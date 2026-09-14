@@ -2,7 +2,7 @@
 
 import React, { useState } from 'react';
 import { CardInfo } from '@/types/card';
-import { allYojoCards, allSweetCards, allPlayableCards } from '@/data/cards';
+import { getCardCatalog } from '@/data/catalog';
 import ExportPopup from '@/components/popup/ExportPopup';
 import ImportPopup from '@/components/popup/ImportPopup';
 import ShareButtons from '@/components/ui/ShareButtons';
@@ -13,6 +13,7 @@ import CardList from '@/components/card/CardList';
 import CardListPanel, { DECK_VIEW_TABS, DeckCardType } from '@/components/card/CardListPanel';
 import { useDeckPageState } from './useDeckPageState';
 import { css } from 'styled-system/css';
+import { useI18n } from '@/i18n/LocaleProvider';
 
 interface DeckPageClientProps {
   initialDeckName: string | null;
@@ -27,6 +28,8 @@ interface DeckPageClientProps {
 
 export default function DeckPageClient(props: DeckPageClientProps) {
   const { isTwoCardLimit } = useSettings();
+  const { locale, t } = useI18n();
+  const { allYojoCards, allSweetCards, allPlayableCards } = getCardCatalog(locale);
 
   const {
     userId,
@@ -61,7 +64,7 @@ export default function DeckPageClient(props: DeckPageClientProps) {
   const [mobileAddModalType, setMobileAddModalType] = useState<DeckCardType | null>(null);
 
   if (isLoading) {
-    return <div className={css({ mx: 'auto', maxW: '1700px', pt: '4', px: '4', pb: '4', color: 'gray.800', _dark: { color: 'gray.100' } })}>読み込み中...</div>;
+    return <div className={css({ mx: 'auto', maxW: '1700px', pt: '4', px: '4', pb: '4', color: 'gray.800', _dark: { color: 'gray.100' } })}>{t('読み込み中...')}</div>;
   }
 
   if (error) {
@@ -104,7 +107,7 @@ export default function DeckPageClient(props: DeckPageClientProps) {
               {deckName}
               {isOwner && (
                 <span className={css({ ml: '2', fontSize: 'sm', color: 'gray.500' })}>
-                  (クリックして編集)
+                  ({locale === 'ja' ? 'クリックして編集' : 'click to edit'})
                 </span>
               )}
             </h1>
@@ -114,7 +117,7 @@ export default function DeckPageClient(props: DeckPageClientProps) {
             )}
             <ShareButtons
               share_url={currentUrl}
-              share_text={`#お菓子争奪戦争ぷぷりえーる`}
+              share_text={locale === 'ja' ? '#お菓子争奪戦争ぷぷりえーる' : '#PPLALE'}
               isLocal={userId === 'local'}
               yojoDeck={yojoDeck}
               sweetDeck={sweetDeck}
@@ -154,7 +157,7 @@ export default function DeckPageClient(props: DeckPageClientProps) {
             onRemovePlayableCard={handleRemovePlayableCard}
             onDropDeck={handleDrop}
             onAddClick={(type) => {
-              setMobileAddModalType(type === '幼女' ? 'yojo' : type === 'お菓子' ? 'sweet' : 'playable');
+              setMobileAddModalType(type === 'yojo' ? 'yojo' : type === 'sweet' ? 'sweet' : 'playable');
             }}
           />
         </div>
@@ -221,6 +224,7 @@ export default function DeckPageClient(props: DeckPageClientProps) {
 }
 
 function LoginToSaveButton({ onClick }: { onClick: () => void }) {
+  const { t } = useI18n();
   return (
     <button
       onClick={onClick}
@@ -236,7 +240,7 @@ function LoginToSaveButton({ onClick }: { onClick: () => void }) {
         _hover: { bg: 'blue.700' },
       })}
     >
-      アカウントにデッキを保存
+      {t('アカウントにデッキを保存')}
     </button>
   );
 }
@@ -250,7 +254,8 @@ interface MobileAddCardModalProps {
 
 /** スマホ幅で「デッキに追加」を押したときに開くカード選択モーダル。 */
 function MobileAddCardModal({ modalType, onClose, onAddToDeck, canAddToDeck }: MobileAddCardModalProps) {
-  const modalTitle = modalType === 'yojo' ? '幼女カードを追加' : modalType === 'sweet' ? 'お菓子カードを追加' : 'プレイアブルカードを追加';
+  const { t } = useI18n();
+  const modalTitle = modalType === 'yojo' ? t('幼女カードを追加') : modalType === 'sweet' ? t('お菓子カードを追加') : t('プレイアブルカードを追加');
 
   return (
     <div className={css({
@@ -291,7 +296,7 @@ function MobileAddCardModal({ modalType, onClose, onAddToDeck, canAddToDeck }: M
             rounded: 'full',
             transitionProperty: 'color, background-color, border-color, text-decoration-color, fill, stroke',
           })}
-          aria-label="閉じる"
+          aria-label={t('閉じる')}
         >
           <svg className={css({ w: '6', h: '6', color: 'gray.600', _dark: { color: 'gray.300' } })} fill="none" stroke="currentColor" strokeWidth={2.5} viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
@@ -318,6 +323,8 @@ function MobileAddCardModal({ modalType, onClose, onAddToDeck, canAddToDeck }: M
 }
 
 function CardListForModal({ modalType, onAddToDeck, canAddToDeck }: Omit<MobileAddCardModalProps, 'onClose'>) {
+  const { locale } = useI18n();
+  const { allYojoCards, allSweetCards, allPlayableCards } = getCardCatalog(locale);
   // モーダル内はタブ無しで単一種別のカードリストのみを表示する
   return (
     <CardList

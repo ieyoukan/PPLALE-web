@@ -14,6 +14,7 @@ import { CardInfo } from '@/types/card';
 import Card from '@/components/card/Card';
 import { css } from 'styled-system/css';
 import { button } from 'styled-system/recipes';
+import { useI18n } from '@/i18n/LocaleProvider';
 
 /**
  * プレイアブルカード最終選択コンポーネントのProps
@@ -58,6 +59,7 @@ const PlayableCardFinalSelection: React.FC<PlayableCardFinalSelectionProps> = ({
   onBack,
   onCheckDeck,
 }) => {
+  const { t } = useI18n();
   // カードの表示状態管理
   const [cardsFaceUp, setCardsFaceUp] = useState<boolean[]>([]);
 
@@ -76,7 +78,7 @@ const PlayableCardFinalSelection: React.FC<PlayableCardFinalSelectionProps> = ({
 
   return (
     <div className={css({ mt: '4', display: 'flex', flexDirection: 'column', alignItems: 'center' })}>
-      <h2 className={css({ fontSize: 'xl', fontWeight: 'bold', mb: '4', textAlign: 'center' })}>プレイアブルカードを選択してください</h2>
+      <h2 className={css({ fontSize: 'xl', fontWeight: 'bold', mb: '4', textAlign: 'center' })}>{t('プレイアブルカードを選択してください')}</h2>
       {!selectedPlayableCard && (
         <div>
           <div className={css({ display: 'flex', gap: '4' })}>
@@ -102,7 +104,7 @@ const PlayableCardFinalSelection: React.FC<PlayableCardFinalSelectionProps> = ({
             className={button({ variant: 'secondary', size: 'md' })}
             onClick={onCheckDeck}
           >
-            デッキ確認
+            {t('デッキを確認')}
           </button>
           </div>
         </div>
@@ -132,13 +134,13 @@ const PlayableCardFinalSelection: React.FC<PlayableCardFinalSelectionProps> = ({
             className={`${button({ variant: 'special', size: 'lg' })} ${css({ position: 'absolute', bottom: '40', right: '0' })}`}
             onClick={onConfirm}
           >
-            選択
+            {t('選択する')}
           </button>
           <button
             className={`${button({ variant: 'secondary', size: 'md' })} ${css({ position: 'absolute', top: '0', left: '0' })}`}
             onClick={onBack}
           >
-            ◀︎戻る
+            ◀︎{t('戻る')}
           </button>
         </div>
       )}

@@ -1,5 +1,5 @@
 import { useState, useMemo, useEffect } from 'react';
-import { CardInfo, FruitType } from '@/types/card';
+import { CardInfo, CardVersion, FruitType, SweetType } from '@/types/card';
 
 /**
  * カードリストのフィルタリング・ソートロジック。
@@ -12,8 +12,8 @@ export function useCardListFilters(
   allPlayableCards: CardInfo[],
 ) {
   const [fruitFilter, setFruitFilter] = useState<FruitType | 'all'>('all');
-  const [sweetTypeFilter, setSweetTypeFilter] = useState<string | 'all'>('all');
-  const [versionFilter, setVersionFilter] = useState<string | 'all'>('all');
+  const [sweetTypeFilter, setSweetTypeFilter] = useState<SweetType | 'all'>('all');
+  const [versionFilter, setVersionFilter] = useState<CardVersion | 'all'>('all');
   const [searchQuery, setSearchQuery] = useState('');
 
   // 表示するカード種別が切り替わったらフィルターをリセットする
@@ -57,11 +57,11 @@ export function useCardListFilters(
   }, [filteredCards, displayCardType]);
 
   const sweetTypes = useMemo(
-    () => Array.from(new Set(allSweetCards.filter(card => card.sweetType).map(card => card.sweetType ?? ''))).filter(Boolean),
+    () => Array.from(new Set(allSweetCards.flatMap(card => card.sweetType ? [card.sweetType] : []))),
     [allSweetCards],
   );
   const versions = useMemo(
-    () => Array.from(new Set(allPlayableCards.filter(card => card.version).map(card => card.version ?? ''))).filter(Boolean),
+    () => Array.from(new Set(allPlayableCards.flatMap(card => card.version ? [card.version] : []))),
     [allPlayableCards],
   );
 

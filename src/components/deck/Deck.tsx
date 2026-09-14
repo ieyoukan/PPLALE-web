@@ -9,6 +9,7 @@ import React, { useState, useMemo } from 'react';
 import { CardInfo, CardType } from '@/types/card';
 import Card from '@/components/card/Card';
 import { css } from 'styled-system/css';
+import { useI18n } from '@/i18n/LocaleProvider';
 
 interface DeckProps {
   /** デッキに含まれるカードのリスト */
@@ -90,6 +91,7 @@ const Deck: React.FC<DeckProps> = ({
   onAddClick,
   attachedToTabs = false,
 }) => {
+  const { t, cardTypeLabel } = useI18n();
   // ドラッグ中のカードのインデックス
   const [draggedIndex, setDraggedIndex] = useState<number | null>(null);
   // デッキにドラッグオーバー中かどうか
@@ -97,11 +99,11 @@ const Deck: React.FC<DeckProps> = ({
 
   // デッキの最大枚数
   const maxCards =
-        type === '幼女'
+        type === 'yojo'
         ? 20
-        : type === 'お菓子'
+        : type === 'sweet'
         ? 10
-        : type === 'プレイアブル'
+        : type === 'playable'
         ? 1
         : 0;
 
@@ -179,7 +181,7 @@ const Deck: React.FC<DeckProps> = ({
   };
 
   const getDeckTheme = () => {
-    if (type === '幼女') {
+    if (type === 'yojo') {
       return {
         container: css({
           borderColor: 'red.200',
@@ -191,7 +193,7 @@ const Deck: React.FC<DeckProps> = ({
       };
     }
 
-    if (type === 'お菓子') {
+    if (type === 'sweet') {
       return {
         container: css({
           borderColor: 'cyan.200',
@@ -203,7 +205,7 @@ const Deck: React.FC<DeckProps> = ({
       };
     }
 
-    if (type === 'プレイアブル') {
+    if (type === 'playable') {
       return {
         container: css({
           borderColor: 'indigo.200',
@@ -260,7 +262,7 @@ const Deck: React.FC<DeckProps> = ({
     >
       <div className={css({ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: '4' })}>
         <h2 className={`${deckTheme.title} ${css({ fontSize: 'xl', fontWeight: 'bold' })}`}>
-          {type}デッキ ({cards.length}/{maxCards})
+          {cardTypeLabel(type)} {t('デッキ')} ({cards.length}/{maxCards})
         </h2>
         {!readOnly && (
           <div className={css({ position: 'relative' })}>
@@ -275,12 +277,12 @@ const Deck: React.FC<DeckProps> = ({
               value={sortCriteria}
               onChange={(e) => setSortCriteria(e.target.value as 'none' | 'id' | 'name' | 'cost' | 'attack' | 'hp')}
             >
-              <option value="none">ソートしない</option>
-              <option value="id">ID順</option>
-              <option value="name">名前順</option>
-              <option value="cost">コスト順</option>
-              <option value="attack">攻撃力順</option>
-              <option value="hp">HP順</option>
+              <option value="none">{t('ソートしない')}</option>
+              <option value="id">{t('ID順')}</option>
+              <option value="name">{t('名前順')}</option>
+              <option value="cost">{t('コスト順')}</option>
+              <option value="attack">{t('攻撃力順')}</option>
+              <option value="hp">{t('HP順')}</option>
             </select>
           </div>
         )}
@@ -291,7 +293,7 @@ const Deck: React.FC<DeckProps> = ({
         className={css({
           display: 'grid',
           gridTemplateColumns: readOnly
-            ? type === '幼女'
+            ? type === 'yojo'
               ? {
                   base: 'repeat(4, minmax(0, 1fr))',
                   sm: 'repeat(5, minmax(0, 1fr))',
@@ -362,7 +364,7 @@ const Deck: React.FC<DeckProps> = ({
             <svg className={css({ w: '10', h: '10', color: 'gray.400', mb: '2' })} fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
             </svg>
-            <span className={css({ fontSize: 'sm', fontWeight: 'bold', color: 'gray.500', _dark: { color: 'gray.400' } })}>追加</span>
+            <span className={css({ fontSize: 'sm', fontWeight: 'bold', color: 'gray.500', _dark: { color: 'gray.400' } })}>{t('追加')}</span>
           </button>
         )}
       </div>
@@ -375,7 +377,7 @@ const Deck: React.FC<DeckProps> = ({
           py: '8',
           color: 'gray.500'
         })}>
-          デッキにカードがありません
+          {t('デッキにカードがありません')}
         </div>
       )}
     </div>

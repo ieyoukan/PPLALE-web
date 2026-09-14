@@ -17,6 +17,7 @@ import JungaryCopy from '@/components/icons/JungaryCopy';
 import Link from 'next/link';
 import { css } from 'styled-system/css';
 import { button } from 'styled-system/recipes';
+import { useI18n } from '@/i18n/LocaleProvider';
 
 /**
  * 2Pick結果表示コンポーネントのProps
@@ -60,15 +61,17 @@ function DeckExportBlock({
   copied: boolean;
   onCopy: () => void;
 }) {
+  const { locale, t } = useI18n();
   const text = deck.map((card) => card.id.replace(/\D/g, '')).join(',');
+  const copyHint = locale === 'ja' ? 'クリックでコピー' : 'Click to copy';
   return (
     <section aria-label={title} className={css({ mb: '4' })}>
       <h3 className={css({ fontWeight: 'bold', mb: '2' })}>{title}</h3>
       <div
         role="button"
         tabIndex={0}
-        title={copied ? 'コピーしました！' : 'クリックでコピー'}
-        aria-label={`${title}をコピー`}
+        title={copied ? t('コピーしました！') : copyHint}
+        aria-label={locale === 'ja' ? `${title}をコピー` : `Copy ${title}`}
         onClick={onCopy}
         onKeyDown={(e) => {
           if (e.key === 'Enter' || e.key === ' ') {
@@ -97,7 +100,7 @@ function DeckExportBlock({
         <JungaryCopy aria-hidden="true" width={20} height={20} className={css({ display: 'inline-block', flexShrink: '0' })} />
       </div>
       <p aria-live="polite" className={css({ fontSize: 'sm', minH: '5', color: copied ? 'green.600' : 'gray.500', _dark: { color: copied ? 'green.300' : 'gray.400' } })}>
-        {copied ? 'コピーしました！' : 'クリックでコピー'}
+        {copied ? t('コピーしました！') : copyHint}
       </p>
     </section>
   );
@@ -111,6 +114,7 @@ const TwoPickResult: React.FC<TwoPickResultProps> = ({
   onSave,
   onRestart,
 }) => {
+  const { locale, t } = useI18n();
   const [yojoCopied, setYojoCopied] = useState(false);
   const [sweetCopied, setSweetCopied] = useState(false);
   const [shareUrl, setShareUrl] = useState('');
@@ -130,8 +134,7 @@ const TwoPickResult: React.FC<TwoPickResultProps> = ({
       <div className={css({ position: 'absolute', top: '0', right: '20' })}>
         <ShareButtons
           share_url={shareUrl}
-          share_text="2pickでデッキを作成しました！
-          #お菓子争奪戦争ぷぷりえーる"
+          share_text={locale === 'ja' ? '2pickでデッキを作成しました！\n#お菓子争奪戦争ぷぷりえーる' : 'I built a PPLALE deck with 2Pick!\n#PPLALE'}
           isLocal={true}
           yojoDeck={yojoDeck}
           sweetDeck={sweetDeck}
@@ -139,11 +142,11 @@ const TwoPickResult: React.FC<TwoPickResultProps> = ({
         />
       </div>
       <header>
-        <h2 className={css({ fontSize: '2xl', fontWeight: 'bold', mb: '4' })}>デッキ構築結果</h2>
-        <p className={css({ mb: '4' })}>構築したデッキをシェアしよう</p>
+        <h2 className={css({ fontSize: '2xl', fontWeight: 'bold', mb: '4' })}>{t('デッキ構築結果')}</h2>
+        <p className={css({ mb: '4' })}>{t('構築したデッキをシェアしよう')}</p>
       </header>
 
-      <section aria-label="デッキ画像プレビュー" className={css({ w: '1/2', mx: 'auto', mb: '4' })}>
+      <section aria-label={t('デッキ画像プレビュー')} className={css({ w: '1/2', mx: 'auto', mb: '4' })}>
         <DeckImagePreview
           yojoDeck={yojoDeck}
           sweetDeck={sweetDeck}
@@ -155,13 +158,13 @@ const TwoPickResult: React.FC<TwoPickResultProps> = ({
 
       <div className={css({ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '10', mb: '6' })}>
         <DeckExportBlock
-          title="幼女デッキ"
+          title={t('幼女デッキ')}
           deck={yojoDeck}
           copied={yojoCopied}
           onCopy={() => copyDeck(yojoDeck, setYojoCopied)}
         />
         <DeckExportBlock
-          title="お菓子デッキ"
+          title={t('お菓子デッキ')}
           deck={sweetDeck}
           copied={sweetCopied}
           onCopy={() => copyDeck(sweetDeck, setSweetCopied)}
@@ -174,14 +177,14 @@ const TwoPickResult: React.FC<TwoPickResultProps> = ({
             className={button({ variant: 'primary', size: 'md' })}
             onClick={onSave}
           >
-            デッキを保存
+            {t('デッキを保存')}
           </button>
         ) : (
           <button
             className={button({ variant: 'primary', size: 'md' })}
             onClick={onSave}
           >
-            ログインしてデッキを保存
+            {t('ログインしてデッキを保存')}
           </button>
         )}
         <div className={css({ display: 'flex', alignItems: 'center', gap: '4' })}>
@@ -189,10 +192,10 @@ const TwoPickResult: React.FC<TwoPickResultProps> = ({
           className={button({ variant: 'secondary', size: 'md' })}
           onClick={onRestart}
         >
-          もう一度プレイ
+          {t('もう一度プレイ')}
         </button>
         <Link href="/" className={button({ variant: 'secondary', size: 'md' })}>
-          ホームに戻る
+          {t('ホームに戻る')}
         </Link>
         </div>
       </div>

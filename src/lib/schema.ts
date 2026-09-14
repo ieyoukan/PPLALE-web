@@ -1,7 +1,23 @@
 import { z } from 'zod';
 
-export const cardTypeSchema = z.enum(['幼女', 'お菓子', 'プレイアブル']);
-export const fruitTypeSchema = z.enum(['すべて', 'いちご', 'ぶどう', 'めろん', 'おれんじ']);
+export const cardTypeSchema = z.enum(['yojo', 'sweet', 'playable']);
+export const fruitTypeSchema = z.enum(['all', 'strawberry', 'grape', 'melon', 'orange']);
+export const cardRoleSchema = z.enum(['', 'assistant_manager', 'manager']);
+export const sweetTypeSchema = z.enum([
+  '',
+  'animal_soda',
+  'cafe',
+  'float',
+  'doughnut',
+  'cake',
+  'back_menu',
+  'chai',
+  'ice_cream',
+  'pplale_soda',
+  'pplale_yaki',
+  'currency',
+]);
+export const cardVersionSchema = z.enum(['normal', 'beta']);
 
 export const cardSchema = z.object({
   id: z.string().min(1),
@@ -13,10 +29,10 @@ export const cardSchema = z.object({
   attack: z.number().int().nonnegative(),
   description: z.string(),
   imageUrl: z.string().min(1),
-  role: z.string().optional(),
-  sweetType: z.string().optional(),
+  role: cardRoleSchema.optional(),
+  sweetType: sweetTypeSchema.optional(),
   effect: z.string().optional(),
-  version: z.string().optional(),
+  version: cardVersionSchema.optional(),
 });
 
 export const yojoDataSchema = z.object({

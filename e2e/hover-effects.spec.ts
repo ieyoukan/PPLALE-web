@@ -23,7 +23,7 @@ test.describe('Hover effects: scale removed, ripple added', () => {
   test('tournament page buttons should have ripple, not scale', async ({ page }) => {
     await page.goto('/tournament');
 
-    const discordLink = page.getByRole('link', { name: /Discord.*参加/ });
+    const discordLink = page.getByRole('link', { name: /discord.*(参加|join)|join.*discord/i });
     await expect(discordLink).toBeVisible();
 
     // ::after疑似要素があることを確認
@@ -43,7 +43,7 @@ test.describe('Hover effects: scale removed, ripple added', () => {
   test('tournament link cards should not have box-shadow', async ({ page }) => {
     await page.goto('/tournament');
 
-    const buildLink = page.getByRole('link', { name: /デッキをつくる/ });
+    const buildLink = page.getByRole('link', { name: /デッキをつくる|build a deck/i });
     await expect(buildLink).toBeVisible();
 
     const boxShadow = await buildLink.evaluate((el) =>

@@ -14,6 +14,7 @@ import { CardInfo, CardType } from '@/types/card';
 import CardSelection from './CardSelection';
 import { css } from 'styled-system/css';
 import { button } from 'styled-system/recipes';
+import { useI18n } from '@/i18n/LocaleProvider';
 
 /**
  * デッキカード選択コンポーネントのProps
@@ -22,7 +23,7 @@ import { button } from 'styled-system/recipes';
  * @property {CardInfo[]} currentChoices - 現在表示する選択肢のカード配列 (4枚)
  * @property {(card1: CardInfo, card2: CardInfo) => void} onSelect - カードが選択されたときのコールバック関数
  * @property {number} round - 現在のラウンド番号
- * @property {CardType} currentPhase - 現在の選択フェーズ ('幼女' または 'お菓子')
+ * @property {CardType} currentPhase - 現在の選択フェーズ ('yojo' または 'sweet')
  * @property {() => void} onShowDeckClick - デッキ確認ボタンがクリックされたときのコールバック関数
  */
 interface DeckCardSelectionProps {
@@ -32,7 +33,7 @@ interface DeckCardSelectionProps {
   onSelect: (card1: CardInfo, card2: CardInfo) => void;
   /** 現在のラウンド番号 */
   round: number;
-  /** 現在の選択フェーズ ('幼女' または 'お菓子') */
+  /** 現在の選択フェーズ ('yojo' または 'sweet') */
   currentPhase: CardType;
   /** デッキ確認ボタンがクリックされたときのコールバック関数 */
   onShowDeckClick: () => void;
@@ -48,7 +49,7 @@ interface DeckCardSelectionProps {
  * @param {CardInfo[]} currentChoices - 現在表示する選択肢のカード配列 (4枚)
  * @param {(card1: CardInfo, card2: CardInfo) => void} onSelect - カードが選択されたときのコールバック関数
  * @param {number} round - 現在のラウンド番号
- * @param {CardType} currentPhase - 現在の選択フェーズ ('幼女' または 'お菓子')
+ * @param {CardType} currentPhase - 現在の選択フェーズ ('yojo' または 'sweet')
  * @param {() => void} onShowDeckClick - デッキ確認ボタンがクリックされたときのコールバック関数
  * @param {number} maxYojoRound - 幼女カードのラウンド総数
  * @param {number} maxSweetRound - お菓子カードのラウンド総数
@@ -63,17 +64,18 @@ const DeckCardSelection: React.FC<DeckCardSelectionProps> = ({
   maxYojoRound = 10,
   maxSweetRound = 5,
 }) => {
+  const { locale, t, cardTypeLabel } = useI18n();
 
   if (currentChoices.length < 4) {
-    return <div className={css({ textAlign: 'center', py: '8' })}>カードを読み込み中...</div>;
+    return <div className={css({ textAlign: 'center', py: '8' })}>{locale === 'ja' ? 'カードを読み込み中...' : 'Loading cards...'}</div>;
   }
 
-  const maxRound = currentPhase === '幼女' ? maxYojoRound : maxSweetRound;
+  const maxRound = currentPhase === 'yojo' ? maxYojoRound : maxSweetRound;
 
   return (
     <div className={css({ mt: '4', display: 'flex', flexDirection: 'column', alignItems: 'center' })}>
       <h2 className={css({ fontSize: 'xl', fontWeight: 'bold', mb: '4', textAlign: 'center' })}>
-        {round} / {maxRound}: {currentPhase}カードを選択してください
+        {round} / {maxRound}: {locale === 'ja' ? `${cardTypeLabel(currentPhase)}カードを選択してください` : `Choose ${cardTypeLabel(currentPhase).toLowerCase()} cards`}
       </h2>
       <div className={css({ display: 'flex', justifyContent: 'space-between', alignItems: 'center' })}>
         {/* 左側のカード選択 */}
@@ -88,7 +90,7 @@ const DeckCardSelection: React.FC<DeckCardSelectionProps> = ({
         {/* デッキ確認ボタン */}
         <div className={css({ display: 'flex', justifyContent: 'center' })}>
           <button className={button({ variant: 'secondary', size: 'lg' })} onClick={onShowDeckClick}>
-            デッキ確認
+            {t('デッキを確認')}
           </button>
         </div>
 

@@ -10,9 +10,9 @@ export type DeckCardType = 'yojo' | 'sweet' | 'playable';
 
 /** デッキ編集画面共通のタブ定義（幼女/お菓子/プレイアブル）。 */
 export const DECK_VIEW_TABS: TabDefinition[] = [
-  { key: 'yojo', label: '幼女' },
-  { key: 'sweet', label: 'お菓子' },
-  { key: 'playable', label: 'プレイアブル' },
+  { key: 'yojo', label: 'yojo' },
+  { key: 'sweet', label: 'sweet' },
+  { key: 'playable', label: 'playable' },
 ];
 
 function getCardListColorClassName(activeTabKey: DeckCardType) {

@@ -14,6 +14,7 @@ import { CardInfo } from '@/types/card';
 import Deck from '@/components/deck/Deck';
 import { css } from 'styled-system/css';
 import { button } from 'styled-system/recipes';
+import { useI18n } from '@/i18n/LocaleProvider';
 
 /**
  * デッキ確認ポップアップコンポーネントのProps
@@ -47,6 +48,7 @@ const DeckViewPopup: React.FC<DeckViewPopupProps> = ({
   selectedPlayableCard,
   onClose,
 }) => {
+  const { t } = useI18n();
   return (
     <div className={css({ position: 'fixed', inset: '0', bg: 'black/50', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: '50' })}>
       <div className={css({ bg: 'white', p: '4', rounded: 'lg', w: 'full', maxH: '100vh', overflow: 'auto' })}>
@@ -56,7 +58,7 @@ const DeckViewPopup: React.FC<DeckViewPopupProps> = ({
           <div className={css({ w: 'full', lg: { w: '1/2' } })}>
             <Deck
               cards={yojoDeck}
-              type="幼女"
+              type="yojo"
               readOnly={true}
               showDuplicates={false}
             />
@@ -66,14 +68,14 @@ const DeckViewPopup: React.FC<DeckViewPopupProps> = ({
           <div className={css({ display: 'flex', flexDirection: 'column', gap: '4', w: 'full', lg: { w: '1/2' } })}>
             <Deck
               cards={sweetDeck}
-              type="お菓子"
+              type="sweet"
               readOnly={true}
               showDuplicates={false}
             />
 
             <Deck
               cards={[selectedPlayableCard || null].filter(Boolean) as CardInfo[]}
-              type="プレイアブル"
+              type="playable"
               readOnly={true}
               showDuplicates={false}
             />
@@ -84,7 +86,7 @@ const DeckViewPopup: React.FC<DeckViewPopupProps> = ({
             className={button({ variant: 'primary', size: 'md' })}
             onClick={onClose}
           >
-            閉じる
+            {t('閉じる')}
           </button>
         </div>
       </div>

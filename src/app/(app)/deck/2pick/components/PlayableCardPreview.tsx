@@ -14,6 +14,7 @@ import { CardInfo } from '@/types/card';
 import Card from '@/components/card/Card';
 import { css } from 'styled-system/css';
 import { button } from 'styled-system/recipes';
+import { useI18n } from '@/i18n/LocaleProvider';
 
 /**
  * プレイアブルカードプレビューコンポーネントのProps
@@ -43,6 +44,7 @@ const PlayableCardPreview: React.FC<PlayableCardPreviewProps> = ({
   onCardClick,
   onSubmit,
 }) => {
+  const { t } = useI18n();
   /** 各カードが表向きかどうかの状態 */
   const [cardsFaceUp, setCardsFaceUp] = useState<boolean[]>([]);
 
@@ -60,7 +62,7 @@ const PlayableCardPreview: React.FC<PlayableCardPreviewProps> = ({
 
   return (
     <div className={css({ display: 'flex', flexDirection: 'column', alignItems: 'center', mt: '8' })}>
-      <h2 className={css({ fontSize: 'xl', fontWeight: 'bold', mb: '4' })}>プレイアブルカードを確認してください</h2>
+      <h2 className={css({ fontSize: 'xl', fontWeight: 'bold', mb: '4' })}>{t('プレイアブルカードを確認してください')}</h2>
       <div className={css({ display: 'grid', gridTemplateColumns: 'repeat(3, minmax(0, 1fr))', gap: '4', w: 'full', maxW: '6xl', mx: 'auto', placeItems: 'center' })}>
         {playableChoices.map((card, index) => (
           <Card
@@ -78,7 +80,7 @@ const PlayableCardPreview: React.FC<PlayableCardPreviewProps> = ({
         ))}
       </div>
       <button onClick={onSubmit} className={`${button({ variant: 'primary', size: 'md' })} ${css({ mt: '4' })}`}>
-        次へ
+        {t('次へ')}
       </button>
     </div>
   );

@@ -1,8 +1,9 @@
 'use client';
 
 import React from 'react';
-import { FruitType } from '@/types/card';
+import { CardVersion, FruitType, SweetType } from '@/types/card';
 import { css } from 'styled-system/css';
+import { useI18n } from '@/i18n/LocaleProvider';
 
 const selectClassName = css({
   rounded: 'md',
@@ -33,12 +34,12 @@ interface CardListFilterBarProps {
   displayCardType: 'yojo' | 'sweet' | 'playable';
   fruitFilter: FruitType | 'all';
   onFruitFilterChange: (value: FruitType | 'all') => void;
-  sweetTypeFilter: string | 'all';
-  onSweetTypeFilterChange: (value: string | 'all') => void;
-  sweetTypes: string[];
-  versionFilter: string | 'all';
-  onVersionFilterChange: (value: string | 'all') => void;
-  versions: string[];
+  sweetTypeFilter: SweetType | 'all';
+  onSweetTypeFilterChange: (value: SweetType | 'all') => void;
+  sweetTypes: SweetType[];
+  versionFilter: CardVersion | 'all';
+  onVersionFilterChange: (value: CardVersion | 'all') => void;
+  versions: CardVersion[];
   searchQuery: string;
   onSearchQueryChange: (value: string) => void;
 }
@@ -60,6 +61,7 @@ export default function CardListFilterBar({
   searchQuery,
   onSearchQueryChange,
 }: CardListFilterBarProps) {
+  const { t, fruitLabel, sweetTypeLabel, versionLabel } = useI18n();
   return (
     <div className={css({ display: 'flex', flexDirection: 'column', sm: { flexDirection: 'row' }, gap: '2' })}>
       {displayCardType === 'yojo' && (
@@ -68,22 +70,21 @@ export default function CardListFilterBar({
           value={fruitFilter}
           onChange={(e) => onFruitFilterChange(e.target.value as FruitType | 'all')}
         >
-          <option value="all">フルーツ</option>
-          <option value="いちご">いちご</option>
-          <option value="ぶどう">ぶどう</option>
-          <option value="めろん">めろん</option>
-          <option value="おれんじ">おれんじ</option>
+          <option value="all">{t('すべてのフルーツ')}</option>
+          {(['strawberry', 'grape', 'melon', 'orange'] as FruitType[]).map((fruit) => (
+            <option key={fruit} value={fruit}>{fruitLabel(fruit)}</option>
+          ))}
         </select>
       )}
       {displayCardType === 'sweet' && (
         <select
           className={selectClassName}
           value={sweetTypeFilter}
-          onChange={(e) => onSweetTypeFilterChange(e.target.value)}
+          onChange={(e) => onSweetTypeFilterChange(e.target.value as SweetType | 'all')}
         >
-          <option value="all">お菓子タイプ</option>
+          <option value="all">{t('お菓子タイプ')}</option>
           {sweetTypes.map(type => (
-            type && <option key={type} value={type}>{type}</option>
+            type && <option key={type} value={type}>{sweetTypeLabel(type)}</option>
           ))}
         </select>
       )}
@@ -91,17 +92,17 @@ export default function CardListFilterBar({
         <select
           className={selectClassName}
           value={versionFilter}
-          onChange={(e) => onVersionFilterChange(e.target.value)}
+          onChange={(e) => onVersionFilterChange(e.target.value as CardVersion | 'all')}
         >
-          <option value="all">バージョン</option>
+          <option value="all">{t('バージョン')}</option>
           {versions.map(version => (
-            version && <option key={version} value={version}>{version}</option>
+            version && <option key={version} value={version}>{versionLabel(version)}</option>
           ))}
         </select>
       )}
       <input
         type="text"
-        placeholder="カード名検索..."
+        placeholder={`${t('カードを検索')}...`}
         className={inputClassName}
         value={searchQuery}
         onChange={(e) => onSearchQueryChange(e.target.value)}

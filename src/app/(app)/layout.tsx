@@ -1,62 +1,44 @@
-'use client';
+import AppShell from './AppShell';
+import { LocaleProvider } from '@/i18n/LocaleProvider';
+import { getRequestLocale } from '@/i18n/server';
+import type { Metadata } from 'next';
 
-import Link from 'next/link';
-import { usePathname } from 'next/navigation';
-import { useEffect } from 'react';
-import SettingsButton from '@/components/ui/SideMenu';
-import FireBaseLogin from '@/components/ui/FireBaseLogin';
-import { css } from 'styled-system/css';
+export async function generateMetadata(): Promise<Metadata> {
+  const locale = await getRequestLocale();
+  if (locale === 'ja') return {};
 
-export default function AppLayout({ children }: { children: React.ReactNode }) {
-  const pathname = usePathname();
-  const is2Pick = pathname === '/deck/2pick';
+  const title = 'PPLALE Deck Builder';
+  const description = 'Build, draft, import, export, and share decks for the PPLALE card game.';
+  return {
+    title,
+    description,
+    keywords: ['PPLALE', 'VRChat', 'card game', 'deck builder', '2Pick'],
+    openGraph: {
+      title,
+      description,
+      url: 'https://pplale.vercel.app',
+      siteName: title,
+      images: [{ url: '/ogp.png', width: 1200, height: 630, alt: title }],
+      locale: 'en_US',
+      type: 'website',
+    },
+    twitter: {
+      card: 'summary_large_image',
+      title,
+      description,
+      images: ['/ogp.png'],
+    },
+  };
+}
 
-  // ヘッダーを持たないルート(トップページ等)からクライアントサイド遷移してくると、
-  // このヘッダーが初めてマウントされるタイミングとスクロール位置計算がずれて
-  // ページ先頭がヘッダーの高さ分隠れたままになることがあるため、遷移毎に先頭へ戻す。
-  useEffect(() => {
-    window.scrollTo(0, 0);
-  }, [pathname]);
+export default async function AppLayout({ children }: { children: React.ReactNode }) {
+  const locale = await getRequestLocale();
 
   return (
-    <>
-      <header className={css({
-        position: 'sticky', top: '0', h: '16', zIndex: '40',
-        bg: { base: 'white/95', _dark: 'gray.900/95' },
-        backdropBlur: 'md',
-        borderBottomWidth: '1px',
-        borderColor: { base: 'gray.200', _dark: 'gray.700' },
-        boxShadow: 'sm',
-      })}>
-        {/* バナー背景画像 */}
-        <div className={css({
-          position: 'absolute', inset: '0',
-          backgroundImage: 'url(\'/images/baner.webp\')',
-          backgroundSize: 'cover',
-          backgroundPosition: 'center',
-          backgroundRepeat: 'no-repeat',
-          opacity: '0.15',
-          _dark: { opacity: '0.08' },
-        })} />
-        <div className={css({ position: 'relative', zIndex: '1', maxW: 'breakpoint-2xl', mx: 'auto', px: '4', h: 'full', display: 'flex', alignItems: 'center', justifyContent: 'space-between' })}>
-          <div className={css({ display: 'flex', alignItems: 'center', gap: '4', minW: '0' })}>
-            {is2Pick ? (
-              <p className={css({ fontSize: '2xl', fontWeight: 'bold' })}>2Pick構築</p>
-            ) : (
-              <Link className={css({ fontSize: 'xl', fontWeight: 'bold', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' })} href="/">
-                ぷぷりえーる デッキ構築
-              </Link>
-            )}
-          </div>
-          <div className={css({ display: 'flex', alignItems: 'center', gap: '3', flexShrink: '0' })}>
-            <SettingsButton />
-            <FireBaseLogin />
-          </div>
-        </div>
-      </header>
-      <main>
-        {children}
-      </main>
-    </>
+    <LocaleProvider initialLocale={locale}>
+      <div lang={locale}>
+        <AppShell>{children}</AppShell>
+      </div>
+    </LocaleProvider>
   );
 }

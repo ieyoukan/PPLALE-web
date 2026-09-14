@@ -9,8 +9,9 @@
 
 import React, { useState } from 'react';
 import { CardInfo } from '@/types/card';
-import { allYojoCards, allSweetCards, allPlayableCards } from '@/data/cards';
+import { getCardCatalog } from '@/data/catalog';
 import { css } from 'styled-system/css';
+import { useI18n } from '@/i18n/LocaleProvider';
 
 interface ImportedDeck {
   yojoDeck: CardInfo[];
@@ -41,6 +42,8 @@ interface ImportPopupProps {
  * @returns インポートポップアップコンポーネント
  */
 const ImportPopup: React.FC<ImportPopupProps> = ({ onImport, onClose }) => {
+  const { locale, t } = useI18n();
+  const { allYojoCards, allSweetCards, allPlayableCards } = getCardCatalog(locale);
   // 幼女デッキのカードID
   const [yojoCardIds, setYojoCardIds] = useState('');
   // お菓子デッキのカードID
@@ -98,7 +101,8 @@ const ImportPopup: React.FC<ImportPopupProps> = ({ onImport, onClose }) => {
         .filter((card): card is CardInfo => card !== undefined);
 
       // プレイアブルカードのIDを取得
-      const playableId = playableCardId.trim();
+      const playableDigits = playableCardId.trim().replace(/\D/g, '');
+      const playableId = playableDigits ? `p_${parseInt(playableDigits, 10)}` : '';
       const newPlayableCard = playableId
         ? allPlayableCards.find(card => card.id === playableId) || null
         : null;
@@ -111,7 +115,7 @@ const ImportPopup: React.FC<ImportPopupProps> = ({ onImport, onClose }) => {
       });
       onClose();
     } catch (error) {
-      setError(error instanceof Error ? error.message : 'デッキのインポートに失敗しました');
+      setError(error instanceof Error ? error.message : locale === 'ja' ? 'デッキのインポートに失敗しました' : 'Could not import the deck');
     }
   };
 
@@ -150,7 +154,7 @@ const ImportPopup: React.FC<ImportPopupProps> = ({ onImport, onClose }) => {
           _dark: { bg: 'gray.800', color: 'gray.100' },
         })}
       >
-        <h2 className={css({ fontSize: 'xl', fontWeight: 'bold', mb: '4' })}>デッキをインポート</h2>
+        <h2 className={css({ fontSize: 'xl', fontWeight: 'bold', mb: '4' })}>{t('デッキをインポート')}</h2>
         {error && (
           <div className={css({ mb: '4', p: '2', bg: 'red.100', color: 'red.700', rounded: 'sm' })}>
             {error}
@@ -158,7 +162,7 @@ const ImportPopup: React.FC<ImportPopupProps> = ({ onImport, onClose }) => {
         )}
         <div className={css({ display: 'flex', flexDirection: 'column', gap: '4' })}>
           <div>
-            <h4 className={css({ fontWeight: 'bold', mb: '2' })}>幼女デッキ</h4>
+            <h4 className={css({ fontWeight: 'bold', mb: '2' })}>{t('幼女デッキ')}</h4>
             <textarea
               className={css({
                 w: 'full',
@@ -173,15 +177,17 @@ const ImportPopup: React.FC<ImportPopupProps> = ({ onImport, onClose }) => {
               rows={3}
               value={yojoCardIds}
               onChange={(e) => setYojoCardIds(e.target.value)}
-              placeholder="1,2,3,4,5 (任意)"
+              placeholder={locale === 'ja' ? '1,2,3,4,5 (任意)' : '1,2,3,4,5 (optional)'}
             />
             <p className={css({ fontSize: 'sm', color: 'gray.600', mt: '1' })}>
-              カンマ区切りで数字を入力してください（例：1,2,3,4,5）。IDは1から64の範囲で入力してください。先頭の0は不要です。
+              {locale === 'ja'
+                ? 'カンマ区切りで数字を入力してください（例：1,2,3,4,5）。先頭の0は不要です。'
+                : 'Enter comma-separated numbers (for example: 1,2,3,4,5). Leading zeroes are not required.'}
             </p>
           </div>
 
           <div>
-            <h4 className={css({ fontWeight: 'bold', mb: '2' })}>お菓子デッキ</h4>
+            <h4 className={css({ fontWeight: 'bold', mb: '2' })}>{t('お菓子デッキ')}</h4>
             <textarea
               className={css({
                 w: 'full',
@@ -196,12 +202,12 @@ const ImportPopup: React.FC<ImportPopupProps> = ({ onImport, onClose }) => {
               rows={3}
               value={sweetCardIds}
               onChange={(e) => setSweetCardIds(e.target.value)}
-              placeholder="6,7,8,9,10 (任意)"
+              placeholder={locale === 'ja' ? '6,7,8,9,10 (任意)' : '6,7,8,9,10 (optional)'}
             />
           </div>
 
           <div>
-            <h4 className={css({ fontWeight: 'bold', mb: '2' })}>プレイアブルカード</h4>
+            <h4 className={css({ fontWeight: 'bold', mb: '2' })}>{t('プレイアブルカード')}</h4>
             <input
               type="text"
               className={css({
@@ -216,7 +222,7 @@ const ImportPopup: React.FC<ImportPopupProps> = ({ onImport, onClose }) => {
               })}
               value={playableCardId}
               onChange={(e) => setPlayableCardId(e.target.value)}
-              placeholder="p_01 (任意)"
+              placeholder={locale === 'ja' ? 'p_01 (任意)' : 'p_01 (optional)'}
             />
           </div>
         </div>
@@ -239,7 +245,7 @@ const ImportPopup: React.FC<ImportPopupProps> = ({ onImport, onClose }) => {
             })}
             onClick={handleClose}
           >
-            キャンセル
+            {t('キャンセル')}
           </button>
           <button
             className={css({
@@ -254,7 +260,7 @@ const ImportPopup: React.FC<ImportPopupProps> = ({ onImport, onClose }) => {
             })}
             onClick={handleImport}
           >
-            インポート
+            {t('インポート')}
           </button>
         </div>
       </div>
@@ -262,4 +268,4 @@ const ImportPopup: React.FC<ImportPopupProps> = ({ onImport, onClose }) => {
   );
 };
 
-export default ImportPopup; 
+export default ImportPopup;

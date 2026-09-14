@@ -59,7 +59,7 @@ const DeckList: React.FC<DeckListProps> = ({
           {activeTabKey === 'yojo' && (
             <Deck
               cards={yojoDeck}
-              type="幼女"
+              type="yojo"
               readOnly={false}
               onCardRemove={onRemoveFromYojoDeck}
               onDragOverDeck={(e) => e.preventDefault()}
@@ -73,7 +73,7 @@ const DeckList: React.FC<DeckListProps> = ({
           {activeTabKey === 'sweet' && (
             <Deck
               cards={sweetDeck}
-              type="お菓子"
+              type="sweet"
               readOnly={false}
               onCardRemove={onRemoveFromSweetDeck}
               onDragOverDeck={(e) => e.preventDefault()}
@@ -87,7 +87,7 @@ const DeckList: React.FC<DeckListProps> = ({
           {activeTabKey === 'playable' && (
             <Deck
               cards={[playableCard || null].filter(Boolean) as CardInfo[]}
-              type="プレイアブル"
+              type="playable"
               readOnly={false}
               onCardRemove={onRemovePlayableCard}
               onDragOverDeck={(e) => e.preventDefault()}
@@ -106,7 +106,7 @@ const DeckList: React.FC<DeckListProps> = ({
             <div className={css({ w: 'full', lg: { w: '1/2' } })}>
               <Deck
                 cards={yojoDeck}
-                type="幼女"
+                type="yojo"
                 readOnly={true}
                 onCardRemove={onRemoveFromYojoDeck} // 実際には呼ばれないが型合わせのため
                 showDuplicates={false}
@@ -117,7 +117,7 @@ const DeckList: React.FC<DeckListProps> = ({
             <div className={css({ display: 'flex', flexDirection: 'column', gap: '4', w: 'full', lg: { w: '1/2' } })}>
               <Deck
                 cards={sweetDeck}
-                type="お菓子"
+                type="sweet"
                 readOnly={true}
                 onCardRemove={onRemoveFromSweetDeck} // 実際には呼ばれないが型合わせのため
                 showDuplicates={false}
@@ -125,7 +125,7 @@ const DeckList: React.FC<DeckListProps> = ({
 
               <Deck
                 cards={[playableCard || null].filter(Boolean) as CardInfo[]}
-                type="プレイアブル"
+                type="playable"
                 readOnly={true}
                 onCardRemove={onRemovePlayableCard} // 実際には呼ばれないが型合わせのため
                 showDuplicates={false}

@@ -20,6 +20,10 @@ const dataFiles = [
   { rel: 'src/data/sweet.json', key: 'sweet', dir: 'public/images/sweet' },
   { rel: 'src/data/playable.json', key: 'playable', dir: 'public/images/playable' },
   { rel: 'src/data/tokenYojo.json', key: 'tokenYojo', dir: 'public/images/yojo' },
+  { rel: 'src/data/en/yojo.json', key: 'yojo', dir: 'public/images/en/yojo' },
+  { rel: 'src/data/en/sweet.json', key: 'sweet', dir: 'public/images/en/sweet' },
+  { rel: 'src/data/en/playable.json', key: 'playable', dir: 'public/images/en/playable' },
+  { rel: 'src/data/en/tokenYojo.json', key: 'tokenYojo', dir: 'public/images/en/yojo' },
 ];
 
 let errors = 0;

@@ -12,6 +12,7 @@ import { CardInfo } from '@/types/card';
 import Card from '@/components/card/Card';
 import DeckImagePreview from '@/components/deck/DeckImagePreview';
 import { css } from 'styled-system/css';
+import { useI18n } from '@/i18n/LocaleProvider';
 
 /**
  * エクスポートポップアップのプロパティ
@@ -45,6 +46,7 @@ interface ExportPopupProps {
  * @returns エクスポートポップアップコンポーネント
  */
 const ExportPopup: React.FC<ExportPopupProps> = ({ yojoDeck, sweetDeck, playableCard, onClose }) => {
+  const { t } = useI18n();
   // 幼女デッキのコピー状態
   const [yojoCopied, setYojoCopied] = useState(false);
   // お菓子デッキのコピー状態
@@ -101,10 +103,10 @@ const ExportPopup: React.FC<ExportPopupProps> = ({ yojoDeck, sweetDeck, playable
           _dark: { bg: 'gray.800', color: 'gray.100' },
         })}
       >
-        <h3 className={css({ fontSize: 'xl', fontWeight: 'bold', mb: '4' })}>デッキをエクスポート</h3>
+        <h3 className={css({ fontSize: 'xl', fontWeight: 'bold', mb: '4' })}>{t('デッキをエクスポート')}</h3>
         <div className={css({ mb: '4' })}>
           <div className={css({ mb: '4' })}>
-            <h4 className={css({ fontWeight: 'bold', mb: '2' })}>幼女デッキ</h4>
+            <h4 className={css({ fontWeight: 'bold', mb: '2' })}>{t('幼女デッキ')}</h4>
             <div
               className={css({
                 maxH: '40',
@@ -133,12 +135,12 @@ const ExportPopup: React.FC<ExportPopupProps> = ({ yojoDeck, sweetDeck, playable
               })}
               onClick={handleCopyYojoDeck}
             >
-              {yojoCopied ? 'コピーしました！' : '幼女デッキをコピー'}
+              {t(yojoCopied ? 'コピーしました！' : '幼女デッキをコピー')}
             </button>
           </div>
 
           <div className={css({ mb: '4' })}>
-            <h4 className={css({ fontWeight: 'bold', mb: '2' })}>お菓子デッキ</h4>
+            <h4 className={css({ fontWeight: 'bold', mb: '2' })}>{t('お菓子デッキ')}</h4>
             <div
               className={css({
                 maxH: '40',
@@ -167,13 +169,13 @@ const ExportPopup: React.FC<ExportPopupProps> = ({ yojoDeck, sweetDeck, playable
               })}
               onClick={handleCopySweetDeck}
             >
-              {sweetCopied ? 'コピーしました！' : 'お菓子デッキをコピー'}
+              {t(sweetCopied ? 'コピーしました！' : 'お菓子デッキをコピー')}
             </button>
           </div>
 
             {playableCard?.name && (
             <div className={css({ mb: '4' })}>
-            <h4 className={css({ fontWeight: 'bold', mb: '2' })}>プレイアブルキャラ</h4>
+            <h4 className={css({ fontWeight: 'bold', mb: '2' })}>{t('プレイアブルキャラ')}</h4>
               <Card
                 card={playableCard}
                 isSelected={false}
@@ -199,7 +201,7 @@ const ExportPopup: React.FC<ExportPopupProps> = ({ yojoDeck, sweetDeck, playable
             })}
             onClick={() => setShowImagePreview(true)}
           >
-            デッキの画像を表示
+            {t('デッキの画像を表示')}
           </button>
           <button
             className={css({
@@ -219,7 +221,7 @@ const ExportPopup: React.FC<ExportPopupProps> = ({ yojoDeck, sweetDeck, playable
             })}
             onClick={onClose}
           >
-            閉じる
+            {t('閉じる')}
           </button>
         </div>
         {showImagePreview && (

@@ -11,6 +11,7 @@ import {signInWithPopup, GoogleAuthProvider, signOut, User } from 'firebase/auth
 import Image from 'next/image';
 import { auth } from '@/lib/firebase';
 import { css } from 'styled-system/css';
+import { useI18n } from '@/i18n/LocaleProvider';
 
 const provider = new GoogleAuthProvider();
 
@@ -25,6 +26,7 @@ interface FireBaseLoginProps {
  * @returns {JSX.Element} Firebaseログインコンポーネント
  */
 const FireBaseLogin: React.FC<FireBaseLoginProps> = () => {
+  const { t } = useI18n();
   const [user, set_user] = useState<User | null>(null);
   const [menu_open, set_menu_open] = useState<boolean>(false);
   const menuRef = useRef<HTMLDivElement>(null);
@@ -131,7 +133,7 @@ const FireBaseLogin: React.FC<FireBaseLoginProps> = () => {
             fill="#EA4335" 
           />
         </svg>
-        ログイン
+        {t('ログイン')}
       </button>
     );
   }
@@ -152,7 +154,7 @@ const FireBaseLogin: React.FC<FireBaseLoginProps> = () => {
         {user.photoURL ? (
           <Image
             src={user.photoURL}
-            alt={user.displayName ?? 'ユーザー'}
+            alt={user.displayName ?? t('ユーザー')}
             width={40}
             height={40}
             className={css({ rounded: 'full' })}
@@ -207,7 +209,7 @@ const FireBaseLogin: React.FC<FireBaseLoginProps> = () => {
               _dark: { color: 'gray.200', _hover: { bg: 'gray.700' } },
             })}
           >
-            ログアウト
+            {t('ログアウト')}
           </button>
         </div>
       )}

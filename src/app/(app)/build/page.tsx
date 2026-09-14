@@ -8,7 +8,8 @@ import { db } from '@/lib/firebase';
 import { useAuth } from '@/lib/auth';
 import Image from 'next/image';
 import { generateDeckImageDataUrl } from '@/components/deck/DeckImagePreview';
-import { allYojoCards, allSweetCards, allPlayableCards } from '@/data/cards';
+import { getCardCatalog } from '@/data/catalog';
+import { useI18n } from '@/i18n/LocaleProvider';
 import { nanoid } from 'nanoid';
 import { css } from 'styled-system/css';
 
@@ -57,6 +58,8 @@ interface Deck {
 }
 
 export default function BuildPage() {
+  const { locale, t } = useI18n();
+  const { allYojoCards, allSweetCards, allPlayableCards } = getCardCatalog(locale);
   const router = useRouter();
   const { user } = useAuth();
   const [recentDecks, setRecentDecks] = useState<Deck[]>([]);
@@ -118,7 +121,7 @@ export default function BuildPage() {
       }
     };
     fetchRecentDecks();
-  }, [user]);
+  }, [user, locale, allYojoCards, allSweetCards, allPlayableCards]);
 
   const topDecks = recentDecks.slice(0, 3);
   const otherDecks = recentDecks.slice(3);
@@ -154,7 +157,7 @@ export default function BuildPage() {
         const deckRef = doc(db, 'users', user.uid, 'decks', newDeckId);
         
         await setDoc(deckRef, {
-          name: '無名のデッキ',
+          name: t('無名のデッキ'),
           yojoDeckIds: [],
           sweetDeckIds: [],
           playableCardId: null,
@@ -169,7 +172,7 @@ export default function BuildPage() {
         const deckId = nanoid(8);
         const newDeck = {
           id: deckId,
-          name: '無名のデッキ',
+          name: t('無名のデッキ'),
           createdAt: new Date(),
           updatedAt: new Date(),
           userId: 'local'
@@ -180,7 +183,7 @@ export default function BuildPage() {
       }
     } catch (error) {
       console.error('デッキの作成に失敗しました:', error);
-      alert('デッキの作成に失敗しました');
+      alert(locale === 'ja' ? 'デッキの作成に失敗しました' : 'Could not create the deck');
     } finally {
       setIsCreating(false);
     }
@@ -201,7 +204,7 @@ export default function BuildPage() {
       setDeletingDeckId(null);
     } catch (error) {
       console.error('デッキの削除に失敗しました:', error);
-      alert('デッキの削除に失敗しました');
+      alert(locale === 'ja' ? 'デッキの削除に失敗しました' : 'Could not delete the deck');
     }
   };
 
@@ -211,7 +214,7 @@ export default function BuildPage() {
 
         {/* 新しいデッキ作成セクション */}
         <section className={css({ mb: '12' })}>
-          <h2 className={css({ mb: '4', fontSize: '2xl', fontWeight: 'semibold', color: 'gray.900', _dark: { color: 'gray.100' } })}>新しいデッキを作成</h2>
+          <h2 className={css({ mb: '4', fontSize: '2xl', fontWeight: 'semibold', color: 'gray.900', _dark: { color: 'gray.100' } })}>{t('新しいデッキを作成')}</h2>
           <div className={css({ display: 'grid', gridTemplateColumns: 'repeat(1, minmax(0, 1fr))', md: { gridTemplateColumns: 'repeat(2, minmax(0, 1fr))' }, gap: '4' })}>
             <button
               onClick={() => handleCreateDeck('normal')}
@@ -225,8 +228,8 @@ export default function BuildPage() {
                   </svg>
                 </div>
                 <div>
-                  <h3 className={css({ fontSize: 'lg', fontWeight: 'medium', color: 'gray.800', _dark: { color: 'gray.100' } })}>通常構築</h3>
-                  <p className={css({ mt: '1', fontSize: 'sm', color: 'gray.500', _dark: { color: 'gray.400' } })}>新しいデッキを最初から構築します</p>
+                  <h3 className={css({ fontSize: 'lg', fontWeight: 'medium', color: 'gray.800', _dark: { color: 'gray.100' } })}>{t('通常構築')}</h3>
+                  <p className={css({ mt: '1', fontSize: 'sm', color: 'gray.500', _dark: { color: 'gray.400' } })}>{t('新しいデッキを最初から構築します')}</p>
                 </div>
               </div>
             </button>
@@ -244,7 +247,7 @@ export default function BuildPage() {
                 </div>
                 <div>
                   <h3 className={css({ fontSize: 'lg', fontWeight: 'medium', color: 'gray.800', _dark: { color: 'gray.100' } })}>2pick</h3>
-                  <p className={css({ mt: '1', fontSize: 'sm', color: 'gray.500', _dark: { color: 'gray.400' } })}>2枚選択方式でデッキを構築します</p>
+                  <p className={css({ mt: '1', fontSize: 'sm', color: 'gray.500', _dark: { color: 'gray.400' } })}>{t('2枚選択方式でデッキを構築します')}</p>
                 </div>
               </div>
             </button>
@@ -254,7 +257,7 @@ export default function BuildPage() {
         {/* 最近作成したデッキセクション（ログインユーザーのみ表示） */}
         {user && (
           <section>
-            <h2 className={css({ mb: '4', fontSize: '2xl', fontWeight: 'semibold', color: 'gray.900', _dark: { color: 'gray.100' } })}>最近作成したデッキ</h2>
+            <h2 className={css({ mb: '4', fontSize: '2xl', fontWeight: 'semibold', color: 'gray.900', _dark: { color: 'gray.100' } })}>{t('最近作成したデッキ')}</h2>
             {/* 直近3つを大きく表示 */}
             <div className={css({
               display: 'grid',
@@ -289,7 +292,7 @@ export default function BuildPage() {
                         {deck.yojoDeckIds && deck.yojoDeckIds.length > 0 && deckImages[deck.id] && (
                           <Image
                             src={deckImages[deck.id]}
-                            alt={`${deck.name}のデッキ画像`}
+                            alt={locale === 'ja' ? `${deck.name}のデッキ画像` : `Deck image for ${deck.name}`}
                             fill
                             className={css({ objectFit: 'cover' })}
                             unoptimized
@@ -298,7 +301,7 @@ export default function BuildPage() {
                       </div>
                       <h3 className={css({ fontWeight: 'medium', color: 'gray.800', _dark: { color: 'gray.100' } })}>{deck.name}</h3>
                       <p className={css({ mt: '1', fontSize: 'sm', color: 'gray.500', _dark: { color: 'gray.400' } })}>
-                        最終更新: {deck.updatedAt.toLocaleDateString('ja-JP')}
+                        {t('最終更新')}: {deck.updatedAt.toLocaleDateString(locale === 'ja' ? 'ja-JP' : 'en-US')}
                       </p>
                     </Link>
                     <button
@@ -317,7 +320,7 @@ export default function BuildPage() {
                         transitionTimingFunction: 'cubic-bezier(0.4, 0, 0.2, 1)',
                         _groupHover: { opacity: '1' },
                       })}
-                      aria-label="デッキを削除"
+                      aria-label={t('デッキを削除')}
                     >
                       <svg className={css({ w: '4', h: '4' })} fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
@@ -339,7 +342,7 @@ export default function BuildPage() {
                 })}>
                   <input
                     type="text"
-                    placeholder="デッキ名でフィルター"
+                    placeholder={t('デッキ名でフィルター')}
                     value={filter}
                     onChange={e => setFilter(e.target.value)}
                     className={css({
@@ -356,11 +359,11 @@ export default function BuildPage() {
                   />
                   {/* ソートUI例: */}
                   {/* <select className="p-2 border rounded main-color">
-                    <option value="updatedAt">最終更新順</option>
-                    <option value="name">名前順</option>
+                    <option value="updatedAt">{locale === 'ja' ? '最終更新順' : 'Last updated'}</option>
+                    <option value="name">{t('名前順')}</option>
                   </select> */}
                 </div>
-                <h3 className={css({ mb: '2', fontSize: 'lg', fontWeight: 'semibold', color: 'gray.900', _dark: { color: 'gray.100' } })}>その他のデッキ</h3>
+                <h3 className={css({ mb: '2', fontSize: 'lg', fontWeight: 'semibold', color: 'gray.900', _dark: { color: 'gray.100' } })}>{t('その他のデッキ')}</h3>
                 <ul>
                   {otherDecks
                     .filter(deck => deck.name.includes(filter))
@@ -387,7 +390,7 @@ export default function BuildPage() {
                           _dark: { _hover: { bg: 'gray.700/60' } },
                         })}>
                           <span className={css({ truncate: true, fontWeight: 'medium', color: 'gray.800', _dark: { color: 'gray.100' } })}>{deck.name}</span>
-                          <span className={css({ ml: '2', fontSize: 'xs', color: 'gray.500', flexShrink: '0' })}>{deck.updatedAt.toLocaleDateString('ja-JP')}</span>
+                          <span className={css({ ml: '2', fontSize: 'xs', color: 'gray.500', flexShrink: '0' })}>{deck.updatedAt.toLocaleDateString(locale === 'ja' ? 'ja-JP' : 'en-US')}</span>
                         </Link>
                         <button
                           onClick={e => { e.stopPropagation(); setMenuOpenId(menuOpenId === deck.id ? null : deck.id); }}
@@ -399,7 +402,7 @@ export default function BuildPage() {
                             _hover: { bg: 'gray.200' },
                             _dark: { color: 'gray.200', _hover: { bg: 'gray.700' } },
                           })}
-                          aria-label="メニューを開く"
+                          aria-label={t('メニューを開く')}
                         >
                           {/* 3点縦メニューアイコン */}
                           <svg className={css({ w: '5', h: '5', color: 'gray.600' })} fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -428,7 +431,7 @@ export default function BuildPage() {
                               onClick={e => { e.stopPropagation(); setDeletingDeckId(deck.id); setMenuOpenId(null); }}
                               className={css({ display: 'block', w: 'full', textAlign: 'left', px: '4', py: '2', _hover: { bg: 'red.100' }, color: 'red.600' })}
                             >
-                              削除
+                              {t('削除')}
                             </button>
                             <button
                               onClick={e => {
@@ -438,7 +441,7 @@ export default function BuildPage() {
                               }}
                               className={css({ display: 'block', w: 'full', textAlign: 'left', px: '4', py: '2', _hover: { bg: 'blue.100' }, color: 'blue.600' })}
                             >
-                              共有リンクをコピー
+                              {t('共有リンクをコピー')}
                             </button>
                           </div>
                         )}
@@ -464,8 +467,10 @@ export default function BuildPage() {
               boxShadow: 'xl',
               _dark: { bg: 'gray.800', color: 'gray.100' },
             })}>
-              <h3 className={css({ mb: '4', fontSize: 'lg', fontWeight: 'bold' })}>デッキの削除</h3>
-              <p className={css({ mb: '6', fontSize: 'sm', color: 'gray.600', _dark: { color: 'gray.300' } })}>このデッキを削除してもよろしいですか？この操作は取り消せません。</p>
+              <h3 className={css({ mb: '4', fontSize: 'lg', fontWeight: 'bold' })}>{t('デッキの削除')}</h3>
+              <p className={css({ mb: '6', fontSize: 'sm', color: 'gray.600', _dark: { color: 'gray.300' } })}>
+                {locale === 'ja' ? 'このデッキを削除してもよろしいですか？この操作は取り消せません。' : 'Are you sure you want to delete this deck? This action cannot be undone.'}
+              </p>
               <div className={css({ display: 'flex', justifyContent: 'flex-end', gap: '4' })}>
                 <button
                   onClick={() => setDeletingDeckId(null)}
@@ -480,13 +485,13 @@ export default function BuildPage() {
                     _dark: { borderColor: 'gray.600', color: 'gray.200', _hover: { bg: 'gray.700' } },
                   })}
                 >
-                  キャンセル
+                  {t('キャンセル')}
                 </button>
                 <button
                   onClick={() => handleDeleteDeck(deletingDeckId)}
                   className={css({ px: '4', py: '2', bg: 'red.500', color: 'white', rounded: 'sm', _hover: { bg: 'red.600' } })}
                 >
-                  削除する
+                  {t('削除する')}
                 </button>
               </div>
             </div>
@@ -495,4 +500,4 @@ export default function BuildPage() {
       </div>
     </main>
   );
-} 
+}

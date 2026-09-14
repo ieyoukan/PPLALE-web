@@ -5,6 +5,7 @@ import { createPortal } from 'react-dom';
 import Image from 'next/image';
 import { CardInfo } from '@/types/card';
 import { css } from 'styled-system/css';
+import { useI18n } from '@/i18n/LocaleProvider';
 
 const isGitHubPages = process.env.NEXT_PUBLIC_GITHUB_PAGES === 'true';
 const basePath = isGitHubPages ? '/PPLALE-web_front' : '';
@@ -19,6 +20,7 @@ interface CardDetailProps {
 }
 
 const CardDetail: React.FC<CardDetailProps> = ({ card, onClose, canAddToDeck, onAddToDeck, isInDeck, handleCardRemove }) => {
+  const { locale, t } = useI18n();
   const cardRef = useRef<HTMLDivElement>(null);
 
   const handlePointerMove = (event: React.PointerEvent<HTMLDivElement>) => {
@@ -48,7 +50,7 @@ const CardDetail: React.FC<CardDetailProps> = ({ card, onClose, canAddToDeck, on
       <div
         role="dialog"
         aria-modal="true"
-        aria-label={`${card.name}の拡大表示`}
+        aria-label={locale === 'ja' ? `${card.name}の拡大表示` : `Enlarged view of ${card.name}`}
         className={css({ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '5' })}
         onClick={(event) => event.stopPropagation()}
       >
@@ -68,7 +70,7 @@ const CardDetail: React.FC<CardDetailProps> = ({ card, onClose, canAddToDeck, on
               _hover: { bg: 'black', transform: 'scale(1.08)' },
             })}
             onClick={onClose}
-            aria-label="拡大表示を閉じる"
+            aria-label={t('拡大表示を閉じる')}
           >
             ×
           </button>
@@ -111,7 +113,7 @@ const CardDetail: React.FC<CardDetailProps> = ({ card, onClose, canAddToDeck, on
             >
               <Image
                 src={`${basePath}/images/back-card.webp`}
-                alt="カード裏面"
+                alt={t('カード裏面')}
                 fill
                 sizes="(max-width: 768px) 90vw, 500px"
                 className={css({ objectFit: 'contain' })}
@@ -131,7 +133,7 @@ const CardDetail: React.FC<CardDetailProps> = ({ card, onClose, canAddToDeck, on
             onClick={() => onAddToDeck(card)}
             disabled={!canAdd}
           >
-            {card.type === 'プレイアブル' ? '選択する' : 'デッキに追加'}
+            {t(card.type === 'playable' ? '選択する' : 'デッキに追加')}
           </button>
         ) : isInDeck ? (
           <button
@@ -141,7 +143,7 @@ const CardDetail: React.FC<CardDetailProps> = ({ card, onClose, canAddToDeck, on
             })}
             onClick={() => handleCardRemove?.(card)}
           >
-            デッキから外す
+            {t('デッキから削除')}
           </button>
         ) : null}
       </div>

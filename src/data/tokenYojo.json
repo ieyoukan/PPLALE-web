@@ -3,8 +3,8 @@
     {
       "id": "yt_0",
       "name": "少女うゆち",
-      "type": "幼女",
-      "fruit": "いちご",
+      "type": "yojo",
+      "fruit": "strawberry",
       "description": "",
       "imageUrl": "/images/yojo/222イチゴ少女うゆち.webp",
       "cost": 2,
@@ -16,8 +16,8 @@
     {
       "id": "yt_1",
       "name": "美女うゆち",
-      "type": "幼女",
-      "fruit": "いちご",
+      "type": "yojo",
+      "fruit": "strawberry",
       "description": "",
       "imageUrl": "/images/yojo/333イチゴ美女うゆち.webp",
       "cost": 3,

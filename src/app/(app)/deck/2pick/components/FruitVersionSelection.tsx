@@ -10,10 +10,11 @@
 
 import React from 'react';
 import { Controller, Control, UseFormHandleSubmit, ControllerRenderProps } from 'react-hook-form';
-import { FruitType } from '@/types/card';
+import { CardVersion, FruitType } from '@/types/card';
 import Image from 'next/image';
 import { css } from 'styled-system/css';
 import { button } from 'styled-system/recipes';
+import { useI18n } from '@/i18n/LocaleProvider';
 
 /**
  * フルーツとバージョン選択コンポーネントのProps
@@ -33,7 +34,7 @@ interface FruitVersionSelectionProps {
   /** 選択されているフルーツの配列 */
   selectedFruits: FruitType[];
   /** 選択されているプレイアブルカードのバージョンの配列 */
-  selectedPlayableVersions: string[];
+  selectedPlayableVersions: CardVersion[];
   /** フォーム送信時のコールバック関数 */
   onSubmit: () => void;
 }
@@ -43,7 +44,7 @@ interface FormData {
   /** 選択されたフルーツの配列 */
   fruits: FruitType[];
   /** 選択されたプレイアブルカードのバージョンの配列 */
-  playableVersions: string[];
+  playableVersions: CardVersion[];
 }
 
 /**
@@ -59,15 +60,17 @@ const FruitVersionSelection: React.FC<FruitVersionSelectionProps> = ({
   selectedPlayableVersions,
   onSubmit,
 }) => {
+  const { t, fruitLabel, versionLabel } = useI18n();
+  const versionImage: Record<CardVersion, string> = { normal: '通常', beta: 'β' };
   return (
     <div className={css({ display: 'flex', flexDirection: 'column', alignItems: 'center', mt: '8' })}>
-      <h2 className={css({ fontSize: 'xl', fontWeight: 'bold', mb: '8' })}>カードのフルーツを選択してください</h2>
+      <h2 className={css({ fontSize: 'xl', fontWeight: 'bold', mb: '8' })}>{t('カードのフルーツを選択してください')}</h2>
       <form
         onSubmit={handleSubmit(onSubmit)}
         className={css({ display: 'flex', flexDirection: 'column', gap: '8', w: 'full', maxW: '4xl' })}
       >
         <div className={css({ display: 'grid', gridTemplateColumns: 'repeat(2, minmax(0, 1fr))', md: { gridTemplateColumns: 'repeat(4, minmax(0, 1fr))' }, gap: '6' })}>
-          {(['いちご', 'ぶどう', 'めろん', 'おれんじ'] as FruitType[]).map(fruit => (
+          {(['strawberry', 'grape', 'melon', 'orange'] as FruitType[]).map(fruit => (
             <Controller
               key={fruit}
               name="fruits"
@@ -96,7 +99,7 @@ const FruitVersionSelection: React.FC<FruitVersionSelectionProps> = ({
                     transitionDuration: '300ms',
                     boxShadow: field.value.includes(fruit) ? '0 0 0 4px var(--colors-special)' : '0 0 0 2px var(--colors-gray-200)',
                   })}>
-                    <div className={css({ w: 'full', h: '32', position: 'relative' })} style={{ backgroundColor: fruit === 'いちご' ? '#9B4341' : fruit === 'ぶどう' ? '#6E25AB' : fruit === 'めろん' ? '#40923D' : '#E5872C' }}>
+                    <div className={css({ w: 'full', h: '32', position: 'relative' })} style={{ backgroundColor: fruit === 'strawberry' ? '#9B4341' : fruit === 'grape' ? '#6E25AB' : fruit === 'melon' ? '#40923D' : '#E5872C' }}>
                       <Image
                         src="/pupu_game.webp"
                         alt="background"
@@ -115,16 +118,16 @@ const FruitVersionSelection: React.FC<FruitVersionSelectionProps> = ({
                       </div>
                     )}
                   </div>
-                  <p className={css({ textAlign: 'center', mt: '2', fontWeight: 'medium' })}>{fruit}</p>
+                  <p className={css({ textAlign: 'center', mt: '2', fontWeight: 'medium' })}>{fruitLabel(fruit)}</p>
                 </label>
               )}
             />
           ))}
         </div>
 
-        <h2 className={css({ fontSize: 'xl', fontWeight: 'bold', mb: '8', mt: '12' })}>プレイアブルカードのバージョンを選択してください</h2>
+        <h2 className={css({ fontSize: 'xl', fontWeight: 'bold', mb: '8', mt: '12' })}>{t('プレイアブルカードのバージョンを選択してください')}</h2>
         <div className={css({ display: 'grid', gridTemplateColumns: 'repeat(2, minmax(0, 1fr))', gap: '6' })}>
-          {(['通常', 'β'] as string[]).map(version => (
+          {(['normal', 'beta'] as CardVersion[]).map(version => (
             <Controller
               key={version}
               name="playableVersions"
@@ -154,8 +157,8 @@ const FruitVersionSelection: React.FC<FruitVersionSelectionProps> = ({
                     boxShadow: field.value.includes(version) ? '0 0 0 4px var(--colors-special)' : '0 0 0 2px var(--colors-gray-200)',
                   })}>
                     <Image
-                      src={`/images/versions/${version}.webp`}
-                      alt={version}
+                      src={`/images/versions/${versionImage[version]}.webp`}
+                      alt={versionLabel(version)}
                       className={css({ w: 'full', h: '48', objectFit: 'cover' })}
                       width={200}
                       height={200}
@@ -171,7 +174,7 @@ const FruitVersionSelection: React.FC<FruitVersionSelectionProps> = ({
                       </div>
                     )}
                   </div>
-                  <p className={css({ textAlign: 'center', mt: '2', fontWeight: 'medium' })}>{version}</p>
+                  <p className={css({ textAlign: 'center', mt: '2', fontWeight: 'medium' })}>{versionLabel(version)}</p>
                 </label>
               )}
             />
@@ -185,7 +188,7 @@ const FruitVersionSelection: React.FC<FruitVersionSelectionProps> = ({
             })}`}
             disabled={selectedFruits.length === 0 || selectedPlayableVersions.length === 0}
           >
-            次へ
+            {t('次へ')}
           </button>
         </div>
       </form>

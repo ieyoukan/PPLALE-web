@@ -12,6 +12,7 @@ import Image from 'next/image';
 import { CardInfo } from '@/types/card';
 import CardDetail from './CardDetail';
 import { css } from 'styled-system/css';
+import { useI18n } from '@/i18n/LocaleProvider';
 
 const isGitHubPages = process.env.NEXT_PUBLIC_GITHUB_PAGES === 'true';
 const basePath = isGitHubPages ? '/PPLALE-web_front' : '';
@@ -113,6 +114,7 @@ const Card: React.FC<CardProps> = ({
   unoptimized = false,
 }) => {
   const [showDetail, setShowDetail] = useState(false);
+  const { locale, t } = useI18n();
 
     // サイズ設定をマージ
     const cardSizes: CardSizes = {
@@ -252,7 +254,7 @@ const Card: React.FC<CardProps> = ({
           <div className="card-face card-back">
             <Image
               src={loadingImagePath}
-              alt="カード裏面"
+              alt={t('カード裏面')}
               fill
               className={css({ rounded: 'lg', objectFit: 'contain' })}
               sizes={`(max-width: 640px) ${cardSizes.base.width}px, 
@@ -266,9 +268,9 @@ const Card: React.FC<CardProps> = ({
         </div>
 
         {/* 選択中のオーバーレイ */}
-        {isSelected && card.type === 'プレイアブル' && !showDetail && isFaceUp && (
+        {isSelected && card.type === 'playable' && !showDetail && isFaceUp && (
           <div className={css({ position: 'absolute', inset: '0', bg: 'black/50', display: 'flex', alignItems: 'center', justifyContent: 'center', rounded: 'lg' })}>
-            <p className={css({ color: 'white', fontSize: 'lg', fontWeight: 'bold' })}>選択中</p>
+            <p className={css({ color: 'white', fontSize: 'lg', fontWeight: 'bold' })}>{locale === 'ja' ? '選択中' : 'Selected'}</p>
           </div>
         )}
 
@@ -300,7 +302,7 @@ const Card: React.FC<CardProps> = ({
               _hover: { bg: 'red.500', color: 'white' },
             })}
             onClick={handleRemove}
-            aria-label={`${card.name}を削除`}
+            aria-label={locale === 'ja' ? `${card.name}を削除` : `Remove ${card.name}`}
           >
             ×
           </button>

@@ -8,6 +8,7 @@ import Image from 'next/image';
 import { CardInfo } from '@/types/card';
 import DeckImagePreview from '@/components/deck/DeckImagePreview';
 import { css } from 'styled-system/css';
+import { useI18n } from '@/i18n/LocaleProvider';
 
 interface ShareButtonsProps {
   share_url: string;
@@ -32,6 +33,7 @@ const ShareButtons: React.FC<ShareButtonsProps> = ({
   sweetDeck = [], 
   playableCard = null 
 }) => {
+  const { locale, t } = useI18n();
   const [show_options, set_show_options] = useState(false);
   const [copy_success, set_copy_success] = useState(false);
   const [showImagePreview, setShowImagePreview] = useState(false);
@@ -95,7 +97,7 @@ const ShareButtons: React.FC<ShareButtonsProps> = ({
       setTimeout(() => set_copy_success(false), 2000);
     } catch (err) {
       console.error('リンクのコピーに失敗しました:', err);
-      alert('リンクのコピーに失敗しました。');
+      alert(locale === 'ja' ? 'リンクのコピーに失敗しました。' : 'Could not copy the link.');
       set_show_options(false);
     }
   };
@@ -117,12 +119,12 @@ const ShareButtons: React.FC<ShareButtonsProps> = ({
           _hover: { bg: 'gray.100' },
           _dark: { color: 'gray.100', _hover: { bg: 'gray.800' } },
         })}
-        aria-label="シェア"
-        title="シェア"
+        aria-label={t('シェア')}
+        title={t('シェア')}
       >
         <Image
           src={ShareIcon}
-          alt="シェアアイコン"
+          alt={t('シェアアイコン')}
           width={40}
           height={40}
         />
@@ -130,7 +132,7 @@ const ShareButtons: React.FC<ShareButtonsProps> = ({
 
       {/* コピー成功メッセージ */}
       {copy_success && (
-        <span className={css({ ml: '2', color: 'green.600', fontSize: 'sm' })}>コピーしました！</span>
+        <span className={css({ ml: '2', color: 'green.600', fontSize: 'sm' })}>{t('コピーしました！')}</span>
       )}
 
       {/* シェアの選択肢（横並びアイコン） */}
@@ -167,12 +169,12 @@ const ShareButtons: React.FC<ShareButtonsProps> = ({
               _hover: { bg: 'gray.100' },
               _dark: { _hover: { bg: 'gray.700' } },
             })}
-            aria-label="リンクをコピー"
-            title="リンクをコピー"
+            aria-label={t('リンクをコピー')}
+            title={t('リンクをコピー')}
           >
             <Image
               src={LinkIcon}
-              alt="リンクアイコン"
+              alt={t('リンクアイコン')}
               width={50}
               height={50}
             />
@@ -194,12 +196,12 @@ const ShareButtons: React.FC<ShareButtonsProps> = ({
               transitionProperty: 'color, background-color, border-color, text-decoration-color, fill, stroke',
               _hover: { bg: 'sky.600' },
             })}
-            aria-label="Twitterでシェア"
-            title="Twitterでシェア"
+            aria-label={t('Twitterでシェア')}
+            title={t('Twitterでシェア')}
           >
             <Image
               src={TwitterIcon}
-              alt="Twitterアイコン"
+              alt={t('Twitterアイコン')}
               width={50}
               height={50}
             />
@@ -221,12 +223,12 @@ const ShareButtons: React.FC<ShareButtonsProps> = ({
               _hover: { bg: 'gray.100' },
               _dark: { _hover: { bg: 'gray.700' } },
             })}
-            aria-label="デッキの画像を表示"
-            title="デッキの画像を表示"
+            aria-label={t('デッキの画像を表示')}
+            title={t('デッキの画像を表示')}
           >
             <Image
               src={ImageIcon}
-              alt="画像アイコン"
+              alt={t('画像アイコン')}
               width={50}
               height={50}
             />

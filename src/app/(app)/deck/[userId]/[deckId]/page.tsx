@@ -1,7 +1,9 @@
 import { doc, getDoc } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 import { CardInfo } from '@/types/card';
-import { allYojoCards, allSweetCards, allPlayableCards } from '@/data/cards';
+import { getCardCatalog } from '@/data/catalog';
+import { getRequestLocale } from '@/i18n/server';
+import type { AppLocale } from '@/i18n/config';
 import DeckPageClient from './DeckPageClient';
 import { Metadata } from 'next';
 import { createOgSignature, createOgSignaturePayload } from '@/lib/ogSignature';
@@ -15,7 +17,7 @@ interface DeckDocData {
   is2pick?: boolean;
 }
 
-async function createDeck(): Promise<{
+async function createDeck(locale: AppLocale): Promise<{
   initialDeckName: string | null;
   initialYojoDeck: CardInfo[];
   initialSweetDeck: CardInfo[];
@@ -26,7 +28,7 @@ async function createDeck(): Promise<{
   // 新規作成の場合は空のデッキデータを返す
   // Firebaseへの保存はクライアントサイドで行う
   return {
-    initialDeckName: '無名のデッキ',
+    initialDeckName: locale === 'ja' ? '無名のデッキ' : 'Untitled deck',
     initialYojoDeck: [],
     initialSweetDeck: [],
     initialSelectedPlayableCard: null,
@@ -35,7 +37,7 @@ async function createDeck(): Promise<{
   };
 }
 
-async function getDeckData(userId: string, deckId: string): Promise<{
+async function getDeckData(userId: string, deckId: string, locale: AppLocale): Promise<{
   initialDeckName: string | null;
   initialYojoDeck: CardInfo[];
   initialSweetDeck: CardInfo[];
@@ -47,7 +49,7 @@ async function getDeckData(userId: string, deckId: string): Promise<{
     // ローカルユーザーの場合、クライアント側でlocalStorageから読み込むため初期データは空とし、
     // isServerDataAvailable を false に設定してクライアント側での処理を促す。
     return {
-      initialDeckName: '無名のデッキ',
+      initialDeckName: locale === 'ja' ? '無名のデッキ' : 'Untitled deck',
       initialYojoDeck: [],
       initialSweetDeck: [],
       initialSelectedPlayableCard: null,
@@ -61,15 +63,18 @@ async function getDeckData(userId: string, deckId: string): Promise<{
     const deckDoc = await getDoc(deckRef);
 
     if (!deckDoc.exists()) {
-      throw new Error(`デッキID "${deckId}" が見つかりません。ユーザーID: "${userId}"`);
+      throw new Error(locale === 'ja'
+        ? `デッキID "${deckId}" が見つかりません。ユーザーID: "${userId}"`
+        : `Deck "${deckId}" was not found for user "${userId}".`);
     }
 
     const deckDocData = deckDoc.data() as DeckDocData;
-    const deckName = deckDocData.name || '無名のデッキ';
+    const deckName = deckDocData.name || (locale === 'ja' ? '無名のデッキ' : 'Untitled deck');
     const yojoDeckIds: string[] = deckDocData.yojoDeckIds || [];
     const sweetDeckIds: string[] = deckDocData.sweetDeckIds || [];
     const playableCardId: string | null = deckDocData.playableCardId || null;
 
+    const { allYojoCards, allSweetCards, allPlayableCards } = getCardCatalog(locale);
     const yojoDeck: CardInfo[] = yojoDeckIds
       .map(id => allYojoCards.find(card => card.id === id))
       .filter((card): card is CardInfo => card !== undefined);
@@ -95,10 +100,10 @@ async function getDeckData(userId: string, deckId: string): Promise<{
     
     const errorMessage = error instanceof Error 
       ? error.message 
-      : 'デッキの取得に失敗しました';
+      : locale === 'ja' ? 'デッキの取得に失敗しました' : 'Could not load the deck';
     
     return {
-      initialDeckName: '無名のデッキ',
+      initialDeckName: locale === 'ja' ? '無名のデッキ' : 'Untitled deck',
       initialYojoDeck: [],
       initialSweetDeck: [],
       initialSelectedPlayableCard: null,
@@ -113,9 +118,12 @@ export async function generateMetadata(
 ): Promise<Metadata> {
   const params = await paramsPromise;
   const { userId, deckId } = params;
+  const locale = await getRequestLocale();
   const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || 'https://pplale.pgw.jp';
-  let title = 'ぷぷりえーる デッキ構築';
-  let description = 'お菓子争奪カードゲーム「ぷぷりえーる」のデッキ構築ツールです。';
+  let title = locale === 'ja' ? 'ぷぷりえーる デッキ構築' : 'PPLALE Deck Builder';
+  let description = locale === 'ja'
+    ? 'お菓子争奪カードゲーム「ぷぷりえーる」のデッキ構築ツールです。'
+    : 'Build and share decks for the PPLALE card game.';
   let ogImage = new URL('/ogp.png', baseUrl);
 
   if (userId !== 'local') {
@@ -125,8 +133,10 @@ export async function generateMetadata(
       if (deckDoc.exists()) {
         const deckData = deckDoc.data();
         if (deckData?.name) {
-          title = `${deckData.name} | ぷぷりえーる デッキ`;
-          description = `${deckData.name} のデッキ構成です。幼女カード、お菓子カード、プレイアブルカードを確認できます。`;
+          title = locale === 'ja' ? `${deckData.name} | ぷぷりえーる デッキ` : `${deckData.name} | PPLALE Deck`;
+          description = locale === 'ja'
+            ? `${deckData.name} のデッキ構成です。幼女カード、お菓子カード、プレイアブルカードを確認できます。`
+            : `View the little girl, sweets, and playable character cards in ${deckData.name}.`;
         }
         // 動的OGP画像のURLを生成
         // APIルートを使用する方式に戻す場合
@@ -179,16 +189,17 @@ export default async function DeckPage({
   const params = await paramsPromise;
   const { userId, deckId } = params;
   const searchParamsData = await searchParams;
+  const locale = await getRequestLocale();
   
   // クエリパラメータで新規作成かどうかを判別
   const isNewDeck = searchParamsData.isNew === 'true';
   let deckData;
   if (isNewDeck) {
-    deckData = await createDeck();
+    deckData = await createDeck(locale);
     
   } else {
     // デッキデータを取得
-    deckData = await getDeckData(userId, deckId);
+    deckData = await getDeckData(userId, deckId, locale);
   }
 
 
@@ -204,4 +215,4 @@ export default async function DeckPage({
       serverDeckId={deckId}
     />
   );
-} 
+}

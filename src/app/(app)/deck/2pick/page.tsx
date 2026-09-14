@@ -9,16 +9,16 @@
 
 'use client';
 
-import React, { Suspense, useState, useEffect, useCallback} from 'react';
+import React, { Suspense, useState, useEffect, useCallback } from 'react';
 import { useForm } from 'react-hook-form';
 import { css } from 'styled-system/css';
-import { CardInfo, CardType, FruitType } from '@/types/card';
-import { allYojoCards, allSweetCards, allPlayableCards } from '@/data/cards';
+import { CardInfo, CardType, CardVersion, FruitType } from '@/types/card';
+import { getCardCatalog } from '@/data/catalog';
 import { useSettings } from "@/app/SettingsProvider";
 import { useAuth } from '@/lib/auth';
 import { doc, setDoc, getDoc } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
-import { useRouter, useSearchParams, usePathname } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { GoogleAuthProvider, signInWithPopup } from 'firebase/auth';
 import { auth } from '@/lib/firebase';
 
@@ -29,6 +29,15 @@ import DeckCardSelection from './components/DeckCardSelection';
 import PlayableCardFinalSelection from './components/PlayableCardFinalSelection';
 import TwoPickResult from './components/TwoPickResult';
 import DeckViewPopup from './components/DeckViewPopup';
+import { useI18n } from '@/i18n/LocaleProvider';
+
+const legacyFruitCodes: Record<string, FruitType> = {
+  strawberry: 'strawberry', grape: 'grape', melon: 'melon', orange: 'orange',
+  'いちご': 'strawberry', 'ぶどう': 'grape', 'めろん': 'melon', 'おれんじ': 'orange',
+};
+const legacyVersionCodes: Record<string, CardVersion> = {
+  normal: 'normal', beta: 'beta', '通常': 'normal', 'β': 'beta',
+};
 
 /**
  * 2Pickモードのメインページコンポーネント
@@ -36,17 +45,22 @@ import DeckViewPopup from './components/DeckViewPopup';
  * @returns {JSX.Element} 2Pickページ
  */
 function TwoPickContent() {
+  const { locale, t } = useI18n();
+  const { allYojoCards, allSweetCards, allPlayableCards } = getCardCatalog(locale);
   const { user } = useAuth();
   const router = useRouter();
-  const pathname = usePathname();
   const searchParams = useSearchParams();
   const { isTwoCardLimit: defaultIsTwoCardLimit } = useSettings();
   const isTwoCardLimitParam = searchParams.get('twoCardLimit');
   const isTwoCardLimit = isTwoCardLimitParam !== null
     ? isTwoCardLimitParam === 'true'
     : defaultIsTwoCardLimit;
-  const initialFruits = searchParams.get('fruits')?.split(',') || ['いちご'];
-  const initialPlayableVersions = searchParams.get('playableVersions')?.split(',') || ['通常'];
+  const initialFruits = (searchParams.get('fruits')?.split(',') || ['strawberry'])
+    .map(value => legacyFruitCodes[value])
+    .filter((value): value is FruitType => Boolean(value));
+  const initialPlayableVersions = (searchParams.get('playableVersions')?.split(',') || ['normal'])
+    .map(value => legacyVersionCodes[value])
+    .filter((value): value is CardVersion => Boolean(value));
   
   // 幼女カード、お菓子カード、プレイアブルカード
   const [yojoCards] = useState<CardInfo[]>(allYojoCards);
@@ -54,7 +68,7 @@ function TwoPickContent() {
   const [playableCards] = useState<CardInfo[]>(allPlayableCards);
   
   // 現在の選択フェーズ（幼女かお菓子か）
-  const [currentPhase, setCurrentPhase] = useState<CardType>('幼女');
+  const [currentPhase, setCurrentPhase] = useState<CardType>('yojo');
   // 現在表示されている選択肢
   const [currentChoices, setCurrentChoices] = useState<CardInfo[]>([]);
   // 幼女デッキ
@@ -65,10 +79,10 @@ function TwoPickContent() {
   const [isShowDeck, setIsShowDeck] = useState(false); // デッキ確認ポップアップの表示状態
   const [round, setRound] = useState(1); // 現在のラウンド
 
-  const { control, handleSubmit, watch } = useForm<{ fruits: FruitType[]; playableVersions: string[] }>({
+  const { control, handleSubmit, watch } = useForm<{ fruits: FruitType[]; playableVersions: CardVersion[] }>({
     defaultValues: {
-      fruits: initialFruits as FruitType[],
-      playableVersions: initialPlayableVersions,
+      fruits: initialFruits.length > 0 ? initialFruits : ['strawberry'],
+      playableVersions: initialPlayableVersions.length > 0 ? initialPlayableVersions : ['normal'],
     },
   });
 
@@ -82,16 +96,16 @@ function TwoPickContent() {
   const [playableChoices, setPlayableChoices] = useState<CardInfo[]>([]);
 
   // 選択肢を更新する関数
-const updateChoices = useCallback(() => {
+  const updateChoices = useCallback(() => {
     const availableCards =
-      currentPhase === '幼女'
+      currentPhase === 'yojo'
         ? yojoCards.filter(card => selectedFruits.includes(card.fruit))
         : sweetCards.filter(card => selectedFruits.includes(card.fruit));
 
     // 2枚制限が有効な場合、すでに2枚選択されているカードを除外
     const filteredCards = isTwoCardLimit
       ? availableCards.filter(card => {
-          const cardCount = currentPhase === '幼女'
+          const cardCount = currentPhase === 'yojo'
             ? yojoDeck.filter(c => c.id === card.id).length
             : sweetDeck.filter(c => c.id === card.id).length;
           return cardCount < 2;
@@ -99,11 +113,11 @@ const updateChoices = useCallback(() => {
       : availableCards;
 
     // 動物さんソーダタイプのカードが1枚しか追加できないように制限
-    const filteredSweetCards = currentPhase === 'お菓子'
+    const filteredSweetCards = currentPhase === 'sweet'
       ? filteredCards.filter(card => {
-          if (card.sweetType === '動物さんソーダ') {
+          if (card.sweetType === 'animal_soda') {
             const existingAnimalSodas = new Set(sweetDeck
-              .filter(c => c.sweetType === '動物さんソーダ')
+              .filter(c => c.sweetType === 'animal_soda')
               .map(c => c.id));
             return !existingAnimalSodas.has(card.id);
           }
@@ -138,11 +152,6 @@ const updateChoices = useCallback(() => {
     }
   }, [selectionPhase, selectedPlayableCard]);
 
-  // 初期化
-  useEffect(() => {
-    restart();
-  }, []);
-
   useEffect(() => {
     localStorage.setItem('yojoDeck', JSON.stringify(yojoDeck));
     localStorage.setItem('sweetDeck', JSON.stringify(sweetDeck));
@@ -151,7 +160,7 @@ const updateChoices = useCallback(() => {
 
   // カードが選択されたときの処理
   const handleCardSelect = useCallback((card1: CardInfo, card2: CardInfo) => {
-    if (currentPhase === '幼女') {
+    if (currentPhase === 'yojo') {
       setYojoDeck(prevYojoDeck => {
         if (prevYojoDeck.length >= 20) return prevYojoDeck;
         const newDeck = [...prevYojoDeck, card1, card2].sort((a, b) => parseInt(a.id) - parseInt(b.id));
@@ -168,18 +177,17 @@ const updateChoices = useCallback(() => {
     }
 
     setRound(prevRound => {
-      const nextRound = prevRound + 1;
-      updateChoices();
-
-      if (currentPhase === '幼女' && nextRound > 10) {
-        setCurrentPhase('お菓子');
-        setRound(1);
-      } else if (currentPhase === 'お菓子' && nextRound > 5) {
-        setSelectionPhase('playableSelection');
+      if (currentPhase === 'yojo' && prevRound >= 10) {
+        setCurrentPhase('sweet');
+        return 1;
       }
-      return nextRound;
+      if (currentPhase === 'sweet' && prevRound >= 5) {
+        setSelectionPhase('playableSelection');
+        return prevRound;
+      }
+      return prevRound + 1;
     });
-  }, [currentPhase, updateChoices]);
+  }, [currentPhase]);
 
   const restart = useCallback(() => {
     setYojoDeck([]);
@@ -191,10 +199,10 @@ const updateChoices = useCallback(() => {
   }, []);
 
   const handleRestart = useCallback(() => {
-    if (window.confirm('もう一度作りますか？')) {
+    if (window.confirm(locale === 'ja' ? 'もう一度作りますか？' : 'Build another deck?')) {
       restart();
     }
-  }, [restart]);
+  }, [restart, locale]);
 
   // プレイアブルカード選択完了処理
   const handlePlayableCardConfirm = () => {
@@ -227,7 +235,7 @@ const updateChoices = useCallback(() => {
   // プレイアブル確認フェーズでの次へボタン処理
   const handlePlayablePreviewSubmit = () => {
     setSelectionPhase('CardSelection'); // カード選択へ
-    setCurrentPhase('幼女'); // 初期は幼女カードから選択
+    setCurrentPhase('yojo'); // 初期は幼女カードから選択
     setSelectedPlayableCard(null); // 拡大表示を解除
   };
 
@@ -242,7 +250,7 @@ const updateChoices = useCallback(() => {
           const deckId = Date.now().toString();
           
           // まずローカルストレージに保存
-          localStorage.setItem(`deck_${deckId}_name`, '2pickデッキ');
+          localStorage.setItem(`deck_${deckId}_name`, locale === 'ja' ? '2pickデッキ' : '2Pick deck');
           localStorage.setItem(`deck_${deckId}_yojo`, JSON.stringify(yojoDeck));
           localStorage.setItem(`deck_${deckId}_sweet`, JSON.stringify(sweetDeck));
           localStorage.setItem(`deck_${deckId}_playable`, JSON.stringify(selectedPlayableCard));
@@ -250,7 +258,7 @@ const updateChoices = useCallback(() => {
           // Firebaseに保存
           const deckRef = doc(db, 'users', result.user.uid, 'decks', deckId);
           await setDoc(deckRef, {
-            name: '無名の2pickデッキ',
+            name: t('無名の2pickデッキ'),
             yojoDeckIds: yojoDeck.map(card => card.id),
             sweetDeckIds: sweetDeck.map(card => card.id),
             playableCardId: selectedPlayableCard?.id || null,
@@ -261,7 +269,7 @@ const updateChoices = useCallback(() => {
           // 保存が完了したことを確認
           const savedDeck = await getDoc(deckRef);
           if (!savedDeck.exists()) {
-            throw new Error('デッキの保存に失敗しました');
+            throw new Error(locale === 'ja' ? 'デッキの保存に失敗しました' : 'Could not save the deck');
           }
 
           // 保存成功後、デッキページに遷移
@@ -269,7 +277,7 @@ const updateChoices = useCallback(() => {
         }
       } catch (error) {
         console.error('ログインエラー:', error);
-        alert('ログインに失敗しました');
+        alert(locale === 'ja' ? 'ログインに失敗しました' : 'Sign-in failed');
       }
       return;
     }
@@ -278,7 +286,7 @@ const updateChoices = useCallback(() => {
       const deckId = Date.now().toString();
       
       // まずローカルストレージに保存
-      localStorage.setItem(`deck_${deckId}_name`, '2pickデッキ');
+      localStorage.setItem(`deck_${deckId}_name`, locale === 'ja' ? '2pickデッキ' : '2Pick deck');
       localStorage.setItem(`deck_${deckId}_yojo`, JSON.stringify(yojoDeck));
       localStorage.setItem(`deck_${deckId}_sweet`, JSON.stringify(sweetDeck));
       localStorage.setItem(`deck_${deckId}_playable`, JSON.stringify(selectedPlayableCard));
@@ -286,7 +294,7 @@ const updateChoices = useCallback(() => {
       // Firebaseに保存
       const deckRef = doc(db, 'users', user.uid, 'decks', deckId);
       await setDoc(deckRef, {
-        name: '無名の2pickデッキ',
+        name: t('無名の2pickデッキ'),
         yojoDeckIds: yojoDeck.map(card => card.id),
         sweetDeckIds: sweetDeck.map(card => card.id),
         playableCardId: selectedPlayableCard?.id || null,
@@ -297,7 +305,7 @@ const updateChoices = useCallback(() => {
       // 保存が完了したことを確認
       const savedDeck = await getDoc(deckRef);
       if (!savedDeck.exists()) {
-        throw new Error('デッキの保存に失敗しました');
+        throw new Error(locale === 'ja' ? 'デッキの保存に失敗しました' : 'Could not save the deck');
       }
 
       // 保存成功後、デッキページに遷移
@@ -311,7 +319,9 @@ const updateChoices = useCallback(() => {
           stack: error.stack
         });
       }
-      alert(`デッキの保存に失敗しました: ${error instanceof Error ? error.message : '不明なエラー'}`);
+      alert(locale === 'ja'
+        ? `デッキの保存に失敗しました: ${error instanceof Error ? error.message : '不明なエラー'}`
+        : `Could not save the deck: ${error instanceof Error ? error.message : 'Unknown error'}`);
     }
   };
 
@@ -320,12 +330,14 @@ const updateChoices = useCallback(() => {
     const handleBeforeUnload = (e: BeforeUnloadEvent) => {
       if (selectionPhase !== 'fruitSelection' && selectionPhase !== 'end') {
         e.preventDefault();
-        e.returnValue = 'ページを離れると、選択したカードが失われます。';
+        e.returnValue = locale === 'ja'
+          ? 'ページを離れると、選択したカードが失われます。'
+          : 'Leaving this page will discard your selected cards.';
       }
     };
     window.addEventListener('beforeunload', handleBeforeUnload);
     return () => window.removeEventListener('beforeunload', handleBeforeUnload);
-  }, [selectionPhase]);
+  }, [selectionPhase, locale]);
 
   return (
   <div>
@@ -402,9 +414,10 @@ const updateChoices = useCallback(() => {
 }
 
 function TwoPickFallback() {
+  const { t } = useI18n();
   return (
     <div className={`container ${css({ position: 'relative', pt: '6', pb: '8', textAlign: 'center', color: 'gray.700', _dark: { color: 'gray.200' } })}`}>
-      読み込み中...
+      {t('読み込み中...')}
     </div>
   );
 }

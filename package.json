@@ -16,6 +16,7 @@
     "lint": "eslint .",
     "lint:fix": "eslint . --fix",
     "typecheck": "tsc --noEmit",
+    "cards:import-en": "node scripts/import-english-cards.mjs",
     "cards:optimize": "node scripts/optimize-images.mjs",
     "cards:check": "node scripts/check-cards.mjs",
     "test:e2e": "playwright test",

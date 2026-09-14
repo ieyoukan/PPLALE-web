@@ -2,6 +2,8 @@
 
 import React from 'react';
 import { css } from 'styled-system/css';
+import { CardType } from '@/types/card';
+import { useI18n } from '@/i18n/LocaleProvider';
 
 /**
  * @JSDoc
@@ -41,6 +43,7 @@ const TabButtons: React.FC<TabButtonsProps> = ({
   onTabClick,
   variant = 'default',
 }) => {
+  const { cardTypeLabel } = useI18n();
 
   const getButtonColor = (tabKey: string) => {
     if (tabKey === 'yojo') {
@@ -155,7 +158,9 @@ const TabButtons: React.FC<TabButtonsProps> = ({
           onClick={() => onTabClick(tab.key)}
           className={getButtonClassName(tab.key)}
         >
-          {tab.label}
+          {(['yojo', 'sweet', 'playable'] as string[]).includes(tab.key)
+            ? cardTypeLabel(tab.key as CardType)
+            : tab.label}
         </button>
       ))}
     </div>

@@ -1,0 +1,121 @@
+{
+  "playable": [
+    {
+      "id": "p_0",
+      "name": "Amino",
+      "type": "playable",
+      "version": "normal",
+      "fruit": "all",
+      "description": "",
+      "imageUrl": "/images/en/playable/p_0.webp",
+      "cost": 0,
+      "hp": 20,
+      "attack": 0,
+      "effect": "Common skill 1 : 【Charge! Snack time next door】 Cost 0 Give 'Charge' to an allied little girl. Usage limit: 2 times\n・Unique skill 1 : 【The Brain of Peuplier】 Cost 3 Increase your MAX PP by 1. The cost of a sweets card in your hand is -2 until the end of your turn. Usage limit: 1 time\n・Unique skill 2 : 【Amino's full backup】 Cost 2 This skill can be used if your MAX PP is 7 or more. Increase your MAX PP by 1. Deal 2 damage to a random enemy little girl. Draw a card. Usage limit: 1 time"
+    },
+    {
+      "id": "p_1",
+      "name": "Uimaru",
+      "type": "playable",
+      "version": "normal",
+      "fruit": "all",
+      "description": "",
+      "imageUrl": "/images/en/playable/p_1.webp",
+      "cost": 0,
+      "hp": 20,
+      "attack": 0,
+      "effect": "Common skill 1 : 【Charge! Snack time next door】 Cost 0 Give 'Charge' to an allied little girl. Usage limit: 2 times\nUnique skill 1 : 【I will protect the sweetszzZ.】 Cost 0 Deal 1 damage to an enemy little girl. Usage limit: 2 times\nUnique skill 2 : 【I will show you my bestzzZ.】 Cost 1 Deal 2 damage to an enemy little girl. Usage limit: 2 times\nUnique skill 3 :【I am actually very skillfulzzZ.】 Cost 1 Deal 1 damage to an enemy little girl. If you paid 1 additional cost, Deal 2 damage instead. Usage limit: 1 time"
+    },
+    {
+      "id": "p_2",
+      "name": "Sutora",
+      "type": "playable",
+      "version": "normal",
+      "fruit": "all",
+      "description": "素早くお菓子を食べることができる幼女。アグロデッキはストラを使う",
+      "imageUrl": "/images/en/playable/p_2.webp",
+      "cost": 0,
+      "hp": 20,
+      "attack": 0,
+      "effect": "Common skill 1 : 【Charge! Snack time next door】 Cost 0 Give 'Charge' to an allied little girl. Usage limit: 2 times\nUnique skill 1 : 【I will definitely pay you back later, so please give me that sweets.】 Cost 0 This skill can't be used for two consecutive turns. Increase 2 PPs available this turn. Reduce 2 PPs available for the next turn instead. Usage limit: 2 times"
+    },
+    {
+      "id": "p_3",
+      "name": "Momoca",
+      "type": "playable",
+      "version": "normal",
+      "fruit": "all",
+      "description": "",
+      "imageUrl": "/images/en/playable/p_3.webp",
+      "cost": 0,
+      "hp": 20,
+      "attack": 0,
+      "effect": "Common skill 1 : 【Charge! Snack time next door】 Cost 0 Give 'Charge' to an allied little girl. Usage limit: 2 times\n・Unique skill 1 : 【First-aid】 Cost 0 Usage limit: 2 times Restores 1 sweets point and 1 remaining usage of\nCommon skill 1.\n・Unique skill 2: 【I got you some sweets !】 Cost 1 Usage limit: 1 time Restores 1 sweets point. Give 'Defense' to a random allied little girl.\n・Unique skill 3: 【Get well everyone !!】 Cost 1 Usage limit: 1 time Increase the Max value of your sweets points by 3. Restore 3 sweets points."
+    },
+    {
+      "id": "p_4",
+      "name": "Rikusu",
+      "type": "playable",
+      "version": "normal",
+      "fruit": "all",
+      "description": "",
+      "imageUrl": "/images/en/playable/p_4.webp",
+      "cost": 0,
+      "hp": 20,
+      "attack": 0,
+      "effect": "Common skill 1 : 【Charge! Snack time next door】 Cost 0 Give 'Charge' to an allied little girl. Usage limit: 2 times\n・Unique skill 1 : 【Manager's Leadership】 Cost 3 Give +1/+1 to all allied little girls. If there are 2 or fewer little girls on your field, give +2/+2 instead. Usage limit: 2 times\n・Unique skill 2 : 【Punishment !!】 Cost 1 Destroy an enemy little girl who ate sweets during your opponent's previous turn. You may pay 2 additional cost. If you do, destroy all enemy little girls who ate sweets during your opponent's previous turn. Usage limit: 1 time"
+    },
+    {
+      "id": "p_5",
+      "name": "Lente",
+      "type": "playable",
+      "version": "normal",
+      "fruit": "all",
+      "description": "",
+      "imageUrl": "/images/en/playable/p_5.webp",
+      "cost": 0,
+      "hp": 20,
+      "attack": 0,
+      "effect": "Common skill 1 : 【Charge! Snack time next door】 Cost 0 Give 'Charge' to an allied little girl. Usage limit: 2 times\nUnique skill 1 : 【ｸﾏｰ(I've got some good news... would you like to come to our team?)】 Cost 4 Steal a little girl from your opponent's field. (The ability changes are carried over) Usage limit: 1 time\nUnique skill 2 : 【ｸﾏｰ(Greedy Bear. Bear called for friends.)】 Cost 1 Draw 2 cards from your little girl deck. Usage limit: 1 time"
+    },
+    {
+      "id": "p_6",
+      "name": "Syurei",
+      "type": "playable",
+      "version": "beta",
+      "fruit": "all",
+      "description": "",
+      "imageUrl": "/images/en/playable/p_6.webp",
+      "cost": 0,
+      "hp": 20,
+      "attack": 0,
+      "effect": "Starting MP: 3 Max MP: 20\nCommon skill 1 : 【Charge! Snack time next door】 Cost 0 Give 'Charge' to an allied little girl. Usage limit: 2 times\nUnique skill 1 : 【Luna Restore】Cost 1, Restore 2 MP.\nUnique skill 2 : 【Icicle Rain】MP Cost: 5, Deal 1 damage to all enemy little girls.\nUnique skill 3 : 【Absolute Zero】MP Cost: 9, Destroy an enemy little girl.\nUnique skill 4: 【Frostburn Veil】MP Cost: 9, Apply -3/-3 to an enemy little girl.\nUnique skill 5 : 【Astral Flare】MP Cost: 15, Destroy all the little girls in the field."
+    },
+    {
+      "id": "p_7",
+      "name": "Mutuki & Makoto",
+      "type": "playable",
+      "version": "beta",
+      "fruit": "all",
+      "description": "",
+      "imageUrl": "/images/en/playable/p_7.webp",
+      "cost": 0,
+      "hp": 20,
+      "attack": 0,
+      "effect": "Common skill 1 : 【Charge! Snack time next door】 Cost 0 Give 'Charge' to an allied little girl. Usage limit: 2 times\nUnique passive skill : 【Mutuki & Makoto Combination】If you had played both 'Mutuki' and 'Makoto' from your hand this match, the cost of this character's unique skill is set to 0.\nUnique skill 1 : 【Let's have a little snack!】Cost 1, Give 'Fast eater' to an allied little girl. Usage limit: 1 time\nUnique skill 2 : 【Everyone, please join in. Jangariaan!】Cost 1, Give 'Penetration' to an allied little girl. Usage limit: 1 time"
+    },
+    {
+      "id": "p_8",
+      "name": "Tyori",
+      "type": "playable",
+      "version": "beta",
+      "fruit": "all",
+      "description": "",
+      "imageUrl": "/images/en/playable/p_8.webp",
+      "cost": 0,
+      "hp": 20,
+      "attack": 0,
+      "effect": "Common skill 1 : 【Charge! Snack time next door】 Cost 0 Give 'Charge' to an allied little girl. Usage limit: 2 times\nUnique passive skill : 【Hehehe, let's play together!】During this match, every little girl that comes into play on your field gains “Tag” (1d6 ≥ 6). Additionally, when a little girl who already has ‘Tag’ (1d6 ≥ X) comes into play on your field, she gains “Tag” (1d6 ≥ X-1).\nUnique skill 1 : 【Emergency avoidance!】During your opponent's turn, when your little girl with the “Tag” ability is attacked by your opponent's little girl, treat the result as 1d6=6 instead of rolling 1d6. Reduce the PP you can use on your next turn by 2. Usage limit: 1 time\nUnique skill 2 : 【Fall in love with Tyori-chuke!】Cost 1, Prevent an enemy little girl from acting until the end of your opponent's next turn. Usage limit: 1 time"
+    }
+  ]
+}

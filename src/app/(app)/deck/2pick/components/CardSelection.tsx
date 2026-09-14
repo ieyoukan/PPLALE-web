@@ -15,6 +15,7 @@ import Card from '@/components/card/Card';
 import { CardInfo } from '@/types/card';
 import { css } from 'styled-system/css';
 import { button } from 'styled-system/recipes';
+import { useI18n } from '@/i18n/LocaleProvider';
 
 /**
  * カード選択コンポーネントのProps
@@ -38,6 +39,7 @@ interface CardSelectionProps {
  * @returns {JSX.Element} カード選択UI
  */
 const CardSelection: React.FC<CardSelectionProps> = ({ cards, onSelect }) => {
+  const { t } = useI18n();
 
   if (cards.length < 2) return null;
   return (
@@ -63,7 +65,7 @@ const CardSelection: React.FC<CardSelectionProps> = ({ cards, onSelect }) => {
           className={`${button({ variant: 'primary', size: 'lg' })} animate-fadeIn ${css({ mt: '4' })}`}
           onClick={onSelect}
         >
-          選択
+          {t('選択する')}
         </button>
       )}
 

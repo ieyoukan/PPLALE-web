@@ -12,6 +12,7 @@ import Card from './Card';
 import CardListFilterBar from './CardListFilterBar';
 import { useCardListFilters } from './useCardListFilters';
 import { css } from 'styled-system/css';
+import { useI18n } from '@/i18n/LocaleProvider';
 
 interface CardListProps {
   allYojoCards: CardInfo[];
@@ -41,6 +42,7 @@ const CardList: React.FC<CardListProps> = ({
   canAddToDeck,
   onAddToDeck,
 }) => {
+  const { locale } = useI18n();
   const {
     fruitFilter, setFruitFilter,
     sweetTypeFilter, setSweetTypeFilter,
@@ -114,7 +116,7 @@ const CardList: React.FC<CardListProps> = ({
 
       {sortedFilteredCards.length === 0 && (
         <div className={css({ textAlign: 'center', py: '8', color: 'gray.500' })}>
-          条件に一致するカードが見つかりませんでした。
+          {locale === 'ja' ? '条件に一致するカードが見つかりませんでした。' : 'No cards match the selected filters.'}
         </div>
       )}
     </div>

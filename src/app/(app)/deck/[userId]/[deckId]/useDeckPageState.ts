@@ -1,12 +1,13 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import { CardInfo } from '@/types/card';
-import { allYojoCards, allSweetCards, allPlayableCards } from '@/data/cards';
+import { getCardCatalog } from '@/data/catalog';
 import { doc, setDoc } from 'firebase/firestore';
 import { db, auth } from '@/lib/firebase';
 import { validateDeckData } from '@/lib/schema';
 import { useAuth } from '@/lib/auth';
 import { GoogleAuthProvider, signInWithPopup } from 'firebase/auth';
+import { useI18n } from '@/i18n/LocaleProvider';
 
 const yojoLimit = 20;
 const sweetLimit = 10;
@@ -45,12 +46,14 @@ export function useDeckPageState({
   isTwoCardLimit,
 }: DeckPageStateInput) {
   const router = useRouter();
+  const { locale, t } = useI18n();
+  const { allYojoCards, allSweetCards, allPlayableCards } = getCardCatalog(locale);
   const userId = serverUserId;
   const deckId = serverDeckId;
 
   const { user } = useAuth();
 
-  const [deckName, setDeckName] = useState(initialDeckName || '無名のデッキ');
+  const [deckName, setDeckName] = useState(initialDeckName || t('無名のデッキ'));
   const [isEditing, setIsEditing] = useState(false);
   const [yojoDeck, setYojoDeck] = useState<CardInfo[]>(initialYojoDeck);
   const [sweetDeck, setSweetDeck] = useState<CardInfo[]>(initialSweetDeck);
@@ -74,7 +77,7 @@ export function useDeckPageState({
   }, [initialYojoDeck, yojoDeck, initialSweetDeck, sweetDeck]);
 
   useEffect(() => {
-    setDeckName(initialDeckName || '無名のデッキ');
+    setDeckName(initialDeckName || t('無名のデッキ'));
     setYojoDeck(initialYojoDeck);
     setSweetDeck(initialSweetDeck);
     setSelectedPlayableCard(initialSelectedPlayableCard);
@@ -113,16 +116,25 @@ export function useDeckPageState({
             setYojoDeck(newYojoDeck);
             setSweetDeck(newSweetDeck);
             setSelectedPlayableCard(newPlayableCard);
-            setDeckName('共有されたデッキ');
+            setDeckName(t('共有されたデッキ'));
           } else if (savedName || savedYojo || savedSweet || savedPlayable) {
-            setDeckName(savedName || '無名のデッキ');
-            setYojoDeck(savedYojo ? JSON.parse(savedYojo) : []);
-            setSweetDeck(savedSweet ? JSON.parse(savedSweet) : []);
-            setSelectedPlayableCard(savedPlayable ? JSON.parse(savedPlayable) : null);
+            const savedYojoCards = savedYojo ? JSON.parse(savedYojo) as CardInfo[] : [];
+            const savedSweetCards = savedSweet ? JSON.parse(savedSweet) as CardInfo[] : [];
+            const savedPlayableCard = savedPlayable ? JSON.parse(savedPlayable) as CardInfo | null : null;
+            setDeckName(savedName || t('無名のデッキ'));
+            setYojoDeck(savedYojoCards
+              .map(({ id }) => allYojoCards.find(card => card.id === id))
+              .filter((card): card is CardInfo => card !== undefined));
+            setSweetDeck(savedSweetCards
+              .map(({ id }) => allSweetCards.find(card => card.id === id))
+              .filter((card): card is CardInfo => card !== undefined));
+            setSelectedPlayableCard(savedPlayableCard
+              ? allPlayableCards.find(card => card.id === savedPlayableCard.id) || null
+              : null);
           }
         } catch (e) {
           console.error("ローカルデータの読み込みに失敗:", e);
-          setError("ローカルデータの読み込みに失敗しました");
+          setError(locale === 'ja' ? 'ローカルデータの読み込みに失敗しました' : 'Could not load the local deck data');
         } finally {
           setIsLoading(false);
           setIsLoaded(true);
@@ -132,7 +144,7 @@ export function useDeckPageState({
     } else {
       setIsLoading(false);
     }
-  }, [initialDeckName, initialYojoDeck, initialSweetDeck, initialSelectedPlayableCard, isServerDataAvailable, initialError, userId, deckId, router, user]);
+  }, [initialDeckName, initialYojoDeck, initialSweetDeck, initialSelectedPlayableCard, isServerDataAvailable, initialError, userId, deckId, router, user, locale, t, allYojoCards, allSweetCards, allPlayableCards]);
 
   useEffect(() => {
     const handleExport = () => setShowExportPopup(true);
@@ -166,6 +178,12 @@ export function useDeckPageState({
     }
   }, [selectedPlayableCard, deckId, userId]);
 
+  const showDataLossWarning = useCallback((message: string): boolean => {
+    return window.confirm(locale === 'ja'
+      ? `警告: ${message}\n\nこの操作により、現在のデッキデータが失われる可能性があります。\n\n本当に続行しますか？`
+      : `Warning: ${message}\n\nThis operation may discard the current deck data.\n\nContinue?`);
+  }, [locale]);
+
   // Firebaseへの保存
   useEffect(() => {
     if (!isLoaded) return;
@@ -178,9 +196,9 @@ export function useDeckPageState({
         const hasSignificantDataLoss = checkSignificantDataLoss();
         if (hasSignificantDataLoss) {
           const confirmed = showDataLossWarning(
-            `デッキの変更により、多くのカードが削除されます。\n\n` +
-            `この変更を保存しますか？\n\n` +
-            `保存後は元に戻すことができません。`
+            locale === 'ja'
+              ? `デッキの変更により、多くのカードが削除されます。\n\nこの変更を保存しますか？\n\n保存後は元に戻すことができません。`
+              : `This change will remove many cards from the deck.\n\nSave this change?\n\nIt cannot be undone after saving.`
           );
           if (!confirmed) {
             console.log('ユーザーがデータ損失警告でキャンセルしました');
@@ -199,7 +217,7 @@ export function useDeckPageState({
           validateDeckData(docData);
         } catch (e) {
           console.error('Deck validation failed, aborting save:', e);
-          alert('デッキの保存に失敗しました: データが不正です');
+          alert(locale === 'ja' ? 'デッキの保存に失敗しました: データが不正です' : 'Could not save the deck: invalid data');
           return;
         }
 
@@ -213,16 +231,14 @@ export function useDeckPageState({
             stack: error.stack
           });
         }
-        alert(`デッキの更新に失敗しました: ${error instanceof Error ? error.message : '不明なエラー'}`);
+        alert(locale === 'ja'
+          ? `デッキの更新に失敗しました: ${error instanceof Error ? error.message : '不明なエラー'}`
+          : `Could not update the deck: ${error instanceof Error ? error.message : 'Unknown error'}`);
       }
     };
 
     saveToFirebase();
-  }, [user, userId, deckId, isLoaded, deckName, yojoDeck, sweetDeck, selectedPlayableCard, checkSignificantDataLoss]);
-
-  const showDataLossWarning = (message: string): boolean => {
-    return window.confirm(`警告: ${message}\n\nこの操作により、現在のデッキデータが失われる可能性があります。\n\n本当に続行しますか？`);
-  };
+  }, [user, userId, deckId, isLoaded, deckName, yojoDeck, sweetDeck, selectedPlayableCard, checkSignificantDataLoss, locale, showDataLossWarning]);
 
   /**
    * ローカルユーザーがログインしてデッキを保存する
@@ -242,7 +258,7 @@ export function useDeckPageState({
           validateDeckData(docData);
         } catch (e) {
           console.error('Deck validation failed, aborting save:', e);
-          alert('デッキの保存に失敗しました: データが不正です');
+          alert(locale === 'ja' ? 'デッキの保存に失敗しました: データが不正です' : 'Could not save the deck: invalid data');
           return;
         }
 
@@ -251,7 +267,7 @@ export function useDeckPageState({
         router.push(`/deck/${user.uid}/${deckId}`);
       } catch (error) {
         console.error('デッキの更新に失敗しました:', error);
-        alert('デッキの更新に失敗しました');
+        alert(locale === 'ja' ? 'デッキの更新に失敗しました' : 'Could not update the deck');
       }
       return;
     }
@@ -272,7 +288,7 @@ export function useDeckPageState({
           validateDeckData(docData);
         } catch (e) {
           console.error('Deck validation failed, aborting save:', e);
-          alert('デッキの保存に失敗しました: データが不正です');
+          alert(locale === 'ja' ? 'デッキの保存に失敗しました: データが不正です' : 'Could not save the deck: invalid data');
           return;
         }
 
@@ -282,7 +298,7 @@ export function useDeckPageState({
       }
     } catch (error) {
       console.error('ログインエラー:', error);
-      alert('ログインに失敗しました');
+      alert(locale === 'ja' ? 'ログインに失敗しました' : 'Sign-in failed');
     }
   };
 
@@ -309,30 +325,30 @@ export function useDeckPageState({
       setIsEditing(false);
     } catch (error) {
       console.error('デッキ名の更新に失敗しました:', error);
-      alert('デッキ名の更新に失敗しました');
+      alert(locale === 'ja' ? 'デッキ名の更新に失敗しました' : 'Could not update the deck name');
     }
   };
 
   const canAddToDeck = useCallback((card: CardInfo) => {
     if (isTwoCardLimit) {
-      if (card.type === '幼女') {
+      if (card.type === 'yojo') {
         const count = yojoDeck.filter(c => c.id === card.id).length;
         if (count >= 2) return false;
-      } else if (card.type === 'お菓子') {
+      } else if (card.type === 'sweet') {
         const count = sweetDeck.filter(c => c.id === card.id).length;
         if (count >= 2) return false;
       }
     }
-    if (card.sweetType == "動物さんソーダ") {
+    if (card.sweetType == "animal_soda") {
       const count = sweetDeck.filter(c => c.id == card.id).length;
       if (count >= 1) return false;
     }
 
-    if (card.type === '幼女') {
+    if (card.type === 'yojo') {
       return yojoDeck.length < yojoLimit;
-    } else if (card.type === 'お菓子') {
+    } else if (card.type === 'sweet') {
       return sweetDeck.length < sweetLimit;
-    } else if (card.type === 'プレイアブル') {
+    } else if (card.type === 'playable') {
       return !selectedPlayableCard;
     }
     return false;
@@ -340,11 +356,11 @@ export function useDeckPageState({
 
   const handleAddCard = useCallback((card: CardInfo) => {
     if (!canAddToDeck(card)) return;
-    if (card.type === '幼女' && yojoDeck.length < yojoLimit) {
+    if (card.type === 'yojo' && yojoDeck.length < yojoLimit) {
       setYojoDeck(prev => [...prev, card]);
-    } else if (card.type === 'お菓子' && sweetDeck.length < sweetLimit) {
+    } else if (card.type === 'sweet' && sweetDeck.length < sweetLimit) {
       setSweetDeck(prev => [...prev, card]);
-    } else if (card.type === 'プレイアブル' && !selectedPlayableCard) {
+    } else if (card.type === 'playable' && !selectedPlayableCard) {
       setSelectedPlayableCard(card);
     }
   }, [canAddToDeck, yojoDeck.length, sweetDeck.length, selectedPlayableCard]);
@@ -373,20 +389,20 @@ export function useDeckPageState({
     const cardType = e.dataTransfer.getData('cardType');
 
     let cardToAdd: CardInfo | undefined;
-    if (cardType === '幼女') cardToAdd = allYojoCards.find(c => c.id === cardId);
-    else if (cardType === 'お菓子') cardToAdd = allSweetCards.find(c => c.id === cardId);
-    else if (cardType === 'プレイアブル') cardToAdd = allPlayableCards.find(c => c.id === cardId);
+    if (cardType === 'yojo') cardToAdd = allYojoCards.find(c => c.id === cardId);
+    else if (cardType === 'sweet') cardToAdd = allSweetCards.find(c => c.id === cardId);
+    else if (cardType === 'playable') cardToAdd = allPlayableCards.find(c => c.id === cardId);
 
     if (cardToAdd && canAddToDeck(cardToAdd)) {
-      if (cardType === '幼女' && deckType === 'yojo') {
+      if (cardType === 'yojo' && deckType === 'yojo') {
         handleAddCard(cardToAdd);
-      } else if (cardType === 'お菓子' && deckType === 'sweet') {
+      } else if (cardType === 'sweet' && deckType === 'sweet') {
         handleAddCard(cardToAdd);
-      } else if (cardType === 'プレイアブル' && deckType === 'playable') {
+      } else if (cardType === 'playable' && deckType === 'playable') {
         handleAddCard(cardToAdd);
       }
     }
-  }, [canAddToDeck, handleAddCard]);
+  }, [canAddToDeck, handleAddCard, allYojoCards, allSweetCards, allPlayableCards]);
 
   /** インポートポップアップからのデッキ一括反映 */
   const handleImportDeck = useCallback((importedDeck: ImportedDeck) => {
