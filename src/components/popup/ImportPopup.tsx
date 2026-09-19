@@ -222,7 +222,7 @@ const ImportPopup: React.FC<ImportPopupProps> = ({ onImport, onClose }) => {
               })}
               value={playableCardId}
               onChange={(e) => setPlayableCardId(e.target.value)}
-              placeholder={locale === 'ja' ? 'p_01 (任意)' : 'p_01 (optional)'}
+              placeholder={locale === 'ja' ? '2（任意）' : '2 (optional)'}
             />
           </div>
         </div>
