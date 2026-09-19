@@ -303,10 +303,12 @@ export function useDeckPageState({
   };
 
   const handleNameChange = async (newName: string) => {
+    const normalizedName = newName.trim() || '無名のデッキ';
+
     if (userId === 'local') {
       setIsEditing(false);
-      setDeckName(newName);
-      localStorage.setItem(`deck_${deckId}_name`, newName);
+      setDeckName(normalizedName);
+      localStorage.setItem(`deck_${deckId}_name`, normalizedName);
       handleLoginAndSave();
       return;
     }
@@ -318,10 +320,10 @@ export function useDeckPageState({
     try {
       const deckRef = doc(db, 'users', userId, 'decks', deckId);
       await setDoc(deckRef, {
-        name: newName,
+        name: normalizedName,
         updatedAt: new Date()
       }, { merge: true });
-      setDeckName(newName);
+      setDeckName(normalizedName);
       setIsEditing(false);
     } catch (error) {
       console.error('デッキ名の更新に失敗しました:', error);

@@ -36,7 +36,6 @@ export default function DeckPageClient(props: DeckPageClientProps) {
     deckName,
     isEditing,
     setIsEditing,
-    setDeckName,
     yojoDeck,
     sweetDeck,
     selectedPlayableCard,
@@ -62,6 +61,7 @@ export default function DeckPageClient(props: DeckPageClientProps) {
 
   const [deckViewActiveTab, setDeckViewActiveTab] = useState<DeckCardType>('yojo');
   const [mobileAddModalType, setMobileAddModalType] = useState<DeckCardType | null>(null);
+  const [editingDeckName, setEditingDeckName] = useState(deckName);
 
   if (isLoading) {
     return <div className={css({ mx: 'auto', maxW: '1700px', pt: '4', px: '4', pb: '4', color: 'gray.800', _dark: { color: 'gray.100' } })}>{t('読み込み中...')}</div>;
@@ -78,12 +78,12 @@ export default function DeckPageClient(props: DeckPageClientProps) {
           <div className={css({ display: 'flex', alignItems: 'center', gap: '2' })}>
             <input
               type="text"
-              value={deckName}
-              onChange={(e) => setDeckName(e.target.value)}
-              onBlur={() => handleNameChange(deckName)}
+              value={editingDeckName}
+              onChange={(e) => setEditingDeckName(e.target.value)}
+              onBlur={() => handleNameChange(editingDeckName)}
               onKeyDown={(e) => {
                 if (e.key === 'Enter') {
-                  handleNameChange(deckName);
+                  handleNameChange(editingDeckName);
                 }
               }}
               className={css({
@@ -101,7 +101,12 @@ export default function DeckPageClient(props: DeckPageClientProps) {
           <div className={css({ display: 'flex', alignItems: 'center', justifyContent: 'space-between', w: 'full' })}>
             <h1
               className={css({ fontSize: '3xl', fontWeight: 'bold' })}
-              onClick={() => isOwner && setIsEditing(true)}
+              onClick={() => {
+                if (isOwner) {
+                  setEditingDeckName(deckName);
+                  setIsEditing(true);
+                }
+              }}
               style={{ cursor: isOwner ? 'pointer' : 'default' }}
             >
               {deckName}
