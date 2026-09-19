@@ -52,10 +52,12 @@ const getCardData = async (cardId: string, cardType: 'yojo' | 'sweet' | 'playabl
   }
 
   if (card) {
+    // resvg（@vercel/og が内部で使用するSVGレンダラー）は WebP のデコードに非対応のため、
+    // ビルド時に生成済みの OGP専用 PNG（public/og-cards/、npm run cards:og-images）を参照する
+    const ogImagePath = card.imageUrl.replace('/images/', '/og-cards/').replace(/\.webp$/i, '.png');
     const cardData = {
       ...card,
-      // カード画像はプリ最適化済み WebP。絶対 URL に解決して OGP に埋め込む
-      imageUrl: new URL(card.imageUrl, baseUrl).toString(),
+      imageUrl: new URL(ogImagePath, baseUrl).toString(),
     };
 
     cardCache.set(cacheKey, cardData);
