@@ -123,7 +123,6 @@ export default function DeckPageClient(props: DeckPageClientProps) {
             <ShareButtons
               share_url={currentUrl}
               share_text={locale === 'ja' ? '#お菓子争奪戦争ぷぷりえーる' : '#PPLALE'}
-              isLocal={userId === 'local'}
               yojoDeck={yojoDeck}
               sweetDeck={sweetDeck}
               playableCard={selectedPlayableCard}
