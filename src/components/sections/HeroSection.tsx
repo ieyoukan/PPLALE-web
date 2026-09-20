@@ -78,6 +78,8 @@ export default function HeroSection({ cardsYPosition }: HeroSectionProps) {
           fill
           priority
           sizes="100vw"
+          placeholder="blur"
+          blurDataURL="data:image/jpeg;base64,/9j/2wBDABQODxIPDRQSEBIXFRQYHjIhHhwcHj0sLiQySUBMS0dARkVQWnNiUFVtVkVGZIhlbXd7gYKBTmCNl4x9lnN+gXz/2wBDARUXFx4aHjshITt8U0ZTfHx8fHx8fHx8fHx8fHx8fHx8fHx8fHx8fHx8fHx8fHx8fHx8fHx8fHx8fHx8fHx8fHz/wAARCAAJABADASIAAhEBAxEB/8QAFgABAQEAAAAAAAAAAAAAAAAABAID/8QAJRAAAAQFAgcAAAAAAAAAAAAAAQIDBAAFERIxBiE0NVFyc7HB/8QAFQEBAQAAAAAAAAAAAAAAAAAAAQL/xAAWEQEBAQAAAAAAAAAAAAAAAAABADH/2gAMAwEAAhEDEQA/AMZaxlzpVJM6NXIBcclRpkMxc8I2YLWpJ2uA3IXcSFKPQMYgel+dJdpvUM1jxyHi+xZsLf/Z"
           style={{ objectFit: 'cover', objectPosition: 'center' }}
         />
         <div className={css({ position: 'absolute', inset: '0' })}></div>
@@ -168,7 +170,7 @@ export default function HeroSection({ cardsYPosition }: HeroSectionProps) {
                       </div>
                       <Image src={btn.img} alt={btn.title} fill
                         sizes="(max-width: 640px) 85vw, (max-width: 768px) 45vw, 320px"
-                        style={{ objectFit: 'cover', borderRadius: '0.5rem' }} priority={idx === 0} />
+                        style={{ objectFit: 'cover', borderRadius: '0.5rem' }} priority={idx === activeIndex} />
                     </div>
                   </Link>
                 </motion.div>
