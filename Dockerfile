@@ -1,4 +1,4 @@
-FROM node:22-alpine AS builder
+FROM node:22.23.2-alpine AS builder
 
 WORKDIR /app
 
@@ -16,7 +16,7 @@ COPY .env.production .env
 RUN npm run build
 
 # 本番環境用のイメージ
-FROM node:22-alpine AS runner
+FROM node:22.23.2-alpine AS runner
 
 WORKDIR /app
 
@@ -39,4 +39,4 @@ ENV PORT=3000
 VOLUME ["/app/logs"]
 
 # アプリケーションの起動
-CMD ["node", "server.js"] 
+CMD ["node", "server.js"]

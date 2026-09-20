@@ -3,6 +3,7 @@
 import React from 'react';
 import { Darumadrop_One } from 'next/font/google';
 import Link from 'next/link';
+import { css } from 'styled-system/css';
 
 const darumadrop = Darumadrop_One({
   weight: '400',
@@ -110,56 +111,56 @@ const clothes = [
 
 export default function Credits() {
   return (
-    <main className="min-h-screen bg-gradient-to-b from-pink-100 to-white">
-      <div className="container mx-auto px-4 py-16">
-        <h1 className={`${darumadrop.className} text-4xl md:text-5xl text-center mb-16 text-pink-600`}>
+    <main className={css({ minH: 'screen', bgGradient: 'to-b', gradientFrom: 'pink.100', gradientTo: 'white' })}>
+      <div className={`container ${css({ px: '4', py: '16' })}`}>
+        <h1 className={`${darumadrop.className} ${css({ fontSize: { base: '4xl', md: '5xl' }, textAlign: 'center', mb: '16', color: 'pink.600' })}`}>
           クレジット
         </h1>
 
-        <div className="max-w-3xl mx-auto bg-white rounded-xl shadow-lg p-8">
-          <div className="mb-8 p-4 bg-gray-50 rounded-lg">
-            <p className="text-sm text-gray-600 leading-relaxed">
+        <div className={css({ maxW: '3xl', mx: 'auto', bg: 'white', rounded: 'xl', boxShadow: 'lg', p: '8' })}>
+          <div className={css({ mb: '8', p: '4', bg: 'gray.50', rounded: 'lg' })}>
+            <p className={css({ fontSize: 'sm', color: 'gray.600', lineHeight: 'relaxed' })}>
               すべてのゲーム内アセットは元の所有者に帰属します。<br />
               本ゲームは非営利目的で制作されており、すべての権利は各権利者に帰属します。
             </p>
-            <p className="text-sm text-gray-600 leading-relaxed">
+            <p className={css({ fontSize: 'sm', color: 'gray.600', lineHeight: 'relaxed' })}>
               また、本サイトで使用しているすべてのカード画像はVRChatカードゲーム「ぷぷりえーる」のものです。
             </p>
           </div>
 
-          <section className="mb-8">
-            <h2 className={`${darumadrop.className} text-2xl mb-4 text-pink-500`}>使用素材</h2>
-            <div className="space-y-4">
-              <div className="border-b pb-4">
-                <h3 className="font-bold text-lg mb-2">アバター</h3>
+          <section className={css({ mb: '8' })}>
+            <h2 className={`${darumadrop.className} ${css({ fontSize: '2xl', mb: '4', color: 'pink.500' })}`}>使用素材</h2>
+            <div className={css({ display: 'flex', flexDirection: 'column', gap: '4' })}>
+              <div className={css({ borderBottomWidth: '1px', pb: '4' })}>
+                <h3 className={css({ fontWeight: 'bold', fontSize: 'lg', mb: '2' })}>アバター</h3>
                 {avatar.map((avatar, idx) => (
-                <p className="text-sm mb-3 leading-relaxed" key={idx}>
+                <p className={css({ fontSize: 'sm', mb: '3', lineHeight: 'relaxed' })} key={idx}>
                   {/* ここにアバターのクレジット情報を記載 */}
                   アバター名: {avatar.Name}<br/>
                   クレジット: {avatar.Credit}<br />
-                  リンク: <a href={avatar.Link} target="_blank" className="text-blue-500 hover:text-blue-600" rel="noopener noreferrer">{avatar.Link}</a><br />
+                  リンク: <a href={avatar.Link} target="_blank" className={css({ color: 'blue.500', _hover: { color: 'blue.600' } })} rel="noopener noreferrer">{avatar.Link}</a><br />
                 </p>
                 ))}
               </div>
 
-              <div className="border-b pb-4">
-                <h3 className="font-bold text-lg mb-2">衣装</h3>
+              <div className={css({ borderBottomWidth: '1px', pb: '4' })}>
+                <h3 className={css({ fontWeight: 'bold', fontSize: 'lg', mb: '2' })}>衣装</h3>
                 {clothes.map((clothes, idx) => (
-                <p className="text-sm mb-2 leading-relaxed" key={idx}>
+                <p className={css({ fontSize: 'sm', mb: '2', lineHeight: 'relaxed' })} key={idx}>
                   {/* ここに衣装のクレジット情報を記載 */}
                   衣装名: {clothes.Name}<br />
                   クレジット: {clothes.Credit}<br />
-                  リンク: <a href={clothes.Link} target="_blank" className="text-blue-500 hover:text-blue-600" rel="noopener noreferrer">{clothes.Link}</a><br />
+                  リンク: <a href={clothes.Link} target="_blank" className={css({ color: 'blue.500', _hover: { color: 'blue.600' } })} rel="noopener noreferrer">{clothes.Link}</a><br />
                 </p>
                 ))}
               </div>
             </div>
           </section>
 
-          <div className="text-center mt-8">
-            <Link 
-              href="/" 
-              className="inline-block bg-pink-500 text-white px-6 py-2 rounded-full hover:bg-pink-600 transition-colors"
+          <div className={css({ textAlign: 'center', mt: '8' })}>
+            <Link
+              href="/"
+              className={css({ display: 'inline-block', bg: 'pink.500', color: 'white', px: '6', py: '2', rounded: 'full', transitionProperty: 'color, background-color, border-color, text-decoration-color, fill, stroke', _hover: { bg: 'pink.600' } })}
             >
               トップページに戻る
             </Link>

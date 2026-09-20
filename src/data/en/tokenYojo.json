@@ -1,0 +1,30 @@
+{
+  "tokenYojo": [
+    {
+      "id": "yt_0",
+      "name": "Young lady Uyuchi",
+      "type": "yojo",
+      "fruit": "strawberry",
+      "description": "",
+      "imageUrl": "/images/en/yojo/yt_0.webp",
+      "cost": 2,
+      "hp": 2,
+      "attack": 2,
+      "effect": "When this little girl is destroyed, put a “Beautiful woman Uyuchi” into your hand. When this little girl comes into play from your hand, if there are already 5 or more little girls with the name “Uyuchi” in their names of the Strawberry type that you’ve played from your hand during this match, gains +3/+3 and Fast eater.",
+      "role": ""
+    },
+    {
+      "id": "yt_1",
+      "name": "Beautiful woman Uyuchi",
+      "type": "yojo",
+      "fruit": "strawberry",
+      "description": "",
+      "imageUrl": "/images/en/yojo/yt_1.webp",
+      "cost": 3,
+      "hp": 3,
+      "attack": 3,
+      "effect": "When this little girl comes into play from your hand, if there are already 5 or more little girls with the name “Uyuchi” in their names of the Strawberry type that you’ve played from your hand during this match, gains +3/+3 and Fast eater.",
+      "role": ""
+    }
+  ]
+}

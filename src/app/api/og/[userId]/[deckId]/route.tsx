@@ -25,7 +25,7 @@ if (!getApps().length) {
   });
 }
 
-const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || 'https://pplale.pgw.jp';
+const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || 'https://pplale.vercel.app';
 const ID_PATTERN = /^[\w-]{1,64}$/;
 
 // カードデータのキャッシュ
@@ -52,23 +52,13 @@ const getCardData = async (cardId: string, cardType: 'yojo' | 'sweet' | 'playabl
   }
 
   if (card) {
+    // resvg（@vercel/og が内部で使用するSVGレンダラー）は WebP のデコードに非対応のため、
+    // ビルド時に生成済みの OGP専用 PNG（public/og-cards/、npm run cards:og-images）を参照する
+    const ogImagePath = card.imageUrl.replace('/images/', '/og-cards/').replace(/\.webp$/i, '.png');
     const cardData = {
       ...card,
-      imageUrl: card.imageUrl.startsWith('http://') || card.imageUrl.startsWith('https://')
-        ? card.imageUrl
-        : `${baseUrl}/Resized${card.imageUrl}`
+      imageUrl: new URL(ogImagePath, baseUrl).toString(),
     };
-
-    // 画像の存在確認を試みる
-    try {
-      const response = await fetch(cardData.imageUrl, { method: 'HEAD' });
-      if (!response.ok) {
-        // 画像が見つからない場合もキャッシュ
-      }
-    } catch (error) {
-      // ネットワークエラーなどをスキップ
-      console.debug('Image fetch failed:', error);
-    }
 
     cardCache.set(cacheKey, cardData);
     return cardData;

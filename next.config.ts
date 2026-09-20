@@ -1,7 +1,6 @@
 import type { NextConfig } from 'next';
 
 const config: NextConfig = {
-  output: 'standalone',
   images: {
     remotePatterns: [
       {
@@ -83,6 +82,7 @@ const config: NextConfig = {
   turbopack: {
     resolveAlias: {
       '@': './src',
+      'styled-system': './styled-system',
     },
   },
 };

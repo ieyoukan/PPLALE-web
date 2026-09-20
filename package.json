@@ -2,36 +2,50 @@
   "name": "pplale",
   "version": "0.1.0",
   "private": true,
+  "engines": {
+    "node": ">=22.23.2 <23"
+  },
   "scripts": {
+    "prepare": "panda codegen && husky",
+    "predev": "panda codegen",
+    "prebuild": "panda codegen && node scripts/generate-og-images.mjs",
     "dev": "next dev",
     "build": "next build",
     "export": "next export",
     "start": "next start",
     "lint": "eslint .",
     "lint:fix": "eslint . --fix",
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit",
+    "cards:import-en": "node scripts/import-english-cards.mjs",
+    "cards:optimize": "node scripts/optimize-images.mjs",
+    "cards:og-images": "node scripts/generate-og-images.mjs",
+    "cards:check": "node scripts/check-cards.mjs",
+    "test:e2e": "playwright test",
+    "test:e2e:ui": "playwright test --ui"
   },
   "dependencies": {
-    "@vercel/og": "^0.11.1",
+    "@vercel/og": "^1.0.1",
     "@vercel/speed-insights": "^2.0.0",
     "critters": "^0.0.25",
     "firebase": "^12.13.0",
-    "firebase-admin": "^13.9.0",
+    "firebase-admin": "^14.4.0",
     "framer-motion": "^12.36.0",
     "next": "^16.2.6",
     "react": "^19.2.6",
     "react-dom": "^19.2.6",
     "react-hook-form": "^7.75.0",
+    "uuid": "^14.0.2",
     "zod": "^4.4.3"
   },
   "devDependencies": {
     "@eslint/eslintrc": "^3",
+    "@pandacss/dev": "^0.31.0",
+    "@playwright/test": "^1.62.1",
     "@svgr/plugin-svgo": "^8.1.0",
     "@svgr/webpack": "^8.1.0",
     "@types/node": "^20",
     "@types/react": "^19",
     "@types/react-dom": "^19",
-    "autoprefixer": "^10.4.23",
     "eslint": "^9.39.2",
     "eslint-config-next": "^16.2.3",
     "eslint-plugin-react": "^7.37.5",
@@ -39,8 +53,9 @@
     "eslint-plugin-security": "^3.0.1",
     "eslint-plugin-unicorn": "^62.0.0",
     "file-loader": "^6.2.0",
+    "husky": "^9.1.7",
     "postcss": "^8.5.6",
-    "tailwindcss": "^3.4.17",
+    "sharp": "^0.35.3",
     "typescript": "^5"
   }
 }

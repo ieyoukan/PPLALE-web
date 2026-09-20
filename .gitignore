@@ -1,5 +1,5 @@
 .DS_Store
-
+/assets
 # dependencies
 /node_modules
 /.pnp
@@ -43,3 +43,9 @@ next-env.d.ts
 ## Panda
 styled-system
 styled-system-studio
+
+# sheet fetch cache (scripts/fetch-sheet-csv.mjs --all の出力先)
+.cache/
+
+# husky internal (npm run prepare で再生成される)
+.husky/_/

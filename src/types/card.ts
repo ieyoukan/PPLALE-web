@@ -1,8 +1,23 @@
 /**
  * カードの種類を定義する型
  */
-export type CardType = '幼女' | 'お菓子' | 'プレイアブル';
-export type FruitType = 'すべて' |'いちご' | 'ぶどう' | 'めろん' | 'おれんじ';
+export type CardType = 'yojo' | 'sweet' | 'playable';
+export type FruitType = 'all' | 'strawberry' | 'grape' | 'melon' | 'orange';
+export type CardRole = '' | 'assistant_manager' | 'manager';
+export type SweetType =
+  | ''
+  | 'animal_soda'
+  | 'cafe'
+  | 'float'
+  | 'doughnut'
+  | 'cake'
+  | 'back_menu'
+  | 'chai'
+  | 'ice_cream'
+  | 'pplale_soda'
+  | 'pplale_yaki'
+  | 'currency';
+export type CardVersion = 'normal' | 'beta';
 
 /**
  * カードの情報を表すインターフェース
@@ -27,13 +42,13 @@ export interface CardInfo {
   /** カードの画像URL */
   imageUrl: string;
   /** 役職 */
-  role?: string;
+  role?: CardRole;
   /** お菓子タイプ */
-  sweetType?: string;
+  sweetType?: SweetType;
   /** 効果 */
   effect?: string;
   /** バージョン */
-  version?: string;
+  version?: CardVersion;
 }
 
 /**

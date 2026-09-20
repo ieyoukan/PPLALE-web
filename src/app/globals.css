@@ -1,143 +1,22 @@
-/* Tailwindをインポート */
-@import 'tailwindcss/base';
-@import 'tailwindcss/components';
-@import 'tailwindcss/utilities';
+@layer reset, base, tokens, recipes, utilities;
 
-/* グローバルスタイル */
-:root {
-  --primary-color: #3b82f6;
-  --primary-hover: #2563eb;
-  --secondary-color: #10b981;
-  --secondary-hover: #059669;
-  --danger-color: #ef4444;
-  --danger-hover: #dc2626;
-  --background-color: #f3f4f6;
-  --hover-back-color: #9e9e9e;
-  --hover-back-color-light: #e2e2e2;
-  --card-background: #ffffff;
-  --text-color: #1f2937;
-  --text-light: #6b7280;
-  --border-radius: 0.5rem;
-  --shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
-  --special: #3ec6c4;
-  --special-hover: #0f8c8c;
+/* グローバルスタイル（トークンはpanda.config.tsのtokens/semanticTokensから生成） */
 
-  --revers-background-color: #1f2937;
-  --revers-text-color: #f3f4f6;
+.main-color { color: var(--colors-text-color); }
+.main-background { background-color: var(--colors-background-color); }
 
-  --deck-background-color: #c3c3c3;
-  --deck-border-color: #9e9e9e;
-  --deck-text-color: #1f2937;
-  --yojo-deck-background-color: #f8d9d9;
-  --yojo-deck-border-color: #e0b0b0;
-  --yojo-deck-text-color: #800000;
-  --sweet-deck-background-color: #d9f6f8;
-  --sweet-deck-border-color:  #90e0e0;
-  --sweet-deck-text-color: #008080;
-  --playable-deck-background-color: #d9d9f8;
-  --playable-deck-border-color: #9090e0;
-  --playable-deck-text-color: #000080;
-}
+a.main-background:hover { background-color: var(--colors-hover-back-color); }
 
-:root.dark {
-  --background-color: #1f2937;
-  --background-light: #1f2937;
-  --hover-back-color: #6e6e6e;
-  --hover-back-color-light: #9e9e9e;
-  --card-background: #374151;
-  --text-color: #f3f4f6;
-  --text-light: #9ca3af;
-  --shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.5), 0 2px 4px -1px rgba(0, 0, 0, 0.4);
-
-  --revers-text-color: #1f2937;
-  --revers-background-color: #f3f4f6;
-  --revers-card-background: #ffffff;
-
-  --deck-background-color: #515151;
-  --deck-border-color: #9e9e9e;
-  --deck-text-color: #dddddd;
-  --yojo-deck-background-color: #e09898;
-  --yojo-deck-border-color: #c09090;
-  --yojo-deck-text-color: #800000;
-  --sweet-deck-background-color: #98b7e0;
-  --sweet-deck-border-color: #9090c0;
-  --sweet-deck-text-color: #008080;
-  --playable-deck-background-color: #9898e0;
-  --playable-deck-border-color: #9090c0;
-  --playable-deck-text-color: #000080;
-}
-
-.main-color {
-  color: var(--text-color);
-}
-.main-background {
-  background-color: var(--background-color);
-}
-
-.light-color {
-  color: var(--text-color);
-}
-.light-background {
-  background-color: var(--background-light);
-}
-
-a.main-background:hover {
-  background-color: var(--hover-back-color);
-}
-
-a.light-background:hover {
-  background-color: var(--hover-back-color-light);
-}
-
-.deck-color {
-  background-color: var(--deck-background-color);
-  color: var(--deck-text-color);
-}
-
-
-.yojo-deck-color {
-  background-color: var(--yojo-deck-background-color);
-  color: var(--yojo-deck-text-color);
-  border-color: var(--yojo-deck-border-color);
-}
-
-.sweet-deck-color {
-  background-color: var(--sweet-deck-background-color);
-  color: var(--sweet-deck-text-color);
-  border-color: var(--sweet-deck-border-color);
-}
-
-.playable-deck-color {
-  background-color: var(--playable-deck-background-color);
-  color: var(--playable-deck-text-color);
-  border-color: var(--playable-deck-border-color);
-}
-
-
-
-
-button.main-color:hover {
-  background-color: var(--hover-back-color);
-  color: var(--text-light);
-  transform: scale(1.01);
-}
-
+button.main-color:hover,
 a.main-color:hover {
-  background-color: var(--hover-back-color);
-  color: var(--text-light);
-  transform: scale(1.05);
-}
-
-
-.reverse-color {
-  background-color: var(--revers-background-color);
-  color: var(--revers-text-color);
+  background-color: var(--colors-hover-back-color);
+  color: var(--colors-text-light);
 }
 
 body {
   font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
-  background-color: var(--background-color);
-  color: var(--text-color);
+  background-color: var(--colors-background-color);
+  color: var(--colors-text-color);
   line-height: 1.5;
 }
 
@@ -145,41 +24,19 @@ article {
   margin: 0 auto;
   padding: 0.5rem;
   max-width: 800px;
-  background-color: var(--card-background);
-  border-radius: var(--border-radius);
-  box-shadow: var(--shadow);
+  background-color: var(--colors-card-background);
+  border-radius: var(--radii-border-radius);
+  box-shadow: var(--shadows-shadow);
   z-index: auto;
 }
 
-select {
-  background-color: var(--background-color);
-  color: var(--text-light);
-}
+select { background-color: var(--colors-background-color); color: var(--colors-text-light); }
+option { background-color: var(--colors-background-color); color: var(--colors-text-light); }
+input { background-color: var(--colors-background-color); color: var(--colors-text-color); }
+textarea { background-color: var(--colors-background-color); color: var(--colors-text-color); }
 
-option {
-  background-color: var(--background-color);
-  color: var(--text-light);
-}
-
-input {
-  background-color: var(--background-color);
-  color: var(--text-color);
-}
-
-textarea{
-  background-color: var(--background-color);
-  color: var(--text-color);
-}
-
-.container {
-  max-width: 1700px;
-  margin: 0 auto;
-  background: var(--base-background);
-  color: var(--base-color);
-}
-
-/* ヘッダースタイル */
-header {
+/* ヘッダースタイル（ページ内のバナーヘッダー用。クラスで指定して使用） */
+.page-header {
   background-image: url('/images/baner.webp');
   background-size: cover;
   background-position: center;
@@ -187,352 +44,46 @@ header {
   color: white;
   position: relative;
   padding: 2rem;
-  border-radius: var(--border-radius);
+  border-radius: var(--radii-border-radius);
   margin-bottom: 2rem;
 }
+.page-header h1 { font-size: 1.5rem; font-weight: 600; color: white; }
 
-header h1{
-  font-size: 1.5rem;
-  font-weight: 600;
-  color: white;
-}
+label { color: var(--colors-text-color); }
 
-
-label{
-  color: var(--text-color);
-}
-
-pre{
-  background-color: var(--background-color);
-  color: var(--text-light);
+pre {
+  background-color: var(--colors-background-color);
+  color: var(--colors-text-light);
   background-size: cover;
   background-position: center;
   background-repeat: no-repeat;
 }
 
-header::before {
+.page-header::before {
   content: '';
   position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
+  top: 0; left: 0; right: 0; bottom: 0;
   background-color: rgba(0, 0, 0, 0.4);
-  border-radius: var(--border-radius);
+  border-radius: var(--radii-border-radius);
   z-index: 0;
 }
+.page-header > * { position: relative; z-index: 1; }
 
-header > * {
-  position: relative;
-  z-index: 1;
-}
-
-.btn-primary {
-  background-color: var(--primary-color);
-  color: white;
-  border-radius: 10px;
-  padding: 0.6rem 0.75rem;
-  font-weight: 600;
-  font-size: 1rem;
+/* Button styles are now handled by Panda CSS button/iconButton recipes. */
+/* Pandaのpreflightにはボタンのポインターカーソルが含まれていないため明示的に指定 */
+button:not(:disabled),
+[role="button"]:not([aria-disabled="true"]) {
   cursor: pointer;
-  transition: all 0.3s ease;
-  border: none;
-  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-}
-.btn-primary:hover {
-  background-color: var(--primary-hover);
-  transform: scale(1.05);
-}
-.btn-secondary {
-  background-color: var(--secondary-color);
-  color: white;
-  border-radius: 10px;
-  padding: 0.5rem;
-  padding: 0.6rem 0.75rem;
-  font-weight: 600;
-  font-size: 1rem;
-  cursor: pointer;
-  transition: all 0.3s ease;
-  border: none;
-  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-}
-.btn-secondary:hover {
-  background-color: var(--secondary-hover);
-  transform: scale(1.05);
-  padding: 0.5rem;
-}
-.btn-danger {
-  background-color: var(--danger-color);
-  color: white;
-  border-radius: 10px;
-  padding: 0.6rem 0.75rem;
-  font-weight: 600;
-  font-size: 1rem;
-  cursor: pointer;
-  transition: all 0.3s ease;
-  border: none;
-  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-}
-.btn-danger:hover {
-  background-color: var(--danger-hover);
-  transform: scale(1.05);
-}
-
-.btn-export {
-  background-color: var(--primary-color);
-  color: white;
-  border-radius: 10px;
-  padding: 0.5rem;
-  font-weight: 600;
-  font-size: 1rem;
-  cursor: pointer;
-  transition: all 0.3s ease;
-  border: none;
-  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-}
-
-.btn-export:hover {
-  background-color: var(--primary-hover);
-  transform: scale(1.05);
-}
-
-.btn-import {
-  background-color: var(--secondary-color);
-  color: white;
-  border-radius: 10px;
-  padding: 0.5rem;
-  font-weight: 600;
-  font-size: 1rem;
-  cursor: pointer;
-  transition: all 0.3s ease;
-  border: none;
-  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-}
-
-.btn-import:hover {
-  background-color: var(--secondary-hover);
-  transform: scale(1.05);
-}
-
-.btn-select {
-  background-color: var(--special);
-  font-weight: 1000;
-  color: white;
-  border-radius: 60px;
-  padding: 1.19rem 1rem;
-  font-weight: 600;
-  font-size: 1rem;
-  cursor: pointer;
-  transition: all 0.2s ease;
-  transform: scale(1.7);
-  border: none;
-  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-}
-
-.btn-select:hover{
-  background-color: var(--special-hover);
-  color: white;
-  transform: scale(2);
-}
-
-.btn-reset {
-  position: fixed;
-  bottom: 1rem;
-  right: 1rem;
-  border-radius: 20px;
-  background-color: var(--special);
-  color: var(--text-color);
-  border: 1px solid var(--text-light);
-  padding: 1.5rem 1.5rem;
-  cursor: pointer;
-  transition: background-color 0.3s, color 0.3s;
-  font-size: 1rem;
-}
-
-.btn-reset:hover {
-  background-color: var(--special-hover);
-  color: var(--background-color);
-}
-
-
-a.lnk-mode {
-  display: inline-block;
-  padding: 0.55rem 1.5rem;
-  border-radius: 10px;
-  background-color: var(--background-color);
-  color: var(--text-color);
-  font-weight: 600;
-  font-size: 1rem;
-  cursor: pointer;
-  transition: all 0.3s ease;
-  border: 1px solid var(--special);
-  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-}
-
-a.lnk-mode:hover {
-  background-color: var(--special-hover);
-  transform: scale(1.05);
-}
-
-.btn:disabled {
-  opacity: 0.6;
-  cursor: not-allowed;
-  box-shadow: none;
-}
-
-
-/* カードスタイル */
-.card {
-  border-radius: var(--border-radius);
-  padding: 0.5rem;
-  box-shadow: var(--shadow);
-}
-
-/* ドラッグアンドドロップ */
-.dropzone {
-  border: 2px dashed #cbd5e1;
-  border-radius: var(--border-radius);
-  padding: 1rem;
-  transition: border-color 0.2s;
-}
-
-.dropzone:hover {
-  border-color: var(--primary-color);
-}
-
-.toggle-dark-mode {
-  position: fixed;
-  top: 1rem;
-  right: 1rem;
-  background-color: var(--card-background);
-  color: var(--text-color);
-  border: 1px solid var(--text-light);
-  border-radius: var(--border-radius);
-  padding: 0.5rem 1rem;
-  cursor: pointer;
-  transition: background-color 0.3s, color 0.3s;
-  font-size: 0.5rem;
-}
-
-.toggle-dark-mode:hover {
-  background-color: var(--text-light);
-  color: var(--background-color);
-}
-
-.popup {
-  position: fixed;
-  background-color: var(--card-background);
-  color: var(--text-color);
-  border-radius: var(--border-radius);
-  padding: 1.5rem;
-}
-
-/* アニメーション */
-@keyframes scaleIn {
-  from {
-    transform: scale(0.8);
-    opacity: 0;
-  }
-  to {
-    transform: scale(1);
-    opacity: 1;
-  }
-}
-
-@keyframes scaleOut {
-  from {
-    transform: scale(1);
-    opacity: 1;
-  }
-  to {
-    transform: scale(0.8);
-    opacity: 0;
-  }
-}
-
-.transform {
-  animation: scaleIn 0.3s ease-out forwards;
-}
-
-.transform-leave {
-  animation: scaleOut 0.3s ease-in forwards;
 }
 
 @keyframes slideIn {
-  from {
-    transform: translateX(100%);
-    opacity: 0;
-  }
-  to {
-    transform: translateX(0);
-    opacity: 1;
-  }
+  from { transform: translateX(100%); opacity: 0; }
+  to { transform: translateX(0); opacity: 1; }
 }
-
-@keyframes slideOut {
-  from {
-    transform: translateX(0);
-    opacity: 1;
-  }
-  to {
-    transform: translateX(100%);
-    opacity: 0;
-  }
-}
-
-.transform-slide {
-  animation: slideIn 0.3s ease-out forwards;
-}
-
-.transform-slide-leave {
-  animation: slideOut 0.3s ease-in forwards;
-}
+.transform-slide { animation: slideIn 0.3s ease-out forwards; }
 
 @keyframes disappear {
-  0% {
-    transform: scale(1);
-    opacity: 1;
-  }
-  100% {
-    transform: scale(1.5);
-    opacity: 0;
-  }
+  0% { transform: scale(1); opacity: 1; }
+  100% { transform: scale(1.5); opacity: 0; }
 }
-
-.animate-disappear {
-  animation: disappear 0.5s ease-out forwards;
-}
-
-/* テキストの改行を適切に処理 */
-.break-words {
-  overflow-wrap: break-word;
-  word-break: break-word;
-  white-space: pre-line;
-}
-
-.description {
-  font-size: 0.875rem;
-  color: var(--text-light);
-  margin-top: 0.5rem;
-}
-
-.pixelated {
-  image-rendering: pixelated;
-  image-rendering: -moz-crisp-edges;
-  image-rendering: crisp-edges;
-  image-rendering: -webkit-optimize-contrast;
-  image-rendering: optimize-contrast;
-  image-rendering: -o-crisp-edges;
-  image-rendering: crisp-edges;
-  -ms-interpolation-mode: nearest-neighbor;
-  width: 100%;
-  height: 100%;
-}
-
-.twitter-button {
-  background-color: #1DA1F2; /* Twitterブルー */
-}
-
-.twitter-button:hover {
-  background-color: #0f82cc; /* 少し濃いTwitterブルー */
-}
+.animate-disappear { animation: disappear 0.5s ease-out forwards; }

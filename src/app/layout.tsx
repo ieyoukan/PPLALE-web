@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import DarkModeProvider from './DarkModeProvider';
-import { SettingsProvider } from './SideMenuProvider';
+import { SettingsProvider } from './SettingsProvider';
 import { AuthProvider } from '@/lib/auth';
 import { SpeedInsights } from "@vercel/speed-insights/next"
 
