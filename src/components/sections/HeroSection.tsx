@@ -71,10 +71,15 @@ export default function HeroSection({ cardsYPosition }: HeroSectionProps) {
 
   return (
     <section className={css({ position: 'relative', h: 'screen' })}>
-      <div
-        className={css({ position: 'absolute', inset: '0', bgSize: 'cover', bgPosition: 'center' })}
-        style={{ backgroundImage: 'url("/top.jpg")' }}
-      >
+      <div className={css({ position: 'absolute', inset: '0' })}>
+        <Image
+          src="/top.jpg"
+          alt=""
+          fill
+          priority
+          sizes="100vw"
+          style={{ objectFit: 'cover', objectPosition: 'center' }}
+        />
         <div className={css({ position: 'absolute', inset: '0' })}></div>
       </div>
 
