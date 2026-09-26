@@ -24,18 +24,18 @@
     "test:e2e:ui": "playwright test --ui"
   },
   "dependencies": {
-    "@vercel/og": "^1.0.1",
+    "@vercel/og": "^1.0.3",
     "@vercel/speed-insights": "^2.0.0",
     "critters": "^0.0.25",
     "uuid": "^14.0.2",
     "firebase": "^12.17.1",
     "firebase-admin": "^14.2.0",
-    "framer-motion": "^13.0.0",
-    "next": "^16.2.6",
+    "framer-motion": "^13.4.2",
+    "next": "^16.3.6",
     "react": "^19.2.8",
     "react-dom": "^19.2.8",
     "react-hook-form": "^7.85.0",
-    "zod": "^4.4.3"
+    "zod": "^4.6.5"
   },
   "devDependencies": {
     "@eslint/eslintrc": "^3",
