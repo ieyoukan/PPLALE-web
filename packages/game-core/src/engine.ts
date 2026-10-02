@@ -625,7 +625,7 @@ function drain(s: GameState, catalog: Catalog) {
         s.phase = 'playing';
         startTurn(s, s.rules.firstPlayer);
         if (s.rules.firstTurnDraw) {
-            s.queue.push({op: 'draw', actor: s.active, deck: s.rules.turnDraw, text: 'turn'});
+            s.queue.push({op: 'draw', actor: s.active, text: 'turn'});
             drain(s, catalog);
         }
     }
@@ -663,6 +663,9 @@ export function canAttack(s: GameState, side: Side, uid: string, target: string 
     if (c.entered === s.turn && !c.keywords.includes('fast') && !(target !== 'leader' && c.keywords.includes('charge')))
         return false;
     const enemy = s.players[other(side)];
+    const taunts = enemy.field.filter(id => s.cards[id].keywords.includes('taunt'));
+    // The user-confirmed rule: taunt units are the only legal attack targets.
+    if (taunts.length) return taunts.includes(target);
     if (target === 'leader')
         return !c.keywords.includes('noEat') && (!(enemy.field.some(id => s.cards[id].keywords.includes('taunt'))) || (s.rules.pierceIgnoresTaunt && c.keywords.includes('pierce')));
     if (!enemy.field.includes(target))
@@ -688,8 +691,8 @@ export function applyCommand(previous: GameState, command: Command, catalog: Cat
                 s.phase = 'opening';
                 note(s, `${s.players[s.active].name}が先攻です。最初の手札を引いてください`);
                 for (const side of [s.active, other(s.active)]) {
-                    if (s.rules.initialYojo) s.queue.push({op: 'draw', actor: side, deck: 'yojo', count: s.rules.initialYojo, text: 'opening'});
-                    if (s.rules.initialSweet) s.queue.push({op: 'draw', actor: side, deck: 'sweet', count: s.rules.initialSweet, text: 'opening'});
+                    const count = s.rules.initialYojo + s.rules.initialSweet;
+                    if (count) s.queue.push({op: 'draw', actor: side, count, text: 'opening'});
                 }
             }
         }
@@ -789,7 +792,7 @@ export function applyCommand(previous: GameState, command: Command, catalog: Cat
             else if (command.type === 'end') {
                 p.hand.forEach(id => s.cards[id].temporaryCost = 0);
                 startTurn(s, other(command.actor));
-                s.queue.push({op: 'draw', actor: s.active, deck: s.rules.turnDraw, text: 'turn'});
+                s.queue.push({op: 'draw', actor: s.active, text: 'turn'});
             }
             else if (command.type === 'reveal') {
                 if (!p.hand.includes(command.uid) || s.cards[command.uid].cardId !== 's_24')

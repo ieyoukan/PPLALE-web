@@ -133,3 +133,35 @@ test('CPU completes its required draws using the same commands as a human', () =
   assert.equal(draws, 3);
   assert.equal(state.players[actor].hand.length, 3);
 });
+
+test('each opening and turn draw allows a fresh choice of either deck', () => {
+  let state = roll(create());
+  const actor = state.pending.task.actor;
+  for (const kind of ['sweet', 'yojo', 'sweet']) {
+    assert.deepEqual(state.pending.options.map(o => o.id), ['yojo', 'sweet']);
+    state = command(state, { type: 'choose', actor, option: kind });
+  }
+  assert.equal(state.players[actor].sweet.length, 8);
+  assert.equal(state.players[actor].yojo.length, 19);
+  state = deal(state);
+  state = command(state, { type: 'end', actor: state.active });
+  assert.deepEqual(state.pending.options.map(o => o.id), ['yojo', 'sweet']);
+  const before = state.players[state.active].sweet.length;
+  state = command(state, { type: 'choose', actor: state.active, option: 'sweet' });
+  assert.equal(state.players[state.active].sweet.length, before - 1);
+  assert.equal(state.pending, null);
+});
+
+test('taunt only permits attacking taunt units, including with pierce and another guard present', () => {
+  let state = deal(roll(create()));
+  const actor = state.active, enemy = actor === 0 ? 1 : 0;
+  const uid = state.players[actor].hand.shift();
+  state.players[actor].field.push(uid);
+  Object.assign(state.cards[uid], { slot: 0, entered: -1, keywords: ['pierce'], attackBonus: 1 });
+  const taunt = state.players[enemy].hand.shift(), guard = state.players[enemy].hand.shift();
+  state.players[enemy].field.push(taunt, guard);
+  Object.assign(state.cards[taunt], { slot: 0, keywords: ['taunt'] });
+  Object.assign(state.cards[guard], { slot: 1, keywords: ['guard'] });
+  for (const target of ['leader', guard]) assert.ok(applyCommand(state, { type: 'attack', actor, uid, target }, catalog).error);
+  assert.equal(applyCommand(state, { type: 'attack', actor, uid, target: taunt }, catalog).error, undefined);
+});

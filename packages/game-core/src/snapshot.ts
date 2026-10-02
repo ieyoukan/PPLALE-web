@@ -40,5 +40,13 @@ export function restoreGame(value: unknown, catalog: Catalog): GameState | null 
             occupied.push(card.slot);
         }
     }
+    // Keep saved matches playable under the corrected free-choice draw rule.
+    for (const t of [...s.queue, ...(s.pending ? [s.pending.task] : [])]) {
+        if (t.op === 'draw' && (t.text === 'opening' || t.text === 'turn')) delete t.deck;
+    }
+    if (s.pending?.task.op === 'draw' && !s.pending.task.deck) {
+        const p = s.players[s.pending.task.actor];
+        s.pending.options = (['yojo', 'sweet'] as const).map(kind => ({ id: kind, label: `${kind === 'yojo' ? '幼女' : 'お菓子'}デッキ（${p[kind].length}枚）` }));
+    }
     return s as GameState;
 }

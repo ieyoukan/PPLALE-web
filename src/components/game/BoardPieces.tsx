@@ -10,7 +10,7 @@ export function DeckStack({ side, kind, ids, thresholds = [], enabled, drawing =
   enabled: boolean; drawing?: boolean; onClick: () => void;
 }) {
   const label = { yojo: '幼女デッキ', sweet: 'お菓子デッキ', nap: 'お昼寝場所', exile: '除外カード' }[kind];
-  return <button type="button" data-deck={`${side}-${kind}`} className={`${styles.deckZone} ${drawing ? styles.drawReady : ''}`}
+  return <button type="button" data-deck={`${side}-${kind}`} data-label={{ yojo: '幼女', sweet: 'お菓子', nap: 'お昼寝', exile: '除外' }[kind]} className={`${styles.deckZone} ${drawing ? styles.drawReady : ''}`}
     onClick={onClick} disabled={!enabled} aria-label={`${side === 0 ? 'あなた' : '相手'}の${label} ${ids.length}枚`}>
     <span className={styles.zoneLabel}>{label}</span>
     <span className={styles.stack} data-stack>
