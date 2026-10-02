@@ -20,6 +20,9 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
+      - name: Check game opening and draw flow
+        run: npm run test:game
+
       - name: Run project checks
         run: mise run check
 

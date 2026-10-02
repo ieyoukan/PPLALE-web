@@ -27,7 +27,7 @@ export function validateDeck(deck: Deck, catalog: Catalog): string[] {
             errors.push(`${catalog[id].name}は1枚までです`);
     return Array.from(new Set(errors));
 }
-function random(state: GameState, size: number) { state.rng = (Math.imul(state.rng, 1664525) + 1013904223) >>> 0; return state.rng % Math.max(1, size); }
+function random(state: GameState, size: number) { state.rng = (Math.imul(state.rng, 1664525) + 1013904223) >>> 0; return Math.floor(state.rng / 0x100000000 * Math.max(1, size)); }
 function note(s: GameState, text: string) { s.log.push(text); if (s.log.length > 100)
     s.log.shift(); }
 function makeCard(s: GameState, id: string): string {
@@ -73,7 +73,7 @@ function points(s: GameState, side: Side, amount: number, mode: 'reduce' | 'stea
         if (before > threshold && p.points <= threshold && !p.milestones.includes(threshold)) {
             p.milestones.push(threshold);
             note(s, `${threshold}ポイント到達：お菓子を1枚ドロー`);
-            draw(s, side, 'sweet');
+            s.queue.push({op: 'draw', actor: side, deck: 'sweet', text: 'threshold'});
         }
     if (mode === 'steal' && s.rules.stealHeals)
         heal(s, other(side), before - p.points);
@@ -469,8 +469,10 @@ function execute(s: GameState, t: Task, catalog: Catalog) {
             break;
         }
         case 'draw': {
-            if (!t.deck && !t.target) {
-                s.pending = { prompt: 'どちらのデッキから引きますか？', options: [{ id: 'yojo', label: `幼女デッキ（${p.yojo.length}枚）` }, { id: 'sweet', label: `お菓子デッキ（${p.sweet.length}枚）` }], task: t };
+            if (!t.target) {
+                const kinds = t.deck ? [t.deck] : ['yojo', 'sweet'] as const;
+                const reason = t.text === 'opening' ? '最初の手札' : t.text === 'turn' ? 'ターン開始' : t.text === 'threshold' ? 'お菓子ポイント到達' : 'カード効果';
+                s.pending = { prompt: `${reason}：山札を押して1枚引いてください`, options: kinds.map(kind => ({ id: kind, label: `${kind === 'yojo' ? '幼女' : 'お菓子'}デッキ（${p[kind].length}枚）` })), task: t };
                 break;
             }
             const kind = t.deck ?? t.target as DeckKind, uid = draw(s, t.actor, kind);
@@ -619,6 +621,14 @@ function drain(s: GameState, catalog: Catalog) {
             execute(s, task, catalog);
         settle(s, catalog);
     }
+    if (s.phase === 'opening' && !s.pending && !s.queue.length && s.winner === null) {
+        s.phase = 'playing';
+        startTurn(s, s.rules.firstPlayer);
+        if (s.rules.firstTurnDraw) {
+            s.queue.push({op: 'draw', actor: s.active, deck: s.rules.turnDraw, text: 'turn'});
+            drain(s, catalog);
+        }
+    }
     if (s.winner !== null) {
         s.pending = null;
         s.queue = [];
@@ -637,24 +647,18 @@ export function newGame(decks: [
         Player,
         Player
     ];
-    const s: GameState = { version: 1, rules: { ...rules }, rng: seed >>> 0, serial: 0, revision: 0, active: rules.firstPlayer, turn: 0, players, cards: {}, queue: [], pending: null, winner: null, log: [] };
+    const s: GameState = { version: 1, phase: 'dice', dice: null, rules: { ...rules }, rng: seed >>> 0, serial: 0, revision: 0, active: rules.firstPlayer, turn: 0, players, cards: {}, queue: [], pending: null, winner: null, log: [] };
     for (const side of [0, 1] as Side[]) {
         for (const kind of ['yojo', 'sweet'] as const)
             s.players[side][kind] = shuffled(s, decks[side][kind].map(id => makeCard(s, id)));
-        for (let i = 0; i < rules.initialYojo; i++)
-            draw(s, side, 'yojo');
-        for (let i = 0; i < rules.initialSweet; i++)
-            draw(s, side, 'sweet');
     }
-    startTurn(s, rules.firstPlayer);
-    if (rules.firstTurnDraw)
-        draw(s, s.active, rules.turnDraw);
+    note(s, 'ダイスを振って先攻・後攻を決めてください');
     return s;
 }
 function startTurn(s: GameState, side: Side) { s.active = side; s.turn++; const p = s.players[side]; p.turns++; p.pp = Math.max(0, maxPp(s, side) - p.nextPpDebt); p.nextPpDebt = 0; p.field.forEach(id => s.cards[id].exhausted = false); note(s, `${p.name}の${p.turns}ターン目`); }
 export function canAttack(s: GameState, side: Side, uid: string, target: string | 'leader', catalog: Catalog): boolean {
     const p = s.players[side], c = s.cards[uid];
-    if (s.active !== side || s.pending || s.winner !== null || !p.field.includes(uid) || !c || c.exhausted || c.keywords.includes('immobile') || attackOf(c, catalog) <= 0)
+    if (s.phase !== 'playing' || s.active !== side || s.pending || s.winner !== null || !p.field.includes(uid) || !c || c.exhausted || c.keywords.includes('immobile') || attackOf(c, catalog) <= 0)
         return false;
     if (c.entered === s.turn && !c.keywords.includes('fast') && !(target !== 'leader' && c.keywords.includes('charge')))
         return false;
@@ -672,7 +676,24 @@ export function applyCommand(previous: GameState, command: Command, catalog: Cat
         const p = s.players[command.actor];
         if (s.winner !== null)
             throw new Error('この対戦は終了しています');
-        if (command.type === 'adjust' || command.type === 'draw') {
+        if (command.type === 'roll') {
+            if (s.phase !== 'dice') throw new Error('手番は既に決まっています');
+            const rolls: [number, number] = [random(s, 6) + 1, random(s, 6) + 1];
+            s.dice = {rolls, ties: (s.dice?.ties ?? 0) + (rolls[0] === rolls[1] ? 1 : 0)};
+            note(s, `ダイス：${s.players[0].name} ${rolls[0]} / ${s.players[1].name} ${rolls[1]}`);
+            if (rolls[0] === rolls[1]) note(s, '同じ目なので、もう一度振ってください');
+            else {
+                s.rules.firstPlayer = rolls[0] > rolls[1] ? 0 : 1;
+                s.active = s.rules.firstPlayer;
+                s.phase = 'opening';
+                note(s, `${s.players[s.active].name}が先攻です。最初の手札を引いてください`);
+                for (const side of [s.active, other(s.active)]) {
+                    if (s.rules.initialYojo) s.queue.push({op: 'draw', actor: side, deck: 'yojo', count: s.rules.initialYojo, text: 'opening'});
+                    if (s.rules.initialSweet) s.queue.push({op: 'draw', actor: side, deck: 'sweet', count: s.rules.initialSweet, text: 'opening'});
+                }
+            }
+        }
+        else if (command.type === 'adjust' || command.type === 'draw') {
             if (!allowAdjust)
                 throw new Error('テスト操作は両側操作モードで利用できます');
             if (s.pending)
@@ -705,6 +726,7 @@ export function applyCommand(previous: GameState, command: Command, catalog: Cat
             s.queue.unshift({ ...t, target: command.option });
         }
         else {
+            if (s.phase !== 'playing') throw new Error('ダイスと最初のドローを完了してください');
             if (s.active !== command.actor)
                 throw new Error('相手のターンです');
             if (s.pending)
@@ -767,7 +789,7 @@ export function applyCommand(previous: GameState, command: Command, catalog: Cat
             else if (command.type === 'end') {
                 p.hand.forEach(id => s.cards[id].temporaryCost = 0);
                 startTurn(s, other(command.actor));
-                draw(s, s.active, s.rules.turnDraw);
+                s.queue.push({op: 'draw', actor: s.active, deck: s.rules.turnDraw, text: 'turn'});
             }
             else if (command.type === 'reveal') {
                 if (!p.hand.includes(command.uid) || s.cards[command.uid].cardId !== 's_24')

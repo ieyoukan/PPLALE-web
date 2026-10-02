@@ -1,0 +1,20 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 350 74">
+  <defs>
+    <g id="sprig" fill="#fffee2">
+      <path d="M0 0q-13-4-11-15q2-7 7 0Z M0 0q-3-16 5-18q8-1 2 12Z M0 0q15-10 20-3q6 8-11 8Z M0 0q12 7 9 15q-4 7-11-7Z M0 0q-14 10-17 2q-3-8 11-8Z"/>
+      <circle r="2.5"/>
+    </g>
+  </defs>
+  <rect x="2" y="2" width="346" height="70" rx="29" fill="#adf8bf" fill-opacity=".9" stroke="#ffffe4" stroke-width="2"/>
+  <rect x="6" y="6" width="338" height="62" rx="26" fill="none" stroke="#fffde3" stroke-width="1.5"/>
+  <g>
+    <use href="#sprig" transform="translate(29 20) scale(.7)"/><use href="#sprig" transform="translate(24 52) scale(.65) rotate(90)"/>
+    <use href="#sprig" transform="translate(63 12) scale(.45)"/><use href="#sprig" transform="translate(102 12) scale(.5) rotate(70)"/>
+    <use href="#sprig" transform="translate(143 11) scale(.43) rotate(-30)"/><use href="#sprig" transform="translate(181 12) scale(.5) rotate(90)"/>
+    <use href="#sprig" transform="translate(222 11) scale(.45)"/><use href="#sprig" transform="translate(263 13) scale(.5) rotate(-70)"/>
+    <use href="#sprig" transform="translate(321 21) scale(.7) rotate(50)"/><use href="#sprig" transform="translate(327 52) scale(.65) rotate(140)"/>
+    <use href="#sprig" transform="translate(63 63) scale(.45) rotate(170)"/><use href="#sprig" transform="translate(102 62) scale(.5) rotate(-90)"/>
+    <use href="#sprig" transform="translate(143 63) scale(.43) rotate(120)"/><use href="#sprig" transform="translate(181 62) scale(.5) rotate(-60)"/>
+    <use href="#sprig" transform="translate(222 63) scale(.45) rotate(150)"/><use href="#sprig" transform="translate(263 61) scale(.5) rotate(90)"/>
+  </g>
+</svg>

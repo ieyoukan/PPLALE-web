@@ -3,7 +3,7 @@ import { other, skillsFor } from './model.ts';
 import type { Catalog, Command, GameState } from './model.ts';
 /** A deterministic, lightweight opponent. It uses the same commands as the UI. */
 export function cpuCommand(s: GameState, catalog: Catalog): Command | null {
-    if (s.winner !== null)
+    if (s.winner !== null || s.phase === 'dice')
         return null;
     const actor = s.pending?.task.actor ?? s.active;
     const p = s.players[actor], enemy = s.players[other(actor)];

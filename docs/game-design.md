@@ -29,6 +29,12 @@ GameSetup / Firebase decks ──> BoardEmulator ──> GameState を描画
 
 分離の単位はライブラリ。現段階で別サービス・別リポジトリにする必要はない。
 
+## 対戦の開始とドロー
+
+`GameState.phase` は `dice` → `opening` → `playing`。ダイスと先攻決定は core、演出は UI が扱う。ドローは `pending` に保持し、山札クリックの `choose` Command ごとに1枚引く。初期手札・通常ドロー・カード効果・10/5のドローを同じ処理で扱い、解決待ちの間はプレイやターン終了を拒否する。CPU も同じ Command を使用する。
+
+UI はドロー前後の手札と山札の差分から移動演出を描く。詳細はサイドパネル、効果の対象は場や手札、山札を直接操作する。保存キーは維持し、旧セッションは進行中の `playing` 状態として復元する。
+
 ## Vercel への配置
 
 - Root Directory はリポジトリのルート。既存 Next.js プロジェクトのまま運用する。
@@ -68,5 +74,5 @@ GameSetup / Firebase decks ──> BoardEmulator ──> GameState を描画
 - root の TypeScript、変更箇所の ESLint、game-core 単独のコンパイルを実施。
 - ローカルブラウザで開始、手札の拡大、4番目の枠へのドラッグ配置、PP調整、10ポイントでのドロー、おはじき、再読み込み後の復元、CPUのターン進行を確認。
 - `next build --webpack` は `/game` を含む本番ページの生成まで成功。
-- 通常の `next build` は、この実行環境でTurbopackの内部ポート利用が許可されず停止。Vercelへの実デプロイは未実施。
+- 通常の `next build` は、この実行環境でTurbopackの内部ポート利用が許可されず停止。既存 Vercel プロジェクトへの GitHub push による本番デプロイは成功している。
 - Firebase実アカウントでのログイン・保存デッキの読み込み、全カード組み合わせの公式裁定との照合は未確認。

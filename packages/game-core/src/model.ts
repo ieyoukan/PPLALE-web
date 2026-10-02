@@ -104,6 +104,8 @@ export interface Choice {
 }
 export interface GameState {
     version: 1;
+    phase: 'dice' | 'opening' | 'playing';
+    dice: { rolls: [number, number]; ties: number } | null;
     rules: Rules;
     rng: number;
     serial: number;
@@ -121,6 +123,9 @@ export interface GameState {
     log: string[];
 }
 export type Command = {
+    type: 'roll';
+    actor: Side;
+} | {
     type: 'play';
     actor: Side;
     uid: string;
