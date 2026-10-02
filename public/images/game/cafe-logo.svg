@@ -1,0 +1,44 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1568 882">
+  <defs>
+    <g id="flower">
+      <circle cy="-24" r="25"/><circle cx="23" cy="-7" r="25"/><circle cx="14" cy="21" r="25"/><circle cx="-14" cy="21" r="25"/><circle cx="-23" cy="-7" r="25"/><circle r="17" fill="#fffdeb"/>
+    </g>
+    <g id="cup"><path d="M-37-23H29V6Q29 28 8 28H-15Q-37 28-37 6Z"/><path d="M29-18H46Q62-18 62-2Q62 14 29 14" fill="none" stroke="currentColor" stroke-width="10"/><rect x="-44" y="33" width="91" height="9" rx="4"/></g>
+    <g id="pot"><path d="M-40-11Q-45 37 0 37Q43 37 42-11Z"/><path d="M-38-8-63-22Q-70-28-72-18L-48 9Z"/><path d="M38-10Q76-23 69 12Q63 28 34 27" fill="none" stroke="currentColor" stroke-width="10"/><path d="M-30-17Q0-44 30-17Z"/><circle cy="-39" r="7"/></g>
+  </defs>
+  <path d="M335 259H1188Q1248 259 1248 319V727Q1248 790 1188 790H335Q275 790 275 727V319Q275 259 335 259Z" fill="#fff" stroke="#a88667" stroke-width="21"/>
+  <path d="M285 650H1238V727Q1238 779 1188 779H335Q285 779 285 727Z" fill="#fffdeb"/>
+  <rect x="269" y="130" width="987" height="119" rx="17" fill="#a88667"/>
+  <path d="M314 249V269H1200V249" fill="#a88667"/>
+  <path d="M338 260H1185" stroke="#fffdeb" stroke-width="6" stroke-dasharray="18 16"/>
+  <text x="381" y="222" fill="#fffdeb" font-family="sans-serif" font-size="59" font-weight="700" letter-spacing="8">ロリっ子喫茶</text>
+  <g fill="#fffdeb" color="#fffdeb"><use href="#cup" transform="translate(841 196) scale(.63)"/><use href="#flower" transform="translate(923 198) scale(.64)"/><use href="#pot" transform="translate(1014 193) scale(.62)"/><use href="#flower" transform="translate(1103 198) scale(.64)"/></g>
+  <g fill="#b3d788">
+    <path d="M389 336H500V401L467 434Q515 487 508 518Q494 556 429 580L404 534Q469 493 450 471L418 443L451 388H389Z"/>
+    <path d="M342 487 378 452 414 487 378 522Z M522 487 558 452 594 487 558 522Z"/>
+    <use href="#flower" transform="translate(554 397) scale(.9)"/>
+    <path d="M811 346H866V417H895Q887 465 851 465Q811 465 811 422Z M928 327H982V428Q982 515 890 550L865 505Q928 471 928 427Z"/>
+  </g>
+  <g fill="#f4b0bb">
+    <path d="M632 427H722V480L694 506Q738 548 730 577Q718 605 661 625L638 583Q689 554 672 536L648 513L679 471H632Z"/>
+    <path d="M594 551 627 518 660 551 627 584Z M731 551 764 518 797 551 764 584Z"/>
+    <use href="#flower" transform="translate(766 479) scale(.7)"/>
+    <path d="M1040 418H1145V463H1040Z M1038 474H1146V514L1115 552Q1110 564 1130 564H1169V606H1103Q1079 605 1077 582Q1049 608 997 599L1032 558L1071 515H1038Z"/>
+  </g>
+  <g fill="#e7c3e2" color="#e7c3e2">
+    <use href="#flower" transform="translate(430 721) scale(.75)"/>
+    <ellipse cx="536" cy="737" rx="45" ry="17" fill="none" stroke="#e7c3e2" stroke-width="4"/>
+    <path d="M503 707Q535 690 570 707V734Q535 753 503 734Z"/><ellipse cx="536" cy="705" rx="34" ry="16" fill="#fffdeb" stroke="#e7c3e2" stroke-width="6"/><path d="M523 702 537 695 551 702 537 711Z"/>
+    <use href="#flower" transform="translate(643 721) scale(.75)"/>
+    <use href="#cup" transform="translate(741 716) scale(.77)"/>
+    <use href="#flower" transform="translate(846 721) scale(.75)"/>
+    <use href="#pot" transform="translate(965 715) scale(.77)"/>
+    <use href="#flower" transform="translate(1073 721) scale(.75)"/>
+  </g>
+  <g stroke="#a2677c" stroke-width="8" stroke-linejoin="round">
+    <path d="M1205 242Q1143 241 1087 298Q1062 323 1090 353L1113 376Q1138 397 1167 370L1207 295 1258 363Q1281 401 1311 377L1334 353Q1364 322 1321 289Q1269 246 1205 242Z" fill="#ffef93"/>
+    <path d="M1206 294Q1171 356 1160 419Q1152 450 1175 444Q1197 426 1206 360L1247 496Q1255 529 1275 514Q1292 507 1280 472L1246 314" fill="#ffed73"/>
+    <path d="M1200 260Q1159 266 1110 303L1135 338 1196 283 M1232 268Q1274 274 1315 310L1289 348 1240 291" fill="#fffdeb"/>
+  </g>
+  <ellipse cx="1206" cy="270" rx="20" ry="27" fill="#fff6b0"/>
+</svg>

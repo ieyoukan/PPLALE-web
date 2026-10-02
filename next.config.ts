@@ -1,6 +1,7 @@
 import type { NextConfig } from 'next';
 
 const config: NextConfig = {
+  transpilePackages: ['@pplale/game-core'],
   images: {
     remotePatterns: [
       {

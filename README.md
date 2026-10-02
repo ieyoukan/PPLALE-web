@@ -28,6 +28,12 @@ VRChatのイベント「ロリっ子喫茶ぷぷりえ」のカードゲーム�
 
 # 開発について
 
+カード効果の機械向けデータと用語の区別は [カード効果データと用語](docs/card-effect-rules.md) を参照。
+Next.js / game-core の分離方針、Vercelへの配置、未確定ルールは [対戦ゲームの設計](docs/game-design.md) を参照。
+ゲーム本体の独立パッケージは [`packages/game-core`](packages/game-core/README.md) に置く。
+
+対戦エミュレータは `/game/`。いちごカードと通常プレイアブルで、CPU対戦・両側操作・Firebaseの保存済みデッキ読み込みができる。手札、PP、攻撃、効果、10/5のドローとおはじきを連動させ、途中状態を同じブラウザに保存する。操作と対応範囲は [盤面エミュレータ](docs/board-emulator.md) を参照。
+
 ## 開発環境のセットアップ
 
 このプロジェクトは [mise](https://mise.jdx.dev/) でNode.jsのバージョンを管理している。
