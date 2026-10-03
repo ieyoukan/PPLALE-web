@@ -1,7 +1,7 @@
 'use client';
 
 import { useCallback, useEffect, useReducer, useState } from 'react';
-import { applyCommand, newGame, restoreGame, sandboxRules } from '@pplale/game-core';
+import { applyCommand, newGame, sandboxRules } from '@pplale/game-core';
 import type { Command, CpuLevel, GameState } from '@pplale/game-core';
 import { cpuLevels } from '@pplale/game-core';
 import { demoDeck, gameCatalog } from '@/lib/game/catalog';
@@ -34,20 +34,27 @@ export function useGameSession({ onRestored }: { onRestored: () => void }) {
   const [saveError, setSaveError] = useState('');
 
   useEffect(() => {
-    try {
-      const raw = localStorage.getItem(STORAGE_KEY);
-      if (raw) {
-        const saved = JSON.parse(raw);
-        const state = restoreGame(saved.game, gameCatalog);
-        if (state) {
-          dispatch({ type: 'load', game: state });
-          setMode(saved.mode === 'hotseat' ? 'hotseat' : 'cpu');
-          if (cpuLevels.includes(saved.level)) setLevel(saved.level);
-          onRestored();
-        } else setSaveError('前回の対戦を復元できませんでした');
-      }
-    } catch { setSaveError('前回の対戦を復元できませんでした'); }
-    setReady(true);
+    let cancelled = false;
+    async function restore() {
+      try {
+        const raw = localStorage.getItem(STORAGE_KEY);
+        if (raw) {
+          const { restoreGame } = await import('@pplale/game-core/snapshot');
+          if (cancelled) return;
+          const saved = JSON.parse(raw);
+          const state = restoreGame(saved.game, gameCatalog);
+          if (state) {
+            dispatch({ type: 'load', game: state });
+            setMode(saved.mode === 'hotseat' ? 'hotseat' : 'cpu');
+            if (cpuLevels.includes(saved.level)) setLevel(saved.level);
+            onRestored();
+          } else setSaveError('前回の対戦を復元できませんでした');
+        }
+      } catch { if (!cancelled) setSaveError('前回の対戦を復元できませんでした'); }
+      if (!cancelled) setReady(true);
+    }
+    void restore();
+    return () => { cancelled = true; };
     // Restore once on mount.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);

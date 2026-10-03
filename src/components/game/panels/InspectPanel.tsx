@@ -15,7 +15,7 @@ export function InspectPanel({ uid }: { uid: string }) {
   const onField = owner !== undefined && game.players[owner].field.includes(uid);
   return <>
     <div className={styles.inspectImage}>
-      <GameCard id={card.cardId} instance={card} abilities currentCost={inHand ? costOf(game, uid, gameCatalog, owner) : undefined} />
+      <GameCard id={card.cardId} instance={card} sizes="(max-width: 700px) 90vw, 560px" abilities currentCost={inHand ? costOf(game, uid, gameCatalog, owner) : undefined} />
     </div>
     <div className={styles.inspectActions}>
       <p>攻撃 {attackOf(card, gameCatalog)} / 残りHP {hpOf(card, gameCatalog)}</p>

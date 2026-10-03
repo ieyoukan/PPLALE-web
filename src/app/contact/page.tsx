@@ -1,5 +1,7 @@
 'use client';
 
+import '@/app/panda.css';
+
 import React from 'react';
 import { Darumadrop_One } from 'next/font/google';
 import Link from 'next/link';

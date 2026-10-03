@@ -1,4 +1,3 @@
-@layer reset, base, tokens, recipes, utilities;
 
 /* グローバルスタイル（トークンはpanda.config.tsのtokens/semanticTokensから生成） */
 

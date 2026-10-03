@@ -1,13 +1,14 @@
 'use client';
 
+import dynamic from 'next/dynamic';
 import { useBoardContext } from '../board/BoardContext';
 import { GameSetup } from '../GameSetup';
 import styles from '../BoardEmulator.module.css';
-import { InspectPanel } from './InspectPanel';
-import { LogPanel } from './LogPanel';
-import { MenuPanel } from './MenuPanel';
-import { SkillPanel } from './SkillPanel';
-import { ZonePanel } from './ZonePanel';
+const InspectPanel = dynamic(() => import('./InspectPanel').then(module => module.InspectPanel));
+const LogPanel = dynamic(() => import('./LogPanel').then(module => module.LogPanel));
+const MenuPanel = dynamic(() => import('./MenuPanel').then(module => module.MenuPanel));
+const SkillPanel = dynamic(() => import('./SkillPanel').then(module => module.SkillPanel));
+const ZonePanel = dynamic(() => import('./ZonePanel').then(module => module.ZonePanel));
 
 /** The drawer / modal that shows whichever panel is open. */
 export function SidePanel() {

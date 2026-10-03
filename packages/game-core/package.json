@@ -3,6 +3,7 @@
   "version": "0.1.0",
   "private": true,
   "type": "module",
+  "sideEffects": false,
   "files": [
     "src",
     "dist"
@@ -11,6 +12,14 @@
     ".": {
       "types": "./src/index.ts",
       "default": "./src/index.ts"
+    },
+    "./ai": {
+      "types": "./src/ai/index.ts",
+      "default": "./src/ai/index.ts"
+    },
+    "./snapshot": {
+      "types": "./src/snapshot.ts",
+      "default": "./src/snapshot.ts"
     }
   },
   "scripts": {

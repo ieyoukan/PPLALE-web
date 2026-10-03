@@ -12,7 +12,7 @@ import { actingSides, legalMoves } from './moves.ts';
 import type { CpuLevel, CpuStrategy } from './types.ts';
 
 export const cpuStrategies: Record<CpuLevel, CpuStrategy> = { easy, normal, hard, master };
-export const cpuLevels: CpuLevel[] = ['easy', 'normal', 'hard', 'master'];
+export { cpuLevels } from './profiles.ts';
 
 export interface CpuOptions {
     level?: CpuLevel;

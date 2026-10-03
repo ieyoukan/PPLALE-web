@@ -1,20 +1,10 @@
 import type { Metadata } from "next";
-import { Geist, Geist_Mono } from "next/font/google";
+import "./reset.css";
 import "./globals.css";
 import DarkModeProvider from './DarkModeProvider';
 import { SettingsProvider } from './SettingsProvider';
 import { AuthProvider } from '@/lib/auth';
 import { SpeedInsights } from "@vercel/speed-insights/next"
-
-const geistSans = Geist({
-  variable: "--font-geist-sans",
-  subsets: ["latin"],
-});
-
-const geistMono = Geist_Mono({
-  variable: "--font-geist-mono",
-  subsets: ["latin"],
-});
 
 // Vercel環境かどうかを判定
 const isVercel = process.env.VERCEL === '1';
@@ -83,7 +73,6 @@ export default function RootLayout({
   return (
     <html lang="ja" suppressHydrationWarning>
       <head>
-        <link rel="canonical" href="https://pplale.vercel.app" />
         <meta name="theme-color" content="#d889cbff" />
         <meta name="viewport" content="width=device-width, initial-scale=1.0" />
         
@@ -131,7 +120,7 @@ export default function RootLayout({
         />
       </head>
       <body
-        className={`${geistSans.variable} ${geistMono.variable} antialiased`}
+        className="antialiased"
         suppressHydrationWarning
       >
         <AuthProvider>

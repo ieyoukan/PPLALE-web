@@ -25,7 +25,7 @@ export function PlayerSide({ side }: { side: Side }) {
     <Zone side={side} kind="nap" className={styles.napZone} />
     <Zone side={side} kind="exile" className={styles.exileZone} />
     <button className={styles.playableZone} onClick={() => board.setPanel({ type: 'skills', side })} aria-label={`${side === 0 ? 'あなた' : '相手'}のスキル`}>
-      <span className={styles.playableCard}><GameCard id={player.playable} /></span>
+      <span className={styles.playableCard}><GameCard id={player.playable} sizes="90px" /></span>
     </button>
     <div className={styles.turnCounter}>
       <Counter label="ターン数(+pp)" value={player.turns} bonus={player.ppBonus} temporaryBonus={player.turnPpBonus} pp={`${player.pp} / ${availablePpMaximum(game, side)}`} test={sandbox}
@@ -40,7 +40,7 @@ export function PlayerSide({ side }: { side: Side }) {
       <span className={styles.fieldLabel}>Field</span>
       {Array.from({ length: FIELD_SLOTS }, (_, slot) => <FieldSlot key={slot} side={side} slot={slot} />)}
     </div>
-    {!near && <div className={styles.opponentHand} aria-label={`相手の手札 ${player.hand.length}枚`}>
+    {!near && <div className={styles.opponentHand} role="group" aria-label={`相手の手札 ${player.hand.length}枚`}>
       {player.hand.map((uid, i) => <span key={uid} data-hand={uid} className={`${styles.hiddenCard} ${board.flying(uid) ? styles.dealing : ''}`}
         style={{ '--hand-index': i - (player.hand.length - 1) / 2, '--fan-step': `${Math.min(56, 360 / Math.max(1, player.hand.length))}px` } as CSSProperties}>
         {game.cards[uid].revealed && <GameCard id={game.cards[uid].cardId} />}

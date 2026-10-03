@@ -22,7 +22,7 @@ export function DeckStack({ side, kind, ids, thresholds = [], enabled, drawing =
     <span className={styles.deckCount}>{ids.length}<small>枚</small></span>
     {kind === 'sweet' && <span className={styles.thresholds}>{[10, 5].map(value => <span key={value}
       className={thresholds.includes(value) ? styles.reached : ''}
-      aria-label={`${value}ポイントのドロー${thresholds.includes(value) ? '機会使用済み' : '未達'}`}>
+      role="img" aria-label={`${value}ポイントのドロー${thresholds.includes(value) ? '機会使用済み' : '未達'}`}>
       <i />{value === 10 ? '⑩' : '⑤'}
     </span>)}</span>}
   </button>;
@@ -37,8 +37,8 @@ export function Counter({ label, value, points, bonus = 0, temporaryBonus = 0, p
       {label}
     </button>
     <div className={styles.counterValue}><span>{value}</span>{pp && <small>{pp} PP</small>}
-      {!!bonus && <span className={styles.whiteMarble} aria-label={`追加PP ${bonus}`}>{bonus > 0 ? '+' : ''}{bonus}</span>}
-      {!!temporaryBonus && <span className={styles.whiteMarble} aria-label={`このターンの追加PP ${temporaryBonus}`}>+{temporaryBonus}</span>}
+      {!!bonus && <span className={styles.whiteMarble} role="img" aria-label={`追加PP ${bonus}`}>{bonus > 0 ? '+' : ''}{bonus}</span>}
+      {!!temporaryBonus && <span className={styles.whiteMarble} role="img" aria-label={`このターンの追加PP ${temporaryBonus}`}>+{temporaryBonus}</span>}
     </div>
     <div className={styles.counterControls}>
       <button disabled={!test} onClick={() => onAdjust(-5)} aria-label={`${points ? 'お菓子ポイント' : '追加PP'}を5減らす`}>≪</button>
@@ -61,7 +61,7 @@ export function PpPanel({ current, maximum, own }: { current: number; maximum: n
 
 const pips: Record<number, number[]> = { 1: [4], 2: [0, 8], 3: [0, 4, 8], 4: [0, 2, 6, 8], 5: [0, 2, 4, 6, 8], 6: [0, 2, 3, 5, 6, 8] };
 export function Die({ value, rolling }: { value: number | null; rolling: boolean }) {
-  return <span className={`${styles.die} ${rolling ? styles.rollingDie : ''}`} aria-label={value === null ? 'まだ振っていないダイス' : `ダイス ${value}`}>
+  return <span className={`${styles.die} ${rolling ? styles.rollingDie : ''}`} role="img" aria-label={value === null ? 'まだ振っていないダイス' : `ダイス ${value}`}>
     {Array.from({ length: 9 }, (_, i) => <i key={i} className={(value !== null && pips[value]?.includes(i)) ? styles.pip : ''} />)}
   </span>;
 }

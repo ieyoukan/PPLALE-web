@@ -81,13 +81,4 @@ export function validateDeckData(data: unknown): Deck {
   return parsed;
 }
 
-export function parseBooleanFromStorage(value: string | null, fallback: boolean): boolean {
-  if (value === null) return fallback;
-
-  try {
-    const parsed = JSON.parse(value);
-    return typeof parsed === 'boolean' ? parsed : fallback;
-  } catch {
-    return fallback;
-  }
-}
+export { parseBooleanFromStorage } from './storage';

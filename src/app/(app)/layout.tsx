@@ -1,3 +1,4 @@
+import '@/app/panda.css';
 import AppShell from './AppShell';
 import { LocaleProvider } from '@/i18n/LocaleProvider';
 import { getRequestLocale } from '@/i18n/server';

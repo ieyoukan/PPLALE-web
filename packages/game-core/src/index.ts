@@ -1,8 +1,9 @@
+export { cpuLevels, cpuProfiles } from './ai/profiles.ts';
 export * from './model.ts';
 export { applyCommand } from './commands/index.ts';
 export { newGame, validateDeck } from './setup.ts';
 export { restoreGame } from './snapshot.ts';
-export { actingSides, cpuCommand, cpuLevels, cpuStrategies, determinize, evaluate, defaultWeights, findLethal, legalMoves, playMatch, randomStrawberryDeck } from './ai/index.ts';
+export { actingSides, cpuCommand, cpuStrategies, determinize, evaluate, defaultWeights, findLethal, legalMoves, playMatch, randomStrawberryDeck } from './ai/index.ts';
 export type { CpuDecision, CpuLevel, CpuOptions, CpuStrategy, LethalOptions, LethalResult, MatchOptions, MatchResult, Move, Weights } from './ai/index.ts';
 export { attackOf, availablePpMaximum, costOf, hpOf, maxPp, spawnCard } from './core/cards.ts';
 export { canAttack } from './core/combat.ts';

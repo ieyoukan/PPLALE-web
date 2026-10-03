@@ -5,16 +5,13 @@
 }
 .emulator:fullscreen { overflow: auto; }
 .emulator button { cursor: pointer; }
+.emulator label { color: inherit; }
 .emulator button:disabled { cursor: default; }
 .emulator button:focus-visible, .emulator a:focus-visible { outline: 2px solid #866399; outline-offset: 3px; }
 .toolbar {
   display: flex; align-items: center; gap: 18px; min-height: 34px; padding: 5px 15px;
   background: #fff7e9; border-bottom: 1px solid #c5a78e; font-size: 10px; color: #866e5e;
 }
-.home { font-size: 14px; font-weight: 700; text-decoration: none; color: #79604d; white-space: nowrap; }
-.tools { display: flex; gap: 5px; margin-left: auto; flex-wrap: wrap; }
-.tools button { background: #fffaf1; border: 1px solid #d0b89e; border-radius: 3px; padding: 3px 9px; font-size: 10px; }
-.tools button:disabled { opacity: .4; }
 .tableViewport, .handDock {
   background: repeating-linear-gradient(1deg, #ffffff04 0 1px, transparent 1px 8px),
     repeating-linear-gradient(0deg, #2b170c35 0 1px, transparent 1px 12px),
@@ -34,9 +31,11 @@
 }
 .logoLayer {
   position: absolute; inset: -15% -10%; pointer-events: none;
-  background: url('/images/game/cafe-logo.svg') -9cqw -8cqw / 76cqw 42.75cqw repeat;
+  display: grid; grid-template-columns: repeat(2, 76cqw); grid-auto-rows: 42.75cqw;
+  transform: translate(-9cqw, -8cqw);
   mix-blend-mode: multiply; opacity: .15;
 }
+.matLogo { width: 76cqw; height: 42.75cqw; max-width: none; }
 .playerSide { position: absolute; inset: 0; pointer-events: none; }
 .playerSide button, .playerSide .counterControls { pointer-events: auto; }
 .field { position: absolute; left: 23%; width: 55.5%; display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); gap: .45cqw; }
@@ -115,7 +114,6 @@
 .near .playableZone { top: 77%; }
 .far .playableZone { top: 1.2%; transform: rotate(180deg); }
 .playableCard { position: absolute; width: 61%; aspect-ratio: 533 / 800; top: 14%; left: 19.5%; filter: drop-shadow(1px 2px 3px #51443a55); }
-.playableName { position: absolute; left: 0; right: 0; bottom: 3%; font: .67cqw 'BoardHandwriting', 'Yu Kyokasho', serif; color: #694877; }
 .turnCounter, .pointsCounter { position: absolute; width: 20.3%; height: 17.5%; pointer-events: auto; }
 .near .turnCounter { left: 23.5%; top: 72%; }
 .near .pointsCounter { left: 58.25%; top: 72%; }
@@ -140,22 +138,12 @@
 .opponentHand { position: absolute; right: .8%; top: 14%; width: 4.5%; height: 15%; }
 .hiddenCard { display: block; position: absolute; width: 3cqw; height: 4.5cqw; top: calc(var(--hand-index) * 5px); left: 0; transform: rotate(calc(var(--hand-index) * 2deg)); background: url('/images/back-card.webp') center / 100% 100%; border: 1px solid #e8d8c1; border-radius: 2px; box-shadow: 1px 2px 3px #32212155; }
 .opponentHand small { position: absolute; bottom: -1cqw; left: 0; font: .65cqw sans-serif; color: #f9e5c7; white-space: nowrap; }
-.diceArea { position: absolute; z-index: 12; top: 43.8%; left: 38%; width: 26%; height: 7%; display: flex; align-items: center; justify-content: center; gap: 12px; color: #64513e; }
-.dicePair { display: flex; gap: 10px; }
-.dicePair > div { display: flex; align-items: center; gap: 4px; }
-.dicePair > div > span:first-child { font-size: .65cqw; }
-.diceArea > button, .diceArea > span { font-size: .8cqw; line-height: 1.5; max-width: 14cqw; }
-.diceArea > button { background: #fff8e8ec; padding: .4cqw .6cqw; border: 1px solid #c7b78b; border-radius: 4px; box-shadow: 0 2px 6px #7f57322a; }
 .die { display: grid; grid-template: repeat(3, 1fr) / repeat(3, 1fr); gap: .14cqw; width: 2.45cqw; height: 2.45cqw; padding: .42cqw; background: #fffcf0; border: 1px solid #dad2bd; border-radius: .4cqw; box-shadow: .12cqw .25cqw 0 #b6aa96, .22cqw .33cqw .3cqw #573d3844; }
 .die i { border-radius: 50%; }
 .pip { background: #846447; box-shadow: inset 0 1px 1px #3c292e88; }
 .rollingDie { animation: diceRoll .2s linear infinite; }
-.dicePair > div:last-child .rollingDie { animation-direction: reverse; }
-.actionStrip { min-height: 34px; padding: 5px 16px; background: #fff7e9; border-top: 1px solid #b19478; border-bottom: 1px solid #c4ab8c; color: #8b7057; display: flex; justify-content: center; align-items: center; flex-wrap: wrap; gap: 8px; font-size: 11px; }
-.actionStrip > button { display: flex; align-items: center; gap: 7px; padding: 5px 10px; border: 1px solid #baad94; background: #f1f6e6; border-radius: 5px; color: #5c785b; font-size: 11px; }
 .choiceThumb { position: relative; width: 28px; aspect-ratio: 533 / 800; display: block; }
 .handDock { position: relative; min-height: 145px; padding-top: 5px; overflow: visible; container-type: inline-size; }
-.handMeta { display: flex; justify-content: space-between; padding: 0 8%; font-size: 10px; color: #efe0c6; }
 .hand { display: flex; justify-content: center; align-items: flex-end; height: 118px; padding-top: 8px; isolation: isolate; }
 .handCard { position: relative; width: 90px; height: 135px; flex-shrink: 0; margin-left: calc(-1 * var(--overlap)); background: #604747; border: 1px solid #e0c7a3; border-radius: 4px; box-shadow: -3px 6px 8px #21141f88; transform: translateY(var(--lift)) rotate(var(--angle)); transform-origin: bottom center; transition: transform .2s ease, box-shadow .2s; }
 .handCard:first-child { margin-left: 0; }
@@ -164,12 +152,6 @@
 .selectedHand { outline: 2px solid #f1d78d; }
 .dealing { visibility: hidden; }
 .revealed { position: absolute; bottom: 4px; left: 15%; width: 70%; color: #fff9e6; background: #8b657bc7; font-size: 8px; border-radius: 3px; }
-.preview { position: absolute; z-index: 80; bottom: 5px; left: 12px; width: 300px; display: flex; gap: 10px; padding: 10px; background: #fff9ecee; border: 1px solid #d1bb97; border-radius: 5px; box-shadow: 0 4px 17px #3c252955; }
-.previewImage { position: relative; width: 82px; aspect-ratio: 533 / 800; flex-shrink: 0; align-self: flex-start; }
-.preview h3 { font-size: 12px; font-weight: 700; margin: 0 0 5px; }
-.preview p { font-size: 10px; line-height: 1.65; max-height: 118px; overflow: auto; white-space: pre-wrap; }
-.preview button { display: block; width: 100%; padding: 5px; margin-top: 6px; border: 1px solid #b4c2a3; border-radius: 3px; background: #e6efd8; color: #61825f; font-size: 10px; }
-.preview button:disabled { opacity: .45; }
 .result { position: absolute; z-index: 40; left: 30%; top: 43.5%; width: 40%; display: flex; justify-content: center; align-items: center; gap: 15px; padding: 10px; background: #fff9e7e8; border: 1px solid #bda781; border-radius: 5px; font-size: 16px; }
 .result button { font-size: 11px; background: #d9e7cb; padding: 6px 12px; border-radius: 3px; }
 .drawer { position: fixed; z-index: 100; right: 0; top: 34px; bottom: 0; width: min(360px, 92vw); overflow: auto; padding: 25px 20px; color: #685441; background: #fff9edf7; border-left: 1px solid #cfbda0; box-shadow: -7px 0 22px #33202a33; }
@@ -184,7 +166,6 @@
 .dialogHeading { display: flex; align-items: center; justify-content: space-between; margin-bottom: 16px; }
 .dialogHeading h2 { font-size: 21px; margin-top: 4px; }
 .dialogHeading > button { font-size: 23px; color: #947960; }
-.eyebrow { font: 9px Georgia, serif; letter-spacing: .17em; color: #ad947b; }
 .help { font-size: 10px; color: #987f67; line-height: 1.8; margin: 10px 0; }
 .help a { text-decoration: underline; }
 .setupModes { display: flex; gap: 8px; margin: 18px 0; }
@@ -195,13 +176,11 @@
 .deckSelectors label, .ruleGrid label { font-size: 11px; }
 .deckSelectors select, .ruleGrid select, .ruleGrid input { display: block; width: 100%; margin-top: 6px; background: #fffcf4; border: 1px solid #d7c8af; border-radius: 3px; padding: 8px; color: #6b5946; font-size: 11px; }
 .secondaryButton { padding: 8px; border: 1px solid #c7b497; border-radius: 4px; font-size: 10px; }
-.ruleSettings { padding: 10px; margin: 14px 0; border: 1px solid #ddcfb7; border-radius: 4px; font-size: 10px; color: #937d63; }
+.ruleSettings { padding: 10px; margin: 14px 0; border: 1px solid #ddcfb7; border-radius: 4px; font-size: 10px; color: #685441; }
 .ruleSettings summary { cursor: pointer; }
 .ruleSettings p { white-space: pre-wrap; margin: 10px 0; line-height: 1.8; }
 .ruleGrid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
-.check { display: flex; gap: 7px; align-items: center; margin-top: 9px; }
-.check input { flex-shrink: 0; }
-.startButton { display: block; width: 100%; margin-top: 20px; padding: 12px; border: 1px solid #9bb18d; border-radius: 5px; background: #e1ecd3; color: #608057; font-size: 13px; }
+.startButton { display: block; width: 100%; margin-top: 20px; padding: 12px; border: 1px solid #9bb18d; border-radius: 5px; background: #e1ecd3; color: #37532e; font-size: 13px; font-weight: 700; }
 .startButton span { float: right; }
 .error { padding: 7px; background: #fbe5dc; color: #ac655b; font-size: 10px; }
 .skillButton { display: flex; align-items: center; gap: 8px; width: 100%; padding: 12px 8px; border: 1px solid #d9c8ad; border-radius: 5px; background: #fffdf6; text-align: left; font-size: 11px; margin: 9px 0; }
@@ -233,11 +212,8 @@
 @keyframes diceRoll { 0% { transform: rotate(-13deg) translateY(0); } 50% { transform: rotate(12deg) translateY(-7px); } 100% { transform: rotate(-13deg) translateY(0); } }
 @media (max-width: 900px) {
   .toolbar { flex-wrap: wrap; gap: 8px; padding: 6px 10px; }
-  .tools { width: 100%; margin-left: 0; }
   .drawer { top: 62px; }
   .handDock { min-width: 700px; }
-  .preview { width: 270px; }
-  .handMeta { padding: 0 15px; }
 }
 @media (prefers-reduced-motion: reduce) {
   .handCard, .fieldSlot { transition: none; }
@@ -283,17 +259,9 @@
 .turnControl button > span { font-size: 26px; color: #fff4c4; line-height: 1; }
 .turnControl button:not(:disabled):active { transform: translateY(5px); }
 .turnControl button:disabled { opacity: 1; filter: saturate(.45) brightness(.9); }
-.ppRing { display: flex; align-items: baseline; gap: 4px; padding: 7px 16px; border: 2px solid #fff5d7; border-radius: 24px; background: #8db394; color: #fffdf2; box-shadow: 0 4px 0 #527966; }
-.ppRing b { font-size: 30px; }
-.ppRing span { font-size: 18px; color: inherit; }
 .opponentHand { left: 50%; right: auto; top: -82px; width: 0; height: 165px; z-index: 18; perspective: 700px; }
 .hiddenCard { width: 104px; height: 156px; top: 0; left: -52px; border: 2px solid #e5ceae; border-radius: 7px; transform-origin: 50% 5%; transform: translateX(calc(var(--hand-index) * var(--fan-step))) rotate(calc(var(--hand-index) * -7deg)) rotateX(-12deg); box-shadow: 4px 10px 12px #341e2866; transition: transform .4s cubic-bezier(.2,.8,.2,1); }
-.diceArea { top: 41%; left: 27%; width: 49%; height: 9%; gap: 18px; }
-.diceArea > button, .diceArea > span { font-size: 22px; max-width: none; }
-.diceArea > button { padding: 12px 22px; min-height: 52px; border-radius: 18px; border: 2px solid #f6e0b3; background: #fff9e9; box-shadow: 0 5px 0 #c1a47f; }
-.dicePair > div > span:first-child { font-size: 18px; }
 .die { width: 54px; height: 54px; padding: 9px; gap: 4px; border-radius: 10px; }
-.dicePair { gap: 20px; }
 .handDock { position: fixed; z-index: 45; left: 50%; bottom: -105px; transform: translateX(-50%); width: min(850px, 90vw); min-width: 0; min-height: 0; padding: 0; background: none; transition: bottom .35s cubic-bezier(.2,.8,.2,1), width .35s; pointer-events: none; }
 .hand { height: 210px; padding: 0 12px; overflow: visible; align-items: flex-end; perspective: 1000px; }
 .handCard { pointer-events: auto; touch-action: none; width: 140px; height: 210px; border-radius: 7px; border: 2px solid #dfc5a0; background: #634237; transform: translateY(var(--lift)) rotate(var(--angle)) rotateX(7deg); box-shadow: -5px 9px 8px #341c2866, inset 0 -3px #eedcba; transition: transform .25s, width .3s, height .3s, box-shadow .25s; }
@@ -311,15 +279,13 @@
 .errorToast { position: fixed; top: 18px; left: 50%; transform: translateX(-50%); z-index: 180; max-width: 80vw; padding: 16px 24px; border-radius: 18px; background: #ffe6e2; color: #98464a; font-size: 18px; box-shadow: 0 5px 15px #5a353344; }
 .drawer { top: 0; width: min(560px, 100vw); padding: 70px 28px 30px; border-radius: 28px 0 0 28px; background: #fff9f0; font-size: 18px; }
 .drawer > h2, .dialogHeading h2 { font-size: 26px; }
-.drawer > p, .help, .deckSelectors label, .ruleGrid label, .ruleSettings, .check, .testControls h3, .testControls b, .error { font-size: 18px; }
+.drawer > p, .help, .deckSelectors label, .ruleGrid label, .ruleSettings, .testControls h3, .testControls b, .error { font-size: 18px; }
 .close, .dialogHeading > button { width: 48px; height: 48px; border-radius: 50%; background: #f0dccb; font-size: 30px; }
 .inspectImage { width: min(100%, 360px); margin: 0 auto 22px; }
 .zoneCards > button { width: 150px; }
 .setupModes button, .deckSelectors select, .ruleGrid select, .ruleGrid input, .secondaryButton, .startButton, .testControls button { font-size: 18px; min-height: 52px; border-radius: 14px; padding: 12px; }
 .setupModes button { min-height: 70px; }
 .ruleSettings summary { min-height: 44px; }
-.check { padding: 8px 0; }
-.check input { width: 24px; height: 24px; }
 .menuList { display: grid; gap: 16px; }
 .menuList button, .menuList a { min-height: 56px; text-align: center; padding: 14px; font-size: 20px; border-radius: 18px; background: #f1e4d4; }
 .modalBackdrop { position: fixed; z-index: 95; inset: 0; background: #30203588; backdrop-filter: blur(5px); border: 0; }
@@ -341,7 +307,7 @@
 @keyframes impact { 0%, 45% { opacity: 0; transform: translate(-50%, -50%) scale(.2); } 52% { opacity: 1; transform: translate(-50%, -50%) scale(1.3) rotate(20deg); } 100% { opacity: 0; transform: translate(-50%, -50%) scale(1.8) rotate(45deg); } }
 @keyframes deckLift { 50% { transform: translateY(-12px) rotateX(8deg) rotateY(-10deg); } }
 @keyframes beckon { 50% { transform: translateY(8px); } }
-@media (max-width: 700px) { .skillModal { padding: 65px 18px 20px; } .skillButton { flex-wrap: wrap; padding: 16px; gap: 12px; } .skillButton > span { flex: 1; min-width: 160px; } .skillButton small { width: 100%; } .drawer { border-radius: 0; } .diceArea { left: 24%; width: 53%; } }
+@media (max-width: 700px) { .skillModal { padding: 65px 18px 20px; } .skillButton { flex-wrap: wrap; padding: 16px; gap: 12px; } .skillButton > span { flex: 1; min-width: 160px; } .skillButton small { width: 100%; } .drawer { border-radius: 0; } }
 @media (max-height: 600px) { .counterControls { display: none; } .opponentHand { top: -115px; } }
 @media (max-height: 600px) { .near .field { top: 46%; } .far .field { top: auto; bottom: 59%; } }
 @media (prefers-reduced-motion: reduce) { .strikeCard, .impact { animation-duration: .01s; } .drawReady .stack, .drawReady::after { animation: none; } .handDock, .handCard, .hiddenCard { transition: none; } }
@@ -358,7 +324,7 @@
 .turnControl { position: fixed; right: 16px; top: 39%; width: auto; }
 .turnControl button { width: clamp(104px, 10vw, 156px); height: clamp(104px, 10vw, 156px); font-size: clamp(22px, 2vw, 30px); }
 .tokenCard, .tokenCard small { font-size: 18px; }
-@media (max-height: 600px) { .turnControl { top: 30%; right: 12px; gap: 8px; } .turnControl button { width: 104px; height: 104px; } .ppRing { padding: 4px 12px; } .ppRing b { font-size: 24px; } .near .zoneLabel, .far .zoneLabel { display: none; } .deckZone::before { content: attr(data-label); position: absolute; left: 0; right: 0; top: -22px; font-size: 18px; color: #62485d; white-space: nowrap; } .deckCount { right: 5%; bottom: 0; } }
+@media (max-height: 600px) { .turnControl { top: 30%; right: 12px; gap: 8px; } .turnControl button { width: 104px; height: 104px; } .near .zoneLabel, .far .zoneLabel { display: none; } .deckZone::before { content: attr(data-label); position: absolute; left: 0; right: 0; top: -22px; font-size: 18px; color: #62485d; white-space: nowrap; } .deckCount { right: 5%; bottom: 0; } }
 .occupied .cardImage { animation: placeCard .32s ease-out; }
 @keyframes placeCard { from { transform: translateY(-25px) scale(1.14) rotate(-4deg); filter: drop-shadow(10px 20px 10px #43234366); } to { transform: translateY(0) scale(1) rotate(0); } }
 @media (prefers-reduced-motion: reduce) { .occupied .cardImage { animation: none; } }
@@ -401,7 +367,6 @@
 .turnControl { right: 12px; top: 50%; transform: translateY(-50%); width: clamp(176px, 14vw, 224px); gap: 8px; }
 .ppPanel { position: relative; width: 100%; height: 94px; display: flex; flex-direction: column; justify-content: center; color: #fff8e7; filter: drop-shadow(0 5px 3px #20171c80); }
 .ownPp { height: 116px; gap: 8px; }
-.ppFrame { position: absolute; inset: 0; width: 100%; height: 100%; pointer-events: none; }
 .ppAmount { position: relative; display: flex; justify-content: center; align-items: baseline; gap: 12px; padding: 0 16px; line-height: 1; text-shadow: 0 2px 3px #082b32; }
 .turnControl .ppAmount > span { font-size: 24px; font-family: Georgia, serif; font-weight: 700; color: #c4e97c; }
 .ppAmount b { font-family: Georgia, serif; font-size: 48px; font-weight: 400; font-variant-numeric: tabular-nums; }
@@ -447,8 +412,7 @@
 @media (max-height: 600px) { .ppPanel { height: 64px; } .ownPp { height: 82px; } .ppAmount b { font-size: 36px; } }
 
 /* Every numbered stone keeps equal width and height, including enlarged cards. */
-.selectedCardImage .damageMarble, .selectedCardImage .buffMarble, .selectedCardImage .costMarble,
-.inspectImage .damageMarble, .inspectImage .buffMarble, .inspectImage .costMarble { --marble-size: 64px; font-size: 30px; }
+.selectedCardImage .damageMarble, .selectedCardImage .buffMarble, .selectedCardImage .costMarble, .inspectImage .damageMarble, .inspectImage .buffMarble, .inspectImage .costMarble { --marble-size: 64px; font-size: 30px; }
 .selectedCardImage .buffMarble, .inspectImage .buffMarble { bottom: 6%; }
 .selectedCardImage .costMarble > span, .inspectImage .costMarble > span { font-size: 26px; }
 .inspectImage .keywordBadges { top: 8px; left: 50%; right: auto; transform: translateX(-50%); width: max-content; }

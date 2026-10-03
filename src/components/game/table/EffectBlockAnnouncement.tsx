@@ -15,7 +15,7 @@ export function EffectBlockAnnouncement() {
       <span>✋</span>
     </div>)}
     <div className={styles.notice}>
-      <div className={styles.card}><GameCard id={first.cardId} /></div>
+      <div className={styles.card}><GameCard id={first.cardId} sizes="(max-width: 700px) 30vw, 220px" /></div>
       <div className={styles.words}>
         <strong>じょんこが止めた！</strong>
         <span>{first.kind === 'damage' ? 'ダメージを防いだ' : '破壊を防いだ'}</span>

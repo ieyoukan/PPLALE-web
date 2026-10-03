@@ -15,7 +15,7 @@ export function SkillPanel({ side }: { side: Side }) {
   const player = game.players[side], card = displayCards[player.playable];
   const usable = game.phase === 'playing' && game.active === side && board.canControl(side) && !game.pending && !busy;
   return <>
-    <div className={styles.inspectImage}><GameCard id={player.playable} /></div>
+    <div className={styles.inspectImage}><GameCard id={player.playable} sizes="120px" /></div>
     <h2>{card.name}</h2>
     {skillsFor(player.playable).map((skill, index) => <button className={styles.skillButton} key={index}
       disabled={!usable || player.skills[index] <= 0 || player.pp < skill.cost}

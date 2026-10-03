@@ -1,11 +1,10 @@
 'use client';
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
-import { cpuLevels, cpuStrategies, newGame, sandboxRules, validateDeck } from '@pplale/game-core';
+import { cpuLevels, cpuProfiles, newGame, sandboxRules, validateDeck } from '@pplale/game-core';
 import type { CpuLevel, GameState, Rules } from '@pplale/game-core';
 import { useAuth } from '@/lib/auth';
 import { demoDeck, gameCatalog } from '@/lib/game/catalog';
-import { loadGameDecks } from '@/lib/game/savedDecks';
 import type { SavedGameDeck } from '@/lib/game/savedDecks';
 import styles from './BoardEmulator.module.css';
 export function GameSetup({ onStart, onClose }: {
@@ -30,7 +29,7 @@ export function GameSetup({ onStart, onClose }: {
         }
         setLoading(true);
         setError('');
-        loadGameDecks(user.uid).then(result => { if (active)
+        import('@/lib/game/savedDecks').then(({ loadGameDecks }) => loadGameDecks(user.uid)).then(result => { if (active)
             setDecks(result); }).catch(() => { if (active)
             setError('保存済みデッキを読み込めませんでした。接続とログイン状態を確認してください。'); }).finally(() => { if (active)
             setLoading(false); });
@@ -59,7 +58,7 @@ export function GameSetup({ onStart, onClose }: {
     return <div className={styles.setupContent}>
     <div className={styles.dialogHeading}><div><h2>対戦の準備</h2></div><button onClick={onClose} aria-label="閉じる">×</button></div>
     <div className={styles.setupModes}><button aria-pressed={mode === 'cpu'} onClick={() => setMode('cpu')}>CPUと対戦</button><button aria-pressed={mode === 'hotseat'} onClick={() => setMode('hotseat')}>両側を操作</button></div>
-    {mode === 'cpu' && <div className={styles.setupModes} role="group" aria-label="CPUの強さ">{cpuLevels.map(id => <button key={id} aria-pressed={level === id} title={cpuStrategies[id].description} onClick={() => setLevel(id)}>{cpuStrategies[id].name}</button>)}</div>}
+    {mode === 'cpu' && <div className={styles.setupModes} role="group" aria-label="CPUの強さ">{cpuLevels.map(id => <button key={id} aria-pressed={level === id} title={cpuProfiles[id].description} onClick={() => setLevel(id)}>{cpuProfiles[id].name}</button>)}</div>}
     <div className={styles.deckSelectors}>{[0, 1].map(side => <label key={side}>{side === 0 ? 'あなたのデッキ' : '相手のデッキ'}<select value={selected[side]} onChange={event => setSelected(previous => previous.map((value, index) => index === side ? event.target.value : value))}><option value="demo">いちごのおためしデッキ（20 / 10）</option>{decks.map(d => <option key={d.id} value={d.id} disabled={!!d.errors.length}>{d.deck.name}{d.errors.length ? '（使用不可）' : `（${d.deck.yojo.length} / ${d.deck.sweet.length}）`}</option>)}</select></label>)}</div>
     {!user ? <button className={styles.secondaryButton} onClick={() => { signInWithGoogle().catch(() => setError('ログインできませんでした')); }}>Googleでログインして保存済みデッキを使う</button> : <p className={styles.help}>{loading ? 'デッキを読み込み中…' : `${decks.length}件の保存済みデッキ`} · <Link href="/build">デッキを編集する</Link></p>}
     {decks.some(d => d.errors.length > 0) && <details className={styles.ruleSettings}><summary>使用できないデッキの理由</summary>{decks.filter(d => d.errors.length).map(d => <p key={d.id}>{d.deck.name}：{d.errors.join(' / ')}</p>)}</details>}

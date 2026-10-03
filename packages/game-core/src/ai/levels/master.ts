@@ -1,3 +1,4 @@
+import { cpuProfiles } from '../profiles.ts';
 // さいきょう: always finds a winning line this turn when one exists (① findLethal); otherwise plays like つよい.
 import { findLethal } from '../lethal.ts';
 import type { CpuStrategy } from '../types.ts';
@@ -8,8 +9,7 @@ const SEARCH_NODES = 4000;
 
 export const master: CpuStrategy = {
     level: 'master',
-    name: 'さいきょう',
-    description: 'このターンで勝てる手順があれば必ず見つけます。なければ「つよい」と同じ判断です',
+    ...cpuProfiles.master,
     choose(d) {
         if (d.state.phase === 'playing') {
             const lethal = findLethal(d.state, d.side, d.catalog, { maxNodes: SEARCH_NODES });

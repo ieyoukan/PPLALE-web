@@ -1,8 +1,12 @@
 'use client';
 
 import React, { createContext, useContext, useEffect, useState } from 'react';
-import { getAuth, onAuthStateChanged, User, GoogleAuthProvider, signInWithPopup, signOut } from 'firebase/auth';
-import { app } from './firebase';
+import type { User } from 'firebase/auth';
+
+/** Auth needs only the app and auth SDK; Firestore loads when a saved deck is requested. */
+function loadAuth() {
+  return Promise.all([import('firebase/auth'), import('./firebaseApp')]).then(([sdk, { app }]) => ({ sdk, auth: sdk.getAuth(app) }));
+}
 
 interface AuthContextType {
   user: User | null;
@@ -21,12 +25,11 @@ const AuthContext = createContext<AuthContextType>({
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
-  const auth = getAuth(app);
 
   const signInWithGoogle = async () => {
     try {
-      const provider = new GoogleAuthProvider();
-      await signInWithPopup(auth, provider);
+      const { sdk, auth } = await loadAuth();
+      await sdk.signInWithPopup(auth, new sdk.GoogleAuthProvider());
     } catch (error) {
       console.error('Googleログインに失敗しました:', error);
       throw error;
@@ -35,7 +38,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const handleSignOut = async () => {
     try {
-      await signOut(auth);
+      const { sdk, auth } = await loadAuth();
+      await sdk.signOut(auth);
     } catch (error) {
       console.error('ログアウトに失敗しました:', error);
       throw error;
@@ -43,13 +47,16 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   };
 
   useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, (user) => {
-      setUser(user);
-      setLoading(false);
+    let cancelled = false;
+    let unsubscribe: (() => void) | undefined;
+    void loadAuth().then(({ sdk, auth }) => {
+      if (cancelled) return;
+      unsubscribe = sdk.onAuthStateChanged(auth, nextUser => { setUser(nextUser); setLoading(false); });
+    }).catch(error => {
+      if (!cancelled) { console.error('ログイン状態を確認できませんでした:', error); setLoading(false); }
     });
-
-    return () => unsubscribe();
-  }, [auth]);
+    return () => { cancelled = true; unsubscribe?.(); };
+  }, []);
 
   return (
     <AuthContext.Provider value={{ user, loading, signInWithGoogle, signOut: handleSignOut }}>
@@ -60,4 +67,4 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
 export function useAuth() {
   return useContext(AuthContext);
-} 
+}

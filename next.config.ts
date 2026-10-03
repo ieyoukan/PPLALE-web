@@ -27,7 +27,7 @@ const config: NextConfig = {
     ],
     unoptimized: false,
     deviceSizes: [640, 750, 828, 1080, 1200, 1920, 2048],
-    imageSizes: [16, 32, 48, 64, 96, 128, 256, 384],
+    imageSizes: [16, 32, 48, 64, 96, 128, 160, 192, 256, 384],
     formats: ['image/webp', 'image/avif'],
     minimumCacheTTL: 60 * 60 * 24 * 365, // 1年
     dangerouslyAllowSVG: true,
@@ -35,7 +35,7 @@ const config: NextConfig = {
     contentSecurityPolicy: "default-src 'self'; script-src 'none'; sandbox;",
   },
   experimental: {
-    optimizeCss: true,
+    inlineCss: true,
     optimizePackageImports: ['framer-motion'],
   },
   serverExternalPackages: ['@vercel/og'],

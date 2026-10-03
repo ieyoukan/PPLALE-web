@@ -3,6 +3,7 @@
 import React from 'react';
 import { motion, MotionValue } from 'framer-motion';
 import Image from 'next/image';
+import Link from 'next/link';
 import { Darumadrop_One } from 'next/font/google';
 import { css } from 'styled-system/css';
 
@@ -17,7 +18,8 @@ const explanationCards = [
   {
     title: 'ぷぷりえーるとは',
     description: 'ぷぷりえの幼女とお菓子のカードゲーム。20枚の幼女カードと10枚のお菓子カードでデッキを構築し対戦します。ぷぷりえポイント(PP)を使用してカードを使って、先に相手のお菓子(HP)を食べた方が勝ちです。',
-    img: '/images/fruits/いちご.webp'
+    img: '/images/fruits/いちご.webp',
+    tournament: true,
   },
   {
     title: 'ぷぷりえとは',
@@ -118,6 +120,17 @@ export default function ExplanationSection({ explanationOpacity, explanationY }:
                     <p className={css({ fontSize: 'lg', lineHeight: 'relaxed' })}>
                       {card.description}
                     </p>
+                    {card.tournament && (
+                      <Link href="/tournament" className={css({
+                        display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
+                        gap: '3', minH: '12', mt: '6', px: '6', py: '3',
+                        bg: 'pink.100', color: 'pink.800', rounded: 'xl', fontSize: 'lg', fontWeight: 'bold',
+                        _hover: { bg: 'pink.200' },
+                        _focusVisible: { outline: '3px solid', outlineColor: 'pink.500', outlineOffset: '3px' },
+                      })}>
+                        たいかいについて <span aria-hidden="true">→</span>
+                      </Link>
+                    )}
                   </div>
 
                   <div className={`group ${css({ position: 'relative', h: '64', rounded: 'xl', overflow: 'hidden', cursor: 'pointer' })}`} onClick={() => card.link && window.open(card.link, '_blank')}>

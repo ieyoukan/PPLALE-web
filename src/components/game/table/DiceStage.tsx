@@ -14,7 +14,7 @@ export function DiceStage() {
   const value = dice.rolling ? dice.outcome : dice.complete && game.phase === 'dice' && !dice.reveal ? null : game.dice?.rolls[visible] ?? null;
   const interactive = game.phase === 'dice' && !busy && board.canControl(visible) && visible === dice.nextDie;
   const chooser = <strong className={styles.diceResult}>{sideName(board, game.active)}が選べる！</strong>;
-  return <div className={styles.diceFocus} aria-label="先攻・後攻のダイス">
+  return <div className={styles.diceFocus} role="group" aria-label="先攻・後攻のダイス">
     <div className={styles.diceStage}>
       {game.phase === 'initiative' && !busy ? <>
         {chooser}

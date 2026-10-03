@@ -1,5 +1,5 @@
 // Runs the CPU off the main thread: deep searches (さいきょう) must not freeze the board.
-import { cpuCommand } from '@pplale/game-core';
+import { cpuCommand } from '@pplale/game-core/ai';
 import type { Command, CpuLevel, GameState, Side } from '@pplale/game-core';
 import { gameCatalog } from '@/lib/game/catalog';
 

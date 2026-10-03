@@ -1,7 +1,6 @@
 'use client';
 
 import { useCallback, useEffect, useRef } from 'react';
-import { cpuCommand } from '@pplale/game-core';
 import type { Command, CpuLevel, GameState } from '@pplale/game-core';
 import { gameCatalog } from '@/lib/game/catalog';
 import type { DrawFlight } from '../BoardPieces';
@@ -11,16 +10,19 @@ const CPU_DELAY = 650;
 const CPU_SIDE = 1;
 
 type Reply = (command: Command | null) => void;
-const thinkHere = (request: CpuRequest, reply: Reply) => reply(cpuCommand(request.game, gameCatalog, { level: request.level, side: request.side }));
+const thinkHere = (request: CpuRequest, reply: Reply) => {
+  void import('@pplale/game-core/ai').then(({ cpuCommand }) => reply(cpuCommand(request.game, gameCatalog, { level: request.level, side: request.side })));
+};
 
 /**
  * The CPU thinks in a Web Worker. Without one (old browsers) or if it crashes, it thinks on the
  * main thread instead, including for requests that were still waiting.
  */
-function useCpuWorker() {
+function useCpuWorker(enabled: boolean) {
   const worker = useRef<Worker | null>(null);
   const waiting = useRef(new Map<number, { request: CpuRequest; reply: Reply }>());
   useEffect(() => {
+    if (!enabled) return;
     const pending = waiting.current;
     try {
       const instance = new Worker(new URL('./cpu.worker.ts', import.meta.url), { type: 'module' });
@@ -36,7 +38,7 @@ function useCpuWorker() {
       worker.current = instance;
       return () => { instance.terminate(); worker.current = null; pending.clear(); };
     } catch { worker.current = null; }
-  }, []);
+  }, [enabled]);
   return useCallback((request: CpuRequest, reply: Reply) => {
     if (!worker.current) return thinkHere(request, reply);
     waiting.current.set(request.id, { request, reply });
@@ -50,7 +52,7 @@ export function useCpuPlayer({ enabled, level, game, act, busy, flights }: {
   /** Any animation is running. Opening draws and the mulligan may overlap the human's flights. */
   busy: { any: boolean; blocking: boolean }; flights: DrawFlight[];
 }) {
-  const think = useCpuWorker();
+  const think = useCpuWorker(enabled);
   const request = useRef(0);
   useEffect(() => {
     if (!enabled || busy.blocking || game.winner !== null || game.phase === 'dice') return;

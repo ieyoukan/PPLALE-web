@@ -14,7 +14,7 @@ export function PlayAnnouncement() {
   if (!shown) return null;
   const who = sideName(board, board.view === 0 ? 1 : 0);
   return <div key={shown.id} className={styles.announcement} role="status" aria-live="assertive">
-    <div className={styles.announcementCard}><GameCard id={shown.cardId} /></div>
+    <div className={styles.announcementCard}><GameCard id={shown.cardId} sizes="180px" /></div>
     <div className={styles.announcementText}>
       <small>{who}の{verb[shown.kind]}</small>
       <strong>{shown.title}</strong>

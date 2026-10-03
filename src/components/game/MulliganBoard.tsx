@@ -93,7 +93,7 @@ export function MulliganBoard({ cards, exchanges, enabled, confirmed, onChange, 
           onKeyDown={event => {
             const zone = event.key === 'ArrowLeft' ? 'yojo' : event.key === 'ArrowRight' ? 'sweet' : event.key === 'ArrowDown' ? 'keep' : null;
             if (zone) { event.preventDefault(); onChange(card.uid, zone === 'keep' ? null : zone); }
-          }}><GameCard id={card.id} />{exchanges[card.uid] && <span className={styles.swapBadge} aria-hidden="true">↻</span>}</button>;
+          }}><GameCard id={card.id} sizes="(max-width: 700px) 22vw, 240px" />{exchanges[card.uid] && <span className={styles.swapBadge} aria-hidden="true">↻</span>}</button>;
       })}
     </div>
     <div className={styles.controls}>

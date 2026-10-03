@@ -1,10 +1,10 @@
+import { cpuProfiles } from '../profiles.ts';
 // よわい: picks a random legal move, but does not end the turn too eagerly.
 import type { CpuStrategy } from '../types.ts';
 
 export const easy: CpuStrategy = {
     level: 'easy',
-    name: 'よわい',
-    description: 'ルールの範囲で気まぐれに動きます',
+    ...cpuProfiles.easy,
     choose({ moves, random }) {
         const actions = moves.filter(m => m.command.type !== 'end');
         const end = moves.find(m => m.command.type === 'end');

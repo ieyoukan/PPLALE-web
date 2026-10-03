@@ -1,3 +1,4 @@
+import { cpuProfiles } from '../profiles.ts';
 // つよい: tries every legal move and keeps the one whose resulting board scores best.
 import { evaluate } from '../evaluate.ts';
 import { legalMoves } from '../moves.ts';
@@ -12,8 +13,7 @@ const MIN_GAIN = 0.5;
 
 export const hard: CpuStrategy = {
     level: 'hard',
-    name: 'つよい',
-    description: '打てる手をすべて試し、盤面が一番良くなる手を選びます',
+    ...cpuProfiles.hard,
     choose(d) {
         // Before the first turn there is little to compare; the rule of thumb is fine there.
         if (d.state.phase !== 'playing') return normal.choose(d);

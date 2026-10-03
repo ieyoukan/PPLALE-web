@@ -3,9 +3,10 @@
 // Layout of the game screen. Rules live in @pplale/game-core, interaction state in board/useBoard,
 // each visible region in table/ and the drawers in panels/.
 import { useRef } from 'react';
+import Image from 'next/image';
+import dynamic from 'next/dynamic';
 import { BoardContext } from './board/BoardContext';
 import { useBoard } from './board/useBoard';
-import { MulliganBoard } from './MulliganBoard';
 import { SidePanel } from './panels/SidePanel';
 import { ChoiceTray } from './table/ChoiceTray';
 import { DiceStage } from './table/DiceStage';
@@ -18,6 +19,8 @@ import { TurnControl } from './table/TurnControl';
 import { displayCards, gameCatalog } from '@/lib/game/catalog';
 import type { DeckKind } from '@pplale/game-core';
 import styles from './BoardEmulator.module.css';
+
+const MulliganBoard = dynamic(() => import('./MulliganBoard').then(module => module.MulliganBoard));
 
 export default function BoardEmulator() {
   const container = useRef<HTMLDivElement>(null);
@@ -33,7 +36,10 @@ export default function BoardEmulator() {
       </header>
       <div className={`${styles.tableViewport} ${game.phase === 'playing' ? styles.withTurnControl : ''}`}>
         <div className={styles.table} data-table>
-          <div className={styles.mat}><div className={styles.logoLayer} /></div>
+          <div className={styles.mat}><div className={styles.logoLayer} aria-hidden="true">
+            {Array.from({ length: 8 }, (_, index) => index).map(index => <Image key={index} src="/images/game/cafe-logo.svg" alt="" width={1568} height={882}
+              unoptimized loading="eager" fetchPriority={index === 0 ? 'high' : 'auto'} className={styles.matLogo} />)}
+          </div></div>
           <PlayerSide side={0} />
           <PlayerSide side={1} />
           <ResultBanner />

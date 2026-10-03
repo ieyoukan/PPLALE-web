@@ -23,7 +23,7 @@ export function HandDock() {
         style={{ '--angle': `${Math.max(-16, Math.min(16, offset * 4))}deg`, '--lift': `${Math.min(35, Math.abs(offset) * 7)}px`, '--overlap': `${Math.min(100, Math.max(40, (me.hand.length - 4) * 13))}px`, zIndex: index } as CSSProperties}
         aria-label={`手札 ${displayCards[card.cardId].name}`} onPointerDown={event => drag.pickUp(event, uid, 'hand')}
         onClick={() => { if (!drag.clickSuppressed()) board.clickHand(uid); }}>
-        <GameCard id={card.cardId} instance={card} currentCost={costOf(game, uid, gameCatalog, view)} />
+        <GameCard id={card.cardId} instance={card} currentCost={costOf(game, uid, gameCatalog, view)} sizes="(max-width: 900px) 130px, 160px" />
         {card.revealed && <span className={styles.revealed}>公開</span>}
       </button>;
     })}</div>
@@ -40,7 +40,7 @@ export function SelectedCard() {
   const unit = def.type === 'yojo';
   return <aside className={styles.cardSelection} aria-label="選んだ手札">
     <button className={styles.selectedCardImage} onPointerDown={event => drag.pickUp(event, selected, 'hand')} aria-label="選択したカードを持つ">
-      <GameCard id={card.cardId} instance={card} currentCost={cost} />
+      <GameCard id={card.cardId} instance={card} currentCost={cost} sizes="(max-width: 700px) calc(100vw - 16px), min(calc(100vw - 184px), 67vh)" />
     </button>
     <div className={styles.cardSelectionActions}>
       <button className={styles.primaryAction} disabled={!playEnabled || cost > me.pp || unit && me.field.length >= 7} onClick={() => board.play(selected)}>{unit ? '場に出す' : '使う'}</button>

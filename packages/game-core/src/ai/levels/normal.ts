@@ -1,3 +1,4 @@
+import { cpuProfiles } from '../profiles.ts';
 // ふつう: the original rule-of-thumb CPU. Card-specific judgement comes from the scripts' `cpu` hints.
 import { scriptOf } from '../../cards/registry.ts';
 import { attackOf, costOf, hpOf } from '../../core/cards.ts';
@@ -15,8 +16,7 @@ const yojoInHand = (s: GameState, side: Side, catalog: Catalog) => s.players[sid
 
 export const normal: CpuStrategy = {
     level: 'normal',
-    name: 'ふつう',
-    description: 'カードごとの定石で手堅く動きます',
+    ...cpuProfiles.normal,
     choose(d) {
         const { state: s, moves } = d;
         if (s.pending) return choose(d);

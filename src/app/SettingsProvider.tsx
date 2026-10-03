@@ -1,7 +1,7 @@
 'use client';
 
 import React, { createContext, useContext, useState, useEffect } from 'react';
-import { parseBooleanFromStorage } from '@/lib/schema';
+import { parseBooleanFromStorage } from '@/lib/storage';
 
 interface SettingsContextType {
   showSettings: boolean;
