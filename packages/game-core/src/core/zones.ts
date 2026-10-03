@@ -23,7 +23,6 @@ export function draw(s: GameState, side: Side, kind: DeckKind): string | undefin
         note(s, `${p.name}：${deckLabel(kind)}を1枚ドロー`);
     } else {
         note(s, `${p.name}：${deckLabel(kind)}デッキが空です`);
-        if (s.rules.emptyDeckLoses) s.winner = other(side);
     }
     return uid;
 }

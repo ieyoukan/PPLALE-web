@@ -20,9 +20,12 @@ export const defaultWeights: Weights = { points: 10, unitAttack: 3, unitHp: 2, d
 function sideScore(s: GameState, side: Side, catalog: Catalog, w: Weights) {
     const p = s.players[side];
     let score = p.points * w.points + p.hand.length * w.hand + maxPp(s, side) * w.maxPp;
+    // Breaking a one-use barrier is progress even when no points / HP are lost yet.
+    if (p.shield) score += w.points;
     for (const uid of p.field) {
         const c = s.cards[uid];
         score += attackOf(c, catalog) * w.unitAttack + Math.max(0, hpOf(c, catalog)) * w.unitHp;
+        if (c.shield) score += w.unitHp;
         if (c.keywords.includes('taunt') || c.keywords.includes('guard')) score += w.defender;
     }
     return score;

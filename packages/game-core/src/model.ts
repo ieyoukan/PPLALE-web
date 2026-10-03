@@ -32,14 +32,12 @@ export interface Rules {
     initialSweet: number;
     firstPlayer: Side;
     turnDraw: DeckKind;
-    firstTurnDraw: boolean;
-    maxPP: number;
-    emptyDeckLoses: boolean;
 }
-// Explicit sandbox preset until the rulebook is confirmed. Stored in each match.
+export const MAX_PP = 12;
+// Test setup values; turn flow and PP/hand limits follow the rulebook.
 export const sandboxRules: Rules = {
     initialPoints: 12, initialYojo: 3, initialSweet: 0, firstPlayer: 0,
-    turnDraw: 'yojo', firstTurnDraw: false, maxPP: 10, emptyDeckLoses: false,
+    turnDraw: 'yojo',
 };
 
 /** One physical card in a match. `uid` is unique per match, `cardId` points to the catalog. */
@@ -81,8 +79,10 @@ export interface Player {
     turns: number;
     pp: number;
     ppBonus: number;
+    /** Extra spendable PP for the second player’s fifth turn only. Not a permanent max-PP buff. */
+    turnPpBonus: number;
     nextPpDebt: number;
-    /** Sweet-point thresholds (10, 5) whose draw has already happened. */
+    /** Sweet-point thresholds (10, 5) whose one-time draw opportunity has already been offered. */
     milestones: number[];
     /** Card ids played from hand this game, oldest first. */
     played: string[];
@@ -102,7 +102,7 @@ export interface Player {
 export type TaskOp =
     // generic, see effects/ops.ts
     | 'damage' | 'allDamage' | 'randomDamage' | 'buff' | 'allBuff' | 'keyword' | 'destroy' | 'copy' | 'stealUnit'
-    | 'heal' | 'reduce' | 'steal' | 'pp' | 'summon' | 'addHand' | 'draw' | 'discard' | 'handCost' | 'enterAuras'
+    | 'heal' | 'reduce' | 'steal' | 'pp' | 'summon' | 'addHand' | 'draw' | 'discard' | 'handCost' | 'enterAuras' | 'trimHand' | 'finishTurn'
     // card / skill specific
     | 'searchRole' | 'diceDiscard' | 'shurei' | 'doughnut' | 'float' | 'floatSearch' | 'pocky' | 'pockyEnemy' | 'gift'
     | 'bonusDamage' | 'punish';
@@ -147,6 +147,8 @@ export interface GameState {
     version: 1;
     /** Marks saves using taunt for selected effects, guard for attacks, and mandatory steal healing. */
     effectTauntRules?: true;
+    /** Marks saves using the latest turn, hand-limit and deck-exhaustion rules. */
+    turnRules?: true;
     phase: Phase;
     openingRemaining: [number, number];
     mulligan: { eligible: [string[], string[]]; confirmed: [boolean, boolean] };

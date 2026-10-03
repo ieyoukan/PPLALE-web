@@ -85,7 +85,7 @@ function choose(d: CpuDecision): Move {
         preferred = ids.find(id => s.cards[id]?.entered === s.turn && !s.cards[id].keywords.includes('charge'));
     // Otherwise rank card options: harmful steps pick the best enemy, discards the cheapest card.
     const harmful = ['damage', 'destroy', 'stealUnit'].includes(task.op);
-    const discarding = ['discard', 'diceDiscard', 'gift', 'doughnut'].includes(task.op);
+    const discarding = ['discard', 'diceDiscard', 'gift', 'doughnut', 'trimHand'].includes(task.op);
     const score = (id: string) => {
         const c = s.cards[id];
         if (!c) return 0;

@@ -1,6 +1,6 @@
 'use client';
 
-import { maxPp } from '@pplale/game-core';
+import { availablePpMaximum } from '@pplale/game-core';
 import type { CSSProperties } from 'react';
 import type { DeckKind, Side } from '@pplale/game-core';
 import { displayCards, gameCatalog } from '@/lib/game/catalog';
@@ -28,7 +28,7 @@ export function PlayerSide({ side }: { side: Side }) {
       <span className={styles.playableCard}><GameCard id={player.playable} /></span>
     </button>
     <div className={styles.turnCounter}>
-      <Counter label="ターン数(+pp)" value={player.turns} bonus={player.ppBonus} pp={`${player.pp} / ${maxPp(game, side)}`} test={sandbox}
+      <Counter label="ターン数(+pp)" value={player.turns} bonus={player.ppBonus} temporaryBonus={player.turnPpBonus} pp={`${player.pp} / ${availablePpMaximum(game, side)}`} test={sandbox}
         onAdjust={delta => board.adjust(side, 'ppBonus', delta)} onReset={() => board.adjust(side, 'ppBonus', -player.ppBonus)} />
     </div>
     <div className={styles.pointsCounter} data-leader={side}>

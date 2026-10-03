@@ -28,7 +28,7 @@ export interface MatchOptions {
     levels: [CpuLevel, CpuLevel];
     seed: number;
     decks?: [Deck, Deck];
-    /** Defaults to the sandbox rules with running out of cards losing, so every match ends. */
+    /** Defaults to the rulebook setup; exhausted decks do not cause a loss. */
     rules?: Rules;
     maxCommands?: number;
     /** Called before each command: the hook for recording training data. */
@@ -45,7 +45,7 @@ export interface MatchResult {
 /** Plays one match to the end. Throws if a CPU sends a command the engine rejects. */
 export function playMatch(catalog: Catalog, { levels, seed, decks, rules, maxCommands = 4000, onStep }: MatchOptions): MatchResult {
     const pair = decks ?? [randomStrawberryDeck(seed), randomStrawberryDeck(Math.imul(seed, 31) + 7)];
-    let s = newGame(pair, catalog, rules ?? { ...sandboxRules, emptyDeckLoses: true }, seed);
+    let s = newGame(pair, catalog, rules ?? sandboxRules, seed);
     const thinking: [number, number] = [0, 0];
     let commands = 0;
     for (; commands < maxCommands && s.winner === null; commands++) {

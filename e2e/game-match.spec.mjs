@@ -91,3 +91,50 @@ test('CPU responds after turn end and returns control with a manual draw', async
   await expect(page.getByRole('button', { name: /ターン\s*終了/ })).toBeEnabled();
   expect(errors).toEqual([]);
 });
+
+test('ending with eleven cards requires two hand exclusions before the turn changes', async ({ page }) => {
+  const s = arena({ me: { hand: Array(11).fill('y_5') } });
+  s.players[1].yojo = [];
+  s.players[1].sweet = [];
+  await loadBoard(page, s);
+  await page.getByRole('button', { name: /ターン\s*終了/ }).click();
+  await expect(page.getByText('あと2枚除外', { exact: true })).toBeVisible();
+  const chosen = hand(s).slice(-2).reverse();
+  await page.locator(`[data-hand-list] [data-hand="${chosen[0]}"]`).click();
+  await expect(page.getByText('あと1枚除外', { exact: true })).toBeVisible();
+  await page.reload();
+  await expect(page.getByText('あと1枚除外', { exact: true })).toBeVisible();
+  await page.locator(`[data-hand-list] [data-hand="${chosen[1]}"]`).click();
+  await expect.poll(async () => (await savedGame(page)).active).toBe(1);
+  const next = await savedGame(page);
+  expect(next.players[0].hand).toHaveLength(9);
+  expect(next.players[0].exile).toEqual(chosen);
+  expect(next.players[0].nap).toHaveLength(0);
+  expect(next.players[0].pp).toBe(0);
+  expect(next.pending).toBeNull();
+});
+
+test('second-player fifth-turn PP is shown as seven usable PP and a temporary +2 marble', async ({ page }) => {
+  const s = arena({ me: { turns: 4, ppBonus: 0 }, foe: { turns: 4, ppBonus: 0 } });
+  await loadBoard(page, s);
+  await page.getByRole('button', { name: /ターン\s*終了/ }).click();
+  await expect(page.getByLabel('このターンの追加PP 2', { exact: true })).toBeVisible();
+  await page.locator('[data-deck="1-yojo"]').click();
+  await expect(page.getByRole('group', { name: '自分のPP 7 / 7', exact: true })).toBeVisible();
+  await page.getByRole('button', { name: /ターン\s*終了/ }).click();
+  await expect(page.getByLabel('このターンの追加PP 2', { exact: true })).toBeHidden();
+  expect((await savedGame(page)).players[1].pp).toBe(0);
+});
+
+test('a threshold draw can be declined and its one-time marker remains used', async ({ page }) => {
+  const s = arena();
+  s.players[0].points = 10;
+  s.players[0].milestones = [10];
+  s.pending = { prompt: 'お菓子ポイント到達：山札を押して1枚引いてください', task: { op: 'draw', actor: 0, deck: 'sweet', text: 'threshold' }, options: [{ id: 'sweet', label: 'お菓子デッキ' }, { id: 'skip', label: '引かない' }] };
+  await loadBoard(page, s);
+  await page.getByRole('button', { name: '引かない', exact: true }).click();
+  await expect(page.getByRole('button', { name: /ターン\s*終了/ })).toBeEnabled();
+  const next = await savedGame(page);
+  expect(next.players[0].sweet).toHaveLength(10);
+  expect(next.players[0].milestones).toEqual([10]);
+});

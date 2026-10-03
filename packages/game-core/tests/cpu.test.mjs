@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { actingSides, applyCommand, cpuCommand, cpuLevels, determinize, legalMoves, newGame, playMatch, randomStrawberryDeck, sandboxRules } from '../dist/index.js';
-import { arena, catalog, field, hand, play } from './helpers.mjs';
+import { arena, catalog, field, hand, play, run } from './helpers.mjs';
 
 /** Plays a whole match between two CPU levels; playMatch throws on any rejected command. */
 const match = (levels, seed) => playMatch(catalog, { levels, seed });
@@ -57,6 +57,26 @@ for (const level of cpuLevels) {
 }
 
 // さいきょう vs つよい is measured with `npm run cpu:arena` (too slow for the unit tests).
+for (const level of ['hard', 'master']) {
+  test(`${level}: breaks pancake protection instead of ending an empty-deck match forever`, () => {
+    let s = arena({ me: { field: ['y_16', 'y_16'], pp: 0 }, foe: { points: 1 } });
+    for (const p of s.players) {
+      p.yojo = [];
+      p.sweet = [];
+      p.skills = p.skills.map(() => 0);
+    }
+    s.players[1].shield = true;
+    const first = cpuCommand(s, catalog, { side: 0, level });
+    assert.equal(first.type, 'attack');
+    assert.equal(first.target, 'leader');
+    s = run(s, first);
+    assert.equal(s.players[1].shield, false);
+    assert.equal(s.players[1].points, 1);
+    s = run(s, cpuCommand(s, catalog, { side: 0, level }));
+    assert.equal(s.winner, 0);
+  });
+}
+
 test('levels are ordered: hard beats normal and normal beats easy over many matches', () => {
   const wins = (a, b) => {
     let count = 0;

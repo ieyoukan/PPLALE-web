@@ -1,4 +1,5 @@
 // Card instances and their current values (attack, HP, cost, keywords).
+import { MAX_PP } from '../model.ts';
 import { scriptOf } from '../cards/registry.ts';
 import type { Catalog, GameState, Instance, Keyword, Side } from '../model.ts';
 
@@ -59,11 +60,15 @@ export function recordEffectBlock(s: GameState, uid: string, kind: 'damage' | 'd
 
 export function maxPp(s: GameState, side: Side) {
     const p = s.players[side];
-    return Math.max(0, Math.min(s.rules.maxPP, p.turns + p.ppBonus));
+    return Math.max(0, Math.min(MAX_PP, p.turns + p.ppBonus));
+}
+/** Spendable ceiling this turn; the temporary second-player bonus does not trigger max-PP effects. */
+export function availablePpMaximum(s: GameState, side: Side) {
+    return Math.min(MAX_PP, maxPp(s, side) + s.players[side].turnPpBonus);
 }
 export function gainPp(s: GameState, side: Side, amount: number) {
     const p = s.players[side];
-    p.pp = Math.min(maxPp(s, side), p.pp + amount);
+    p.pp = Math.min(availablePpMaximum(s, side), p.pp + amount);
 }
 
 export function costOf(s: GameState, uid: string, catalog: Catalog, side: Side) {

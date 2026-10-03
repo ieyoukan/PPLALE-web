@@ -22,14 +22,14 @@ export function DeckStack({ side, kind, ids, thresholds = [], enabled, drawing =
     <span className={styles.deckCount}>{ids.length}<small>枚</small></span>
     {kind === 'sweet' && <span className={styles.thresholds}>{[10, 5].map(value => <span key={value}
       className={thresholds.includes(value) ? styles.reached : ''}
-      aria-label={`${value}ポイントのドロー${thresholds.includes(value) ? '済み' : '未達'}`}>
+      aria-label={`${value}ポイントのドロー${thresholds.includes(value) ? '機会使用済み' : '未達'}`}>
       <i />{value === 10 ? '⑩' : '⑤'}
     </span>)}</span>}
   </button>;
 }
 
-export function Counter({ label, value, points, bonus = 0, pp, onAdjust, onReset, test, target, onClick }: {
-  label: string; value: number; points?: boolean; bonus?: number; pp?: string;
+export function Counter({ label, value, points, bonus = 0, temporaryBonus = 0, pp, onAdjust, onReset, test, target, onClick }: {
+  label: string; value: number; points?: boolean; bonus?: number; temporaryBonus?: number; pp?: string;
   onAdjust: (delta: number) => void; onReset: () => void; test: boolean; target?: boolean; onClick?: () => void;
 }) {
   return <div className={`${styles.counter} ${target ? styles.counterTarget : ''}`}>
@@ -38,6 +38,7 @@ export function Counter({ label, value, points, bonus = 0, pp, onAdjust, onReset
     </button>
     <div className={styles.counterValue}><span>{value}</span>{pp && <small>{pp} PP</small>}
       {!!bonus && <span className={styles.whiteMarble} aria-label={`追加PP ${bonus}`}>{bonus > 0 ? '+' : ''}{bonus}</span>}
+      {!!temporaryBonus && <span className={styles.whiteMarble} aria-label={`このターンの追加PP ${temporaryBonus}`}>+{temporaryBonus}</span>}
     </div>
     <div className={styles.counterControls}>
       <button disabled={!test} onClick={() => onAdjust(-5)} aria-label={`${points ? 'お菓子ポイント' : '追加PP'}を5減らす`}>≪</button>

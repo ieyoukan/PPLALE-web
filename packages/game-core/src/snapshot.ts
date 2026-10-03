@@ -3,7 +3,8 @@ import { z } from 'zod';
 import { deckLabel, keywords } from './model.ts';
 import type { Catalog, GameState, TaskOp } from './model.ts';
 import { selectable, unitsInScope } from './effects/targets.ts';
-import { opDef } from './effects/resolve.ts';
+import { availablePpMaximum } from './core/cards.ts';
+import { opDef, resolveQueue } from './effects/resolve.ts';
 
 const integer = z.number().int();
 const positive = integer.nonnegative();
@@ -13,15 +14,15 @@ const keyword = z.enum(keywords as [string, ...string[]]);
 const task = z.object({ op: z.string(), actor: side, source: z.string().optional(), target: z.string().optional(), amount: integer.optional(), hp: integer.optional(), keyword: keyword.optional(), cardId: z.string().optional(), scope: z.enum(['friendly', 'enemy', 'any']).optional(), ids: ids.optional(), candidates: ids.optional(), count: positive.optional(), multiplier: positive.optional(), text: z.string().optional(), deck: z.enum(['yojo', 'sweet']).optional() });
 const player = z.object({
     name: z.string(), yojo: ids, sweet: ids, hand: ids, field: ids.max(7), nap: ids, exile: ids, playable: z.string(),
-    points: positive, maxPoints: positive, turns: positive, pp: positive, ppBonus: integer, nextPpDebt: positive,
+    points: positive, maxPoints: positive, turns: positive, pp: positive, ppBonus: integer, turnPpBonus: positive.max(2).default(0), nextPpDebt: positive,
     milestones: z.array(z.union([z.literal(10), z.literal(5)])), played: ids, shield: z.boolean(),
     // v1 saves stored おいしくなる呪文 as a boolean.
     sweetBoost: positive.optional(), doubleSweet: z.boolean().optional(),
     skills: z.array(positive), lastBorrow: integer,
 }).transform(({ doubleSweet, sweetBoost, ...rest }) => ({ ...rest, sweetBoost: sweetBoost ?? (doubleSweet ? 1 : 0) }));
 const schema = z.object({
-    version: z.literal(1), effectTauntRules: z.literal(true).optional(), phase: z.enum(['dice', 'initiative', 'opening', 'mulligan', 'playing']).default('playing'), dice: z.object({ rolls: z.tuple([integer.min(1).max(6).nullable(), integer.min(1).max(6).nullable()]), ties: positive }).nullable().default(null), rng: positive, serial: positive, revision: positive, active: side, turn: positive,
-    rules: z.object({ initialPoints: integer.positive(), initialYojo: positive.max(20), initialSweet: positive.max(10), firstPlayer: side, turnDraw: z.enum(['yojo', 'sweet']), firstTurnDraw: z.boolean(), maxPP: integer.positive(), emptyDeckLoses: z.boolean() }),
+    version: z.literal(1), effectTauntRules: z.literal(true).optional(), turnRules: z.literal(true).optional(), phase: z.enum(['dice', 'initiative', 'opening', 'mulligan', 'playing']).default('playing'), dice: z.object({ rolls: z.tuple([integer.min(1).max(6).nullable(), integer.min(1).max(6).nullable()]), ties: positive }).nullable().default(null), rng: positive, serial: positive, revision: positive, active: side, turn: positive,
+    rules: z.object({ initialPoints: integer.positive(), initialYojo: positive.max(20), initialSweet: positive.max(10), firstPlayer: side, turnDraw: z.enum(['yojo', 'sweet']) }),
     openingRemaining: z.tuple([positive, positive]).default([0, 0]),
     effectBlocks: z.object({ revision: positive, events: z.array(z.object({ uid: z.string(), kind: z.enum(['damage', 'destroy']) })).max(500) }).optional(),
     mulligan: z.object({ eligible: z.tuple([ids, ids]), confirmed: z.tuple([z.boolean(), z.boolean()]) }).default({ eligible: [[], []], confirmed: [false, false] }),
@@ -42,6 +43,7 @@ export function restoreGame(value: unknown, catalog: Catalog): GameState | null 
     migrateTasks(s);
     migrateEffectTargets(s, catalog);
     if ([...s.queue, ...(s.pending ? [s.pending.task] : [])].some(t => !opDef(t.op as TaskOp))) return null;
+    migrateTurnRules(s, catalog);
     return s as GameState;
 }
 
@@ -128,5 +130,29 @@ function migrateEffectTargets(s: Saved, catalog: Catalog) {
         const units = s.pending.options.map(o => o.id).filter(uid => s.players[t.actor === 0 ? 1 : 0].field.includes(uid));
         const allowed = selectable(state, t.actor, units);
         s.pending.options = s.pending.options.filter(o => o.id === 'all' || allowed.includes(o.id));
+    }
+}
+
+/** Upgrade old saved choices and the one-time second-player fifth-turn PP grant. */
+function migrateTurnRules(s: Saved, catalog: Catalog) {
+    const state = s as GameState;
+    if (!s.turnRules) {
+        s.turnRules = true;
+        const p = s.players[s.active];
+        if (s.phase === 'playing' && s.active !== s.rules.firstPlayer && p.turns === 5) {
+            p.turnPpBonus = 2;
+            p.pp = Math.min(availablePpMaximum(state, s.active), p.pp + 2);
+        }
+    }
+    if (s.pending?.task.op !== 'draw') return;
+    const t = s.pending.task, p = s.players[t.actor];
+    const kinds = (t.deck ? [t.deck] : ['yojo', 'sweet'] as const).filter(kind => p[kind].length > 0);
+    if (kinds.length) {
+        s.pending.options = [...kinds.map(kind => ({ id: kind, label: `${deckLabel(kind)}デッキ（${p[kind].length}枚）` })),
+            ...(t.text === 'threshold' ? [{ id: 'skip', label: '引かない' }] : [])];
+    } else {
+        s.pending = null;
+        s.queue.unshift({ ...t, target: undefined });
+        resolveQueue(state, catalog);
     }
 }

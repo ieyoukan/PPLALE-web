@@ -4,10 +4,9 @@ import { costOf, isRealSweet, note } from '../core/cards.ts';
 import { canAttack, resolveAttack } from '../core/combat.ts';
 import { enterField, FIELD_SIZE, openSlot } from '../core/zones.ts';
 import { cardContext, effects } from '../effects/context.ts';
-import { other, RuleError } from '../model.ts';
+import { RuleError } from '../model.ts';
 import type { Catalog, Definition, GameState, Player, Side } from '../model.ts';
 import { skillsFor } from '../playables/skills.ts';
-import { startTurn } from './phases.ts';
 import type { Handlers } from './types.ts';
 
 function assertMainPhase(s: GameState, actor: Side) {
@@ -58,9 +57,7 @@ export const turnCommands: Handlers<'play' | 'attack' | 'end' | 'reveal' | 'skil
     },
     end(s, c) {
         assertMainPhase(s, c.actor);
-        s.players[c.actor].hand.forEach(uid => { s.cards[uid].temporaryCost = 0; });
-        startTurn(s, other(c.actor));
-        s.queue.push({ op: 'draw', actor: s.active, text: 'turn' });
+        s.queue.push({ op: 'trimHand', actor: c.actor }, { op: 'finishTurn', actor: c.actor });
     },
     reveal(s, c) {
         assertMainPhase(s, c.actor);

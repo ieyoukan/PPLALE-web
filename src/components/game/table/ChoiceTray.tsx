@@ -10,9 +10,9 @@ import styles from '../BoardEmulator.module.css';
  */
 export function ChoiceTray() {
   const { pending, ours, busy, choose } = useBoardContext();
-  if (!pending || !ours || pending.decks.length) return null;
+  if (!pending || !ours || pending.decks.length && !pending.buttons.length) return null;
   return <div className={`${styles.choiceTray} ${pending.hand.length ? styles.choiceTrayTop : ''}`} role="status">
-    <strong>{pending.prompt}</strong>
+    {!pending.decks.length && <strong>{pending.prompt}</strong>}
     {pending.buttons.map(option => <button key={option.id} disabled={busy} onClick={() => choose(option.id)}>
       {option.cardId ? <span className={styles.choiceThumb}><GameCard id={option.cardId} /></span> : option.label}
     </button>)}

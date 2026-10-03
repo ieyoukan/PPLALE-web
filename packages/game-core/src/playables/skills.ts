@@ -3,6 +3,7 @@
 import type { OpTable } from '../cards/types.ts';
 import { costOf } from '../core/cards.ts';
 import type { Effects } from '../effects/context.ts';
+import { MAX_PP } from '../model.ts';
 import { selectable } from '../effects/targets.ts';
 
 export interface SkillScript {
@@ -42,7 +43,7 @@ export const playableSkills: Record<string, SkillScript[]> = {
                 fx.me.ppBonus++;
                 fx.queue('handCost', { amount: -2, text: 'temporary' });
             },
-            cpu: fx => fx.maxPp() < fx.s.rules.maxPP,
+            cpu: fx => fx.maxPp() < MAX_PP,
         },
         {
             // 【参謀の全面バックアップ】最大PPが7以上なら使用可。最大PP+1。ランダムな相手幼女に2ダメージ。1枚引く。

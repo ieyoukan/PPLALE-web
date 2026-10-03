@@ -18,12 +18,13 @@ function roll(state) {
   assert.equal(state.phase, 'opening');
   return state;
 }
-function deal(state) {
+function deal(state, drawFirst = true) {
   while (state.phase === 'opening') {
     const actor = state.openingRemaining.findIndex(count => count > 0);
     state = command(state, { type: 'openingDraw', actor, deck: 'yojo' });
   }
   while (state.phase === 'mulligan') state = command(state, { type: 'keep', actor: state.active });
+  if (drawFirst && state.pending?.task.text === 'turn') state = command(state, { type: 'choose', actor: state.active, option: 'yojo' });
   return state;
 }
 
@@ -75,7 +76,7 @@ test('each deck click draws one opening card and both players draw independently
   assert.equal(next.pending, null);
   const played = applyCommand(next, { type: 'play', actor, uid: next.players[actor].hand[0] }, catalog);
   assert.ok(played.error);
-  const finished = deal(next);
+  const finished = deal(next, false);
   assert.equal(finished.phase, 'playing');
   assert.equal(finished.active, finished.rules.firstPlayer);
   assert.equal(finished.players[finished.active].pp, 1);

@@ -36,7 +36,7 @@ export function losePoints(s: GameState, side: Side, amount: number, mode: Point
     for (const threshold of [10, 5]) {
         if (before > threshold && p.points <= threshold && !p.milestones.includes(threshold)) {
             p.milestones.push(threshold);
-            note(s, `${threshold}ポイント到達：お菓子を1枚ドロー`);
+            note(s, `${threshold}ポイント到達：お菓子を1枚引くことができます`);
             s.queue.push({ op: 'draw', actor: side, deck: 'sweet', text: 'threshold' });
         }
     }

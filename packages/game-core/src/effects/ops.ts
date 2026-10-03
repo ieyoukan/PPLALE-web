@@ -1,4 +1,5 @@
 // Generic effect steps shared by many cards. Card-only steps are declared next to the card.
+import { finishTurn } from '../commands/phases.ts';
 import { scriptOf } from '../cards/registry.ts';
 import type { OpTable } from '../cards/types.ts';
 import { isRealSweet } from '../core/cards.ts';
@@ -84,10 +85,12 @@ export const genericOps: OpTable = {
     draw: {
         run(fx, t) {
             if (!t.target) {
-                const kinds: DeckKind[] = t.deck ? [t.deck] : ['yojo', 'sweet'];
-                fx.ask(`${drawReason(t)}：山札を押して1枚引いてください`, kinds.map(kind => ({ id: kind, label: `${deckLabel(kind)}デッキ（${fx.me[kind].length}枚）` })), t);
+                const kinds = (t.deck ? [t.deck] : ['yojo', 'sweet'] as DeckKind[]).filter(kind => fx.me[kind].length > 0);
+                if (!kinds.length) { fx.note('山札にカードがないため補充できません'); return; }
+                fx.ask(`${drawReason(t)}：山札を押して1枚引いてください`, [...kinds.map(kind => ({ id: kind, label: `${deckLabel(kind)}デッキ（${fx.me[kind].length}枚）` })), ...(t.text === 'threshold' ? [{ id: 'skip', label: '引かない' }] : [])], t);
                 return;
             }
+            if (t.target === 'skip' && t.text === 'threshold') return;
             const kind = t.deck ?? t.target as DeckKind, uid = draw(fx.s, t.actor, kind);
             const drawn = [...(t.ids ?? []), ...(uid ? [uid] : [])];
             const total = (t.count ?? 1) * (t.multiplier ?? 1);
@@ -96,6 +99,18 @@ export const genericOps: OpTable = {
             if (source) scriptOf(source.cardId).onDrawn?.(cardContext(fx.s, fx.catalog, t.actor, source.uid), { kind, uid, drawn, done: total <= 1 });
         },
     },
+    /** End-turn hand limit: exile chosen cards, without discard triggers. */
+    trimHand: {
+        run(fx, t) {
+            if (t.target) {
+                fx.me.hand = fx.me.hand.filter(uid => uid !== t.target);
+                fx.me.exile.push(t.target);
+                fx.note(`${fx.defOf(t.target).name}を手札上限のため除外`);
+            }
+            if (fx.me.hand.length > 9) fx.pick(`あと${fx.me.hand.length - 9}枚除外`, fx.me.hand, { ...t, target: undefined });
+        },
+    },
+    finishTurn: { run: (fx, t) => finishTurn(fx.s, t.actor) },
     /** Discard one card from hand. With an empty hand it does nothing and later steps continue. */
     discard: {
         run(fx, t) {
