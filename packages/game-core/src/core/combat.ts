@@ -15,21 +15,21 @@ export function canAttack(s: GameState, side: Side, uid: string, target: string 
     if (c.entered === s.turn && !c.keywords.includes('fast') && !(target !== 'leader' && c.keywords.includes('charge')))
         return false;
     const enemy = s.players[other(side)];
-    const taunts = enemy.field.filter(id => s.cards[id].keywords.includes('taunt'));
-    // Taunt units are the only legal targets while any is on the field (user-confirmed rule).
-    if (taunts.length) return taunts.includes(target);
+    // Guard protects both sweets and non-guard units. Pierce bypasses both restrictions.
+    const guards = enemy.field.filter(id => s.cards[id].keywords.includes('guard'));
+    if (guards.length && !c.keywords.includes('pierce')) return guards.includes(target);
     if (target === 'leader')
-        return !c.keywords.includes('noEat') && (!enemy.field.some(id => s.cards[id].keywords.includes('guard')) || c.keywords.includes('pierce'));
+        return !c.keywords.includes('noEat');
     return enemy.field.includes(target);
 }
 
 /**
  * The unit eats the opponent's sweets. It counts as having eaten (for りくす) even when a barrier
- * nullifies the change; only a taunt stops the attempt itself.
+ * nullifies the change. Attack target restrictions are checked by canAttack.
  */
 export function eat(s: GameState, side: Side, uid: string, amount: number) {
     const result = losePoints(s, other(side), amount, 'eat');
-    if (result.blocked !== 'taunt') s.cards[uid].ateOn = s.turn;
+    s.cards[uid].ateOn = s.turn;
     return result;
 }
 

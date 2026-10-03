@@ -38,12 +38,23 @@ export function buff(s: GameState, uid: string, attack: number, hp: number) {
 /** Deals damage. Effect damage is ignored by `effectImmune`; うぃまる's barrier absorbs any one hit. */
 export function hit(s: GameState, uid: string, amount: number, byEffect = true) {
     const card = s.cards[uid];
-    if (!card || amount <= 0 || byEffect && card.keywords.includes('effectImmune')) return;
+    if (!card || amount <= 0) return;
+    if (byEffect && card.keywords.includes('effectImmune')) {
+        recordEffectBlock(s, uid, 'damage');
+        return;
+    }
     if (card.shield) {
         card.shield = false;
         return;
     }
     card.damage += amount;
+}
+
+export function recordEffectBlock(s: GameState, uid: string, kind: 'damage' | 'destroy') {
+    const revision = s.revision + 1;
+    const events = s.effectBlocks?.revision === revision ? s.effectBlocks.events : [];
+    s.effectBlocks = { revision, events: [...events, { uid, kind }] };
+    note(s, `じょんこの効果耐性：${kind === 'damage' ? 'ダメージ' : '破壊'}を無効化`);
 }
 
 export function maxPp(s: GameState, side: Side) {

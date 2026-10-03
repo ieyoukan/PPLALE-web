@@ -34,13 +34,12 @@ export interface Rules {
     turnDraw: DeckKind;
     firstTurnDraw: boolean;
     maxPP: number;
-    stealHeals: boolean;
     emptyDeckLoses: boolean;
 }
 // Explicit sandbox preset until the rulebook is confirmed. Stored in each match.
 export const sandboxRules: Rules = {
     initialPoints: 12, initialYojo: 3, initialSweet: 0, firstPlayer: 0,
-    turnDraw: 'yojo', firstTurnDraw: false, maxPP: 10, stealHeals: false, emptyDeckLoses: false,
+    turnDraw: 'yojo', firstTurnDraw: false, maxPP: 10, emptyDeckLoses: false,
 };
 
 /** One physical card in a match. `uid` is unique per match, `cardId` points to the catalog. */
@@ -146,6 +145,8 @@ export interface Choice {
 export type Phase = 'dice' | 'initiative' | 'opening' | 'mulligan' | 'playing';
 export interface GameState {
     version: 1;
+    /** Marks saves using taunt for selected effects, guard for attacks, and mandatory steal healing. */
+    effectTauntRules?: true;
     phase: Phase;
     openingRemaining: [number, number];
     mulligan: { eligible: [string[], string[]]; confirmed: [boolean, boolean] };
@@ -162,6 +163,8 @@ export interface GameState {
     pending: Choice | null;
     winner: Side | 'draw' | null;
     log: string[];
+    /** Effect immunity outcomes from one command, for presentation; never changes legality. */
+    effectBlocks?: { revision: number; events: { uid: string; kind: 'damage' | 'destroy' }[] };
 }
 
 export type Command =

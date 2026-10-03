@@ -12,18 +12,18 @@ export function heal(s: GameState, side: Side, amount: number) {
 
 /**
  * Removes sweet points from `side`.
- * - 食べる / 奪う: blocked by the defender's taunt, then by パンケーキ once.
+ * - 奪う: blocked by enemy 挑発; if successful, heals the actor by X (up to their maximum).
+ * - 食べる / 奪う: blocked by パンケーキ once, after the taunt check.
  * - 減らす: never blocked.
- * Returns `blocked: 'taunt'` when nothing was even attempted, so callers can tell that apart from
- * a barrier that nullified the change (FAQ: the unit still counts as having eaten).
  */
 export function losePoints(s: GameState, side: Side, amount: number, mode: PointLoss): { lost: number; blocked?: 'taunt' | 'shield' } {
     const p = s.players[side];
+    if (amount <= 0) return { lost: 0 };
+    if (mode === 'steal' && p.field.some(uid => s.cards[uid].keywords.includes('taunt'))) {
+        note(s, '挑発がお菓子を奪う効果を無効化しました');
+        return { lost: 0, blocked: 'taunt' };
+    }
     if (mode !== 'reduce') {
-        if (p.field.some(uid => s.cards[uid].keywords.includes('taunt'))) {
-            note(s, '挑発によってお菓子が守られました');
-            return { lost: 0, blocked: 'taunt' };
-        }
         if (p.shield) {
             p.shield = false;
             note(s, 'パンケーキが一度だけ無効化しました');
@@ -40,6 +40,6 @@ export function losePoints(s: GameState, side: Side, amount: number, mode: Point
             s.queue.push({ op: 'draw', actor: side, deck: 'sweet', text: 'threshold' });
         }
     }
-    if (mode === 'steal' && s.rules.stealHeals) heal(s, other(side), before - p.points);
+    if (mode === 'steal') heal(s, other(side), amount);
     return { lost: before - p.points };
 }

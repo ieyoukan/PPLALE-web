@@ -161,7 +161,7 @@ test('each opening and turn draw allows a fresh choice of either deck', () => {
   assert.equal(state.pending, null);
 });
 
-test('taunt only permits attacking taunt units, including with pierce and another guard present', () => {
+test('pierce bypasses guard and taunt does not constrain attack targets', () => {
   let state = deal(roll(create()));
   const actor = state.active, enemy = actor === 0 ? 1 : 0;
   const uid = state.players[actor].hand.shift();
@@ -171,8 +171,7 @@ test('taunt only permits attacking taunt units, including with pierce and anothe
   state.players[enemy].field.push(taunt, guard);
   Object.assign(state.cards[taunt], { slot: 0, keywords: ['taunt'] });
   Object.assign(state.cards[guard], { slot: 1, keywords: ['guard'] });
-  for (const target of ['leader', guard]) assert.ok(applyCommand(state, { type: 'attack', actor, uid, target }, catalog).error);
-  assert.equal(applyCommand(state, { type: 'attack', actor, uid, target: taunt }, catalog).error, undefined);
+  for (const target of ['leader', guard, taunt]) assert.equal(applyCommand(state, { type: 'attack', actor, uid, target }, catalog).error, undefined);
 });
 
 
@@ -228,19 +227,19 @@ function combat() {
   return { state, actor, enemy, uid: put(actor), guard: put(enemy), ordinary: put(enemy), put };
 }
 
-test('guard blocks direct attacks, not other units; fast does not bypass it and pierce does', () => {
+test('guard blocks sweets and non-guard units; fast does not bypass it and pierce does', () => {
   const { state, actor, uid, guard, ordinary } = combat();
   state.cards[guard].keywords = ['guard'];
   state.cards[uid].keywords = ['fast'];
   state.cards[uid].entered = state.turn;
   assert.equal(canAttack(state, actor, uid, 'leader', catalog), false);
-  assert.equal(canAttack(state, actor, uid, ordinary, catalog), true);
+  assert.equal(canAttack(state, actor, uid, ordinary, catalog), false);
   assert.equal(canAttack(state, actor, uid, guard, catalog), true);
   state.cards[uid].keywords.push('pierce');
   assert.equal(canAttack(state, actor, uid, 'leader', catalog), true);
   state.cards[guard].keywords.push('taunt');
-  assert.equal(canAttack(state, actor, uid, 'leader', catalog), false);
-  assert.equal(canAttack(state, actor, uid, ordinary, catalog), false);
+  assert.equal(canAttack(state, actor, uid, 'leader', catalog), true);
+  assert.equal(canAttack(state, actor, uid, ordinary, catalog), true);
   assert.equal(canAttack(state, actor, uid, guard, catalog), true);
 });
 

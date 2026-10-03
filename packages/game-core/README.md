@@ -17,7 +17,8 @@ Next.js / React / Firebase に依存しない、ぷぷりえーるのローカ�
 | `commands/` | Command ごとの処理（`opening.ts` 開始前 / `turn.ts` ターン中 / `sandbox.ts` テスト操作）と `applyCommand` |
 | `setup.ts` | デッキ検証と `newGame` |
 | `view.ts` | UI 向けの読み取り専用ヘルパー（`pendingView` で選択肢の表示場所、`attackTargets`） |
-| `ai/` | CPU。`moves.ts` 合法手、`hidden.ts` 見えない情報の推測、`evaluate.ts` 盤面評価、`levels/` 強さごとの戦略 |
+| `ai/` | CPU。`moves.ts` 合法手、`hidden.ts` 見えない情報の推測、`evaluate.ts` 盤面評価、`lethal.ts` このターンの勝ち筋の完全探索、`selfplay.ts` CPU同士の対戦、`levels/` 強さごとの戦略 |
+| `core/state.ts` | `cloneState`。探索で大量に呼ぶ状態コピー（structuredClone の約10倍速い） |
 | `snapshot.ts` | 保存された状態の検証・復元と旧形式の移行 |
 
 ## カード効果の読み方・追加方法
@@ -57,7 +58,28 @@ export const easy: CpuStrategy = {
 - `state` は `determinize` 済み。相手の非公開の手札・山札の順番・乱数の種は推測で置き換えてあり、CPU は不正に情報を読めない。`next` もその推測した世界での結果。
 - 盤面の良し悪しは `evaluate(state, side, catalog, weights)`。重みを変えれば打ち方の個性を作れる。
 - `cpuCommand(state, catalog, { level, side })` が手番の判定、推測、実際の状態での再確認をまとめて行う。新しい強さは `ai/index.ts` の `cpuStrategies` に登録すると、対戦準備画面に自動で並ぶ。
-- 強さの順序は `tests/cpu.test.mjs` の対戦で確かめる（例：ふつう対よわい 20/20、つよい対ふつう 12/20）。
+- 強さの順序は `tests/cpu.test.mjs` と `npm run cpu:arena -- [試合数] [レベル…]` で確かめる。席は1試合ごとに入れ替える。
+
+| 対戦（20試合） | 勝率 | 1手の平均思考時間 |
+| --- | --- | --- |
+| ふつう vs よわい | 95% | 0.1ms |
+| つよい vs ふつう | 80% | 0.1ms |
+| さいきょう vs ふつう | 90% | 95ms |
+| さいきょう vs つよい | 60% | 128ms |
+
+### このターンの勝ち筋の完全探索（`findLethal`）
+
+`findLethal(state, side, catalog, { maxNodes })` は、自分のターン内の手順をすべて試し、このターンで勝てる手順を返す。
+
+- `win`: 返した手順は、見えないカードやダイスがどうであっても勝つ。ドローやランダム効果を通る手順は、乱数と山札順を変えた複数の世界すべてで勝つ場合だけ採用する。
+- `none`: すべての手順を調べ、確実に勝てる手順はない。
+- `unknown`: 局面数の上限（`maxNodes`）に達した。
+- 手順の順番だけが違う同じ局面は1回しか調べない。相手の選択が途中で必要になる手順は、その先を計画できないので打ち切る。
+- 「さいきょう」は毎回これを実行し、勝ち筋がなければ「つよい」と同じ判断をする。画面では Web Worker 上で動くので、探索中も操作は止まらない。
+
+### 学習するCPU（③）に向けて
+
+`playMatch(catalog, { levels, seed, onStep })` は1試合を最後まで進める。`onStep(state, command, side)` で各手の局面と選んだ手を取り出せるので、勝敗と合わせて学習データにできる。`evaluate` の重み（`Weights`）を自己対戦で調整するのが最初の一歩で、学習した評価を使う戦略は `ai/levels/` に1ファイル足すだけで対戦に参加できる。強さは `cpu:arena` で「さいきょう」と比べて測る。
 
 ## API
 

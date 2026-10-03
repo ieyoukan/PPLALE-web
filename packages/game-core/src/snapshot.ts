@@ -2,6 +2,7 @@
 import { z } from 'zod';
 import { deckLabel, keywords } from './model.ts';
 import type { Catalog, GameState, TaskOp } from './model.ts';
+import { selectable, unitsInScope } from './effects/targets.ts';
 import { opDef } from './effects/resolve.ts';
 
 const integer = z.number().int();
@@ -19,9 +20,10 @@ const player = z.object({
     skills: z.array(positive), lastBorrow: integer,
 }).transform(({ doubleSweet, sweetBoost, ...rest }) => ({ ...rest, sweetBoost: sweetBoost ?? (doubleSweet ? 1 : 0) }));
 const schema = z.object({
-    version: z.literal(1), phase: z.enum(['dice', 'initiative', 'opening', 'mulligan', 'playing']).default('playing'), dice: z.object({ rolls: z.tuple([integer.min(1).max(6).nullable(), integer.min(1).max(6).nullable()]), ties: positive }).nullable().default(null), rng: positive, serial: positive, revision: positive, active: side, turn: positive,
-    rules: z.object({ initialPoints: integer.positive(), initialYojo: positive.max(20), initialSweet: positive.max(10), firstPlayer: side, turnDraw: z.enum(['yojo', 'sweet']), firstTurnDraw: z.boolean(), maxPP: integer.positive(), stealHeals: z.boolean(), emptyDeckLoses: z.boolean() }),
+    version: z.literal(1), effectTauntRules: z.literal(true).optional(), phase: z.enum(['dice', 'initiative', 'opening', 'mulligan', 'playing']).default('playing'), dice: z.object({ rolls: z.tuple([integer.min(1).max(6).nullable(), integer.min(1).max(6).nullable()]), ties: positive }).nullable().default(null), rng: positive, serial: positive, revision: positive, active: side, turn: positive,
+    rules: z.object({ initialPoints: integer.positive(), initialYojo: positive.max(20), initialSweet: positive.max(10), firstPlayer: side, turnDraw: z.enum(['yojo', 'sweet']), firstTurnDraw: z.boolean(), maxPP: integer.positive(), emptyDeckLoses: z.boolean() }),
     openingRemaining: z.tuple([positive, positive]).default([0, 0]),
+    effectBlocks: z.object({ revision: positive, events: z.array(z.object({ uid: z.string(), kind: z.enum(['damage', 'destroy']) })).max(500) }).optional(),
     mulligan: z.object({ eligible: z.tuple([ids, ids]), confirmed: z.tuple([z.boolean(), z.boolean()]) }).default({ eligible: [[], []], confirmed: [false, false] }),
     players: z.tuple([player, player]),
     cards: z.record(z.string(), z.object({ uid: z.string(), cardId: z.string(), attackBonus: integer, hpBonus: integer, damage: positive, costDelta: integer, temporaryCost: integer, keywords: z.array(keyword), shield: z.boolean(), slot: integer.min(0).max(6).nullable().default(null), entered: integer, exhausted: z.boolean(), ateOn: integer, revealed: z.boolean(), links: ids })),
@@ -38,6 +40,7 @@ export function restoreGame(value: unknown, catalog: Catalog): GameState | null 
     if (!migrateFieldSlots(s)) return null;
     migrateOpening(s);
     migrateTasks(s);
+    migrateEffectTargets(s, catalog);
     if ([...s.queue, ...(s.pending ? [s.pending.task] : [])].some(t => !opDef(t.op as TaskOp))) return null;
     return s as GameState;
 }
@@ -100,5 +103,30 @@ function migrateTasks(s: Saved) {
     if (s.pending?.task.op === 'draw' && !s.pending.task.deck) {
         const p = s.players[s.pending.task.actor];
         s.pending.options = (['yojo', 'sweet'] as const).map(kind => ({ id: kind, label: `${deckLabel(kind)}デッキ（${p[kind].length}枚）` }));
+    }
+}
+
+// Saved choices from the attack-only taunt rule must adopt the current effect targeting.
+function migrateEffectTargets(s: Saved, catalog: Catalog) {
+    if (s.effectTauntRules) return;
+    s.effectTauntRules = true;
+    const state = s as GameState;
+    const candidatesFor = (t: SavedTask) => {
+        const scope = unitsInScope(state, t);
+        return selectable(state, t.actor, (t.candidates ?? scope).filter(uid => scope.includes(uid)));
+    };
+    for (const t of s.queue) {
+        if (opDef(t.op as TaskOp)?.target === 'unit' && t.candidates) t.candidates = candidatesFor(t);
+    }
+    if (!s.pending) return;
+    const t = s.pending.task;
+    if (opDef(t.op as TaskOp)?.target === 'unit') {
+        t.candidates = candidatesFor(t);
+        s.pending.options = t.candidates.filter(uid => !(t.ids ?? []).includes(uid))
+            .map(uid => ({ id: uid, label: catalog[s.cards[uid].cardId].name }));
+    } else if (t.op === 'punish') {
+        const units = s.pending.options.map(o => o.id).filter(uid => s.players[t.actor === 0 ? 1 : 0].field.includes(uid));
+        const allowed = selectable(state, t.actor, units);
+        s.pending.options = s.pending.options.filter(o => o.id === 'all' || allowed.includes(o.id));
     }
 }

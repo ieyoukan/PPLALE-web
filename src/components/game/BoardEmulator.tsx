@@ -11,6 +11,8 @@ import { ChoiceTray } from './table/ChoiceTray';
 import { DiceStage } from './table/DiceStage';
 import { HandDock, SelectedCard } from './table/HandDock';
 import { AnimationLayer, HeldCard, ResultBanner } from './table/Overlays';
+import { PlayAnnouncement, TargetPing } from './table/PlayAnnouncement';
+import { EffectBlockAnnouncement } from './table/EffectBlockAnnouncement';
 import { PlayerSide } from './table/PlayerSide';
 import { TurnControl } from './table/TurnControl';
 import { displayCards, gameCatalog } from '@/lib/game/catalog';
@@ -54,6 +56,9 @@ export default function BoardEmulator() {
       <SidePanel />
       <HeldCard />
       <AnimationLayer />
+      <TargetPing />
+      <PlayAnnouncement />
+      <EffectBlockAnnouncement />
     </div>
   </BoardContext.Provider>;
 }

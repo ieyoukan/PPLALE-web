@@ -2,19 +2,31 @@
 
 import { useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react';
 import type { RefObject } from 'react';
-import { canAttack, other } from '@pplale/game-core';
+import { canAttack, other, skillsFor } from '@pplale/game-core';
 import type { Command, DeckKind, GameState, Side } from '@pplale/game-core';
-import { gameCatalog } from '@/lib/game/catalog';
+import { displayCards, gameCatalog } from '@/lib/game/catalog';
+import { skillDescription } from '@/lib/game/skillText';
 import type { DrawFlight } from '../BoardPieces';
 import { TURN_NOTICE_DURATION } from '../TurnAnnouncement';
 import type { TurnNotice } from '../TurnAnnouncement';
 import type { Mode } from './useGameSession';
 
 export type Strike = { uid: string; cardId: string; x: number; y: number; dx: number; dy: number; width: number; height: number };
+/** A card or skill the opponent used, shown large before it resolves. */
+export type Announcement = { id: number; kind: 'play' | 'skill' | 'reveal'; cardId: string; title: string; text: string };
+/** Immunity outcomes to present after a command resolves. */
+export type EffectBlockNotice = { id: number; targets: (Ping & { cardId: string; kind: 'damage' | 'destroy' })[] };
+/** The card the opponent picked for an effect. */
+export type Ping = { uid: string; x: number; y: number; width: number; height: number };
 
 const DRAW_DURATION = 800;
 const STRIKE_HIT = 360;
 const STRIKE_DURATION = 720;
+// The opponent's card stays readable for a moment before its effect resolves.
+const ANNOUNCE_HIT = 1100;
+const ANNOUNCE_DURATION = 1450;
+const PING_HIT = 500;
+const PING_DURATION = 900;
 const rectOf = (element: Element) => {
   const { x, y, width, height } = element.getBoundingClientRect();
   return { x, y, width, height };
@@ -28,6 +40,9 @@ export function useBoardAnimations({ game, view, mode, container }: { game: Game
   const [flights, setFlights] = useState<DrawFlight[]>([]);
   const [strike, setStrike] = useState<Strike | null>(null);
   const [turnNotice, setTurnNotice] = useState<TurnNotice | null>(null);
+  const [announcement, setAnnouncement] = useState<Announcement | null>(null);
+  const [ping, setPing] = useState<Ping | null>(null);
+  const [blocked, setBlocked] = useState<EffectBlockNotice | null>(null);
   const previous = useRef(game);
   const enabled = useRef(false);
   const timers = useRef<ReturnType<typeof setTimeout>[]>([]);
@@ -39,6 +54,21 @@ export function useBoardAnimations({ game, view, mode, container }: { game: Game
     previous.current = game;
     if (!enabled.current || old === game || !container.current) return;
     const root = container.current;
+    if (game.effectBlocks?.revision === game.revision) {
+      const seen = new Set<string>();
+      const targets = game.effectBlocks.events.flatMap(event => {
+        const element = root.querySelector(`[data-unit="${event.uid}"]`);
+        if (seen.has(event.uid) || !game.cards[event.uid]) return [];
+        seen.add(event.uid);
+        return [{ ...event, cardId: game.cards[event.uid].cardId, ...(element ? rectOf(element) : { x: 0, y: 0, width: 0, height: 0 }) }];
+      });
+      if (targets.length) {
+        setAnnouncement(null);
+        setPing(null);
+        setBlocked({ id: game.revision, targets });
+        later(() => setBlocked(current => current?.id === game.revision ? null : current), 1200);
+      }
+    }
     const next: DrawFlight[] = [];
     for (const side of [0, 1] as Side[]) {
       for (const uid of game.players[side].hand) {
@@ -66,10 +96,28 @@ export function useBoardAnimations({ game, view, mode, container }: { game: Game
   }, [game, view, mode, container, later]);
   useEffect(() => () => timers.current.forEach(clearTimeout), []);
 
-  /** Runs `commit` (applying the command) with its animation: attacks lunge first. */
+  /**
+   * Runs `commit` (applying the command) with its animation: attacks lunge first; the opponent's
+   * cards, skills and chosen targets are shown before they resolve, so the result can be followed.
+   */
   const run = useCallback((command: Command, commit: () => void) => {
     const apply = () => { enabled.current = true; commit(); };
     const root = container.current;
+    const opponent = command.actor !== view;
+    const shown = opponent ? describe(game, command) : null;
+    if (shown) {
+      setAnnouncement(shown);
+      later(apply, ANNOUNCE_HIT);
+      later(() => setAnnouncement(current => current?.id === shown.id ? null : current), ANNOUNCE_DURATION);
+      return;
+    }
+    const picked = opponent && command.type === 'choose' && root?.querySelector(`[data-unit="${command.option}"], [data-hand="${command.option}"]`);
+    if (picked) {
+      setPing({ uid: (command as Extract<Command, { type: 'choose' }>).option, ...rectOf(picked) });
+      later(apply, PING_HIT);
+      later(() => setPing(null), PING_DURATION);
+      return;
+    }
     if (command.type === 'attack' && root && canAttack(game, command.actor, command.uid, command.target, gameCatalog)) {
       const source = root.querySelector(`[data-unit="${command.uid}"]`);
       const target = root.querySelector(command.target === 'leader' ? `[data-leader="${other(command.actor)}"]` : `[data-unit="${command.target}"]`);
@@ -82,7 +130,7 @@ export function useBoardAnimations({ game, view, mode, container }: { game: Game
       }
     }
     apply();
-  }, [game, container, later]);
+  }, [game, view, container, later]);
 
   /** Loads, restores and undo jump without animating the difference. */
   const skipNext = useCallback(() => { enabled.current = false; }, []);
@@ -93,7 +141,25 @@ export function useBoardAnimations({ game, view, mode, container }: { game: Game
     setFlights([]);
     setStrike(null);
     setTurnNotice(null);
+    setAnnouncement(null);
+    setPing(null);
+    setBlocked(null);
   }, []);
 
-  return { flights, strike, turnNotice, busy: flights.length > 0 || !!strike || !!turnNotice, run, skipNext, reset };
+  return { flights, strike, turnNotice, announcement, ping, blocked, busy: flights.length > 0 || !!strike || !!turnNotice || !!announcement || !!ping || !!blocked, run, skipNext, reset };
+}
+
+let announcementId = 0;
+/** What to show for the opponent's play / skill / reveal, or null for other commands. */
+function describe(game: GameState, command: Command): Announcement | null {
+  const id = ++announcementId;
+  if (command.type === 'play' || command.type === 'reveal') {
+    const card = displayCards[game.cards[command.uid].cardId];
+    return { id, kind: command.type, cardId: card.id, title: card.name, text: card.effect ?? '' };
+  }
+  if (command.type === 'skill') {
+    const playable = game.players[command.actor].playable, skill = skillsFor(playable)[command.index];
+    return skill ? { id, kind: 'skill', cardId: playable, title: skill.name, text: skillDescription(displayCards[playable].effect, command.index) } : null;
+  }
+  return null;
 }

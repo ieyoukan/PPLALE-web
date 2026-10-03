@@ -25,7 +25,7 @@ function execute(s: GameState, t: Task, catalog: Catalog) {
     if (!def) throw new Error(`未知の効果です: ${t.op}`);
     const fx = effects(s, catalog, t.actor, t.source, t.multiplier ?? 1);
     if (def.target === 'unit' && !t.target) {
-        // Fix the candidates on the first ask so repeats cannot widen the choice (taunt FAQ).
+        // Fix the candidates on the first ask so repeated selections cannot include newly summoned units.
         const scoped = unitsInScope(s, t);
         const candidates = t.candidates ?? selectable(s, t.actor, scoped);
         const remaining = candidates.filter(id => scoped.includes(id) && !(t.ids ?? []).includes(id));

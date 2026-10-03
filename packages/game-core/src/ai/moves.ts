@@ -1,5 +1,7 @@
 // Legal moves: every command the engine accepts for a side right now, with its result.
 import { applyCommand } from '../commands/index.ts';
+import { costOf } from '../core/cards.ts';
+import { canAttack } from '../core/combat.ts';
 import { isRevealable } from '../view.ts';
 import { other, sides } from '../model.ts';
 import type { Catalog, Command, DeckKind, GameState, Side } from '../model.ts';
@@ -55,12 +57,26 @@ function candidates(s: GameState, side: Side): Command[] {
 }
 
 /**
+ * Cheap conditions the engine also requires; they only skip hopeless candidates before the costly
+ * full application, so they can never hide a legal move.
+ */
+function worthTrying(s: GameState, command: Command, catalog: Catalog): boolean {
+    const p = s.players[command.actor];
+    switch (command.type) {
+        case 'attack': return canAttack(s, command.actor, command.uid, command.target, catalog);
+        case 'play': return costOf(s, command.uid, catalog, command.actor) <= p.pp;
+        case 'skill': return p.skills[command.index] > 0 && skillsFor(p.playable)[command.index].cost <= p.pp;
+        default: return true;
+    }
+}
+
+/**
  * All legal moves of `side`. Legality is decided by the engine itself (each candidate is applied),
  * so this can never disagree with the rules. Sandbox commands are not included.
  */
 export function legalMoves(s: GameState, side: Side, catalog: Catalog): Move[] {
     if (!actingSides(s).includes(side)) return [];
-    return candidates(s, side).flatMap(command => {
+    return candidates(s, side).filter(command => worthTrying(s, command, catalog)).flatMap(command => {
         const result = applyCommand(s, command, catalog);
         return result.error ? [] : [{ command, next: result.state }];
     });

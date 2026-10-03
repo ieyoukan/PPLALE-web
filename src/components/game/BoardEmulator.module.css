@@ -459,3 +459,24 @@
 .far .damageMarble { transform: rotate(171deg); }
 .ppGems i { flex: 0 0 auto; }
 @media (prefers-reduced-motion: reduce) { .costMarble { animation: none; } }
+
+/* The opponent's play / skill / reveal, shown before it resolves. */
+.announcement { position: fixed; inset: 0; z-index: 186; display: flex; align-items: center; justify-content: center; gap: clamp(16px, 3vw, 40px); padding: 24px; background: radial-gradient(ellipse at center, #2a1a33cc 0%, #2a1a3388 55%, transparent 80%); pointer-events: none; animation: announceFade 1.45s ease both; }
+.announcementCard { position: relative; height: min(58dvh, 460px); aspect-ratio: 533 / 800; border-radius: 10px; box-shadow: 0 0 0 3px #ffe9b8, 0 0 40px #ffb7d6aa, 18px 26px 24px #1b0f2299; animation: announceCard 1.45s cubic-bezier(.16,1,.3,1) both; }
+.announcementText { max-width: min(420px, 40vw); display: flex; flex-direction: column; gap: 10px; color: #fffaf0; text-shadow: 0 2px 8px #1b0f22; animation: announceText 1.45s ease both; }
+.announcementText small { align-self: flex-start; padding: 4px 12px; border-radius: 999px; background: #ec96b8; color: #fff; font-size: 16px; text-shadow: none; }
+.announcementText strong { font-size: clamp(24px, 3vw, 38px); line-height: 1.2; }
+.announcementText p { margin: 0; font-size: clamp(14px, 1.6vw, 18px); line-height: 1.6; white-space: pre-line; }
+@keyframes announceFade { 0% { opacity: 0; } 10%, 82% { opacity: 1; } 100% { opacity: 0; } }
+@keyframes announceCard { 0% { transform: translateY(-42vh) scale(.35) rotate(-8deg); } 22% { transform: translateY(0) scale(1.06) rotate(1deg); } 30%, 80% { transform: scale(1) rotate(0); } 100% { transform: translateY(14vh) scale(.5); } }
+@keyframes announceText { 0%, 14% { opacity: 0; transform: translateX(-16px); } 26%, 100% { opacity: 1; transform: translateX(0); } }
+@media (max-width: 700px) { .announcement { flex-direction: column; } .announcementCard { height: 42dvh; } .announcementText { max-width: 88vw; } }
+
+/* The card the opponent picked for an effect. */
+.targetPing { position: fixed; z-index: 187; pointer-events: none; border-radius: 10px; box-shadow: 0 0 0 4px #ff8fb8, 0 0 24px 6px #ff8fb8aa; animation: targetPing .9s ease-out both; }
+@keyframes targetPing { 0% { transform: scale(1.35); opacity: 0; } 30% { transform: scale(1); opacity: 1; } 75% { opacity: 1; } 100% { transform: scale(1.08); opacity: 0; } }
+
+@media (prefers-reduced-motion: reduce) {
+  .announcement, .announcementText { animation: none; }
+  .announcementCard, .targetPing { animation: none; }
+}

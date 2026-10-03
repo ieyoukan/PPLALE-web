@@ -34,7 +34,7 @@ export function useBoard(container: RefObject<HTMLDivElement | null>) {
   const [exchanges, setExchanges] = useState<Record<string, DeckKind>>({});
   const setup = panel?.type === 'setup';
   const animations = useBoardAnimations({ game, view, mode, container });
-  const { run: animate, flights, strike, turnNotice } = animations;
+  const { run: animate, flights, strike, turnNotice, announcement, ping, blocked, busy: animating } = animations;
   const canControl = useCallback((side: Side) => mode === 'hotseat' || side === 0, [mode]);
 
   /** Sends a command (with its animation). Clears the local selection of the acting side. */
@@ -47,13 +47,12 @@ export function useBoard(container: RefObject<HTMLDivElement | null>) {
     animate(command, () => send(command));
   }, [view, animate, send]);
 
-  const animating = flights.length > 0 || !!strike || !!turnNotice;
   const dice = useOpeningDice({ game, act, paused: setup, cpuRolls: ready && mode === 'cpu' && !setup && !paused && !animating });
   const { busy: rollingDice } = dice;
   const busy = animating || rollingDice;
   useCpuPlayer({
     enabled: ready && mode === 'cpu' && !setup && !paused, level, game, act, flights,
-    busy: { any: busy, blocking: rollingDice || !!strike || !!turnNotice },
+    busy: { any: busy, blocking: rollingDice || !!strike || !!turnNotice || !!announcement || !!ping || !!blocked },
   });
 
   // Same-device play follows whoever has to act.

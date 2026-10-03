@@ -1,5 +1,6 @@
 // What a side cannot know is replaced by a random but consistent guess before a CPU sees the state.
 import { shuffled } from '../core/rng.ts';
+import { cloneState } from '../core/state.ts';
 import { other } from '../model.ts';
 import type { Catalog, DeckKind, GameState, Side } from '../model.ts';
 
@@ -12,7 +13,7 @@ import type { Catalog, DeckKind, GameState, Side } from '../model.ts';
  * Everything else is public. The result is a valid state, so it can be simulated with applyCommand.
  */
 export function determinize(s: GameState, side: Side, catalog: Catalog, seed: number): GameState {
-    const t = structuredClone(s);
+    const t = cloneState(s);
     t.rng = seed >>> 0;
     const me = t.players[side], foe = t.players[other(side)];
     for (const kind of ['yojo', 'sweet'] as const) {

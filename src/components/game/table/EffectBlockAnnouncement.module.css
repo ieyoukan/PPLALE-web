@@ -1,0 +1,102 @@
+.layer {
+  position: fixed;
+  inset: 0;
+  z-index: 205;
+  pointer-events: none;
+  background: rgb(44 25 47 / 24%);
+  animation: linger 1.2s ease both;
+}
+
+.shield {
+  position: absolute;
+  border: 5px solid #fffbdb;
+  border-radius: 12px;
+  box-shadow: 0 0 0 7px #b8e5d8, 0 0 40px 14px #ffedba;
+  animation: defend 0.45s ease-out both;
+}
+
+.shield span {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  display: grid;
+  place-items: center;
+  width: 64px;
+  height: 64px;
+  border-radius: 50%;
+  background: #fffbea;
+  font-size: 38px;
+  box-shadow: 0 4px 10px #80526866;
+}
+
+.notice {
+  position: absolute;
+  top: 46%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  display: flex;
+  align-items: center;
+  gap: 24px;
+  width: max-content;
+  max-width: 95vw;
+  animation: pop 0.25s ease-out both;
+}
+
+.card {
+  position: relative;
+  height: clamp(160px, 32dvh, 290px);
+  aspect-ratio: 533 / 800;
+  flex-shrink: 0;
+  transform: rotate(-8deg);
+  filter: drop-shadow(0 12px 14px #29192999);
+}
+
+.words {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  color: #753a64;
+  background: #fff9ec;
+  border: 4px solid #ecb2c8;
+  border-radius: 24px;
+  padding: 18px 24px;
+  box-shadow: 0 8px 0 #c78caa, 0 12px 28px #39253c55;
+}
+
+.words strong {
+  font-family: 'BoardHandwriting', sans-serif;
+  font-size: clamp(28px, 4vw, 56px);
+  line-height: 1.2;
+}
+
+.words span {
+  font-size: clamp(22px, 2.5vw, 30px);
+  font-weight: 700;
+}
+
+@keyframes linger {
+  0% { opacity: 0; }
+  12%, 80% { opacity: 1; }
+  100% { opacity: 0; }
+}
+
+@keyframes defend {
+  from { transform: scale(1.25); opacity: 0; }
+  to { transform: scale(1); opacity: 1; }
+}
+
+@keyframes pop {
+  from { scale: 0.7; }
+  to { scale: 1; }
+}
+
+@media (max-width: 600px) and (orientation: portrait) {
+  .notice { flex-direction: column; gap: 16px; }
+  .card { height: 25dvh; }
+  .words { padding: 16px; text-align: center; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .shield, .notice { animation: none; }
+}

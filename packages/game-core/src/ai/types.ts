@@ -1,7 +1,7 @@
 import type { Catalog, GameState, Side } from '../model.ts';
 import type { Move } from './moves.ts';
 
-export type CpuLevel = 'easy' | 'normal' | 'hard';
+export type CpuLevel = 'easy' | 'normal' | 'hard' | 'master';
 
 /** What a strategy gets for one decision. */
 export interface CpuDecision {

@@ -20,6 +20,7 @@
     "lint:fix": "eslint . --fix",
     "typecheck": "tsc --noEmit",
     "test:game": "npm run test --workspace=@pplale/game-core",
+    "cpu:arena": "npm run arena --workspace=@pplale/game-core --",
     "cards:import-en": "node scripts/import-english-cards.mjs",
     "cards:optimize": "node scripts/optimize-images.mjs",
     "cards:og-images": "node scripts/generate-og-images.mjs",

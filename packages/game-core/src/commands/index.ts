@@ -1,3 +1,4 @@
+import { cloneState } from '../core/state.ts';
 import { resolveQueue } from '../effects/resolve.ts';
 import { RuleError } from '../model.ts';
 import type { Catalog, Command, GameState, Result } from '../model.ts';
@@ -14,7 +15,7 @@ const handlers: Handlers<Command['type']> = { ...openingCommands, ...turnCommand
  * state unchanged with `error`. `allowAdjust` enables the sandbox test commands.
  */
 export function applyCommand(previous: GameState, command: Command, catalog: Catalog, allowAdjust = false): Result {
-    const s = structuredClone(previous);
+    const s = cloneState(previous);
     try {
         if (s.winner !== null) throw new RuleError('この対戦は終了しています');
         if (command.type in sandboxCommands && !allowAdjust) throw new RuleError('テスト操作は両側操作モードで利用できます');

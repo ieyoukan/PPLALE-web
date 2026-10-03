@@ -3,7 +3,7 @@ import { scriptOf } from '../cards/registry.ts';
 import { cardContext } from '../effects/context.ts';
 import { deckLabel, other, sides } from '../model.ts';
 import type { Catalog, DeckKind, GameState, Side } from '../model.ts';
-import { hpOf, note, spawnCard } from './cards.ts';
+import { hpOf, note, recordEffectBlock, spawnCard } from './cards.ts';
 
 export const FIELD_SIZE = 7;
 
@@ -77,7 +77,10 @@ export function destroy(s: GameState, uid: string, byEffect: boolean, catalog: C
     const side = ownerOnField(s, uid);
     if (side === undefined) return;
     const card = s.cards[uid];
-    if (byEffect && card.keywords.includes('effectImmune')) return;
+    if (byEffect && card.keywords.includes('effectImmune')) {
+        recordEffectBlock(s, uid, 'destroy');
+        return;
+    }
     const p = s.players[side];
     p.field = p.field.filter(id => id !== uid);
     card.slot = null;

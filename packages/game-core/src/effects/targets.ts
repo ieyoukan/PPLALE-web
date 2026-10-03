@@ -8,10 +8,7 @@ export function unitsInScope(s: GameState, t: Pick<Task, 'actor' | 'scope'>): st
     return s.players[other(t.actor)].field;
 }
 
-/**
- * Taunt concentrates explicit selections: when enemy taunt units are among the candidates, only
- * they can be chosen. Global and random effects do not use this.
- */
+/** Enemy taunt concentrates selected effects, within the effect's own eligible scope. */
 export function selectable(s: GameState, actor: Side, candidates: string[]): string[] {
     const enemy = s.players[other(actor)].field;
     const taunts = candidates.filter(id => enemy.includes(id) && s.cards[id].keywords.includes('taunt'));

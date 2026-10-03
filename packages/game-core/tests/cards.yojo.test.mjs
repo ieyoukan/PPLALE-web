@@ -95,6 +95,8 @@ test('y_11 もなか: loses 2 points on play; on destruction damages allies and 
 test('y_11 もなか: destruction damages every friendly unit and heals 2', () => {
   let s = arena({ me: { field: ['y_11', 'y_17'], points: 5 }, foe: { field: ['y_21'] } });
   s.active = 1;
+  // まめろん has guard: grant pierce so the attack can reach もなか.
+  s.cards[field(s, 1)[0]].keywords.push('pierce');
   s = run(s, { type: 'attack', actor: 1, uid: field(s, 1)[0], target: field(s)[0] });
   assert.equal(s.players[0].points, 7);
   assert.equal(s.cards[field(s)[0]].damage, 1);

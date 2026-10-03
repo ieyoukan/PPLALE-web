@@ -7,8 +7,7 @@ import type { DeckKind, GameState, Keyword, Side, Task, TaskOp } from '../model.
  */
 export interface OpDef {
     /**
-     * `unit`: the step needs one unit on the field, chosen from `task.scope` (taunt concentrates the
-     * choice). The engine asks for it, then `run` sees `task.target` set.
+     * `unit`: the step needs one unit on the field, chosen from `task.scope`, narrowed by enemy taunt. The engine asks for it, then `run` sees `task.target` set.
      */
     target?: 'unit';
     run(fx: Effects, task: Task): void;

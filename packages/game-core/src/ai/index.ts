@@ -6,12 +6,13 @@ import type { Catalog, Command, GameState, Side } from '../model.ts';
 import { determinize } from './hidden.ts';
 import { easy } from './levels/easy.ts';
 import { hard } from './levels/hard.ts';
+import { master } from './levels/master.ts';
 import { normal } from './levels/normal.ts';
 import { actingSides, legalMoves } from './moves.ts';
 import type { CpuLevel, CpuStrategy } from './types.ts';
 
-export const cpuStrategies: Record<CpuLevel, CpuStrategy> = { easy, normal, hard };
-export const cpuLevels: CpuLevel[] = ['easy', 'normal', 'hard'];
+export const cpuStrategies: Record<CpuLevel, CpuStrategy> = { easy, normal, hard, master };
+export const cpuLevels: CpuLevel[] = ['easy', 'normal', 'hard', 'master'];
 
 export interface CpuOptions {
     level?: CpuLevel;
@@ -41,6 +42,10 @@ export function cpuCommand(s: GameState, catalog: Catalog, { level = 'normal', s
 export { actingSides, legalMoves } from './moves.ts';
 export type { Move } from './moves.ts';
 export { determinize } from './hidden.ts';
+export { findLethal } from './lethal.ts';
+export { playMatch, randomStrawberryDeck } from './selfplay.ts';
+export type { MatchOptions, MatchResult } from './selfplay.ts';
+export type { LethalOptions, LethalResult } from './lethal.ts';
 export { evaluate, defaultWeights } from './evaluate.ts';
 export type { Weights } from './evaluate.ts';
 export type { CpuDecision, CpuLevel, CpuStrategy } from './types.ts';
