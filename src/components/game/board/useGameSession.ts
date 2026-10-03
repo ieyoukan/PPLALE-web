@@ -1,25 +1,22 @@
 'use client';
 
 import { useCallback, useEffect, useReducer, useState } from 'react';
-import { applyCommand, newGame, sandboxRules } from '@pplale/game-core';
+import { applyCommand, cpuLevels, newGame, sandboxRules } from '@pplale/game-core';
 import type { Command, CpuLevel, GameState, Side } from '@pplale/game-core';
-import { cpuLevels } from '@pplale/game-core';
 import { demoDeck, gameCatalog } from '@/lib/game/catalog';
+import { readSession, saveSession } from '@/lib/game/sessionStore';
+import type { Levels, Mode } from '@/lib/game/sessionStore';
 
-/** cpu: you (side 0) vs CPU. hotseat: one device controls both sides. watch: CPU vs CPU. */
-export type Mode = 'cpu' | 'hotseat' | 'watch';
-/** CPU level per side; a side's entry is unused while a human controls it. */
-export type Levels = [CpuLevel, CpuLevel];
+export type { Levels, Mode } from '@/lib/game/sessionStore';
+type Session = { game: GameState; error: string; history: GameState[] };
+type Action = { type: 'command'; command: Command; sandbox: boolean } | { type: 'load'; game: GameState } | { type: 'undo' };
+
+const HISTORY_LIMIT = 20;
 const modes: Mode[] = ['cpu', 'hotseat', 'watch'];
 /** Sides the CPU plays in a mode. */
 export const cpuSidesOf = (mode: Mode): Side[] => mode === 'cpu' ? [1] : mode === 'watch' ? [0, 1] : [];
 /** Display name of a side from the viewer's seat (side 0 is the near side). */
 export const sideLabel = (mode: Mode, side: Side) => mode === 'watch' ? `CPU ${side + 1}` : side === 0 ? 'あなた' : mode === 'cpu' ? 'CPU' : '相手';
-type Session = { game: GameState; error: string; history: GameState[] };
-type Action = { type: 'command'; command: Command; sandbox: boolean } | { type: 'load'; game: GameState } | { type: 'undo' };
-
-const STORAGE_KEY = 'pplale-game-session-v2';
-const HISTORY_LIMIT = 20;
 
 function reducer(session: Session, action: Action): Session {
   if (action.type === 'load') return { game: action.game, error: '', history: [] };
@@ -31,11 +28,15 @@ function reducer(session: Session, action: Action): Session {
   return result.error ? { ...session, error: result.error } : { game: result.state, error: '', history: [...session.history.slice(1 - HISTORY_LIMIT), session.game] };
 }
 
-const initial = (): Session => ({ game: newGame([{ ...demoDeck, name: 'あなた' }, { ...demoDeck, name: 'CPU' }], gameCatalog, sandboxRules, 42), error: '', history: [] });
+// Only a placeholder until the saved match is loaded; the board is not shown before `ready`.
+const placeholder = (): Session => ({ game: newGame([{ ...demoDeck, name: 'あなた' }, { ...demoDeck, name: 'CPU' }], gameCatalog, sandboxRules, 42), error: '', history: [] });
 
-/** The match state, undo history and browser persistence. All game changes go through `send`. */
-export function useGameSession({ onRestored }: { onRestored: () => void }) {
-  const [session, dispatch] = useReducer(reducer, undefined, initial);
+/**
+ * The match prepared on the preparation page, its undo history and browser persistence. All game
+ * changes go through `send`. Without a usable saved match `onMissing` is called (back to preparation).
+ */
+export function useGameSession({ onMissing }: { onMissing: () => void }) {
+  const [session, dispatch] = useReducer(reducer, undefined, placeholder);
   const [mode, setMode] = useState<Mode>('cpu');
   const [levels, setLevels] = useState<Levels>(['normal', 'normal']);
   const [ready, setReady] = useState(false);
@@ -44,25 +45,18 @@ export function useGameSession({ onRestored }: { onRestored: () => void }) {
   useEffect(() => {
     let cancelled = false;
     async function restore() {
-      try {
-        const raw = localStorage.getItem(STORAGE_KEY);
-        if (raw) {
-          const { restoreGame } = await import('@pplale/game-core/snapshot');
-          if (cancelled) return;
-          const saved = JSON.parse(raw);
-          const state = restoreGame(saved.game, gameCatalog);
-          if (state) {
-            dispatch({ type: 'load', game: state });
-            setMode(modes.includes(saved.mode) ? saved.mode : 'cpu');
-            // Saves from before the watch mode only stored the opponent's level.
-            const valid = (value: unknown): value is CpuLevel => cpuLevels.includes(value as CpuLevel);
-            if (Array.isArray(saved.levels) && saved.levels.length === 2 && saved.levels.every(valid)) setLevels(saved.levels);
-            else if (valid(saved.level)) setLevels(['normal', saved.level]);
-            onRestored();
-          } else setSaveError('前回の対戦を復元できませんでした');
-        }
-      } catch { if (!cancelled) setSaveError('前回の対戦を復元できませんでした'); }
-      if (!cancelled) setReady(true);
+      const saved = readSession();
+      const { restoreGame } = await import('@pplale/game-core/snapshot');
+      if (cancelled) return;
+      const state = saved ? restoreGame(saved.game, gameCatalog) : null;
+      if (!saved || !state) return onMissing();
+      dispatch({ type: 'load', game: state });
+      setMode(modes.includes(saved.mode as Mode) ? saved.mode as Mode : 'cpu');
+      // Saves from before the watch mode only stored the opponent's level.
+      const valid = (value: unknown): value is CpuLevel => cpuLevels.includes(value as CpuLevel);
+      if (Array.isArray(saved.levels) && saved.levels.length === 2 && saved.levels.every(valid)) setLevels(saved.levels as Levels);
+      else if (valid(saved.level)) setLevels(['normal', saved.level]);
+      setReady(true);
     }
     void restore();
     return () => { cancelled = true; };
@@ -71,13 +65,12 @@ export function useGameSession({ onRestored }: { onRestored: () => void }) {
   }, []);
   useEffect(() => {
     if (!ready) return;
-    try { localStorage.setItem(STORAGE_KEY, JSON.stringify({ game: session.game, mode, levels })); }
+    try { saveSession({ game: session.game, mode, levels }); }
     catch { setSaveError('このブラウザに対戦を保存できません'); }
   }, [ready, session.game, mode, levels]);
 
   // Same-device play allows the sandbox test commands.
   const send = useCallback((command: Command) => dispatch({ type: 'command', command, sandbox: mode === 'hotseat' }), [mode]);
-  const load = useCallback((game: GameState, nextMode: Mode, nextLevels: Levels) => { dispatch({ type: 'load', game }); setMode(nextMode); setLevels(nextLevels); setSaveError(''); }, []);
   const undo = useCallback(() => dispatch({ type: 'undo' }), []);
-  return { ...session, mode, setMode, levels, ready, saveError, send, load, undo, canUndo: session.history.length > 0 };
+  return { ...session, mode, levels, ready, saveError, send, undo, canUndo: session.history.length > 0 };
 }

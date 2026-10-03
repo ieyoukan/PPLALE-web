@@ -1,8 +1,9 @@
 'use client';
 
+import { useState } from 'react';
 import dynamic from 'next/dynamic';
 import { useBoardContext } from '../board/BoardContext';
-import { GameSetup } from '../GameSetup';
+import type { Panel } from '../board/useBoard';
 import styles from '../BoardEmulator.module.css';
 const InspectPanel = dynamic(() => import('./InspectPanel').then(module => module.InspectPanel));
 const LogPanel = dynamic(() => import('./LogPanel').then(module => module.LogPanel));
@@ -10,24 +11,32 @@ const MenuPanel = dynamic(() => import('./MenuPanel').then(module => module.Menu
 const SkillPanel = dynamic(() => import('./SkillPanel').then(module => module.SkillPanel));
 const ZonePanel = dynamic(() => import('./ZonePanel').then(module => module.ZonePanel));
 
-/** The drawer / modal that shows whichever panel is open. */
+type DrawerPanel = Extract<NonNullable<Panel>, { type: 'menu' | 'logs' | 'zone' }>;
+const isDrawer = (panel: Panel): panel is DrawerPanel => !!panel && ['menu', 'logs', 'zone'].includes(panel.type);
+
+/**
+ * Menu, log and pile lists slide in from the right and are closed with the toolbar button, which
+ * sits in the same corner. Card inspection and skills are modals with their own close button.
+ */
 export function SidePanel() {
-  const { panel, setPanel, start } = useBoardContext();
-  if (!panel) return null;
-  const modal = panel.type === 'skills';
-  const className = [styles.drawer, modal && styles.skillModal, panel.type === 'inspect' && styles.inspection].filter(Boolean).join(' ');
-  const label = panel.type === 'setup' ? '対戦の準備' : modal ? 'スキル' : 'カード情報';
+  const { panel, setPanel } = useBoardContext();
+  const drawer = isDrawer(panel) ? panel : null;
+  // Keep the last content while the drawer slides out.
+  const [last, setLast] = useState<DrawerPanel | null>(drawer);
+  if (drawer && drawer !== last) setLast(drawer);
+  const modal = panel?.type === 'skills';
   return <>
-    {modal && <button className={styles.modalBackdrop} aria-label="スキルを閉じる" onClick={() => setPanel(null)} />}
-    <aside className={className} role={modal ? 'dialog' : undefined} aria-modal={modal || undefined} aria-label={label}>
-      {panel.type === 'setup' ? <GameSetup onClose={() => setPanel(null)} onStart={start} /> : <>
-        <button className={styles.close} onClick={() => setPanel(null)} aria-label="パネルを閉じる">×</button>
-        {panel.type === 'menu' && <MenuPanel />}
-        {panel.type === 'logs' && <LogPanel />}
-        {panel.type === 'zone' && <ZonePanel side={panel.side} kind={panel.kind} />}
-        {panel.type === 'inspect' && <InspectPanel uid={panel.uid} />}
-        {panel.type === 'skills' && <SkillPanel side={panel.side} />}
-      </>}
+    <aside className={`${styles.drawer} ${styles.slideDrawer} ${drawer ? styles.drawerOpen : ''}`} inert={!drawer} aria-label="メニュー">
+      {last?.type === 'menu' && <MenuPanel />}
+      {last?.type === 'logs' && <LogPanel />}
+      {last?.type === 'zone' && <ZonePanel side={last.side} kind={last.kind} />}
     </aside>
+    {modal && <button className={styles.modalBackdrop} aria-label="スキルを閉じる" onClick={() => setPanel(null)} />}
+    {(panel?.type === 'skills' || panel?.type === 'inspect') && <aside className={[styles.drawer, modal ? styles.skillModal : styles.inspection].join(' ')}
+      role={modal ? 'dialog' : undefined} aria-modal={modal || undefined} aria-label={modal ? 'スキル' : 'カード情報'}>
+      <button className={styles.close} onClick={() => setPanel(null)} aria-label="パネルを閉じる">×</button>
+      {panel.type === 'inspect' && <InspectPanel uid={panel.uid} />}
+      {panel.type === 'skills' && <SkillPanel side={panel.side} />}
+    </aside>}
   </>;
 }

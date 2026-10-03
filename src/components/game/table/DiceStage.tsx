@@ -8,8 +8,8 @@ import styles from '../BoardEmulator.module.css';
 /** Dice for the first player, then the winner's first / second choice. */
 export function DiceStage() {
   const board = useBoardContext();
-  const { game, setup, dice, busy } = board;
-  if (setup || !(game.phase === 'dice' || game.phase === 'initiative' || dice.reveal)) return null;
+  const { game, dice, busy } = board;
+  if (!(game.phase === 'dice' || game.phase === 'initiative' || dice.reveal)) return null;
   const visible: Side = dice.busy ? dice.rollingSide : game.phase === 'opening' ? 1 : dice.nextDie;
   const value = dice.rolling ? dice.outcome : dice.complete && game.phase === 'dice' && !dice.reveal ? null : game.dice?.rolls[visible] ?? null;
   const interactive = game.phase === 'dice' && !busy && board.canControl(visible) && visible === dice.nextDie;

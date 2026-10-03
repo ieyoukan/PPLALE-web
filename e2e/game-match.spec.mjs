@@ -8,10 +8,11 @@ const savedGame = page => page.evaluate(key => JSON.parse(localStorage.getItem(k
 async function loadBoard(page, game, mode = 'hotseat') {
   game.players[0].name = 'あなた';
   game.players[1].name = mode === 'cpu' ? 'CPU' : '相手';
+  // Store the match on the preparation page, then open the board, which loads it.
   await page.goto(url);
-  await page.getByRole('button', { name: /デッキをセットする/ }).waitFor();
+  await page.getByRole('button', { name: /対戦をはじめる/ }).waitFor();
   await page.evaluate(({ game, mode, key }) => localStorage.setItem(key, JSON.stringify({ game, mode, level: 'easy' })), { game, mode, key: storageKey });
-  await page.reload();
+  await page.goto(new URL('play/', url).href);
   await expect(page.locator('[data-table]')).toBeVisible();
   await expect.poll(async () => (await savedGame(page)).phase).toBe('playing');
 }

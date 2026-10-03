@@ -33,10 +33,10 @@ export function AnimationLayer() {
 }
 
 export function ResultBanner() {
-  const { game, setPanel } = useBoardContext();
+  const { game, leave } = useBoardContext();
   if (game.winner === null) return null;
   return <div className={styles.result}>
     <strong>{game.winner === 'draw' ? '引き分け' : `${game.players[game.winner].name}の勝利`}</strong>
-    <button onClick={() => setPanel({ type: 'setup' })}>次の対戦を準備する</button>
+    <button onClick={leave}>次の対戦を準備する</button>
   </div>;
 }

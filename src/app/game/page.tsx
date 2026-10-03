@@ -1,10 +1,10 @@
 import type { Metadata } from 'next';
-import BoardEmulator from '@/components/game/BoardEmulator';
+import GameLobby from '@/components/game/GameLobby';
 export const metadata: Metadata = {
-    title: 'ぷぷりえーる 盤面エミュレータ',
-    description: 'いちごカードと通常プレイアブルで、ぷぷりえーるの盤面を操作する。',
+    title: 'ぷぷりえーる ゲームの準備',
+    description: 'いちごカードと通常プレイアブルで、ぷぷりえーるの対戦を準備する。CPUと対戦、両側を操作、CPU同士の観戦を選べる。',
     alternates: { canonical: '/game/' },
 };
 export default function GamePage() {
-    return <BoardEmulator />;
+    return <GameLobby />;
 }

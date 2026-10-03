@@ -25,13 +25,21 @@ const MulliganBoard = dynamic(() => import('./MulliganBoard').then(module => mod
 export default function BoardEmulator() {
   const container = useRef<HTMLDivElement>(null);
   const board = useBoard(container);
-  const { game, me, view, mode, paused, attacker, drag, mulligan, setup, error, setPanel, setPaused, setAttacker } = board;
+  const { game, me, view, mode, paused, attacker, drag, mulligan, ready, panel, error, setPanel, setPaused, setAttacker } = board;
+  // The saved match is still loading (or missing, and the preparation page is opening).
+  if (!ready) return <div className={styles.emulator} aria-busy="true" />;
+  // Any open panel (drawer or modal) is closed from the same corner button.
+  const drawerOpen = !!panel;
   return <BoardContext.Provider value={board}>
     <div className={styles.emulator} ref={container}
       onKeyDown={event => { if (event.key === 'Escape') board.clearSelection(); }}
       onPointerMove={drag.move} onPointerUp={drag.release} onPointerCancel={drag.cancel}>
       <header className={styles.toolbar}>
-        <button className={styles.menuButton} onClick={() => setPanel({ type: 'menu' })} aria-label="メニュー">☰</button>
+        {/* One button in one place: opens the menu, and closes whatever drawer is open. */}
+        <button className={`${styles.menuButton} ${drawerOpen ? styles.menuButtonOpen : ''}`} aria-expanded={drawerOpen}
+          onClick={() => setPanel(drawerOpen ? null : { type: 'menu' })} aria-label={drawerOpen ? 'メニューを閉じる' : 'メニュー'}>
+          <span aria-hidden="true">{drawerOpen ? '×' : '☰'}</span>
+        </button>
         {mode !== 'hotseat' && paused && <button className={styles.menuButton} onClick={() => setPaused(false)} aria-label="CPU再開">▶</button>}
       </header>
       <div className={`${styles.tableViewport} ${game.phase === 'playing' ? styles.withTurnControl : ''}`}>
@@ -55,7 +63,7 @@ export default function BoardEmulator() {
       </div>}
       <HandDock />
       <SelectedCard />
-      {game.phase === 'mulligan' && !game.pending && !setup && <MulliganBoard key={view}
+      {game.phase === 'mulligan' && !game.pending && <MulliganBoard key={view}
         cards={me.hand.map(uid => ({ uid, id: game.cards[uid].cardId, name: displayCards[game.cards[uid].cardId].name, deck: gameCatalog[game.cards[uid].cardId].type as DeckKind }))}
         exchanges={mulligan.exchanges} enabled={mulligan.enabled} confirmed={game.mulligan.confirmed[view]}
         onChange={mulligan.change} onConfirm={mulligan.confirm} />}

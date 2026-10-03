@@ -4,17 +4,18 @@ import { useCallback, useEffect, useMemo, useState } from 'react';
 import { attackTargets, costOf, other, pendingView } from '@pplale/game-core';
 import type { Command, DeckKind, GameState, Side } from '@pplale/game-core';
 import type { RefObject } from 'react';
+import { useRouter } from 'next/navigation';
 import { gameCatalog } from '@/lib/game/catalog';
+import { LOBBY_PATH } from '@/lib/game/sessionStore';
 import { useBoardAnimations } from './useBoardAnimations';
 import { useCardDrag } from './useCardDrag';
 import type { DragSource } from './useCardDrag';
 import { useCpuPlayer } from './useCpuPlayer';
 import { cpuSidesOf, useGameSession } from './useGameSession';
-import type { Levels, Mode } from './useGameSession';
 import { useOpeningDice } from './useOpeningDice';
 
 export type Panel =
-  | { type: 'menu' } | { type: 'setup' } | { type: 'logs' }
+  | { type: 'menu' } | { type: 'logs' }
   | { type: 'inspect'; uid: string } | { type: 'skills'; side: Side } | { type: 'zone'; side: Side; kind: 'nap' | 'exile' }
   | null;
 
@@ -25,14 +26,17 @@ const typeOf = (game: GameState, uid: string) => gameCatalog[game.cards[uid].car
  * for each kind of tap / drag. Components read it through BoardContext and stay presentational.
  */
 export function useBoard(container: RefObject<HTMLDivElement | null>) {
-  const [panel, setPanel] = useState<Panel>({ type: 'setup' });
-  const { game, mode, levels, ready, error, saveError, canUndo, send, load, undo: undoCommand, setMode } = useGameSession({ onRestored: () => setPanel(null) });
+  const [panel, setPanel] = useState<Panel>(null);
+  const router = useRouter();
+  // No saved match (opened directly, or storage cleared): prepare one first.
+  const { game, mode, levels, ready, error, saveError, canUndo, send, undo: undoCommand } = useGameSession({ onMissing: () => router.replace(LOBBY_PATH) });
   const [view, setView] = useState<Side>(0);
   const [selected, setSelected] = useState<string | null>(null);
   const [attacker, setAttacker] = useState<string | null>(null);
   const [paused, setPaused] = useState(false);
   const [exchanges, setExchanges] = useState<Record<string, DeckKind>>({});
-  const setup = panel?.type === 'setup';
+  /** The saved match is still loading; nothing may act yet. */
+  const loading = !ready;
   const cpuSides = useMemo(() => cpuSidesOf(mode), [mode]);
   const animations = useBoardAnimations({ game, view, mode, cpuSides, container });
   const { run: animate, flights, strike, turnNotice, announcement, ping, blocked, busy: animating } = animations;
@@ -49,11 +53,11 @@ export function useBoard(container: RefObject<HTMLDivElement | null>) {
     animate(command, () => send(command));
   }, [view, animate, send]);
 
-  const dice = useOpeningDice({ game, act, paused: setup, cpuSides, cpuRolls: ready && !setup && !paused && !animating });
+  const dice = useOpeningDice({ game, act, paused: loading, cpuSides, cpuRolls: ready && !loading && !paused && !animating });
   const { busy: rollingDice } = dice;
   const busy = animating || rollingDice;
   useCpuPlayer({
-    enabled: ready && cpuSides.length > 0 && !setup && !paused, sides: cpuSides, levels, game, act, flights,
+    enabled: ready && cpuSides.length > 0 && !loading && !paused, sides: cpuSides, levels, game, act, flights,
     busy: { any: busy, blocking: rollingDice || !!strike || !!turnNotice || !!announcement || !!ping || !!blocked },
   });
 
@@ -67,7 +71,7 @@ export function useBoard(container: RefObject<HTMLDivElement | null>) {
   const pending = useMemo(() => pendingView(game), [game]);
   const ours = !!pending && canControl(pending.actor);
   const attacks = useMemo(() => attackTargets(game, game.active, gameCatalog), [game]);
-  const playEnabled = game.phase === 'playing' && canControl(view) && game.active === view && !game.pending && !busy && !setup && game.winner === null;
+  const playEnabled = game.phase === 'playing' && canControl(view) && game.active === view && !game.pending && !busy && !loading && game.winner === null;
   const flying = (uid: string) => flights.some(f => f.uid === uid);
   const canStrike = useCallback((uid: string, target: string | 'leader') => game.active === view && !!attacks[uid]?.includes(target), [attacks, game.active, view]);
   const canAttackNow = (uid: string) => !!attacks[uid];
@@ -81,8 +85,8 @@ export function useBoard(container: RefObject<HTMLDivElement | null>) {
   const adjust = (side: Side, resource: 'points' | 'ppBonus' | 'pp', delta: number) => act({ type: 'adjust', actor: side, resource, delta });
 
   function deckReady(side: Side, kind: DeckKind) {
-    if (game.phase === 'opening') return canControl(side) && !setup && !rollingDice && game.openingRemaining[side] > 0 && !flights.some(f => game.players[side].hand.includes(f.uid));
-    return ours && !busy && !setup && pending!.actor === side && pending!.decks.includes(kind);
+    if (game.phase === 'opening') return canControl(side) && !loading && !rollingDice && game.openingRemaining[side] > 0 && !flights.some(f => game.players[side].hand.includes(f.uid));
+    return ours && !busy && !loading && pending!.actor === side && pending!.decks.includes(kind);
   }
   function clickDeck(side: Side, kind: DeckKind) {
     if (game.phase === 'opening') act({ type: 'openingDraw', actor: side, deck: kind });
@@ -139,7 +143,7 @@ export function useBoard(container: RefObject<HTMLDivElement | null>) {
   const replacements = me.hand.filter(uid => exchanges[uid] && game.mulligan.eligible[view].includes(uid)).map(uid => ({ uid, deck: exchanges[uid] }));
   const mulligan = {
     exchanges,
-    enabled: game.phase === 'mulligan' && !game.mulligan.confirmed[view] && canControl(view) && !game.pending && !rollingDice && !strike && !flights.some(f => me.hand.includes(f.uid)) && !setup,
+    enabled: game.phase === 'mulligan' && !game.mulligan.confirmed[view] && canControl(view) && !game.pending && !rollingDice && !strike && !flights.some(f => me.hand.includes(f.uid)) && !loading,
     change: (uid: string, deck: DeckKind | null) => setExchanges(current => {
       const next = { ...current };
       if (deck) next[uid] = deck;
@@ -150,16 +154,9 @@ export function useBoard(container: RefObject<HTMLDivElement | null>) {
   };
 
   // ── Session ──
-  function start(state: GameState, nextMode: Mode, nextLevels: Levels) {
-    dice.reset();
-    animations.reset();
-    drag.cancel();
-    load(state, nextMode, nextLevels);
-    setView(0);
-    setPaused(false);
-    setPanel(null);
-    setSelected(null);
-    setAttacker(null);
+  /** Back to the preparation page. The match stays saved and can be resumed from there. */
+  function leave() {
+    router.push(LOBBY_PATH);
   }
   function undo() {
     animations.skipNext();
@@ -177,13 +174,13 @@ export function useBoard(container: RefObject<HTMLDivElement | null>) {
   }
 
   return {
-    game, mode, levels, view, me, panel, setup, busy, paused,
+    game, mode, levels, view, me, panel, ready, busy, paused,
     error: error || saveError, canUndo,
     selected, attacker, pending, ours, playEnabled,
     animations, dice, drag, mulligan,
     canControl, canStrike, canAttackNow, affordable, isOption, flying, deckReady,
     act, choose, play, adjust, clickDeck, clickSlot, clickHand, attackLeader,
-    setPanel, setSelected, setAttacker, setView, setMode, setPaused, start, undo, clearSelection, toggleFullscreen,
+    setPanel, setSelected, setAttacker, setView, setPaused, leave, undo, clearSelection, toggleFullscreen,
   };
 }
 export type Board = ReturnType<typeof useBoard>;

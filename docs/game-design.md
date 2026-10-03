@@ -7,7 +7,7 @@
 ```text
 src/data/*.json ── catalog.ts ──> game-core
                                    ↑ Command
-GameSetup / Firebase decks ──> BoardEmulator ──> GameState を描画
+GameLobby (/game/) + Firebase decks ──保存──> BoardEmulator (/game/play/) ──> GameState を描画
                                    ↓
                            localStorage に途中保存
 ```

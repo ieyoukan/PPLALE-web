@@ -4,14 +4,14 @@ import Link from 'next/link';
 import { cpuLevels, cpuProfiles, newGame, sandboxRules, validateDeck } from '@pplale/game-core';
 import type { CpuLevel, GameState, Rules, Side } from '@pplale/game-core';
 import { sideLabel } from './board/useGameSession';
-import type { Levels, Mode } from './board/useGameSession';
+import type { Levels, Mode } from '@/lib/game/sessionStore';
 import { useAuth } from '@/lib/auth';
 import { demoDeck, gameCatalog } from '@/lib/game/catalog';
 import type { SavedGameDeck } from '@/lib/game/savedDecks';
 import styles from './BoardEmulator.module.css';
-export function GameSetup({ onStart, onClose }: {
+/** Mode, CPU levels, decks and test rules for a new match. Used by the preparation page. */
+export function GameSetup({ onStart }: {
     onStart: (game: GameState, mode: Mode, levels: Levels) => void;
-    onClose: () => void;
 }) {
     const { user, signInWithGoogle } = useAuth();
     const [decks, setDecks] = useState<SavedGameDeck[]>([]);
@@ -59,7 +59,6 @@ export function GameSetup({ onStart, onClose }: {
     }
     const fields = [['initialYojo', '先攻の初期手札枚数', 0, 20], ['initialPoints', '初期お菓子ポイント', 1, 30]] as const;
     return <div className={styles.setupContent}>
-    <div className={styles.dialogHeading}><div><h2>対戦の準備</h2></div><button onClick={onClose} aria-label="閉じる">×</button></div>
     <div className={styles.setupModes}><button aria-pressed={mode === 'cpu'} onClick={() => setMode('cpu')}>CPUと対戦</button><button aria-pressed={mode === 'hotseat'} onClick={() => setMode('hotseat')}>両側を操作</button><button aria-pressed={mode === 'watch'} onClick={() => setMode('watch')}>CPU同士を観戦</button></div>
     {/* One row per CPU side: the opponent against you, both sides when watching. */}
     {(mode === 'watch' ? [0, 1] as Side[] : mode === 'cpu' ? [1] as Side[] : []).map(side => <div key={side} className={styles.setupModes} role="group" aria-label={mode === 'watch' ? `${sideLabel(mode, side)}の強さ` : 'CPUの強さ'}>
@@ -71,6 +70,6 @@ export function GameSetup({ onStart, onClose }: {
     {decks.some(d => d.errors.length > 0) && <details className={styles.ruleSettings}><summary>使用できないデッキの理由</summary>{decks.filter(d => d.errors.length).map(d => <p key={d.id}>{d.deck.name}：{d.errors.join(' / ')}</p>)}</details>}
     <details className={styles.ruleSettings}><summary>テスト用の基本ルール設定</summary><p>PP上限は12、デッキ切れによる敗北はありません。突撃は登場直後に幼女へ、早食いは幼女・お菓子へ攻撃できます。防衛がいる場合は貫通がない限り防衛持ちへの攻撃に限ります。</p><div className={styles.ruleGrid}>{fields.map(([key, label, min, max]) => <label key={key}>{label}<input type="number" min={min} max={max} value={rules[key]} onChange={event => setRules(previous => ({ ...previous, [key]: Math.max(min, Math.min(max, Number(event.target.value) || min)) }))}/></label>)}</div></details>
     {error && <p role="alert" className={styles.error}>{error}</p>}
-    <button className={styles.startButton} onClick={start}>デッキをセットする <span>→</span></button>
+    <button className={styles.startButton} onClick={start}>対戦をはじめる <span>→</span></button>
   </div>;
 }
