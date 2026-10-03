@@ -2,11 +2,19 @@
 
 import { useCallback, useEffect, useReducer, useState } from 'react';
 import { applyCommand, newGame, sandboxRules } from '@pplale/game-core';
-import type { Command, CpuLevel, GameState } from '@pplale/game-core';
+import type { Command, CpuLevel, GameState, Side } from '@pplale/game-core';
 import { cpuLevels } from '@pplale/game-core';
 import { demoDeck, gameCatalog } from '@/lib/game/catalog';
 
-export type Mode = 'cpu' | 'hotseat';
+/** cpu: you (side 0) vs CPU. hotseat: one device controls both sides. watch: CPU vs CPU. */
+export type Mode = 'cpu' | 'hotseat' | 'watch';
+/** CPU level per side; a side's entry is unused while a human controls it. */
+export type Levels = [CpuLevel, CpuLevel];
+const modes: Mode[] = ['cpu', 'hotseat', 'watch'];
+/** Sides the CPU plays in a mode. */
+export const cpuSidesOf = (mode: Mode): Side[] => mode === 'cpu' ? [1] : mode === 'watch' ? [0, 1] : [];
+/** Display name of a side from the viewer's seat (side 0 is the near side). */
+export const sideLabel = (mode: Mode, side: Side) => mode === 'watch' ? `CPU ${side + 1}` : side === 0 ? 'あなた' : mode === 'cpu' ? 'CPU' : '相手';
 type Session = { game: GameState; error: string; history: GameState[] };
 type Action = { type: 'command'; command: Command; sandbox: boolean } | { type: 'load'; game: GameState } | { type: 'undo' };
 
@@ -29,7 +37,7 @@ const initial = (): Session => ({ game: newGame([{ ...demoDeck, name: 'あなた
 export function useGameSession({ onRestored }: { onRestored: () => void }) {
   const [session, dispatch] = useReducer(reducer, undefined, initial);
   const [mode, setMode] = useState<Mode>('cpu');
-  const [level, setLevel] = useState<CpuLevel>('normal');
+  const [levels, setLevels] = useState<Levels>(['normal', 'normal']);
   const [ready, setReady] = useState(false);
   const [saveError, setSaveError] = useState('');
 
@@ -45,8 +53,11 @@ export function useGameSession({ onRestored }: { onRestored: () => void }) {
           const state = restoreGame(saved.game, gameCatalog);
           if (state) {
             dispatch({ type: 'load', game: state });
-            setMode(saved.mode === 'hotseat' ? 'hotseat' : 'cpu');
-            if (cpuLevels.includes(saved.level)) setLevel(saved.level);
+            setMode(modes.includes(saved.mode) ? saved.mode : 'cpu');
+            // Saves from before the watch mode only stored the opponent's level.
+            const valid = (value: unknown): value is CpuLevel => cpuLevels.includes(value as CpuLevel);
+            if (Array.isArray(saved.levels) && saved.levels.length === 2 && saved.levels.every(valid)) setLevels(saved.levels);
+            else if (valid(saved.level)) setLevels(['normal', saved.level]);
             onRestored();
           } else setSaveError('前回の対戦を復元できませんでした');
         }
@@ -60,13 +71,13 @@ export function useGameSession({ onRestored }: { onRestored: () => void }) {
   }, []);
   useEffect(() => {
     if (!ready) return;
-    try { localStorage.setItem(STORAGE_KEY, JSON.stringify({ game: session.game, mode, level })); }
+    try { localStorage.setItem(STORAGE_KEY, JSON.stringify({ game: session.game, mode, levels })); }
     catch { setSaveError('このブラウザに対戦を保存できません'); }
-  }, [ready, session.game, mode, level]);
+  }, [ready, session.game, mode, levels]);
 
   // Same-device play allows the sandbox test commands.
   const send = useCallback((command: Command) => dispatch({ type: 'command', command, sandbox: mode === 'hotseat' }), [mode]);
-  const load = useCallback((game: GameState, nextMode: Mode, nextLevel: CpuLevel) => { dispatch({ type: 'load', game }); setMode(nextMode); setLevel(nextLevel); setSaveError(''); }, []);
+  const load = useCallback((game: GameState, nextMode: Mode, nextLevels: Levels) => { dispatch({ type: 'load', game }); setMode(nextMode); setLevels(nextLevels); setSaveError(''); }, []);
   const undo = useCallback(() => dispatch({ type: 'undo' }), []);
-  return { ...session, mode, setMode, level, ready, saveError, send, load, undo, canUndo: session.history.length > 0 };
+  return { ...session, mode, setMode, levels, ready, saveError, send, load, undo, canUndo: session.history.length > 0 };
 }

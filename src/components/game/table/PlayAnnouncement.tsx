@@ -7,12 +7,12 @@ import styles from '../BoardEmulator.module.css';
 
 const verb = { play: 'プレイ', skill: 'スキル', reveal: '公開' } as const;
 
-/** The opponent's card / skill, large, with its text — shown before it resolves. */
+/** A card / skill used by the opponent (or by either CPU when watching), large, with its text — shown before it resolves. */
 export function PlayAnnouncement() {
   const board = useBoardContext();
   const shown = board.animations.announcement;
   if (!shown) return null;
-  const who = sideName(board, board.view === 0 ? 1 : 0);
+  const who = sideName(board, shown.side);
   return <div key={shown.id} className={styles.announcement} role="status" aria-live="assertive">
     <div className={styles.announcementCard}><GameCard id={shown.cardId} sizes="180px" /></div>
     <div className={styles.announcementText}>

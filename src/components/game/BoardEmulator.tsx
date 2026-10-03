@@ -32,7 +32,7 @@ export default function BoardEmulator() {
       onPointerMove={drag.move} onPointerUp={drag.release} onPointerCancel={drag.cancel}>
       <header className={styles.toolbar}>
         <button className={styles.menuButton} onClick={() => setPanel({ type: 'menu' })} aria-label="メニュー">☰</button>
-        {mode === 'cpu' && paused && <button className={styles.menuButton} onClick={() => setPaused(false)} aria-label="CPU再開">▶</button>}
+        {mode !== 'hotseat' && paused && <button className={styles.menuButton} onClick={() => setPaused(false)} aria-label="CPU再開">▶</button>}
       </header>
       <div className={`${styles.tableViewport} ${game.phase === 'playing' ? styles.withTurnControl : ''}`}>
         <div className={styles.table} data-table>

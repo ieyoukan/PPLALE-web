@@ -2,15 +2,15 @@
 
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { attackTargets, costOf, other, pendingView } from '@pplale/game-core';
-import type { Command, CpuLevel, DeckKind, GameState, Side } from '@pplale/game-core';
+import type { Command, DeckKind, GameState, Side } from '@pplale/game-core';
 import type { RefObject } from 'react';
 import { gameCatalog } from '@/lib/game/catalog';
 import { useBoardAnimations } from './useBoardAnimations';
 import { useCardDrag } from './useCardDrag';
 import type { DragSource } from './useCardDrag';
 import { useCpuPlayer } from './useCpuPlayer';
-import { useGameSession } from './useGameSession';
-import type { Mode } from './useGameSession';
+import { cpuSidesOf, useGameSession } from './useGameSession';
+import type { Levels, Mode } from './useGameSession';
 import { useOpeningDice } from './useOpeningDice';
 
 export type Panel =
@@ -26,16 +26,18 @@ const typeOf = (game: GameState, uid: string) => gameCatalog[game.cards[uid].car
  */
 export function useBoard(container: RefObject<HTMLDivElement | null>) {
   const [panel, setPanel] = useState<Panel>({ type: 'setup' });
-  const { game, mode, level, ready, error, saveError, canUndo, send, load, undo: undoCommand, setMode } = useGameSession({ onRestored: () => setPanel(null) });
+  const { game, mode, levels, ready, error, saveError, canUndo, send, load, undo: undoCommand, setMode } = useGameSession({ onRestored: () => setPanel(null) });
   const [view, setView] = useState<Side>(0);
   const [selected, setSelected] = useState<string | null>(null);
   const [attacker, setAttacker] = useState<string | null>(null);
   const [paused, setPaused] = useState(false);
   const [exchanges, setExchanges] = useState<Record<string, DeckKind>>({});
   const setup = panel?.type === 'setup';
-  const animations = useBoardAnimations({ game, view, mode, container });
+  const cpuSides = useMemo(() => cpuSidesOf(mode), [mode]);
+  const animations = useBoardAnimations({ game, view, mode, cpuSides, container });
   const { run: animate, flights, strike, turnNotice, announcement, ping, blocked, busy: animating } = animations;
-  const canControl = useCallback((side: Side) => mode === 'hotseat' || side === 0, [mode]);
+  /** A human acts for this side (nobody does while watching two CPUs). */
+  const canControl = useCallback((side: Side) => !cpuSides.includes(side), [cpuSides]);
 
   /** Sends a command (with its animation). Clears the local selection of the acting side. */
   const act = useCallback((command: Command) => {
@@ -47,11 +49,11 @@ export function useBoard(container: RefObject<HTMLDivElement | null>) {
     animate(command, () => send(command));
   }, [view, animate, send]);
 
-  const dice = useOpeningDice({ game, act, paused: setup, cpuRolls: ready && mode === 'cpu' && !setup && !paused && !animating });
+  const dice = useOpeningDice({ game, act, paused: setup, cpuSides, cpuRolls: ready && !setup && !paused && !animating });
   const { busy: rollingDice } = dice;
   const busy = animating || rollingDice;
   useCpuPlayer({
-    enabled: ready && mode === 'cpu' && !setup && !paused, level, game, act, flights,
+    enabled: ready && cpuSides.length > 0 && !setup && !paused, sides: cpuSides, levels, game, act, flights,
     busy: { any: busy, blocking: rollingDice || !!strike || !!turnNotice || !!announcement || !!ping || !!blocked },
   });
 
@@ -148,11 +150,11 @@ export function useBoard(container: RefObject<HTMLDivElement | null>) {
   };
 
   // ── Session ──
-  function start(state: GameState, nextMode: Mode, nextLevel: CpuLevel) {
+  function start(state: GameState, nextMode: Mode, nextLevels: Levels) {
     dice.reset();
     animations.reset();
     drag.cancel();
-    load(state, nextMode, nextLevel);
+    load(state, nextMode, nextLevels);
     setView(0);
     setPaused(false);
     setPanel(null);
@@ -175,7 +177,7 @@ export function useBoard(container: RefObject<HTMLDivElement | null>) {
   }
 
   return {
-    game, mode, level, view, me, panel, setup, busy, paused,
+    game, mode, levels, view, me, panel, setup, busy, paused,
     error: error || saveError, canUndo,
     selected, attacker, pending, ours, playEnabled,
     animations, dice, drag, mulligan,

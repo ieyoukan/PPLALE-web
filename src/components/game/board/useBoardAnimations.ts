@@ -9,11 +9,12 @@ import { skillDescription } from '@/lib/game/skillText';
 import type { DrawFlight } from '../BoardPieces';
 import { TURN_NOTICE_DURATION } from '../TurnAnnouncement';
 import type { TurnNotice } from '../TurnAnnouncement';
+import { sideLabel } from './useGameSession';
 import type { Mode } from './useGameSession';
 
 export type Strike = { uid: string; cardId: string; x: number; y: number; dx: number; dy: number; width: number; height: number };
 /** A card or skill the opponent used, shown large before it resolves. */
-export type Announcement = { id: number; kind: 'play' | 'skill' | 'reveal'; cardId: string; title: string; text: string };
+export type Announcement = { id: number; kind: 'play' | 'skill' | 'reveal'; side: Side; cardId: string; title: string; text: string };
 /** Immunity outcomes to present after a command resolves. */
 export type EffectBlockNotice = { id: number; targets: (Ping & { cardId: string; kind: 'damage' | 'destroy' })[] };
 /** The card the opponent picked for an effect. */
@@ -36,7 +37,7 @@ const rectOf = (element: Element) => {
  * Visual effects derived from state changes: cards flying from deck to hand, the attack lunge and
  * the turn announcement. Nothing here changes the game; `busy` tells the board to wait.
  */
-export function useBoardAnimations({ game, view, mode, container }: { game: GameState; view: Side; mode: Mode; container: RefObject<HTMLDivElement | null> }) {
+export function useBoardAnimations({ game, view, mode, cpuSides, container }: { game: GameState; view: Side; mode: Mode; cpuSides: Side[]; container: RefObject<HTMLDivElement | null> }) {
   const [flights, setFlights] = useState<DrawFlight[]>([]);
   const [strike, setStrike] = useState<Strike | null>(null);
   const [turnNotice, setTurnNotice] = useState<TurnNotice | null>(null);
@@ -87,7 +88,7 @@ export function useBoardAnimations({ game, view, mode, container }: { game: Game
     const beginsTurn = game.phase === 'playing' && (old.phase !== 'playing' || old.turn !== game.turn);
     if (beginsTurn) {
       const announce = () => {
-        setTurnNotice({ id: game.turn, own: mode === 'hotseat' || game.active === view, number: game.players[game.active].turns, pp: game.players[game.active].pp });
+        setTurnNotice({ id: game.turn, own: mode === 'hotseat' || game.active === view, number: game.players[game.active].turns, pp: game.players[game.active].pp, label: mode === 'watch' ? `${sideLabel(mode, game.active)}のターン` : undefined });
         later(() => setTurnNotice(null), TURN_NOTICE_DURATION);
       };
       if (next.length) later(announce, DRAW_DURATION);
@@ -97,13 +98,14 @@ export function useBoardAnimations({ game, view, mode, container }: { game: Game
   useEffect(() => () => timers.current.forEach(clearTimeout), []);
 
   /**
-   * Runs `commit` (applying the command) with its animation: attacks lunge first; the opponent's
-   * cards, skills and chosen targets are shown before they resolve, so the result can be followed.
+   * Runs `commit` (applying the command) with its animation: attacks lunge first; cards, skills and
+   * chosen targets of the opponent or of any CPU side are shown before they resolve, so the result
+   * can be followed.
    */
   const run = useCallback((command: Command, commit: () => void) => {
     const apply = () => { enabled.current = true; commit(); };
     const root = container.current;
-    const opponent = command.actor !== view;
+    const opponent = command.actor !== view || cpuSides.includes(command.actor);
     const shown = opponent ? describe(game, command) : null;
     if (shown) {
       setAnnouncement(shown);
@@ -130,7 +132,7 @@ export function useBoardAnimations({ game, view, mode, container }: { game: Game
       }
     }
     apply();
-  }, [game, view, container, later]);
+  }, [game, view, cpuSides, container, later]);
 
   /** Loads, restores and undo jump without animating the difference. */
   const skipNext = useCallback(() => { enabled.current = false; }, []);
@@ -155,11 +157,11 @@ function describe(game: GameState, command: Command): Announcement | null {
   const id = ++announcementId;
   if (command.type === 'play' || command.type === 'reveal') {
     const card = displayCards[game.cards[command.uid].cardId];
-    return { id, kind: command.type, cardId: card.id, title: card.name, text: card.effect ?? '' };
+    return { id, kind: command.type, side: command.actor, cardId: card.id, title: card.name, text: card.effect ?? '' };
   }
   if (command.type === 'skill') {
     const playable = game.players[command.actor].playable, skill = skillsFor(playable)[command.index];
-    return skill ? { id, kind: 'skill', cardId: playable, title: skill.name, text: skillDescription(displayCards[playable].effect, command.index) } : null;
+    return skill ? { id, kind: 'skill', side: command.actor, cardId: playable, title: skill.name, text: skillDescription(displayCards[playable].effect, command.index) } : null;
   }
   return null;
 }

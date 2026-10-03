@@ -172,6 +172,7 @@
 .setupModes button { flex: 1; padding: 12px 8px; border: 1px solid #d9cab1; border-radius: 5px; background: #fffdf7; font-size: 12px; }
 .setupModes button[aria-pressed=true] { border-color: #a4bd98; background: #e9f1df; }
 .setupModes small { display: block; font-size: 9px; color: #a08d75; margin-top: 4px; }
+.setupModeLabel { flex: 0 0 auto; align-self: center; min-width: 4.5em; font-size: 16px; color: #7a5967; }
 .deckSelectors { display: flex; flex-direction: column; gap: 12px; margin: 18px 0; }
 .deckSelectors label, .ruleGrid label { font-size: 11px; }
 .deckSelectors select, .ruleGrid select, .ruleGrid input { display: block; width: 100%; margin-top: 6px; background: #fffcf4; border: 1px solid #d7c8af; border-radius: 3px; padding: 8px; color: #6b5946; font-size: 11px; }

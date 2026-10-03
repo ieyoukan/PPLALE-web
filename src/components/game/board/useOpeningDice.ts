@@ -13,7 +13,7 @@ const CPU_DELAY = 650;
  * The first-player dice. The 3D die needs the result before the throw starts, so it is computed
  * with the deterministic engine and then committed when the throw lands.
  */
-export function useOpeningDice({ game, act, paused, cpuRolls }: { game: GameState; act: (command: Command) => void; paused: boolean; cpuRolls: boolean }) {
+export function useOpeningDice({ game, act, paused, cpuRolls, cpuSides }: { game: GameState; act: (command: Command) => void; paused: boolean; cpuRolls: boolean; cpuSides: Side[] }) {
   const [rolling, setRolling] = useState(false);
   const [rollingSide, setRollingSide] = useState<Side>(0);
   const [reveal, setReveal] = useState(false);
@@ -38,12 +38,12 @@ export function useOpeningDice({ game, act, paused, cpuRolls }: { game: GameStat
     }, DICE_THROW_DURATION);
   }, [busy, paused, game, nextDie, act]);
 
-  // The CPU throws its own die.
+  // A CPU side throws its own die.
   useEffect(() => {
-    if (!cpuRolls || busy || game.phase !== 'dice' || nextDie !== 1) return;
+    if (!cpuRolls || busy || game.phase !== 'dice' || !cpuSides.includes(nextDie)) return;
     const id = setTimeout(roll, CPU_DELAY);
     return () => clearTimeout(id);
-  }, [cpuRolls, busy, game.phase, nextDie, roll]);
+  }, [cpuRolls, cpuSides, busy, game.phase, nextDie, roll]);
   useEffect(() => () => { if (timer.current) clearTimeout(timer.current); }, []);
 
   const reset = useCallback(() => {

@@ -1,13 +1,13 @@
 'use client';
 
 import { useCallback, useEffect, useRef } from 'react';
-import type { Command, CpuLevel, GameState } from '@pplale/game-core';
+import type { Command, GameState, Side } from '@pplale/game-core';
 import { gameCatalog } from '@/lib/game/catalog';
 import type { DrawFlight } from '../BoardPieces';
 import type { CpuRequest, CpuResponse } from './cpu.worker';
+import type { Levels } from './useGameSession';
 
 const CPU_DELAY = 650;
-const CPU_SIDE = 1;
 
 type Reply = (command: Command | null) => void;
 const thinkHere = (request: CpuRequest, reply: Reply) => {
@@ -46,9 +46,21 @@ function useCpuWorker(enabled: boolean) {
   }, []);
 }
 
-/** Plays side 1 with the engine's CPU at `level`, one command at a time, waiting for animations. */
-export function useCpuPlayer({ enabled, level, game, act, busy, flights }: {
-  enabled: boolean; level: CpuLevel; game: GameState; act: (command: Command) => void;
+/** The CPU side that should act now, or null. Opening draws and the mulligan run in parallel per side. */
+function cpuToMove(game: GameState, sides: Side[], flights: DrawFlight[], animating: boolean): Side | null {
+  const cardFlying = (side: Side) => flights.some(f => game.players[side].hand.includes(f.uid));
+  if (game.phase === 'opening') return sides.find(side => game.openingRemaining[side] > 0 && !cardFlying(side)) ?? null;
+  if (game.phase === 'mulligan') return sides.find(side => !game.mulligan.confirmed[side] && !cardFlying(side)) ?? null;
+  const actor = game.pending?.task.actor ?? game.active;
+  return !animating && sides.includes(actor) ? actor : null;
+}
+
+/**
+ * Plays every side in `sides` with the engine's CPU (one side against a human, both when watching),
+ * one command at a time, waiting for animations.
+ */
+export function useCpuPlayer({ enabled, sides, levels, game, act, busy, flights }: {
+  enabled: boolean; sides: Side[]; levels: Levels; game: GameState; act: (command: Command) => void;
   /** Any animation is running. Opening draws and the mulligan may overlap the human's flights. */
   busy: { any: boolean; blocking: boolean }; flights: DrawFlight[];
 }) {
@@ -56,17 +68,13 @@ export function useCpuPlayer({ enabled, level, game, act, busy, flights }: {
   const request = useRef(0);
   useEffect(() => {
     if (!enabled || busy.blocking || game.winner !== null || game.phase === 'dice') return;
-    const cpuCardFlying = flights.some(f => game.players[CPU_SIDE].hand.includes(f.uid));
-    if (game.phase === 'opening') {
-      if (game.openingRemaining[CPU_SIDE] <= 0 || cpuCardFlying) return;
-    } else if (game.phase === 'mulligan') {
-      if (game.mulligan.confirmed[CPU_SIDE] || cpuCardFlying) return;
-    } else if (busy.any || (game.pending?.task.actor ?? game.active) !== CPU_SIDE) return;
+    const side = cpuToMove(game, sides, flights, busy.any);
+    if (side === null) return;
     // An answer for an older position (the match changed while thinking) is dropped.
     let cancelled = false;
-    const timer = setTimeout(() => think({ id: ++request.current, game, level, side: CPU_SIDE }, command => {
+    const timer = setTimeout(() => think({ id: ++request.current, game, level: levels[side], side }, command => {
       if (command && !cancelled) act(command);
     }), CPU_DELAY);
     return () => { clearTimeout(timer); cancelled = true; };
-  }, [enabled, level, game, act, busy.any, busy.blocking, flights, think]);
+  }, [enabled, sides, levels, game, act, busy.any, busy.blocking, flights, think]);
 }
