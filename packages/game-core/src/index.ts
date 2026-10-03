@@ -1,6 +1,13 @@
-export { cardEffectsSchema } from './cardEffectSchema.ts';
-export type { CardEffects } from './cardEffectSchema.ts';
 export * from './model.ts';
-export * from './engine.ts';
+export { applyCommand } from './commands/index.ts';
+export { newGame, validateDeck } from './setup.ts';
 export { restoreGame } from './snapshot.ts';
 export { cpuCommand } from './cpu.ts';
+export { attackOf, costOf, hpOf, maxPp, spawnCard } from './core/cards.ts';
+export { canAttack } from './core/combat.ts';
+export { skillsFor } from './playables/skills.ts';
+export type { SkillScript } from './playables/skills.ts';
+export { scriptOf } from './cards/registry.ts';
+export type { CardScript, OpDef } from './cards/types.ts';
+export { attackTargets, isRevealable, pendingView } from './view.ts';
+export type { PendingView } from './view.ts';

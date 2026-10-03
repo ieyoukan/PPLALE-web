@@ -1,3 +1,4 @@
+import { memo } from 'react';
 import Image from 'next/image';
 import { attackOf, hpOf } from '@pplale/game-core';
 import type { Instance } from '@pplale/game-core';
@@ -5,7 +6,8 @@ import { displayCards, gameCatalog } from '@/lib/game/catalog';
 import styles from './BoardEmulator.module.css';
 const keywordNames = { charge: '突撃', fast: '早食い', taunt: '挑発', guard: '防衛', pierce: '貫通', immobile: '行動不能', noEat: '食不可', effectImmune: '効果耐性' } as const;
 const signed = (value: number) => `${value >= 0 ? '+' : '−'}${Math.abs(value)}`;
-export function GameCard({ id, instance, stats = false, abilities = false, currentCost }: {
+/** Card face with live markers. Memoized: unchanged cards skip re-rendering during drags and selection. */
+export const GameCard = memo(function GameCard({ id, instance, stats = false, abilities = false, currentCost }: {
     id: string;
     instance?: Instance;
     stats?: boolean;
@@ -32,4 +34,4 @@ export function GameCard({ id, instance, stats = false, abilities = false, curre
       <span aria-hidden="true">{currentCost < card.cost ? '↓' : '↑'}</span>{currentCost}
     </span>}
   </>;
-}
+});

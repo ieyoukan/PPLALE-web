@@ -1,6 +1,11 @@
+// Types shared by every layer. No logic other than tiny pure helpers lives here.
+
 export type Side = 0 | 1;
 export type DeckKind = 'yojo' | 'sweet';
 export type Keyword = 'charge' | 'fast' | 'taunt' | 'guard' | 'pierce' | 'immobile' | 'noEat' | 'effectImmune';
+export const keywords: readonly Keyword[] = ['charge', 'fast', 'taunt', 'guard', 'pierce', 'immobile', 'noEat', 'effectImmune'];
+
+/** Printed card data passed in from the app (no images). */
 export interface Definition {
     id: string;
     name: string;
@@ -20,6 +25,7 @@ export interface Deck {
     sweet: string[];
     playable: string;
 }
+
 export interface Rules {
     initialPoints: number;
     initialYojo: number;
@@ -30,33 +36,38 @@ export interface Rules {
     maxPP: number;
     stealHeals: boolean;
     emptyDeckLoses: boolean;
-    /** Legacy snapshot fields; combat always follows the confirmed rules. */
-    guardBlocksUnits: boolean;
-    pierceIgnoresTaunt: boolean;
 }
 // Explicit sandbox preset until the rulebook is confirmed. Stored in each match.
 export const sandboxRules: Rules = {
     initialPoints: 12, initialYojo: 3, initialSweet: 0, firstPlayer: 0,
-    turnDraw: 'yojo', firstTurnDraw: false, maxPP: 10, stealHeals: false,
-    emptyDeckLoses: false, guardBlocksUnits: false, pierceIgnoresTaunt: false,
+    turnDraw: 'yojo', firstTurnDraw: false, maxPP: 10, stealHeals: false, emptyDeckLoses: false,
 };
+
+/** One physical card in a match. `uid` is unique per match, `cardId` points to the catalog. */
 export interface Instance {
     uid: string;
     cardId: string;
     attackBonus: number;
     hpBonus: number;
     damage: number;
+    /** Permanent cost change while in hand. */
     costDelta: number;
+    /** Cost change until the owner's turn ends. */
     temporaryCost: number;
     keywords: Keyword[];
+    /** うぃまるの「1度だけ受けたダメージを0にする」 */
     shield: boolean;
     slot: number | null;
+    /** Game turn it entered the field. */
     entered: number;
     exhausted: boolean;
+    /** Game turn it last ate sweets (for りくす). */
     ateOn: number;
     revealed: boolean;
+    /** Units destroyed together with this one (くっつくポッキー). */
     links: string[];
 }
+
 export interface Player {
     name: string;
     yojo: string[];
@@ -72,16 +83,41 @@ export interface Player {
     pp: number;
     ppBonus: number;
     nextPpDebt: number;
+    /** Sweet-point thresholds (10, 5) whose draw has already happened. */
     milestones: number[];
+    /** Card ids played from hand this game, oldest first. */
     played: string[];
+    /** ふわふわパンケーキ */
     shield: boolean;
-    doubleSweet: boolean;
+    /** Pending おいしくなる呪文 casts. The next real sweet is multiplied by 1 + this. */
+    sweetBoost: number;
+    /** Remaining uses per skill, indexed like `skillsFor(playable)`. */
     skills: number[];
     lastBorrow: number;
 }
+
+/**
+ * Names of queued effect steps. Generic ones live in effects/ops.ts; card-specific ones are
+ * declared next to their card (cards/*.ts) or skill (playables/*.ts).
+ */
+export type TaskOp =
+    // generic, see effects/ops.ts
+    | 'damage' | 'allDamage' | 'randomDamage' | 'buff' | 'allBuff' | 'keyword' | 'destroy' | 'copy' | 'stealUnit'
+    | 'heal' | 'reduce' | 'steal' | 'pp' | 'summon' | 'addHand' | 'draw' | 'discard' | 'handCost' | 'enterAuras'
+    // card / skill specific
+    | 'searchRole' | 'diceDiscard' | 'shurei' | 'doughnut' | 'float' | 'floatSearch' | 'pocky' | 'pockyEnemy' | 'gift'
+    | 'bonusDamage' | 'punish';
+/** Why a draw happens; also the tag that keeps a hand-cost change temporary. */
+export type TaskTag = 'opening' | 'turn' | 'threshold' | 'temporary';
+
+/**
+ * A queued effect step. It is plain JSON so a match can be saved while an effect waits for a choice.
+ * `target` is empty until the player picks; the step is then re-run with the chosen option id.
+ */
 export interface Task {
-    op: string;
+    op: TaskOp;
     actor: Side;
+    /** Card uid that caused the step; its script receives follow-up hooks such as `onDrawn`. */
     source?: string;
     target?: string;
     amount?: number;
@@ -89,11 +125,13 @@ export interface Task {
     keyword?: Keyword;
     cardId?: string;
     scope?: 'friendly' | 'enemy' | 'any';
+    /** Ids already handled by earlier repeats of the same step. */
     ids?: string[];
+    /** Fixed candidate list for multi-target steps. */
     candidates?: string[];
     count?: number;
     multiplier?: number;
-    text?: string;
+    text?: TaskTag;
     deck?: DeckKind;
 }
 export interface Choice {
@@ -104,9 +142,11 @@ export interface Choice {
     }[];
     task: Task;
 }
+
+export type Phase = 'dice' | 'initiative' | 'opening' | 'mulligan' | 'playing';
 export interface GameState {
     version: 1;
-    phase: 'dice' | 'initiative' | 'opening' | 'mulligan' | 'playing';
+    phase: Phase;
     openingRemaining: [number, number];
     mulligan: { eligible: [string[], string[]]; confirmed: [boolean, boolean] };
     dice: { rolls: [number | null, number | null]; ties: number } | null;
@@ -116,91 +156,36 @@ export interface GameState {
     revision: number;
     active: Side;
     turn: number;
-    players: [
-        Player,
-        Player
-    ];
+    players: [Player, Player];
     cards: Record<string, Instance>;
     queue: Task[];
     pending: Choice | null;
     winner: Side | 'draw' | null;
     log: string[];
 }
-export type Command = {
-    type: 'openingDraw';
-    actor: Side;
-    deck: DeckKind;
-} | {
-    type: 'initiative';
-    actor: Side;
-    order: 'first' | 'second';
-} | {
-    type: 'mulligan';
-    actor: Side;
-    replacements: { uid: string; deck: DeckKind }[];
-} | {
-    type: 'keep';
-    actor: Side;
-} | {
-    type: 'roll';
-    actor: Side;
-} | {
-    type: 'play';
-    actor: Side;
-    uid: string;
-    slot?: number;
-} | {
-    type: 'attack';
-    actor: Side;
-    uid: string;
-    target: string | 'leader';
-} | {
-    type: 'end';
-    actor: Side;
-} | {
-    type: 'choose';
-    actor: Side;
-    option: string;
-} | {
-    type: 'skill';
-    actor: Side;
-    index: number;
-} | {
-    type: 'reveal';
-    actor: Side;
-    uid: string;
-} | {
-    type: 'adjust';
-    actor: Side;
-    resource: 'points' | 'pp' | 'ppBonus' | 'damage';
-    delta: number;
-    uid?: string;
-} | {
-    type: 'draw';
-    actor: Side;
-    deck: DeckKind;
-};
+
+export type Command =
+    | { type: 'roll'; actor: Side }
+    | { type: 'initiative'; actor: Side; order: 'first' | 'second' }
+    | { type: 'openingDraw'; actor: Side; deck: DeckKind }
+    | { type: 'mulligan'; actor: Side; replacements: { uid: string; deck: DeckKind }[] }
+    | { type: 'keep'; actor: Side }
+    | { type: 'play'; actor: Side; uid: string; slot?: number }
+    | { type: 'attack'; actor: Side; uid: string; target: string | 'leader' }
+    | { type: 'end'; actor: Side }
+    | { type: 'choose'; actor: Side; option: string }
+    | { type: 'skill'; actor: Side; index: number }
+    | { type: 'reveal'; actor: Side; uid: string }
+    // Sandbox (test) operations, accepted only with `allowAdjust`.
+    | { type: 'adjust'; actor: Side; resource: 'points' | 'pp' | 'ppBonus' | 'damage'; delta: number; uid?: string }
+    | { type: 'draw'; actor: Side; deck: DeckKind };
 export interface Result {
     state: GameState;
     error?: string;
 }
+
 export const other = (side: Side): Side => side === 0 ? 1 : 0;
-export const baseKeywords: Record<string, Keyword[]> = {
-    y_1: ['taunt'], y_3: ['guard'], y_4: ['charge'], y_8: ['guard'], y_13: ['fast', 'taunt'],
-    y_15: ['fast'], y_16: ['guard'], y_17: ['guard', 'noEat'], y_20: ['charge'], y_21: ['charge'],
-    y_23: ['guard'], y_25: ['fast', 'pierce'], y_28: ['taunt', 'effectImmune'],
-    y_29: ['taunt'], token_pudding: ['taunt', 'guard', 'immobile'],
-};
-export const skillInfo: Record<string, {
-    name: string;
-    cost: number;
-    uses: number;
-}[]> = {
-    p_0: [{ name: 'ぷぷりえの参謀', cost: 3, uses: 1 }, { name: '参謀の全面バックアップ', cost: 2, uses: 1 }],
-    p_1: [{ name: 'お菓子はうぃまるが守りまｽﾔｧ', cost: 0, uses: 2 }, { name: 'うぃまるの本気を見せまｽﾔｧ', cost: 1, uses: 2 }, { name: '実は色々できまｽﾔｧ', cost: 1, uses: 1 }],
-    p_2: [{ name: '後で返すからそのお菓子ちょうだい？', cost: 0, uses: 2 }],
-    p_3: [{ name: '応急手当', cost: 0, uses: 2 }, { name: 'お菓子買ってきたよー', cost: 1, uses: 1 }, { name: '皆元気になあれ！', cost: 1, uses: 1 }],
-    p_4: [{ name: '店長のリーダーシップなん', cost: 3, uses: 2 }, { name: 'おしおきなん！', cost: 1, uses: 1 }],
-    p_5: [{ name: 'うち来ない？', cost: 4, uses: 1 }, { name: '強欲なｸﾏ', cost: 1, uses: 1 }],
-};
-export function skillsFor(id: string) { return [{ name: '突撃！隣のおやつタイム', cost: 0, uses: 2 }, ...(skillInfo[id] ?? [])]; }
+export const sides: readonly Side[] = [0, 1];
+export const deckLabel = (kind: DeckKind) => kind === 'yojo' ? '幼女' : 'お菓子';
+/** Thrown for an illegal command; applyCommand turns it into `Result.error` and keeps the old state. */
+export class RuleError extends Error {}

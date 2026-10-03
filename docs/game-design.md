@@ -15,8 +15,9 @@ GameSetup / Firebase decks ──> BoardEmulator ──> GameState を描画
 | 層 | 責務 | 場所 |
 | --- | --- | --- |
 | Next.js | ルート、カード画像、ログイン、Firebase の保存済みデッキ読み込み | `src/app/game`, `src/lib/game` |
-| 画面 | 手札、ドラッグ、対象選択、盤面、履歴、操作モード | `src/components/game` |
-| ゲーム本体 | デッキ検証、状態遷移、カード効果、戦闘、勝敗、乱数 | `packages/game-core/src/engine.ts` |
+| 画面 | 操作の状態とルール（`board/useBoard`）、盤面の各領域（`table/`）、パネル（`panels/`） | `src/components/game` |
+| ゲーム本体 | デッキ検証、状態遷移、戦闘、勝敗、乱数 | `packages/game-core/src/{commands,core,effects}` |
+| カード効果 | カード・スキルごとの効果（いつ・何をするか） | `packages/game-core/src/cards`, `playables` |
 | CPU | 状態から次の Command を選ぶ | `packages/game-core/src/cpu.ts` |
 | 状態復元 | 保存内容の形式とカード参照を確認 | `packages/game-core/src/snapshot.ts` |
 

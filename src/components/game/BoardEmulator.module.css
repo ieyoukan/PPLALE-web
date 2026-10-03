@@ -304,6 +304,8 @@
 .revealed { font-size: 18px; }
 .choiceTray { position: fixed; z-index: 65; left: 50%; bottom: 24px; transform: translateX(-50%); max-width: 92vw; max-height: 70dvh; overflow: auto; display: flex; flex-wrap: wrap; align-items: center; justify-content: center; gap: 14px; padding: 18px; border: 2px solid #ffedc7; border-radius: 24px; background: #fff8edee; box-shadow: 0 10px 30px #45304444; font-size: 20px; }
 .choiceTray strong { width: 100%; text-align: center; }
+/* Picking from the hand: keep the hand uncovered. */
+.choiceTrayTop { bottom: auto; top: 24px; }
 .choiceTray button { min-width: 72px; min-height: 52px; padding: 10px 16px; background: #d9ebc9; border-radius: 16px; font-size: 20px; }
 .choiceThumb { width: 160px; }
 .errorToast { position: fixed; top: 18px; left: 50%; transform: translateX(-50%); z-index: 180; max-width: 80vw; padding: 16px 24px; border-radius: 18px; background: #ffe6e2; color: #98464a; font-size: 18px; box-shadow: 0 5px 15px #5a353344; }

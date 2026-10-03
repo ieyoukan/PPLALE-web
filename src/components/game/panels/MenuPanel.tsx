@@ -1,0 +1,27 @@
+'use client';
+
+import Link from 'next/link';
+import { other } from '@pplale/game-core';
+import { useBoardContext } from '../board/BoardContext';
+import styles from '../BoardEmulator.module.css';
+
+export function MenuPanel() {
+  const { mode, paused, view, busy, canUndo, setPanel, setMode, setPaused, setView, undo, toggleFullscreen } = useBoardContext();
+  const close = (action: () => void) => () => { action(); setPanel(null); };
+  return <>
+    <h2>メニュー</h2>
+    <div className={styles.menuList}>
+      <button onClick={() => setPanel({ type: 'setup' })}>対戦の準備</button>
+      <button onClick={close(() => setMode(mode === 'cpu' ? 'hotseat' : 'cpu'))}>{mode === 'cpu' ? '両側を操作' : 'CPUに任せる'}</button>
+      {mode === 'cpu'
+        ? <button onClick={close(() => setPaused(!paused))}>{paused ? 'CPU再開' : 'CPU一時停止'}</button>
+        : <>
+          <button onClick={close(() => setView(other(view)))}>反対側を見る</button>
+          <button disabled={!canUndo || busy} onClick={close(undo)}>一手戻す</button>
+        </>}
+      <button onClick={() => setPanel({ type: 'logs' })}>履歴</button>
+      <button onClick={close(toggleFullscreen)}>全画面</button>
+      <Link href="/">ホームへ</Link>
+    </div>
+  </>;
+}
