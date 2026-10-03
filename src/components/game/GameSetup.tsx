@@ -1,15 +1,15 @@
 'use client';
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
-import { newGame, sandboxRules, validateDeck } from '@pplale/game-core';
-import type { GameState, Rules } from '@pplale/game-core';
+import { cpuLevels, cpuStrategies, newGame, sandboxRules, validateDeck } from '@pplale/game-core';
+import type { CpuLevel, GameState, Rules } from '@pplale/game-core';
 import { useAuth } from '@/lib/auth';
 import { demoDeck, gameCatalog } from '@/lib/game/catalog';
 import { loadGameDecks } from '@/lib/game/savedDecks';
 import type { SavedGameDeck } from '@/lib/game/savedDecks';
 import styles from './BoardEmulator.module.css';
 export function GameSetup({ onStart, onClose }: {
-    onStart: (game: GameState, mode: 'cpu' | 'hotseat') => void;
+    onStart: (game: GameState, mode: 'cpu' | 'hotseat', level: CpuLevel) => void;
     onClose: () => void;
 }) {
     const { user, signInWithGoogle } = useAuth();
@@ -18,6 +18,7 @@ export function GameSetup({ onStart, onClose }: {
     const [error, setError] = useState('');
     const [selected, setSelected] = useState(['demo', 'demo']);
     const [mode, setMode] = useState<'cpu' | 'hotseat'>('cpu');
+    const [level, setLevel] = useState<CpuLevel>('normal');
     const [rules, setRules] = useState<Rules>({ ...sandboxRules });
     useEffect(() => {
         let active = true;
@@ -48,7 +49,7 @@ export function GameSetup({ onStart, onClose }: {
         const random = new Uint32Array(1);
         crypto.getRandomValues(random);
         try {
-            onStart(newGame([{ ...a, name: `あなた · ${a.name}` }, { ...b, name: `${mode === 'cpu' ? 'CPU' : '相手'} · ${b.name}` }], gameCatalog, rules, random[0]), mode);
+            onStart(newGame([{ ...a, name: `あなた · ${a.name}` }, { ...b, name: `${mode === 'cpu' ? 'CPU' : '相手'} · ${b.name}` }], gameCatalog, rules, random[0]), mode, level);
         }
         catch (error) {
             setError(error instanceof Error ? error.message : '開始できません');
@@ -58,6 +59,7 @@ export function GameSetup({ onStart, onClose }: {
     return <div className={styles.setupContent}>
     <div className={styles.dialogHeading}><div><h2>対戦の準備</h2></div><button onClick={onClose} aria-label="閉じる">×</button></div>
     <div className={styles.setupModes}><button aria-pressed={mode === 'cpu'} onClick={() => setMode('cpu')}>CPUと対戦</button><button aria-pressed={mode === 'hotseat'} onClick={() => setMode('hotseat')}>両側を操作</button></div>
+    {mode === 'cpu' && <div className={styles.setupModes} role="group" aria-label="CPUの強さ">{cpuLevels.map(id => <button key={id} aria-pressed={level === id} title={cpuStrategies[id].description} onClick={() => setLevel(id)}>{cpuStrategies[id].name}</button>)}</div>}
     <div className={styles.deckSelectors}>{[0, 1].map(side => <label key={side}>{side === 0 ? 'あなたのデッキ' : '相手のデッキ'}<select value={selected[side]} onChange={event => setSelected(previous => previous.map((value, index) => index === side ? event.target.value : value))}><option value="demo">いちごのおためしデッキ（20 / 10）</option>{decks.map(d => <option key={d.id} value={d.id} disabled={!!d.errors.length}>{d.deck.name}{d.errors.length ? '（使用不可）' : `（${d.deck.yojo.length} / ${d.deck.sweet.length}）`}</option>)}</select></label>)}</div>
     {!user ? <button className={styles.secondaryButton} onClick={() => { signInWithGoogle().catch(() => setError('ログインできませんでした')); }}>Googleでログインして保存済みデッキを使う</button> : <p className={styles.help}>{loading ? 'デッキを読み込み中…' : `${decks.length}件の保存済みデッキ`} · <Link href="/build">デッキを編集する</Link></p>}
     {decks.some(d => d.errors.length > 0) && <details className={styles.ruleSettings}><summary>使用できないデッキの理由</summary>{decks.filter(d => d.errors.length).map(d => <p key={d.id}>{d.deck.name}：{d.errors.join(' / ')}</p>)}</details>}

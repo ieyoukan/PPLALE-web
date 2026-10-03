@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { attackTargets, costOf, other, pendingView } from '@pplale/game-core';
-import type { Command, DeckKind, GameState, Side } from '@pplale/game-core';
+import type { Command, CpuLevel, DeckKind, GameState, Side } from '@pplale/game-core';
 import type { RefObject } from 'react';
 import { gameCatalog } from '@/lib/game/catalog';
 import { useBoardAnimations } from './useBoardAnimations';
@@ -26,7 +26,7 @@ const typeOf = (game: GameState, uid: string) => gameCatalog[game.cards[uid].car
  */
 export function useBoard(container: RefObject<HTMLDivElement | null>) {
   const [panel, setPanel] = useState<Panel>({ type: 'setup' });
-  const { game, mode, ready, error, saveError, canUndo, send, load, undo: undoCommand, setMode } = useGameSession({ onRestored: () => setPanel(null) });
+  const { game, mode, level, ready, error, saveError, canUndo, send, load, undo: undoCommand, setMode } = useGameSession({ onRestored: () => setPanel(null) });
   const [view, setView] = useState<Side>(0);
   const [selected, setSelected] = useState<string | null>(null);
   const [attacker, setAttacker] = useState<string | null>(null);
@@ -52,7 +52,7 @@ export function useBoard(container: RefObject<HTMLDivElement | null>) {
   const { busy: rollingDice } = dice;
   const busy = animating || rollingDice;
   useCpuPlayer({
-    enabled: ready && mode === 'cpu' && !setup && !paused, game, act, flights,
+    enabled: ready && mode === 'cpu' && !setup && !paused, level, game, act, flights,
     busy: { any: busy, blocking: rollingDice || !!strike || !!turnNotice },
   });
 
@@ -149,11 +149,11 @@ export function useBoard(container: RefObject<HTMLDivElement | null>) {
   };
 
   // ── Session ──
-  function start(state: GameState, nextMode: Mode) {
+  function start(state: GameState, nextMode: Mode, nextLevel: CpuLevel) {
     dice.reset();
     animations.reset();
     drag.cancel();
-    load(state, nextMode);
+    load(state, nextMode, nextLevel);
     setView(0);
     setPaused(false);
     setPanel(null);
@@ -176,7 +176,7 @@ export function useBoard(container: RefObject<HTMLDivElement | null>) {
   }
 
   return {
-    game, mode, view, me, panel, setup, busy, paused,
+    game, mode, level, view, me, panel, setup, busy, paused,
     error: error || saveError, canUndo,
     selected, attacker, pending, ours, playEnabled,
     animations, dice, drag, mulligan,

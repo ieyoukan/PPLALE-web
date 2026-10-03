@@ -17,7 +17,7 @@ Next.js / React / Firebase に依存しない、ぷぷりえーるのローカ�
 | `commands/` | Command ごとの処理（`opening.ts` 開始前 / `turn.ts` ターン中 / `sandbox.ts` テスト操作）と `applyCommand` |
 | `setup.ts` | デッキ検証と `newGame` |
 | `view.ts` | UI 向けの読み取り専用ヘルパー（`pendingView` で選択肢の表示場所、`attackTargets`） |
-| `cpu.ts` | 同じ Command を使う簡易CPU |
+| `ai/` | CPU。`moves.ts` 合法手、`hidden.ts` 見えない情報の推測、`evaluate.ts` 盤面評価、`levels/` 強さごとの戦略 |
 | `snapshot.ts` | 保存された状態の検証・復元と旧形式の移行 |
 
 ## カード効果の読み方・追加方法
@@ -41,6 +41,23 @@ y_8: {
 - そのカードだけの手順は、カードの `ops` に書く（例：しゅれいの `shurei`、ポッキーの `pocky`）。`model.ts` の `TaskOp` に名前を追加する。
 - CPU 向けの判断（対象がいないなら使わない等）は `cpu.worthPlaying`、選択の好みは op の `cpu`。
 - テストは `tests/cards.*.test.mjs` / `tests/skills.test.mjs` に、`arena()` で盤面を作って1カード1テストで書く。
+
+## CPU の書き方
+
+CPU の強さ（`ai/levels/*.ts`）は「合法手の一覧から1つ選ぶ」ことだけを書く。
+
+```ts
+export const easy: CpuStrategy = {
+    level: 'easy', name: 'よわい', description: '…',
+    choose: ({ moves, random }) => moves[random(moves.length)],
+};
+```
+
+- `moves` は `legalMoves` の結果。各 `Move` は `command` と、それを実行した後の状態 `next` を持つ。合法かどうかはエンジン自身に適用して判定するので、ルールとずれない。
+- `state` は `determinize` 済み。相手の非公開の手札・山札の順番・乱数の種は推測で置き換えてあり、CPU は不正に情報を読めない。`next` もその推測した世界での結果。
+- 盤面の良し悪しは `evaluate(state, side, catalog, weights)`。重みを変えれば打ち方の個性を作れる。
+- `cpuCommand(state, catalog, { level, side })` が手番の判定、推測、実際の状態での再確認をまとめて行う。新しい強さは `ai/index.ts` の `cpuStrategies` に登録すると、対戦準備画面に自動で並ぶ。
+- 強さの順序は `tests/cpu.test.mjs` の対戦で確かめる（例：ふつう対よわい 20/20、つよい対ふつう 12/20）。
 
 ## API
 

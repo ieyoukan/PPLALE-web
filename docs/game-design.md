@@ -18,7 +18,7 @@ GameSetup / Firebase decks ──> BoardEmulator ──> GameState を描画
 | 画面 | 操作の状態とルール（`board/useBoard`）、盤面の各領域（`table/`）、パネル（`panels/`） | `src/components/game` |
 | ゲーム本体 | デッキ検証、状態遷移、戦闘、勝敗、乱数 | `packages/game-core/src/{commands,core,effects}` |
 | カード効果 | カード・スキルごとの効果（いつ・何をするか） | `packages/game-core/src/cards`, `playables` |
-| CPU | 状態から次の Command を選ぶ | `packages/game-core/src/cpu.ts` |
+| CPU | 合法手から次の Command を選ぶ。強さごとの戦略、非公開情報の推測 | `packages/game-core/src/ai` |
 | 状態復元 | 保存内容の形式とカード参照を確認 | `packages/game-core/src/snapshot.ts` |
 
 ### 分離する価値

@@ -2,7 +2,8 @@
 
 import { useCallback, useEffect, useReducer, useState } from 'react';
 import { applyCommand, newGame, restoreGame, sandboxRules } from '@pplale/game-core';
-import type { Command, GameState } from '@pplale/game-core';
+import type { Command, CpuLevel, GameState } from '@pplale/game-core';
+import { cpuLevels } from '@pplale/game-core';
 import { demoDeck, gameCatalog } from '@/lib/game/catalog';
 
 export type Mode = 'cpu' | 'hotseat';
@@ -28,6 +29,7 @@ const initial = (): Session => ({ game: newGame([{ ...demoDeck, name: 'あなた
 export function useGameSession({ onRestored }: { onRestored: () => void }) {
   const [session, dispatch] = useReducer(reducer, undefined, initial);
   const [mode, setMode] = useState<Mode>('cpu');
+  const [level, setLevel] = useState<CpuLevel>('normal');
   const [ready, setReady] = useState(false);
   const [saveError, setSaveError] = useState('');
 
@@ -40,6 +42,7 @@ export function useGameSession({ onRestored }: { onRestored: () => void }) {
         if (state) {
           dispatch({ type: 'load', game: state });
           setMode(saved.mode === 'hotseat' ? 'hotseat' : 'cpu');
+          if (cpuLevels.includes(saved.level)) setLevel(saved.level);
           onRestored();
         } else setSaveError('前回の対戦を復元できませんでした');
       }
@@ -50,13 +53,13 @@ export function useGameSession({ onRestored }: { onRestored: () => void }) {
   }, []);
   useEffect(() => {
     if (!ready) return;
-    try { localStorage.setItem(STORAGE_KEY, JSON.stringify({ game: session.game, mode })); }
+    try { localStorage.setItem(STORAGE_KEY, JSON.stringify({ game: session.game, mode, level })); }
     catch { setSaveError('このブラウザに対戦を保存できません'); }
-  }, [ready, session.game, mode]);
+  }, [ready, session.game, mode, level]);
 
   // Same-device play allows the sandbox test commands.
   const send = useCallback((command: Command) => dispatch({ type: 'command', command, sandbox: mode === 'hotseat' }), [mode]);
-  const load = useCallback((game: GameState, nextMode: Mode) => { dispatch({ type: 'load', game }); setMode(nextMode); setSaveError(''); }, []);
+  const load = useCallback((game: GameState, nextMode: Mode, nextLevel: CpuLevel) => { dispatch({ type: 'load', game }); setMode(nextMode); setLevel(nextLevel); setSaveError(''); }, []);
   const undo = useCallback(() => dispatch({ type: 'undo' }), []);
-  return { ...session, mode, setMode, ready, saveError, send, load, undo, canUndo: session.history.length > 0 };
+  return { ...session, mode, setMode, level, ready, saveError, send, load, undo, canUndo: session.history.length > 0 };
 }
