@@ -1,5 +1,6 @@
 // dice → initiative → opening → mulligan → playing, and the start of each turn.
 import { availablePpMaximum, note } from '../core/cards.ts';
+import { settleStall } from '../core/stall.ts';
 import { resolveQueue } from '../effects/resolve.ts';
 import { other } from '../model.ts';
 import type { Catalog, GameState, Side } from '../model.ts';
@@ -36,11 +37,13 @@ export function advancePhase(s: GameState, catalog: Catalog) {
 }
 
 /** Called after hand-limit exclusions, while the ending side is still active. */
-export function finishTurn(s: GameState, side: Side) {
+export function finishTurn(s: GameState, side: Side, catalog: Catalog) {
     const p = s.players[side];
     p.hand.forEach(uid => { s.cards[uid].temporaryCost = 0; });
     p.pp = 0;
     p.turnPpBonus = 0;
+    // 膠着: three turns without any action (or none possible ever) end the match on points.
+    if (settleStall(s, catalog)) return;
     startTurn(s, other(side));
     s.queue.push({ op: 'draw', actor: s.active, text: 'turn' });
 }

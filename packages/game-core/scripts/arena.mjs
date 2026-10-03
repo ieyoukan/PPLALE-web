@@ -1,14 +1,7 @@
 // CPU levels against each other: `npm run cpu:arena -- [games per pair] [levels...]`
 // Seats are swapped every other game so the first-player advantage cancels out.
-import { readFileSync } from 'node:fs';
 import { cpuLevels, playMatch } from '../dist/index.js';
-
-const data = name => JSON.parse(readFileSync(new URL(`../../../src/data/${name}.json`, import.meta.url)))[name];
-const catalog = Object.fromEntries([
-  ...data('yojo'), ...data('sweet'), ...data('playable'), ...data('tokenYojo'),
-  { id: 'token_cat', name: '猫まんじゅう', type: 'yojo', fruit: 'strawberry', cost: 1, attack: 1, hp: 1 },
-  { id: 'token_pudding', name: 'ギガプリン', type: 'yojo', fruit: 'strawberry', cost: 5, attack: 0, hp: 7 },
-].map(card => [card.id, card]));
+import { catalog } from './catalog.mjs';
 
 const games = Number(process.argv[2] ?? 20);
 const levels = process.argv.length > 3 ? process.argv.slice(3) : cpuLevels;

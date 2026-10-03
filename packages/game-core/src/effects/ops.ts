@@ -110,7 +110,7 @@ export const genericOps: OpTable = {
             if (fx.me.hand.length > 9) fx.pick(`あと${fx.me.hand.length - 9}枚除外`, fx.me.hand, { ...t, target: undefined });
         },
     },
-    finishTurn: { run: (fx, t) => finishTurn(fx.s, t.actor) },
+    finishTurn: { run: (fx, t) => finishTurn(fx.s, t.actor, fx.catalog) },
     /** Discard one card from hand. With an empty hand it does nothing and later steps continue. */
     discard: {
         run(fx, t) {

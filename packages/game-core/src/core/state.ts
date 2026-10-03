@@ -29,6 +29,7 @@ export function cloneState(s: GameState): GameState {
         queue: s.queue.map(cloneTask),
         pending: s.pending && cloneChoice(s.pending),
         log: [...s.log],
+        ...(s.stall ? { stall: { ...s.stall } } : {}),
         ...(s.effectBlocks ? { effectBlocks: { revision: s.effectBlocks.revision, events: s.effectBlocks.events.map(event => ({ ...event })) } } : {}),
     };
 }

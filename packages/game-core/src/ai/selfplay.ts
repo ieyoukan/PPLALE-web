@@ -2,7 +2,7 @@
 import { applyCommand } from '../commands/index.ts';
 import { cpuCommand } from './index.ts';
 import { actingSides } from './moves.ts';
-import type { CpuLevel } from './types.ts';
+import type { CpuLevel, CpuStrategy } from './types.ts';
 import { newGame } from '../setup.ts';
 import { sandboxRules } from '../model.ts';
 import type { Catalog, Command, Deck, GameState, Rules, Side } from '../model.ts';
@@ -25,7 +25,8 @@ export function randomStrawberryDeck(seed: number): Deck {
 }
 
 export interface MatchOptions {
-    levels: [CpuLevel, CpuLevel];
+    /** A registered level or any strategy (e.g. a variant being trained) per side. */
+    levels: [CpuLevel | CpuStrategy, CpuLevel | CpuStrategy];
     seed: number;
     decks?: [Deck, Deck];
     /** Defaults to the rulebook setup; exhausted decks do not cause a loss. */
@@ -47,16 +48,18 @@ export function playMatch(catalog: Catalog, { levels, seed, decks, rules, maxCom
     const pair = decks ?? [randomStrawberryDeck(seed), randomStrawberryDeck(Math.imul(seed, 31) + 7)];
     let s = newGame(pair, catalog, rules ?? sandboxRules, seed);
     const thinking: [number, number] = [0, 0];
+    const player = (side: Side) => typeof levels[side] === 'string' ? { level: levels[side] as CpuLevel } : { strategy: levels[side] as CpuStrategy };
+    const nameOf = (side: Side) => typeof levels[side] === 'string' ? levels[side] as string : (levels[side] as CpuStrategy).name;
     let commands = 0;
     for (; commands < maxCommands && s.winner === null; commands++) {
         const [side] = actingSides(s);
         const started = Date.now();
-        const command = s.phase === 'dice' ? { type: 'roll' as const, actor: side } : cpuCommand(s, catalog, { level: levels[side], side });
+        const command = s.phase === 'dice' ? { type: 'roll' as const, actor: side } : cpuCommand(s, catalog, { ...player(side), side });
         thinking[side] += Date.now() - started;
-        if (!command) throw new Error(`${levels[side]} has no move in ${s.phase}`);
+        if (!command) throw new Error(`${nameOf(side)} has no move in ${s.phase}`);
         onStep?.(s, command, side);
         const result = applyCommand(s, command, catalog);
-        if (result.error) throw new Error(`${levels[side]} sent ${JSON.stringify(command)}: ${result.error}`);
+        if (result.error) throw new Error(`${nameOf(side)} sent ${JSON.stringify(command)}: ${result.error}`);
         s = result.state;
     }
     return { winner: s.winner, turns: s.turn, commands, thinking };

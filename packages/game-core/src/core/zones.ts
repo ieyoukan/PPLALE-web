@@ -3,6 +3,7 @@ import { scriptOf } from '../cards/registry.ts';
 import { cardContext } from '../effects/context.ts';
 import { deckLabel, other, sides } from '../model.ts';
 import type { Catalog, DeckKind, GameState, Side } from '../model.ts';
+import { markAction } from './stall.ts';
 import { hpOf, note, recordEffectBlock, spawnCard } from './cards.ts';
 
 export const FIELD_SIZE = 7;
@@ -20,6 +21,7 @@ export function draw(s: GameState, side: Side, kind: DeckKind): string | undefin
     const p = s.players[side], uid = p[kind].shift();
     if (uid) {
         p.hand.push(uid);
+        markAction(s);
         note(s, `${p.name}：${deckLabel(kind)}を1枚ドロー`);
     } else {
         note(s, `${p.name}：${deckLabel(kind)}デッキが空です`);

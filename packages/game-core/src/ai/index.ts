@@ -16,6 +16,8 @@ export { cpuLevels } from './profiles.ts';
 
 export interface CpuOptions {
     level?: CpuLevel;
+    /** A strategy to use instead of a registered level (training and experiments). */
+    strategy?: CpuStrategy;
     /** The side the CPU plays. Omitted: whichever side has to act (side 1 first in the opening). */
     side?: Side;
 }
@@ -24,7 +26,7 @@ export interface CpuOptions {
  * The CPU's next command, or null when the side has nothing to do now.
  * The dice phase is left to the caller, which shows the throw (the result is random anyway).
  */
-export function cpuCommand(s: GameState, catalog: Catalog, { level = 'normal', side }: CpuOptions = {}): Command | null {
+export function cpuCommand(s: GameState, catalog: Catalog, { level = 'normal', side, strategy = cpuStrategies[level] }: CpuOptions = {}): Command | null {
     if (s.phase === 'dice') return null;
     const acting = actingSides(s);
     const actor = side ?? (acting.includes(1) ? 1 : acting[0]);
@@ -33,7 +35,7 @@ export function cpuCommand(s: GameState, catalog: Catalog, { level = 'normal', s
     const known = determinize(s, actor, catalog, (s.rng ^ 0x5bd1e995 ^ s.revision) >>> 0);
     const moves = legalMoves(known, actor, catalog);
     if (!moves.length) return null;
-    const command = cpuStrategies[level].choose({ state: known, side: actor, catalog, moves, random: size => random(known, size) }).command;
+    const command = strategy.choose({ state: known, side: actor, catalog, moves, random: size => random(known, size) }).command;
     if (!applyCommand(s, command, catalog).error) return command;
     // The guessed world allowed something the real one does not; fall back to a real legal move.
     return legalMoves(s, actor, catalog)[0]?.command ?? null;
@@ -44,6 +46,7 @@ export type { Move } from './moves.ts';
 export { determinize } from './hidden.ts';
 export { findLethal } from './lethal.ts';
 export { playMatch, randomStrawberryDeck } from './selfplay.ts';
+export { createHard } from './levels/hard.ts';
 export type { MatchOptions, MatchResult } from './selfplay.ts';
 export type { LethalOptions, LethalResult } from './lethal.ts';
 export { evaluate, defaultWeights } from './evaluate.ts';

@@ -2,6 +2,7 @@
 import { scriptOf } from '../cards/registry.ts';
 import { costOf, isRealSweet, note } from '../core/cards.ts';
 import { canAttack, resolveAttack } from '../core/combat.ts';
+import { markAction } from '../core/stall.ts';
 import { enterField, FIELD_SIZE, openSlot } from '../core/zones.ts';
 import { cardContext, effects } from '../effects/context.ts';
 import { RuleError } from '../model.ts';
@@ -35,6 +36,7 @@ export const turnCommands: Handlers<'play' | 'attack' | 'end' | 'reveal' | 'skil
             if (p.field.length >= FIELD_SIZE) throw new RuleError('場は7人までです');
             if (!Number.isInteger(slot) || slot < 0 || slot >= FIELD_SIZE || p.field.some(id => s.cards[id].slot === slot)) throw new RuleError('空いている場を選んでください');
         }
+        markAction(s);
         p.pp -= cost;
         p.hand = p.hand.filter(id => id !== c.uid);
         note(s, `${p.name}：「${def.name}」をプレイ（${cost}PP）`);
@@ -53,6 +55,7 @@ export const turnCommands: Handlers<'play' | 'attack' | 'end' | 'reveal' | 'skil
     },
     attack(s, c, catalog) {
         if (!canAttack(s, c.actor, c.uid, c.target, catalog)) throw new RuleError('その対象には攻撃できません');
+        markAction(s);
         resolveAttack(s, c.actor, c.uid, c.target, catalog);
     },
     end(s, c) {
@@ -72,6 +75,7 @@ export const turnCommands: Handlers<'play' | 'attack' | 'end' | 'reveal' | 'skil
         const fx = effects(s, catalog, c.actor);
         const blocked = skill.blocked?.(fx);
         if (blocked) throw new RuleError(blocked);
+        markAction(s);
         p.pp -= skill.cost;
         p.skills[c.index]--;
         note(s, `${p.name}：${skill.name}`);

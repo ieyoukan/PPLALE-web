@@ -165,6 +165,11 @@ export interface GameState {
     pending: Choice | null;
     winner: Side | 'draw' | null;
     log: string[];
+    /**
+     * 膠着の判定: whether the current turn had a draw / play / unit action / skill, and how many
+     * turns in a row ended without one. Absent in older saves (treated as no idle turns).
+     */
+    stall?: { acted: boolean; idleTurns: number };
     /** Effect immunity outcomes from one command, for presentation; never changes legality. */
     effectBlocks?: { revision: number; events: { uid: string; kind: 'damage' | 'destroy' }[] };
 }

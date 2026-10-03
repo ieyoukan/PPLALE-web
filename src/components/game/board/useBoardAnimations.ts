@@ -24,10 +24,10 @@ const DRAW_DURATION = 800;
 const STRIKE_HIT = 360;
 const STRIKE_DURATION = 720;
 // The opponent's card stays readable for a moment before its effect resolves.
-const ANNOUNCE_HIT = 1100;
-const ANNOUNCE_DURATION = 1450;
-const PING_HIT = 500;
-const PING_DURATION = 900;
+const ANNOUNCE_HIT = 1900;
+const ANNOUNCE_DURATION = 2400;
+const PING_HIT = 700;
+const PING_DURATION = 1200;
 const rectOf = (element: Element) => {
   const { x, y, width, height } = element.getBoundingClientRect();
   return { x, y, width, height };
