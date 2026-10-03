@@ -1,0 +1,30 @@
+.overlay { position: fixed; inset: 0; z-index: 80; display: grid; grid-template-columns: minmax(0, 1fr) clamp(88px, 11vw, 160px); gap: 20px; padding: 24px 22px 22px 82px; background: #392e4166; backdrop-filter: blur(5px); color: #775768; font-family: 'BoardHandwriting', 'Yu Kyokasho', cursive; }
+.stage { position: relative; min-width: 0; min-height: 0; touch-action: none; }
+.destinations { position: absolute; inset: 0 0 55%; display: grid; grid-template-columns: 1fr 1fr; gap: 18px; }
+.zone, .keep { position: relative; border: 4px solid; border-radius: 30px; box-shadow: 0 8px 0 #59425155, 0 15px 28px #35233655, inset 0 0 0 3px #fff9; transition: background .18s, box-shadow .18s; }
+.yojo { border-color: #d57991; color: #a54863; background: linear-gradient(160deg, #fff3e9ed, #f3bbccd9); }
+.sweet { border-color: #71b2cf; color: #397e9c; background: linear-gradient(160deg, #f5fffeed, #b6ddefd9); }
+.zone h2, .keep h2 { position: absolute; top: 0; left: 0; right: 0; height: 48px; display: grid; place-items: center; margin: 0; font-size: clamp(24px, 2.6vw, 38px); font-weight: 400; text-shadow: 0 1px 0 white; }
+.keep { position: absolute; inset: 51% 0 0; background: linear-gradient(160deg, #fffdf3ee, #f8e2dbea); border-color: #caa987; }
+.keep h2 { top: auto; bottom: 0; color: #987e69; }
+.emptySwap { position: absolute; inset: 48px 0 0; display: grid; place-items: center; font: 120px Arial, sans-serif; opacity: .22; animation: inviteSwap 2s ease-in-out infinite; }
+.upArrow { position: absolute; top: 44%; left: 50%; transform: translateX(-50%); color: #fff7e8; font: 52px Arial, sans-serif; line-height: 1; text-shadow: 0 3px 8px #5b304a88; pointer-events: none; }
+.hovered { box-shadow: 0 0 0 5px #fffbdc, 0 0 32px #fff7be, inset 0 0 0 3px #fff; }
+.card { position: absolute; top: 0; left: 0; aspect-ratio: 533 / 800; padding: 0; border: 0; border-radius: 10px; background: transparent; z-index: 2; touch-action: none; box-shadow: 2px 8px 4px #38293d44, 8px 14px 18px #38293d55; transition: transform .34s cubic-bezier(.2,.8,.2,1), width .34s cubic-bezier(.2,.8,.2,1), box-shadow .2s; }
+.card img { border-radius: 8px; }
+.card:focus-visible { outline: 4px solid #fff5c6; outline-offset: 6px; }
+.held { z-index: 10; transition: none; box-shadow: 12px 26px 16px #34223588; cursor: grabbing; }
+.exchanging { box-shadow: 0 0 0 3px #fff5dd, 5px 12px 16px #38293d66; }
+.swapBadge { position: absolute; top: -12px; right: -12px; width: 42px; height: 42px; display: grid; place-items: center; border: 2px solid #e5c1bf; border-radius: 50%; background: #fff7e8; color: #a76686; font: 32px Arial, sans-serif; box-shadow: 0 4px 8px #54345144; }
+.controls { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 20px; }
+.confirm { width: 100%; aspect-ratio: 1; border: 5px solid #fff0cb; border-radius: 50%; background: radial-gradient(circle at 35% 25%, #fff1fa, #e8a5c8 55%, #b96c9b); color: #805278; font: clamp(28px, 3.2vw, 46px) 'BoardHandwriting', 'Yu Kyokasho', cursive; box-shadow: 0 0 0 3px #bf94a0, 0 8px 0 #92617a, 0 14px 24px #31233d66, inset 0 0 0 4px #ffffff66; transition: filter .2s, transform .2s; }
+.confirm:enabled:hover { filter: brightness(1.08); transform: translateY(-3px); }
+.confirm:disabled { filter: saturate(.5); opacity: .65; }
+.waiting { display: flex; gap: 10px; }
+.waiting i { width: 12px; height: 12px; border-radius: 50%; background: #fff2d6; animation: waitBounce 1s ease-in-out infinite; }
+.waiting i:nth-child(2) { animation-delay: .15s; }.waiting i:nth-child(3) { animation-delay: .3s; }
+@keyframes inviteSwap { 0%, 100% { transform: translateY(4px); } 50% { transform: translateY(-4px); } }
+@keyframes waitBounce { 0%, 100% { transform: translateY(0); opacity: .5; } 50% { transform: translateY(-6px); opacity: 1; } }
+@media (max-height: 550px) { .overlay { padding: 12px 14px 12px 72px; gap: 14px; }.destinations { gap: 12px; }.zone, .keep { border-radius: 20px; border-width: 3px; }.emptySwap { font-size: 72px; }.zone h2, .keep h2 { font-size: 24px; height: 38px; }.upArrow { font-size: 32px; }.swapBadge { width: 30px; height: 30px; font-size: 24px; top: -8px; right: -8px; } }
+@media (max-width: 600px) and (min-height: 551px) { .overlay { grid-template-columns: 1fr; grid-template-rows: minmax(0, 1fr) 80px; padding: 72px 12px 14px; gap: 12px; }.destinations { gap: 10px; }.zone, .keep { border-radius: 20px; }.controls { flex-direction: row; gap: 18px; }.confirm { width: 80px; font-size: 28px; }.upArrow { font-size: 38px; }.emptySwap { font-size: 82px; } }
+@media (prefers-reduced-motion: reduce) { .card, .confirm { transition: none; }.emptySwap, .waiting i { animation: none; } }

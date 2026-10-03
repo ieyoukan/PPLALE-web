@@ -53,10 +53,10 @@ function draw(s: GameState, side: Side, kind: DeckKind): string | undefined {
     return uid;
 }
 function heal(s: GameState, side: Side, amount: number) { const p = s.players[side]; p.points = Math.min(p.maxPoints, p.points + amount); }
-function points(s: GameState, side: Side, amount: number, mode: 'reduce' | 'steal' | 'eat', catalog: Catalog, piercing = false) {
+function points(s: GameState, side: Side, amount: number, mode: 'reduce' | 'steal' | 'eat', catalog: Catalog) {
     const p = s.players[side];
     if (mode !== 'reduce') {
-        if (!piercing && p.field.some(uid => s.cards[uid].keywords.includes('taunt'))) {
+        if (p.field.some(uid => s.cards[uid].keywords.includes('taunt'))) {
             note(s, '挑発によってお菓子が守られました');
             return 0;
         }
@@ -379,11 +379,18 @@ function options(s: GameState, catalog: Catalog, ids: string[]) { return ids.map
 function choose(s: GameState, prompt: string, ids: string[], task: Task, catalog: Catalog) { if (ids.length)
     s.pending = { prompt, options: options(s, catalog, ids), task }; }
 function fieldTargets(s: GameState, t: Task) { return t.scope === 'friendly' ? s.players[t.actor].field : t.scope === 'any' ? s.players.flatMap(p => p.field) : s.players[other(t.actor)].field; }
+// Restrict only explicit selections. Global and random effects keep their full scope.
+function selectableTargets(s: GameState, actor: Side, ids: string[]) {
+    const taunts = ids.filter(id => s.players[other(actor)].field.includes(id) && s.cards[id].keywords.includes('taunt'));
+    return taunts.length ? taunts : ids;
+}
 function execute(s: GameState, t: Task, catalog: Catalog) {
     const p = s.players[t.actor], enemy = s.players[other(t.actor)], n = (t.amount ?? 0) * (t.multiplier ?? 1), source = t.source ? s.cards[t.source] : undefined;
     const targetOps = ['damage', 'buff', 'keyword', 'destroy', 'copy', 'pocky', 'pockyEnemy', 'stealUnit'];
     if (targetOps.includes(t.op) && !t.target) {
-        choose(s, '対象の幼女を選んでください', fieldTargets(s, t), t, catalog);
+        const candidates = t.candidates ?? selectableTargets(s, t.actor, fieldTargets(s, t));
+        const remaining = candidates.filter(id => fieldTargets(s, t).includes(id) && !(t.ids ?? []).includes(id));
+        choose(s, '対象の幼女を選んでください', remaining, { ...t, candidates }, catalog);
         return;
     }
     switch (t.op) {
@@ -471,11 +478,19 @@ function execute(s: GameState, t: Task, catalog: Catalog) {
         case 'draw': {
             if (!t.target) {
                 const kinds = t.deck ? [t.deck] : ['yojo', 'sweet'] as const;
-                const reason = t.text === 'opening' ? '最初の手札' : t.text === 'turn' ? 'ターン開始' : t.text === 'threshold' ? 'お菓子ポイント到達' : 'カード効果';
+                const reason = t.text === 'mulligan' ? '手札の交換' : t.text === 'opening' ? '最初の手札' : t.text === 'turn' ? 'ターン開始' : t.text === 'threshold' ? 'お菓子ポイント到達' : 'カード効果';
                 s.pending = { prompt: `${reason}：山札を押して1枚引いてください`, options: kinds.map(kind => ({ id: kind, label: `${kind === 'yojo' ? '幼女' : 'お菓子'}デッキ（${p[kind].length}枚）` })), task: t };
                 break;
             }
             const kind = t.deck ?? t.target as DeckKind, uid = draw(s, t.actor, kind);
+            if (t.text === 'mulligan' && t.source) {
+                if (!uid) throw new Error('カードのある山札を選んでください');
+                const old = t.source;
+                p.hand = p.hand.filter(id => id !== old);
+                const originalDeck = catalog[s.cards[old].cardId].type === 'yojo' ? 'yojo' : 'sweet';
+                p[originalDeck] = shuffled(s, [...p[originalDeck], old]);
+                note(s, `${p.name}が初期手札を1枚交換しました`);
+            }
             const ids = [...(t.ids ?? []), ...(uid ? [uid] : [])];
             if (uid && t.text === 'attackIfYojo' && kind === 'yojo' && source)
                 buff(s, source.uid, 1, 0);
@@ -589,7 +604,7 @@ function execute(s: GameState, t: Task, catalog: Catalog) {
         case 'punish': {
             const ids = enemy.field.filter(id => s.cards[id].ateOn === s.turn - 1);
             if (!t.target && ids.length)
-                s.pending = { prompt: '直前にお菓子を食べた幼女を破壊', options: [...options(s, catalog, ids), ...(p.pp >= 2 ? [{ id: 'all', label: '追加2PPで全員' }] : [])], task: t };
+                s.pending = { prompt: '直前にお菓子を食べた幼女を破壊', options: [...options(s, catalog, selectableTargets(s, t.actor, ids)), ...(p.pp >= 2 ? [{ id: 'all', label: '追加2PPで全員' }] : [])], task: t };
             else if (t.target === 'all') {
                 p.pp -= 2;
                 ids.forEach(id => destroy(s, id, true, catalog));
@@ -613,15 +628,16 @@ function drain(s: GameState, catalog: Catalog) {
         if (++limit > 500)
             throw new Error('効果の解決が上限に達しました');
         const task = s.queue.shift()!;
-        if (task.ids && task.op === 'damage' && !task.target) {
-            const targets = fieldTargets(s, task).filter(id => !task.ids!.includes(id));
-            choose(s, '別の対象を選んでください', targets, task, catalog);
-        }
-        else
-            execute(s, task, catalog);
+        execute(s, task, catalog);
         settle(s, catalog);
     }
-    if (s.phase === 'opening' && !s.pending && !s.queue.length && s.winner === null) {
+    if (s.phase === 'opening' && s.openingRemaining.every(count => count === 0) && !s.pending && !s.queue.length && s.winner === null) {
+        s.phase = 'mulligan';
+        s.active = s.rules.firstPlayer;
+        s.mulligan.eligible = [[...s.players[0].hand], [...s.players[1].hand]];
+        note(s, '初期手札は各カード1回だけ交換できます。準備ができたら手札を決定してください');
+    }
+    if (s.phase === 'mulligan' && s.mulligan.confirmed.every(Boolean) && !s.pending && !s.queue.length && s.winner === null) {
         s.phase = 'playing';
         startTurn(s, s.rules.firstPlayer);
         if (s.rules.firstTurnDraw) {
@@ -647,7 +663,7 @@ export function newGame(decks: [
         Player,
         Player
     ];
-    const s: GameState = { version: 1, phase: 'dice', dice: null, rules: { ...rules }, rng: seed >>> 0, serial: 0, revision: 0, active: rules.firstPlayer, turn: 0, players, cards: {}, queue: [], pending: null, winner: null, log: [] };
+    const s: GameState = { version: 1, phase: 'dice', openingRemaining: [0, 0], mulligan: { eligible: [[], []], confirmed: [false, false] }, dice: null, rules: { ...rules }, rng: seed >>> 0, serial: 0, revision: 0, active: rules.firstPlayer, turn: 0, players, cards: {}, queue: [], pending: null, winner: null, log: [] };
     for (const side of [0, 1] as Side[]) {
         for (const kind of ['yojo', 'sweet'] as const)
             s.players[side][kind] = shuffled(s, decks[side][kind].map(id => makeCard(s, id)));
@@ -667,11 +683,10 @@ export function canAttack(s: GameState, side: Side, uid: string, target: string 
     // The user-confirmed rule: taunt units are the only legal attack targets.
     if (taunts.length) return taunts.includes(target);
     if (target === 'leader')
-        return !c.keywords.includes('noEat') && (!(enemy.field.some(id => s.cards[id].keywords.includes('taunt'))) || (s.rules.pierceIgnoresTaunt && c.keywords.includes('pierce')));
+        return !c.keywords.includes('noEat') && (!enemy.field.some(id => s.cards[id].keywords.includes('guard')) || c.keywords.includes('pierce'));
     if (!enemy.field.includes(target))
         return false;
-    const guards = enemy.field.filter(id => s.cards[id].keywords.includes('guard'));
-    return !s.rules.guardBlocksUnits || !guards.length || guards.includes(target) || c.keywords.includes('pierce');
+    return true;
 }
 export function applyCommand(previous: GameState, command: Command, catalog: Catalog, allowAdjust = false): Result {
     const s: GameState = JSON.parse(JSON.stringify(previous));
@@ -681,20 +696,59 @@ export function applyCommand(previous: GameState, command: Command, catalog: Cat
             throw new Error('この対戦は終了しています');
         if (command.type === 'roll') {
             if (s.phase !== 'dice') throw new Error('手番は既に決まっています');
-            const rolls: [number, number] = [random(s, 6) + 1, random(s, 6) + 1];
-            s.dice = {rolls, ties: (s.dice?.ties ?? 0) + (rolls[0] === rolls[1] ? 1 : 0)};
-            note(s, `ダイス：${s.players[0].name} ${rolls[0]} / ${s.players[1].name} ${rolls[1]}`);
-            if (rolls[0] === rolls[1]) note(s, '同じ目なので、もう一度振ってください');
-            else {
-                s.rules.firstPlayer = rolls[0] > rolls[1] ? 0 : 1;
-                s.active = s.rules.firstPlayer;
-                s.phase = 'opening';
-                note(s, `${s.players[s.active].name}が先攻です。最初の手札を引いてください`);
-                for (const side of [s.active, other(s.active)]) {
-                    const count = s.rules.initialYojo + s.rules.initialSweet;
-                    if (count) s.queue.push({op: 'draw', actor: side, count, text: 'opening'});
+            const complete = s.dice?.rolls.every(value => value !== null);
+            const rolls: [number | null, number | null] = complete ? [null, null] : [...(s.dice?.rolls ?? [null, null])];
+            const expected = rolls[0] === null ? 0 : 1;
+            if (command.actor !== expected) throw new Error('順番にダイスを振ってください');
+            rolls[command.actor] = random(s, 6) + 1;
+            s.dice = { rolls, ties: s.dice?.ties ?? 0 };
+            note(s, `${s.players[command.actor].name}のダイス：${rolls[command.actor]}`);
+            if (rolls[0] !== null && rolls[1] !== null) {
+                if (rolls[0] === rolls[1]) {
+                    s.dice.ties++;
+                    note(s, '同じ目なので、もう一度順番に振ってください');
+                } else {
+                    s.active = rolls[0] > rolls[1] ? 0 : 1;
+                    s.phase = 'initiative';
+                    note(s, `${s.players[s.active].name}が先攻・後攻を選びます`);
                 }
             }
+        }
+        else if (command.type === 'initiative') {
+            if (s.phase !== 'initiative' || s.active !== command.actor) throw new Error('ダイスで勝った側が先攻・後攻を選んでください');
+            if (command.order !== 'first' && command.order !== 'second') throw new Error('先攻・後攻を選んでください');
+            s.rules.firstPlayer = command.order === 'first' ? command.actor : other(command.actor);
+            s.active = s.rules.firstPlayer;
+            s.phase = 'opening';
+            note(s, `${p.name}が${command.order === 'first' ? '先攻' : '後攻'}を選びました`);
+            for (const side of [0, 1] as Side[]) s.openingRemaining[side] = s.rules.initialYojo + s.rules.initialSweet + (side === s.rules.firstPlayer ? 0 : 1);
+        }
+        else if (command.type === 'openingDraw') {
+            if (s.phase !== 'opening' || s.openingRemaining[command.actor] <= 0) throw new Error('必要な初期手札は引き終わっています');
+            if (command.deck !== 'yojo' && command.deck !== 'sweet' || !p[command.deck].length) throw new Error('カードのある山札を選んでください');
+            draw(s, command.actor, command.deck);
+            s.openingRemaining[command.actor]--;
+        }
+        else if (command.type === 'mulligan' || command.type === 'keep') {
+            if (s.phase !== 'mulligan' || s.mulligan.confirmed[command.actor] || s.pending) throw new Error('初期手札の確認中だけ操作できます');
+            if (command.type === 'mulligan') {
+                const replacements = command.replacements;
+                const ids = replacements.map(item => item.uid);
+                if (!ids.length || new Set(ids).size !== ids.length || ids.some(id => !p.hand.includes(id) || !s.mulligan.eligible[command.actor].includes(id))) throw new Error('交換できる初期手札を選んでください');
+                for (const kind of ['yojo', 'sweet'] as const) {
+                    if (replacements.filter(item => item.deck === kind).length > p[kind].length) throw new Error('交換先のデッキにカードが足りません');
+                }
+                if (replacements.some(item => item.deck !== 'yojo' && item.deck !== 'sweet')) throw new Error('交換先のデッキを選んでください');
+                // Draw the entire batch before returning originals, so none can be redrawn.
+                p.hand = p.hand.filter(id => !ids.includes(id));
+                for (const item of replacements) draw(s, command.actor, item.deck);
+                for (const uid of ids) p[catalog[s.cards[uid].cardId].type as DeckKind].push(uid);
+                for (const kind of ['yojo', 'sweet'] as const) p[kind] = shuffled(s, p[kind]);
+                note(s, `${p.name}：初期手札を${ids.length}枚まとめて交換`);
+            }
+            s.mulligan.confirmed[command.actor] = true;
+            s.mulligan.eligible[command.actor] = [];
+            if (!s.mulligan.confirmed[other(command.actor)]) s.active = other(command.actor);
         }
         else if (command.type === 'adjust' || command.type === 'draw') {
             if (!allowAdjust)
@@ -729,7 +783,7 @@ export function applyCommand(previous: GameState, command: Command, catalog: Cat
             s.queue.unshift({ ...t, target: command.option });
         }
         else {
-            if (s.phase !== 'playing') throw new Error('ダイスと最初のドローを完了してください');
+            if (s.phase !== 'playing') throw new Error('ダイス・先攻後攻の選択・初期ドロー・手札の確認を完了してください');
             if (s.active !== command.actor)
                 throw new Error('相手のターンです');
             if (s.pending)
@@ -778,7 +832,7 @@ export function applyCommand(previous: GameState, command: Command, catalog: Cat
                     settle(s, catalog);
                 }
                 if (command.target === 'leader') {
-                    if (points(s, other(command.actor), attackOf(c, catalog), 'eat', catalog, c.keywords.includes('pierce') && s.rules.pierceIgnoresTaunt) > 0)
+                    if (points(s, other(command.actor), attackOf(c, catalog), 'eat', catalog) > 0)
                         c.ateOn = s.turn;
                     note(s, `${catalog[c.cardId].name}がお菓子を食べました`);
                 }

@@ -5,7 +5,13 @@ import type { Catalog, Command, GameState } from './model.ts';
 export function cpuCommand(s: GameState, catalog: Catalog): Command | null {
     if (s.winner !== null || s.phase === 'dice')
         return null;
-    const actor = s.pending?.task.actor ?? s.active;
+    const actor = s.phase === 'opening' ? s.openingRemaining[1] > 0 ? 1 : 0 : s.phase === 'mulligan' ? !s.mulligan.confirmed[1] ? 1 : 0 : s.pending?.task.actor ?? s.active;
+    if (s.phase === 'opening') {
+        const p = s.players[actor];
+        const deck = p.yojo.length && p.hand.filter(id => catalog[s.cards[id].cardId].type === 'yojo').length < 2 ? 'yojo' : p.sweet.length ? 'sweet' : 'yojo';
+        return s.openingRemaining[actor] > 0 ? { type: 'openingDraw', actor, deck } : null;
+    }
+    if (s.phase === 'initiative') return { type: 'initiative', actor, order: 'first' };
     const p = s.players[actor], enemy = s.players[other(actor)];
     if (s.pending) {
         const { options, task } = s.pending;
@@ -41,6 +47,10 @@ export function cpuCommand(s: GameState, catalog: Catalog): Command | null {
         });
         const option = options.find(o => o.id === preferred) ?? ranked[0];
         return option ? { type: 'choose', actor, option: option.id } : null;
+    }
+    if (s.phase === 'mulligan') {
+        const replacements = s.mulligan.eligible[actor].filter(id => p.hand.includes(id) && catalog[s.cards[id].cardId].cost >= 4).map(uid => ({ uid, deck: catalog[s.cards[uid].cardId].type as 'yojo' | 'sweet' }));
+        return replacements.length ? { type: 'mulligan', actor, replacements } : { type: 'keep', actor };
     }
     // Finish a won position before spending more resources.
     for (const uid of p.field)

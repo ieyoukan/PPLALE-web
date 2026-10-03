@@ -145,6 +145,22 @@ export default defineConfig({
 
   theme: {
     extend: {
+      keyframes: {
+        gameTurnIntro: {
+          '0%': { opacity: 0, transform: 'scale(0.78) rotate(-2deg)' },
+          '20%': { opacity: 1, transform: 'scale(0.96) rotate(-1deg)' },
+          '55%': { opacity: 1, transform: 'scale(1) rotate(0deg)' },
+          '100%': { opacity: 0, transform: 'scale(1.12) rotate(1deg)' },
+        },
+        gameTurnFade: {
+          '0%': { opacity: 0 }, '20%, 55%': { opacity: 1 }, '100%': { opacity: 0 },
+        },
+        gameTurnBeam: {
+          '0%': { opacity: 0, transform: 'scaleX(0.1)' },
+          '30%': { opacity: 1, transform: 'scaleX(1)' },
+          '100%': { opacity: 0, transform: 'scaleX(1.3)' },
+        },
+      },
       recipes: { button: buttonRecipe, iconButton: iconButtonRecipe },
       tokens: {
         colors: {

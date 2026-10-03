@@ -30,6 +30,7 @@ export interface Rules {
     maxPP: number;
     stealHeals: boolean;
     emptyDeckLoses: boolean;
+    /** Legacy snapshot fields; combat always follows the confirmed rules. */
     guardBlocksUnits: boolean;
     pierceIgnoresTaunt: boolean;
 }
@@ -37,7 +38,7 @@ export interface Rules {
 export const sandboxRules: Rules = {
     initialPoints: 12, initialYojo: 3, initialSweet: 0, firstPlayer: 0,
     turnDraw: 'yojo', firstTurnDraw: false, maxPP: 10, stealHeals: false,
-    emptyDeckLoses: false, guardBlocksUnits: true, pierceIgnoresTaunt: true,
+    emptyDeckLoses: false, guardBlocksUnits: false, pierceIgnoresTaunt: false,
 };
 export interface Instance {
     uid: string;
@@ -89,6 +90,7 @@ export interface Task {
     cardId?: string;
     scope?: 'friendly' | 'enemy' | 'any';
     ids?: string[];
+    candidates?: string[];
     count?: number;
     multiplier?: number;
     text?: string;
@@ -104,8 +106,10 @@ export interface Choice {
 }
 export interface GameState {
     version: 1;
-    phase: 'dice' | 'opening' | 'playing';
-    dice: { rolls: [number, number]; ties: number } | null;
+    phase: 'dice' | 'initiative' | 'opening' | 'mulligan' | 'playing';
+    openingRemaining: [number, number];
+    mulligan: { eligible: [string[], string[]]; confirmed: [boolean, boolean] };
+    dice: { rolls: [number | null, number | null]; ties: number } | null;
     rules: Rules;
     rng: number;
     serial: number;
@@ -123,6 +127,21 @@ export interface GameState {
     log: string[];
 }
 export type Command = {
+    type: 'openingDraw';
+    actor: Side;
+    deck: DeckKind;
+} | {
+    type: 'initiative';
+    actor: Side;
+    order: 'first' | 'second';
+} | {
+    type: 'mulligan';
+    actor: Side;
+    replacements: { uid: string; deck: DeckKind }[];
+} | {
+    type: 'keep';
+    actor: Side;
+} | {
     type: 'roll';
     actor: Side;
 } | {

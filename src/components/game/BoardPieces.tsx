@@ -1,6 +1,7 @@
 'use client';
 
 import type { Side } from '@pplale/game-core';
+import type { CSSProperties } from 'react';
 import { GameCard } from './GameCard';
 import styles from './BoardEmulator.module.css';
 
@@ -48,10 +49,19 @@ export function Counter({ label, value, points, bonus = 0, pp, onAdjust, onReset
   </div>;
 }
 
+export function PpPanel({ current, maximum, own }: { current: number; maximum: number; own: boolean }) {
+  return <div className={`${styles.ppPanel} ${own ? styles.ownPp : styles.opponentPp}`} role="group" aria-label={`${own ? '自分' : '相手'}のPP ${current} / ${maximum}`}>
+    <div className={styles.ppAmount} aria-hidden="true"><span>PP</span><b>{current}</b><em>/{maximum}</em></div>
+    {own && maximum > 0 && <div className={styles.ppGems} style={{ '--pp-count': maximum } as CSSProperties} aria-hidden="true">
+      {Array.from({ length: maximum }, (_, index) => <i key={index} className={index < current ? styles.availablePp : styles.spentPp} />)}
+    </div>}
+  </div>;
+}
+
 const pips: Record<number, number[]> = { 1: [4], 2: [0, 8], 3: [0, 4, 8], 4: [0, 2, 6, 8], 5: [0, 2, 4, 6, 8], 6: [0, 2, 3, 5, 6, 8] };
-export function Die({ value, rolling }: { value: number; rolling: boolean }) {
-  return <span className={`${styles.die} ${rolling ? styles.rollingDie : ''}`} aria-label={`ダイス ${value}`}>
-    {Array.from({ length: 9 }, (_, i) => <i key={i} className={pips[value]?.includes(i) ? styles.pip : ''} />)}
+export function Die({ value, rolling }: { value: number | null; rolling: boolean }) {
+  return <span className={`${styles.die} ${rolling ? styles.rollingDie : ''}`} aria-label={value === null ? 'まだ振っていないダイス' : `ダイス ${value}`}>
+    {Array.from({ length: 9 }, (_, i) => <i key={i} className={(value !== null && pips[value]?.includes(i)) ? styles.pip : ''} />)}
   </span>;
 }
 

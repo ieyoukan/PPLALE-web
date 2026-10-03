@@ -28,7 +28,8 @@ VRChatのイベント「ロリっ子喫茶ぷぷりえ」のカードゲーム�
 
 # 開発について
 
-カード効果の機械向けデータと用語の区別は [カード効果データと用語](docs/card-effect-rules.md) を参照。
+能力説明とイチゴ・ぶどうのFAQは [ルール・裁定集](docs/game-rules.md) を参照。
+カード効果の機械向け処理と、提供ルールへの対応状況は [カード効果の実装状況](docs/card-effect-rules.md) を参照。
 Next.js / game-core の分離方針、Vercelへの配置、未確定ルールは [対戦ゲームの設計](docs/game-design.md) を参照。
 ゲーム本体の独立パッケージは [`packages/game-core`](packages/game-core/README.md) に置く。
 
