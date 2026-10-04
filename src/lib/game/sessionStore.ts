@@ -1,5 +1,6 @@
 // The match in progress, kept in this browser. The preparation page writes it, the board reads
 // and updates it; both go through here so the format lives in one place.
+import { turnOf } from '@pplale/game-core';
 import type { Command, CpuLevel, Deck, GameState, Rules, Side } from '@pplale/game-core';
 
 /** cpu: you (side 0) vs CPU. hotseat: one device controls both sides. watch: CPU vs CPU. */
@@ -53,5 +54,7 @@ export function describeSavedMatch(): string | null {
   const game = saved?.game as Partial<GameState> | undefined;
   if (!game || game.winner !== null || !Array.isArray(game.players)) return null;
   const mode = saved?.mode === 'watch' ? 'CPU同士を観戦' : saved?.mode === 'hotseat' ? 'ふたり対戦' : 'CPUと対戦';
-  return game.phase === 'playing' ? `${mode}・${game.turn}ターン目` : `${mode}・開始前`;
+  if (game.phase !== 'playing' || game.active === undefined || !game.rules) return `${mode}・開始前`;
+  const { order, number } = turnOf({ active: game.active, rules: game.rules, players: game.players });
+  return `${mode}・${order === 'first' ? '先攻' : '後攻'}${number}ターン目`;
 }

@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { cpuProfiles, other } from '@pplale/game-core';
+import { cpuProfiles, matchTurns, other } from '@pplale/game-core';
 import type { Deck, Side } from '@pplale/game-core';
 import { displayCards } from '@/lib/game/catalog';
 import { useBoardContext } from '../board/BoardContext';
@@ -28,8 +28,7 @@ function Result({ outcome: { winner, kind } }: { outcome: Outcome }) {
   const foe = other(view), deck = setup?.decks[featured];
   const rows: [string, string][] = [
     ['決着', game.players[other(winner)].points <= 0 ? 'お菓子ポイントが0になった' : '行動のないターンが続き、お菓子ポイントで判定'],
-    // `game.turn` counts every turn of both sides; a player counts their own.
-    ['ターン', `${Math.max(game.players[0].turns, game.players[1].turns)}ターン`],
+    ['ターン', `${matchTurns(game)}ターン`],
     ['お菓子ポイント', `${names[view]} ${game.players[view].points} − ${game.players[foe].points} ${names[foe]}`],
     ['先攻', names[game.rules.firstPlayer]],
     ...(mode === 'cpu' ? [['CPUの強さ', cpuProfiles[levels[1]].name] as [string, string]] : []),

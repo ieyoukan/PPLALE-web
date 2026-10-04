@@ -4,7 +4,7 @@ import { cpuCommand } from './index.ts';
 import { actingSides } from './moves.ts';
 import type { CpuLevel, CpuStrategy } from './types.ts';
 import { newGame } from '../setup.ts';
-import { sandboxRules } from '../model.ts';
+import { matchTurns, sandboxRules } from '../model.ts';
 import type { Catalog, Command, Deck, GameState, Rules, Side } from '../model.ts';
 
 const yojoIds = Array.from({ length: 31 }, (_, i) => `y_${i}`);
@@ -37,6 +37,7 @@ export interface MatchOptions {
 }
 export interface MatchResult {
     winner: Side | 'draw' | null;
+    /** Turns per side (see matchTurns), not both sides added up. */
     turns: number;
     commands: number;
     /** Milliseconds each side spent deciding. */
@@ -62,5 +63,5 @@ export function playMatch(catalog: Catalog, { levels, seed, decks, rules, maxCom
         if (result.error) throw new Error(`${nameOf(side)} sent ${JSON.stringify(command)}: ${result.error}`);
         s = result.state;
     }
-    return { winner: s.winner, turns: s.turn, commands, thinking };
+    return { winner: s.winner, turns: matchTurns(s), commands, thinking };
 }

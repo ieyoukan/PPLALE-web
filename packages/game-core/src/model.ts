@@ -77,6 +77,7 @@ export interface Player {
     playable: string;
     points: number;
     maxPoints: number;
+    /** This side's own turns so far: the "nターン目" players count, and its base max PP. */
     turns: number;
     pp: number;
     ppBonus: number;
@@ -159,6 +160,10 @@ export interface GameState {
     serial: number;
     revision: number;
     active: Side;
+    /**
+     * Identifies the current turn for rules like "entered this turn" / "ate last turn". It ticks for
+     * both sides, so it is not a number players use: show `turnOf` / `matchTurns` instead.
+     */
     turn: number;
     players: [Player, Player];
     cards: Record<string, Instance>;
@@ -202,3 +207,10 @@ export const sides: readonly Side[] = [0, 1];
 export const deckLabel = (kind: DeckKind) => kind === 'yojo' ? '幼女' : 'お菓子';
 /** Thrown for an illegal command; applyCommand turns it into `Result.error` and keeps the old state. */
 export class RuleError extends Error {}
+
+type TurnCounts = Pick<GameState, 'active' | 'rules'> & { players: readonly Pick<Player, 'turns'>[] };
+/** The current turn as players count it: 先攻 / 後攻 and that side's own turn number. */
+export const turnOf = (s: TurnCounts): { order: 'first' | 'second'; number: number } =>
+    ({ order: s.active === s.rules.firstPlayer ? 'first' : 'second', number: s.players[s.active].turns });
+/** Length of a match in turns per side (the first player's count; the second has the same or one less). */
+export const matchTurns = (s: Pick<TurnCounts, 'players'>): number => Math.max(...s.players.map(p => p.turns));
