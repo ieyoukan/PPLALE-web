@@ -155,7 +155,7 @@ export function useBoardAnimations({ game, view, mode, cpuSides, replaying, cont
     const beginsTurn = game.phase === 'playing' && (old.phase !== 'playing' || old.turn !== game.turn);
     if (beginsTurn) {
       const announce = () => {
-        setTurnNotice({ id: game.turn, own: mode === 'hotseat' || game.active === view, number: game.players[game.active].turns, pp: game.players[game.active].pp, label: mode === 'watch' ? `${sideLabel(mode, game.active)}のターン` : undefined });
+        setTurnNotice({ id: game.turn, own: mode === 'hotseat' || game.active === view, order: game.active === game.rules.firstPlayer ? '先攻' : '後攻', number: game.players[game.active].turns, pp: game.players[game.active].pp, label: mode === 'watch' ? `${sideLabel(mode, game.active)}のターン` : undefined });
         later(() => setTurnNotice(null), TURN_NOTICE_DURATION);
       };
       if (next.length) later(announce, DRAW_DURATION);

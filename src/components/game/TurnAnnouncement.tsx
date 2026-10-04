@@ -4,7 +4,7 @@ import { css } from 'styled-system/css';
 export const TURN_NOTICE_DURATION = 1400;
 
 /** `label` replaces the default 「あなた / あいてのターン」 (used when watching two CPUs). */
-export type TurnNotice = { id: number; own: boolean; number: number; pp: number; label?: string };
+export type TurnNotice = { id: number; own: boolean; /** 先攻 / 後攻 of the side whose turn begins. */ order: string; number: number; pp: number; label?: string };
 
 export function TurnAnnouncement({ notice }: { notice: TurnNotice }) {
   return <div role="status" aria-live="polite" style={{ '--turn-tint': notice.own ? '#ffc7df' : '#c8b9ff' } as CSSProperties}
@@ -18,7 +18,7 @@ export function TurnAnnouncement({ notice }: { notice: TurnNotice }) {
       </div>
       <div aria-hidden="true" className={css({ height: '3px', margin: '12px auto', width: '85%', background: 'linear-gradient(90deg, transparent, var(--turn-tint) 25%, #fff 50%, var(--turn-tint) 75%, transparent)', boxShadow: '0 0 16px var(--turn-tint), 0 0 36px var(--turn-tint)', animation: 'gameTurnBeam 1400ms ease-out both', _motionReduce: { animation: 'none' } })} />
       <div className={css({ fontFamily: '"BoardHandwriting", "Yu Kyokasho", cursive', fontSize: 'clamp(22px, 3vw, 36px)', fontWeight: '400', WebkitTextStroke: '0.4px #fffdf7', letterSpacing: '0.06em', textShadow: '0 0 12px var(--turn-tint), 0 2px 6px rgba(30,20,40,0.7)' })}>
-        {notice.number}ターン目 · {notice.pp} PP
+        {notice.order} {notice.number}ターン目 · {notice.pp} PP
       </div>
     </div>
   </div>;
