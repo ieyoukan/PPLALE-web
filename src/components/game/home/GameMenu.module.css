@@ -1,7 +1,8 @@
-/* Tab column + page, over the table's pink check. Panels are dark and see-through; the page itself
+/* Tab column + page, over the night-sky card picture. Panels are dark and see-through; the page itself
    is a cream sheet so the forms stay readable. */
 .menu { position: relative; min-height: 100dvh; display: grid; grid-template-columns: clamp(210px, 24vw, 300px) minmax(0, 1fr); gap: clamp(10px, 2vw, 24px); padding: clamp(10px, 2vw, 24px); color: #fffdeb; background: #2a1f24; isolation: isolate; }
-.menu::before { content: ''; position: fixed; inset: 0; z-index: -1; background: repeating-conic-gradient(#f4b0bb 0 25%, #fffdeb 0 50%) 0 0 / 120px 120px; filter: brightness(.4) saturate(.9); }
+/* The cards floating in the night sky, darkened a little so the panels stay readable. */
+.menu::before { content: ''; position: fixed; inset: 0; z-index: -1; background: linear-gradient(90deg, #000a, #0004 45%, #0006), url('/images/game/menu-bg.webp') center 30% / cover no-repeat #10142a; }
 .menu a, .menu button { cursor: pointer; }
 .menu a:focus-visible, .menu button:focus-visible { outline: 2px solid #ffef93; outline-offset: 3px; }
 

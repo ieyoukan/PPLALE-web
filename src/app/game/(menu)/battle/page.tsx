@@ -1,10 +1,10 @@
 import type { Metadata } from 'next';
-import GameLobby from '@/components/game/GameLobby';
+import { BattleSoon } from '@/components/game/home/BattleSoon';
 export const metadata: Metadata = {
     title: 'ぷぷりえーる バトル',
-    description: '同じ端末でふたり対戦する。ルームマッチは準備中。',
+    description: 'ほかのプレイヤーとの対戦（ルームマッチ）は準備中。',
     alternates: { canonical: '/game/battle/' },
 };
 export default function Page() {
-    return <GameLobby kind="battle" />;
+    return <BattleSoon />;
 }

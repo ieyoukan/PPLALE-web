@@ -1,7 +1,7 @@
 'use client';
 
-// Preparation before entering the board, shown inside the game menu: `solo` (against the CPU,
-// or watching two CPUs) and `battle` (between people: the same device now, rooms later). The
+// Preparation before entering the board, shown inside the game menu: against the CPU, or watching
+// two CPUs. Matches between players (rooms) will get their own preparation on the バトル tab. The
 // prepared match is saved in the browser and the board page (/game/play/) picks it up.
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
@@ -12,12 +12,9 @@ import type { Levels, MatchSetup, Mode } from '@/lib/game/sessionStore';
 import { GameSetup } from './GameSetup';
 import styles from './GameLobby.module.css';
 
-const kinds = {
-  solo: { modes: ['cpu', 'watch'] },
-  battle: { modes: ['hotseat'] },
-} satisfies Record<string, { modes: Mode[] }>;
+const modes: Mode[] = ['cpu', 'watch'];
 
-export default function GameLobby({ kind }: { kind: keyof typeof kinds }) {
+export default function GameLobby() {
   const router = useRouter();
   const [saved, setSaved] = useState<string | null>(null);
   const [error, setError] = useState('');
@@ -36,7 +33,7 @@ export default function GameLobby({ kind }: { kind: keyof typeof kinds }) {
     {saved && <Link href={PLAY_PATH} className={styles.resume}>
       <span>前回の対戦を続ける</span><small>{saved}</small>
     </Link>}
-    <GameSetup modes={kinds[kind].modes} onStart={start} />
+    <GameSetup modes={modes} onStart={start} />
     {error && <p role="alert" className={styles.error}>{error}</p>}
   </>;
 }

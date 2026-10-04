@@ -3,5 +3,6 @@
 .tile:nth-child(2) { border-color: #b3d788; background: linear-gradient(90deg, #b3d788 0 14px, #fff 14px); }
 .tile b { font-size: clamp(24px, 3.4vw, 36px); letter-spacing: .2em; }
 .tile span { font-size: 16px; }
-.tile:hover { transform: translateY(-3px); box-shadow: 0 8px 0 #a8866755; }
+.soon { border-color: #d8cbbd; background: linear-gradient(90deg, #d8cbbd 0 14px, #f7f2ea 14px); color: #9a8676; }
+.tile:not(.soon):hover { transform: translateY(-3px); box-shadow: 0 8px 0 #a8866755; }
 @media (prefers-reduced-motion: reduce) { .tile { transition: none; } }

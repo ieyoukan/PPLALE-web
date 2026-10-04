@@ -6,5 +6,5 @@ export const metadata: Metadata = {
     alternates: { canonical: '/game/' },
 };
 export default function Page() {
-    return <GameLobby kind="solo" />;
+    return <GameLobby />;
 }

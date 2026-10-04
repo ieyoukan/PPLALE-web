@@ -10,7 +10,7 @@ import { useAuth } from '@/lib/auth';
 import { demoDeck, gameCatalog } from '@/lib/game/catalog';
 import type { SavedGameDeck } from '@/lib/game/savedDecks';
 import styles from './BoardEmulator.module.css';
-const modeNames: Record<Mode, string> = { cpu: 'CPUと対戦', watch: 'CPU同士を観戦', hotseat: 'この端末でふたり対戦' };
+const modeNames: Record<Mode, string> = { cpu: 'CPUと対戦', watch: 'CPU同士を観戦', hotseat: '両側を操作' };
 /** Mode (among `modes`), CPU levels and decks for a new match (the rules are fixed). Used by the preparation pages. */
 export function GameSetup({ modes, onStart }: {
     modes: Mode[];
@@ -61,8 +61,6 @@ export function GameSetup({ modes, onStart }: {
     return <div className={styles.setupContent}>
     <div className={styles.setupModes}>
       {modes.map(id => <button key={id} aria-pressed={mode === id} onClick={() => setMode(id)}>{modeNames[id]}</button>)}
-      {/* Between people: rooms come later. */}
-      {modes.includes('hotseat') && <button disabled>ルームマッチ<small>準備中</small></button>}
     </div>
     {/* One row per CPU side: the opponent against you, both sides when watching. */}
     {(mode === 'watch' ? [0, 1] as Side[] : mode === 'cpu' ? [1] as Side[] : []).map(side => <div key={side} className={styles.setupModes} role="group" aria-label={mode === 'watch' ? `${sideLabel(mode, side)}の強さ` : 'CPUの強さ'}>
