@@ -75,7 +75,7 @@ export const strawberryYojo: CardScripts = {
     },
     // y_9 ぷらむ: 相手の幼女1人に2ダメージ。
     y_9: { onPlay: ctx => ctx.queue('damage', { scope: 'enemy', amount: 2 }) },
-    // y_10 ゼロオレ: 破壊されたときランダムな相手の幼女に2ダメージ。
+    // y_10 ゼロオレンジ: 破壊されたときランダムな相手の幼女に2ダメージ。
     y_10: { onDestroyed: ctx => ctx.queue('randomDamage', { amount: 2 }) },
     // y_11 もなか: 自分のお菓子を2減らす。破壊されたとき自分の幼女すべてに1ダメージ、お菓子を2回復。
     y_11: {
