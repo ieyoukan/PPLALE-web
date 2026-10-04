@@ -1,21 +1,21 @@
 'use client';
 
-// Preparation before entering the board, reached from the game's home: `solo` (against the CPU,
+// Preparation before entering the board, shown inside the game menu: `solo` (against the CPU,
 // or watching two CPUs) and `battle` (between people: the same device now, rooms later). The
 // prepared match is saved in the browser and the board page (/game/play/) picks it up.
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import type { GameState } from '@pplale/game-core';
-import { HOME_PATH, PLAY_PATH, describeSavedMatch, saveSession } from '@/lib/game/sessionStore';
+import { PLAY_PATH, describeSavedMatch, saveSession } from '@/lib/game/sessionStore';
 import type { Levels, MatchSetup, Mode } from '@/lib/game/sessionStore';
 import { GameSetup } from './GameSetup';
 import styles from './GameLobby.module.css';
 
 const kinds = {
-  solo: { title: 'CPU対決', modes: ['cpu', 'watch'] },
-  battle: { title: 'バトル', modes: ['hotseat'] },
-} satisfies Record<string, { title: string; modes: Mode[] }>;
+  solo: { modes: ['cpu', 'watch'] },
+  battle: { modes: ['hotseat'] },
+} satisfies Record<string, { modes: Mode[] }>;
 
 export default function GameLobby({ kind }: { kind: keyof typeof kinds }) {
   const router = useRouter();
@@ -32,17 +32,11 @@ export default function GameLobby({ kind }: { kind: keyof typeof kinds }) {
     } catch { setError('このブラウザに対戦を保存できないため、開始できません'); }
   }
 
-  return <main className={styles.lobby}>
-    <div className={styles.card}>
-      <header className={styles.heading}>
-        <h1>{kinds[kind].title}</h1>
-        <Link href={HOME_PATH} className={styles.home}>ホームへ</Link>
-      </header>
-      {saved && <Link href={PLAY_PATH} className={styles.resume}>
-        <span>前回の対戦を続ける</span><small>{saved}</small>
-      </Link>}
-      <GameSetup modes={kinds[kind].modes} onStart={start} />
-      {error && <p role="alert" className={styles.error}>{error}</p>}
-    </div>
-  </main>;
+  return <>
+    {saved && <Link href={PLAY_PATH} className={styles.resume}>
+      <span>前回の対戦を続ける</span><small>{saved}</small>
+    </Link>}
+    <GameSetup modes={kinds[kind].modes} onStart={start} />
+    {error && <p role="alert" className={styles.error}>{error}</p>}
+  </>;
 }

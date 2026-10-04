@@ -180,7 +180,7 @@ export function useBoard(container: RefObject<HTMLDivElement | null>) {
   };
 
   // ── Session ──
-  /** Back to the game's home. The match stays saved and can be resumed from there. */
+  /** Back to the game menu. The match stays saved and can be resumed from there. */
   function leave() {
     router.push(HOME_PATH);
   }

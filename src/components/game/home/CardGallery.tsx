@@ -4,7 +4,7 @@
 import { useState } from 'react';
 import Link from 'next/link';
 import { displayCards } from '@/lib/game/catalog';
-import { HOME_PATH } from '@/lib/game/sessionStore';
+import { CARDS_PATH } from '@/lib/game/sessionStore';
 import { GameCard } from '../GameCard';
 import styles from './CardGallery.module.css';
 
@@ -20,10 +20,10 @@ export default function CardGallery() {
   const [group, setGroup] = useState<(typeof groups)[number]['id']>('yojo');
   const [open, setOpen] = useState<string | null>(null);
   const shown = all.filter(groups.find(g => g.id === group)!.has), card = open ? displayCards[open] : null;
-  return <main className={styles.gallery}>
+  return <div className={styles.gallery}>
     <header className={styles.heading}>
-      <h1>カード図鑑</h1>
-      <Link href={HOME_PATH}>ホームへ</Link>
+      <h2>図鑑</h2>
+      <Link href={CARDS_PATH}>カードへ戻る</Link>
     </header>
     <div className={styles.tabs} role="tablist" aria-label="カードの種類">{groups.map(g =>
       <button key={g.id} role="tab" aria-selected={group === g.id} onClick={() => setGroup(g.id)}>{g.label}<small>{all.filter(g.has).length}</small></button>)}
@@ -41,5 +41,5 @@ export default function CardGallery() {
         </div>
       </div>
     </div>}
-  </main>;
+  </div>;
 }

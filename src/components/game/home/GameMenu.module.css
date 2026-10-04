@@ -1,0 +1,45 @@
+/* Tab column + page, over the table's pink check. Panels are dark and see-through; the page itself
+   is a cream sheet so the forms stay readable. */
+.menu { position: relative; min-height: 100dvh; display: grid; grid-template-columns: clamp(210px, 24vw, 300px) minmax(0, 1fr); gap: clamp(10px, 2vw, 24px); padding: clamp(10px, 2vw, 24px); color: #fffdeb; background: #2a1f24; isolation: isolate; }
+.menu::before { content: ''; position: fixed; inset: 0; z-index: -1; background: repeating-conic-gradient(#f4b0bb 0 25%, #fffdeb 0 50%) 0 0 / 120px 120px; filter: brightness(.4) saturate(.9); }
+.menu a, .menu button { cursor: pointer; }
+.menu a:focus-visible, .menu button:focus-visible { outline: 2px solid #ffef93; outline-offset: 3px; }
+
+.side { position: sticky; top: clamp(10px, 2vw, 24px); align-self: start; display: flex; flex-direction: column; gap: 14px; max-height: calc(100dvh - clamp(20px, 4vw, 48px)); padding: 14px; border: 1px solid #fffdeb33; border-radius: 22px; background: #0009; backdrop-filter: blur(6px); overflow: auto; }
+.logo { width: 100%; height: auto; }
+.tabs { display: grid; gap: 10px; }
+/* Pill tabs: a coloured band on a dark pill; the current one is filled. */
+.tab { display: grid; gap: 2px; padding: 12px 18px; border: 2px solid var(--tone); border-radius: 999px; background: linear-gradient(90deg, var(--tone) 0 10px, #0008 10px); color: #fffdeb; text-align: center; transition: background .2s, color .2s, transform .2s; }
+.tab b { font-size: clamp(18px, 2vw, 22px); }
+.tab small { font-size: 12px; opacity: .85; }
+.tab:hover { transform: translateX(4px); }
+.tab[aria-current=page] { background: var(--tone); color: #6b4a3a; box-shadow: 0 0 0 2px #fffdeb, 0 6px 14px #0008; }
+.pink { --tone: #f4b0bb; }
+.green { --tone: #b3d788; }
+.lilac { --tone: #e7c3e2; }
+.foot { display: grid; gap: 10px; margin-top: auto; }
+.player { display: grid; gap: 2px; padding: 10px 14px; border: 1px solid #fffdeb33; border-radius: 14px; background: #0006; }
+.player small { font: 11px Georgia, serif; letter-spacing: .14em; color: #e7c3e2; }
+.player b { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 17px; }
+.player button { justify-self: start; margin-top: 6px; padding: 6px 14px; border-radius: 999px; background: #f4b0bb; color: #6b4a3a; font-size: 14px; font-weight: 700; }
+.back { padding: 10px 14px; border: 1px solid #fffdeb44; border-radius: 999px; text-align: center; font-size: 15px; }
+.back:hover { background: #fffdeb22; }
+
+.pane { min-width: 0; display: flex; flex-direction: column; border: 2px solid #a88667; border-radius: 22px; background: #fffdeb; color: #6b4a3a; overflow: hidden; box-shadow: 0 14px 30px #0008; }
+.pane h1 { padding: 12px 20px; background: #a88667; color: #fffdeb; font-size: clamp(20px, 2.4vw, 26px); font-weight: 700; text-align: center; letter-spacing: .1em; }
+.body { flex: 1; width: min(100%, 980px); margin: 0 auto; padding: clamp(14px, 2.4vw, 28px); }
+
+/* Narrow screens: the column becomes a strip across the top. */
+@media (max-width: 720px) {
+  .menu { grid-template-columns: minmax(0, 1fr); }
+  .side { position: static; max-height: none; flex-flow: row wrap; align-items: center; gap: 10px; padding: 10px; }
+  .logo { width: 104px; }
+  .tabs { flex: 1; display: flex; gap: 6px; min-width: 0; }
+  .tab { flex: 1; padding: 8px 6px; background: #0008; }
+  .tab b { font-size: 15px; white-space: nowrap; }
+  .tab small { display: none; }
+  .foot { flex: 1 0 100%; display: flex; align-items: center; justify-content: space-between; margin: 0; }
+  .player { display: flex; align-items: center; gap: 8px; padding: 6px 12px; min-width: 0; }
+  .player button { margin: 0; }
+}
+@media (prefers-reduced-motion: reduce) { .tab { transition: none; } }

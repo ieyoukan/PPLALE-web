@@ -22,13 +22,12 @@ export interface StoredSession {
 }
 
 const STORAGE_KEY = 'pplale-game-session-v2';
-/** The game's home: from here to solo play, battles and the cards. */
+/** Where the game opens and returns to: the CPU対決 tab (preparation against the CPU). */
 export const HOME_PATH = '/game/';
-/** Preparation against the CPU (or watching two CPUs). */
-export const SOLO_PATH = '/game/solo/';
 /** Preparation of a match between people (same device now; rooms later). */
 export const BATTLE_PATH = '/game/battle/';
 export const CARDS_PATH = '/game/cards/';
+export const CARD_GALLERY_PATH = '/game/cards/zukan/';
 export const PLAY_PATH = '/game/play/';
 
 /** Sides the CPU plays in a mode. */
