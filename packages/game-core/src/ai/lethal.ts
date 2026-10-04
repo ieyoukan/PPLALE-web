@@ -1,18 +1,21 @@
-// ① 勝ち筋の完全探索: is there a sequence of own commands that wins this turn?
+// 勝ち筋の探索: is there a sequence of own commands that wins this turn?
 import { cloneState } from '../core/state.ts';
 import { shuffled } from '../core/rng.ts';
+import { attackOf, hpOf } from '../core/cards.ts';
 import { applyCommand } from '../commands/index.ts';
 import type { Catalog, Command, GameState, Side } from '../model.ts';
+import { other } from '../model.ts';
 import { legalMoves } from './moves.ts';
 import type { Move } from './moves.ts';
 
 export interface LethalResult {
     /**
-     * win: `line` wins this turn whatever the hidden cards and dice are.
-     * none: every line was tried and none is certain to win.
+     * win: `line` wins this turn, including every sampled re-roll if it uses luck.
+     * none: every line was tried and none passed those checks.
      * unknown: the node budget ran out first.
      */
     status: 'win' | 'none' | 'unknown';
+    /** Includes mandatory opponent threshold draws; execute only the first own command, then replan. */
     line: Command[];
     /** Distinct positions examined. */
     nodes: number;
@@ -61,6 +64,39 @@ const priority = (m: Move) => {
     return 5;
 };
 
+/** Order the search by damage, guard removal and attackers still available this turn. */
+function distance(s: GameState, side: Side, catalog: Catalog): number {
+    if (s.winner === side) return -1e9;
+    if (s.winner !== null) return 1e9;
+    const me = s.players[side], enemy = s.players[other(side)];
+    const guards = enemy.field.filter(uid => s.cards[uid].keywords.includes('guard'));
+    const guardValue = (uid: string) => 30 + Math.max(0, hpOf(s.cards[uid], catalog)) * 3 + (s.cards[uid].shield ? 5 : 0);
+    let obstruction = guards.reduce((total, uid) => total + guardValue(uid), 0);
+    // Target selection is still searched. Estimate its best guard removal for ordering only.
+    const task = s.pending?.task;
+    if (task?.actor === side && task.op === 'damage') {
+        const damage = (task.amount ?? 0) * (task.multiplier ?? 1);
+        const selectable = new Set(s.pending!.options.map(option => option.id));
+        obstruction -= Math.max(0, ...guards.filter(uid => selectable.has(uid)).map(uid => {
+            const c = s.cards[uid];
+            if (c.keywords.includes('effectImmune') || damage <= 0) return 0;
+            if (c.shield) return 5;
+            return damage >= hpOf(c, catalog) ? guardValue(uid) : damage * 3;
+        }));
+    }
+    let pressure = 0;
+    for (const uid of me.field) {
+        const c = s.cards[uid], attack = attackOf(c, catalog);
+        if (c.exhausted || attack <= 0 || c.keywords.includes('immobile')) continue;
+        const ready = c.entered !== s.turn || c.keywords.includes('fast');
+        const canTrade = ready || c.keywords.includes('charge');
+        if (ready && !c.keywords.includes('noEat')) pressure += attack * 6;
+        if (canTrade && obstruction > 0) pressure += attack * 2;
+        if (c.cardId === 'y_20' && (ready || canTrade && enemy.field.length)) pressure += 12;
+    }
+    return enemy.points * 12 + obstruction + (enemy.shield ? 10 : 0) - pressure - me.pp * 0.1;
+}
+
 /** Replays `line` in worlds with other dice and deck orders; it must win in all of them. */
 function certain(start: GameState, side: Side, line: Command[], catalog: Catalog, checks: number): boolean {
     for (let i = 1; i <= checks; i++) {
@@ -78,15 +114,16 @@ function certain(start: GameState, side: Side, line: Command[], catalog: Catalog
 }
 
 /**
- * Depth-first search over this side's own commands until the turn ends. Transpositions (the same
- * position reached in another order) are visited once. A line through luck is accepted only if it
- * wins in every re-rolled world. Call it with the CPU's view (see determinize), never the real state.
+ * Depth-first search over this side's commands and forced threshold draws until the turn ends.
+ * Transpositions (the same position reached in another order) are visited once. A line through luck
+ * must win in every sampled re-roll. Call it with the CPU's view (see determinize), never the real state.
  */
 export function findLethal(start: GameState, side: Side, catalog: Catalog, { maxNodes = 4000, checks = 8 }: LethalOptions = {}): LethalResult {
     if (start.phase !== 'playing' || start.winner !== null) return { status: 'none', line: [], nodes: 0 };
     const seen = new Set<number>();
     let exhausted = false;
     const search = (s: GameState, line: Command[], lucky: boolean): Command[] | null => {
+        if (s.winner !== null) return s.winner === side && (!lucky || certain(start, side, line, catalog, checks)) ? line : null;
         if (seen.size >= maxNodes) {
             exhausted = true;
             return null;
@@ -95,16 +132,21 @@ export function findLethal(start: GameState, side: Side, catalog: Catalog, { max
         const key = positionKey(s) * 2 + (lucky ? 1 : 0);
         if (seen.has(key)) return null;
         seen.add(key);
-        const moves = legalMoves(s, side, catalog).filter(m => m.command.type !== 'end').sort((a, b) => priority(a) - priority(b));
+        if (s.pending && s.pending.task.actor !== side) {
+            const { task, options } = s.pending;
+            // No opponent choice or newly drawn hidden card is used by our subsequent commands.
+            // Resolving the draw may also resume queued random effects, so keep the luck checks.
+            if (task.op !== 'draw' || task.text !== 'threshold' || task.source || task.deck !== 'sweet'
+                || options.length !== 1 || options[0].id !== 'sweet') return null;
+            const [forced] = legalMoves(s, task.actor, catalog);
+            return forced ? search(forced.next, [...line, forced.command], lucky || usesLuck(s, forced.next)) : null;
+        }
+        const moves = legalMoves(s, side, catalog).filter(m => m.command.type !== 'end')
+            .map(move => ({ move, distance: distance(move.next, side, catalog) }))
+            .sort((a, b) => a.distance - b.distance || priority(a.move) - priority(b.move))
+            .map(({ move }) => move);
         for (const move of moves) {
             const next = [...line, move.command], luck = lucky || usesLuck(s, move.next);
-            if (move.next.winner === side) {
-                if (!luck || certain(start, side, next, catalog, checks)) return next;
-                continue;
-            }
-            if (move.next.winner !== null) continue;
-            // The opponent has to answer something mid-turn: the line cannot be planned further.
-            if (move.next.pending && move.next.pending.task.actor !== side) continue;
             const found = search(move.next, next, luck);
             if (found) return found;
         }

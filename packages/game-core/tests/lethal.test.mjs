@@ -60,3 +60,67 @@ test('the さいきょう CPU plays the winning line step by step', () => {
   assert.equal(s.winner, 0);
   assert.equal(hand(s).length, 1, 'it did not waste the turn on ふらら');
 });
+
+test('lethal continues through both mandatory opponent milestone draws', () => {
+  const s = arena({ me: { field: ['y_25', 'y_25', 'y_25'], pp: 0 } });
+  s.players[0].skills.fill(0);
+  field(s).forEach(uid => { s.cards[uid].attackBonus = 1; });
+  const before = structuredClone(s);
+  const result = findLethal(s, 0, catalog, { maxNodes: 12 });
+  assert.equal(result.status, 'win');
+  assert.deepEqual(result.line.map(c => c.actor), [0, 1, 0, 1, 0]);
+  assert.ok(result.line.filter(c => c.actor === 1).every(c => c.type === 'choose' && c.option === 'sweet'));
+  assert.equal(replay(s, result.line).winner, 0);
+  assert.deepEqual(s, before);
+});
+
+test('lethal prioritizes a guard-removing skill within a tight node budget', () => {
+  const s = arena({ me: { playable: 'p_1', field: ['y_23'], pp: 0 }, foe: { field: ['y_8'], points: 3 } });
+  const result = findLethal(s, 0, catalog, { maxNodes: 3 });
+  assert.equal(result.status, 'win');
+  assert.deepEqual(result.line.map(c => c.type), ['skill', 'choose', 'attack']);
+  assert.equal(result.line[0].index, 1);
+  assert.equal(replay(s, result.line).winner, 0);
+});
+
+test('lethal does not choose an optional opponent response', () => {
+  const s = arena({ me: { field: ['y_25'] }, foe: { points: 3 } });
+  s.pending = { task: { op: 'draw', actor: 1 }, prompt: 'draw', options: [
+    { id: 'yojo', label: 'yojo' }, { id: 'sweet', label: 'sweet' },
+  ] };
+  const result = findLethal(s, 0, catalog);
+  assert.equal(result.status, 'none');
+  assert.deepEqual(result.line, []);
+});
+
+test('lethal still checks luck when a milestone draw resumes queued random damage', () => {
+  const s = arena({ me: { field: ['y_20'], pp: 0 }, foe: { field: ['y_8', 'y_28'], points: 5 } });
+  s.players[0].skills.fill(0);
+  s.cards[field(s, 1)[1]].keywords = [];
+  s.rng = 1; // This roll hits the guard, but other rolls may miss it.
+  s.pending = { task: { op: 'draw', actor: 1, deck: 'sweet', text: 'threshold' }, prompt: 'draw',
+    options: [{ id: 'sweet', label: 'sweet' }] };
+  s.queue = [{ op: 'randomDamage', actor: 0, amount: 2 }];
+  assert.equal(findLethal(s, 0, catalog).status, 'none');
+});
+
+test('lethal detects a win from effects resumed after an opponent milestone draw', () => {
+  const s = arena({ me: { pp: 0 }, foe: { points: 3 } });
+  s.pending = { task: { op: 'draw', actor: 1, deck: 'sweet', text: 'threshold' }, prompt: 'draw',
+    options: [{ id: 'sweet', label: 'sweet' }] };
+  s.queue = [{ op: 'reduce', actor: 0, amount: 3 }];
+  const result = findLethal(s, 0, catalog);
+  assert.equal(result.status, 'win');
+  assert.equal(replay(s, result.line).winner, 0);
+});
+
+test('master replans after each opponent milestone draw to finish the winning turn', () => {
+  let s = arena({ me: { field: ['y_25', 'y_25', 'y_25'], pp: 0 } });
+  s.players[0].skills.fill(0);
+  field(s).forEach(uid => { s.cards[uid].attackBonus = 1; });
+  for (let step = 0; step < 5 && s.winner === null; step++) {
+    const side = s.pending?.task.actor ?? s.active;
+    s = replay(s, [cpuCommand(s, catalog, { level: 'master', side })]);
+  }
+  assert.equal(s.winner, 0);
+});

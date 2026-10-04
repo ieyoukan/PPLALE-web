@@ -35,6 +35,7 @@ interface Limits {
 }
 interface Planner {
     catalog: Catalog;
+    replies: Map<string, number>;
     key(state: GameState): string;
     value(state: GameState, side: Side): number;
     order(state: GameState, side: Side): number;
@@ -71,7 +72,7 @@ function planner(catalog: Catalog): Planner {
         return side === 0 ? score : -score;
     };
     return {
-        catalog, value,
+        catalog, value, replies: new Map(),
         key(state) {
             let key = keys.get(state);
             if (key === undefined) { key = positionKey(state); keys.set(state, key); }
@@ -189,12 +190,14 @@ function replyScore(line: Line, side: Side, p: Planner, limits: Limits) {
     const actor = other(side);
     // A pathological effect chain can outlive the mandatory-choice cap; do not call it a finished turn.
     if (line.state.active !== actor) return { score: p.value(line.state, side) - 30, nodes: 0 };
+    const key = `${side}:${limits.nodes}:${limits.width}:${limits.depth}:${p.key(line.state)}`;
+    const cached = p.replies.get(key);
+    if (cached !== undefined) return { score: cached, nodes: 0 };
     const reply = turnLines(line.state, actor, p, limits);
-    return {
-        score: reply.lines.length ? Math.min(...reply.lines.map(plan => p.value(plan.state, side)))
-            : p.value(line.state, side),
-        nodes: reply.nodes,
-    };
+    const scores = reply.lines.map(plan => p.value(plan.state, side));
+    const score = scores.length ? Math.min(...scores) : p.value(line.state, side);
+    p.replies.set(key, score);
+    return { score, nodes: reply.nodes };
 }
 
 /**
