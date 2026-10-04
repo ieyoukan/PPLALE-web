@@ -43,7 +43,8 @@ export function PlayerSide({ side }: { side: Side }) {
     {!near && <div className={styles.opponentHand} role="group" aria-label={`相手の手札 ${player.hand.length}枚`}>
       {player.hand.map((uid, i) => <span key={uid} data-hand={uid} className={`${styles.hiddenCard} ${board.flying(uid) ? styles.dealing : ''}`}
         style={{ '--hand-index': i - (player.hand.length - 1) / 2, '--fan-step': `${Math.min(56, 360 / Math.max(1, player.hand.length))}px` } as CSSProperties}>
-        {(game.cards[uid].revealed || mode === 'watch') && <GameCard id={game.cards[uid].cardId} />}
+        {/* The opponent holds their cards facing them, so they are upside down from here. */}
+        <span className={styles.hiddenFace}>{(game.cards[uid].revealed || mode === 'watch') && <GameCard id={game.cards[uid].cardId} />}</span>
       </span>)}
     </div>}
   </section>;

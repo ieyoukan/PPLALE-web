@@ -136,6 +136,7 @@
 .turnControl button:disabled { opacity: .5; }
 .opponentHand { position: absolute; right: .8%; top: 14%; width: 4.5%; height: 15%; }
 .hiddenCard { display: block; position: absolute; width: 3cqw; height: 4.5cqw; top: calc(var(--hand-index) * 5px); left: 0; transform: rotate(calc(var(--hand-index) * 2deg)); background: url('/images/back-card.webp') center / 100% 100%; border: 1px solid #e8d8c1; border-radius: 2px; box-shadow: 1px 2px 3px #32212155; }
+.hiddenFace { position: absolute; inset: 0; border-radius: inherit; background: inherit; transform: rotate(180deg); }
 .opponentHand small { position: absolute; bottom: -1cqw; left: 0; font: .65cqw sans-serif; color: #f9e5c7; white-space: nowrap; }
 .die { display: grid; grid-template: repeat(3, 1fr) / repeat(3, 1fr); gap: .14cqw; width: 2.45cqw; height: 2.45cqw; padding: .42cqw; background: #fffcf0; border: 1px solid #dad2bd; border-radius: .4cqw; box-shadow: .12cqw .25cqw 0 #b6aa96, .22cqw .33cqw .3cqw #573d3844; }
 .die i { border-radius: 50%; }

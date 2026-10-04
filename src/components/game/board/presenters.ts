@@ -48,8 +48,8 @@ const isVisible = (place: { side: Side; zone: Zone } | null, state: GameState, u
   if (place.zone === 'hand') return place.side === scene.view || scene.mode === 'watch' || !!state.cards[uid]?.revealed;
   return true;
 };
-/** The far side's field and piles are drawn upside down; hands are upright. */
-const spinOf = (place: { side: Side; zone: Zone } | null, scene: Scene) => place && place.side !== scene.view && place.zone !== 'hand' ? 180 : 0;
+/** Everything on the far side (field, piles and hand) is drawn upside down. */
+const spinOf = (place: { side: Side; zone: Zone } | null, scene: Scene) => place && place.side !== scene.view ? 180 : 0;
 const spotOf = (place: { side: Side; zone: Zone }, uid: string): Spot =>
   place.zone === 'field' ? { unit: uid } : place.zone === 'hand' ? { hand: uid } : { pile: [place.side, place.zone] };
 const onField = (state: GameState, uid: string) => state.players.some(p => p.field.includes(uid));
