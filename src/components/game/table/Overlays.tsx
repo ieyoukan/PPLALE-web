@@ -31,12 +31,3 @@ export function AnimationLayer() {
     <div className={styles.flightLayer}>{flights.map(flight => <FlyingCard key={flight.uid} flight={flight} />)}</div>
   </>;
 }
-
-export function ResultBanner() {
-  const { game, leave } = useBoardContext();
-  if (game.winner === null) return null;
-  return <div className={styles.result}>
-    <strong>{game.winner === 'draw' ? '引き分け' : `${game.players[game.winner].name}の勝利`}</strong>
-    <button onClick={leave}>次の対戦を準備する</button>
-  </div>;
-}

@@ -87,10 +87,9 @@ export const genericOps: OpTable = {
             if (!t.target) {
                 const kinds = (t.deck ? [t.deck] : ['yojo', 'sweet'] as DeckKind[]).filter(kind => fx.me[kind].length > 0);
                 if (!kinds.length) { fx.note('山札にカードがないため補充できません'); return; }
-                fx.ask(`${drawReason(t)}：山札を押して1枚引いてください`, [...kinds.map(kind => ({ id: kind, label: `${deckLabel(kind)}デッキ（${fx.me[kind].length}枚）` })), ...(t.text === 'threshold' ? [{ id: 'skip', label: '引かない' }] : [])], t);
+                fx.ask(`${drawReason(t)}：山札を押して1枚引いてください`, kinds.map(kind => ({ id: kind, label: `${deckLabel(kind)}デッキ（${fx.me[kind].length}枚）` })), t);
                 return;
             }
-            if (t.target === 'skip' && t.text === 'threshold') return;
             const kind = t.deck ?? t.target as DeckKind, uid = draw(fx.s, t.actor, kind);
             const drawn = [...(t.ids ?? []), ...(uid ? [uid] : [])];
             const total = (t.count ?? 1) * (t.multiplier ?? 1);

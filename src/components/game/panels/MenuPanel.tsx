@@ -6,17 +6,21 @@ import styles from '../BoardEmulator.module.css';
 
 /** In-match actions only. Choosing the mode, levels and decks belongs to the preparation page. */
 export function MenuPanel() {
-  const { mode, paused, view, busy, canUndo, setPanel, setPaused, setView, undo, toggleFullscreen, leave } = useBoardContext();
+  const { mode, paused, view, busy, canUndo, replaying, setPanel, setPaused, setView, undo, toggleFullscreen, leave, stopReplay } = useBoardContext();
   const close = (action: () => void) => () => { action(); setPanel(null); };
   return <>
-    <h2>メニュー</h2>
+    <h2>{replaying ? 'リプレイ' : 'メニュー'}</h2>
     <div className={styles.menuList}>
       <button onClick={() => setPanel({ type: 'logs' })}>履歴</button>
-      {mode !== 'hotseat' && <button onClick={close(() => setPaused(!paused))}>{paused ? 'CPU再開' : 'CPU一時停止'}</button>}
+      {replaying
+        ? <button onClick={close(() => setPaused(!paused))}>{paused ? '再生する' : '一時停止'}</button>
+        : mode !== 'hotseat' && <button onClick={close(() => setPaused(!paused))}>{paused ? 'CPU再開' : 'CPU一時停止'}</button>}
       {mode !== 'cpu' && <button onClick={close(() => setView(other(view)))}>反対側を見る</button>}
-      {mode === 'hotseat' && <button disabled={!canUndo || busy} onClick={close(undo)}>一手戻す</button>}
+      {mode === 'hotseat' && !replaying && <button disabled={!canUndo || busy} onClick={close(undo)}>一手戻す</button>}
       <button onClick={close(toggleFullscreen)}>全画面</button>
-      <button className={styles.menuLeave} onClick={leave}>対戦をやめる</button>
+      {replaying
+        ? <button className={styles.menuLeave} onClick={stopReplay}>リプレイをやめる</button>
+        : <button className={styles.menuLeave} onClick={leave}>対戦をやめる</button>}
     </div>
   </>;
 }

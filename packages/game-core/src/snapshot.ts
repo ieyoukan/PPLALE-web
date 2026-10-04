@@ -149,8 +149,8 @@ function migrateTurnRules(s: Saved, catalog: Catalog) {
     const t = s.pending.task, p = s.players[t.actor];
     const kinds = (t.deck ? [t.deck] : ['yojo', 'sweet'] as const).filter(kind => p[kind].length > 0);
     if (kinds.length) {
-        s.pending.options = [...kinds.map(kind => ({ id: kind, label: `${deckLabel(kind)}デッキ（${p[kind].length}枚）` })),
-            ...(t.text === 'threshold' ? [{ id: 'skip', label: '引かない' }] : [])];
+        // Rebuilt from the decks; this also drops the 「引かない」 option older saves had for the 10 / 5 draws.
+        s.pending.options = kinds.map(kind => ({ id: kind, label: `${deckLabel(kind)}デッキ（${p[kind].length}枚）` }));
     } else {
         s.pending = null;
         s.queue.unshift({ ...t, target: undefined });

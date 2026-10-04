@@ -51,9 +51,11 @@ for (const viewport of [{ width: 1280, height: 860 }, { width: 844, height: 390 
       await page.mouse.move(target.x + target.width / 2, target.y + target.height / 2, { steps: 12 });
       await page.mouse.up();
       await expect.poll(async () => (await savedGame(page)).winner).toBe(0);
-      await expect(page.getByText('あなたの勝利', { exact: true })).toBeVisible();
+      // ゲームセット and the verdict play first, then the result screen stays.
+      const result = page.getByRole('dialog', { name: '対戦結果' });
+      await expect(result.getByText('あなたの勝ち', { exact: true })).toBeVisible({ timeout: 10000 });
       await page.reload();
-      await expect(page.getByText('あなたの勝利', { exact: true })).toBeVisible();
+      await expect(result.getByText('あなたの勝ち', { exact: true })).toBeVisible();
       expect(errors).toEqual([]);
     });
 
@@ -127,15 +129,17 @@ test('second-player fifth-turn PP is shown as seven usable PP and a temporary +2
   expect((await savedGame(page)).players[1].pp).toBe(0);
 });
 
-test('a threshold draw can be declined and its one-time marker remains used', async ({ page }) => {
+test('a threshold draw is mandatory: the only choice is the sweets deck', async ({ page }) => {
   const s = arena();
   s.players[0].points = 10;
   s.players[0].milestones = [10];
-  s.pending = { prompt: 'お菓子ポイント到達：山札を押して1枚引いてください', task: { op: 'draw', actor: 0, deck: 'sweet', text: 'threshold' }, options: [{ id: 'sweet', label: 'お菓子デッキ' }, { id: 'skip', label: '引かない' }] };
+  s.pending = { prompt: 'お菓子ポイント到達：山札を押して1枚引いてください', task: { op: 'draw', actor: 0, deck: 'sweet', text: 'threshold' }, options: [{ id: 'sweet', label: 'お菓子デッキ' }] };
   await loadBoard(page, s);
-  await page.getByRole('button', { name: '引かない', exact: true }).click();
+  await expect(page.getByRole('button', { name: '引かない', exact: true })).toHaveCount(0);
+  await expect(page.getByRole('button', { name: /ターン\s*終了/ })).toBeDisabled();
+  await page.locator('[data-deck="0-sweet"]').click();
   await expect(page.getByRole('button', { name: /ターン\s*終了/ })).toBeEnabled();
   const next = await savedGame(page);
-  expect(next.players[0].sweet).toHaveLength(10);
+  expect(next.players[0].sweet).toHaveLength(9);
   expect(next.players[0].milestones).toEqual([10]);
 });

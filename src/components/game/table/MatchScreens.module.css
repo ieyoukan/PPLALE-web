@@ -1,0 +1,131 @@
+/* Full-screen moments around a match: 先攻・後攻 (versus), ゲームセット / verdict (finale), result. */
+
+/* ── 先攻・後攻 ── */
+/* Over the blurred table, laid out like it: the other side on top, the viewer at the bottom. */
+.versus { position: fixed; inset: 0; z-index: 180; display: grid; grid-template-rows: minmax(0, 1fr) auto minmax(0, 1fr); align-items: center; padding: clamp(8px, 3vh, 28px) clamp(12px, 4vw, 48px); overflow: hidden; background: #1a1228a6; backdrop-filter: blur(9px); color: #fff6df; pointer-events: none; font-family: 'Yu Mincho', 'Hiragino Mincho ProN', 'Noto Serif JP', serif; animation: versusShow 3.2s ease both; }
+.versusSide { display: flex; align-items: center; justify-content: center; gap: clamp(14px, 4vw, 56px); min-height: 0; height: 100%; }
+.versusTop { animation: versusFromTop .55s cubic-bezier(.16, 1, .3, 1) both; }
+.versusBottom { animation: versusFromBottom .55s cubic-bezier(.16, 1, .3, 1) both; }
+/* The whole playable card, not a crop. */
+.versusCard { position: relative; flex: none; height: min(100%, 36vh, 60vw); aspect-ratio: 533 / 800; filter: drop-shadow(0 12px 18px #000a); }
+.versusTop .versusCard { transform: rotate(3deg); }
+.versusBottom .versusCard { transform: rotate(-3deg); }
+.versusInfo { display: grid; justify-items: center; gap: clamp(6px, 1.4vh, 14px); min-width: 0; }
+.playerText { display: grid; justify-items: center; gap: 2px; min-width: 0; }
+.playerText small { font: clamp(11px, 1.3vw, 16px) Georgia, 'Times New Roman', serif; letter-spacing: .12em; color: #e9d9b8; }
+.playerText b { max-width: 44vw; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: clamp(16px, 2.4vw, 30px); text-shadow: 0 2px 6px #000; }
+
+.orderPlate { height: min(21vh, 28vw); aspect-ratio: 1.45 / 1; display: grid; place-items: center; border: 2px solid #e9d39a; border-radius: 6px; outline: 1px solid #b08a45; outline-offset: -8px; background: radial-gradient(circle at 50% 45%, var(--plate-glow), #2a1d14 62%, #150e0a); box-shadow: 0 0 0 3px #1c2a4a, 0 0 0 5px #caa85c, 0 14px 30px #000a; animation: plateIn .6s .35s cubic-bezier(.2, 1.2, .3, 1) both; }
+.plateFirst { --plate-glow: #6e3f37; }
+.plateSecond { --plate-glow: #3d4a6e; }
+.orderPlate strong { display: flex; align-items: center; font-size: min(12vh, 16vw); font-weight: 900; line-height: 1; filter: drop-shadow(0 0 10px #ffd97a99) drop-shadow(0 3px 2px #000a); }
+/* The gradient is clipped per character: a clipped parent loses transformed children in some browsers. */
+.orderPlate strong span { display: inline-block; background: linear-gradient(180deg, #fffdf0 20%, #f6dc93 55%, #c9973a); -webkit-background-clip: text; background-clip: text; color: transparent; }
+.orderPlate strong span:first-child { transform: translate(.06em, -.12em); }
+.orderPlate strong span:last-child { font-size: .74em; transform: translate(-.08em, .26em); }
+
+.versusMiddle { position: relative; display: grid; place-items: center; padding: clamp(2px, 1vh, 10px) 0; }
+.versusBeam { position: absolute; top: 50%; left: -10vw; right: -10vw; height: 3px; transform: translateY(-50%); background: linear-gradient(90deg, #fff0, #fff 20%, #fff 80%, #fff0); box-shadow: 0 0 18px 4px #ffe9a8, 0 0 60px 14px #ff9ec788; animation: versusBeam .6s .2s ease-out both; }
+.versusMark { position: relative; font: italic 700 min(11vh, 15vw) / 1 Georgia, 'Times New Roman', serif; letter-spacing: -.04em; color: #f6e7c4; text-shadow: 0 0 22px #17111f, 0 0 50px #17111f, 0 4px 10px #000; animation: versusMark .5s .45s cubic-bezier(.2, 1.3, .3, 1) both; }
+.versusCaption { position: absolute; right: 0; top: 50%; max-width: 38%; margin: 0; padding-top: 10px; text-align: right; font-size: clamp(13px, 1.8vw, 22px); text-shadow: 0 2px 8px #000, 0 0 20px #000; }
+
+@keyframes versusShow { 0% { opacity: 0; } 5%, 90% { opacity: 1; } 100% { opacity: 0; } }
+@keyframes versusFromTop { from { opacity: 0; transform: translateY(-40%); } }
+@keyframes versusFromBottom { from { opacity: 0; transform: translateY(40%); } }
+@keyframes versusBeam { from { opacity: 0; transform: translateY(-50%) scaleX(0); } }
+@keyframes versusMark { from { opacity: 0; transform: scale(2.2); } }
+@keyframes plateIn { from { opacity: 0; transform: perspective(900px) rotateY(85deg) scale(.7); } }
+
+/* ── 先攻 / 後攻を選択 ── */
+.orderChoice { display: grid; justify-items: center; gap: clamp(14px, 4vh, 40px); color: #fff6df; font-family: 'Yu Mincho', 'Hiragino Mincho ProN', 'Noto Serif JP', serif; }
+.orderChoice h2 { margin: 0; font-size: clamp(22px, 4vw, 44px); font-weight: 700; letter-spacing: .08em; text-shadow: 0 0 18px #ffd9ea88, 0 3px 8px #1e1428; }
+.orderOptions { display: flex; gap: clamp(16px, 5vw, 64px); }
+/* Plates as cards: they lift under the pointer and the chosen one stays raised and lit. */
+.orderOption { height: min(34vh, 36vw); aspect-ratio: 1 / 1.1; padding: 0; cursor: pointer; opacity: .82; animation: none; transition: transform .2s ease, box-shadow .2s ease, opacity .2s ease, filter .2s ease; }
+.orderOption strong { font-size: min(15vh, 16vw); }
+.orderOption:hover, .orderOption:focus-visible { opacity: 1; transform: translateY(-10px) scale(1.04); }
+.orderPicked, .orderPicked:hover { opacity: 1; transform: translateY(-14px) scale(1.07); box-shadow: 0 0 0 3px #1c2a4a, 0 0 0 6px #fff1b8, 0 0 34px 8px #ffd97acc, 0 20px 36px #000a; }
+.orderOptions:has(.orderPicked) .orderOption:not(.orderPicked) { opacity: .5; filter: saturate(.6); }
+.orderDecide { min-width: clamp(160px, 22vw, 260px); min-height: 56px; padding: 10px 28px; border: 2px solid #ffe3ef; border-radius: 12px; background: linear-gradient(#f0a0c4, #bd5f8e); color: #fff; font-family: inherit; font-size: clamp(18px, 2.4vw, 26px); font-weight: 700; box-shadow: inset 0 0 0 1px #7d3a5b, 0 5px 0 #7d3a5b, 0 10px 20px #0006; cursor: pointer; transition: filter .2s, transform .2s, opacity .2s; }
+.orderDecide:enabled:hover { filter: brightness(1.1); transform: translateY(-2px); }
+.orderDecide:disabled { opacity: .45; filter: saturate(.4); cursor: default; }
+@media (max-height: 520px) { .orderOption { height: min(40vh, 30vw); } .orderDecide { min-height: 46px; } }
+
+/* ── ゲームセット / verdict ── */
+.finale { position: fixed; inset: 0; z-index: 175; display: grid; place-items: center; padding: 0; border: 0; background: #1a1228b3; color: #fffdf7; cursor: pointer; font-family: 'Yu Mincho', 'Hiragino Mincho ProN', 'Noto Serif JP', serif; animation: finaleVeil .3s ease-out both; }
+.gameSet, .verdict { display: block; max-width: 96vw; font-weight: 900; line-height: 1.2; white-space: nowrap; }
+.gameSet { font-size: clamp(38px, 9vw, 130px); letter-spacing: .12em; text-shadow: 0 0 18px #ffd9ea, 0 0 46px #ff9ec7, 0 4px 10px #1e1428; animation: gameSet .6s cubic-bezier(.16, 1, .3, 1) both; }
+.gameSet::after { content: ''; display: block; height: 3px; margin: .12em auto 0; background: linear-gradient(90deg, transparent, #ffc7df 25%, #fff 50%, #ffc7df 75%, transparent); box-shadow: 0 0 16px #ffc7df; animation: finaleLine .7s .1s ease-out both; }
+.verdict { font-size: clamp(40px, 11vw, 160px); animation: verdict .6s cubic-bezier(.2, 1.3, .3, 1) both; }
+.win { background: linear-gradient(180deg, #fffdf0 20%, #f9df8f 55%, #d19a2f); -webkit-background-clip: text; background-clip: text; color: transparent; filter: drop-shadow(0 0 18px #ffd97acc) drop-shadow(0 4px 3px #3a2408); }
+.lose { color: #d3d8ea; text-shadow: 0 0 22px #6c78b8, 0 4px 10px #10131f; }
+.draw, .neutral { color: #fff6df; text-shadow: 0 0 20px #c9b3e6, 0 4px 10px #1e1428; }
+@keyframes finaleVeil { from { opacity: 0; } }
+@keyframes gameSet { from { opacity: 0; transform: scale(1.6); letter-spacing: .5em; } }
+@keyframes finaleLine { from { transform: scaleX(0); } }
+@keyframes verdict { from { opacity: 0; transform: translateY(30px) scale(.6); } }
+
+/* ── Result ── */
+.result { position: fixed; inset: 0; z-index: 170; display: grid; grid-template: auto minmax(0, 1fr) / minmax(0, 40fr) minmax(0, 60fr); gap: clamp(8px, 2vh, 20px) clamp(14px, 4vw, 56px); padding: clamp(10px, 3vh, 32px) clamp(14px, 5vw, 72px); overflow: auto; color: #fff6df; backdrop-filter: blur(6px); animation: finaleVeil .45s ease-out both; }
+.resultWin { background: radial-gradient(120% 90% at 50% 0%, #b9853fee, #513520f0 55%, #23160ff5); }
+.resultLose { background: radial-gradient(120% 90% at 50% 0%, #56664ff0, #2a342bf2 55%, #131814f7); }
+.resultNeutral { background: radial-gradient(120% 90% at 50% 0%, #6b5580f0, #2f233cf2 55%, #17111ff7); }
+.result button, .result a { cursor: pointer; }
+.result button:focus-visible, .result a:focus-visible { outline: 2px solid #fff6df; outline-offset: 3px; }
+
+.resultHeading { grid-column: 1 / -1; text-align: center; }
+.resultHeading h2 { margin: 0; font: 700 clamp(40px, 9vw, 112px) / 1 Georgia, 'Times New Roman', serif; letter-spacing: .1em; }
+.resultHeading h2:not(.win) { color: #f3ead2; text-shadow: 0 0 18px #0008, 0 3px 6px #0008; filter: none; }
+.resultHeading p { display: inline-block; margin: clamp(4px, 1vh, 10px) 0 0; padding: 4px clamp(30px, 8vw, 90px); background: linear-gradient(90deg, transparent, #0007 22%, #0007 78%, transparent); font-size: clamp(16px, 2.2vw, 26px); letter-spacing: .08em; }
+
+.resultSide { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: clamp(8px, 1.6vh, 16px); min-height: 0; }
+.resultArt { position: relative; flex: 0 1 auto; height: min(56vh, 520px); max-width: 100%; aspect-ratio: 533 / 800; transform: rotate(-3deg); filter: drop-shadow(0 18px 26px #000a); animation: resultArt .6s .1s cubic-bezier(.16, 1, .3, 1) both; }
+.resultName { max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: clamp(16px, 2vw, 24px); text-shadow: 0 2px 6px #000; }
+.resultBody { display: flex; flex-direction: column; justify-content: center; gap: clamp(10px, 2.4vh, 26px); min-width: 0; }
+
+.summary { margin: 0; padding: clamp(8px, 1.6vh, 16px) 4px; border-block: 1px solid #fff6df55; font-size: clamp(14px, 1.7vw, 20px); }
+.summary > div { display: flex; justify-content: space-between; gap: 18px; padding: 4px 0; }
+.summary dt { flex: none; opacity: .8; }
+.summary dd { margin: 0; text-align: right; }
+
+.deckRow { display: grid; grid-template-columns: auto auto; align-items: center; justify-content: start; gap: 8px 14px; min-width: 0; font-size: clamp(14px, 1.7vw, 20px); }
+.deckRow strong { grid-column: 1 / -1; padding: 8px 14px; border: 1px solid #fff6df55; border-radius: 8px; background: #0004; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-weight: 400; }
+.actions { display: flex; flex-wrap: wrap; justify-content: flex-end; gap: 12px; }
+
+.plateButton { display: inline-flex; align-items: center; justify-content: center; min-height: 48px; padding: 8px clamp(16px, 2.6vw, 34px); border: 2px solid #a9dcec; border-radius: 10px; background: linear-gradient(#2f7591, #1c4960); color: #f3fbff; font-size: clamp(15px, 1.8vw, 21px); text-decoration: none; box-shadow: inset 0 0 0 1px #0f2d3d, 0 4px 0 #0f2d3d, 0 8px 18px #0006; transition: filter .2s, transform .2s; }
+.plateButton:hover { filter: brightness(1.12); transform: translateY(-2px); }
+.primaryPlate { min-width: min(100%, 240px); border-color: #ffe3ef; background: linear-gradient(#f0a0c4, #bd5f8e); box-shadow: inset 0 0 0 1px #7d3a5b, 0 4px 0 #7d3a5b, 0 8px 18px #0006; }
+@keyframes resultArt { from { opacity: 0; transform: translateX(-60px) rotate(-8deg); } }
+
+/* Used deck */
+.deckModal { position: fixed; inset: 0; z-index: 185; display: grid; place-items: center; padding: 16px; background: #000a; }
+.deckSheet { width: min(920px, 100%); max-height: 100%; overflow: auto; padding: 18px 20px 24px; border: 2px solid #ffedc7; border-radius: 20px; background: #fff9f0; color: #5b4636; }
+.deckSheet header { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+.deckSheet h3 { margin: 0; font-size: 22px; }
+.deckSheet h4 { margin: 18px 0 8px; font-size: 16px; color: #8a6f5c; }
+.deckSheet header button { width: 44px; height: 44px; border-radius: 50%; background: #f1e4d4; font-size: 24px; color: #6b5444; }
+.deckGrid { display: grid; grid-template-columns: repeat(auto-fill, minmax(92px, 1fr)); gap: 10px; margin: 0; padding: 0; list-style: none; }
+.deckCard { position: relative; aspect-ratio: 533 / 800; }
+.deckCount { position: absolute; right: 2px; bottom: 2px; padding: 2px 8px; border-radius: 999px; background: #3b2a3cdd; color: #fff6df; font-size: 15px; font-weight: 700; }
+
+/* Short screens (a phone on its side): everything stays on one screen. */
+@media (max-height: 520px) {
+  .resultHeading { display: flex; align-items: baseline; justify-content: center; gap: 16px; }
+  .resultHeading h2 { font-size: clamp(32px, 11vh, 56px); }
+  .resultHeading p { margin: 0; }
+  .resultArt { height: min(46vh, 300px); }
+  .plateButton { min-height: 42px; }
+  .summary > div { padding: 1px 0; }
+}
+/* Narrow screens: one column, the character small on top. */
+@media (max-width: 640px) {
+  .result { grid-template: auto auto auto / minmax(0, 1fr); align-content: start; }
+  .resultSide { flex-flow: row wrap; }
+  .resultArt { height: min(30vh, 260px); }
+  .actions { justify-content: center; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .versus { animation: versusShow 3.2s linear both; }
+  .versusTop, .versusBottom, .versusBeam, .versusMark, .orderPlate, .gameSet, .gameSet::after, .verdict, .resultArt { animation: none; }
+  .plateButton, .orderOption, .orderDecide { transition: none; }
+}

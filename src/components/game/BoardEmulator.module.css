@@ -152,8 +152,6 @@
 .selectedHand { outline: 2px solid #f1d78d; }
 .dealing { visibility: hidden; }
 .revealed { position: absolute; bottom: 4px; left: 15%; width: 70%; color: #fff9e6; background: #8b657bc7; font-size: 8px; border-radius: 3px; }
-.result { position: absolute; z-index: 40; left: 30%; top: 43.5%; width: 40%; display: flex; justify-content: center; align-items: center; gap: 15px; padding: 10px; background: #fff9e7e8; border: 1px solid #bda781; border-radius: 5px; font-size: 16px; }
-.result button { font-size: 11px; background: #d9e7cb; padding: 6px 12px; border-radius: 3px; }
 .drawer { position: fixed; z-index: 100; right: 0; top: 34px; bottom: 0; width: min(360px, 92vw); overflow: auto; padding: 25px 20px; color: #685441; background: #fff9edf7; border-left: 1px solid #cfbda0; box-shadow: -7px 0 22px #33202a33; }
 .drawer > h2 { margin: 15px 28px 18px 0; font-size: 19px; }
 .drawer > p { font-size: 12px; line-height: 1.8; margin-bottom: 14px; white-space: pre-wrap; }
@@ -207,16 +205,9 @@
 }
 @keyframes drawFlip { 0%, 28% { transform: rotateY(0); } 72%, 100% { transform: rotateY(180deg); } }
 .drawHint { position: fixed; z-index: 75; left: 50%; top: 46%; transform: translate(-50%, -50%); padding: 8px 22px; border: 2px solid #fff0cb; border-radius: 999px; background: #5b4257e6; color: #fffaf0; font: clamp(16px, 2vw, 24px) 'BoardHandwriting', 'Yu Kyokasho', cursive; white-space: nowrap; pointer-events: none; box-shadow: 0 6px 16px #2a1b3066; }
-.orderNotice { position: fixed; z-index: 180; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: clamp(14px, 3vh, 30px); background: #251b2ccc; color: #fff4d8; font-family: 'BoardHandwriting', 'Yu Kyokasho', cursive; pointer-events: none; animation: orderNotice 2.6s ease-out both; }
-.orderNotice p { margin: 0; font-size: clamp(20px, 3vw, 36px); text-shadow: 0 2px 8px #1e1428; }
-.orderSides { display: flex; align-items: center; gap: clamp(12px, 3vw, 40px); }
-.orderSides > i { font-style: normal; font-size: clamp(20px, 3vw, 40px); color: #ffd9ea; }
-.orderSide { display: grid; place-items: center; gap: 6px; width: clamp(130px, 30vw, 320px); padding: clamp(14px, 3vh, 34px) 10px; border: 3px solid #fff1d3; border-radius: 28px; box-shadow: 0 7px 0 #0003, 0 14px 28px #130c1d66; }
-.orderSide span { font-size: clamp(18px, 2.6vw, 32px); }
-.orderSide strong { font-size: clamp(44px, 9vw, 110px); font-weight: 400; line-height: 1.1; }
-.orderFirst { background: #eac1d3; color: #704a61; }
-.orderSecond { background: #d7e7b9; color: #536749; }
-@keyframes orderNotice { 0% { opacity: 0; } 10%, 85% { opacity: 1; } 100% { opacity: 0; } }
+.replayBadge { position: fixed; z-index: 135; top: 16px; left: 16px; display: flex; align-items: center; gap: 10px; padding: 6px 8px 6px 16px; border: 2px solid #fff1d3; border-radius: 999px; background: #5b4257e6; color: #fffaf0; font-size: 16px; box-shadow: 0 6px 16px #2a1b3066; }
+.replayBadge button { padding: 6px 14px; border-radius: 999px; background: #fff3dc; color: #6b4a5c; font-size: 15px; }
+@media (max-height: 500px) { .replayBadge { top: 6px; left: 8px; font-size: 14px; } }
 @keyframes deckPulse { 50% { filter: drop-shadow(0 0 3px #75c497); } }
 @keyframes targetPulse { 50% { box-shadow: 0 0 4px #7fc69266; } }
 @keyframes diceRoll { 0% { transform: rotate(-13deg) translateY(0); } 50% { transform: rotate(12deg) translateY(-7px); } 100% { transform: rotate(-13deg) translateY(0); } }
@@ -317,8 +308,6 @@
 .skillButton strong { font-size: 22px; }
 .skillButton p { font-size: 18px; line-height: 1.7; margin-top: 8px; color: #7d6961; }
 .skillButton small { font-size: 18px; color: #9c7383; }
-.result { font-size: 26px; padding: 22px; border-radius: 24px; }
-.result button { min-height: 52px; font-size: 20px; }
 .heldCard { position: fixed; z-index: 190; pointer-events: none; width: 150px; aspect-ratio: 533 / 800; transform: translate(-50%, -65%) rotate(-7deg); filter: drop-shadow(15px 24px 12px #30203388); }
 .strikeLayer { position: fixed; inset: 0; z-index: 185; pointer-events: none; }
 .strikeCard { position: absolute; filter: drop-shadow(0 16px 10px #43234388); animation: strike .72s cubic-bezier(.3,.05,.2,1) both; }
@@ -375,10 +364,6 @@
 .diceResult, .diceTie { font-size: 32px; text-shadow: 0 3px 12px #160c21; }
 @media (max-width: 600px) { .diceStage { gap: 28px; padding: 16px; } .focusDie { padding: 10px; gap: 22px; } .focusDie > span:first-child { font-size: 24px; } }
 
-.initiativeChoices { display: flex; gap: 24px; }
-.initiativeChoices button { min-width: 140px; min-height: 86px; padding: 20px 28px; border: 2px solid #fff1d3; border-radius: 26px; background: #eac1d3; color: #704a61; font-size: 30px; font-weight: 700; box-shadow: 0 7px 0 #93637e, 0 14px 28px #130c1d66; }
-.initiativeChoices button:last-child { background: #d7e7b9; color: #536749; box-shadow: 0 7px 0 #829267, 0 14px 28px #130c1d66; }
-.initiativeChoices button:disabled { opacity: .6; }
 
 /* Opponent PP / turn button / own PP, arranged like a card game control rail. */
 .withTurnControl { width: calc(100vw - clamp(176px, 14vw, 224px) - 24px); }

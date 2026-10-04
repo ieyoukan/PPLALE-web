@@ -108,18 +108,20 @@ test('an empty deck cannot be chosen for the turn draw; two empty decks skip rep
   assert.equal(s.players[0].pp, s.players[0].turns + s.players[0].ppBonus);
 });
 
-test('10 and 5 sweet draws can each be declined once, including crossing both in a single loss', () => {
+test('10 and 5 sweet draws are mandatory, once each, including crossing both in a single loss', () => {
   let s = arena();
   s = run(s, { type: 'adjust', actor: 0, resource: 'points', delta: -8 }, true);
   assert.deepEqual(s.players[0].milestones, [10, 5]);
-  assert.deepEqual(s.pending.options.map(o => o.id), ['sweet', 'skip']);
-  s = choose(s, 'skip');
+  assert.deepEqual(s.pending.options.map(o => o.id), ['sweet']);
+  assert.ok(failure(s, { type: 'choose', actor: 0, option: 'skip' }));
   s = choose(s, 'sweet');
-  assert.equal(s.players[0].sweet.length, 9);
+  assert.deepEqual(s.pending.options.map(o => o.id), ['sweet']);
+  s = choose(s, 'sweet');
+  assert.equal(s.players[0].sweet.length, 8);
   s = run(s, { type: 'adjust', actor: 0, resource: 'points', delta: 8 }, true);
   s = run(s, { type: 'adjust', actor: 0, resource: 'points', delta: -8 }, true);
   assert.equal(s.pending, null);
-  assert.equal(s.players[0].sweet.length, 9);
+  assert.equal(s.players[0].sweet.length, 8);
 });
 
 test('old empty-deck draw choices restore without trapping the match', () => {

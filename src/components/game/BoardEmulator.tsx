@@ -11,7 +11,9 @@ import { SidePanel } from './panels/SidePanel';
 import { ChoiceTray } from './table/ChoiceTray';
 import { DiceStage } from './table/DiceStage';
 import { HandDock, SelectedCard } from './table/HandDock';
-import { AnimationLayer, HeldCard, ResultBanner } from './table/Overlays';
+import { AnimationLayer, HeldCard } from './table/Overlays';
+import { Finale } from './table/Finale';
+import { ResultScreen } from './table/ResultScreen';
 import { PlayAnnouncement, TargetPing } from './table/PlayAnnouncement';
 import { EffectBlockAnnouncement } from './table/EffectBlockAnnouncement';
 import { OrderNotice } from './table/OrderNotice';
@@ -26,7 +28,7 @@ const MulliganBoard = dynamic(() => import('./MulliganBoard').then(module => mod
 export default function BoardEmulator() {
   const container = useRef<HTMLDivElement>(null);
   const board = useBoard(container);
-  const { game, me, view, mode, paused, attacker, drag, mulligan, ready, panel, error, setPanel, setPaused, setAttacker } = board;
+  const { game, me, view, mode, paused, attacker, drag, mulligan, ready, panel, error, replaying, setPanel, setPaused, setAttacker, stopReplay } = board;
   // The saved match is still loading (or missing, and the preparation page is opening).
   if (!ready) return <div className={styles.emulator} aria-busy="true" />;
   // Any open panel (drawer or modal) is closed from the same corner button.
@@ -41,8 +43,9 @@ export default function BoardEmulator() {
           onClick={() => setPanel(drawerOpen ? null : { type: 'menu' })} aria-label={drawerOpen ? 'メニューを閉じる' : 'メニュー'}>
           <span aria-hidden="true">{drawerOpen ? '×' : '☰'}</span>
         </button>
-        {mode !== 'hotseat' && paused && <button className={styles.menuButton} onClick={() => setPaused(false)} aria-label="CPU再開">▶</button>}
+        {(mode !== 'hotseat' || replaying) && paused && <button className={styles.menuButton} onClick={() => setPaused(false)} aria-label={replaying ? '再生する' : 'CPU再開'}>▶</button>}
       </header>
+      {replaying && <div className={styles.replayBadge}><span>リプレイ中</span><button onClick={stopReplay}>やめる</button></div>}
       <div className={`${styles.tableViewport} ${game.phase === 'playing' ? styles.withTurnControl : ''}`}>
         <div className={styles.table} data-table>
           <div className={styles.mat}><div className={styles.logoLayer} aria-hidden="true">
@@ -51,7 +54,6 @@ export default function BoardEmulator() {
           </div></div>
           <PlayerSide side={0} />
           <PlayerSide side={1} />
-          <ResultBanner />
         </div>
       </div>
       <TurnControl />
@@ -75,6 +77,8 @@ export default function BoardEmulator() {
       <AnimationLayer />
       <TargetPing />
       <OrderNotice />
+      <Finale />
+      <ResultScreen />
       <PlayAnnouncement />
       <EffectBlockAnnouncement />
     </div>

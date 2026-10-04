@@ -8,7 +8,7 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import type { GameState } from '@pplale/game-core';
 import { PLAY_PATH, readSession, saveSession } from '@/lib/game/sessionStore';
-import type { Levels, Mode } from '@/lib/game/sessionStore';
+import type { Levels, MatchSetup, Mode } from '@/lib/game/sessionStore';
 import { GameSetup } from './GameSetup';
 import styles from './GameLobby.module.css';
 
@@ -28,9 +28,10 @@ export default function GameLobby() {
   // localStorage is only available in the browser, after the first render.
   useEffect(() => { setSaved(describeSaved()); }, []);
 
-  function start(game: GameState, mode: Mode, levels: Levels) {
+  function start({ game, setup, mode, levels }: { game: GameState; setup: MatchSetup; mode: Mode; levels: Levels }) {
     try {
-      saveSession({ game, mode, levels });
+      // The first state and the setup are kept for the replay and the rematch on the result screen.
+      saveSession({ game, mode, levels, setup, initial: game, commands: [] });
       router.push(PLAY_PATH);
     } catch { setError('このブラウザに対戦を保存できないため、開始できません'); }
   }

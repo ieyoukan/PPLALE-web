@@ -17,8 +17,10 @@ export type Strike = { uid: string; cardId: string; x: number; y: number; dx: nu
 export type Announcement = { id: number; kind: 'play' | 'skill' | 'reveal'; side: Side; cardId: string; title: string; text: string };
 /** Immunity outcomes to present after a command resolves. */
 export type EffectBlockNotice = { id: number; targets: (Ping & { cardId: string; kind: 'damage' | 'destroy' })[] };
-/** Who goes first, shown after a CPU chose. */
+/** Who goes first, shown once it is decided. */
 export type OrderNotice = { chooser: Side; first: Side };
+/** End of the match: `wait` for the last animation, ゲームセット, the verdict; null shows the result screen. */
+export type Finale = 'wait' | 'set' | 'verdict' | null;
 /** The card the opponent picked for an effect. */
 export type Ping = { uid: string; x: number; y: number; width: number; height: number };
 
@@ -30,7 +32,11 @@ const ANNOUNCE_HIT = 1900;
 const ANNOUNCE_DURATION = 2400;
 const PING_HIT = 700;
 const PING_DURATION = 1200;
-export const ORDER_NOTICE_DURATION = 2600;
+export const ORDER_NOTICE_DURATION = 3200;
+// The last blow lands, then ゲームセット and the verdict are shown before the result screen.
+const FINALE_WAIT = 700;
+const FINALE_SET = 1700;
+const FINALE_VERDICT = 2400;
 const rectOf = (element: Element) => {
   const { x, y, width, height } = element.getBoundingClientRect();
   return { x, y, width, height };
@@ -40,7 +46,7 @@ const rectOf = (element: Element) => {
  * Visual effects derived from state changes: cards flying from deck to hand, the attack lunge and
  * the turn announcement. Nothing here changes the game; `busy` tells the board to wait.
  */
-export function useBoardAnimations({ game, view, mode, cpuSides, container }: { game: GameState; view: Side; mode: Mode; cpuSides: Side[]; container: RefObject<HTMLDivElement | null> }) {
+export function useBoardAnimations({ game, view, mode, cpuSides, replaying, container }: { game: GameState; view: Side; mode: Mode; cpuSides: Side[]; replaying: boolean; container: RefObject<HTMLDivElement | null> }) {
   const [flights, setFlights] = useState<DrawFlight[]>([]);
   const [strike, setStrike] = useState<Strike | null>(null);
   const [turnNotice, setTurnNotice] = useState<TurnNotice | null>(null);
@@ -48,6 +54,7 @@ export function useBoardAnimations({ game, view, mode, cpuSides, container }: { 
   const [ping, setPing] = useState<Ping | null>(null);
   const [blocked, setBlocked] = useState<EffectBlockNotice | null>(null);
   const [order, setOrder] = useState<OrderNotice | null>(null);
+  const [finale, setFinale] = useState<Finale>(null);
   const previous = useRef(game);
   const enabled = useRef(false);
   const timers = useRef<ReturnType<typeof setTimeout>[]>([]);
@@ -82,17 +89,24 @@ export function useBoardAnimations({ game, view, mode, cpuSides, container }: { 
         const source = kind && root.querySelector(`[data-deck="${side}-${kind}"] [data-stack]`);
         const target = root.querySelector(`[data-hand="${uid}"]`);
         if (!source || !target) continue;
-        next.push({ uid, cardId: game.cards[uid].cardId, face: side === view || game.cards[uid].revealed, turn: side !== view, from: rectOf(source), to: rectOf(target) });
+        next.push({ uid, cardId: game.cards[uid].cardId, face: side === view || mode === 'watch' || game.cards[uid].revealed, turn: side !== view, from: rectOf(source), to: rectOf(target) });
       }
     }
     if (next.length) {
       setFlights(current => [...current, ...next]);
       later(() => setFlights(current => current.filter(f => !next.some(n => n.uid === f.uid))), DRAW_DURATION);
     }
-    // A CPU decided who goes first: show both sides' order before the opening draws.
-    if (old.phase === 'initiative' && game.phase === 'opening' && cpuSides.includes(old.active)) {
+    // Who goes first was decided: show both sides' order before the opening draws.
+    if (old.phase === 'initiative' && game.phase === 'opening') {
       setOrder({ chooser: old.active, first: game.rules.firstPlayer });
       later(() => setOrder(null), ORDER_NOTICE_DURATION);
+    }
+    // The match just ended: ゲームセット, then the verdict, then the result screen (finale = null).
+    if (old.winner === null && game.winner !== null && !replaying) {
+      setFinale('wait');
+      later(() => setFinale(current => current === 'wait' ? 'set' : current), FINALE_WAIT);
+      later(() => setFinale(current => current === 'set' ? 'verdict' : current), FINALE_WAIT + FINALE_SET);
+      later(() => setFinale(current => current === 'verdict' ? null : current), FINALE_WAIT + FINALE_SET + FINALE_VERDICT);
     }
     const beginsTurn = game.phase === 'playing' && (old.phase !== 'playing' || old.turn !== game.turn);
     if (beginsTurn) {
@@ -103,7 +117,7 @@ export function useBoardAnimations({ game, view, mode, cpuSides, container }: { 
       if (next.length) later(announce, DRAW_DURATION);
       else announce();
     }
-  }, [game, view, mode, cpuSides, container, later]);
+  }, [game, view, mode, replaying, container, later]);
   useEffect(() => () => timers.current.forEach(clearTimeout), []);
 
   /**
@@ -128,7 +142,7 @@ export function useBoardAnimations({ game, view, mode, cpuSides, container }: { 
         const kind = gameCatalog[game.cards[uid]?.cardId]?.type;
         const source = root.querySelector(`[data-hand="${uid}"]`);
         const target = root.querySelector(`[data-deck="${command.actor}-${kind}"] [data-stack]`) ?? root.querySelector(`[data-deck="${command.actor}-${kind}"]`);
-        return source && target ? [{ uid, cardId: game.cards[uid].cardId, face: command.actor === view, turn: false, returning: true, from: rectOf(source), to: rectOf(target) }] : [];
+        return source && target ? [{ uid, cardId: game.cards[uid].cardId, face: command.actor === view || mode === 'watch', turn: false, returning: true, from: rectOf(source), to: rectOf(target) }] : [];
       });
       if (back.length) {
         setFlights(current => [...current, ...back]);
@@ -154,7 +168,7 @@ export function useBoardAnimations({ game, view, mode, cpuSides, container }: { 
       }
     }
     apply();
-  }, [game, view, cpuSides, container, later]);
+  }, [game, view, mode, cpuSides, container, later]);
 
   /** Loads, restores and undo jump without animating the difference. */
   const skipNext = useCallback(() => { enabled.current = false; }, []);
@@ -169,9 +183,12 @@ export function useBoardAnimations({ game, view, mode, cpuSides, container }: { 
     setPing(null);
     setBlocked(null);
     setOrder(null);
+    setFinale(null);
   }, []);
+  /** A tap moves on: ゲームセット → verdict → result screen. */
+  const advanceFinale = useCallback(() => setFinale(current => current === 'set' ? 'verdict' : current === 'verdict' ? null : current), []);
 
-  return { flights, strike, turnNotice, announcement, ping, blocked, order, busy: flights.length > 0 || !!strike || !!turnNotice || !!announcement || !!ping || !!blocked || !!order, run, skipNext, reset };
+  return { flights, strike, turnNotice, announcement, ping, blocked, order, finale, advanceFinale, busy: flights.length > 0 || !!strike || !!turnNotice || !!announcement || !!ping || !!blocked || !!order, run, skipNext, reset };
 }
 
 let announcementId = 0;

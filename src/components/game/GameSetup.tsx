@@ -1,17 +1,18 @@
 'use client';
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
-import { cpuLevels, cpuProfiles, newGame, sandboxRules, validateDeck } from '@pplale/game-core';
+import { cpuLevels, cpuProfiles, sandboxRules, validateDeck } from '@pplale/game-core';
 import type { CpuLevel, GameState, Rules, Side } from '@pplale/game-core';
-import { sideLabel } from './board/useGameSession';
-import type { Levels, Mode } from '@/lib/game/sessionStore';
+import { createMatch } from '@/lib/game/match';
+import { sideLabel } from '@/lib/game/sessionStore';
+import type { Levels, MatchSetup, Mode } from '@/lib/game/sessionStore';
 import { useAuth } from '@/lib/auth';
 import { demoDeck, gameCatalog } from '@/lib/game/catalog';
 import type { SavedGameDeck } from '@/lib/game/savedDecks';
 import styles from './BoardEmulator.module.css';
 /** Mode, CPU levels, decks and test rules for a new match. Used by the preparation page. */
 export function GameSetup({ onStart }: {
-    onStart: (game: GameState, mode: Mode, levels: Levels) => void;
+    onStart: (match: { game: GameState; setup: MatchSetup; mode: Mode; levels: Levels }) => void;
 }) {
     const { user, signInWithGoogle } = useAuth();
     const [decks, setDecks] = useState<SavedGameDeck[]>([]);
@@ -48,10 +49,9 @@ export function GameSetup({ onStart }: {
             setError(errors.join(' / '));
             return;
         }
-        const random = new Uint32Array(1);
-        crypto.getRandomValues(random);
         try {
-            onStart(newGame([{ ...a, name: `${sideLabel(mode, 0)} · ${a.name}` }, { ...b, name: `${sideLabel(mode, 1)} · ${b.name}` }], gameCatalog, rules, random[0]), mode, levels);
+            const setup: MatchSetup = { decks: [a, b], rules };
+            onStart({ game: createMatch(setup, mode), setup, mode, levels });
         }
         catch (error) {
             setError(error instanceof Error ? error.message : '開始できません');

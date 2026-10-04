@@ -6,12 +6,13 @@ import type { Command, DeckKind, GameState, Side } from '@pplale/game-core';
 import type { RefObject } from 'react';
 import { useRouter } from 'next/navigation';
 import { gameCatalog } from '@/lib/game/catalog';
+import { useAuth } from '@/lib/auth';
 import { LOBBY_PATH } from '@/lib/game/sessionStore';
 import { useBoardAnimations } from './useBoardAnimations';
 import { useCardDrag } from './useCardDrag';
 import type { DragSource } from './useCardDrag';
 import { useCpuPlayer } from './useCpuPlayer';
-import { cpuSidesOf, useGameSession } from './useGameSession';
+import { cpuSidesOf, sideLabel, useGameSession } from './useGameSession';
 import { useOpeningDice } from './useOpeningDice';
 
 export type Panel =
@@ -20,6 +21,9 @@ export type Panel =
   | null;
 
 const typeOf = (game: GameState, uid: string) => gameCatalog[game.cards[uid].cardId].type;
+// A replay moves quickly through the opening and leaves time to follow each turn.
+const REPLAY_DELAY = 500;
+const REPLAY_OPENING_DELAY = 150;
 
 /**
  * Everything the board UI needs: the match, who may act, what is targetable, and the handlers
@@ -29,7 +33,11 @@ export function useBoard(container: RefObject<HTMLDivElement | null>) {
   const [panel, setPanel] = useState<Panel>(null);
   const router = useRouter();
   // No saved match (opened directly, or storage cleared): prepare one first.
-  const { game, mode, levels, ready, error, saveError, canUndo, send, undo: undoCommand } = useGameSession({ onMissing: () => router.replace(LOBBY_PATH) });
+  const session = useGameSession({ onMissing: () => router.replace(LOBBY_PATH) });
+  const { game, mode, levels, ready, error, saveError, canUndo, send, undo: undoCommand, replaying, replayNext, setup, canRematch, canReplay } = session;
+  const { user } = useAuth();
+  /** Names for the versus and result screens: the signed-in user's name for the human seat. */
+  const names = useMemo<[string, string]>(() => [mode !== 'watch' && user?.displayName || sideLabel(mode, 0), sideLabel(mode, 1)], [mode, user]);
   const [view, setView] = useState<Side>(0);
   const [selected, setSelected] = useState<string | null>(null);
   const [attacker, setAttacker] = useState<string | null>(null);
@@ -38,9 +46,10 @@ export function useBoard(container: RefObject<HTMLDivElement | null>) {
   const [exchanges, setExchanges] = useState<string[]>([]);
   /** The saved match is still loading; nothing may act yet. */
   const loading = !ready;
-  const cpuSides = useMemo(() => cpuSidesOf(mode), [mode]);
-  const animations = useBoardAnimations({ game, view, mode, cpuSides, container });
-  const { run: animate, flights, strike, turnNotice, announcement, ping, blocked, busy: animating } = animations;
+  // Nobody controls a replay: both sides are driven, like watching two CPUs.
+  const cpuSides = useMemo<Side[]>(() => replaying ? [0, 1] : cpuSidesOf(mode), [mode, replaying]);
+  const animations = useBoardAnimations({ game, view, mode, cpuSides, replaying, container });
+  const { run: animate, skipNext: skipAnimation, flights, strike, turnNotice, announcement, ping, blocked, order, busy: animating } = animations;
   /** A human acts for this side (nobody does while watching two CPUs). */
   const canControl = useCallback((side: Side) => !cpuSides.includes(side), [cpuSides]);
 
@@ -58,10 +67,27 @@ export function useBoard(container: RefObject<HTMLDivElement | null>) {
   const { busy: rollingDice } = dice;
   const busy = animating || rollingDice;
   useCpuPlayer({
-    enabled: ready && cpuSides.length > 0 && !loading && !paused, sides: cpuSides, levels, game, act, flights,
-    busy: { any: busy, blocking: rollingDice || !!strike || !!turnNotice || !!announcement || !!ping || !!blocked },
+    enabled: ready && !replaying && cpuSides.length > 0 && !loading && !paused, sides: cpuSides, levels, game, act, flights,
+    busy: { any: busy, blocking: rollingDice || !!strike || !!turnNotice || !!announcement || !!ping || !!blocked || !!order },
   });
 
+  // ── Replay ──
+  const { stopReplay: endReplay } = session;
+  // Feeds the recorded commands one at a time. The dice hook throws the dice itself (same result).
+  useEffect(() => {
+    if (!replaying || paused || busy) return;
+    if (!replayNext || error) {
+      // The recorded match is over (or no longer applies): back to its result without animating the jump.
+      skipAnimation();
+      return endReplay();
+    }
+    if (replayNext.type === 'roll') return;
+    const timer = setTimeout(() => act(replayNext), game.phase === 'playing' ? REPLAY_DELAY : REPLAY_OPENING_DELAY);
+    return () => clearTimeout(timer);
+  }, [replaying, paused, busy, replayNext, error, endReplay, skipAnimation, act, game.phase]);
+
+  // Watching starts from CPU 2's seat, so CPU 1 is on top and CPU 2 at the bottom (on the table and the versus screen).
+  useEffect(() => { if (mode === 'watch') setView(1); }, [mode]);
   // Same-device play follows whoever has to act.
   useEffect(() => {
     if (mode === 'hotseat' && (game.phase === 'playing' || game.phase === 'mulligan') && !busy) setView(game.pending?.task.actor ?? game.active);
@@ -158,6 +184,20 @@ export function useBoard(container: RefObject<HTMLDivElement | null>) {
   function leave() {
     router.push(LOBBY_PATH);
   }
+  /** Switching to another match (rematch, replay, back from a replay): nothing carries over. */
+  function resetTable() {
+    animations.reset();
+    dice.reset();
+    setView(mode === 'watch' ? 1 : 0);
+    setSelected(null);
+    setAttacker(null);
+    setExchanges([]);
+    setPanel(null);
+    setPaused(false);
+  }
+  function rematch() { resetTable(); session.rematch(); }
+  function startReplay() { resetTable(); session.startReplay(); }
+  function stopReplay() { resetTable(); session.stopReplay(); }
   function undo() {
     animations.skipNext();
     undoCommand();
@@ -174,13 +214,14 @@ export function useBoard(container: RefObject<HTMLDivElement | null>) {
   }
 
   return {
-    game, mode, levels, view, me, panel, ready, busy, paused,
+    game, mode, levels, view, me, panel, ready, busy, paused, names,
+    setup, canRematch, canReplay, replaying,
     error: error || saveError, canUndo,
     selected, attacker, pending, ours, playEnabled,
     animations, dice, drag, mulligan,
     canControl, canStrike, canAttackNow, affordable, isOption, flying, deckReady,
     act, choose, play, adjust, clickDeck, clickSlot, clickHand, attackLeader,
-    setPanel, setSelected, setAttacker, setView, setPaused, leave, undo, clearSelection, toggleFullscreen,
+    setPanel, setSelected, setAttacker, setView, setPaused, leave, undo, clearSelection, toggleFullscreen, rematch, startReplay, stopReplay,
   };
 }
 export type Board = ReturnType<typeof useBoard>;
