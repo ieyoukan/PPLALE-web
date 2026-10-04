@@ -1,7 +1,7 @@
 'use client';
 
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { attackTargets, costOf, other, pendingView } from '@pplale/game-core';
+import { attackTargets, canPlay, costOf, other, pendingView } from '@pplale/game-core';
 import type { Command, DeckKind, GameState, Side } from '@pplale/game-core';
 import type { RefObject } from 'react';
 import { useRouter } from 'next/navigation';
@@ -34,7 +34,8 @@ export function useBoard(container: RefObject<HTMLDivElement | null>) {
   const [selected, setSelected] = useState<string | null>(null);
   const [attacker, setAttacker] = useState<string | null>(null);
   const [paused, setPaused] = useState(false);
-  const [exchanges, setExchanges] = useState<Record<string, DeckKind>>({});
+  /** Opening cards marked to be given back in the mulligan. */
+  const [exchanges, setExchanges] = useState<string[]>([]);
   /** The saved match is still loading; nothing may act yet. */
   const loading = !ready;
   const cpuSides = useMemo(() => cpuSidesOf(mode), [mode]);
@@ -48,7 +49,7 @@ export function useBoard(container: RefObject<HTMLDivElement | null>) {
     if (command.actor === view) {
       setSelected(null);
       setAttacker(null);
-      setExchanges({});
+      setExchanges([]);
     }
     animate(command, () => send(command));
   }, [view, animate, send]);
@@ -75,7 +76,7 @@ export function useBoard(container: RefObject<HTMLDivElement | null>) {
   const flying = (uid: string) => flights.some(f => f.uid === uid);
   const canStrike = useCallback((uid: string, target: string | 'leader') => game.active === view && !!attacks[uid]?.includes(target), [attacks, game.active, view]);
   const canAttackNow = (uid: string) => !!attacks[uid];
-  const affordable = (uid: string) => playEnabled && costOf(game, uid, gameCatalog, view) <= me.pp;
+  const affordable = (uid: string) => playEnabled && costOf(game, uid, gameCatalog, view) <= me.pp && canPlay(game, view, uid, gameCatalog);
   /** The pending choice lets the player pick this option id. */
   const isOption = (id: string) => ours && !!pending && [...pending.units, ...pending.hand].includes(id);
 
@@ -118,7 +119,7 @@ export function useBoard(container: RefObject<HTMLDivElement | null>) {
     container,
     canPick: useCallback((uid: string, kind: DragSource) => {
       if (busy || kind === 'field' && (!playEnabled || !attacks[uid])) return null;
-      return { canDrag: playEnabled && (kind === 'field' || costOf(game, uid, gameCatalog, view) <= game.players[view].pp) };
+      return { canDrag: playEnabled && (kind === 'field' || costOf(game, uid, gameCatalog, view) <= game.players[view].pp && canPlay(game, view, uid, gameCatalog)) };
     }, [busy, playEnabled, attacks, game, view]),
     onDragStart: useCallback((uid: string, kind: DragSource) => {
       setAttacker(kind === 'field' ? uid : null);
@@ -140,17 +141,15 @@ export function useBoard(container: RefObject<HTMLDivElement | null>) {
   });
 
   // ── Mulligan ──
-  const replacements = me.hand.filter(uid => exchanges[uid] && game.mulligan.eligible[view].includes(uid)).map(uid => ({ uid, deck: exchanges[uid] }));
+  const returning = me.hand.filter(uid => exchanges.includes(uid) && game.mulligan.eligible[view].includes(uid));
   const mulligan = {
-    exchanges,
+    selected: returning,
+    /** Replacements still to draw after giving cards back; each from either deck. */
+    remaining: game.phase === 'mulligan' && !game.mulligan.confirmed[view] ? game.openingRemaining[view] : 0,
     enabled: game.phase === 'mulligan' && !game.mulligan.confirmed[view] && canControl(view) && !game.pending && !rollingDice && !strike && !flights.some(f => me.hand.includes(f.uid)) && !loading,
-    change: (uid: string, deck: DeckKind | null) => setExchanges(current => {
-      const next = { ...current };
-      if (deck) next[uid] = deck;
-      else delete next[uid];
-      return next;
-    }),
-    confirm: () => act(replacements.length ? { type: 'mulligan', actor: view, replacements } : { type: 'keep', actor: view }),
+    toggle: (uid: string, on: boolean) => setExchanges(current => on ? [...current.filter(id => id !== uid), uid] : current.filter(id => id !== uid)),
+    confirm: () => act(returning.length ? { type: 'mulligan', actor: view, uids: returning } : { type: 'keep', actor: view }),
+    draw: (deck: DeckKind) => act({ type: 'openingDraw', actor: view, deck }),
   };
 
   // ── Session ──

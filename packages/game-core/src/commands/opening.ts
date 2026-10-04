@@ -3,7 +3,7 @@ import { note } from '../core/cards.ts';
 import { rollDie, shuffled } from '../core/rng.ts';
 import { draw } from '../core/zones.ts';
 import { other, RuleError, sides } from '../model.ts';
-import type { DeckKind, GameState, Side } from '../model.ts';
+import type { Catalog, DeckKind, GameState, Side } from '../model.ts';
 import type { Handlers } from './types.ts';
 
 export const openingCommands: Handlers<'roll' | 'initiative' | 'openingDraw' | 'mulligan' | 'keep'> = {
@@ -36,30 +36,30 @@ export const openingCommands: Handlers<'roll' | 'initiative' | 'openingDraw' | '
         note(s, `${s.players[c.actor].name}が${c.order === 'first' ? '先攻' : '後攻'}を選びました`);
         for (const side of sides) s.openingRemaining[side] = s.rules.initialYojo + s.rules.initialSweet + (side === s.rules.firstPlayer ? 0 : 1);
     },
-    // Both sides draw in parallel, one card per click from either deck.
-    openingDraw(s, c) {
-        if (s.phase !== 'opening' || s.openingRemaining[c.actor] <= 0) throw new RuleError('必要な初期手札は引き終わっています');
+    // Both sides draw in parallel, one card per click from either deck. The same command draws the
+    // replacements of a mulligan.
+    openingDraw(s, c, catalog) {
+        const redraw = s.phase === 'mulligan' && !s.mulligan.confirmed[c.actor];
+        if (s.phase !== 'opening' && !redraw || s.openingRemaining[c.actor] <= 0) throw new RuleError('必要な初期手札は引き終わっています');
         if (c.deck !== 'yojo' && c.deck !== 'sweet' || !s.players[c.actor][c.deck].length) throw new RuleError('カードのある山札を選んでください');
         draw(s, c.actor, c.deck);
         s.openingRemaining[c.actor]--;
+        if (redraw) finishRedraw(s, c.actor, catalog);
     },
-    // Each opening card can be exchanged once, all in one batch, each from a chosen deck.
+    // Each opening card can be exchanged once, all in one batch: first choose the cards to give
+    // back (whatever their kind), then draw that many with `openingDraw`, each from either deck.
     mulligan(s, c, catalog) {
         assertMulligan(s, c.actor);
-        const p = s.players[c.actor], ids = c.replacements.map(item => item.uid);
-        if (!ids.length || new Set(ids).size !== ids.length || ids.some(id => !p.hand.includes(id) || !s.mulligan.eligible[c.actor].includes(id)))
+        const p = s.players[c.actor], ids = c.uids;
+        if (!Array.isArray(ids) || !ids.length || new Set(ids).size !== ids.length || ids.some(id => !p.hand.includes(id) || !s.mulligan.eligible[c.actor].includes(id)))
             throw new RuleError('交換できる初期手札を選んでください');
-        if (c.replacements.some(item => item.deck !== 'yojo' && item.deck !== 'sweet')) throw new RuleError('交換先のデッキを選んでください');
-        for (const kind of ['yojo', 'sweet'] as const) {
-            if (c.replacements.filter(item => item.deck === kind).length > p[kind].length) throw new RuleError('交換先のデッキにカードが足りません');
-        }
-        // Draw the entire batch before returning originals, so none can be redrawn.
+        // The originals wait outside the decks until every replacement is drawn, so none can be redrawn.
         p.hand = p.hand.filter(id => !ids.includes(id));
-        for (const item of c.replacements) draw(s, c.actor, item.deck);
-        for (const uid of ids) p[catalog[s.cards[uid].cardId].type as DeckKind].push(uid);
-        for (const kind of ['yojo', 'sweet'] as const) p[kind] = shuffled(s, p[kind]);
-        note(s, `${p.name}：初期手札を${ids.length}枚まとめて交換`);
-        confirm(s, c.actor);
+        s.mulligan.aside[c.actor] = [...ids];
+        s.mulligan.eligible[c.actor] = [];
+        s.openingRemaining[c.actor] = ids.length;
+        note(s, `${p.name}：初期手札を${ids.length}枚交換`);
+        finishRedraw(s, c.actor, catalog);
     },
     keep(s, c) {
         assertMulligan(s, c.actor);
@@ -69,6 +69,17 @@ export const openingCommands: Handlers<'roll' | 'initiative' | 'openingDraw' | '
 
 function assertMulligan(s: GameState, actor: Side) {
     if (s.phase !== 'mulligan' || s.mulligan.confirmed[actor] || s.pending) throw new RuleError('初期手札の確認中だけ操作できます');
+    if (s.openingRemaining[actor] > 0) throw new RuleError('交換するカードを山札から引いてください');
+}
+/** Once the replacements are drawn (or the decks are empty) the originals are shuffled back. */
+function finishRedraw(s: GameState, actor: Side, catalog: Catalog) {
+    const p = s.players[actor];
+    if (s.openingRemaining[actor] > 0 && (p.yojo.length || p.sweet.length)) return;
+    s.openingRemaining[actor] = 0;
+    for (const uid of s.mulligan.aside[actor]) p[catalog[s.cards[uid].cardId].type as DeckKind].push(uid);
+    s.mulligan.aside[actor] = [];
+    for (const kind of ['yojo', 'sweet'] as const) p[kind] = shuffled(s, p[kind]);
+    confirm(s, actor);
 }
 function confirm(s: GameState, actor: Side) {
     s.mulligan.confirmed[actor] = true;

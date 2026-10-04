@@ -1,4 +1,5 @@
 // Commands during a turn: play, attack, skills, choices and ending the turn.
+import { canPlay } from '../view.ts';
 import { scriptOf } from '../cards/registry.ts';
 import { costOf, isRealSweet, note } from '../core/cards.ts';
 import { canAttack, resolveAttack } from '../core/combat.ts';
@@ -31,6 +32,7 @@ export const turnCommands: Handlers<'play' | 'attack' | 'end' | 'reveal' | 'skil
         if (!p.hand.includes(c.uid)) throw new RuleError('そのカードは手札にありません');
         const card = s.cards[c.uid], def = catalog[card.cardId], cost = costOf(s, c.uid, catalog, c.actor);
         if (cost > p.pp) throw new RuleError('PPが足りません');
+        if (!canPlay(s, c.actor, c.uid, catalog)) throw new RuleError('対象にできる幼女がいないので使えません');
         const slot = c.slot ?? openSlot(s, c.actor);
         if (def.type === 'yojo') {
             if (p.field.length >= FIELD_SIZE) throw new RuleError('場は7人までです');

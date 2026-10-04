@@ -23,13 +23,17 @@ test('a pending choice only allows answering it', () => {
   assert.deepEqual(moves.map(m => m.command), field(s, 1).map(option => ({ type: 'choose', actor: 0, option })));
 });
 
-test('mulligan moves cover keep and every exchange plan (3^n)', () => {
+test('mulligan moves cover keep and every set of cards to give back (2^n), then the redraws', () => {
   let s = newGame([randomStrawberryDeck(1), randomStrawberryDeck(2)], catalog, sandboxRules, 3);
   while (s.phase !== 'mulligan') {
     const [side] = actingSides(s);
     s = applyCommand(s, s.phase === 'dice' ? { type: 'roll', actor: side } : cpuCommand(s, catalog, { side }), catalog).state;
   }
-  for (const side of [0, 1]) assert.equal(legalMoves(s, side, catalog).length, 3 ** s.mulligan.eligible[side].length);
+  for (const side of [0, 1]) assert.equal(legalMoves(s, side, catalog).length, 2 ** s.mulligan.eligible[side].length);
+  s = applyCommand(s, { type: 'mulligan', actor: 0, uids: s.players[0].hand.slice(0, 2) }, catalog).state;
+  assert.deepEqual(legalMoves(s, 0, catalog).map(m => m.command.deck), ['yojo', 'sweet']);
+  while (!s.mulligan.confirmed[0]) s = applyCommand(s, cpuCommand(s, catalog, { side: 0 }), catalog).state;
+  assert.equal(s.players[0].hand.length, s.rules.firstPlayer === 0 ? 3 : 4);
 });
 
 test('the CPU only sees a re-guessed opponent hand and deck order', () => {

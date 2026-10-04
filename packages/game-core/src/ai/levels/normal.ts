@@ -40,12 +40,14 @@ function byDeck({ moves }: CpuDecision, deck: string) {
     return moves.find(m => m.command.type === 'openingDraw' && m.command.deck === deck || m.command.type === 'choose' && m.command.option === deck) ?? moves[0];
 }
 
-/** Exchange opening cards costing 4 or more, each back to its own deck. */
-function mulligan({ state: s, side, catalog, moves }: CpuDecision) {
+/** Exchange opening cards costing 4 or more, each for a card of its own kind. */
+function mulligan(d: CpuDecision) {
+    const { state: s, side, catalog, moves } = d;
+    const aside = s.mulligan.aside[side];
+    if (s.openingRemaining[side] > 0) return byDeck(d, catalog[s.cards[aside[aside.length - s.openingRemaining[side]]].cardId].type);
     const heavy = s.mulligan.eligible[side].filter(id => s.players[side].hand.includes(id) && catalog[s.cards[id].cardId].cost >= 4);
     if (!heavy.length) return of(moves, 'keep')[0] ?? moves[0];
-    return of(moves, 'mulligan').find(m => m.command.replacements.length === heavy.length
-        && m.command.replacements.every(r => heavy.includes(r.uid) && r.deck === catalog[s.cards[r.uid].cardId].type)) ?? moves[0];
+    return of(moves, 'mulligan').find(m => m.command.uids.length === heavy.length && m.command.uids.every(uid => heavy.includes(uid))) ?? moves[0];
 }
 
 function mainPhase(d: CpuDecision): Move {

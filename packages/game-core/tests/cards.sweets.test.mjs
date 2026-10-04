@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { arena, choose, draws, field, hand, idsOf, optionIds, play, playFirst, run, stats } from './helpers.mjs';
+import { arena, choose, draws, failure, field, hand, idsOf, optionIds, play, playFirst, run, stats } from './helpers.mjs';
 
 test('s_0〜s_5 動物さんソーダ: X counts distinct sodas played including this one', () => {
   const cases = [
@@ -183,4 +183,53 @@ test('s_27 すいーつあーん: gives a revealed copy to the opponent and rest
   s = arena({ me: { hand: ['s_27'], pp: 3 } });
   s = play(s, hand(s)[0]);
   assert.equal(s.players[0].pp, 5);
+});
+
+test('single-target damage sweets cannot be played without an enemy unit', () => {
+  const blocked = (cardId, played = []) => {
+    const s = arena({ me: { hand: [cardId] } });
+    s.players[0].played = played;
+    return !!failure(s, { type: 'play', actor: 0, uid: hand(s)[0] });
+  };
+  assert.ok(blocked('s_6'));
+  assert.ok(blocked('s_7'));
+  assert.ok(blocked('s_9'));
+  assert.ok(blocked('s_9', ['s_10']));
+  assert.ok(blocked('s_10'));
+  // 動物さんソーダ: only X=2 selects a unit.
+  assert.ok(blocked('s_0', ['s_1']));
+  assert.ok(!blocked('s_0'));
+  // Area damage needs no target.
+  assert.ok(!blocked('s_8'));
+  assert.ok(!blocked('s_0', ['s_1', 's_2', 's_3']));
+  // The card stays in hand and no PP is spent.
+  const s = arena({ me: { hand: ['s_6'] } });
+  const after = failure(s, { type: 'play', actor: 0, uid: hand(s)[0] });
+  assert.match(after, /対象/);
+});
+
+test('sweets that select one of your own units cannot be played on an empty field', () => {
+  const blocked = (cardId, { played = [], extra = [], foe = {} } = {}) => {
+    const s = arena({ me: { hand: [cardId, ...extra] }, foe });
+    s.players[0].played = played;
+    return !!failure(s, { type: 'play', actor: 0, uid: hand(s)[0] });
+  };
+  for (const id of ['s_11', 's_12', 's_13', 's_14']) assert.ok(blocked(id, { extra: ['s_11'] }));
+  for (const id of ['s_15', 's_16', 's_17', 's_20']) assert.ok(blocked(id));
+  assert.ok(blocked('s_16', { played: ['s_15', 's_17'] }));
+  // くまちょこけーき as the third kind buffs everyone and selects nothing.
+  assert.ok(!blocked('s_17', { played: ['s_15', 's_16'] }));
+  // ポッキー needs a unit on both sides.
+  assert.ok(blocked('s_23', { foe: { field: ['y_9'] } }));
+  // ぷぷりえーる buffs all and stays playable.
+  const s = arena({ me: { hand: ['s_24'], pp: 12 } });
+  assert.equal(failure(s, { type: 'play', actor: 0, uid: hand(s)[0] }), undefined);
+});
+
+test('s_10 メロンソーダフロート: once コーラフロート was played it hits all and needs no enemy unit', () => {
+  let s = arena({ me: { hand: ['s_10'] } });
+  s.players[0].played = ['s_9'];
+  s = playFirst(s, 's_10');
+  assert.equal(s.pending, null);
+  assert.deepEqual(idsOf(s, hand(s)), []);
 });

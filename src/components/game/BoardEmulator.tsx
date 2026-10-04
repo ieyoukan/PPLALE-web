@@ -65,8 +65,9 @@ export default function BoardEmulator() {
       <SelectedCard />
       {game.phase === 'mulligan' && !game.pending && <MulliganBoard key={view}
         cards={me.hand.map(uid => ({ uid, id: game.cards[uid].cardId, name: displayCards[game.cards[uid].cardId].name, deck: gameCatalog[game.cards[uid].cardId].type as DeckKind }))}
-        exchanges={mulligan.exchanges} enabled={mulligan.enabled} confirmed={game.mulligan.confirmed[view]}
-        onChange={mulligan.change} onConfirm={mulligan.confirm} />}
+        selected={mulligan.selected} remaining={mulligan.remaining} deckCounts={{ yojo: me.yojo.length, sweet: me.sweet.length }}
+        enabled={mulligan.enabled} confirmed={game.mulligan.confirmed[view]}
+        onToggle={mulligan.toggle} onConfirm={mulligan.confirm} onDraw={mulligan.draw} />}
       <SidePanel />
       <HeldCard />
       <AnimationLayer />

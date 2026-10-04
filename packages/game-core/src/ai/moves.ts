@@ -4,7 +4,7 @@ import { costOf } from '../core/cards.ts';
 import { canAttack } from '../core/combat.ts';
 import { isRevealable } from '../view.ts';
 import { other, sides } from '../model.ts';
-import type { Catalog, Command, DeckKind, GameState, Side } from '../model.ts';
+import type { Catalog, Command, GameState, Side } from '../model.ts';
 import { skillsFor } from '../playables/skills.ts';
 
 export interface Move {
@@ -28,12 +28,15 @@ export function actingSides(s: GameState): Side[] {
     }
 }
 
-/** Each opening card stays or goes back to its own / the other deck: 3^n combinations. */
+const deckDraws = (side: Side): Command[] => [{ type: 'openingDraw', actor: side, deck: 'yojo' }, { type: 'openingDraw', actor: side, deck: 'sweet' }];
+
+/** Keep the hand or give back any subset of the opening cards (2^n), then draw the replacements one by one. */
 function mulliganCommands(s: GameState, side: Side): Command[] {
-    let plans: { uid: string; deck: DeckKind }[][] = [[]];
+    if (s.openingRemaining[side] > 0) return deckDraws(side);
+    let plans: string[][] = [[]];
     for (const uid of s.mulligan.eligible[side].filter(id => s.players[side].hand.includes(id)))
-        plans = plans.flatMap(plan => [plan, [...plan, { uid, deck: 'yojo' as const }], [...plan, { uid, deck: 'sweet' as const }]]);
-    return plans.map(replacements => replacements.length ? { type: 'mulligan', actor: side, replacements } : { type: 'keep', actor: side });
+        plans = plans.flatMap(plan => [plan, [...plan, uid]]);
+    return plans.map(uids => uids.length ? { type: 'mulligan', actor: side, uids } : { type: 'keep', actor: side });
 }
 
 function candidates(s: GameState, side: Side): Command[] {
@@ -42,7 +45,7 @@ function candidates(s: GameState, side: Side): Command[] {
     switch (s.phase) {
         case 'dice': return [{ type: 'roll', actor: side }];
         case 'initiative': return [{ type: 'initiative', actor: side, order: 'first' }, { type: 'initiative', actor: side, order: 'second' }];
-        case 'opening': return [{ type: 'openingDraw', actor: side, deck: 'yojo' }, { type: 'openingDraw', actor: side, deck: 'sweet' }];
+        case 'opening': return deckDraws(side);
         case 'mulligan': return mulliganCommands(s, side);
     }
     const targets = ['leader', ...s.players[other(side)].field];

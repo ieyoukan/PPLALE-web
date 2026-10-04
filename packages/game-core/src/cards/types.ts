@@ -36,6 +36,8 @@ export interface CardScript {
     keywords?: Keyword[];
     /** Overrides the printed cost while in hand. */
     baseCost?(s: GameState, side: Side): number | undefined;
+    /** False when the card cannot be played now (e.g. it must select a unit and none is there). */
+    canPlay?(ctx: CardContext): boolean;
     /** The card can be revealed from hand at any time. */
     revealable?: boolean;
     /** 手札から場に出たとき（幼女）／使ったとき（お菓子）. */

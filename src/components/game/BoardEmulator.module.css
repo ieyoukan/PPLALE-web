@@ -425,8 +425,8 @@
 .inspectImage .keywordBadges { top: 8px; left: 50%; right: auto; transform: translateX(-50%); width: max-content; }
 .inspectImage .keywordBadges > span { max-width: none; font-size: 26px; padding: 6px 12px; }
 .far .keywordBadges > span, .far .whiteMarble, .far .deckCount { transform: rotate(180deg); }
-.far .attackMarble { left: auto; right: -8px; transform: rotate(180deg); }
-.far .hpMarble { right: auto; left: -8px; transform: rotate(180deg); }
+/* The far cards are upside down: the marbles stay beside the printed attack / HP and only the digits turn. */
+.far .attackMarble, .far .hpMarble { transform: rotate(180deg); }
 .far .damageMarble { transform: rotate(171deg); }
 .ppGems i { flex: 0 0 auto; }
 @media (prefers-reduced-motion: reduce) { .costMarble { animation: none; } }

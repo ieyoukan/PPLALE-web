@@ -1,6 +1,6 @@
 'use client';
 
-import { costOf, isRevealable } from '@pplale/game-core';
+import { canPlay, costOf, isRevealable } from '@pplale/game-core';
 import type { CSSProperties } from 'react';
 import { displayCards, gameCatalog } from '@/lib/game/catalog';
 import { useBoardContext } from '../board/BoardContext';
@@ -43,7 +43,7 @@ export function SelectedCard() {
       <GameCard id={card.cardId} instance={card} currentCost={cost} sizes="(max-width: 700px) calc(100vw - 16px), min(calc(100vw - 184px), 67vh)" />
     </button>
     <div className={styles.cardSelectionActions}>
-      <button className={styles.primaryAction} disabled={!playEnabled || cost > me.pp || unit && me.field.length >= 7} onClick={() => board.play(selected)}>{unit ? '場に出す' : '使う'}</button>
+      <button className={styles.primaryAction} disabled={!playEnabled || cost > me.pp || unit && me.field.length >= 7 || !canPlay(game, view, selected, gameCatalog)} onClick={() => board.play(selected)}>{unit ? '場に出す' : '使う'}</button>
       {isRevealable(card.cardId) && !card.revealed && game.phase === 'playing' &&
         <button disabled={!playEnabled} onClick={() => board.act({ type: 'reveal', actor: view, uid: selected })}>公開する</button>}
       <button onClick={() => board.setSelected(null)}>閉じる</button>

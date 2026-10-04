@@ -26,7 +26,7 @@ const schema = z.object({
     openingRemaining: z.tuple([positive, positive]).default([0, 0]),
     stall: z.object({ acted: z.boolean(), idleTurns: positive }).optional(),
     effectBlocks: z.object({ revision: positive, events: z.array(z.object({ uid: z.string(), kind: z.enum(['damage', 'destroy']) })).max(500) }).optional(),
-    mulligan: z.object({ eligible: z.tuple([ids, ids]), confirmed: z.tuple([z.boolean(), z.boolean()]) }).default({ eligible: [[], []], confirmed: [false, false] }),
+    mulligan: z.object({ eligible: z.tuple([ids, ids]), confirmed: z.tuple([z.boolean(), z.boolean()]), aside: z.tuple([ids, ids]).default([[], []]) }).default({ eligible: [[], []], confirmed: [false, false], aside: [[], []] }),
     players: z.tuple([player, player]),
     cards: z.record(z.string(), z.object({ uid: z.string(), cardId: z.string(), attackBonus: integer, hpBonus: integer, damage: positive, costDelta: integer, temporaryCost: integer, keywords: z.array(keyword), shield: z.boolean(), slot: integer.min(0).max(6).nullable().default(null), entered: integer, exhausted: z.boolean(), ateOn: integer, revealed: z.boolean(), links: ids })),
     queue: z.array(task).max(500), pending: z.object({ prompt: z.string(), options: z.array(z.object({ id: z.string(), label: z.string() })), task }).nullable(), winner: z.union([side, z.literal('draw')]).nullable(), log: z.array(z.string()).max(100),
@@ -54,6 +54,7 @@ function validReferences(s: Saved, catalog: Catalog) {
         if (!catalog[p.playable]) return false;
         for (const zone of ['yojo', 'sweet', 'hand', 'field', 'nap', 'exile'] as const) all.push(...p[zone]);
     }
+    all.push(...s.mulligan.aside.flat());
     if (new Set(all).size !== all.length || all.some(id => !s.cards[id])) return false;
     return !Object.entries(s.cards).some(([uid, c]) => uid !== c.uid || !catalog[c.cardId]);
 }

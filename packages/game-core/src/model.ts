@@ -152,7 +152,11 @@ export interface GameState {
     turnRules?: true;
     phase: Phase;
     openingRemaining: [number, number];
-    mulligan: { eligible: [string[], string[]]; confirmed: [boolean, boolean] };
+    /**
+     * `aside`: opening cards given back for an exchange. They wait outside every zone while the
+     * replacements are drawn (`openingRemaining`), then go back into their decks.
+     */
+    mulligan: { eligible: [string[], string[]]; confirmed: [boolean, boolean]; aside: [string[], string[]] };
     dice: { rolls: [number | null, number | null]; ties: number } | null;
     rules: Rules;
     rng: number;
@@ -179,7 +183,7 @@ export type Command =
     | { type: 'roll'; actor: Side }
     | { type: 'initiative'; actor: Side; order: 'first' | 'second' }
     | { type: 'openingDraw'; actor: Side; deck: DeckKind }
-    | { type: 'mulligan'; actor: Side; replacements: { uid: string; deck: DeckKind }[] }
+    | { type: 'mulligan'; actor: Side; uids: string[] }
     | { type: 'keep'; actor: Side }
     | { type: 'play'; actor: Side; uid: string; slot?: number }
     | { type: 'attack'; actor: Side; uid: string; target: string | 'leader' }
