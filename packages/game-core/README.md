@@ -41,7 +41,21 @@ y_8: {
 - **どう選ぶか（UI）**: `ops.ts` の `target: 'unit'` は場の幼女から、`ctx.pick` に手札の uid を渡せば手札から、`ctx.ask` はボタンで選ぶ。UI は `pendingView` を通して、選択肢を場・手札・山札・ボタンのどこに出すか自動で決める。カードを追加しても UI の変更は不要。
 - そのカードだけの手順は、カードの `ops` に書く（例：しゅれいの `shurei`、ポッキーの `pocky`）。`model.ts` の `TaskOp` に名前を追加する。
 - CPU 向けの判断（対象がいないなら使わない等）は `cpu.worthPlaying`、選択の好みは op の `cpu`。
+- **使える条件**: 対象を選ぶ効果で対象がいないときなど、使えない条件は `canPlay`（スキルは `blocked`）に書く。エンジンが拒否し、UI も手札を光らせず「使う」を押せなくする。
 - テストは `tests/cards.*.test.mjs` / `tests/skills.test.mjs` に、`arena()` で盤面を作って1カード1テストで書く。
+
+### 演出（何もしなくても付く）
+
+演出はカードごとに書かない。`changes.ts` の `changesBetween(before, after)` が、1回のコマンドで変わったことを一覧にし（カードの移動、ダメージ、能力値・キーワード、お菓子ポイント、PP、ダイスなど）、UI はその種類ごとに決まった見せ方をする（`src/components/game/board/presenters.ts`）。だから **`ctx.buff` / `ctx.discard` / `ctx.summon` などで状態を変えれば、新しいカードでも自動で演出が付く**。たとえば手札を捨てればカードがお昼寝場所へ飛び、+1/+1 すればその幼女の上に「+1/+1」が出る。
+
+抜けを防ぐ仕組み：
+
+- `Instance` / `Player` / `GameState` の各フィールドは `changes.ts` で「どの変化として見せるか／見せない理由」に分類してある。フィールドを足して分類しないと `tests/changes.test.mjs` が落ちる。
+- 変化の種類（`ChangeKind`）を足すと、`presenters.ts` に見せ方を書くまで型エラーになる。
+- `tests/changes.test.mjs` は、`onPlay` を持つすべてのいちごカードを実際にプレイし、何の変化も出ないカードがあれば落ちる。
+- 状態に残らない出来事（ダイスの出目、効果耐性で止まったこと）は、`ctx.rollDie()` のように `effects` の操作が記録する。乱数でダイスを振るときは `ctx.random` ではなく `ctx.rollDie` を使う。
+
+相手が盤面のカード以外を選んだとき（「1PP追加」など）は、選んだ内容が自動で表示される。カードの説明画面やカード専用の大きな演出が欲しい場合だけ、UI 側に追加する。
 
 ## CPU の書き方
 

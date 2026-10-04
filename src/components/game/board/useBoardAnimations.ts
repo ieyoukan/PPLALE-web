@@ -2,11 +2,13 @@
 
 import { useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react';
 import type { RefObject } from 'react';
-import { canAttack, other, skillsFor } from '@pplale/game-core';
-import type { Command, DeckKind, GameState, Side } from '@pplale/game-core';
+import { canAttack, changesBetween, other, skillsFor } from '@pplale/game-core';
+import type { Command, GameState, Side } from '@pplale/game-core';
 import { displayCards, gameCatalog } from '@/lib/game/catalog';
 import { skillDescription } from '@/lib/game/skillText';
 import type { DrawFlight } from '../BoardPieces';
+import { present } from './presenters';
+import type { Hit, Pop, Rect, Spot } from './presenters';
 import { DICE_THROW_DURATION } from '../OpeningDie';
 import { TURN_NOTICE_DURATION } from '../TurnAnnouncement';
 import type { TurnNotice } from '../TurnAnnouncement';
@@ -26,8 +28,7 @@ export type EffectRoll = { id: number; side: Side; value: number; cardId?: strin
 export type ChoiceNote = { id: number; side: Side; label: string };
 /** End of the match: `wait` for the last animation, ゲームセット, the verdict; null shows the result screen. */
 export type Finale = 'wait' | 'set' | 'verdict' | null;
-/** Damage just taken by a unit or by a side's sweet points, shown large over it. */
-export type Hit = { id: number; amount: number; x: number; y: number; /** Dealt by a unit's attack (a scuffle cloud) or by an effect (a flash). */ kind: 'attack' | 'effect' };
+export type { Hit, Pop } from './presenters';
 /** The card the opponent picked for an effect. */
 export type Ping = { uid: string; x: number; y: number; width: number; height: number };
 
@@ -40,25 +41,42 @@ const ANNOUNCE_DURATION = 2400;
 const PING_HIT = 700;
 const PING_DURATION = 1200;
 const HIT_DURATION = 1100;
+const POP_DURATION = 1300;
+const FLIGHT_REST = 200;
 const ROLL_RESULT = 1300;
 const CHOICE_HIT = 1000;
 const CHOICE_DURATION = 1500;
-// A destroyed unit stays put while its damage shows, then is carried to its pile.
-const FALL_DELAY = 450;
-const FALL_REST = 350;
 export const ORDER_NOTICE_DURATION = 3200;
 // The last blow lands, then ゲームセット and the verdict are shown before the result screen.
 const FINALE_WAIT = 700;
 const FINALE_SET = 1700;
 const FINALE_VERDICT = 2400;
-const rectOf = (element: Element) => {
+const rectOf = (element: Element): Rect => {
   const { x, y, width, height } = element.getBoundingClientRect();
   return { x, y, width, height };
 };
+/** Cards on their way into a hand, deck or the field must land before anyone acts; ones going to a pile are only decoration. */
+const blocksPlay = (flight: DrawFlight) => flight.toZone !== 'nap' && flight.toZone !== 'exile';
+const spotKey = (spot: Spot) => 'unit' in spot ? `unit:${spot.unit}` : 'hand' in spot ? `hand:${spot.hand}` : 'pile' in spot ? `pile:${spot.pile.join('-')}` : 'leader' in spot ? `leader:${spot.leader}` : `pp:${spot.pp}`;
+const selectorOf = (spot: Spot) => 'unit' in spot ? `[data-unit="${spot.unit}"]` : 'hand' in spot ? `[data-hand="${spot.hand}"]`
+  : 'pile' in spot ? `[data-deck="${spot.pile.join('-')}"] [data-stack]` : 'leader' in spot ? `[data-leader="${spot.leader}"]` : `[data-pp="${spot.pp}"]`;
+const liveRect = (root: HTMLElement, spot: Spot) => { const element = root.querySelector(selectorOf(spot)); return element ? rectOf(element) : undefined; };
+/** Every spot a presenter may point at, as it is right now (taken just before a command applies). */
+function captureRects(root: HTMLElement | null): Map<string, Rect> {
+  const rects = new Map<string, Rect>();
+  if (!root) return rects;
+  root.querySelectorAll<HTMLElement>('[data-unit]').forEach(e => rects.set(`unit:${e.dataset.unit}`, rectOf(e)));
+  root.querySelectorAll<HTMLElement>('[data-hand]').forEach(e => rects.set(`hand:${e.dataset.hand}`, rectOf(e)));
+  root.querySelectorAll<HTMLElement>('[data-deck]').forEach(e => rects.set(`pile:${e.dataset.deck}`, rectOf(e.querySelector('[data-stack]') ?? e)));
+  root.querySelectorAll<HTMLElement>('[data-leader]').forEach(e => rects.set(`leader:${e.dataset.leader}`, rectOf(e)));
+  root.querySelectorAll<HTMLElement>('[data-pp]').forEach(e => rects.set(`pp:${e.dataset.pp}`, rectOf(e)));
+  return rects;
+}
 
 /**
- * Visual effects derived from state changes: cards flying from deck to hand, the attack lunge and
- * the turn announcement. Nothing here changes the game; `busy` tells the board to wait.
+ * Visual effects: what each command changed (see presenters.ts), the attack lunge, the opponent's
+ * cards and choices, and the turn / match announcements. Nothing here changes the game; `busy` tells
+ * the board to wait.
  */
 export function useBoardAnimations({ game, view, mode, cpuSides, replaying, container }: { game: GameState; view: Side; mode: Mode; cpuSides: Side[]; replaying: boolean; container: RefObject<HTMLDivElement | null> }) {
   const [flights, setFlights] = useState<DrawFlight[]>([]);
@@ -72,8 +90,9 @@ export function useBoardAnimations({ game, view, mode, cpuSides, replaying, cont
   const [hits, setHits] = useState<Hit[]>([]);
   const [effectRoll, setEffectRoll] = useState<EffectRoll | null>(null);
   const [choiceNote, setChoiceNote] = useState<ChoiceNote | null>(null);
-  /** Where each unit was before the command, for units that are destroyed by it. */
-  const unitRects = useRef(new Map<string, ReturnType<typeof rectOf>>());
+  /** Where cards and counters were just before the command, for the ones it moves or removes. */
+  const rectsBefore = useRef(new Map<string, Rect>());
+  const [pops, setPops] = useState<Pop[]>([]);
   /** The command being applied, so its damage can be shown as an attack or as an effect. */
   const lastCommand = useRef<Command['type'] | null>(null);
   const previous = useRef(game);
@@ -81,81 +100,44 @@ export function useBoardAnimations({ game, view, mode, cpuSides, replaying, cont
   const timers = useRef<ReturnType<typeof setTimeout>[]>([]);
   const later = useCallback((callback: () => void, delay: number) => { timers.current.push(setTimeout(callback, delay)); }, []);
 
-  // Compare with the previous state: new hand cards that came from a deck fly in.
+  // Compare with the previous state and present the difference.
   useLayoutEffect(() => {
     const old = previous.current;
     previous.current = game;
     if (!enabled.current || old === game || !container.current) return;
     const root = container.current;
-    if (game.effectBlocks?.revision === game.revision) {
-      const seen = new Set<string>();
-      const targets = game.effectBlocks.events.flatMap(event => {
-        const element = root.querySelector(`[data-unit="${event.uid}"]`);
-        if (seen.has(event.uid) || !game.cards[event.uid]) return [];
-        seen.add(event.uid);
-        return [{ ...event, cardId: game.cards[event.uid].cardId, ...(element ? rectOf(element) : { x: 0, y: 0, width: 0, height: 0 }) }];
-      });
-      if (targets.length) {
-        setAnnouncement(null);
-        setPing(null);
-        setBlocked({ id: game.revision, targets });
-        later(() => setBlocked(current => current?.id === game.revision ? null : current), 1200);
-      }
+    // Everything the command changed, shown by the presenter registered for each kind of change.
+    const shown = present(changesBetween(old, game), {
+      before: old, after: game, view, mode, byAttack: lastCommand.current === 'attack',
+      rect: (spot, when) => when === 'before' ? rectsBefore.current.get(spotKey(spot)) : liveRect(root, spot),
+    });
+    if (shown.blocks.length) {
+      setAnnouncement(null);
+      setPing(null);
+      setBlocked({ id: game.revision, targets: shown.blocks.map(b => ({ uid: b.uid, kind: b.what, cardId: game.cards[b.uid].cardId, ...b.rect })) });
+      later(() => setBlocked(current => current?.id === game.revision ? null : current), 1200);
     }
     // A card rolled a die in this command: throw it, then hold the result for a moment.
-    if (game.effectRoll && game.effectRoll.revision === game.revision) {
-      const roll = { id: game.revision, side: game.effectRoll.side, value: game.effectRoll.value, cardId: game.effectRoll.cardId, rolling: true };
+    if (shown.roll) {
+      const roll = { id: game.revision, side: shown.roll.side, value: shown.roll.value, cardId: shown.roll.cardId, rolling: true };
       setEffectRoll(roll);
       later(() => setEffectRoll(current => current?.id === roll.id ? { ...current, rolling: false } : current), DICE_THROW_DURATION);
       later(() => setEffectRoll(current => current?.id === roll.id ? null : current), DICE_THROW_DURATION + ROLL_RESULT);
     }
-    // Damage taken: by units (also ones destroyed by it, at their last position) and by sweet points.
-    const struck: Hit[] = [];
-    const at = (rect: ReturnType<typeof rectOf> | undefined, amount: number) => { if (rect && amount > 0) struck.push({ id: ++hitId, amount, x: rect.x + rect.width / 2, y: rect.y + rect.height / 2, kind: lastCommand.current === 'attack' ? 'attack' : 'effect' }); };
-    for (const side of [0, 1] as Side[]) {
-      for (const uid of old.players[side].field) {
-        const element = root.querySelector(`[data-unit="${uid}"]`);
-        at(element ? rectOf(element) : unitRects.current.get(uid), (game.cards[uid]?.damage ?? 0) - old.cards[uid].damage);
-      }
-      const leader = root.querySelector(`[data-leader="${side}"]`);
-      at(leader ? rectOf(leader) : undefined, old.players[side].points - game.players[side].points);
+    if (shown.hits.length) {
+      setHits(current => [...current, ...shown.hits]);
+      later(() => setHits(current => current.filter(hit => !shown.hits.includes(hit))), HIT_DURATION);
     }
-    if (struck.length) {
-      setHits(current => [...current, ...struck]);
-      later(() => setHits(current => current.filter(hit => !struck.includes(hit))), HIT_DURATION);
+    if (shown.pops.length) {
+      setPops(current => [...current, ...shown.pops]);
+      later(() => setPops(current => current.filter(pop => !shown.pops.includes(pop))), POP_DURATION);
     }
-    // Units that left the field for a pile (お昼寝場所 / 除外) are carried there from where they stood.
-    const fallen: DrawFlight[] = [];
-    for (const side of [0, 1] as Side[]) {
-      for (const uid of old.players[side].field) {
-        const owner = ([0, 1] as Side[]).find(s => game.players[s].nap.includes(uid) || game.players[s].exile.includes(uid));
-        const from = unitRects.current.get(uid);
-        if (owner === undefined || !from || !game.cards[uid]) continue;
-        const pile = root.querySelector(`[data-deck="${owner}-${game.players[owner].nap.includes(uid) ? 'nap' : 'exile'}"] [data-stack]`);
-        // The far side's cards lie upside down on the table; they keep that way up on the way to the pile.
-        if (pile) fallen.push({ uid, cardId: game.cards[uid].cardId, face: true, turn: side !== view, fallen: true, from, to: rectOf(pile) });
-      }
-    }
-    if (fallen.length) {
-      setFlights(current => [...current, ...fallen]);
-      // The card rests on the pile for a moment: removing it exactly when the flight should end cuts the
-      // landing off whenever the animation starts a little late (a busy frame).
-      later(() => setFlights(current => current.filter(f => !fallen.includes(f))), FALL_DELAY + DRAW_DURATION + FALL_REST);
-    }
-    const next: DrawFlight[] = [];
-    for (const side of [0, 1] as Side[]) {
-      for (const uid of game.players[side].hand) {
-        if (old.players[side].hand.includes(uid)) continue;
-        const kind: DeckKind | null = old.players[side].yojo.includes(uid) ? 'yojo' : old.players[side].sweet.includes(uid) ? 'sweet' : null;
-        const source = kind && root.querySelector(`[data-deck="${side}-${kind}"] [data-stack]`);
-        const target = root.querySelector(`[data-hand="${uid}"]`);
-        if (!source || !target) continue;
-        next.push({ uid, cardId: game.cards[uid].cardId, face: side === view || mode === 'watch' || game.cards[uid].revealed, turn: side !== view, from: rectOf(source), to: rectOf(target) });
-      }
-    }
+    const next = shown.flights;
     if (next.length) {
       setFlights(current => [...current, ...next]);
-      later(() => setFlights(current => current.filter(f => !next.some(n => n.uid === f.uid))), DRAW_DURATION);
+      // The card rests where it lands for a moment: removing it exactly when the flight should end cuts
+      // the landing off whenever the animation starts a little late (a busy frame).
+      later(() => setFlights(current => current.filter(f => !next.includes(f))), Math.max(...next.map(f => f.delay)) + DRAW_DURATION + FLIGHT_REST);
     }
     // Who goes first was decided: show both sides' order before the opening draws.
     if (old.phase === 'initiative' && game.phase === 'opening') {
@@ -175,7 +157,7 @@ export function useBoardAnimations({ game, view, mode, cpuSides, replaying, cont
         setTurnNotice({ id: game.turn, own: mode === 'hotseat' || game.active === view, order: game.active === game.rules.firstPlayer ? '先攻' : '後攻', number: game.players[game.active].turns, pp: game.players[game.active].pp, label: mode === 'watch' ? `${sideLabel(mode, game.active)}のターン` : undefined });
         later(() => setTurnNotice(null), TURN_NOTICE_DURATION);
       };
-      if (next.length) later(announce, DRAW_DURATION);
+      if (next.length) later(announce, Math.max(...next.map(f => f.delay)) + DRAW_DURATION);
       else announce();
     }
   }, [game, view, mode, replaying, container, later]);
@@ -191,7 +173,7 @@ export function useBoardAnimations({ game, view, mode, cpuSides, replaying, cont
     const apply = () => {
       enabled.current = true;
       lastCommand.current = command.type;
-      unitRects.current = new Map(Array.from(root?.querySelectorAll<HTMLElement>('[data-unit]') ?? [], element => [element.dataset.unit!, rectOf(element)]));
+      rectsBefore.current = captureRects(root);
       commit();
     };
     const opponent = command.actor !== view || cpuSides.includes(command.actor);
@@ -201,19 +183,6 @@ export function useBoardAnimations({ game, view, mode, cpuSides, replaying, cont
       later(apply, ANNOUNCE_HIT);
       later(() => setAnnouncement(current => current?.id === shown.id ? null : current), ANNOUNCE_DURATION);
       return;
-    }
-    // Mulligan: the cards given back fly from the hand into their decks.
-    if (command.type === 'mulligan' && root) {
-      const back: DrawFlight[] = command.uids.flatMap(uid => {
-        const kind = gameCatalog[game.cards[uid]?.cardId]?.type;
-        const source = root.querySelector(`[data-hand="${uid}"]`);
-        const target = root.querySelector(`[data-deck="${command.actor}-${kind}"] [data-stack]`) ?? root.querySelector(`[data-deck="${command.actor}-${kind}"]`);
-        return source && target ? [{ uid, cardId: game.cards[uid].cardId, face: command.actor === view || mode === 'watch', turn: false, returning: true, from: rectOf(source), to: rectOf(target) }] : [];
-      });
-      if (back.length) {
-        setFlights(current => [...current, ...back]);
-        later(() => setFlights(current => current.filter(f => !back.some(b => b.uid === f.uid))), DRAW_DURATION);
-      }
     }
     // The opponent picked an option that is not on the table (pay extra PP, skip …): say which.
     const option = opponent && command.type === 'choose' && game.pending?.task.op !== 'draw'
@@ -245,7 +214,7 @@ export function useBoardAnimations({ game, view, mode, cpuSides, replaying, cont
       }
     }
     apply();
-  }, [game, view, mode, cpuSides, container, later]);
+  }, [game, view, cpuSides, container, later]);
 
   /** Loads, restores and undo jump without animating the difference. */
   const skipNext = useCallback(() => { enabled.current = false; }, []);
@@ -262,16 +231,16 @@ export function useBoardAnimations({ game, view, mode, cpuSides, replaying, cont
     setOrder(null);
     setFinale(null);
     setHits([]);
+    setPops([]);
     setEffectRoll(null);
     setChoiceNote(null);
   }, []);
   /** A tap moves on: ゲームセット → verdict → result screen. */
   const advanceFinale = useCallback(() => setFinale(current => current === 'set' ? 'verdict' : current === 'verdict' ? null : current), []);
 
-  return { flights, strike, turnNotice, announcement, ping, blocked, order, finale, hits, effectRoll, choiceNote, advanceFinale, busy: flights.length > 0 || !!strike || !!turnNotice || !!announcement || !!ping || !!blocked || !!order || !!effectRoll || !!choiceNote, run, skipNext, reset };
+  return { flights, strike, turnNotice, announcement, ping, blocked, order, finale, hits, pops, effectRoll, choiceNote, advanceFinale, busy: flights.some(blocksPlay) || !!strike || !!turnNotice || !!announcement || !!ping || !!blocked || !!order || !!effectRoll || !!choiceNote, run, skipNext, reset };
 }
 
-let hitId = 0;
 let choiceId = 0;
 let announcementId = 0;
 /** What to show for the opponent's play / skill / reveal, or null for other commands. */

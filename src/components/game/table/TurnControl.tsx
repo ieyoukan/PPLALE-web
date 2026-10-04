@@ -11,10 +11,10 @@ export function TurnControl() {
   // Present from the start (disabled until the first turn), so the table never changes width.
   const mine = game.phase !== 'playing' || game.active === view;
   return <div className={styles.turnControl}>
-    <PpPanel current={game.players[other(view)].pp} maximum={availablePpMaximum(game, other(view))} own={false} />
+    <PpPanel side={other(view)} current={game.players[other(view)].pp} maximum={availablePpMaximum(game, other(view))} own={false} />
     <button className={`${styles.endTurnButton} ${mine ? '' : styles.enemyTurn}`} disabled={!playEnabled} onClick={() => act({ type: 'end', actor: game.active })}>
       {mine ? <>ターン<br />終了</> : <>相手の<br />ターン</>}
     </button>
-    <PpPanel current={me.pp} maximum={availablePpMaximum(game, view)} own />
+    <PpPanel side={view} current={me.pp} maximum={availablePpMaximum(game, view)} own />
   </div>;
 }

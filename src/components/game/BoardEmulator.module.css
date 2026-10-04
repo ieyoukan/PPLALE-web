@@ -198,28 +198,23 @@
 .testControls button { margin: 2px 6px; padding: 5px 9px; background: #fffdf8; border: 1px solid #c9b79a; border-radius: 4px; font-size: 11px; }
 .testControls b { margin: 0 10px; font-size: 13px; }
 .flightLayer { position: fixed; z-index: 150; inset: 0; pointer-events: none; }
-.flyingCard { position: absolute; transform-origin: top left; perspective: 650px; animation: drawFlight .8s cubic-bezier(.2,.65,.25,1) both; filter: drop-shadow(0 12px 8px #31202566); }
-.flippingCard, .unflippingCard, .faceDownCard { position: absolute; inset: 0; transform-style: preserve-3d; }
-.flippingCard { animation: drawFlip .8s ease-in-out both; }
-.unflippingCard { animation: drawFlip .8s ease-in-out both reverse; }
 /* A destroyed unit: shown face up, waits for its damage number, then goes to its pile. */
-.faceUpCard { position: absolute; inset: 0; transform-style: preserve-3d; transform: rotateY(180deg); }
-.faceUpTurned { transform: rotateY(180deg) rotateZ(180deg); }
-.fallenCard { animation-name: fallFlight; animation-delay: .45s; }
-@keyframes fallFlight {
-  0% { opacity: 1; transform: translate(0, 0) rotate(0) scale(1); filter: grayscale(.5) brightness(.9); }
-  30% { transform: translate(calc(var(--fly-x) * .2), calc(var(--fly-y) * .2 - 30px)) rotate(-10deg) scale(1.08); }
-  100% { opacity: .9; transform: translate(var(--fly-x), var(--fly-y)) rotate(0) scale(var(--fly-scale-x), var(--fly-scale-y)); filter: grayscale(.5) brightness(.9); }
+.flyingCard { position: absolute; transform-origin: top left; animation: drawFlight .8s cubic-bezier(.2,.65,.25,1) var(--fly-delay, 0ms) both; filter: drop-shadow(0 12px 8px #31202566); }
+.flightSpin { position: absolute; inset: 0; perspective: 650px; animation: flightSpin .8s ease-in-out var(--fly-delay, 0ms) both; }
+.lookDown, .lookUp, .lookReveal, .lookHide { position: absolute; inset: 0; transform-style: preserve-3d; }
+.lookUp { transform: rotateY(180deg); }
+.lookReveal { animation: drawFlip .8s ease-in-out var(--fly-delay, 0ms) both; }
+.lookHide { animation: drawFlip .8s ease-in-out var(--fly-delay, 0ms) both reverse; }
+@keyframes drawFlight {
+  0% { opacity: 1; transform: translate(0, -6px) scale(1); }
+  35% { transform: translate(calc(var(--fly-x) * .38), calc(var(--fly-y) * .25 - 50px)) scale(1.14); }
+  100% { opacity: 1; transform: translate(var(--fly-x), var(--fly-y)) scale(var(--fly-scale-x), var(--fly-scale-y)); }
 }
+@keyframes flightSpin { from { transform: rotate(var(--spin-start)); } 35% { transform: rotate(calc((var(--spin-start) + var(--spin-end)) / 2 - 7deg)); } to { transform: rotate(var(--spin-end)); } }
+@keyframes drawFlip { 0%, 28% { transform: rotateY(0); } 72%, 100% { transform: rotateY(180deg); } }
 .flightBack, .flightFront { position: absolute; inset: 0; display: block; border-radius: 3px; border: 1px solid #e5d1aa; backface-visibility: hidden; }
 .flightBack { background: url('/images/back-card.webp') center / 100% 100%; }
 .flightFront { transform: rotateY(180deg); background: #ffeac8; }
-@keyframes drawFlight {
-  0% { opacity: 1; transform: translate(0, -6px) rotate(var(--fly-start)) scale(1); }
-  35% { transform: translate(calc(var(--fly-x) * .38), calc(var(--fly-y) * .25 - 50px)) rotate(-7deg) scale(1.14); }
-  100% { opacity: 1; transform: translate(var(--fly-x), var(--fly-y)) rotate(0) scale(var(--fly-scale-x), var(--fly-scale-y)); }
-}
-@keyframes drawFlip { 0%, 28% { transform: rotateY(0); } 72%, 100% { transform: rotateY(180deg); } }
 .drawHint { position: fixed; z-index: 75; left: 50%; top: 46%; transform: translate(-50%, -50%); padding: 8px 22px; border: 1px solid #fffdeb88; border-radius: 999px; background: #000000b3; color: #fffdeb; font: clamp(16px, 2vw, 24px) 'BoardHandwriting', 'Yu Kyokasho', cursive; white-space: nowrap; pointer-events: none; box-shadow: 0 6px 16px #2a1b3066; }
 .replayBadge { position: fixed; z-index: 135; top: 16px; left: 16px; display: flex; align-items: center; gap: 10px; padding: 6px 8px 6px 16px; border: 1px solid #fffdeb88; border-radius: 999px; background: #000000b3; color: #fffdeb; font-size: 16px; box-shadow: 0 6px 16px #2a1b3066; }
 .replayBadge button { padding: 6px 14px; border-radius: 999px; background: #fffdeb; color: #6b4a3a; font-size: 15px; }
@@ -233,7 +228,7 @@
 @keyframes hitBurst { 0% { opacity: 0; transform: scale(.2) rotate(-30deg); } 12% { opacity: .72; transform: scale(1.2) rotate(8deg); } 24% { transform: scale(.96) rotate(-4deg); } 36%, 78% { opacity: .72; transform: scale(1) rotate(0); } 100% { opacity: 0; transform: scale(1.05); } }
 @keyframes hitNumber { 0% { opacity: 0; transform: translate(-50%, -50%) scale(.2); } 12% { opacity: 1; transform: translate(-50%, -50%) scale(1.3); } 22%, 78% { opacity: 1; transform: translate(-50%, -50%) scale(1); } 100% { opacity: 0; transform: translate(-50%, -50%) scale(1); } }
 @keyframes hitFlash { 0% { opacity: 0; transform: scale(.2); } 12% { opacity: 1; transform: scale(1.35); } 30% { opacity: .9; transform: scale(1); } 100% { opacity: 0; transform: scale(1.15); } }
-@media (prefers-reduced-motion: reduce) { .hitNumber, .hitNumber::before, .hitBurst { animation: hitNumberFade 1s linear both; } .fallenCard { animation-duration: .01s; } }
+@media (prefers-reduced-motion: reduce) { .hitNumber, .hitNumber::before, .hitBurst { animation: hitNumberFade 1s linear both; } }
 @keyframes hitNumberFade { 0%, 80% { opacity: 1; } 100% { opacity: 0; } }
 /* A die rolled by a card: over a dark veil, like the opening dice. */
 .effectDie { position: fixed; z-index: 165; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 18px; background: #000000a6; backdrop-filter: blur(4px); color: #fffdeb; pointer-events: none; animation: finaleFade .25s ease-out both; }
@@ -242,6 +237,14 @@
 /* The opponent's choice that has no card to point at (e.g. 1PP追加・2ダメージ). */
 .choiceNote { position: fixed; z-index: 160; left: 50%; top: 22%; transform: translateX(-50%); padding: 12px 28px; border: 2px solid #fffdeb; border-radius: 999px; background: #000000c7; color: #fffdeb; font-size: clamp(18px, 2.4vw, 28px); font-weight: 700; white-space: nowrap; box-shadow: 0 8px 20px #0008; pointer-events: none; animation: finaleFade .25s ease-out both; }
 @keyframes finaleFade { from { opacity: 0; } }
+/* A short label over a card or counter: +1/+1, 突撃, +3, +1 PP … */
+.pop { position: fixed; z-index: 158; transform: translate(-50%, -50%); padding: 4px 14px; border: 2px solid #fffdeb; border-radius: 999px; font-size: clamp(16px, 1.8vw, 22px); font-weight: 800; white-space: nowrap; pointer-events: none; box-shadow: 0 4px 12px #0007; animation: pop 1.3s ease-out both; }
+.popBuff { background: #f4b0bb; color: #6b4a3a; }
+.popDebuff { background: #6b4a3a; color: #fffdeb; }
+.popHeal { background: #b3d788; color: #3f5a2c; }
+.popInfo { background: #000000c7; color: #fffdeb; }
+@keyframes pop { 0% { opacity: 0; transform: translate(-50%, -20%) scale(.6); } 15% { opacity: 1; transform: translate(-50%, -50%) scale(1.12); } 25%, 80% { opacity: 1; transform: translate(-50%, -60%) scale(1); } 100% { opacity: 0; transform: translate(-50%, -110%) scale(1); } }
+@media (prefers-reduced-motion: reduce) { .pop { animation: hitNumberFade 1.3s linear both; } }
 @keyframes deckPulse { 50% { filter: drop-shadow(0 0 3px #75c497); } }
 @keyframes targetPulse { 50% { box-shadow: 0 0 4px #7fc69266; } }
 @keyframes diceRoll { 0% { transform: rotate(-13deg) translateY(0); } 50% { transform: rotate(12deg) translateY(-7px); } 100% { transform: rotate(-13deg) translateY(0); } }
@@ -253,7 +256,7 @@
 @media (prefers-reduced-motion: reduce) {
   .handCard, .fieldSlot { transition: none; }
   .targetable, .drawReady, .rollingDie { animation: none; }
-  .flyingCard, .flippingCard, .unflippingCard { animation-duration: .01s; }
+  .flyingCard, .flightSpin, .lookReveal, .lookHide { animation-duration: .01s; }
 }
 
 /* Touch-sized controls and a table that fills the app. */

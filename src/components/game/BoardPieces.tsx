@@ -1,6 +1,6 @@
 'use client';
 
-import type { Side } from '@pplale/game-core';
+import type { Side, Zone } from '@pplale/game-core';
 import type { CSSProperties } from 'react';
 import { GameCard } from './GameCard';
 import styles from './BoardEmulator.module.css';
@@ -50,8 +50,8 @@ export function Counter({ label, value, points, bonus = 0, temporaryBonus = 0, p
   </div>;
 }
 
-export function PpPanel({ current, maximum, own }: { current: number; maximum: number; own: boolean }) {
-  return <div className={`${styles.ppPanel} ${own ? styles.ownPp : styles.opponentPp}`} role="group" aria-label={`${own ? '自分' : '相手'}のPP ${current} / ${maximum}`}>
+export function PpPanel({ side, current, maximum, own }: { side: number; current: number; maximum: number; own: boolean }) {
+  return <div data-pp={side} className={`${styles.ppPanel} ${own ? styles.ownPp : styles.opponentPp}`} role="group" aria-label={`${own ? '自分' : '相手'}のPP ${current} / ${maximum}`}>
     <div className={styles.ppAmount} aria-hidden="true"><span>PP</span><b>{current}</b><em>/{maximum}</em></div>
     {own && maximum > 0 && <div className={styles.ppGems} style={{ '--pp-count': maximum } as CSSProperties} aria-hidden="true">
       {Array.from({ length: maximum }, (_, index) => <i key={index} className={index < current ? styles.availablePp : styles.spentPp} />)}
@@ -66,26 +66,32 @@ export function Die({ value, rolling }: { value: number | null; rolling: boolean
   </span>;
 }
 
+type Rect = { x: number; y: number; width: number; height: number };
+/** A card travelling between two places on the table (drawn, discarded, destroyed, stolen …). */
 export interface DrawFlight {
-  uid: string; cardId: string; face: boolean; from: { x: number; y: number; width: number; height: number };
-  to: { x: number; y: number; width: number; height: number }; turn: boolean;
-  /** The card goes back into a deck: it starts face up (when `face`) and ends face down. */
-  returning?: boolean;
-  /** A destroyed unit carried to its pile: face up all the way, after a short pause for the hit. */
-  fallen?: boolean;
+  uid: string; cardId: string; from: Rect; to: Rect;
+  /** down: back all the way; up: face all the way; reveal: back → face; hide: face → back. */
+  look: 'down' | 'up' | 'reveal' | 'hide';
+  /** Rotation at each end in degrees (the far side's field and piles lie upside down). */
+  spin: [number, number];
+  /** Waits this long (ms) before leaving, e.g. a destroyed unit waits for its damage number. */
+  delay: number;
+  /** Where it lands, or null when it leaves the game. */
+  toZone: Zone | null;
 }
+const looks = { down: styles.lookDown, up: styles.lookUp, reveal: styles.lookReveal, hide: styles.lookHide } as const;
 export function FlyingCard({ flight }: { flight: DrawFlight }) {
-  const { from, to, face, turn, cardId, returning, fallen } = flight;
+  const { from, to, look, spin, delay, cardId } = flight;
   const css = {
     left: from.x, top: from.y, width: from.width, height: from.height,
     '--fly-x': `${to.x - from.x}px`, '--fly-y': `${to.y - from.y}px`,
     '--fly-scale-x': to.width / from.width, '--fly-scale-y': to.height / from.height,
-    '--fly-start': turn ? '180deg' : '0deg',
+    '--spin-start': `${spin[0]}deg`, '--spin-end': `${spin[1]}deg`, '--fly-delay': `${delay}ms`,
   } as React.CSSProperties;
-  return <div className={`${styles.flyingCard} ${fallen ? styles.fallenCard : ''}`} data-draw-flight style={css} aria-hidden="true">
-    <div className={!face ? styles.faceDownCard : fallen ? `${styles.faceUpCard} ${turn ? styles.faceUpTurned : ''}` : returning ? styles.unflippingCard : styles.flippingCard}>
+  return <div className={styles.flyingCard} data-draw-flight style={css} aria-hidden="true">
+    <div className={styles.flightSpin}><div className={looks[look]}>
       <span className={styles.flightBack} />
-      {face && <span className={styles.flightFront}><GameCard id={cardId} /></span>}
-    </div>
+      {look !== 'down' && <span className={styles.flightFront}><GameCard id={cardId} /></span>}
+    </div></div>
   </div>;
 }

@@ -11,5 +11,7 @@ export { skillsFor } from './playables/skills.ts';
 export type { SkillScript } from './playables/skills.ts';
 export { scriptOf } from './cards/registry.ts';
 export type { CardScript, OpDef } from './cards/types.ts';
+export { changesBetween, instanceFields, playerFields, stateFields, zones } from './changes.ts';
+export type { Change, ChangeKind, Place, Zone } from './changes.ts';
 export { attackTargets, canPlay, isRevealable, pendingView, skillBlocked } from './view.ts';
 export type { PendingView } from './view.ts';

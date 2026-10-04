@@ -3,8 +3,8 @@ import Image from 'next/image';
 import { attackOf, hpOf } from '@pplale/game-core';
 import type { Instance } from '@pplale/game-core';
 import { displayCards, gameCatalog } from '@/lib/game/catalog';
+import { keywordNames } from './labels';
 import styles from './BoardEmulator.module.css';
-const keywordNames = { charge: '突撃', fast: '早食い', taunt: '挑発', guard: '防衛', pierce: '貫通', immobile: '行動不能', noEat: '食不可', effectImmune: '効果耐性' } as const;
 const signed = (value: number) => `${value >= 0 ? '+' : '−'}${Math.abs(value)}`;
 /** Card face with live markers. Memoized: unchanged cards skip re-rendering during drags and selection. */
 export const GameCard = memo(function GameCard({ id, instance, stats = false, abilities = false, currentCost, sizes = '(max-width: 900px) 90px, 110px' }: {

@@ -113,7 +113,7 @@ export function useBoard(container: RefObject<HTMLDivElement | null>) {
 
   function deckReady(side: Side, kind: DeckKind) {
     // Opening draws, and the redraws after giving cards back in the mulligan (once those have landed in the deck).
-    const redraw = game.phase === 'mulligan' && !game.mulligan.confirmed[side] && !flights.some(f => f.returning);
+    const redraw = game.phase === 'mulligan' && !game.mulligan.confirmed[side] && !flights.some(f => f.toZone === 'yojo' || f.toZone === 'sweet');
     if (game.phase === 'opening' || redraw) return canControl(side) && !loading && !rollingDice && game.openingRemaining[side] > 0 && !flights.some(f => game.players[side].hand.includes(f.uid));
     return ours && !busy && !loading && pending!.actor === side && pending!.decks.includes(kind);
   }
