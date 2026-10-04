@@ -11,8 +11,7 @@ import { outcomeOf } from './outcome';
 import type { Outcome } from './outcome';
 import styles from './MatchScreens.module.css';
 
-const headings = { win: 'WIN', lose: 'LOSE', draw: 'DRAW', neutral: 'RESULT' } as const;
-const tones = { win: styles.resultWin, lose: styles.resultLose, draw: styles.resultNeutral, neutral: styles.resultNeutral } as const;
+const tones = { win: styles.resultWin, lose: styles.resultLose, neutral: styles.resultNeutral } as const;
 
 /** After the match: what happened and what to do next (rematch, replay, the deck, another match, home). */
 export function ResultScreen() {
@@ -22,24 +21,23 @@ export function ResultScreen() {
   return <Result outcome={outcome} />;
 }
 
-function Result({ outcome }: { outcome: Outcome }) {
+function Result({ outcome: { winner, kind } }: { outcome: Outcome }) {
   const { game, view, mode, levels, names, setup, canRematch, canReplay, rematch, startReplay, leave } = useBoardContext();
   const [deckOpen, setDeckOpen] = useState(false);
-  const winner = game.winner === 'draw' ? null : game.winner;
   // Against the CPU the screen is about you; otherwise about whoever won.
-  const featured: Side = outcome.kind === 'neutral' && winner !== null ? winner : view;
+  const featured: Side = kind === 'neutral' ? winner : view;
   const foe = other(view), deck = setup?.decks[featured];
   const rows: [string, string][] = [
-    ...(winner === null ? [] : [['決着', game.players[other(winner)].points <= 0 ? 'お菓子ポイントが0になった' : '行動のないターンが続き、お菓子ポイントで判定'] as [string, string]]),
+    ['決着', game.players[other(winner)].points <= 0 ? 'お菓子ポイントが0になった' : '行動のないターンが続き、お菓子ポイントで判定'],
     ['ターン', `${game.turn}ターン`],
     ['お菓子ポイント', `${names[view]} ${game.players[view].points} − ${game.players[foe].points} ${names[foe]}`],
     ['先攻', names[game.rules.firstPlayer]],
     ...(mode === 'cpu' ? [['CPUの強さ', cpuProfiles[levels[1]].name] as [string, string]] : []),
   ];
-  return <section className={`${styles.result} ${tones[outcome.kind]}`} role="dialog" aria-label="対戦結果">
+  return <section className={`${styles.result} ${tones[kind]}`} role="dialog" aria-label="対戦結果">
     <header className={styles.resultHeading}>
-      <h2 className={styles[outcome.kind]}>{headings[outcome.kind]}</h2>
-      <p>{outcome.text}</p>
+      {/* The winner by name: the signed-in user's name when they won. */}
+      <h2 className={styles[kind]}>{names[winner]}のかち!!</h2>
     </header>
     <div className={styles.resultSide}>
       <div className={styles.resultArt}><GameCard id={game.players[featured].playable} sizes="(max-width: 640px) 40vw, 420px" /></div>

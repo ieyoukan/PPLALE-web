@@ -102,5 +102,6 @@ export function settle(s: GameState, catalog: Catalog) {
         }
     }
     const lost = sides.filter(side => s.players[side].points <= 0);
-    if (lost.length) s.winner = lost.length === 2 ? 'draw' : other(lost[0]);
+    // There is no draw: when both reach 0 in the same step the second player wins, as in the stall rule's tie.
+    if (lost.length) s.winner = lost.length === 2 ? other(s.rules.firstPlayer) : other(lost[0]);
 }

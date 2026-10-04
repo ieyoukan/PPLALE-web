@@ -53,9 +53,9 @@ for (const viewport of [{ width: 1280, height: 860 }, { width: 844, height: 390 
       await expect.poll(async () => (await savedGame(page)).winner).toBe(0);
       // ゲームセット and the verdict play first, then the result screen stays.
       const result = page.getByRole('dialog', { name: '対戦結果' });
-      await expect(result.getByText('あなたの勝ち', { exact: true })).toBeVisible({ timeout: 10000 });
+      await expect(result.getByText('あなたのかち!!', { exact: true })).toBeVisible({ timeout: 10000 });
       await page.reload();
-      await expect(result.getByText('あなたの勝ち', { exact: true })).toBeVisible();
+      await expect(result.getByText('あなたのかち!!', { exact: true })).toBeVisible();
       expect(errors).toEqual([]);
     });
 
