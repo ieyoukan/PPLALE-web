@@ -20,6 +20,8 @@ export interface SkillScript {
     cpu?(fx: Effects): boolean;
 }
 
+/** 「相手の幼女1人に〜」は対象の選択が必要。相手の場に幼女がいなければ使えない。 */
+const needsEnemyUnit = (fx: Effects) => fx.foe.field.length ? undefined : '対象にできる相手の幼女がいません';
 const ateLastTurn = (fx: Effects) => fx.foe.field.filter(uid => fx.s.cards[uid].ateOn === fx.s.turn - 1);
 
 // 【突撃！隣のおやつタイム】コスト0, 場の幼女1人に突撃を付与する。2回。
@@ -60,12 +62,13 @@ export const playableSkills: Record<string, SkillScript[]> = {
     // p_1 うぃまる
     p_1: [
         // 【お菓子はうぃまるが守りまｽﾔｧ】相手の幼女1人に1ダメージ。
-        { name: 'お菓子はうぃまるが守りまｽﾔｧ', cost: 0, uses: 2, use: fx => fx.queue('damage', { scope: 'enemy', amount: 1 }), cpu: fx => fx.foe.field.length > 0 },
+        { name: 'お菓子はうぃまるが守りまｽﾔｧ', cost: 0, uses: 2, blocked: needsEnemyUnit, use: fx => fx.queue('damage', { scope: 'enemy', amount: 1 }), cpu: fx => fx.foe.field.length > 0 },
         // 【うぃまるの本気を見せまｽﾔｧ】相手の幼女1人に2ダメージ。
-        { name: 'うぃまるの本気を見せまｽﾔｧ', cost: 1, uses: 2, use: fx => fx.queue('damage', { scope: 'enemy', amount: 2 }), cpu: fx => fx.foe.field.length > 0 },
+        { name: 'うぃまるの本気を見せまｽﾔｧ', cost: 1, uses: 2, blocked: needsEnemyUnit, use: fx => fx.queue('damage', { scope: 'enemy', amount: 2 }), cpu: fx => fx.foe.field.length > 0 },
         {
             // 【うぃまる、実は色々できまｽﾔｧ】相手の幼女1人に1ダメージ。追加で1PP支払ったなら2ダメージ。
             name: '実は色々できまｽﾔｧ', cost: 1, uses: 1,
+            blocked: needsEnemyUnit,
             use: fx => fx.queue('bonusDamage'),
             ops: {
                 bonusDamage: {
@@ -144,6 +147,7 @@ export const playableSkills: Record<string, SkillScript[]> = {
         {
             // 【おしおきなん！】直前の相手ターンにお菓子を食べた幼女1人を破壊。追加で2支払えば全員。
             name: 'おしおきなん！', cost: 1, uses: 1,
+            blocked: fx => ateLastTurn(fx).length ? undefined : '直前の相手ターンにお菓子を食べた幼女がいません',
             use: fx => fx.queue('punish'),
             ops: {
                 punish: {
@@ -172,6 +176,7 @@ export const playableSkills: Record<string, SkillScript[]> = {
         {
             // 【ｸﾏｰ（うち来ない？）】自分のお菓子を2減らす。相手の幼女1人を奪う（能力変化を引き継いで自分の場に出す）。
             name: 'うち来ない？', cost: 4, uses: 1,
+            blocked: needsEnemyUnit,
             use(fx) {
                 fx.losePoints(fx.side, 2, 'reduce');
                 fx.queue('stealUnit', { scope: 'enemy' });

@@ -1,7 +1,8 @@
 // Read-only helpers that tell a UI where to show things. No React / DOM here.
 import { scriptOf } from './cards/registry.ts';
 import { canAttack } from './core/combat.ts';
-import { cardContext } from './effects/context.ts';
+import { cardContext, effects } from './effects/context.ts';
+import { skillsFor } from './playables/skills.ts';
 import { other } from './model.ts';
 import type { Catalog, DeckKind, GameState, Side, TaskOp } from './model.ts';
 
@@ -46,6 +47,10 @@ export function attackTargets(s: GameState, side: Side, catalog: Catalog): Recor
 /** The card's own play condition holds (cost and field space are checked separately). */
 export const canPlay = (s: GameState, side: Side, uid: string, catalog: Catalog) =>
     scriptOf(s.cards[uid].cardId).canPlay?.(cardContext(s, catalog, side, uid)) ?? true;
+
+/** Why the skill cannot be used now apart from PP and remaining uses (e.g. nothing to select), or undefined. */
+export const skillBlocked = (s: GameState, side: Side, index: number, catalog: Catalog) =>
+    skillsFor(s.players[side].playable)[index]?.blocked?.(effects(s, catalog, side));
 
 /** The card can be revealed from hand with the `reveal` command. */
 export const isRevealable = (cardId: string) => !!scriptOf(cardId).revealable;

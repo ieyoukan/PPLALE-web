@@ -1,8 +1,8 @@
 'use client';
 
-import { skillsFor } from '@pplale/game-core';
+import { skillBlocked, skillsFor } from '@pplale/game-core';
 import type { Side } from '@pplale/game-core';
-import { displayCards } from '@/lib/game/catalog';
+import { displayCards, gameCatalog } from '@/lib/game/catalog';
 import { skillDescription } from '@/lib/game/skillText';
 import { useBoardContext } from '../board/BoardContext';
 import { GameCard } from '../GameCard';
@@ -18,7 +18,7 @@ export function SkillPanel({ side }: { side: Side }) {
     <div className={styles.inspectImage}><GameCard id={player.playable} sizes="120px" /></div>
     <h2>{card.name}</h2>
     {skillsFor(player.playable).map((skill, index) => <button className={styles.skillButton} key={index}
-      disabled={!usable || player.skills[index] <= 0 || player.pp < skill.cost}
+      disabled={!usable || player.skills[index] <= 0 || player.pp < skill.cost || !!skillBlocked(game, side, index, gameCatalog)}
       onClick={() => { act({ type: 'skill', actor: side, index }); setPanel(null); }}>
       <b>{skill.cost} PP</b>
       <span><strong>{skill.name}</strong><p>{skillDescription(card.effect, index)}</p></span>

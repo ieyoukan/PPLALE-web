@@ -71,17 +71,19 @@ export interface DrawFlight {
   to: { x: number; y: number; width: number; height: number }; turn: boolean;
   /** The card goes back into a deck: it starts face up (when `face`) and ends face down. */
   returning?: boolean;
+  /** A destroyed unit carried to its pile: face up all the way, after a short pause for the hit. */
+  fallen?: boolean;
 }
 export function FlyingCard({ flight }: { flight: DrawFlight }) {
-  const { from, to, face, turn, cardId, returning } = flight;
+  const { from, to, face, turn, cardId, returning, fallen } = flight;
   const css = {
     left: from.x, top: from.y, width: from.width, height: from.height,
     '--fly-x': `${to.x - from.x}px`, '--fly-y': `${to.y - from.y}px`,
     '--fly-scale-x': to.width / from.width, '--fly-scale-y': to.height / from.height,
     '--fly-start': turn ? '180deg' : '0deg',
   } as React.CSSProperties;
-  return <div className={styles.flyingCard} data-draw-flight style={css} aria-hidden="true">
-    <div className={!face ? styles.faceDownCard : returning ? styles.unflippingCard : styles.flippingCard}>
+  return <div className={`${styles.flyingCard} ${fallen ? styles.fallenCard : ''}`} data-draw-flight style={css} aria-hidden="true">
+    <div className={!face ? styles.faceDownCard : fallen ? `${styles.faceUpCard} ${turn ? styles.faceUpTurned : ''}` : returning ? styles.unflippingCard : styles.flippingCard}>
       <span className={styles.flightBack} />
       {face && <span className={styles.flightFront}><GameCard id={cardId} /></span>}
     </div>

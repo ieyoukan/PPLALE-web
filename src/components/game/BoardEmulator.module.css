@@ -24,7 +24,6 @@
 }
 .mat {
   position: absolute; inset: 0 6%; overflow: hidden;
-  clip-path: polygon(4% 0, 96% 0, 100% 100%, 0 100%);
   background-color: #fff9ef;
   background-image: repeating-linear-gradient(0deg, #ffae895c 0 4cqw, transparent 4cqw 8cqw),
     repeating-linear-gradient(90deg, #ffae8980 0 4cqw, transparent 4cqw 8cqw);
@@ -172,13 +171,21 @@
 .setupModes small { display: block; font-size: 9px; color: #a08d75; margin-top: 4px; }
 .setupModeLabel { flex: 0 0 auto; align-self: center; min-width: 4.5em; font-size: 16px; color: #7a5967; }
 .deckSelectors { display: flex; flex-direction: column; gap: 12px; margin: 18px 0; }
-.deckSelectors label, .ruleGrid label { font-size: 11px; }
-.deckSelectors select, .ruleGrid select, .ruleGrid input { display: block; width: 100%; margin-top: 6px; background: #fffcf4; border: 1px solid #d7c8af; border-radius: 3px; padding: 8px; color: #6b5946; font-size: 11px; }
+/* The two decks as the two sides of the table (same pink check as the mat). */
+.deckTable { position: relative; display: grid; gap: 34px; margin: 18px 0; padding: 16px; border: 3px solid #e7c3e2; border-radius: 22px; background: #fffdeb repeating-conic-gradient(#f4b0bb33 0 25%, transparent 0 50%) 0 0 / 44px 44px; }
+.deckTable label { display: grid; gap: 6px; padding: 12px 14px; border: 2px solid #e7c3e2; border-radius: 16px; background: #fffdebf2; font-size: 18px; color: #6b5444; }
+.deckTable label span { display: flex; align-items: baseline; justify-content: space-between; font-weight: 700; }
+.deckTable label small { font-size: 14px; font-weight: 400; color: #a88667; }
+.deckTable .deckFar { border-color: #c9b3e6; }
+.deckTable .deckNear { border-color: #f4b0bb; }
+.deckTable select { display: block; width: 100%; min-height: 52px; padding: 12px; border: 1px solid #d7c8af; border-radius: 14px; background: #fff; color: #6b5946; font-size: 18px; }
+.deckTable > i { position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%); padding: 2px 16px; border-radius: 999px; background: #a88667; color: #fffdeb; font: italic 700 18px Georgia, serif; }
+.deckSelectors label { font-size: 11px; }
+.deckSelectors select { display: block; width: 100%; margin-top: 6px; background: #fffcf4; border: 1px solid #d7c8af; border-radius: 3px; padding: 8px; color: #6b5946; font-size: 11px; }
 .secondaryButton { padding: 8px; border: 1px solid #c7b497; border-radius: 4px; font-size: 10px; }
 .ruleSettings { padding: 10px; margin: 14px 0; border: 1px solid #ddcfb7; border-radius: 4px; font-size: 10px; color: #685441; }
 .ruleSettings summary { cursor: pointer; }
 .ruleSettings p { white-space: pre-wrap; margin: 10px 0; line-height: 1.8; }
-.ruleGrid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
 .startButton { display: block; width: 100%; margin-top: 20px; padding: 12px; border: 1px solid #9bb18d; border-radius: 5px; background: #e1ecd3; color: #37532e; font-size: 13px; font-weight: 700; }
 .startButton span { float: right; }
 .error { padding: 7px; background: #fbe5dc; color: #ac655b; font-size: 10px; }
@@ -192,9 +199,18 @@
 .testControls b { margin: 0 10px; font-size: 13px; }
 .flightLayer { position: fixed; z-index: 150; inset: 0; pointer-events: none; }
 .flyingCard { position: absolute; transform-origin: top left; perspective: 650px; animation: drawFlight .8s cubic-bezier(.2,.65,.25,1) both; filter: drop-shadow(0 12px 8px #31202566); }
-.flippingCard, .faceDownCard { position: absolute; inset: 0; transform-style: preserve-3d; }
+.flippingCard, .unflippingCard, .faceDownCard { position: absolute; inset: 0; transform-style: preserve-3d; }
 .flippingCard { animation: drawFlip .8s ease-in-out both; }
 .unflippingCard { animation: drawFlip .8s ease-in-out both reverse; }
+/* A destroyed unit: shown face up, waits for its damage number, then goes to its pile. */
+.faceUpCard { position: absolute; inset: 0; transform-style: preserve-3d; transform: rotateY(180deg); }
+.faceUpTurned { transform: rotateY(180deg) rotateZ(180deg); }
+.fallenCard { animation-name: fallFlight; animation-delay: .45s; }
+@keyframes fallFlight {
+  0% { opacity: 1; transform: translate(0, 0) rotate(0) scale(1); filter: grayscale(.5) brightness(.9); }
+  30% { transform: translate(calc(var(--fly-x) * .2), calc(var(--fly-y) * .2 - 30px)) rotate(-10deg) scale(1.08); }
+  100% { opacity: .9; transform: translate(var(--fly-x), var(--fly-y)) rotate(0) scale(var(--fly-scale-x), var(--fly-scale-y)); filter: grayscale(.5) brightness(.9); }
+}
 .flightBack, .flightFront { position: absolute; inset: 0; display: block; border-radius: 3px; border: 1px solid #e5d1aa; backface-visibility: hidden; }
 .flightBack { background: url('/images/back-card.webp') center / 100% 100%; }
 .flightFront { transform: rotateY(180deg); background: #ffeac8; }
@@ -204,10 +220,21 @@
   100% { opacity: 1; transform: translate(var(--fly-x), var(--fly-y)) rotate(0) scale(var(--fly-scale-x), var(--fly-scale-y)); }
 }
 @keyframes drawFlip { 0%, 28% { transform: rotateY(0); } 72%, 100% { transform: rotateY(180deg); } }
-.drawHint { position: fixed; z-index: 75; left: 50%; top: 46%; transform: translate(-50%, -50%); padding: 8px 22px; border: 2px solid #fff0cb; border-radius: 999px; background: #5b4257e6; color: #fffaf0; font: clamp(16px, 2vw, 24px) 'BoardHandwriting', 'Yu Kyokasho', cursive; white-space: nowrap; pointer-events: none; box-shadow: 0 6px 16px #2a1b3066; }
-.replayBadge { position: fixed; z-index: 135; top: 16px; left: 16px; display: flex; align-items: center; gap: 10px; padding: 6px 8px 6px 16px; border: 2px solid #fff1d3; border-radius: 999px; background: #5b4257e6; color: #fffaf0; font-size: 16px; box-shadow: 0 6px 16px #2a1b3066; }
-.replayBadge button { padding: 6px 14px; border-radius: 999px; background: #fff3dc; color: #6b4a5c; font-size: 15px; }
+.drawHint { position: fixed; z-index: 75; left: 50%; top: 46%; transform: translate(-50%, -50%); padding: 8px 22px; border: 2px solid #fffdeb; border-radius: 999px; background: #a88667f2; color: #fffdeb; font: clamp(16px, 2vw, 24px) 'BoardHandwriting', 'Yu Kyokasho', cursive; white-space: nowrap; pointer-events: none; box-shadow: 0 6px 16px #2a1b3066; }
+.replayBadge { position: fixed; z-index: 135; top: 16px; left: 16px; display: flex; align-items: center; gap: 10px; padding: 6px 8px 6px 16px; border: 2px solid #fffdeb; border-radius: 999px; background: #a88667f2; color: #fffdeb; font-size: 16px; box-shadow: 0 6px 16px #2a1b3066; }
+.replayBadge button { padding: 6px 14px; border-radius: 999px; background: #fffdeb; color: #6b4a3a; font-size: 15px; }
 @media (max-height: 500px) { .replayBadge { top: 6px; left: 8px; font-size: 14px; } }
+.hitNumber { position: fixed; z-index: 160; display: grid; place-items: center; width: clamp(96px, 12vw, 170px); aspect-ratio: 1; transform: translate(-50%, -50%); font: 700 clamp(60px, 8vw, 116px) / 1 Georgia, 'Times New Roman', serif; color: #d9232e; -webkit-text-stroke: 4px #fff; paint-order: stroke fill; pointer-events: none; animation: hitNumber 1s ease-out both; }
+/* A flash of light bursts behind the number as it pops in. */
+.hitNumber::before { content: ''; position: absolute; inset: -18%; z-index: -1; border-radius: 50%; background: radial-gradient(circle, #fff 0 22%, #ffd9f4 40%, #c58cf0cc 58%, #8b5fd400 72%); animation: hitFlash 1s ease-out both; }
+/* Damage from a unit's attack: a cream scuffle cloud instead of the flash. */
+.hitAttack::before { content: none; }
+.hitBurst { position: absolute; inset: -14%; z-index: -1; width: 128%; height: 128%; overflow: visible; fill: #fffdeb; stroke: #fffdeb; stroke-width: 7; stroke-linejoin: round; filter: drop-shadow(0 0 0 #a88667) drop-shadow(0 3px 0 #a8866799); animation: hitBurst 1s ease-out both; }
+@keyframes hitBurst { 0% { opacity: 0; transform: scale(.2) rotate(-30deg); } 12% { opacity: .72; transform: scale(1.2) rotate(8deg); } 24% { transform: scale(.96) rotate(-4deg); } 36%, 78% { opacity: .72; transform: scale(1) rotate(0); } 100% { opacity: 0; transform: scale(1.05); } }
+@keyframes hitNumber { 0% { opacity: 0; transform: translate(-50%, -50%) scale(.2); } 12% { opacity: 1; transform: translate(-50%, -50%) scale(1.3); } 22%, 78% { opacity: 1; transform: translate(-50%, -50%) scale(1); } 100% { opacity: 0; transform: translate(-50%, -50%) scale(1); } }
+@keyframes hitFlash { 0% { opacity: 0; transform: scale(.2); } 12% { opacity: 1; transform: scale(1.35); } 30% { opacity: .9; transform: scale(1); } 100% { opacity: 0; transform: scale(1.15); } }
+@media (prefers-reduced-motion: reduce) { .hitNumber, .hitNumber::before, .hitBurst { animation: hitNumberFade 1s linear both; } .fallenCard { animation-duration: .01s; } }
+@keyframes hitNumberFade { 0%, 80% { opacity: 1; } 100% { opacity: 0; } }
 @keyframes deckPulse { 50% { filter: drop-shadow(0 0 3px #75c497); } }
 @keyframes targetPulse { 50% { box-shadow: 0 0 4px #7fc69266; } }
 @keyframes diceRoll { 0% { transform: rotate(-13deg) translateY(0); } 50% { transform: rotate(12deg) translateY(-7px); } 100% { transform: rotate(-13deg) translateY(0); } }
@@ -219,7 +246,7 @@
 @media (prefers-reduced-motion: reduce) {
   .handCard, .fieldSlot { transition: none; }
   .targetable, .drawReady, .rollingDie { animation: none; }
-  .flyingCard, .flippingCard { animation-duration: .01s; }
+  .flyingCard, .flippingCard, .unflippingCard { animation-duration: .01s; }
 }
 
 /* Touch-sized controls and a table that fills the app. */
@@ -290,11 +317,11 @@
 .errorToast { position: fixed; top: 18px; left: 50%; transform: translateX(-50%); z-index: 180; max-width: 80vw; padding: 16px 24px; border-radius: 18px; background: #ffe6e2; color: #98464a; font-size: 18px; box-shadow: 0 5px 15px #5a353344; }
 .drawer { top: 0; width: min(560px, 100vw); padding: 70px 28px 30px; border-radius: 28px 0 0 28px; background: #fff9f0; font-size: 18px; }
 .drawer > h2, .dialogHeading h2 { font-size: 26px; }
-.drawer > p, .help, .deckSelectors label, .ruleGrid label, .ruleSettings, .testControls h3, .testControls b, .error { font-size: 18px; }
+.drawer > p, .help, .deckSelectors label, .ruleSettings, .testControls h3, .testControls b, .error { font-size: 18px; }
 .close, .dialogHeading > button { width: 48px; height: 48px; border-radius: 50%; background: #f0dccb; font-size: 30px; }
 .inspectImage { width: min(100%, 360px); margin: 0 auto 22px; }
 .zoneCards > button { width: 150px; }
-.setupModes button, .deckSelectors select, .ruleGrid select, .ruleGrid input, .secondaryButton, .startButton, .testControls button { font-size: 18px; min-height: 52px; border-radius: 14px; padding: 12px; }
+.setupModes button, .deckSelectors select, .secondaryButton, .startButton, .testControls button { font-size: 18px; min-height: 52px; border-radius: 14px; padding: 12px; }
 .setupModes button { min-height: 70px; }
 .ruleSettings summary { min-height: 44px; }
 .menuList { display: grid; gap: 16px; }
@@ -358,10 +385,12 @@
 
 
 .diceFocus { position: fixed; z-index: 120; inset: 0; display: grid; place-items: center; background: #251b2ccc; backdrop-filter: blur(5px); }
-.diceStage { display: flex; flex-direction: column; align-items: center; gap: 36px; padding: 24px; color: #fff4d8; text-align: center; }
+.diceStage { position: relative; display: flex; flex-direction: column; align-items: center; gap: 36px; padding: 24px; color: #fff4d8; text-align: center; }
 .focusDie { display: flex; flex-direction: column; align-items: center; gap: 28px; padding: 24px; transition: opacity .3s, filter .3s; }
 .focusDie > span:first-child { font-size: 28px; font-weight: 700; }
 .diceResult, .diceTie { font-size: 32px; text-shadow: 0 3px 12px #160c21; }
+/* Laid over the die instead of under it, so nothing moves when it appears. */
+.diceTie { position: absolute; left: 50%; top: 50%; z-index: 1; transform: translate(-50%, -50%) rotate(-4deg); padding: 6px 26px; border: 2px solid #fffdeb; border-radius: 999px; background: #f4b0bbf2; color: #6b4a3a; font-size: clamp(26px, 4vw, 40px); white-space: nowrap; text-shadow: none; box-shadow: 0 8px 20px #160c2188; pointer-events: none; }
 @media (max-width: 600px) { .diceStage { gap: 28px; padding: 16px; } .focusDie { padding: 10px; gap: 22px; } .focusDie > span:first-child { font-size: 24px; } }
 
 

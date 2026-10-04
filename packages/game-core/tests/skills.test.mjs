@@ -101,3 +101,25 @@ test('p_5 レンテ: pays 2 points to take an enemy unit with its stat changes; 
   s = draws(s);
   assert.deepEqual(idsOf(s, hand(s)), ['y_17', 'y_17']);
 });
+
+test('skills that select a unit cannot be used when there is none to select', () => {
+  const blocked = (playable, index, foe = {}) => {
+    const s = arena({ me: { playable }, foe });
+    return failure(s, { type: 'skill', actor: 0, index });
+  };
+  // うぃまる: every skill targets one enemy unit.
+  for (const index of [1, 2, 3]) assert.match(blocked('p_1', index), /幼女がいません/);
+  // レンテ: nobody to take.
+  assert.match(blocked('p_5', 1), /幼女がいません/);
+  // りくす: an enemy is there, but none ate sweets last turn.
+  assert.match(blocked('p_4', 2, { field: ['y_9'] }), /食べた幼女がいません/);
+  // Nothing was spent.
+  const s = arena({ me: { playable: 'p_1' } });
+  applyCommandFails(s);
+});
+
+function applyCommandFails(s) {
+  const before = { pp: s.players[0].pp, uses: [...s.players[0].skills] };
+  assert.ok(failure(s, { type: 'skill', actor: 0, index: 1 }));
+  assert.deepEqual({ pp: s.players[0].pp, uses: [...s.players[0].skills] }, before);
+}

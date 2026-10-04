@@ -8,8 +8,8 @@ import styles from '../BoardEmulator.module.css';
 /** Both PP gauges and the end-turn button. */
 export function TurnControl() {
   const { game, view, me, playEnabled, act } = useBoardContext();
-  if (game.phase !== 'playing') return null;
-  const mine = game.active === view;
+  // Present from the start (disabled until the first turn), so the table never changes width.
+  const mine = game.phase !== 'playing' || game.active === view;
   return <div className={styles.turnControl}>
     <PpPanel current={game.players[other(view)].pp} maximum={availablePpMaximum(game, other(view))} own={false} />
     <button className={`${styles.endTurnButton} ${mine ? '' : styles.enemyTurn}`} disabled={!playEnabled} onClick={() => act({ type: 'end', actor: game.active })}>

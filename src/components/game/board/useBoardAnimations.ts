@@ -21,6 +21,8 @@ export type EffectBlockNotice = { id: number; targets: (Ping & { cardId: string;
 export type OrderNotice = { chooser: Side; first: Side };
 /** End of the match: `wait` for the last animation, ゲームセット, the verdict; null shows the result screen. */
 export type Finale = 'wait' | 'set' | 'verdict' | null;
+/** Damage just taken by a unit or by a side's sweet points, shown large over it. */
+export type Hit = { id: number; amount: number; x: number; y: number; /** Dealt by a unit's attack (a scuffle cloud) or by an effect (a flash). */ kind: 'attack' | 'effect' };
 /** The card the opponent picked for an effect. */
 export type Ping = { uid: string; x: number; y: number; width: number; height: number };
 
@@ -32,6 +34,10 @@ const ANNOUNCE_HIT = 1900;
 const ANNOUNCE_DURATION = 2400;
 const PING_HIT = 700;
 const PING_DURATION = 1200;
+const HIT_DURATION = 1100;
+// A destroyed unit stays put while its damage shows, then is carried to its pile.
+const FALL_DELAY = 450;
+const FALL_REST = 350;
 export const ORDER_NOTICE_DURATION = 3200;
 // The last blow lands, then ゲームセット and the verdict are shown before the result screen.
 const FINALE_WAIT = 700;
@@ -55,6 +61,11 @@ export function useBoardAnimations({ game, view, mode, cpuSides, replaying, cont
   const [blocked, setBlocked] = useState<EffectBlockNotice | null>(null);
   const [order, setOrder] = useState<OrderNotice | null>(null);
   const [finale, setFinale] = useState<Finale>(null);
+  const [hits, setHits] = useState<Hit[]>([]);
+  /** Where each unit was before the command, for units that are destroyed by it. */
+  const unitRects = useRef(new Map<string, ReturnType<typeof rectOf>>());
+  /** The command being applied, so its damage can be shown as an attack or as an effect. */
+  const lastCommand = useRef<Command['type'] | null>(null);
   const previous = useRef(game);
   const enabled = useRef(false);
   const timers = useRef<ReturnType<typeof setTimeout>[]>([]);
@@ -80,6 +91,39 @@ export function useBoardAnimations({ game, view, mode, cpuSides, replaying, cont
         setBlocked({ id: game.revision, targets });
         later(() => setBlocked(current => current?.id === game.revision ? null : current), 1200);
       }
+    }
+    // Damage taken: by units (also ones destroyed by it, at their last position) and by sweet points.
+    const struck: Hit[] = [];
+    const at = (rect: ReturnType<typeof rectOf> | undefined, amount: number) => { if (rect && amount > 0) struck.push({ id: ++hitId, amount, x: rect.x + rect.width / 2, y: rect.y + rect.height / 2, kind: lastCommand.current === 'attack' ? 'attack' : 'effect' }); };
+    for (const side of [0, 1] as Side[]) {
+      for (const uid of old.players[side].field) {
+        const element = root.querySelector(`[data-unit="${uid}"]`);
+        at(element ? rectOf(element) : unitRects.current.get(uid), (game.cards[uid]?.damage ?? 0) - old.cards[uid].damage);
+      }
+      const leader = root.querySelector(`[data-leader="${side}"]`);
+      at(leader ? rectOf(leader) : undefined, old.players[side].points - game.players[side].points);
+    }
+    if (struck.length) {
+      setHits(current => [...current, ...struck]);
+      later(() => setHits(current => current.filter(hit => !struck.includes(hit))), HIT_DURATION);
+    }
+    // Units that left the field for a pile (お昼寝場所 / 除外) are carried there from where they stood.
+    const fallen: DrawFlight[] = [];
+    for (const side of [0, 1] as Side[]) {
+      for (const uid of old.players[side].field) {
+        const owner = ([0, 1] as Side[]).find(s => game.players[s].nap.includes(uid) || game.players[s].exile.includes(uid));
+        const from = unitRects.current.get(uid);
+        if (owner === undefined || !from || !game.cards[uid]) continue;
+        const pile = root.querySelector(`[data-deck="${owner}-${game.players[owner].nap.includes(uid) ? 'nap' : 'exile'}"] [data-stack]`);
+        // The far side's cards lie upside down on the table; they keep that way up on the way to the pile.
+        if (pile) fallen.push({ uid, cardId: game.cards[uid].cardId, face: true, turn: side !== view, fallen: true, from, to: rectOf(pile) });
+      }
+    }
+    if (fallen.length) {
+      setFlights(current => [...current, ...fallen]);
+      // The card rests on the pile for a moment: removing it exactly when the flight should end cuts the
+      // landing off whenever the animation starts a little late (a busy frame).
+      later(() => setFlights(current => current.filter(f => !fallen.includes(f))), FALL_DELAY + DRAW_DURATION + FALL_REST);
     }
     const next: DrawFlight[] = [];
     for (const side of [0, 1] as Side[]) {
@@ -126,8 +170,13 @@ export function useBoardAnimations({ game, view, mode, cpuSides, replaying, cont
    * can be followed.
    */
   const run = useCallback((command: Command, commit: () => void) => {
-    const apply = () => { enabled.current = true; commit(); };
     const root = container.current;
+    const apply = () => {
+      enabled.current = true;
+      lastCommand.current = command.type;
+      unitRects.current = new Map(Array.from(root?.querySelectorAll<HTMLElement>('[data-unit]') ?? [], element => [element.dataset.unit!, rectOf(element)]));
+      commit();
+    };
     const opponent = command.actor !== view || cpuSides.includes(command.actor);
     const shown = opponent ? describe(game, command) : null;
     if (shown) {
@@ -184,13 +233,15 @@ export function useBoardAnimations({ game, view, mode, cpuSides, replaying, cont
     setBlocked(null);
     setOrder(null);
     setFinale(null);
+    setHits([]);
   }, []);
   /** A tap moves on: ゲームセット → verdict → result screen. */
   const advanceFinale = useCallback(() => setFinale(current => current === 'set' ? 'verdict' : current === 'verdict' ? null : current), []);
 
-  return { flights, strike, turnNotice, announcement, ping, blocked, order, finale, advanceFinale, busy: flights.length > 0 || !!strike || !!turnNotice || !!announcement || !!ping || !!blocked || !!order, run, skipNext, reset };
+  return { flights, strike, turnNotice, announcement, ping, blocked, order, finale, hits, advanceFinale, busy: flights.length > 0 || !!strike || !!turnNotice || !!announcement || !!ping || !!blocked || !!order, run, skipNext, reset };
 }
 
+let hitId = 0;
 let announcementId = 0;
 /** What to show for the opponent's play / skill / reveal, or null for other commands. */
 function describe(game: GameState, command: Command): Announcement | null {

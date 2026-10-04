@@ -46,7 +46,7 @@ export default function BoardEmulator() {
         {(mode !== 'hotseat' || replaying) && paused && <button className={styles.menuButton} onClick={() => setPaused(false)} aria-label={replaying ? '再生する' : 'CPU再開'}>▶</button>}
       </header>
       {replaying && <div className={styles.replayBadge}><span>リプレイ中</span><button onClick={stopReplay}>やめる</button></div>}
-      <div className={`${styles.tableViewport} ${game.phase === 'playing' ? styles.withTurnControl : ''}`}>
+      <div className={`${styles.tableViewport} ${styles.withTurnControl}`}>
         <div className={styles.table} data-table>
           <div className={styles.mat}><div className={styles.logoLayer} aria-hidden="true">
             {Array.from({ length: 8 }, (_, index) => index).map(index => <Image key={index} src="/images/game/cafe-logo.svg" alt="" width={1568} height={882}
