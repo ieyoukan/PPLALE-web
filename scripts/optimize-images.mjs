@@ -24,6 +24,7 @@ const dataFiles = [
   { rel: 'src/data/sweet.json', key: 'sweet' },
   { rel: 'src/data/playable.json', key: 'playable' },
   { rel: 'src/data/tokenYojo.json', key: 'tokenYojo' },
+  { rel: 'src/data/token.json', key: 'token' },
 ];
 
 let converted = 0;

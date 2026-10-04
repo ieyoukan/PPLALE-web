@@ -52,6 +52,17 @@ export const tokenYojoDataSchema = z.object({
   tokenYojo: z.array(cardSchema),
 });
 
+// どのフルーツのデッキからも効果で生成される共通トークン（猫まんじゅう、もちだ、お仕置き棒など）。
+// フルーツタイプを持たず、幼女として扱うものとギミックがある。
+export const tokenCardSchema = cardSchema.extend({
+  type: z.enum(['yojo', 'gimmick']),
+  fruit: z.literal('none'),
+});
+export const tokenDataSchema = z.object({
+  token: z.array(tokenCardSchema),
+});
+export type TokenCard = z.infer<typeof tokenCardSchema>;
+
 /**
  * Firestore に保存する Deck ドキュメントのスキーマ定義
  * - users/{uid}/decks/{deckId}

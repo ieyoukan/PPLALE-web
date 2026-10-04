@@ -9,7 +9,8 @@ export const keywords: readonly Keyword[] = ['charge', 'fast', 'taunt', 'guard',
 export interface Definition {
     id: string;
     name: string;
-    type: 'yojo' | 'sweet' | 'playable';
+    /** `gimmick` is a token played from hand that is neither a unit nor a sweet. */
+    type: 'yojo' | 'sweet' | 'playable' | 'gimmick';
     fruit: string;
     cost: number;
     attack: number;

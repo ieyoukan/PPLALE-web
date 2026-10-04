@@ -4,7 +4,7 @@ import { readFileSync } from 'node:fs';
 import { newGame, applyCommand, restoreGame, cpuCommand, canAttack, sandboxRules } from '../dist/index.js';
 
 const data = name => JSON.parse(readFileSync(new URL(`../../../src/data/${name}.json`, import.meta.url)))[name];
-const catalog = Object.fromEntries([...data('yojo'), ...data('sweet'), ...data('playable'), ...data('tokenYojo')].map(card => [card.id, card]));
+const catalog = Object.fromEntries([...data('yojo'), ...data('sweet'), ...data('playable'), ...data('tokenYojo'), ...data('token')].map(card => [card.id, card]));
 const deck = { name: 'テスト', yojo: Array(20).fill('y_2'), sweet: Array(10).fill('s_19'), playable: 'p_0' };
 const create = (seed = 42, rules = {}) => newGame([deck, deck], catalog, { ...sandboxRules, ...rules }, seed);
 function command(state, action, adjust = false) {

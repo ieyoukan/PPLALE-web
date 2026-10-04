@@ -19,7 +19,7 @@ export const GameCard = memo(function GameCard({ id, instance, stats = false, ab
     if (!card)
         return null;
     return <>
-    {card.imageUrl ? <Image src={card.imageUrl} alt={card.name} fill sizes={sizes} className={styles.cardImage} draggable={false}/> : <span className={styles.tokenCard}><span>{id === 'token_cat' ? '🐈' : '🍮'}</span>{card.name}<small>{card.effect}</small></span>}
+    <Image src={card.imageUrl} alt={card.name} fill sizes={sizes} className={styles.cardImage} draggable={false}/>
     {instance && stats && <span className={styles.stats}><b>{attackOf(instance, gameCatalog)}</b><b>{hpOf(instance, gameCatalog)}</b></span>}
     {!!instance?.damage && <span className={styles.damageMarble} role="img" aria-label={`${instance.damage}ダメージ`}>−{instance.damage}</span>}
     {instance && !!(instance.attackBonus || instance.hpBonus) && <>
