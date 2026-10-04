@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { arena, choose, draws, failure, field, hand, idsOf, newest, optionIds, play, run, stats } from './helpers.mjs';
+import { arena, catalog, choose, draws, failure, field, hand, idsOf, newest, optionIds, play, run, stats } from './helpers.mjs';
 
 test('y_0 かがり: draws on the first turn, otherwise converts remaining PP into +X/+X', () => {
   let s = arena({ me: { hand: ['y_0'], turns: 1, pp: 1 } });
@@ -259,4 +259,30 @@ test('simultaneous destruction resolves the active side first', () => {
   s.active = 1;
   s = run(s, { type: 'attack', actor: 1, uid: field(s, 1)[0], target: field(s)[0] });
   assert.equal(s.pending.task.actor, 1);
+});
+
+test('y_19 さら / y_30 みゅーとん: 「他の」幼女 only, never the card itself', () => {
+  for (const [id, foe] of [['y_19', []], ['y_30', ['y_9']]]) {
+    let s = arena({ me: { hand: [id], field: ['y_23'] }, foe: { field: foe } });
+    const self = hand(s)[0];
+    s = play(s, self);
+    assert.ok(!optionIds(s).includes(self), `${id} must not be able to choose itself`);
+    assert.equal(optionIds(s).length, 1 + foe.length * (id === 'y_30' ? 1 : 0));
+  }
+  // Alone on the field: nothing to choose, the unit just enters.
+  let s = arena({ me: { hand: ['y_30'] } });
+  s = play(s, hand(s)[0]);
+  assert.equal(s.pending, null);
+  assert.deepEqual(idsOf(s, field(s)), ['y_30']);
+});
+
+// Cost / attack / HP as printed on each strawberry card (read from the card images, not the sheet).
+const printed = {
+  y_0: [1, 1, 1], y_1: [1, 1, 1], y_2: [1, 1, 1], y_3: [2, 1, 3], y_4: [2, 2, 1], y_5: [2, 2, 1], y_6: [2, 1, 2], y_7: [2, 2, 2],
+  y_8: [2, 1, 1], y_9: [2, 1, 2], y_10: [2, 2, 2], y_11: [2, 3, 3], y_12: [3, 1, 1], y_13: [3, 2, 1], y_14: [3, 2, 2], y_15: [3, 2, 2],
+  y_16: [3, 2, 3], y_17: [3, 3, 4], y_18: [4, 3, 3], y_19: [4, 2, 3], y_20: [4, 3, 3], y_21: [4, 4, 2], y_22: [4, 2, 5], y_23: [4, 3, 4],
+  y_24: [5, 3, 6], y_25: [5, 3, 3], y_26: [5, 2, 3], y_27: [5, 4, 4], y_28: [6, 5, 5], y_29: [7, 3, 5], y_30: [7, 3, 5],
+};
+test('printed stats: every strawberry unit matches its card', () => {
+  for (const [id, stats] of Object.entries(printed)) assert.deepEqual([catalog[id].cost, catalog[id].attack, catalog[id].hp], stats, `${id} ${catalog[id].name}`);
 });
