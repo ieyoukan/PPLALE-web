@@ -1,7 +1,6 @@
 'use client';
 
 import { useState } from 'react';
-import Link from 'next/link';
 import { cpuProfiles, other } from '@pplale/game-core';
 import type { Deck, Side } from '@pplale/game-core';
 import { displayCards } from '@/lib/game/catalog';
@@ -13,7 +12,7 @@ import styles from './MatchScreens.module.css';
 
 const tones = { win: styles.resultWin, lose: styles.resultLose, neutral: styles.resultNeutral } as const;
 
-/** After the match: what happened and what to do next (rematch, replay, the deck, another match, home). */
+/** After the match: what happened and what to do next (the deck, replay, the game's home, rematch). */
 export function ResultScreen() {
   const board = useBoardContext();
   const outcome = outcomeOf(board);
@@ -29,7 +28,8 @@ function Result({ outcome: { winner, kind } }: { outcome: Outcome }) {
   const foe = other(view), deck = setup?.decks[featured];
   const rows: [string, string][] = [
     ['決着', game.players[other(winner)].points <= 0 ? 'お菓子ポイントが0になった' : '行動のないターンが続き、お菓子ポイントで判定'],
-    ['ターン', `${game.turn}ターン`],
+    // `game.turn` counts every turn of both sides; a player counts their own.
+    ['ターン', `${Math.max(game.players[0].turns, game.players[1].turns)}ターン`],
     ['お菓子ポイント', `${names[view]} ${game.players[view].points} − ${game.players[foe].points} ${names[foe]}`],
     ['先攻', names[game.rules.firstPlayer]],
     ...(mode === 'cpu' ? [['CPUの強さ', cpuProfiles[levels[1]].name] as [string, string]] : []),
@@ -42,7 +42,6 @@ function Result({ outcome: { winner, kind } }: { outcome: Outcome }) {
     <div className={styles.resultSide}>
       <div className={styles.resultArt}><GameCard id={game.players[featured].playable} sizes="(max-width: 640px) 40vw, 420px" /></div>
       <b className={styles.resultName}>{names[featured]}</b>
-      {canRematch && <button className={`${styles.plateButton} ${styles.primaryPlate}`} onClick={rematch}>再戦する</button>}
     </div>
     <div className={styles.resultBody}>
       <dl className={styles.summary}>{rows.map(([label, value]) => <div key={label}><dt>{label}</dt><dd>{value}</dd></div>)}</dl>
@@ -53,9 +52,9 @@ function Result({ outcome: { winner, kind } }: { outcome: Outcome }) {
       </div>}
       <div className={styles.actions}>
         {canReplay && <button className={styles.plateButton} onClick={startReplay}>リプレイ</button>}
-        <Link href="/" className={styles.plateButton}>ホーム</Link>
-        {/* Opens the preparation page; matching against another player will start from here later. */}
-        <button className={`${styles.plateButton} ${styles.primaryPlate}`} onClick={leave}>ゲームを続ける</button>
+        {/* The game's own home (preparation, cards, battles), not the site's top page. */}
+        <button className={styles.plateButton} onClick={leave}>ホーム</button>
+        {canRematch && <button className={`${styles.plateButton} ${styles.primaryPlate}`} onClick={rematch}>再戦する</button>}
       </div>
     </div>
     {deck && deckOpen && <DeckSheet deck={deck} onClose={() => setDeckOpen(false)} />}
