@@ -49,6 +49,8 @@ export { playMatch, randomStrawberryDeck } from './selfplay.ts';
 export { createHard } from './levels/hard.ts';
 export { createMaster } from './levels/master.ts';
 export { searchTurn } from './turn-search.ts';
+export { createValueEvaluator, valueFeatures, valueLayout, valueLogit } from './value.ts';
+export type { Evaluator, ValueModel } from './value.ts';
 export type { TurnSearchOptions, TurnSearchResult } from './turn-search.ts';
 export type { MatchOptions, MatchResult } from './selfplay.ts';
 export type { LethalOptions, LethalResult } from './lethal.ts';

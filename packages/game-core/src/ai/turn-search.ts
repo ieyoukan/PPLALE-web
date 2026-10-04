@@ -9,6 +9,7 @@ import { legalMoves } from './moves.ts';
 import type { Move } from './moves.ts';
 import { drawValue, evaluatePlan, orderPlan } from './planning.ts';
 import type { CpuDecision } from './types.ts';
+import type { Evaluator } from './value.ts';
 
 export interface TurnSearchOptions {
     /** Beam expansions, split fairly between actions/worlds; finishing rollouts have separate caps. */
@@ -21,6 +22,11 @@ export interface TurnSearchOptions {
     worlds?: number;
     /** Promising first actions; end and the one-step fallback are also considered. */
     candidates?: number;
+    /**
+     * Scores finished turns (the position at the start of the next turn) in place of `evaluatePlan`,
+     * e.g. a learned value (ai/value.ts). Moves inside a turn are still ordered by `evaluatePlan`.
+     */
+    evaluate?: Evaluator;
 }
 
 interface Line {
@@ -37,7 +43,10 @@ interface Planner {
     catalog: Catalog;
     replies: Map<string, number>;
     key(state: GameState): string;
+    /** Inside a turn. */
     value(state: GameState, side: Side): number;
+    /** A finished turn or match. */
+    leaf(state: GameState, side: Side): number;
     order(state: GameState, side: Side): number;
 }
 export interface TurnSearchResult {
@@ -61,18 +70,22 @@ function positionKey(s: GameState): string {
 }
 
 /** Simulated states are immutable. These caches live for one decision, never across real turns. */
-function planner(catalog: Catalog): Planner {
-    const keys = new WeakMap<GameState, string>(), values = new WeakMap<GameState, number>();
-    const value = (state: GameState, side: Side) => {
-        let score = values.get(state);
-        if (score === undefined) {
-            score = evaluatePlan(state, 0, catalog);
-            values.set(state, score);
-        }
-        return side === 0 ? score : -score;
+function planner(catalog: Catalog, evaluate?: Evaluator): Planner {
+    const keys = new WeakMap<GameState, string>();
+    const cached = (score: Evaluator) => {
+        const values = new WeakMap<GameState, number>();
+        return (state: GameState, side: Side) => {
+            let value = values.get(state);
+            if (value === undefined) {
+                value = score(state, 0, catalog);
+                values.set(state, value);
+            }
+            return side === 0 ? value : -value;
+        };
     };
+    const value = cached(evaluatePlan);
     return {
-        catalog, value, replies: new Map(),
+        catalog, value, leaf: evaluate ? cached(evaluate) : value, replies: new Map(),
         key(state) {
             let key = keys.get(state);
             if (key === undefined) { key = positionKey(state); keys.set(state, key); }
@@ -128,7 +141,7 @@ function finishLine(line: Line, actor: Side, turn: number, p: Planner): Line {
         }
         commands.push(command);
     }
-    return { state, commands, score: p.value(state, actor) };
+    return { state, commands, score: p.leaf(state, actor) };
 }
 
 /** Keep several completed plans per first action, so a safe alternative survives reply search. */
@@ -155,7 +168,7 @@ function turnLines(start: GameState, actor: Side, p: Planner, limits: Limits, in
             }
             const s = line.state;
             if (s.winner !== null || s.active !== actor || s.turn !== start.turn) {
-                save({ ...line, score: p.value(s, actor) });
+                save({ ...line, score: p.leaf(s, actor) });
                 continue;
             }
             const first = line.commands[0] && commandKey(line.commands[0]);
@@ -172,7 +185,7 @@ function turnLines(start: GameState, actor: Side, p: Planner, limits: Limits, in
                     score: p.order(move.next, actor),
                 };
                 if (move.next.winner !== null || move.next.active !== actor || move.next.turn !== start.turn)
-                    save({ ...child, score: p.value(move.next, actor) });
+                    save({ ...child, score: p.leaf(move.next, actor) });
                 else next.push(child);
             }
         }
@@ -186,7 +199,7 @@ function turnLines(start: GameState, actor: Side, p: Planner, limits: Limits, in
 
 /** Search each reply from the opponent's perspective and score its best resulting position. */
 function replyScore(line: Line, side: Side, p: Planner, limits: Limits) {
-    if (line.state.winner !== null) return { score: p.value(line.state, side), nodes: 0 };
+    if (line.state.winner !== null) return { score: p.leaf(line.state, side), nodes: 0 };
     const actor = other(side);
     // A pathological effect chain can outlive the mandatory-choice cap; do not call it a finished turn.
     if (line.state.active !== actor) return { score: p.value(line.state, side) - 30, nodes: 0 };
@@ -194,8 +207,8 @@ function replyScore(line: Line, side: Side, p: Planner, limits: Limits) {
     const cached = p.replies.get(key);
     if (cached !== undefined) return { score: cached, nodes: 0 };
     const reply = turnLines(line.state, actor, p, limits);
-    const scores = reply.lines.map(plan => p.value(plan.state, side));
-    const score = scores.length ? Math.min(...scores) : p.value(line.state, side);
+    const scores = reply.lines.map(plan => p.leaf(plan.state, side));
+    const score = scores.length ? Math.min(...scores) : p.leaf(line.state, side);
     p.replies.set(key, score);
     return { score, nodes: reply.nodes };
 }
@@ -209,7 +222,7 @@ export function searchTurn(d: CpuDecision, fallback: Move, options: TurnSearchOp
     const { state, side, catalog, moves } = d;
     if (state.phase !== 'playing' || state.active !== side || state.winner !== null)
         return { move: fallback, line: [fallback.command], score: evaluatePlan(state, side, catalog), nodes: 0, worlds: 0 };
-    const p = planner(catalog);
+    const p = planner(catalog, options.evaluate);
     const maxNodes = bounded(options.maxNodes, 2400, 100, 20000);
     const width = bounded(options.beamWidth, 4, 1, 32), depth = bounded(options.maxDepth, 14, 2, 32);
     const worldCount = bounded(options.worlds, 3, 1, 8), candidateCount = bounded(options.candidates, 4, 1, 12);

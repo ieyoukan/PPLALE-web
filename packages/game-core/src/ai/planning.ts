@@ -126,7 +126,7 @@ function resources(s: GameState, side: Side, catalog: Catalog): number {
 }
 
 /** Visible attack pressure. Actual trades, guards, shields and lethal are resolved in the search. */
-function pressure(s: GameState, side: Side, catalog: Catalog): number {
+export function pressure(s: GameState, side: Side, catalog: Catalog): number {
     const p = s.players[side], enemy = s.players[other(side)];
     const guarded = enemy.field.some(uid => s.cards[uid].keywords.includes('guard'));
     const attacks = p.field.flatMap(uid => {

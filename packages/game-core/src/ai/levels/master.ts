@@ -5,6 +5,8 @@ import { drawValue } from '../planning.ts';
 import { searchTurn } from '../turn-search.ts';
 import type { TurnSearchOptions } from '../turn-search.ts';
 import type { CpuStrategy } from '../types.ts';
+import { createValueEvaluator } from '../value.ts';
+import { valueModel } from '../value-model.ts';
 import { hard } from './hard.ts';
 
 /** Lethal search is bounded separately from the turn/reply search. */
@@ -35,4 +37,5 @@ export const createMaster = (options: TurnSearchOptions = {}): CpuStrategy => ({
         return hard.choose(d);
     },
 });
-export const master = createMaster();
+/** Finished turns are scored by the value learned from self-play (ai/value.ts), not `evaluatePlan`. */
+export const master = createMaster({ evaluate: createValueEvaluator(valueModel) });
