@@ -148,6 +148,8 @@ test('y_18 ぎってぃ: discards floor(d6/2) cards and scales its rewards with 
     s = play(s, hand(s)[0]);
     const x = Math.floor(Number(s.log.findLast(line => line.includes('ぎってぃのダイス')).match(/：(\d)/)[1]) / 2);
     seen.add(x);
+    // The roll is recorded for this command, so the board can show the die.
+    assert.deepEqual([s.effectRoll.revision, s.effectRoll.side, s.effectRoll.cardId, Math.floor(s.effectRoll.value / 2)], [s.revision, 0, 'y_18', x]);
     while (s.pending?.task.op === 'diceDiscard') s = choose(s, s.pending.options[0].id);
     s = draws(s);
     assert.equal(s.players[0].nap.length, x);

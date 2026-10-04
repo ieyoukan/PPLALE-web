@@ -4,7 +4,7 @@ import { addKeyword, buff, gainPp, hit, isRealSweet, maxPp, note, spawnCard } fr
 import { eat } from '../core/combat.ts';
 import { heal, losePoints } from '../core/points.ts';
 import type { PointLoss } from '../core/points.ts';
-import { random, shuffled } from '../core/rng.ts';
+import { random, rollDie, shuffled } from '../core/rng.ts';
 import { destroy, discard, summon } from '../core/zones.ts';
 import { other } from '../model.ts';
 import type { Catalog, DeckKind, Definition, GameState, Instance, Keyword, Player, Side, Task, TaskOp } from '../model.ts';
@@ -46,6 +46,8 @@ export interface Effects {
     gainPp(amount: number): void;
     maxPp(): number;
     random(size: number): number;
+    /** Rolls a six-sided die and records it so the UI can show the roll. */
+    rollDie(): number;
     note(text: string): void;
     defOf(uid: string): Definition;
     /** Whether `cardId` was played from hand earlier this game (not counting the current card). */
@@ -83,6 +85,11 @@ export function effects(s: GameState, catalog: Catalog, side: Side, source?: str
         gainPp: amount => gainPp(s, side, amount),
         maxPp: () => maxPp(s, side),
         random: size => random(s, size),
+        rollDie() {
+            const value = rollDie(s);
+            s.effectRoll = { revision: s.revision + 1, side, value, ...(source ? { cardId: s.cards[source]?.cardId } : {}) };
+            return value;
+        },
         note: text => note(s, text),
         defOf: uid => catalog[s.cards[uid].cardId],
         playedBefore: cardId => me.played.includes(cardId),

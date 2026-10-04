@@ -168,7 +168,6 @@
 .setupModes { display: flex; gap: 8px; margin: 18px 0; }
 .setupModes button { flex: 1; padding: 12px 8px; border: 1px solid #d9cab1; border-radius: 5px; background: #fffdf7; font-size: 12px; }
 .setupModes button[aria-pressed=true] { border-color: #a4bd98; background: #e9f1df; }
-.setupModes button:disabled { opacity: .55; }
 .setupModes small { display: block; font-size: 9px; color: #a08d75; margin-top: 4px; }
 .setupModeLabel { flex: 0 0 auto; align-self: center; min-width: 4.5em; font-size: 16px; color: #7a5967; }
 .deckSelectors { display: flex; flex-direction: column; gap: 12px; margin: 18px 0; }
@@ -236,6 +235,13 @@
 @keyframes hitFlash { 0% { opacity: 0; transform: scale(.2); } 12% { opacity: 1; transform: scale(1.35); } 30% { opacity: .9; transform: scale(1); } 100% { opacity: 0; transform: scale(1.15); } }
 @media (prefers-reduced-motion: reduce) { .hitNumber, .hitNumber::before, .hitBurst { animation: hitNumberFade 1s linear both; } .fallenCard { animation-duration: .01s; } }
 @keyframes hitNumberFade { 0%, 80% { opacity: 1; } 100% { opacity: 0; } }
+/* A die rolled by a card: over a dark veil, like the opening dice. */
+.effectDie { position: fixed; z-index: 165; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 18px; background: #000000a6; backdrop-filter: blur(4px); color: #fffdeb; pointer-events: none; animation: finaleFade .25s ease-out both; }
+.effectDie > span { font-size: clamp(20px, 2.6vw, 30px); font-weight: 700; text-shadow: 0 2px 8px #000; }
+.effectDie > strong { font-size: clamp(26px, 3.6vw, 44px); text-shadow: 0 3px 10px #000; animation: finaleFade .3s ease-out both; }
+/* The opponent's choice that has no card to point at (e.g. 1PP追加・2ダメージ). */
+.choiceNote { position: fixed; z-index: 160; left: 50%; top: 22%; transform: translateX(-50%); padding: 12px 28px; border: 2px solid #fffdeb; border-radius: 999px; background: #000000c7; color: #fffdeb; font-size: clamp(18px, 2.4vw, 28px); font-weight: 700; white-space: nowrap; box-shadow: 0 8px 20px #0008; pointer-events: none; animation: finaleFade .25s ease-out both; }
+@keyframes finaleFade { from { opacity: 0; } }
 @keyframes deckPulse { 50% { filter: drop-shadow(0 0 3px #75c497); } }
 @keyframes targetPulse { 50% { box-shadow: 0 0 4px #7fc69266; } }
 @keyframes diceRoll { 0% { transform: rotate(-13deg) translateY(0); } 50% { transform: rotate(12deg) translateY(-7px); } 100% { transform: rotate(-13deg) translateY(0); } }

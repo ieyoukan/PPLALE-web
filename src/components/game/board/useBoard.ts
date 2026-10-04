@@ -49,7 +49,7 @@ export function useBoard(container: RefObject<HTMLDivElement | null>) {
   // Nobody controls a replay: both sides are driven, like watching two CPUs.
   const cpuSides = useMemo<Side[]>(() => replaying ? [0, 1] : cpuSidesOf(mode), [mode, replaying]);
   const animations = useBoardAnimations({ game, view, mode, cpuSides, replaying, container });
-  const { run: animate, skipNext: skipAnimation, flights, strike, turnNotice, announcement, ping, blocked, order, busy: animating } = animations;
+  const { run: animate, skipNext: skipAnimation, flights, strike, turnNotice, announcement, ping, blocked, order, effectRoll, choiceNote, busy: animating } = animations;
   /** A human acts for this side (nobody does while watching two CPUs). */
   const canControl = useCallback((side: Side) => !cpuSides.includes(side), [cpuSides]);
 
@@ -68,7 +68,7 @@ export function useBoard(container: RefObject<HTMLDivElement | null>) {
   const busy = animating || rollingDice;
   useCpuPlayer({
     enabled: ready && !replaying && cpuSides.length > 0 && !loading && !paused, sides: cpuSides, levels, game, act, flights,
-    busy: { any: busy, blocking: rollingDice || !!strike || !!turnNotice || !!announcement || !!ping || !!blocked || !!order },
+    busy: { any: busy, blocking: rollingDice || !!strike || !!turnNotice || !!announcement || !!ping || !!blocked || !!order || !!effectRoll || !!choiceNote },
   });
 
   // ── Replay ──

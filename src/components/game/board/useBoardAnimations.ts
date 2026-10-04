@@ -7,6 +7,7 @@ import type { Command, DeckKind, GameState, Side } from '@pplale/game-core';
 import { displayCards, gameCatalog } from '@/lib/game/catalog';
 import { skillDescription } from '@/lib/game/skillText';
 import type { DrawFlight } from '../BoardPieces';
+import { DICE_THROW_DURATION } from '../OpeningDie';
 import { TURN_NOTICE_DURATION } from '../TurnAnnouncement';
 import type { TurnNotice } from '../TurnAnnouncement';
 import { sideLabel } from './useGameSession';
@@ -19,6 +20,10 @@ export type Announcement = { id: number; kind: 'play' | 'skill' | 'reveal'; side
 export type EffectBlockNotice = { id: number; targets: (Ping & { cardId: string; kind: 'damage' | 'destroy' })[] };
 /** Who goes first, shown once it is decided. */
 export type OrderNotice = { chooser: Side; first: Side };
+/** A die a card rolled (ぎってぃ): thrown, then its result is shown. */
+export type EffectRoll = { id: number; side: Side; value: number; cardId?: string; rolling: boolean };
+/** What the opponent picked when the choice is not a card on the table (e.g. paying extra PP). */
+export type ChoiceNote = { id: number; side: Side; label: string };
 /** End of the match: `wait` for the last animation, ゲームセット, the verdict; null shows the result screen. */
 export type Finale = 'wait' | 'set' | 'verdict' | null;
 /** Damage just taken by a unit or by a side's sweet points, shown large over it. */
@@ -35,6 +40,9 @@ const ANNOUNCE_DURATION = 2400;
 const PING_HIT = 700;
 const PING_DURATION = 1200;
 const HIT_DURATION = 1100;
+const ROLL_RESULT = 1300;
+const CHOICE_HIT = 1000;
+const CHOICE_DURATION = 1500;
 // A destroyed unit stays put while its damage shows, then is carried to its pile.
 const FALL_DELAY = 450;
 const FALL_REST = 350;
@@ -62,6 +70,8 @@ export function useBoardAnimations({ game, view, mode, cpuSides, replaying, cont
   const [order, setOrder] = useState<OrderNotice | null>(null);
   const [finale, setFinale] = useState<Finale>(null);
   const [hits, setHits] = useState<Hit[]>([]);
+  const [effectRoll, setEffectRoll] = useState<EffectRoll | null>(null);
+  const [choiceNote, setChoiceNote] = useState<ChoiceNote | null>(null);
   /** Where each unit was before the command, for units that are destroyed by it. */
   const unitRects = useRef(new Map<string, ReturnType<typeof rectOf>>());
   /** The command being applied, so its damage can be shown as an attack or as an effect. */
@@ -91,6 +101,13 @@ export function useBoardAnimations({ game, view, mode, cpuSides, replaying, cont
         setBlocked({ id: game.revision, targets });
         later(() => setBlocked(current => current?.id === game.revision ? null : current), 1200);
       }
+    }
+    // A card rolled a die in this command: throw it, then hold the result for a moment.
+    if (game.effectRoll && game.effectRoll.revision === game.revision) {
+      const roll = { id: game.revision, side: game.effectRoll.side, value: game.effectRoll.value, cardId: game.effectRoll.cardId, rolling: true };
+      setEffectRoll(roll);
+      later(() => setEffectRoll(current => current?.id === roll.id ? { ...current, rolling: false } : current), DICE_THROW_DURATION);
+      later(() => setEffectRoll(current => current?.id === roll.id ? null : current), DICE_THROW_DURATION + ROLL_RESULT);
     }
     // Damage taken: by units (also ones destroyed by it, at their last position) and by sweet points.
     const struck: Hit[] = [];
@@ -198,6 +215,17 @@ export function useBoardAnimations({ game, view, mode, cpuSides, replaying, cont
         later(() => setFlights(current => current.filter(f => !back.some(b => b.uid === f.uid))), DRAW_DURATION);
       }
     }
+    // The opponent picked an option that is not on the table (pay extra PP, skip …): say which.
+    const option = opponent && command.type === 'choose' && game.pending?.task.op !== 'draw'
+      && !root?.querySelector(`[data-unit="${command.option}"], [data-hand="${command.option}"]`)
+      ? game.pending?.options.find(o => o.id === command.option) : undefined;
+    if (option) {
+      const note = { id: ++choiceId, side: command.actor, label: option.label };
+      setChoiceNote(note);
+      later(apply, CHOICE_HIT);
+      later(() => setChoiceNote(current => current?.id === note.id ? null : current), CHOICE_DURATION);
+      return;
+    }
     const picked = opponent && command.type === 'choose' && root?.querySelector(`[data-unit="${command.option}"], [data-hand="${command.option}"]`);
     if (picked) {
       setPing({ uid: (command as Extract<Command, { type: 'choose' }>).option, ...rectOf(picked) });
@@ -234,14 +262,17 @@ export function useBoardAnimations({ game, view, mode, cpuSides, replaying, cont
     setOrder(null);
     setFinale(null);
     setHits([]);
+    setEffectRoll(null);
+    setChoiceNote(null);
   }, []);
   /** A tap moves on: ゲームセット → verdict → result screen. */
   const advanceFinale = useCallback(() => setFinale(current => current === 'set' ? 'verdict' : current === 'verdict' ? null : current), []);
 
-  return { flights, strike, turnNotice, announcement, ping, blocked, order, finale, hits, advanceFinale, busy: flights.length > 0 || !!strike || !!turnNotice || !!announcement || !!ping || !!blocked || !!order, run, skipNext, reset };
+  return { flights, strike, turnNotice, announcement, ping, blocked, order, finale, hits, effectRoll, choiceNote, advanceFinale, busy: flights.length > 0 || !!strike || !!turnNotice || !!announcement || !!ping || !!blocked || !!order || !!effectRoll || !!choiceNote, run, skipNext, reset };
 }
 
 let hitId = 0;
+let choiceId = 0;
 let announcementId = 0;
 /** What to show for the opponent's play / skill / reveal, or null for other commands. */
 function describe(game: GameState, command: Command): Announcement | null {

@@ -30,6 +30,7 @@ export function cloneState(s: GameState): GameState {
         pending: s.pending && cloneChoice(s.pending),
         log: [...s.log],
         ...(s.stall ? { stall: { ...s.stall } } : {}),
+        ...(s.effectRoll ? { effectRoll: { ...s.effectRoll } } : {}),
         ...(s.effectBlocks ? { effectBlocks: { revision: s.effectBlocks.revision, events: s.effectBlocks.events.map(event => ({ ...event })) } } : {}),
     };
 }

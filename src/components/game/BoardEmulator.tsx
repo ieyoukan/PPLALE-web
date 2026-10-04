@@ -16,6 +16,7 @@ import { Finale } from './table/Finale';
 import { ResultScreen } from './table/ResultScreen';
 import { PlayAnnouncement, TargetPing } from './table/PlayAnnouncement';
 import { EffectBlockAnnouncement } from './table/EffectBlockAnnouncement';
+import { EffectDie } from './table/EffectDie';
 import { OrderNotice } from './table/OrderNotice';
 import { PlayerSide } from './table/PlayerSide';
 import { TurnControl } from './table/TurnControl';
@@ -81,6 +82,7 @@ export default function BoardEmulator() {
       <ResultScreen />
       <PlayAnnouncement />
       <EffectBlockAnnouncement />
+      <EffectDie />
     </div>
   </BoardContext.Provider>;
 }

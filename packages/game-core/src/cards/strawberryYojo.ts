@@ -136,10 +136,10 @@ export const strawberryYojo: CardScripts = {
     // y_18 ぎってぃ: 1d6の半分の枚数を捨てる。1枚以上で相手の手札2枚をランダムに捨てさせ、2枚以上で突撃、3枚以上で2枚引く。
     y_18: {
         onPlay(ctx) {
-            const roll = ctx.random(6) + 1;
-            ctx.note(`ぎってぃのダイス：${roll}（${Math.floor(roll / 2)}枚捨てる）`);
+            const roll = ctx.rollDie(), count = Math.floor(roll / 2);
+            ctx.note(`ぎってぃのダイス：${roll}（${count ? `${count}枚捨てる` : '0枚なので何も起きない'}）`);
             // count: still to discard, amount: discarded so far.
-            ctx.queue('diceDiscard', { count: Math.floor(roll / 2), amount: 0 });
+            ctx.queue('diceDiscard', { count, amount: 0 });
         },
         ops: {
             diceDiscard: {

@@ -173,6 +173,8 @@ export interface GameState {
     stall?: { acted: boolean; idleTurns: number };
     /** Effect immunity outcomes from one command, for presentation; never changes legality. */
     effectBlocks?: { revision: number; events: { uid: string; kind: 'damage' | 'destroy' }[] };
+    /** A die a card rolled during one command (ぎってぃ), for presentation. */
+    effectRoll?: { revision: number; side: Side; value: number; cardId?: string };
 }
 
 export type Command =
