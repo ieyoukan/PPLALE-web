@@ -22,7 +22,13 @@ export interface StoredSession {
 }
 
 const STORAGE_KEY = 'pplale-game-session-v2';
-export const LOBBY_PATH = '/game/';
+/** The game's home: from here to solo play, battles and the cards. */
+export const HOME_PATH = '/game/';
+/** Preparation against the CPU (or watching two CPUs). */
+export const SOLO_PATH = '/game/solo/';
+/** Preparation of a match between people (same device now; rooms later). */
+export const BATTLE_PATH = '/game/battle/';
+export const CARDS_PATH = '/game/cards/';
 export const PLAY_PATH = '/game/play/';
 
 /** Sides the CPU plays in a mode. */
@@ -40,4 +46,13 @@ export function readSession(): { [K in keyof StoredSession]?: unknown } & { leve
     const raw = localStorage.getItem(STORAGE_KEY);
     return raw ? JSON.parse(raw) : null;
   } catch { return null; }
+}
+
+/** A short description of the unfinished saved match (for a "continue" link), or null without one. */
+export function describeSavedMatch(): string | null {
+  const saved = readSession();
+  const game = saved?.game as Partial<GameState> | undefined;
+  if (!game || game.winner !== null || !Array.isArray(game.players)) return null;
+  const mode = saved?.mode === 'watch' ? 'CPU同士を観戦' : saved?.mode === 'hotseat' ? 'ふたり対戦' : 'CPUと対戦';
+  return game.phase === 'playing' ? `${mode}・${game.turn}ターン目` : `${mode}・開始前`;
 }

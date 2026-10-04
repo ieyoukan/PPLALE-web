@@ -7,7 +7,7 @@ import type { RefObject } from 'react';
 import { useRouter } from 'next/navigation';
 import { gameCatalog } from '@/lib/game/catalog';
 import { useAuth } from '@/lib/auth';
-import { LOBBY_PATH } from '@/lib/game/sessionStore';
+import { HOME_PATH } from '@/lib/game/sessionStore';
 import { useBoardAnimations } from './useBoardAnimations';
 import { useCardDrag } from './useCardDrag';
 import type { DragSource } from './useCardDrag';
@@ -33,7 +33,7 @@ export function useBoard(container: RefObject<HTMLDivElement | null>) {
   const [panel, setPanel] = useState<Panel>(null);
   const router = useRouter();
   // No saved match (opened directly, or storage cleared): prepare one first.
-  const session = useGameSession({ onMissing: () => router.replace(LOBBY_PATH) });
+  const session = useGameSession({ onMissing: () => router.replace(HOME_PATH) });
   const { game, mode, levels, ready, error, saveError, canUndo, send, undo: undoCommand, replaying, replayNext, setup, canRematch, canReplay } = session;
   const { user } = useAuth();
   /** Names for the versus and result screens: the signed-in user's name for the human seat. */
@@ -180,9 +180,9 @@ export function useBoard(container: RefObject<HTMLDivElement | null>) {
   };
 
   // ── Session ──
-  /** Back to the preparation page. The match stays saved and can be resumed from there. */
+  /** Back to the game's home. The match stays saved and can be resumed from there. */
   function leave() {
-    router.push(LOBBY_PATH);
+    router.push(HOME_PATH);
   }
   /** Switching to another match (rematch, replay, back from a replay): nothing carries over. */
   function resetTable() {

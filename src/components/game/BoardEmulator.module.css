@@ -168,6 +168,7 @@
 .setupModes { display: flex; gap: 8px; margin: 18px 0; }
 .setupModes button { flex: 1; padding: 12px 8px; border: 1px solid #d9cab1; border-radius: 5px; background: #fffdf7; font-size: 12px; }
 .setupModes button[aria-pressed=true] { border-color: #a4bd98; background: #e9f1df; }
+.setupModes button:disabled { opacity: .55; }
 .setupModes small { display: block; font-size: 9px; color: #a08d75; margin-top: 4px; }
 .setupModeLabel { flex: 0 0 auto; align-self: center; min-width: 4.5em; font-size: 16px; color: #7a5967; }
 .deckSelectors { display: flex; flex-direction: column; gap: 12px; margin: 18px 0; }

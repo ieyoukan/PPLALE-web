@@ -10,8 +10,10 @@ import { useAuth } from '@/lib/auth';
 import { demoDeck, gameCatalog } from '@/lib/game/catalog';
 import type { SavedGameDeck } from '@/lib/game/savedDecks';
 import styles from './BoardEmulator.module.css';
-/** Mode, CPU levels and decks for a new match (the rules are fixed). Used by the preparation page. */
-export function GameSetup({ onStart }: {
+const modeNames: Record<Mode, string> = { cpu: 'CPUと対戦', watch: 'CPU同士を観戦', hotseat: 'この端末でふたり対戦' };
+/** Mode (among `modes`), CPU levels and decks for a new match (the rules are fixed). Used by the preparation pages. */
+export function GameSetup({ modes, onStart }: {
+    modes: Mode[];
     onStart: (match: { game: GameState; setup: MatchSetup; mode: Mode; levels: Levels }) => void;
 }) {
     const { user, signInWithGoogle } = useAuth();
@@ -19,7 +21,7 @@ export function GameSetup({ onStart }: {
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState('');
     const [selected, setSelected] = useState(['demo', 'demo']);
-    const [mode, setMode] = useState<Mode>('cpu');
+    const [mode, setMode] = useState<Mode>(modes[0]);
     const [levels, setLevels] = useState<Levels>(['normal', 'normal']);
     const setLevel = (side: Side, level: CpuLevel) => setLevels(previous => side === 0 ? [level, previous[1]] : [previous[0], level]);
     useEffect(() => {
@@ -57,7 +59,11 @@ export function GameSetup({ onStart }: {
         }
     }
     return <div className={styles.setupContent}>
-    <div className={styles.setupModes}><button aria-pressed={mode === 'cpu'} onClick={() => setMode('cpu')}>CPUと対戦</button><button aria-pressed={mode === 'hotseat'} onClick={() => setMode('hotseat')}>両側を操作</button><button aria-pressed={mode === 'watch'} onClick={() => setMode('watch')}>CPU同士を観戦</button></div>
+    <div className={styles.setupModes}>
+      {modes.map(id => <button key={id} aria-pressed={mode === id} onClick={() => setMode(id)}>{modeNames[id]}</button>)}
+      {/* Between people: rooms come later. */}
+      {modes.includes('hotseat') && <button disabled>ルームマッチ<small>準備中</small></button>}
+    </div>
     {/* One row per CPU side: the opponent against you, both sides when watching. */}
     {(mode === 'watch' ? [0, 1] as Side[] : mode === 'cpu' ? [1] as Side[] : []).map(side => <div key={side} className={styles.setupModes} role="group" aria-label={mode === 'watch' ? `${sideLabel(mode, side)}の強さ` : 'CPUの強さ'}>
       {mode === 'watch' && <span className={styles.setupModeLabel}>{sideLabel(mode, side)}</span>}

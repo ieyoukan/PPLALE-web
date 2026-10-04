@@ -1,10 +1,10 @@
 import type { Metadata } from 'next';
-import GameLobby from '@/components/game/GameLobby';
+import GameHome from '@/components/game/home/GameHome';
 export const metadata: Metadata = {
-    title: 'ぷぷりえーる ゲームの準備',
-    description: 'いちごカードと通常プレイアブルで、ぷぷりえーるの対戦を準備する。CPUと対戦、両側を操作、CPU同士の観戦を選べる。',
+    title: 'ぷぷりえーる ゲーム',
+    description: 'ぷぷりえーるのカードゲーム。CPUとの対決、ふたりでのバトル、カード図鑑とデッキ構築への入口。',
     alternates: { canonical: '/game/' },
 };
-export default function GamePage() {
-    return <GameLobby />;
+export default function Page() {
+    return <GameHome />;
 }
