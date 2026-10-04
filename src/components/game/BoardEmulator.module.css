@@ -196,6 +196,7 @@
 .flyingCard { position: absolute; transform-origin: top left; perspective: 650px; animation: drawFlight .8s cubic-bezier(.2,.65,.25,1) both; filter: drop-shadow(0 12px 8px #31202566); }
 .flippingCard, .faceDownCard { position: absolute; inset: 0; transform-style: preserve-3d; }
 .flippingCard { animation: drawFlip .8s ease-in-out both; }
+.unflippingCard { animation: drawFlip .8s ease-in-out both reverse; }
 .flightBack, .flightFront { position: absolute; inset: 0; display: block; border-radius: 3px; border: 1px solid #e5d1aa; backface-visibility: hidden; }
 .flightBack { background: url('/images/back-card.webp') center / 100% 100%; }
 .flightFront { transform: rotateY(180deg); background: #ffeac8; }
@@ -205,6 +206,17 @@
   100% { opacity: 1; transform: translate(var(--fly-x), var(--fly-y)) rotate(0) scale(var(--fly-scale-x), var(--fly-scale-y)); }
 }
 @keyframes drawFlip { 0%, 28% { transform: rotateY(0); } 72%, 100% { transform: rotateY(180deg); } }
+.drawHint { position: fixed; z-index: 75; left: 50%; top: 46%; transform: translate(-50%, -50%); padding: 8px 22px; border: 2px solid #fff0cb; border-radius: 999px; background: #5b4257e6; color: #fffaf0; font: clamp(16px, 2vw, 24px) 'BoardHandwriting', 'Yu Kyokasho', cursive; white-space: nowrap; pointer-events: none; box-shadow: 0 6px 16px #2a1b3066; }
+.orderNotice { position: fixed; z-index: 180; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: clamp(14px, 3vh, 30px); background: #251b2ccc; color: #fff4d8; font-family: 'BoardHandwriting', 'Yu Kyokasho', cursive; pointer-events: none; animation: orderNotice 2.6s ease-out both; }
+.orderNotice p { margin: 0; font-size: clamp(20px, 3vw, 36px); text-shadow: 0 2px 8px #1e1428; }
+.orderSides { display: flex; align-items: center; gap: clamp(12px, 3vw, 40px); }
+.orderSides > i { font-style: normal; font-size: clamp(20px, 3vw, 40px); color: #ffd9ea; }
+.orderSide { display: grid; place-items: center; gap: 6px; width: clamp(130px, 30vw, 320px); padding: clamp(14px, 3vh, 34px) 10px; border: 3px solid #fff1d3; border-radius: 28px; box-shadow: 0 7px 0 #0003, 0 14px 28px #130c1d66; }
+.orderSide span { font-size: clamp(18px, 2.6vw, 32px); }
+.orderSide strong { font-size: clamp(44px, 9vw, 110px); font-weight: 400; line-height: 1.1; }
+.orderFirst { background: #eac1d3; color: #704a61; }
+.orderSecond { background: #d7e7b9; color: #536749; }
+@keyframes orderNotice { 0% { opacity: 0; } 10%, 85% { opacity: 1; } 100% { opacity: 0; } }
 @keyframes deckPulse { 50% { filter: drop-shadow(0 0 3px #75c497); } }
 @keyframes targetPulse { 50% { box-shadow: 0 0 4px #7fc69266; } }
 @keyframes diceRoll { 0% { transform: rotate(-13deg) translateY(0); } 50% { transform: rotate(12deg) translateY(-7px); } 100% { transform: rotate(-13deg) translateY(0); } }

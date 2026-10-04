@@ -21,7 +21,7 @@ export function cloneState(s: GameState): GameState {
     return {
         ...s,
         openingRemaining: [s.openingRemaining[0], s.openingRemaining[1]],
-        mulligan: { eligible: [[...s.mulligan.eligible[0]], [...s.mulligan.eligible[1]]], confirmed: [s.mulligan.confirmed[0], s.mulligan.confirmed[1]], aside: [[...s.mulligan.aside[0]], [...s.mulligan.aside[1]]] },
+        mulligan: { eligible: [[...s.mulligan.eligible[0]], [...s.mulligan.eligible[1]]], confirmed: [s.mulligan.confirmed[0], s.mulligan.confirmed[1]] },
         dice: s.dice && { rolls: [s.dice.rolls[0], s.dice.rolls[1]], ties: s.dice.ties },
         rules: { ...s.rules },
         players: [clonePlayer(s.players[0]), clonePlayer(s.players[1])],

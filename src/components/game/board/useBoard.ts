@@ -86,11 +86,13 @@ export function useBoard(container: RefObject<HTMLDivElement | null>) {
   const adjust = (side: Side, resource: 'points' | 'ppBonus' | 'pp', delta: number) => act({ type: 'adjust', actor: side, resource, delta });
 
   function deckReady(side: Side, kind: DeckKind) {
-    if (game.phase === 'opening') return canControl(side) && !loading && !rollingDice && game.openingRemaining[side] > 0 && !flights.some(f => game.players[side].hand.includes(f.uid));
+    // Opening draws, and the redraws after giving cards back in the mulligan (once those have landed in the deck).
+    const redraw = game.phase === 'mulligan' && !game.mulligan.confirmed[side] && !flights.some(f => f.returning);
+    if (game.phase === 'opening' || redraw) return canControl(side) && !loading && !rollingDice && game.openingRemaining[side] > 0 && !flights.some(f => game.players[side].hand.includes(f.uid));
     return ours && !busy && !loading && pending!.actor === side && pending!.decks.includes(kind);
   }
   function clickDeck(side: Side, kind: DeckKind) {
-    if (game.phase === 'opening') act({ type: 'openingDraw', actor: side, deck: kind });
+    if (game.phase === 'opening' || game.phase === 'mulligan') act({ type: 'openingDraw', actor: side, deck: kind });
     else choose(kind);
   }
   /** Tap on a field slot: pick an effect target, attack, place the selected unit, or inspect. */
@@ -144,12 +146,11 @@ export function useBoard(container: RefObject<HTMLDivElement | null>) {
   const returning = me.hand.filter(uid => exchanges.includes(uid) && game.mulligan.eligible[view].includes(uid));
   const mulligan = {
     selected: returning,
-    /** Replacements still to draw after giving cards back; each from either deck. */
+    /** Replacements still to draw after giving cards back; each from either deck stack on the table. */
     remaining: game.phase === 'mulligan' && !game.mulligan.confirmed[view] ? game.openingRemaining[view] : 0,
     enabled: game.phase === 'mulligan' && !game.mulligan.confirmed[view] && canControl(view) && !game.pending && !rollingDice && !strike && !flights.some(f => me.hand.includes(f.uid)) && !loading,
     toggle: (uid: string, on: boolean) => setExchanges(current => on ? [...current.filter(id => id !== uid), uid] : current.filter(id => id !== uid)),
     confirm: () => act(returning.length ? { type: 'mulligan', actor: view, uids: returning } : { type: 'keep', actor: view }),
-    draw: (deck: DeckKind) => act({ type: 'openingDraw', actor: view, deck }),
   };
 
   // ── Session ──

@@ -152,11 +152,7 @@ export interface GameState {
     turnRules?: true;
     phase: Phase;
     openingRemaining: [number, number];
-    /**
-     * `aside`: opening cards given back for an exchange. They wait outside every zone while the
-     * replacements are drawn (`openingRemaining`), then go back into their decks.
-     */
-    mulligan: { eligible: [string[], string[]]; confirmed: [boolean, boolean]; aside: [string[], string[]] };
+    mulligan: { eligible: [string[], string[]]; confirmed: [boolean, boolean] };
     dice: { rolls: [number | null, number | null]; ties: number } | null;
     rules: Rules;
     rng: number;

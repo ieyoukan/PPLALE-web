@@ -69,9 +69,11 @@ export function Die({ value, rolling }: { value: number | null; rolling: boolean
 export interface DrawFlight {
   uid: string; cardId: string; face: boolean; from: { x: number; y: number; width: number; height: number };
   to: { x: number; y: number; width: number; height: number }; turn: boolean;
+  /** The card goes back into a deck: it starts face up (when `face`) and ends face down. */
+  returning?: boolean;
 }
 export function FlyingCard({ flight }: { flight: DrawFlight }) {
-  const { from, to, face, turn, cardId } = flight;
+  const { from, to, face, turn, cardId, returning } = flight;
   const css = {
     left: from.x, top: from.y, width: from.width, height: from.height,
     '--fly-x': `${to.x - from.x}px`, '--fly-y': `${to.y - from.y}px`,
@@ -79,7 +81,7 @@ export function FlyingCard({ flight }: { flight: DrawFlight }) {
     '--fly-start': turn ? '180deg' : '0deg',
   } as React.CSSProperties;
   return <div className={styles.flyingCard} data-draw-flight style={css} aria-hidden="true">
-    <div className={face ? styles.flippingCard : styles.faceDownCard}>
+    <div className={!face ? styles.faceDownCard : returning ? styles.unflippingCard : styles.flippingCard}>
       <span className={styles.flightBack} />
       {face && <span className={styles.flightFront}><GameCard id={cardId} /></span>}
     </div>

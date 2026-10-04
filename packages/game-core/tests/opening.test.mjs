@@ -192,7 +192,7 @@ test('opening gives the second player four cards and waits for both confirmation
   assert.equal(state.active, state.rules.firstPlayer);
 });
 
-test('mulligan gives cards back first, then redraws each from a chosen deck', () => {
+test('mulligan shuffles the cards back first, then redraws each from a chosen deck', () => {
   let state = roll(create());
   while (state.phase === 'opening') state = command(state, { type: 'openingDraw', actor: state.openingRemaining.findIndex(count => count > 0), deck: 'yojo' });
   const actor = state.active, original = [...state.players[actor].hand];
@@ -200,9 +200,10 @@ test('mulligan gives cards back first, then redraws each from a chosen deck', ()
   assert.ok(duplicate.error);
   assert.strictEqual(duplicate.state, state);
   state = command(state, { type: 'mulligan', actor, uids: original });
-  // The originals wait outside the decks while the replacements are drawn.
+  // The originals are back in their deck before anything is redrawn.
   assert.deepEqual(state.players[actor].hand, []);
-  assert.deepEqual(state.mulligan.aside[actor], original);
+  assert.ok(original.every(uid => state.players[actor].yojo.includes(uid)));
+  assert.equal(state.players[actor].yojo.length, 20);
   assert.equal(state.openingRemaining[actor], original.length);
   assert.equal(state.mulligan.confirmed[actor], false);
   assert.ok(applyCommand(state, { type: 'keep', actor }, catalog).error);
@@ -213,12 +214,10 @@ test('mulligan gives cards back first, then redraws each from a chosen deck', ()
   original.forEach((_, i) => { state = command(state, { type: 'openingDraw', actor, deck: i === 0 ? 'yojo' : 'sweet' }); });
   assert.equal(state.pending, null);
   assert.equal(state.players[actor].hand.length, original.length);
-  assert.ok(original.every(uid => !state.players[actor].hand.includes(uid) && state.players[actor].yojo.includes(uid)));
   assert.equal(state.players[actor].hand.filter(uid => catalog[state.cards[uid].cardId].type === 'sweet').length, original.length - 1);
   const ids = ['hand', 'yojo', 'sweet'].flatMap(zone => state.players[actor][zone]);
   assert.equal(ids.length, 30);
   assert.equal(new Set(ids).size, 30);
-  assert.deepEqual(state.mulligan.aside[actor], []);
   assert.equal(state.mulligan.confirmed[actor], true);
   assert.deepEqual(state.mulligan.eligible[actor], []);
   state = restoreGame(JSON.parse(JSON.stringify(state)), catalog);

@@ -11,12 +11,12 @@ type Zone = 'swap' | 'keep';
 type Drag = { uid: string; x: number; y: number; offsetX: number; offsetY: number; moved: boolean; width: number };
 
 /**
- * Opening hand exchange in two steps: move the cards to give back (of either kind) to the top and
- * confirm; then draw that many replacements, each from the deck of your choice.
+ * Opening hand exchange: move the cards to give back (of either kind) to the top and confirm.
+ * They return to their decks and the replacements are then drawn from the deck stacks on the table.
  */
-export function MulliganBoard({ cards, selected, remaining, deckCounts, enabled, confirmed, onToggle, onConfirm, onDraw }: {
-  cards: Card[]; selected: string[]; remaining: number; deckCounts: Record<DeckKind, number>; enabled: boolean; confirmed: boolean;
-  onToggle: (uid: string, swap: boolean) => void; onConfirm: () => void; onDraw: (deck: DeckKind) => void;
+export function MulliganBoard({ cards, selected, enabled, confirmed, onToggle, onConfirm }: {
+  cards: Card[]; selected: string[]; enabled: boolean; confirmed: boolean;
+  onToggle: (uid: string, swap: boolean) => void; onConfirm: () => void;
 }) {
   const stage = useRef<HTMLDivElement>(null);
   const gesture = useRef<Drag | null>(null);
@@ -31,7 +31,6 @@ export function MulliganBoard({ cards, selected, remaining, deckCounts, enabled,
     observer.observe(element);
     return () => observer.disconnect();
   }, []);
-  const drawing = remaining > 0;
   const zoneOf = (card: Card): Zone => selected.includes(card.uid) ? 'swap' : 'keep';
   const groups: Record<Zone, Card[]> = { swap: [], keep: [] };
   for (const card of cards) groups[zoneOf(card)].push(card);
@@ -52,7 +51,7 @@ export function MulliganBoard({ cards, selected, remaining, deckCounts, enabled,
     if (y - rect.top < rect.height * 0.45) return 'swap';
     return y - rect.top >= rect.height * 0.51 ? 'keep' : null;
   }
-  const movable = enabled && !drawing;
+  const movable = enabled;
   function pickUp(event: PointerEvent<HTMLButtonElement>, card: Card) {
     if (!movable || event.button !== 0) return;
     const rect = event.currentTarget.getBoundingClientRect();
@@ -79,22 +78,12 @@ export function MulliganBoard({ cards, selected, remaining, deckCounts, enabled,
   }
   return <section className={styles.overlay} aria-label="初期手札の交換">
     <div ref={stage} className={styles.stage} onPointerMove={move} onPointerUp={release} onPointerCancel={() => { gesture.current = null; setDrag(null); setHover(null); }}>
-      {drawing
-        // Step 2: one replacement per press, from either deck.
-        ? <div className={styles.destinations}>{(['yojo', 'sweet'] as const).map(deck => <button key={deck} data-mulligan-deck={deck}
-          className={`${styles.zone} ${styles.deckChoice} ${deck === 'yojo' ? styles.yojo : styles.sweet}`}
-          disabled={!enabled || !deckCounts[deck]} onClick={() => onDraw(deck)}>
-          <h2>{deck === 'yojo' ? '幼女から引く' : 'お菓子から引く'}</h2>
-          <span className={styles.deckBack} aria-hidden="true" />
-          <small>残り{deckCounts[deck]}枚</small>
-        </button>)}</div>
-        // Step 1: the cards to give back, whatever their kind.
-        : <div className={styles.destinations}><div data-mulligan-zone="swap" className={`${styles.zone} ${styles.swap} ${hover === 'swap' ? styles.hovered : ''}`}>
-          <h2>交換する</h2>
-          {!groups.swap.length && <span className={styles.emptySwap} aria-hidden="true">↻</span>}
-        </div></div>}
-      <div data-mulligan-zone="keep" className={`${styles.keep} ${hover === 'keep' ? styles.hovered : ''}`}><h2>{drawing ? `あと${remaining}枚引く` : '手札'}</h2></div>
-      {!drawing && <span className={styles.upArrow} aria-hidden="true">⌃</span>}
+      <div className={styles.destinations}><div data-mulligan-zone="swap" className={`${styles.zone} ${styles.swap} ${hover === 'swap' ? styles.hovered : ''}`}>
+        <h2>交換する</h2>
+        {!groups.swap.length && <span className={styles.emptySwap} aria-hidden="true">↻</span>}
+      </div></div>
+      <div data-mulligan-zone="keep" className={`${styles.keep} ${hover === 'keep' ? styles.hovered : ''}`}><h2>手札</h2></div>
+      <span className={styles.upArrow} aria-hidden="true">⌃</span>
       {cards.map(card => {
         const placed = position(card), held = drag?.uid === card.uid, swap = zoneOf(card) === 'swap';
         const x = held ? drag.x - drag.offsetX : placed.x;
@@ -111,7 +100,7 @@ export function MulliganBoard({ cards, selected, remaining, deckCounts, enabled,
       })}
     </div>
     <div className={styles.controls}>
-      <button className={styles.confirm} disabled={!enabled || drawing || !!drag} onClick={onConfirm}
+      <button className={styles.confirm} disabled={!enabled || !!drag} onClick={onConfirm}
         aria-label={confirmed ? '手札確定済み' : groups.swap.length ? `${groups.swap.length}枚を交換` : '交換せずに決定'}>{confirmed ? '✓' : groups.swap.length ? '交換' : '決定'}</button>
       {confirmed && <span className={styles.waiting} role="status" aria-label="相手の準備を待っています"><i /><i /><i /></span>}
     </div>

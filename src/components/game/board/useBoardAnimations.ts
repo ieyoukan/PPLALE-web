@@ -17,6 +17,8 @@ export type Strike = { uid: string; cardId: string; x: number; y: number; dx: nu
 export type Announcement = { id: number; kind: 'play' | 'skill' | 'reveal'; side: Side; cardId: string; title: string; text: string };
 /** Immunity outcomes to present after a command resolves. */
 export type EffectBlockNotice = { id: number; targets: (Ping & { cardId: string; kind: 'damage' | 'destroy' })[] };
+/** Who goes first, shown after a CPU chose. */
+export type OrderNotice = { chooser: Side; first: Side };
 /** The card the opponent picked for an effect. */
 export type Ping = { uid: string; x: number; y: number; width: number; height: number };
 
@@ -28,6 +30,7 @@ const ANNOUNCE_HIT = 1900;
 const ANNOUNCE_DURATION = 2400;
 const PING_HIT = 700;
 const PING_DURATION = 1200;
+export const ORDER_NOTICE_DURATION = 2600;
 const rectOf = (element: Element) => {
   const { x, y, width, height } = element.getBoundingClientRect();
   return { x, y, width, height };
@@ -44,6 +47,7 @@ export function useBoardAnimations({ game, view, mode, cpuSides, container }: { 
   const [announcement, setAnnouncement] = useState<Announcement | null>(null);
   const [ping, setPing] = useState<Ping | null>(null);
   const [blocked, setBlocked] = useState<EffectBlockNotice | null>(null);
+  const [order, setOrder] = useState<OrderNotice | null>(null);
   const previous = useRef(game);
   const enabled = useRef(false);
   const timers = useRef<ReturnType<typeof setTimeout>[]>([]);
@@ -85,6 +89,11 @@ export function useBoardAnimations({ game, view, mode, cpuSides, container }: { 
       setFlights(current => [...current, ...next]);
       later(() => setFlights(current => current.filter(f => !next.some(n => n.uid === f.uid))), DRAW_DURATION);
     }
+    // A CPU decided who goes first: show both sides' order before the opening draws.
+    if (old.phase === 'initiative' && game.phase === 'opening' && cpuSides.includes(old.active)) {
+      setOrder({ chooser: old.active, first: game.rules.firstPlayer });
+      later(() => setOrder(null), ORDER_NOTICE_DURATION);
+    }
     const beginsTurn = game.phase === 'playing' && (old.phase !== 'playing' || old.turn !== game.turn);
     if (beginsTurn) {
       const announce = () => {
@@ -94,7 +103,7 @@ export function useBoardAnimations({ game, view, mode, cpuSides, container }: { 
       if (next.length) later(announce, DRAW_DURATION);
       else announce();
     }
-  }, [game, view, mode, container, later]);
+  }, [game, view, mode, cpuSides, container, later]);
   useEffect(() => () => timers.current.forEach(clearTimeout), []);
 
   /**
@@ -112,6 +121,19 @@ export function useBoardAnimations({ game, view, mode, cpuSides, container }: { 
       later(apply, ANNOUNCE_HIT);
       later(() => setAnnouncement(current => current?.id === shown.id ? null : current), ANNOUNCE_DURATION);
       return;
+    }
+    // Mulligan: the cards given back fly from the hand into their decks.
+    if (command.type === 'mulligan' && root) {
+      const back: DrawFlight[] = command.uids.flatMap(uid => {
+        const kind = gameCatalog[game.cards[uid]?.cardId]?.type;
+        const source = root.querySelector(`[data-hand="${uid}"]`);
+        const target = root.querySelector(`[data-deck="${command.actor}-${kind}"] [data-stack]`) ?? root.querySelector(`[data-deck="${command.actor}-${kind}"]`);
+        return source && target ? [{ uid, cardId: game.cards[uid].cardId, face: command.actor === view, turn: false, returning: true, from: rectOf(source), to: rectOf(target) }] : [];
+      });
+      if (back.length) {
+        setFlights(current => [...current, ...back]);
+        later(() => setFlights(current => current.filter(f => !back.some(b => b.uid === f.uid))), DRAW_DURATION);
+      }
     }
     const picked = opponent && command.type === 'choose' && root?.querySelector(`[data-unit="${command.option}"], [data-hand="${command.option}"]`);
     if (picked) {
@@ -146,9 +168,10 @@ export function useBoardAnimations({ game, view, mode, cpuSides, container }: { 
     setAnnouncement(null);
     setPing(null);
     setBlocked(null);
+    setOrder(null);
   }, []);
 
-  return { flights, strike, turnNotice, announcement, ping, blocked, busy: flights.length > 0 || !!strike || !!turnNotice || !!announcement || !!ping || !!blocked, run, skipNext, reset };
+  return { flights, strike, turnNotice, announcement, ping, blocked, order, busy: flights.length > 0 || !!strike || !!turnNotice || !!announcement || !!ping || !!blocked || !!order, run, skipNext, reset };
 }
 
 let announcementId = 0;

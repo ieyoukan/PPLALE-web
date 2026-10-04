@@ -14,6 +14,7 @@ import { HandDock, SelectedCard } from './table/HandDock';
 import { AnimationLayer, HeldCard, ResultBanner } from './table/Overlays';
 import { PlayAnnouncement, TargetPing } from './table/PlayAnnouncement';
 import { EffectBlockAnnouncement } from './table/EffectBlockAnnouncement';
+import { OrderNotice } from './table/OrderNotice';
 import { PlayerSide } from './table/PlayerSide';
 import { TurnControl } from './table/TurnControl';
 import { displayCards, gameCatalog } from '@/lib/game/catalog';
@@ -63,15 +64,17 @@ export default function BoardEmulator() {
       </div>}
       <HandDock />
       <SelectedCard />
-      {game.phase === 'mulligan' && !game.pending && <MulliganBoard key={view}
+      {/* While the replacements are drawn the table itself is used: the decks glow and the hand shows. */}
+      {mulligan.remaining > 0 && board.canControl(view) && <div className={styles.drawHint} role="status">あと{mulligan.remaining}枚、好きな山札から引く</div>}
+      {game.phase === 'mulligan' && !game.pending && mulligan.remaining === 0 && <MulliganBoard key={view}
         cards={me.hand.map(uid => ({ uid, id: game.cards[uid].cardId, name: displayCards[game.cards[uid].cardId].name, deck: gameCatalog[game.cards[uid].cardId].type as DeckKind }))}
-        selected={mulligan.selected} remaining={mulligan.remaining} deckCounts={{ yojo: me.yojo.length, sweet: me.sweet.length }}
-        enabled={mulligan.enabled} confirmed={game.mulligan.confirmed[view]}
-        onToggle={mulligan.toggle} onConfirm={mulligan.confirm} onDraw={mulligan.draw} />}
+        selected={mulligan.selected} enabled={mulligan.enabled} confirmed={game.mulligan.confirmed[view]}
+        onToggle={mulligan.toggle} onConfirm={mulligan.confirm} />}
       <SidePanel />
       <HeldCard />
       <AnimationLayer />
       <TargetPing />
+      <OrderNotice />
       <PlayAnnouncement />
       <EffectBlockAnnouncement />
     </div>
