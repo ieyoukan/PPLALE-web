@@ -220,8 +220,8 @@
   100% { opacity: 1; transform: translate(var(--fly-x), var(--fly-y)) rotate(0) scale(var(--fly-scale-x), var(--fly-scale-y)); }
 }
 @keyframes drawFlip { 0%, 28% { transform: rotateY(0); } 72%, 100% { transform: rotateY(180deg); } }
-.drawHint { position: fixed; z-index: 75; left: 50%; top: 46%; transform: translate(-50%, -50%); padding: 8px 22px; border: 2px solid #fffdeb; border-radius: 999px; background: #a88667f2; color: #fffdeb; font: clamp(16px, 2vw, 24px) 'BoardHandwriting', 'Yu Kyokasho', cursive; white-space: nowrap; pointer-events: none; box-shadow: 0 6px 16px #2a1b3066; }
-.replayBadge { position: fixed; z-index: 135; top: 16px; left: 16px; display: flex; align-items: center; gap: 10px; padding: 6px 8px 6px 16px; border: 2px solid #fffdeb; border-radius: 999px; background: #a88667f2; color: #fffdeb; font-size: 16px; box-shadow: 0 6px 16px #2a1b3066; }
+.drawHint { position: fixed; z-index: 75; left: 50%; top: 46%; transform: translate(-50%, -50%); padding: 8px 22px; border: 1px solid #fffdeb88; border-radius: 999px; background: #000000b3; color: #fffdeb; font: clamp(16px, 2vw, 24px) 'BoardHandwriting', 'Yu Kyokasho', cursive; white-space: nowrap; pointer-events: none; box-shadow: 0 6px 16px #2a1b3066; }
+.replayBadge { position: fixed; z-index: 135; top: 16px; left: 16px; display: flex; align-items: center; gap: 10px; padding: 6px 8px 6px 16px; border: 1px solid #fffdeb88; border-radius: 999px; background: #000000b3; color: #fffdeb; font-size: 16px; box-shadow: 0 6px 16px #2a1b3066; }
 .replayBadge button { padding: 6px 14px; border-radius: 999px; background: #fffdeb; color: #6b4a3a; font-size: 15px; }
 @media (max-height: 500px) { .replayBadge { top: 6px; left: 8px; font-size: 14px; } }
 .hitNumber { position: fixed; z-index: 160; display: grid; place-items: center; width: clamp(96px, 12vw, 170px); aspect-ratio: 1; transform: translate(-50%, -50%); font: 700 clamp(60px, 8vw, 116px) / 1 Georgia, 'Times New Roman', serif; color: #d9232e; -webkit-text-stroke: 4px #fff; paint-order: stroke fill; pointer-events: none; animation: hitNumber 1s ease-out both; }
@@ -384,7 +384,7 @@
 
 
 
-.diceFocus { position: fixed; z-index: 120; inset: 0; display: grid; place-items: center; background: #251b2ccc; backdrop-filter: blur(5px); }
+.diceFocus { position: fixed; z-index: 120; inset: 0; display: grid; place-items: center; background: #000000a6; backdrop-filter: blur(5px); }
 .diceStage { position: relative; display: flex; flex-direction: column; align-items: center; gap: 36px; padding: 24px; color: #fff4d8; text-align: center; }
 .focusDie { display: flex; flex-direction: column; align-items: center; gap: 28px; padding: 24px; transition: opacity .3s, filter .3s; }
 .focusDie > span:first-child { font-size: 28px; font-weight: 700; }
