@@ -129,3 +129,16 @@ export function createValueEvaluator(m: ValueModel): Evaluator {
         return side === 0 ? logit : -logit;
     };
 }
+
+/** A model from outside this build (the CPU server). Null unless it fits this build's features. */
+export function parseValueModel(value: unknown): ValueModel | null {
+    const m = value as Partial<ValueModel> | null;
+    if (!m || typeof m !== 'object' || m.inputs !== valueLayout.inputs) return null;
+    const hidden = m.hidden;
+    if (typeof hidden !== 'number' || !Number.isInteger(hidden) || hidden < 1 || hidden > 256) return null;
+    const numbers = (list: unknown, length: number): list is number[] =>
+        Array.isArray(list) && list.length === length && list.every(n => typeof n === 'number' && Number.isFinite(n));
+    if (!numbers(m.first, m.inputs * hidden) || !numbers(m.bias, hidden) || !numbers(m.out, hidden) || !numbers(m.linear, m.inputs)) return null;
+    if (typeof m.scale !== 'number' || !Number.isFinite(m.scale) || m.scale <= 0) return null;
+    return { inputs: m.inputs, hidden, first: m.first, bias: m.bias, out: m.out, linear: m.linear, scale: m.scale };
+}

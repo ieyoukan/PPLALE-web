@@ -17,6 +17,10 @@
       "types": "./src/ai/index.ts",
       "default": "./src/ai/index.ts"
     },
+    "./train": {
+      "types": "./src/ai/value-train.ts",
+      "default": "./src/ai/value-train.ts"
+    },
     "./snapshot": {
       "types": "./src/snapshot.ts",
       "default": "./src/snapshot.ts"
