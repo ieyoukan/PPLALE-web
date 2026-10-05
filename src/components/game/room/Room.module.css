@@ -2,10 +2,14 @@
 .stack { display: grid; gap: clamp(14px, 2vw, 22px); }
 /* The entrance: what room matches are on the left; on the right three large doors, one under the other (watch / enter / make). */
 .entrance { display: grid; grid-template-columns: minmax(210px, 1fr) minmax(0, 2.6fr); gap: clamp(14px, 2.4vw, 28px); align-items: center; }
-.intro { display: grid; gap: 12px; justify-items: center; text-align: center; color: #6b4a3a; }
-.intro h2 { width: 100%; padding-bottom: 10px; border-bottom: 2px solid #a8866766; font-size: clamp(20px, 2.2vw, 28px); font-weight: 700; letter-spacing: .08em; white-space: nowrap; }
+/* Nothing in it may reach into the doors: long lines wrap. */
+.intro { display: grid; gap: 12px; justify-items: center; min-width: 0; text-align: center; color: #6b4a3a; overflow-wrap: anywhere; }
+.intro > * { min-width: 0; max-width: 100%; }
+.intro h2 { width: 100%; padding-bottom: 10px; border-bottom: 2px solid #a8866766; font-size: clamp(20px, 2.2vw, 28px); font-weight: 700; letter-spacing: .08em; }
 .intro > p { font-size: 16px; line-height: 1.8; }
-.intro .server { width: 100%; padding: 10px 12px; text-align: left; font-size: 13px; white-space: nowrap; }
+.intro .server { width: 100%; padding: 10px 12px; text-align: left; font-size: 13px; line-height: 1.6; }
+.intro .server dl div { flex-wrap: wrap; gap: 0 12px; }
+.intro .server dd { margin-left: auto; text-align: right; }
 .intro .server small { display: block; margin: 2px 0 0 18px; }
 .intro .secondary { font-size: 15px; min-height: 44px; padding: 8px 16px; }
 .doors { display: grid; gap: clamp(10px, 1.6vw, 16px); }
