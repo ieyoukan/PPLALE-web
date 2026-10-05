@@ -1,0 +1,83 @@
+# ルームは1つのプロセスのメモリに持ち、同じ内容を1つのボリュームにファイルで残すので、常に1レプリカで動かす。
+
+image:
+  repository: ghcr.io/ieyoukan/pplale-room-server
+  # 実際にどのタグをデプロイするかは Argo CD Image Updater が決める
+  # (update-strategy: semver, allow-tags: ^[0-9]+\.[0-9]+\.[0-9]+$)。
+  # room-server-image.yml が main への push のたびに <major>.<minor>.<patch> 形式のタグを push する。
+  # ここは Argo CD 管理下にない手動 helm install 時のフォールバック。
+  tag: ""
+  pullPolicy: IfNotPresent
+
+imagePullSecrets: []
+nameOverride: ""
+fullnameOverride: ""
+
+service:
+  type: ClusterIP
+  port: 80
+
+# ゲーム (ブラウザ) から直接つながるので、外から届く URL が必要 (HTTP と WebSocket の両方)。
+# その URL を Web アプリの NEXT_PUBLIC_ROOM_SERVER_URL に設定する。
+ingress:
+  enabled: false
+  className: ""
+  annotations: {}
+  hosts:
+    - host: pplale-room.youkan.uk
+      paths:
+        - path: /
+          pathType: Prefix
+  tls: []
+
+# ブラウザからの呼び出しと WebSocket 接続を許す Web アプリのオリジン。"*" を入れるとどこからでも許す。
+allowedOrigins:
+  - https://pplale.vercel.app
+
+# 1つの送信元から1時間に受け付ける「ルームを作る・入る・調べる」の回数
+# (ルームIDの総当たりを抑える)。対戦中の操作は数えない。送信元のアドレスは保存しない。
+requestsPerHour: 120
+# Ingress / Tunnel の後ろで X-Forwarded-For から送信元を読む。
+trustProxy: true
+# 同時に持つルームの上限。超えると新しいルームを作れない。
+maxRooms: 500
+# だれも操作しなくなってからこの時間が過ぎたルームを消す。
+roomIdleHours: 12
+
+persistence:
+  enabled: true
+  # 空ならクラスタのデフォルト。自宅クラスタでは proxmox-data。
+  storageClass: ""
+  # 1ルームは数十KB。
+  size: 1Gi
+  existingClaim: ""
+
+# 対戦の処理は1手あたり数ミリ秒。
+resources:
+  requests:
+    cpu: 50m
+    memory: 128Mi
+  limits:
+    cpu: "1"
+    memory: 512Mi
+
+podSecurityContext:
+  runAsNonRoot: true
+  runAsUser: 65532
+  runAsGroup: 65532
+  fsGroup: 65532
+  seccompProfile:
+    type: RuntimeDefault
+
+securityContext:
+  allowPrivilegeEscalation: false
+  readOnlyRootFilesystem: true
+  capabilities:
+    drop:
+      - ALL
+
+nodeSelector: {}
+tolerations: []
+affinity: {}
+
+extraEnv: []

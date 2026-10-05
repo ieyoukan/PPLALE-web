@@ -35,15 +35,6 @@ service cloud.firestore {
       allow delete: if isOwner(userId);
     }
 
-    // ルームマッチ: 各プレイヤー用の盤面（相手の手札・山札を伏せたもの）。
-    // ドキュメントIDが推測不可能な鍵になっており、その席のブラウザだけが知っている。
-    // IDを知っていれば読めるが（get）、一覧（list）はできない。書き込みはサーバー（Admin SDK）のみ。
-    // ルーム本体（rooms/{roomId}：両者のデッキと完全な盤面）は下の全拒否ルールでサーバー専用。
-    match /roomViews/{viewKey} {
-      allow get: if true;
-      allow list, write: if false;
-    }
-
     // その他のドキュメントへのアクセスは拒否
     match /{document=**} {
       allow read, write: if false;

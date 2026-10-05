@@ -1,8 +1,8 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { describeRoomRules } from '@/lib/game/room/rules';
-import type { RoomRules } from '@/lib/game/room/rules';
+import { describeRoomRules } from '@pplale/game-core/room';
+import type { RoomRules } from '@pplale/game-core/room';
 import { ROOM_PATH, roomHref } from '@/lib/game/sessionStore';
 import styles from './Room.module.css';
 

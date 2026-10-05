@@ -4,7 +4,8 @@
   "private": true,
   "workspaces": [
     "packages/game-core",
-    "services/cpu-server"
+    "services/cpu-server",
+    "services/room-server"
   ],
   "engines": {
     "node": ">=22.23.2 <23"
@@ -22,6 +23,7 @@
     "typecheck": "tsc --noEmit",
     "test:game": "npm run test --workspace=@pplale/game-core",
     "test:cpu-server": "npm run test --workspace=@pplale/cpu-server",
+    "test:room-server": "npm run test --workspace=@pplale/room-server",
     "cpu:arena": "npm run arena --workspace=@pplale/game-core --",
     "cpu:train": "npm run train --workspace=@pplale/game-core --",
     "cpu:deck": "npm run deck --workspace=@pplale/game-core --",

@@ -21,6 +21,10 @@
       "types": "./src/ai/value-train.ts",
       "default": "./src/ai/value-train.ts"
     },
+    "./room": {
+      "types": "./src/room.ts",
+      "default": "./src/room.ts"
+    },
     "./snapshot": {
       "types": "./src/snapshot.ts",
       "default": "./src/snapshot.ts"

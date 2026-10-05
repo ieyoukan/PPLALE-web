@@ -5,10 +5,9 @@ import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/lib/auth';
-import { createRoom, keepSeat, latestRoom } from '@/lib/game/room/client';
-import { defaultRoomRules, fruitNames, fruits, playableNow } from '@/lib/game/room/rules';
-import type { Fruit, RoomRules } from '@/lib/game/room/rules';
-import { MAX_NAME_LENGTH, ROOM_ID_LENGTH, isRoomId } from '@/lib/game/room/types';
+import { createRoom, keepSeat, latestRoom, readServerStats, roomServerUrl } from '@/lib/game/room/client';
+import { MAX_NAME_LENGTH, ROOM_ID_LENGTH, defaultRoomRules, fruitNames, fruits, isRoomId, playableNow } from '@pplale/game-core/room';
+import type { Fruit, RoomRules, RoomServerStats } from '@pplale/game-core/room';
 import { ROOM_PATH, roomHref } from '@/lib/game/sessionStore';
 import tiles from '../home/CardsMenu.module.css';
 import styles from './Room.module.css';
@@ -38,6 +37,39 @@ export function NameField({ name, onChange }: { name: string; onChange: (name: s
   </label>;
 }
 
+/** Whether the room server can be reached and how busy it is, asked now and every half minute. */
+function useServerStats() {
+  // undefined: asking. null: no answer.
+  const [stats, setStats] = useState<RoomServerStats | null>();
+  useEffect(() => {
+    if (!roomServerUrl) return setStats(null);
+    let current = true;
+    const ask = () => readServerStats().then(result => { if (current) setStats(result); }, () => { if (current) setStats(null); });
+    void ask();
+    const timer = setInterval(ask, 30_000);
+    return () => { current = false; clearInterval(timer); };
+  }, []);
+  return stats;
+}
+const duration = (seconds: number) => seconds < 3600 ? `${Math.max(1, Math.round(seconds / 60))}分` : seconds < 86400 ? `${Math.round(seconds / 3600)}時間` : `${Math.round(seconds / 86400)}日`;
+
+/** One line about the room server, with the details behind it for when something seems off. */
+function ServerStatus({ stats }: { stats: RoomServerStats | null | undefined }) {
+  if (stats === undefined) return <p className={styles.server} role="status"><i className={styles.dot} />ルームサーバーを確認中…</p>;
+  if (!stats) return <p className={`${styles.server} ${styles.serverDown}`} role="status"><i className={styles.dot} />
+    {roomServerUrl ? 'ルームサーバーにつながりません。しばらくしてからお試しください。' : 'ルームサーバーが設定されていないため、ルームマッチは使えません。'}</p>;
+  const { rooms, connections, since, uptime, version } = stats;
+  return <details className={`${styles.server} ${styles.serverUp}`}>
+    <summary role="status"><i className={styles.dot} />ルームサーバー：稼働中<small>対戦中 {rooms.playing}・募集中 {rooms.lobby}</small></summary>
+    <dl>
+      <div><dt>接続中のプレイヤー</dt><dd>{connections}</dd></div>
+      <div><dt>ルーム</dt><dd>対戦中 {rooms.playing} / 準備中 {rooms.lobby} / 対戦後 {rooms.finished}</dd></div>
+      <div><dt>起動してから</dt><dd>{duration(uptime)}（ルーム {since.roomsCreated}・対戦 {since.matchesStarted}）</dd></div>
+      <div><dt>バージョン</dt><dd>{version}</dd></div>
+    </dl>
+  </details>;
+}
+
 export function RoomEntrance() {
   const router = useRouter();
   const [open, setOpen] = useState<'create' | 'enter' | null>(null);
@@ -63,9 +95,11 @@ export function RoomEntrance() {
       setBusy(false);
     }
   }
+  const stats = useServerStats();
   const waiting = fruits.some(fruit => !playableNow.fruits.includes(fruit)) || !playableNow.extendedPlayable;
 
   return <div className={styles.stack}>
+    <ServerStatus stats={stats} />
     {latest && <Link href={roomHref(ROOM_PATH, latest)} className={styles.secondary}>前回のルーム（{latest}）に戻る</Link>}
     <div className={tiles.tiles}>
       <button className={`${tiles.tile} ${styles.tileButton}`} aria-expanded={open === 'create'} onClick={() => setOpen(open === 'create' ? null : 'create')}><b>ルームを作る</b><span>ルールを決めて、友だちを招待する</span></button>
@@ -94,7 +128,7 @@ export function RoomEntrance() {
       </fieldset>
       {waiting && <p className={styles.note}>「準備中」のカードは、まだ対戦で動かせないため選べません。対応したものから選べるようになります。</p>}
       <NameField name={name} onChange={setName} />
-      <button className={styles.primary} disabled={busy || !rules.fruits.length} onClick={create}>{busy ? '作成中…' : 'このルールでルームを作る'}</button>
+      <button className={styles.primary} disabled={busy || !rules.fruits.length || stats === null} onClick={create}>{busy ? '作成中…' : 'このルールでルームを作る'}</button>
       {!rules.fruits.length && <p className={styles.note}>使えるフルーツを1つ以上選んでください。</p>}
     </section>}
     {open === 'enter' && <form className={styles.panel} aria-label="ルームへ入る" onSubmit={event => { event.preventDefault(); if (isRoomId(id)) router.push(roomHref(ROOM_PATH, id)); }}>

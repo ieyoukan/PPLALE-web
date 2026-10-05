@@ -1,24 +1,28 @@
 'use client';
 
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { RoomRequestError, dropSeat, joinRoom, keepSeat, readRoomInfo, seatFor, sendRoomAction, watchRoom } from '@/lib/game/room/client';
-import { isRoomId } from '@/lib/game/room/types';
-import type { RoomAction, RoomInfo, RoomView, SeatKey } from '@/lib/game/room/types';
+import { RoomRequestError, connectRoom, dropSeat, joinRoom, keepSeat, readRoomInfo, seatFor } from '@/lib/game/room/client';
+import type { RoomConnection } from '@/lib/game/room/client';
+import { isRoomId } from '@pplale/game-core/room';
+import type { RoomAction, RoomInfo, RoomView, SeatKey } from '@pplale/game-core/room';
 
 /** visitor: the room exists and this browser has no seat in it. gone: no such room (any more). */
 export type RoomStage = 'loading' | 'visitor' | 'seated' | 'gone';
 
 /**
- * A room as this browser knows it: its seat (kept from creating or joining), the seat's view as it
- * changes, and the requests a seated player can make. Views only ever move forward.
+ * A room as this browser knows it: its seat (kept from creating or joining), the seat's view as
+ * the server sends it, and the requests a seated player can make. Views only ever move forward.
  */
 export function useRoom(id: string | null) {
   const [stage, setStage] = useState<RoomStage>('loading');
   const [info, setInfo] = useState<RoomInfo | null>(null);
   const [view, setView] = useState<RoomView | null>(null);
   const [key, setKey] = useState<SeatKey | null>(null);
+  /** The socket is up. False while connecting again after it dropped. */
+  const [linked, setLinked] = useState(true);
   const [error, setError] = useState('');
   const version = useRef(0);
+  const connection = useRef<RoomConnection | null>(null);
   const listeners = useRef(new Set<(view: RoomView) => void>());
   const take = useCallback((next: RoomView) => {
     if (next.version <= version.current) return;
@@ -49,13 +53,20 @@ export function useRoom(id: string | null) {
   }, [id, key]);
   useEffect(() => {
     if (!id || !key) return;
-    return watchRoom(id, key, take, () => {
+    const opened = connection.current = connectRoom(id, key.token, {
+      onView: take, onLink: setLinked,
       // The seat is not valid any more: look at the room as a visitor (or find it gone).
-      dropSeat(id);
-      setView(null);
-      setStage('loading');
-      setKey(null);
+      onGone() {
+        dropSeat(id);
+        setView(null);
+        setStage('loading');
+        setKey(null);
+      },
     });
+    return () => {
+      opened.close();
+      if (connection.current === opened) connection.current = null;
+    };
   }, [id, key, take]);
 
   const join = useCallback(async (name: string) => {
@@ -68,11 +79,9 @@ export function useRoom(id: string | null) {
       take(first);
     } catch (failure) { setError(failure instanceof Error ? failure.message : '参加できませんでした'); }
   }, [id, take]);
-  /** Sends a request of this seat; the view it answers with is taken like any other. Throws RoomRequestError. */
-  const send = useCallback(async (action: RoomAction) => {
-    if (!id || !key) throw new RoomRequestError(401, 'このルームの参加者ではありません');
-    take(await sendRoomAction(id, key.token, action));
-  }, [id, key, take]);
+  /** Sends a request of this seat; its view has arrived when this resolves. Rejects with RoomRequestError. */
+  const send = useCallback((action: RoomAction) =>
+    connection.current?.send(action) ?? Promise.reject(new RoomRequestError(401, 'このルームの参加者ではありません')), []);
   /** Every view after this call, in order. Returns how to stop. */
   const subscribe = useCallback((listener: (view: RoomView) => void) => {
     listeners.current.add(listener);
@@ -80,11 +89,12 @@ export function useRoom(id: string | null) {
   }, []);
   /** Leaves the room for good: gives up a match in progress and forgets the seat. */
   const leave = useCallback(async () => {
-    if (!id || !key) return;
-    await sendRoomAction(id, key.token, { action: 'leave' }).catch(() => {});
+    if (!id) return;
+    await connection.current?.send({ action: 'leave' }).catch(() => {});
+    connection.current?.close();
     dropSeat(id);
-  }, [id, key]);
+  }, [id]);
 
-  return { stage, info, view, seat: key?.seat ?? null, error, join, send, subscribe, leave };
+  return { stage, info, view, seat: key?.seat ?? null, linked, error, join, send, subscribe, leave };
 }
 export type Room = ReturnType<typeof useRoom>;

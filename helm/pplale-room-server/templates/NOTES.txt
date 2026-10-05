@@ -1,0 +1,12 @@
+ルームサーバーをデプロイしました。
+
+{{- if .Values.ingress.enabled }}
+URL: https://{{ (index .Values.ingress.hosts 0).host }}
+{{- else }}
+クラスタ内: http://{{ include "pplale-room-server.fullname" . }}.{{ .Release.Namespace }}.svc.cluster.local:{{ .Values.service.port }}
+ゲーム (ブラウザ) から届く URL が必要です。ingress.enabled か Cloudflare Tunnel で公開してください (WebSocket が通ること)。
+{{- end }}
+
+その URL を Web アプリの環境変数 NEXT_PUBLIC_ROOM_SERVER_URL に設定すると、
+バトルのタブでルームマッチが使えるようになります。
+状況は /stats で見られます (バトルのタブにも出ます)。

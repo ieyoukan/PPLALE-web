@@ -1,0 +1,7 @@
+apiVersion: v2
+name: pplale-room-server
+description: PPLALE のルームサーバー — ルームマッチのルームを持ち、対戦を進めて各プレイヤーに盤面を WebSocket で送る
+type: application
+version: 0.1.0
+# image.tag を指定しない手動 helm install では latest を使う (バージョンは Image Updater が決める)。
+appVersion: "latest"

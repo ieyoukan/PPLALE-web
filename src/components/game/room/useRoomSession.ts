@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useMemo, useReducer, useState } from 'react';
 import type { Command, GameState, Side } from '@pplale/game-core';
 import type { BoardSession, Incoming } from '../board/useGameSession';
-import type { RoomCommand, RoomView } from '@/lib/game/room/types';
+import type { RoomCommand, RoomView } from '@pplale/game-core/room';
 import type { Room } from './useRoom';
 
 type Played = RoomView & { game: GameState };

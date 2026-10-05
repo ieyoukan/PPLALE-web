@@ -1,13 +1,14 @@
 // A room match between two browsers: create, invite, join, both ready, the opening, a turn, giving up.
 //
-// Rooms are written to Firestore unless the server runs with ROOM_STORE=memory, so this only runs
-// against a server named by PPLALE_ROOM_TEST_URL that was started that way, e.g.
-//   ROOM_STORE=memory npx next dev -p 3100
+// Needs a room server and a web app that talks to it; this only runs when PPLALE_ROOM_TEST_URL
+// names that web app, e.g.
+//   PORT=8099 DATA_DIR=$(mktemp -d) npm run start --workspace=@pplale/room-server
+//   NEXT_PUBLIC_ROOM_SERVER_URL=http://localhost:8099 npx next dev -p 3100
 //   PPLALE_ROOM_TEST_URL=http://localhost:3100 npx playwright test room-match
 import { test, expect } from '@playwright/test';
 
 const base = process.env.PPLALE_ROOM_TEST_URL;
-test.skip(!base, 'set PPLALE_ROOM_TEST_URL to a server started with ROOM_STORE=memory');
+test.skip(!base, 'set PPLALE_ROOM_TEST_URL to a web app connected to a room server');
 
 test('two players meet in a room, play the opening and one gives up', async ({ browser }) => {
   test.setTimeout(120000);
@@ -22,6 +23,7 @@ test('two players meet in a room, play the opening and one gives up', async ({ b
 
   // The host makes a room; only what the game can play is selectable.
   await host.goto(`${base}/game/battle/`);
+  await expect(host.getByText('ルームサーバー：稼働中')).toBeVisible();
   await host.getByRole('button', { name: /ルームを作る/ }).click();
   await expect(host.getByRole('checkbox', { name: /いちご/ })).toBeChecked();
   await expect(host.getByRole('checkbox', { name: /ぶどう/ })).toBeDisabled();

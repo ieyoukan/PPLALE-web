@@ -36,6 +36,21 @@
 .roomId output { font: 700 clamp(34px, 6vw, 54px)/1 ui-monospace, Menlo, monospace; letter-spacing: .2em; color: #6b4a3a; }
 .rules { padding: 10px 14px; border-radius: 12px; background: #f7f2ea; font-size: 16px; }
 
+/* The room server's state: a dot, one line, and details that open on a tap. */
+.server { padding: 10px 16px; border: 2px solid #eadfce; border-radius: 16px; background: #fffdf7; color: #6b4a3a; font-size: 16px; }
+.server summary { cursor: pointer; }
+.server small { margin-left: 12px; color: #9a8676; font-size: 14px; }
+.dot { display: inline-block; width: 10px; height: 10px; margin-right: 8px; border-radius: 50%; background: #c9bcad; }
+.serverUp .dot { background: #6fae3c; box-shadow: 0 0 0 3px #b3d78866; }
+.serverDown { border-color: #e2b3ab; background: #fbe5dc; color: #a4483b; }
+.serverDown .dot { background: #d2604f; }
+.server dl { display: grid; gap: 6px; margin-top: 10px; padding-top: 10px; border-top: 1px solid #eadfce; font-size: 15px; }
+.server dl div { display: flex; justify-content: space-between; gap: 12px; }
+.server dt { color: #9a8676; }
+/* Over the board: this side or the other lost its connection. */
+.badge { position: fixed; top: 10px; left: 50%; z-index: 60; transform: translateX(-50%); max-width: calc(100vw - 140px); padding: 8px 18px; border-radius: 999px; background: #3b2a22e6; color: #fffdeb; font-size: 15px; text-align: center; pointer-events: none; }
+.badgeDown { background: #a4483be6; }
+
 .seats { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; }
 .seat { display: grid; gap: 4px; padding: 14px; border: 2px solid #eadfce; border-radius: 16px; background: #fffdf7; }
 .seat small { font-size: 13px; letter-spacing: .12em; color: #9a8676; }

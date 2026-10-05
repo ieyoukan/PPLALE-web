@@ -1,37 +1,38 @@
-// The browser's side of a room: the API calls, the seat kept in this browser, and following the
-// seat's view as it changes.
-import type { RoomRules } from './rules';
-import type { RoomAction, RoomInfo, RoomView, SeatKey, Seated } from './types';
+// The browser's side of a room: asking the room server (services/room-server) for a room or a
+// seat, the seats kept in this browser, and the socket a seat talks through.
+// Without NEXT_PUBLIC_ROOM_SERVER_URL there are no room matches.
+import type { ClientMessage, RoomAction, RoomInfo, RoomRules, RoomServerStats, RoomView, SeatKey, Seated, ServerMessage } from '@pplale/game-core/room';
 
-const url = (id?: string) => id ? `/api/rooms/${id}/` : '/api/rooms/';
+export const roomServerUrl = (process.env.NEXT_PUBLIC_ROOM_SERVER_URL ?? '').replace(/\/+$/, '') || null;
 
-/** A request the server refused; `status` is its HTTP status and `message` can be shown. */
+/** A request the server refused (or that never reached it: status 0); `message` can be shown. */
 export class RoomRequestError extends Error {
   constructor(readonly status: number, message: string) { super(message); }
 }
+const UNREACHABLE = 'ルームサーバーにつながりません。少し待ってからお試しください';
 
-async function call<T>(target: string, options: { token?: string; body?: unknown } = {}): Promise<T> {
+async function call<T>(path: string, body?: unknown): Promise<T> {
+  if (!roomServerUrl) throw new RoomRequestError(0, 'ルームサーバーが設定されていません');
   let response: Response;
   try {
-    response = await fetch(target, {
-      method: options.body === undefined ? 'GET' : 'POST', cache: 'no-store',
-      headers: { ...(options.body !== undefined && { 'content-type': 'application/json' }), ...(options.token && { authorization: `Bearer ${options.token}` }) },
-      ...(options.body !== undefined && { body: JSON.stringify(options.body) }),
+    response = await fetch(roomServerUrl + path, {
+      method: body === undefined ? 'GET' : 'POST', cache: 'no-store', signal: AbortSignal.timeout(8000),
+      ...(body !== undefined && { headers: { 'content-type': 'application/json' }, body: JSON.stringify(body) }),
     });
-  } catch { throw new RoomRequestError(0, 'サーバーにつながりません。接続を確認してください'); }
+  } catch { throw new RoomRequestError(0, UNREACHABLE); }
   const data = await response.json().catch(() => null) as (T & { error?: string }) | null;
   if (!response.ok || !data) throw new RoomRequestError(response.status, data?.error ?? 'サーバーで問題が起きました');
   return data;
 }
 
-export const createRoom = (rules: RoomRules, name: string) => call<Seated>(url(), { body: { rules, name } });
-export const joinRoom = (id: string, name: string) => call<Seated>(url(id), { body: { action: 'join', name } });
-export const readRoomInfo = (id: string) => call<RoomInfo>(url(id));
-export const readRoomView = (id: string, token: string) => call<RoomView>(url(id), { token });
-export const sendRoomAction = (id: string, token: string, action: RoomAction) => call<RoomView>(url(id), { token, body: action });
+export const createRoom = (rules: RoomRules, name: string) => call<Seated>('/rooms', { rules, name });
+export const joinRoom = (id: string, name: string) => call<Seated>(`/rooms/${id}/join`, { name });
+export const readRoomInfo = (id: string) => call<RoomInfo>(`/rooms/${id}`);
+/** How the server is doing: also the way to find out whether it can be reached at all. */
+export const readServerStats = () => call<RoomServerStats>('/stats');
 
 // ── The seats of this browser ──
-const SEATS_KEY = 'pplale-room-seats-v1';
+const SEATS_KEY = 'pplale-room-seats-v2';
 const KEPT_SEATS = 8;
 type Seats = Record<string, SeatKey & { at: number }>;
 function seats(): Seats {
@@ -46,9 +47,9 @@ const current = new Map<string, SeatKey>();
 export function seatFor(id: string): SeatKey | null {
   return current.get(id) ?? seats()[id] ?? null;
 }
-export function keepSeat(id: string, { seat, token, viewKey }: SeatKey) {
-  current.set(id, { seat, token, viewKey });
-  writeSeats({ ...seats(), [id]: { seat, token, viewKey, at: Date.now() } });
+export function keepSeat(id: string, { seat, token }: SeatKey) {
+  current.set(id, { seat, token });
+  writeSeats({ ...seats(), [id]: { seat, token, at: Date.now() } });
 }
 /** The room this browser sat in last, for a way back to it. */
 export function latestRoom(): string | null {
@@ -61,41 +62,73 @@ export function dropSeat(id: string) {
   writeSeats(rest);
 }
 
-const POLL_INTERVAL = 1500;
+// ── The socket of a seat ──
+const RETRY_DELAYS = [500, 1000, 2000, 4000];
+
+export interface RoomConnection {
+  /** Sends a request of the seat. Resolves once the server did it (its view has arrived by then); rejects with RoomRequestError. */
+  send(action: RoomAction): Promise<void>;
+  close(): void;
+}
 
 /**
- * Calls `onView` with the seat's view now and whenever it changes, until the returned function is
- * called. Listens to the published view; where there is none (or listening fails) it asks the API
- * again and again instead. `onGone` is called once when the room or the seat no longer exists.
+ * Keeps a socket to the room open for the seat until `close`: `onView` gets the seat's view now and
+ * after every change, `onLink` whether the socket is up (it connects again by itself when it drops),
+ * `onGone` is called once when the room or the seat no longer exists.
  */
-export function watchRoom(id: string, key: SeatKey, onView: (view: RoomView) => void, onGone: (error: RoomRequestError) => void): () => void {
-  let stopped = false, stopListening: (() => void) | undefined, timer: ReturnType<typeof setTimeout> | undefined;
-  const poll = async () => {
-    if (stopped) return;
-    try {
-      const view = await readRoomView(id, key.token);
-      if (!stopped) onView(view);
-    } catch (error) {
-      if (stopped) return;
-      if (error instanceof RoomRequestError && [401, 404, 410].includes(error.status)) return onGone(error);
-    }
-    timer = setTimeout(poll, POLL_INTERVAL);
+export function connectRoom(id: string, token: string, handlers: { onView: (view: RoomView) => void; onLink: (up: boolean) => void; onGone: (message: string) => void }): RoomConnection {
+  let socket: WebSocket | null = null, stopped = false, attempt = 0, n = 0;
+  let timer: ReturnType<typeof setTimeout> | undefined;
+  const waiting = new Map<number, { resolve: () => void; reject: (error: RoomRequestError) => void }>();
+  const failWaiting = () => {
+    for (const { reject } of Array.from(waiting.values())) reject(new RoomRequestError(0, '接続が切れました。もう一度操作してください'));
+    waiting.clear();
   };
-  if (!key.viewKey) void poll();
-  else void Promise.all([import('firebase/firestore'), import('@/lib/firebase')]).then(([sdk, { db }]) => {
-    if (stopped) return;
-    stopListening = sdk.onSnapshot(sdk.doc(db, 'roomViews', key.viewKey!), snapshot => {
-      const json: unknown = snapshot.get('json');
-      if (typeof json === 'string') return onView(JSON.parse(json) as RoomView);
-      // The published view is gone (the room expired): the API says what is left.
-      stopListening?.();
-      stopListening = undefined;
-      void poll();
-    }, () => { stopListening = undefined; void poll(); });
-  }).catch(() => { void poll(); });
-  return () => {
-    stopped = true;
-    stopListening?.();
-    if (timer) clearTimeout(timer);
+  function open() {
+    if (stopped || !roomServerUrl) return;
+    const next = socket = new WebSocket(`${roomServerUrl.replace(/^http/, 'ws')}/rooms/${id}/socket`);
+    next.addEventListener('open', () => next.send(JSON.stringify({ type: 'hello', token } satisfies ClientMessage)));
+    next.addEventListener('message', event => {
+      if (stopped || socket !== next) return;
+      const message = JSON.parse(String(event.data)) as ServerMessage;
+      if (message.type === 'view') {
+        attempt = 0;
+        handlers.onLink(true);
+        handlers.onView(message.view);
+      } else if (message.type === 'result') {
+        const asked = waiting.get(message.n);
+        waiting.delete(message.n);
+        if (message.error) asked?.reject(new RoomRequestError(400, message.error));
+        else asked?.resolve();
+      } else {
+        stopped = true;
+        failWaiting();
+        handlers.onGone(message.error);
+      }
+    });
+    next.addEventListener('close', () => {
+      if (stopped || socket !== next) return;
+      socket = null;
+      failWaiting();
+      handlers.onLink(false);
+      timer = setTimeout(open, RETRY_DELAYS[Math.min(attempt++, RETRY_DELAYS.length - 1)]);
+    });
+  }
+  open();
+  return {
+    send(action) {
+      return new Promise((resolve, reject) => {
+        if (!socket || socket.readyState !== WebSocket.OPEN) return reject(new RoomRequestError(0, UNREACHABLE));
+        const number = ++n;
+        waiting.set(number, { resolve, reject });
+        socket.send(JSON.stringify({ type: 'action', n: number, action } satisfies ClientMessage));
+      });
+    },
+    close() {
+      stopped = true;
+      if (timer) clearTimeout(timer);
+      failWaiting();
+      socket?.close();
+    },
   };
 }

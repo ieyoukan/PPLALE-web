@@ -7,8 +7,8 @@ import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useAuth } from '@/lib/auth';
 import { demoDeck, gameCatalog } from '@/lib/game/catalog';
-import { describeRoomRules, roomDeckErrors } from '@/lib/game/room/rules';
-import type { RoomView } from '@/lib/game/room/types';
+import { describeRoomRules, roomDeckErrors } from '@pplale/game-core/room';
+import type { RoomView } from '@pplale/game-core/room';
 import type { SavedGameDeck } from '@/lib/game/savedDecks';
 import { BATTLE_PATH, ROOM_PLAY_PATH, roomHref } from '@/lib/game/sessionStore';
 import { NameField, usePlayerName } from './RoomEntrance';
@@ -84,10 +84,11 @@ function Waiting({ room, view }: { room: Room; view: RoomView }) {
     work.catch((failure: unknown) => setError(failure instanceof Error ? failure.message : '送れませんでした')).finally(() => setBusy(false));
   };
   const seat = (label: string, player: typeof foe) => player
-    ? <div className={`${styles.seat} ${player.ready ? styles.seatReady : ''}`}><small>{label}</small><b>{player.name}</b><span>{player.ready ? '準備OK' : 'デッキを選んでいます'}</span></div>
+    ? <div className={`${styles.seat} ${player.ready ? styles.seatReady : ''}`}><small>{label}</small><b>{player.name}</b><span>{!player.online && player !== me ? '接続が切れています' : player.ready ? '準備OK' : 'デッキを選んでいます'}</span></div>
     : <div className={`${styles.seat} ${styles.seatEmpty}`}><small>{label}</small><b>募集中</b><span>相手が入るのを待っています</span></div>;
 
   return <div className={styles.stack}>
+    {!room.linked && <p className={`${styles.server} ${styles.serverDown}`} role="status"><i className={styles.dot} />ルームサーバーに再接続しています…</p>}
     <section className={styles.panel}>
       <div className={styles.roomId}><small>ROOM ID</small><output aria-label={`ルームID ${view.id}`}>{view.id}</output></div>
       <p className={styles.rules}>{describeRoomRules(view.rules)}</p>

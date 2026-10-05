@@ -1,0 +1,97 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "pplale-room-server.fullname" . }}
+  labels:
+    {{- include "pplale-room-server.labels" . | nindent 4 }}
+spec:
+  replicas: 1
+  # ルームは1つのプロセスのメモリにあり、ボリュームも1つの Pod からしか書けないので、入れ替えるときは先に止める。
+  # 入れ替えの間は接続が切れるが、ルームはボリュームから読み直され、ブラウザは自分でつなぎ直す。
+  strategy:
+    type: Recreate
+  selector:
+    matchLabels:
+      {{- include "pplale-room-server.selectorLabels" . | nindent 6 }}
+  template:
+    metadata:
+      labels:
+        {{- include "pplale-room-server.selectorLabels" . | nindent 8 }}
+    spec:
+      automountServiceAccountToken: false
+      {{- with .Values.imagePullSecrets }}
+      imagePullSecrets:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      securityContext:
+        {{- toYaml .Values.podSecurityContext | nindent 8 }}
+      containers:
+        - name: server
+          image: "{{ .Values.image.repository }}:{{ .Values.image.tag | default .Chart.AppVersion }}"
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          securityContext:
+            {{- toYaml .Values.securityContext | nindent 12 }}
+          ports:
+            - name: http
+              containerPort: 8080
+          env:
+            - name: PORT
+              value: "8080"
+            - name: DATA_DIR
+              value: /data
+            - name: ALLOWED_ORIGINS
+              value: {{ join "," .Values.allowedOrigins | quote }}
+            - name: TRUST_PROXY
+              value: {{ .Values.trustProxy | quote }}
+            - name: REQUESTS_PER_HOUR
+              value: {{ .Values.requestsPerHour | quote }}
+            - name: MAX_ROOMS
+              value: {{ .Values.maxRooms | quote }}
+            - name: ROOM_IDLE_HOURS
+              value: {{ .Values.roomIdleHours | quote }}
+            {{- with .Values.extraEnv }}
+            {{- toYaml . | nindent 12 }}
+            {{- end }}
+          livenessProbe:
+            httpGet:
+              path: /healthz
+              port: http
+            initialDelaySeconds: 5
+            periodSeconds: 20
+          readinessProbe:
+            httpGet:
+              path: /healthz
+              port: http
+            initialDelaySeconds: 2
+            periodSeconds: 10
+          resources:
+            {{- toYaml .Values.resources | nindent 12 }}
+          volumeMounts:
+            - name: data
+              mountPath: /data
+            - name: tmp
+              mountPath: /tmp
+      volumes:
+        - name: data
+          {{- if .Values.persistence.enabled }}
+          persistentVolumeClaim:
+            claimName: {{ include "pplale-room-server.claimName" . }}
+          {{- else }}
+          # Pod が入れ替わると進行中のルームと対戦が消える。
+          emptyDir: {}
+          {{- end }}
+        # ルート FS は読み取り専用にしている。
+        - name: tmp
+          emptyDir: {}
+      {{- with .Values.nodeSelector }}
+      nodeSelector:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.tolerations }}
+      tolerations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.affinity }}
+      affinity:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
