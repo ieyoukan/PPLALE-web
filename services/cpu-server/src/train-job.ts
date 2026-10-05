@@ -20,6 +20,18 @@ const SELF_PLAY_SEED = 1_000_000, GATE_SEED = 5_000_000;
 const RECORD_ID = 3_000_000_000;
 const SHARE = 0.5, CHUNK = 100;
 
+export interface Gate { wins: number; matches: number }
+/**
+ * Whether the candidate may be published, or null while the comparison is still open. Decided
+ * early once it is `earlyLead` wins ahead of (or behind) the required rate, otherwise by the rate
+ * after all `total` matches.
+ */
+export function gateVerdict({ wins, matches }: Gate, { minRate, earlyLead, total }: { minRate: number; earlyLead: number; total: number }): boolean | null {
+    const ahead = wins - matches * minRate;
+    if (earlyLead > 0 && Math.abs(ahead) >= earlyLead) return ahead > 0;
+    return matches >= total ? ahead >= 0 : null;
+}
+
 const bytes = (array: Uint32Array | Uint8Array | Float32Array) => Buffer.from(array.buffer, array.byteOffset, array.byteLength);
 
 /** つよい self-play positions. Collected once per image version and kept on the volume. */
@@ -68,9 +80,12 @@ export async function train(store: Store, config: Config, log: (line: string) =>
     log(`trained: validation loss ${result.fit.loss.toFixed(4)} (hand-written value ${result.baseline.loss.toFixed(4)})`);
 
     const seeds = Array.from({ length: training.gatePairs }, (_, i) => GATE_SEED + i);
-    const answers = await runTasks(seeds.map(seed => ({ kind: 'gate' as const, seeds: [seed], candidate: result.model })), training.threads);
-    const gate = answers.reduce((sum, answer) => ({ wins: sum.wins + answer.wins, matches: sum.matches + answer.matches }), { wins: 0, matches: 0 });
-    const published = gate.wins / gate.matches >= training.gateMinRate;
+    const rule = { minRate: training.gateMinRate, earlyLead: training.gateEarlyLead, total: seeds.length * 2 };
+    const tally = (answers: Gate[]) => answers.reduce((sum, answer) => ({ wins: sum.wins + answer.wins, matches: sum.matches + answer.matches }), { wins: 0, matches: 0 });
+    const gate = tally(await runTasks(seeds.map(seed => ({ kind: 'gate' as const, seeds: [seed], candidate: result.model })), training.threads,
+        answers => gateVerdict(tally(answers), rule) !== null));
+    // Stopped early or not, the same rule decides.
+    const published = gateVerdict(gate, { ...rule, total: gate.matches }) === true;
     const version = published ? store.publish(result.model).version : store.currentModel().version;
     log(`against the built-in model: ${gate.wins}/${gate.matches} (${(gate.wins / gate.matches * 100).toFixed(1)}%) → ${published ? `published as ${version}` : 'not published'}`);
 

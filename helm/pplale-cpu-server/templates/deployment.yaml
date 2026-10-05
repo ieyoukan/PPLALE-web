@@ -60,6 +60,8 @@ spec:
               value: {{ .Values.training.gatePairs | quote }}
             - name: GATE_MIN_RATE
               value: {{ .Values.training.gateMinRate | quote }}
+            - name: GATE_EARLY_LEAD
+              value: {{ .Values.training.gateEarlyLead | quote }}
             {{- with .Values.extraEnv }}
             {{- toYaml . | nindent 12 }}
             {{- end }}

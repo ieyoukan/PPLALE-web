@@ -10,20 +10,36 @@ export type Answer<T extends Task> = T extends { kind: 'selfplay' }
     ? { x: Float32Array; y: Uint8Array; match: Uint32Array }
     : { wins: number; matches: number };
 
-/** Runs every task on `threads` workers and returns the answers (in no particular order). */
-export async function runTasks<T extends Task>(tasks: T[], threads: number): Promise<Answer<T>[]> {
+/**
+ * Runs the tasks on `threads` workers and returns the answers (in no particular order).
+ * `enough` is asked after every answer; once it says yes, the tasks still waiting or running are dropped.
+ */
+export async function runTasks<T extends Task>(tasks: T[], threads: number, enough?: (answers: Answer<T>[]) => boolean): Promise<Answer<T>[]> {
     const queue = [...tasks], answers: Answer<T>[] = [];
     const workers = Array.from({ length: Math.min(threads, tasks.length) }, () => new Worker(new URL('./worker.ts', import.meta.url)));
     try {
-        await Promise.all(workers.map(worker => new Promise<void>((resolve, reject) => {
-            const next = () => {
-                const task = queue.shift();
-                if (task) worker.postMessage(task); else resolve();
-            };
-            worker.on('message', (answer: Answer<T>) => { answers.push(answer); next(); });
-            worker.on('error', reject);
-            next();
-        })));
+        await new Promise<void>((resolve, reject) => {
+            let working = workers.length, stopped = false;
+            for (const worker of workers) {
+                const next = () => {
+                    const task = queue.shift();
+                    if (task) worker.postMessage(task);
+                    else if (--working === 0) resolve();
+                };
+                worker.on('message', (answer: Answer<T>) => {
+                    if (stopped) return;
+                    answers.push(answer);
+                    if (enough?.(answers)) {
+                        stopped = true;
+                        return resolve();
+                    }
+                    next();
+                });
+                worker.on('error', reject);
+                next();
+            }
+            if (!workers.length) resolve();
+        });
     } finally {
         await Promise.all(workers.map(worker => worker.terminate()));
     }

@@ -30,6 +30,11 @@ export interface Config {
         gatePairs: number;
         /** Win rate against the built-in model a candidate needs to be published. */
         gateMinRate: number;
+        /**
+         * The comparison stops as soon as the candidate is this many wins ahead of (or behind) that
+         * rate: clear results need far fewer matches. 0 always plays every match.
+         */
+        gateEarlyLead: number;
     };
     /** The image's version: self-play data is collected again when it changes. */
     version: string;
@@ -51,6 +56,7 @@ export function loadConfig(): Config {
             humanWeight: number('HUMAN_WEIGHT', 3),
             gatePairs: number('GATE_PAIRS', 150, 1),
             gateMinRate: number('GATE_MIN_RATE', 0.5),
+            gateEarlyLead: number('GATE_EARLY_LEAD', 6),
         },
         version: process.env.APP_VERSION ?? 'dev',
     };

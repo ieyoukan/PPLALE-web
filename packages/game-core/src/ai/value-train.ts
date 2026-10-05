@@ -1,7 +1,7 @@
 // Training of the learned value (ai/value.ts): sampling positions and fitting the network.
 // Only computation lives here; files and worker threads belong to the callers
 // (scripts/value.mjs and the CPU server).
-import type { Catalog, GameState } from '../model.ts';
+import type { Catalog, Deck, GameState } from '../model.ts';
 import { defaultWeights } from './evaluate.ts';
 import { createHard } from './levels/hard.ts';
 import { playMatch } from './selfplay.ts';
@@ -43,8 +43,11 @@ export function turnStarts(): (state: GameState) => boolean {
     };
 }
 
-/** Sampled turn starts of one つよい self-play match and whether side 0 won; null without a winner. */
-export function selfPlayPositions(catalog: Catalog, seed: number, share: number): { rows: Float32Array[]; won: 0 | 1 } | null {
+/**
+ * Sampled turn starts of one つよい self-play match and whether side 0 won; null without a winner.
+ * Without `decks` both sides get a random deck.
+ */
+export function selfPlayPositions(catalog: Catalog, seed: number, share: number, decks?: [Deck, Deck]): { rows: Float32Array[]; won: 0 | 1 } | null {
     const hard = createHard(defaultWeights);
     const explorer: CpuStrategy = {
         ...hard,
@@ -53,7 +56,7 @@ export function selfPlayPositions(catalog: Catalog, seed: number, share: number)
     let r = Math.imul(seed, 2654435761) >>> 0;
     const chance = () => { r = (Math.imul(r, 1664525) + 1013904223) >>> 0; return r / 4294967296; };
     const rows: Float32Array[] = [], begins = turnStarts();
-    const result = playMatch(catalog, { levels: [explorer, explorer], seed, onStep(state) {
+    const result = playMatch(catalog, { levels: [explorer, explorer], seed, decks, onStep(state) {
         if (begins(state) && chance() < share) rows.push(valueFeatures(state, catalog));
     } });
     return typeof result.winner === 'number' ? { rows, won: result.winner === 0 ? 1 : 0 } : null;
