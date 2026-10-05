@@ -1,0 +1,94 @@
+# 対戦記録・モデル・自己対戦データを1つのボリュームにファイルで持つので、常に1レプリカで動かす。
+
+image:
+  repository: ghcr.io/ieyoukan/pplale-cpu-server
+  # 実際にどのタグをデプロイするかは Argo CD Image Updater が決める
+  # (update-strategy: semver, allow-tags: ^[0-9]+\.[0-9]+\.[0-9]+$)。
+  # cpu-server-image.yml が main への push のたびに <major>.<minor>.<patch> 形式のタグを push する。
+  # ここは Argo CD 管理下にない手動 helm install 時のフォールバック。
+  tag: ""
+  pullPolicy: IfNotPresent
+
+imagePullSecrets: []
+nameOverride: ""
+fullnameOverride: ""
+
+service:
+  type: ClusterIP
+  port: 80
+
+# ゲーム (ブラウザ) から直接呼ばれるので、外から届く URL が必要。
+# その URL を Web アプリの NEXT_PUBLIC_CPU_SERVER_URL に設定する。
+ingress:
+  enabled: false
+  className: ""
+  annotations: {}
+  hosts:
+    - host: pplale-cpu.youkan.uk
+      paths:
+        - path: /
+          pathType: Prefix
+  tls: []
+
+# ブラウザからの呼び出しを許す Web アプリのオリジン。"*" を入れるとどこからでも許す。
+allowedOrigins:
+  - https://pplale.vercel.app
+
+# 1つの送信元から1時間に受け取る対戦記録の数。送信元のアドレスは保存しない。
+reportsPerHour: 30
+# Ingress / Tunnel の後ろで X-Forwarded-For から送信元を読む。
+trustProxy: true
+
+training:
+  enabled: true
+  # 新しい対戦記録がこれだけ溜まると学習する (記録が届いたときと、下の間隔ごとに確認)。
+  minNewReports: 20
+  intervalMinutes: 60
+  # 自己対戦と比較対戦に使うスレッド数。resources.limits.cpu に合わせる。
+  threads: 2
+  # 「つよい」同士の自己対戦の試合数。イメージのバージョンごとに1回だけ集めてボリュームに残す
+  # (2スレッドで15分ほど)。
+  selfPlayGames: 40000
+  # 人との対戦の1局面を、自己対戦の何局面ぶんとして数えるか。
+  humanWeight: 3
+  # 学習したモデルを、イメージに入っているモデルとこの組数 (×2試合) 対戦させる (2スレッドで1時間ほど)。
+  gatePairs: 150
+  # その勝率がこれ以上のときだけ配る。おかしな記録が混ざっても弱いモデルは配られない。
+  gateMinRate: 0.5
+
+persistence:
+  enabled: true
+  # 空ならクラスタのデフォルト。自宅クラスタでは proxmox-data。
+  storageClass: ""
+  size: 2Gi
+  existingClaim: ""
+
+# 学習中は threads ぶんの CPU を使い切る。メモリは自己対戦データ (約100MB) を数回ぶん持つ。
+resources:
+  requests:
+    cpu: 100m
+    memory: 256Mi
+  limits:
+    cpu: "2"
+    memory: 1536Mi
+
+podSecurityContext:
+  runAsNonRoot: true
+  runAsUser: 65532
+  runAsGroup: 65532
+  fsGroup: 65532
+  seccompProfile:
+    type: RuntimeDefault
+
+securityContext:
+  allowPrivilegeEscalation: false
+  readOnlyRootFilesystem: true
+  capabilities:
+    drop:
+      - ALL
+
+nodeSelector: {}
+tolerations: []
+affinity: {}
+
+extraEnv: []

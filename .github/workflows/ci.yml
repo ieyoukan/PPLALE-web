@@ -23,6 +23,9 @@ jobs:
       - name: Check game opening and draw flow
         run: npm run test:game
 
+      - name: Test the CPU server
+        run: npm run test:cpu-server
+
       - name: Run project checks
         run: mise run check
 

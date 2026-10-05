@@ -1,0 +1,13 @@
+# Only what the Dockerfile copies is sent to the builder.
+*
+!package.json
+!package-lock.json
+!packages/game-core/package.json
+!packages/game-core/src
+!services/cpu-server/package.json
+!services/cpu-server/src
+!src/data/yojo.json
+!src/data/sweet.json
+!src/data/playable.json
+!src/data/tokenYojo.json
+!src/data/token.json

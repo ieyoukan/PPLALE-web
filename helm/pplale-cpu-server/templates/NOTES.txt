@@ -1,0 +1,12 @@
+CPU サーバーをデプロイしました。
+
+{{- if .Values.ingress.enabled }}
+URL: https://{{ (index .Values.ingress.hosts 0).host }}
+{{- else }}
+クラスタ内: http://{{ include "pplale-cpu-server.fullname" . }}.{{ .Release.Namespace }}.svc.cluster.local:{{ .Values.service.port }}
+ゲーム (ブラウザ) から届く URL が必要です。ingress.enabled か Cloudflare Tunnel で公開してください。
+{{- end }}
+
+その URL を Web アプリの環境変数 NEXT_PUBLIC_CPU_SERVER_URL に設定すると、
+さいきょうがこのサーバーのモデルを使い、対戦記録が送られるようになります。
+状況は /stats で見られます。

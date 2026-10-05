@@ -1,0 +1,7 @@
+apiVersion: v2
+name: pplale-cpu-server
+description: PPLALE の CPU サーバー — さいきょうとの対戦記録を集めて学習し続け、最新のモデルをゲームに配る
+type: application
+version: 0.1.0
+# image.tag を指定しない手動 helm install では latest を使う (バージョンは Image Updater が決める)。
+appVersion: "latest"

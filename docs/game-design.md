@@ -20,6 +20,7 @@ GameLobby (/game/) + Firebase decks ──保存──> BoardEmulator (/game/pla
 | カード効果 | カード・スキルごとの効果（いつ・何をするか） | `packages/game-core/src/cards`, `playables` |
 | CPU | 合法手から次の Command を選ぶ。強さごとの戦略、非公開情報の推測 | `packages/game-core/src/ai` |
 | 状態復元 | 保存内容の形式とカード参照を確認 | `packages/game-core/src/snapshot.ts` |
+| CPU サーバー | 「さいきょう」との対戦記録を集めて学習し続け、モデルを配る。Vercel ではなく自宅クラスタで動く別プロセス | `services/cpu-server`, `helm/pplale-cpu-server` |
 
 ### 分離する価値
 
@@ -43,6 +44,7 @@ UI はドロー前後の手札と山札の差分から移動演出を描く。�
 - Build Command は既存の `npm run build`。`transpilePackages` により game-core の TypeScript を Next.js がコンパイルする。core の `dist` を事前生成・コミットする必要はない。
 - Firebase の環境変数と AuthProvider は既存のものを使用する。同一ドメインなら同じログイン状態で保存済みデッキを選べる。
 - Vercel に常駐プロセス、WebSocket サーバー、対戦用 API は追加していない。CPU / 同一端末対戦はブラウザで動く。
+- `NEXT_PUBLIC_CPU_SERVER_URL` を設定すると、「さいきょう」は CPU サーバーのモデルで考え（思考はブラウザのまま）、同意したプレイヤーの対戦記録をそこへ送る。未設定ならアプリ内蔵のモデルを使い、何も送らない。詳細は [services/cpu-server](../services/cpu-server/README.md)。
 
 参考: [Vercel Monorepos](https://vercel.com/docs/monorepos)。Next.js の設定はインストール済みパッケージの `node_modules/next/dist/docs/` に合わせる。
 

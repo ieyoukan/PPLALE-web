@@ -1,0 +1,97 @@
+name: Publish CPU server image
+
+# CPU サーバー (services/cpu-server) に関わる変更が main に入るたびに、セマンティック
+# バージョンを自動採番して git タグ (cpu-server-vX.Y.Z) を打ち、そのバージョンで
+# イメージを ghcr.io/ieyoukan/pplale-cpu-server に push する。
+#
+# デプロイは home-manifests の Argo CD が helm/pplale-cpu-server を参照し、
+# Argo CD Image Updater (update-strategy: semver,
+# allow-tags: ^[0-9]+\.[0-9]+\.[0-9]+$) がここで作られたタグを見て image.tag を
+# 書き換える想定なので、イメージのタグは素の "X.Y.Z" 形式で push する (pplale-cms と同じ)。
+on:
+  push:
+    branches: [main]
+    paths:
+      - services/cpu-server/**
+      - packages/game-core/src/**
+      - packages/game-core/package.json
+      - src/data/yojo.json
+      - src/data/sweet.json
+      - src/data/playable.json
+      - src/data/tokenYojo.json
+      - src/data/token.json
+      - .github/workflows/cpu-server-image.yml
+  workflow_dispatch: {}
+
+permissions:
+  contents: write
+  packages: write
+
+env:
+  IMAGE: ghcr.io/ieyoukan/pplale-cpu-server
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - name: Install tools from mise.toml
+        uses: jdx/mise-action@v3
+        with:
+          cache: true
+      - name: Install dependencies
+        run: npm ci
+      - name: Test the CPU server
+        run: npm run test:cpu-server
+
+  tag:
+    needs: test
+    runs-on: ubuntu-latest
+    outputs:
+      version: ${{ steps.bump.outputs.new_version }}
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
+
+      - name: Bump version and push tag
+        id: bump
+        uses: mathieudutour/github-tag-action@v6.2
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          default_bump: patch
+          tag_prefix: cpu-server-v
+
+  build-and-push:
+    needs: tag
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: docker/setup-qemu-action@v3
+      - uses: docker/setup-buildx-action@v3
+
+      - name: Log in to GHCR
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Build and push
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: services/cpu-server/Dockerfile
+          platforms: linux/amd64,linux/arm64
+          push: true
+          build-args: |
+            APP_VERSION=${{ needs.tag.outputs.version }}
+          tags: |
+            ${{ env.IMAGE }}:${{ needs.tag.outputs.version }}
+            ${{ env.IMAGE }}:latest
+          labels: |
+            org.opencontainers.image.version=${{ needs.tag.outputs.version }}
+            org.opencontainers.image.revision=${{ github.sha }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max

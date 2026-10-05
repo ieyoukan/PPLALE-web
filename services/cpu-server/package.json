@@ -1,0 +1,14 @@
+{
+  "name": "@pplale/cpu-server",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "start": "node src/main.ts",
+    "train": "node src/train-job.ts",
+    "test": "node --test tests/*.test.ts"
+  },
+  "dependencies": {
+    "@pplale/game-core": "*"
+  }
+}
