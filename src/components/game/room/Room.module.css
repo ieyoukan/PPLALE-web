@@ -1,8 +1,44 @@
 /* Room pages inside the game menu's cream sheet: making / entering a room and waiting in it. */
 .stack { display: grid; gap: clamp(14px, 2vw, 22px); }
-/* The two entrance tiles are buttons here (they open a form below). */
-.tileButton { width: 100%; font: inherit; text-align: left; cursor: pointer; }
-.tileButton[aria-expanded=true] { box-shadow: 0 0 0 3px #6b4a3a55, 0 5px 0 #a8866755; }
+/* The entrance: what room matches are on the left, three tall doors (watch / enter / make) on the right. */
+.entrance { display: grid; grid-template-columns: minmax(180px, 1fr) minmax(0, 2.6fr); gap: clamp(14px, 2.4vw, 28px); align-items: center; }
+.intro { display: grid; gap: 12px; justify-items: center; text-align: center; color: #6b4a3a; }
+.intro h2 { width: 100%; padding-bottom: 10px; border-bottom: 2px solid #a8866766; font-size: clamp(22px, 2.6vw, 30px); font-weight: 700; letter-spacing: .12em; }
+.intro > p { font-size: 16px; line-height: 1.8; }
+.intro .server { width: 100%; text-align: left; font-size: 14px; }
+.intro .server small { display: block; margin: 2px 0 0 18px; }
+.intro .secondary { font-size: 15px; min-height: 44px; padding: 8px 16px; }
+.doors { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: clamp(8px, 1.6vw, 18px); }
+.door { --tone: #e7c3e2; display: grid; grid-template-rows: minmax(0, 1fr) auto; aspect-ratio: 3 / 4.3; padding: 0; overflow: hidden; border: 3px solid #a88667; border-radius: 16px; background: #fff; color: #6b4a3a; font: inherit; cursor: pointer; box-shadow: 0 6px 0 #a8866755, 0 0 0 4px #fffdeb inset; transition: transform .2s, box-shadow .2s, filter .2s; }
+.watch { --tone: #a9d6ee; }
+.enter { --tone: #e7c3e2; }
+.create { --tone: #f4b0bb; }
+/* The picture: the door's colour as a sky, lighter towards the floor. */
+.doorArt { display: grid; place-items: center; min-height: 0; padding: 8% 10% 2%; background: radial-gradient(circle at 50% 78%, #fffdebcc 0 28%, transparent 62%), linear-gradient(180deg, var(--tone), color-mix(in srgb, var(--tone) 35%, #fffdeb)); }
+.doorArt svg { width: 100%; height: 100%; max-height: 190px; filter: drop-shadow(0 4px 0 #6b4a3a22); }
+/* The name on a plate at the foot, under a rule. */
+.doorPlate { display: grid; gap: 2px; margin: 0 10px; padding: 10px 2px 12px; border-top: 2px solid #a8866766; text-align: center; }
+.doorPlate b { font-size: clamp(15px, 2vw, 22px); letter-spacing: .06em; white-space: nowrap; }
+.doorPlate small { font-size: clamp(11px, 1.3vw, 14px); color: #9a8676; white-space: nowrap; }
+.door:hover { transform: translateY(-4px); box-shadow: 0 10px 0 #a8866755, 0 0 0 4px #fffdeb inset; }
+.door[aria-expanded=true] { transform: translateY(-4px); border-color: #e0607a; box-shadow: 0 10px 0 #e0607a55, 0 0 0 4px #fffdeb inset, 0 0 0 4px #f4b0bb88; }
+/* With one chosen, the others step back. */
+.doors[data-open] .door[aria-expanded=false] { filter: saturate(.55) brightness(.97); }
+@media (max-width: 620px) { .entrance { grid-template-columns: minmax(0, 1fr); } }
+/* A phone held sideways: everything stays on one screen. */
+@media (max-height: 520px) {
+  .entrance { grid-template-columns: minmax(150px, 1fr) minmax(0, 2.6fr); }
+  .door { aspect-ratio: auto; height: min(58dvh, 280px); }
+  .intro { gap: 6px; }
+  .intro > p { font-size: 14px; line-height: 1.5; }
+  .intro .server { padding: 8px 10px; font-size: 12px; }
+  .intro .server small { margin-left: 0; font-size: 12px; }
+  .doorPlate { margin: 0 6px; }
+  .doorPlate b { font-size: 15px; letter-spacing: 0; }
+  .doorPlate small { font-size: 11px; }
+}
+@media (max-width: 420px) { .doorPlate small { display: none; } .doorPlate { margin: 0 6px; padding: 8px 0 10px; } }
+@media (prefers-reduced-motion: reduce) { .door { transition: none; } }
 .panel { display: grid; gap: 14px; padding: clamp(16px, 2.4vw, 26px); border: 3px solid #b3d788; border-radius: 20px; background: #fff; color: #6b4a3a; box-shadow: 0 5px 0 #a8866755; }
 .panel h2 { font-size: clamp(20px, 2.6vw, 26px); font-weight: 700; letter-spacing: .08em; }
 .panel p { font-size: 16px; line-height: 1.7; }

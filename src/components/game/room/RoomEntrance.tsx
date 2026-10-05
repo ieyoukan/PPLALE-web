@@ -9,7 +9,6 @@ import { createRoom, keepSeat, latestRoom, readServerStats, roomServerUrl } from
 import { MAX_NAME_LENGTH, ROOM_ID_LENGTH, defaultRoomRules, fruitNames, fruits, isRoomId, playableNow } from '@pplale/game-core/room';
 import type { Fruit, RoomRules, RoomServerStats } from '@pplale/game-core/room';
 import { ROOM_PATH, roomHref, watchHref } from '@/lib/game/sessionStore';
-import tiles from '../home/CardsMenu.module.css';
 import styles from './Room.module.css';
 
 const NAME_KEY = 'pplale-room-name-v1';
@@ -68,6 +67,35 @@ function ServerStatus({ stats }: { stats: RoomServerStats | null | undefined }) 
   </details>;
 }
 
+/** The picture on each door: a table being watched, a door standing open, a new door. */
+function DoorArt({ kind }: { kind: 'watch' | 'enter' | 'create' }) {
+  if (kind === 'watch') return <svg viewBox="0 0 120 120">
+    <ellipse cx="60" cy="92" rx="46" ry="13" fill="#fffdeb" opacity=".9" />
+    <ellipse cx="60" cy="88" rx="46" ry="13" fill="#fff" stroke="#6b4a3a" strokeWidth="2.5" />
+    <rect x="34" y="70" width="18" height="25" rx="3" fill="#f4b0bb" stroke="#6b4a3a" strokeWidth="2.5" transform="rotate(-10 43 82)" />
+    <rect x="68" y="70" width="18" height="25" rx="3" fill="#b3d788" stroke="#6b4a3a" strokeWidth="2.5" transform="rotate(10 77 82)" />
+    <path d="M22 38q38-34 76 0q-38 34-76 0z" fill="#fff" stroke="#6b4a3a" strokeWidth="3" strokeLinejoin="round" />
+    <circle cx="60" cy="38" r="11" fill="#6b4a3a" /><circle cx="64" cy="34" r="3.5" fill="#fff" />
+  </svg>;
+  return <svg viewBox="0 0 120 120">
+    {/* The doorway, with light coming through it. */}
+    <path d="M28 108V52a32 32 0 0 1 64 0v56z" fill="#fffdeb" stroke="#6b4a3a" strokeWidth="3" strokeLinejoin="round" />
+    <path d="M38 108V54a22 22 0 0 1 44 0v54z" fill={kind === 'enter' ? '#fff6b8' : '#e7c3e2'} stroke="#6b4a3a" strokeWidth="2.5" strokeLinejoin="round" />
+    <path d="M18 108h84" stroke="#6b4a3a" strokeWidth="3" strokeLinecap="round" />
+    {kind === 'enter' ? <>
+      {/* The door leaf swung open, and the way in. */}
+      <path d="M38 108V54a22 22 0 0 1 4-12l14 10v64z" fill="#f4b0bb" stroke="#6b4a3a" strokeWidth="2.5" strokeLinejoin="round" />
+      <path d="M96 84H66m10-9-10 9 10 9" fill="none" stroke="#6b4a3a" strokeWidth="5" strokeLinecap="round" strokeLinejoin="round" />
+    </> : <>
+      <path d="M60 33v75" stroke="#6b4a3a" strokeWidth="2.5" />
+      <circle cx="54" cy="78" r="2.6" fill="#6b4a3a" /><circle cx="66" cy="78" r="2.6" fill="#6b4a3a" />
+      {/* A new one. */}
+      <circle cx="92" cy="30" r="15" fill="#b3d788" stroke="#6b4a3a" strokeWidth="3" />
+      <path d="M92 22v16m-8-8h16" stroke="#6b4a3a" strokeWidth="4" strokeLinecap="round" />
+    </>}
+  </svg>;
+}
+
 export function RoomEntrance() {
   const router = useRouter();
   const [open, setOpen] = useState<'create' | 'enter' | 'watch' | null>(null);
@@ -96,13 +124,26 @@ export function RoomEntrance() {
   const stats = useServerStats();
   const waiting = fruits.some(fruit => !playableNow.fruits.includes(fruit)) || !playableNow.extendedPlayable;
 
+  const door = (kind: 'watch' | 'enter' | 'create', label: string, note: string) =>
+    <button className={`${styles.door} ${styles[kind]}`} aria-expanded={open === kind} onClick={() => setOpen(open === kind ? null : kind)}>
+      <span className={styles.doorArt} aria-hidden="true"><DoorArt kind={kind} /></span>
+      <span className={styles.doorPlate}><b>{label}</b><small>{note}</small></span>
+    </button>;
+
   return <div className={styles.stack}>
-    <ServerStatus stats={stats} />
-    {latest && <Link href={roomHref(ROOM_PATH, latest)} className={styles.secondary}>前回のルーム（{latest}）に戻る</Link>}
-    <div className={tiles.tiles}>
-      <button className={`${tiles.tile} ${styles.tileButton}`} aria-expanded={open === 'create'} onClick={() => setOpen(open === 'create' ? null : 'create')}><b>ルームを作る</b><span>ルールを決めて、友だちを招待する</span></button>
-      <button className={`${tiles.tile} ${styles.tileButton}`} aria-expanded={open === 'enter'} onClick={() => setOpen(open === 'enter' ? null : 'enter')}><b>ルームへ入る</b><span>教えてもらったルームIDで参加する</span></button>
-      <button className={`${tiles.tile} ${styles.tileButton}`} aria-expanded={open === 'watch'} onClick={() => setOpen(open === 'watch' ? null : 'watch')}><b>観戦する</b><span>観戦できるルームの対戦を見る</span></button>
+    {/* Like a room-match menu: what this is on the left, three tall doors to pick from on the right. */}
+    <div className={styles.entrance}>
+      <div className={styles.intro}>
+        <h2>ルームマッチ</h2>
+        <p>特定の相手と<br />対戦することができます</p>
+        <ServerStatus stats={stats} />
+        {latest && <Link href={roomHref(ROOM_PATH, latest)} className={styles.secondary}>前回のルーム（{latest}）に戻る</Link>}
+      </div>
+      <div className={styles.doors} data-open={open ?? undefined}>
+        {door('watch', '観戦する', '対戦を見る')}
+        {door('enter', 'ルームへ入る', 'IDで参加する')}
+        {door('create', 'ルームを作る', '友だちを招待する')}
+      </div>
     </div>
     {open === 'create' && <section className={styles.panel} aria-label="ルームを作る">
       <h2>ルームのルール</h2>
