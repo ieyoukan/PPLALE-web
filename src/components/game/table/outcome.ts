@@ -20,6 +20,6 @@ export function outcomeOf({ game, view, mode, names }: Pick<Board, 'game' | 'vie
   const winner = winnerOf(game);
   if (winner === null) return null;
   const text = `${names[winner]}の勝ち`;
-  if (mode !== 'cpu') return { winner, kind: 'neutral', text };
+  if (mode !== 'cpu' && mode !== 'room') return { winner, kind: 'neutral', text };
   return winner === view ? { winner, kind: 'win', text: '勝利!!' } : { winner, kind: 'lose', text };
 }

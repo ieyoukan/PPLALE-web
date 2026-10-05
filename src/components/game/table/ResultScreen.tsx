@@ -21,13 +21,13 @@ export function ResultScreen() {
 }
 
 function Result({ outcome: { winner, kind } }: { outcome: Outcome }) {
-  const { game, view, mode, levels, names, setup, canRematch, canReplay, rematch, startReplay, leave } = useBoardContext();
+  const { game, view, mode, levels, names, setup, remote, canRematch, canReplay, rematch, startReplay, leave } = useBoardContext();
   const [deckOpen, setDeckOpen] = useState(false);
   // Against the CPU the screen is about you; otherwise about whoever won.
   const featured: Side = kind === 'neutral' ? winner : view;
   const foe = other(view), deck = setup?.decks[featured];
   const rows: [string, string][] = [
-    ['決着', game.players[other(winner)].points <= 0 ? 'お菓子ポイントが0になった' : '行動のないターンが続き、お菓子ポイントで判定'],
+    ['決着', game.players[other(winner)].points <= 0 ? 'お菓子ポイントが0になった' : remote?.resigned === other(winner) ? `${names[other(winner)]}が投了した` : '行動のないターンが続き、お菓子ポイントで判定'],
     ['ターン', `${matchTurns(game)}ターン`],
     ['お菓子ポイント', `${names[view]} ${game.players[view].points} − ${game.players[foe].points} ${names[foe]}`],
     ['先攻', names[game.rules.firstPlayer]],
@@ -52,8 +52,8 @@ function Result({ outcome: { winner, kind } }: { outcome: Outcome }) {
       <div className={styles.actions}>
         {canReplay && <button className={styles.plateButton} onClick={startReplay}>リプレイ</button>}
         {/* The game's own home (preparation, cards, battles), not the site's top page. */}
-        <button className={styles.plateButton} onClick={leave}>ホーム</button>
-        {canRematch && <button className={`${styles.plateButton} ${styles.primaryPlate}`} onClick={rematch}>再戦する</button>}
+        <button className={styles.plateButton} onClick={leave}>{remote ? 'ルームを出る' : 'ホーム'}</button>
+        {canRematch && <button className={`${styles.plateButton} ${styles.primaryPlate}`} onClick={rematch}>{remote ? 'もう一度（デッキ選択へ）' : '再戦する'}</button>}
       </div>
     </div>
     {deck && deckOpen && <DeckSheet deck={deck} onClose={() => setDeckOpen(false)} />}

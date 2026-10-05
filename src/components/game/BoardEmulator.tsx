@@ -5,8 +5,11 @@
 import { useRef } from 'react';
 import Image from 'next/image';
 import dynamic from 'next/dynamic';
+import { useRouter } from 'next/navigation';
 import { BoardContext } from './board/BoardContext';
 import { useBoard } from './board/useBoard';
+import { useGameSession } from './board/useGameSession';
+import type { BoardSession } from './board/useGameSession';
 import { SidePanel } from './panels/SidePanel';
 import { ChoiceTray } from './table/ChoiceTray';
 import { DiceStage } from './table/DiceStage';
@@ -21,14 +24,24 @@ import { OrderNotice } from './table/OrderNotice';
 import { PlayerSide } from './table/PlayerSide';
 import { TurnControl } from './table/TurnControl';
 import { displayCards, gameCatalog } from '@/lib/game/catalog';
+import { HOME_PATH } from '@/lib/game/sessionStore';
 import type { DeckKind } from '@pplale/game-core';
 import styles from './BoardEmulator.module.css';
 
 const MulliganBoard = dynamic(() => import('./MulliganBoard').then(module => module.MulliganBoard));
 
+/** The board of the match kept in this browser (against the CPU, same device, watching). */
 export default function BoardEmulator() {
+  const router = useRouter();
+  // No saved match (opened directly, or storage cleared): prepare one first.
+  const session = useGameSession({ onMissing: () => router.replace(HOME_PATH) });
+  return <BoardTable session={session} />;
+}
+
+/** The game screen for any match: `session` says where it lives and who plays it. */
+export function BoardTable({ session }: { session: BoardSession }) {
   const container = useRef<HTMLDivElement>(null);
-  const board = useBoard(container);
+  const board = useBoard(container, session);
   const { game, me, view, mode, paused, attacker, drag, mulligan, ready, panel, error, replaying, setPanel, setPaused, setAttacker, stopReplay } = board;
   // The saved match is still loading (or missing, and the preparation page is opening).
   if (!ready) return <div className={styles.emulator} aria-busy="true" />;
@@ -44,7 +57,7 @@ export default function BoardEmulator() {
           onClick={() => setPanel(drawerOpen ? null : { type: 'menu' })} aria-label={drawerOpen ? 'メニューを閉じる' : 'メニュー'}>
           <span aria-hidden="true">{drawerOpen ? '×' : '☰'}</span>
         </button>
-        {(mode !== 'hotseat' || replaying) && paused && <button className={styles.menuButton} onClick={() => setPaused(false)} aria-label={replaying ? '再生する' : 'CPU再開'}>▶</button>}
+        {(mode === 'cpu' || mode === 'watch' || replaying) && paused && <button className={styles.menuButton} onClick={() => setPaused(false)} aria-label={replaying ? '再生する' : 'CPU再開'}>▶</button>}
       </header>
       {replaying && <div className={styles.replayBadge}><span>リプレイ中</span><button onClick={stopReplay}>やめる</button></div>}
       <div className={`${styles.tableViewport} ${styles.withTurnControl}`}>

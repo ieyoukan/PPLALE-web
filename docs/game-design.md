@@ -20,6 +20,7 @@ GameLobby (/game/) + Firebase decks ──保存──> BoardEmulator (/game/pla
 | カード効果 | カード・スキルごとの効果（いつ・何をするか） | `packages/game-core/src/cards`, `playables` |
 | CPU | 合法手から次の Command を選ぶ。強さごとの戦略、非公開情報の推測 | `packages/game-core/src/ai` |
 | 状態復元 | 保存内容の形式とカード参照を確認 | `packages/game-core/src/snapshot.ts` |
+| ルームマッチ | ルームの作成・参加、コマンドの検証と実行、各プレイヤー用の盤面の配信 | `src/app/api/rooms`, `src/lib/server/rooms`, `src/lib/game/room`, `src/components/game/room` |
 | CPU サーバー | 「さいきょう」との対戦記録を集めて学習し続け、モデルを配る。Vercel ではなく自宅クラスタで動く別プロセス | `services/cpu-server`, `helm/pplale-cpu-server` |
 
 ### 分離する価値
@@ -43,7 +44,7 @@ UI はドロー前後の手札と山札の差分から移動演出を描く。�
 - `npm ci` で root と game-core の依存関係をインストールする。root の `workspaces` と依存関係、共有 `package-lock.json` に登録済み。
 - Build Command は既存の `npm run build`。`transpilePackages` により game-core の TypeScript を Next.js がコンパイルする。core の `dist` を事前生成・コミットする必要はない。
 - Firebase の環境変数と AuthProvider は既存のものを使用する。同一ドメインなら同じログイン状態で保存済みデッキを選べる。
-- Vercel に常駐プロセス、WebSocket サーバー、対戦用 API は追加していない。CPU / 同一端末対戦はブラウザで動く。
+- Vercel に常駐プロセスや WebSocket サーバーは追加していない。CPU / 同一端末対戦はブラウザで動く。ルームマッチだけが対戦用 API（`/api/rooms/`、Node ランタイムの Route Handler）と Firestore を使う。OGP 画像と同じ `FIREBASE_PROJECT_ID` / `FIREBASE_CLIENT_EMAIL` / `FIREBASE_PRIVATE_KEY` が必要。
 - `NEXT_PUBLIC_CPU_SERVER_URL` を設定すると、「さいきょう」は CPU サーバーのモデルで考え（思考はブラウザのまま）、同意したプレイヤーの対戦記録をそこへ送る。未設定ならアプリ内蔵のモデルを使い、何も送らない。詳細は [services/cpu-server](../services/cpu-server/README.md)。
 
 参考: [Vercel Monorepos](https://vercel.com/docs/monorepos)。Next.js の設定はインストール済みパッケージの `node_modules/next/dist/docs/` に合わせる。
@@ -54,19 +55,30 @@ UI はドロー前後の手札と山札の差分から移動演出を描く。�
 
 対戦途中は `pplale-game-session-v2` に自動保存する。同一ブラウザ・同一オリジンで再読み込み後に再開できる。進行中の対戦にはデッキの実体と選択したルールが保存される。あわせて、開始時の設定（`setup`：両者のデッキとルール）、最初の状態（`initial`）、適用した全コマンド（`commands`）も保存する。再戦は `setup` から新しい seed で作り直し、リプレイは `initial` に `commands` を順に適用して再生する（core は決定的なので同じ結果になる）。リプレイ中は保存を行わない。保存形式の変更、ブラウザのデータ削除、別ドメイン・別端末への移動では再開できないことがある。ルールコード自体の版を固定した長期保存は未実装。
 
-## オンライン対戦へ進める場合
+## ルームマッチ（オンライン対戦）
 
-現在の「両側を操作」は同一端末用であり、インターネット越しの対戦ではない。次の段階では以下を追加する。
+バトルのタブ（`/game/battle/`）でルームを作るか、ルームIDで入る。ルームのページ（`/game/battle/room/?id=123456`）が招待リンクの行き先で、ここでデッキを選び、2人とも「準備OK」になると盤面（`/game/room/?id=…`）へ移る。
 
-1. ブラウザから完全な状態ではなく Command と期待 revision を送信する。
-2. サーバーで Firebase ID token とプレイヤー権限を検証し、game-core で実行する。
-3. Firestore transaction で revision と状態を更新し、二重操作を防ぐ。
-4. 完全な状態はサーバーだけに置き、相手の手札・山札順を除いた各プレイヤー用 view を配信する。
-5. 対戦専用の Firestore rules、切断・再接続・投了を実装する。
+```text
+ブラウザ ──POST Command──> /api/rooms/{id}/ ──> game-core（完全な盤面で実行）
+   ↑                                              │ Firestore transaction
+   └── onSnapshot ── roomViews/{viewKey} <────────┴── rooms/{id}（サーバー専用）
+```
 
-今のローカルセッションは両者の情報を含む。これをそのままオンライン対戦の公開ドキュメントに置かない。
+- **ルームのルール**（`lib/game/room/rules.ts`）は、デッキに使えるカードの範囲：フルーツごとの可否と、拡張プレイアブルの可否。作成時にチェックボックスで選ぶ。game-core がまだ動かせないもの（いちご以外、拡張プレイアブル）は `playableNow` に入っておらず選べない。カードを実装したら `playableNow` に足す。デッキは、ブラウザ（使えるデッキの表示）とサーバー（決定）の両方で同じ関数が検証する。
+- **席**は、作成・参加のときにサーバーが発行する秘密のトークンで識別する（ブラウザの localStorage に保存）。ログインは不要で、招待リンクを開いて名前を入れればすぐ入れる。保存済みデッキを使うときだけログインする。同じブラウザで開き直せば席に戻れる。
+- **盤面はサーバーだけが持つ。** ブラウザは Command と見ている revision を送り、サーバーが席を確かめて game-core で実行し、Firestore の transaction で保存する。ターン中は revision が合わない操作を拒否する（初期ドローと交換は双方が同時に進めるので合わせない）。テスト用の Command は受け付けず、`actor` は送り主の席に置き換える。乱数の種と、デッキのカードの並び（uid とカードの対応）はサーバーで決める。
+- **各席には伏せた盤面だけを配る**（`viewFor`、`packages/game-core/src/redact.ts`）。両者の山札の中身と順番、相手の非公開の手札、乱数の種、解決待ちの効果、相手が選んでいる選択肢のうち非公開のカードを消した `GameState` で、盤面の UI はそのまま描画できる。伏せたカードの `cardId` は `hidden`。
+- **配信**は席ごとの `roomViews/{viewKey}`。ドキュメント ID が推測できない鍵で、その席のブラウザだけが `onSnapshot` で購読する（`firestore.rules` は get のみ許可、list 不可）。購読できないとき（ルール未反映など）は 1.5 秒ごとに API へ問い合わせる。`ROOM_STORE=memory` ではルームをプロセス内に置き、常に API へ問い合わせる（開発・テスト用。Firestore に何も書かない）。
+- **盤面の UI は共通。** `useBoard` は `BoardSession` を受け取り、ブラウザ内の対戦（`useGameSession`）とルームの対戦（`useRoomSession`）のどちらでも動く。ルームでは届いた盤面を1つずつ順に見せる：自分の操作の結果はそのまま反映し、相手の操作は CPU の手と同じ演出（プレイしたカードの表示、攻撃の動き、ダイス）を挟んでから反映する。ダイスはサーバーが振り、結果が届いてから転がす。
+- **投了・再戦・退出。** 対戦中のメニューから投了できる。リザルトの「もう一度」は2人ともデッキ選択に戻る。ロビーでホストが出るとルームは解散、ゲストが出ると席が空く。
+- ルームと盤面には `expiresAt`（最後の更新から12時間後）を付けている。Firestore の TTL ポリシーを `rooms` と `roomViews` の `expiresAt` に設定すると自動で消える。
 
-参考: [Firestore queries](https://firebase.google.com/docs/firestore/query-data/queries)、[Firestore transactions](https://firebase.google.com/docs/firestore/manage-data/transactions)。
+### まだないもの
+
+- 観戦、フレンド招待、切断の検知（相手が戻らないときは自分が投了するか退出する）、持ち時間。
+- ルームの作成・参加の回数制限。ルームIDは6けたの数字なので、空いているルームには ID を当てれば入れる（2人そろえば入れない）。
+- リプレイと、対戦後の相手のデッキの表示（盤面をサーバーが持つため、ブラウザに記録がない）。
 
 ## 未確定のルール
 

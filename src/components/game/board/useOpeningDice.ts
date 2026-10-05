@@ -11,9 +11,10 @@ const CPU_DELAY = 650;
 
 /**
  * The first-player dice. The 3D die needs the result before the throw starts, so it is computed
- * with the deterministic engine and then committed when the throw lands.
+ * with the deterministic engine and then committed when the throw lands. In a room (`remote`) the
+ * server rolls: the command is sent first and `show` throws the die once the result is back.
  */
-export function useOpeningDice({ game, act, paused, cpuRolls, cpuSides }: { game: GameState; act: (command: Command) => void; paused: boolean; cpuRolls: boolean; cpuSides: Side[] }) {
+export function useOpeningDice({ game, act, paused, cpuRolls, cpuSides, remote = false }: { game: GameState; act: (command: Command) => void; paused: boolean; cpuRolls: boolean; cpuSides: Side[]; remote?: boolean }) {
   const [rolling, setRolling] = useState(false);
   const [rollingSide, setRollingSide] = useState<Side>(0);
   const [reveal, setReveal] = useState(false);
@@ -23,20 +24,25 @@ export function useOpeningDice({ game, act, paused, cpuRolls, cpuSides }: { game
   const nextDie: Side = complete || !game.dice || game.dice.rolls[0] === null ? 0 : 1;
   const busy = rolling || reveal;
 
-  const roll = useCallback(() => {
-    if (busy || paused || game.phase !== 'dice') return;
-    const preview = applyCommand(game, { type: 'roll', actor: nextDie }, gameCatalog);
-    if (preview.error) return;
-    setOutcome(preview.state.dice!.rolls[nextDie]);
-    setRollingSide(nextDie);
+  /** Throws `side`'s die so that it lands on `value`, then runs `commit` (which puts the roll into the match). */
+  const show = useCallback((side: Side, value: number, commit: () => void) => {
+    setOutcome(value);
+    setRollingSide(side);
     setRolling(true);
     timer.current = setTimeout(() => {
-      act({ type: 'roll', actor: nextDie });
+      commit();
       setRolling(false);
       setReveal(true);
       timer.current = setTimeout(() => { setReveal(false); timer.current = null; }, REVEAL_DURATION);
     }, DICE_THROW_DURATION);
-  }, [busy, paused, game, nextDie, act]);
+  }, []);
+  const roll = useCallback(() => {
+    if (busy || paused || game.phase !== 'dice') return;
+    if (remote) return act({ type: 'roll', actor: nextDie });
+    const preview = applyCommand(game, { type: 'roll', actor: nextDie }, gameCatalog);
+    if (preview.error) return;
+    show(nextDie, preview.state.dice!.rolls[nextDie]!, () => act({ type: 'roll', actor: nextDie }));
+  }, [busy, paused, remote, game, nextDie, act, show]);
 
   // A CPU side throws its own die.
   useEffect(() => {
@@ -52,5 +58,5 @@ export function useOpeningDice({ game, act, paused, cpuRolls, cpuSides }: { game
     setRolling(false);
     setReveal(false);
   }, []);
-  return { rolling, rollingSide, reveal, outcome, complete, nextDie, busy, roll, reset };
+  return { rolling, rollingSide, reveal, outcome, complete, nextDie, busy, roll, show, reset };
 }

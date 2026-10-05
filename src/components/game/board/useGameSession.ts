@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useReducer, useState } from 'react';
 import { applyCommand, cpuLevels, newGame, sandboxRules } from '@pplale/game-core';
-import type { Command, CpuLevel, GameState } from '@pplale/game-core';
+import type { Command, CpuLevel, GameState, Side } from '@pplale/game-core';
 import { demoDeck, gameCatalog } from '@/lib/game/catalog';
 import { createMatch, randomSeed, usableSetup } from '@/lib/game/match';
 import { readSession, saveSession } from '@/lib/game/sessionStore';
@@ -18,6 +18,33 @@ type Action = { type: 'command'; command: Command; sandbox: boolean } | { type: 
  * shuffle seed (for the report to the CPU server, which rebuilds the match from decks and seed).
  */
 type Origin = { initial: GameState | null; setup: MatchSetup | null; seed: number | null; reported: boolean };
+
+/** One change of a room's match waiting to be shown: the view after it and what caused it. */
+export interface Incoming {
+  /** Differs for every change. */
+  key: string;
+  game: GameState;
+  /** The command that led here (null for anything else, such as the other side giving up). */
+  command: Command | null;
+  /** The card that command played or revealed. */
+  cardId?: string;
+  /** Another match than the one on the table: shown without animating the jump. */
+  fresh: boolean;
+}
+/** What a match played in a room adds: the server applies the commands and sends back what this seat may see. */
+export interface RemoteSession {
+  seat: Side;
+  names: [string, string];
+  /** A command is on its way, or a change has not been shown yet: nothing new may be sent. */
+  waiting: boolean;
+  next: Incoming | null;
+  /** Puts `next` on the table. */
+  accept: () => void;
+  resign: () => void;
+  /** The seat that gave up this match. */
+  resigned: Side | null;
+  leave: () => void;
+}
 
 const HISTORY_LIMIT = 20;
 const modes: Mode[] = ['cpu', 'hotseat', 'watch'];
@@ -117,6 +144,7 @@ export function useGameSession({ onMissing }: { onMissing: () => void }) {
 
   return {
     ...session, mode, levels, ready, saveError, send, undo, canUndo: session.history.length > 0 && !replay,
+    remote: null as RemoteSession | null,
     setup, rematch, canRematch: !!setup,
     /** What the CPU server needs to rebuild this match, when all of it is known. */
     record: initial && setup && seed !== null && !replay ? { seed, decks: setup.decks, commands: session.commands, reported } : null,
@@ -127,3 +155,5 @@ export function useGameSession({ onMissing }: { onMissing: () => void }) {
     replayNext: replay && initial ? replay.commands[session.game.revision - initial.revision] ?? null : null,
   };
 }
+/** What the board plays on: the match in this browser, or one in a room (`remote`). */
+export type BoardSession = ReturnType<typeof useGameSession>;

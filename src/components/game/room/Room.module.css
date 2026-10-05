@@ -1,0 +1,47 @@
+/* Room pages inside the game menu's cream sheet: making / entering a room and waiting in it. */
+.stack { display: grid; gap: clamp(14px, 2vw, 22px); }
+/* The two entrance tiles are buttons here (they open a form below). */
+.tileButton { width: 100%; font: inherit; text-align: left; cursor: pointer; }
+.tileButton[aria-expanded=true] { box-shadow: 0 0 0 3px #6b4a3a55, 0 5px 0 #a8866755; }
+.panel { display: grid; gap: 14px; padding: clamp(16px, 2.4vw, 26px); border: 3px solid #b3d788; border-radius: 20px; background: #fff; color: #6b4a3a; box-shadow: 0 5px 0 #a8866755; }
+.panel h2 { font-size: clamp(20px, 2.6vw, 26px); font-weight: 700; letter-spacing: .08em; }
+.panel p { font-size: 16px; line-height: 1.7; }
+.note { color: #9a8676; font-size: 14px !important; }
+.error { padding: 10px 14px; border-radius: 12px; background: #fbe5dc; color: #a4483b; font-size: 16px; }
+
+.field { display: grid; gap: 6px; font-size: 16px; font-weight: 700; }
+.field input[type=text], .field select { width: 100%; min-height: 50px; padding: 10px 14px; border: 2px solid #d8cbbd; border-radius: 14px; background: #fffdf7; color: inherit; font-size: 18px; font-weight: 400; }
+.idInput { max-width: 12em; font: 700 30px/1 ui-monospace, Menlo, monospace !important; letter-spacing: .28em; text-align: center; }
+
+.checks { display: grid; gap: 10px; padding: 14px; border: 2px solid #eadfce; border-radius: 16px; }
+.checks legend { padding: 0 8px; font-size: 16px; font-weight: 700; }
+.checkRow { display: flex; flex-wrap: wrap; gap: 10px; }
+.check { display: flex; align-items: center; gap: 10px; min-height: 48px; padding: 8px 16px 8px 12px; border: 2px solid #d8cbbd; border-radius: 999px; background: #fffdf7; font-size: 18px; cursor: pointer; }
+.check input { width: 22px; height: 22px; accent-color: #7da552; }
+.check:has(input:checked) { border-color: #7da552; background: #eef6e2; }
+.check:has(input:disabled) { color: #b3a596; background: #f4efe7; cursor: default; }
+.check small { font-size: 13px; }
+
+.primary, .secondary, .danger { min-height: 52px; padding: 12px 22px; border-radius: 999px; font-size: 18px; font-weight: 700; cursor: pointer; transition: transform .15s; }
+.primary { border: 2px solid #7da552; background: #b3d788; color: #37532e; }
+.secondary { border: 2px solid #d8cbbd; background: #fffdf7; color: #6b4a3a; }
+.danger { border: 2px solid #e2b3ab; background: #fff; color: #a4483b; font-size: 16px; min-height: 44px; justify-self: start; }
+.primary:disabled, .secondary:disabled { opacity: .55; cursor: default; }
+.primary:not(:disabled):hover, .secondary:not(:disabled):hover { transform: translateY(-2px); }
+.row { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; }
+
+/* The room id is what gets read out or typed: large and spaced. */
+.roomId { display: flex; flex-wrap: wrap; align-items: center; gap: 14px; }
+.roomId small { font-size: 14px; font-weight: 700; letter-spacing: .14em; color: #9a8676; }
+.roomId output { font: 700 clamp(34px, 6vw, 54px)/1 ui-monospace, Menlo, monospace; letter-spacing: .2em; color: #6b4a3a; }
+.rules { padding: 10px 14px; border-radius: 12px; background: #f7f2ea; font-size: 16px; }
+
+.seats { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; }
+.seat { display: grid; gap: 4px; padding: 14px; border: 2px solid #eadfce; border-radius: 16px; background: #fffdf7; }
+.seat small { font-size: 13px; letter-spacing: .12em; color: #9a8676; }
+.seat b { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 20px; }
+.seat span { font-size: 15px; }
+.seatReady { border-color: #7da552; background: #eef6e2; }
+.seatEmpty { border-style: dashed; color: #9a8676; }
+@media (max-width: 520px) { .seats { grid-template-columns: minmax(0, 1fr); } }
+@media (prefers-reduced-motion: reduce) { .primary, .secondary { transition: none; } }

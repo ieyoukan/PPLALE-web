@@ -167,9 +167,9 @@ export function useBoardAnimations({ game, view, mode, cpuSides, replaying, cont
   /**
    * Runs `commit` (applying the command) with its animation: attacks lunge first; cards, skills and
    * chosen targets of the opponent or of any CPU side are shown before they resolve, so the result
-   * can be followed.
+   * can be followed. `cardId`: the card a play / reveal shows, when the match on the table hides it.
    */
-  const run = useCallback((command: Command, commit: () => void) => {
+  const run = useCallback((command: Command, commit: () => void, cardId?: string) => {
     const root = container.current;
     const apply = () => {
       enabled.current = true;
@@ -178,7 +178,7 @@ export function useBoardAnimations({ game, view, mode, cpuSides, replaying, cont
       commit();
     };
     const opponent = command.actor !== view || cpuSides.includes(command.actor);
-    const shown = opponent ? describe(game, command) : null;
+    const shown = opponent ? describe(game, command, cardId) : null;
     if (shown) {
       setAnnouncement(shown);
       later(apply, ANNOUNCE_HIT);
@@ -245,11 +245,11 @@ export function useBoardAnimations({ game, view, mode, cpuSides, replaying, cont
 let choiceId = 0;
 let announcementId = 0;
 /** What to show for the opponent's play / skill / reveal, or null for other commands. */
-function describe(game: GameState, command: Command): Announcement | null {
+function describe(game: GameState, command: Command, cardId?: string): Announcement | null {
   const id = ++announcementId;
   if (command.type === 'play' || command.type === 'reveal') {
-    const card = displayCards[game.cards[command.uid].cardId];
-    return { id, kind: command.type, side: command.actor, cardId: card.id, title: card.name, text: card.effect ?? '' };
+    const card = displayCards[cardId ?? game.cards[command.uid]?.cardId];
+    return card && { id, kind: command.type, side: command.actor, cardId: card.id, title: card.name, text: card.effect ?? '' };
   }
   if (command.type === 'skill') {
     const playable = game.players[command.actor].playable, skill = skillsFor(playable)[command.index];

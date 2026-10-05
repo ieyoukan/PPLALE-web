@@ -15,3 +15,4 @@ export { changesBetween, instanceFields, playerFields, stateFields, zones } from
 export type { Change, ChangeKind, Place, Zone } from './changes.ts';
 export { attackTargets, canPlay, isRevealable, pendingView, skillBlocked } from './view.ts';
 export type { PendingView } from './view.ts';
+export { HIDDEN_CARD, viewFor } from './redact.ts';

@@ -17,14 +17,16 @@ export function PlayerSide({ side }: { side: Side }) {
   const board = useBoardContext();
   const { game, view, mode, busy, attacker, attackLeader } = board;
   const player = game.players[side], near = side === view;
+  // In a room either seat may be this screen's; elsewhere side 0 is the player.
+  const who = (mode === 'room' ? near : side === 0) ? 'あなた' : '相手';
   const sandbox = mode === 'hotseat' && game.phase === 'playing' && !game.pending && !busy;
   const leaderTarget = !!attacker && side !== view && board.canStrike(attacker, 'leader');
-  return <section className={`${styles.playerSide} ${near ? styles.near : styles.far}`} aria-label={side === 0 ? 'あなたの盤面' : '相手の盤面'}>
+  return <section className={`${styles.playerSide} ${near ? styles.near : styles.far}`} aria-label={`${who}の盤面`}>
     <Zone side={side} kind="yojo" className={styles.deckYojo} />
     <Zone side={side} kind="sweet" className={styles.deckSweet} />
     <Zone side={side} kind="nap" className={styles.napZone} />
     <Zone side={side} kind="exile" className={styles.exileZone} />
-    <button className={styles.playableZone} onClick={() => board.setPanel({ type: 'skills', side })} aria-label={`${side === 0 ? 'あなた' : '相手'}のスキル`}>
+    <button className={styles.playableZone} onClick={() => board.setPanel({ type: 'skills', side })} aria-label={`${who}のスキル`}>
       <span className={styles.playableCard}><GameCard id={player.playable} sizes="90px" /></span>
     </button>
     <div className={styles.turnCounter}>

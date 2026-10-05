@@ -35,6 +35,13 @@ export default function PrivacyPolicy() {
                     <li>デッキデータ（ログイン時のみ保存）</li>
                   </ul>
                 </li>
+                <li>Firebaseに一時的に保存される情報（ゲームのルームマッチで対戦した場合）：
+                  <ul className={css({ listStyleType: 'disc', pl: '6', mt: '2' })}>
+                    <li>ルームで入力した名前（対戦相手に表示されます）、使用したデッキ、対戦の進行状況</li>
+                    <li>アカウントの情報は含まれません。ログインしていなくても同じ内容です</li>
+                    <li>対戦を進めるためだけに使い、ルームを使わなくなってから一定時間が過ぎたものは削除の対象になります</li>
+                  </ul>
+                </li>
                 <li>CPUの学習用サーバーに保存される情報（ゲームで「さいきょう」のCPUと対戦し、送信に同意した場合のみ）：
                   <ul className={css({ listStyleType: 'disc', pl: '6', mt: '2' })}>
                     <li>対戦の記録（お互いのデッキに入っているカード、お互いが打った手、勝敗、受け取った日付）</li>
@@ -60,6 +67,7 @@ export default function PrivacyPolicy() {
                 <li>ユーザー認証</li>
                 <li>デッキデータの保存、共有</li>
                 <li>ゲームのCPUの学習と、その強さの計測</li>
+                <li>ゲームのルームマッチ（ほかのプレイヤーとの対戦）の進行</li>
               </ul>
             </div>
 

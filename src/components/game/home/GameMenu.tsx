@@ -13,7 +13,7 @@ import styles from './GameMenu.module.css';
 
 const tabs = [
   { href: HOME_PATH, label: 'CPU対決', note: 'ひとりであそぶ', tone: styles.pink },
-  { href: BATTLE_PATH, label: 'バトル', note: '準備中', tone: styles.green },
+  { href: BATTLE_PATH, label: 'バトル', note: 'ルームマッチ', tone: styles.green },
   { href: CARDS_PATH, label: 'カード', note: '図鑑・デッキ構築', tone: styles.lilac },
 ];
 

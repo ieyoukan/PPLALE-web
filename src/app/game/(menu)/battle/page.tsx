@@ -1,10 +1,10 @@
 import type { Metadata } from 'next';
-import { BattleSoon } from '@/components/game/home/BattleSoon';
+import { RoomEntrance } from '@/components/game/room/RoomEntrance';
 export const metadata: Metadata = {
     title: 'ぷぷりえーる バトル',
-    description: 'ほかのプレイヤーとの対戦（ルームマッチ）は準備中。',
+    description: 'ルームを作って友だちを招待し、ぷぷりえーるで対戦する（ルームマッチ）。',
     alternates: { canonical: '/game/battle/' },
 };
 export default function Page() {
-    return <BattleSoon />;
+    return <RoomEntrance />;
 }

@@ -11,7 +11,7 @@ import { useAuth } from '@/lib/auth';
 import { demoDeck, gameCatalog } from '@/lib/game/catalog';
 import type { SavedGameDeck } from '@/lib/game/savedDecks';
 import styles from './BoardEmulator.module.css';
-const modeNames: Record<Mode, string> = { cpu: 'CPUと対戦', watch: 'CPU同士を観戦', hotseat: '両側を操作' };
+const modeNames: Record<Mode, string> = { cpu: 'CPUと対戦', watch: 'CPU同士を観戦', hotseat: '両側を操作', room: 'ルームマッチ' };
 /** Mode (among `modes`), CPU levels and decks for a new match (the rules are fixed). Used by the preparation pages. */
 export function GameSetup({ modes, onStart }: {
     modes: Mode[];

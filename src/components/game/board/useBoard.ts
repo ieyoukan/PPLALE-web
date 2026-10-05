@@ -1,6 +1,6 @@
 'use client';
 
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { attackTargets, canPlay, costOf, other, pendingView } from '@pplale/game-core';
 import type { Command, DeckKind, GameState, Side } from '@pplale/game-core';
 import type { RefObject } from 'react';
@@ -13,7 +13,8 @@ import { useBoardAnimations } from './useBoardAnimations';
 import { useCardDrag } from './useCardDrag';
 import type { DragSource } from './useCardDrag';
 import { useCpuPlayer } from './useCpuPlayer';
-import { cpuSidesOf, sideLabel, useGameSession } from './useGameSession';
+import { cpuSidesOf, sideLabel } from './useGameSession';
+import type { BoardSession } from './useGameSession';
 import { useOpeningDice } from './useOpeningDice';
 
 export type Panel =
@@ -30,16 +31,18 @@ const REPLAY_OPENING_DELAY = 150;
  * Everything the board UI needs: the match, who may act, what is targetable, and the handlers
  * for each kind of tap / drag. Components read it through BoardContext and stay presentational.
  */
-export function useBoard(container: RefObject<HTMLDivElement | null>) {
+export function useBoard(container: RefObject<HTMLDivElement | null>, session: BoardSession) {
   const [panel, setPanel] = useState<Panel>(null);
   const router = useRouter();
-  // No saved match (opened directly, or storage cleared): prepare one first.
-  const session = useGameSession({ onMissing: () => router.replace(HOME_PATH) });
+  /** Set in a room: the seat this browser plays, and the changes arriving from the server. */
+  const { remote } = session;
   const { game, mode, levels, ready, error, saveError, canUndo, send, undo: undoCommand, replaying, replayNext, setup, canRematch, canReplay } = session;
   const { user } = useAuth();
   /** Names for the versus and result screens: the signed-in user's name for the human seat. */
-  const names = useMemo<[string, string]>(() => [mode !== 'watch' && user?.displayName || sideLabel(mode, 0), sideLabel(mode, 1)], [mode, user]);
-  const [view, setView] = useState<Side>(0);
+  const localNames = useMemo<[string, string]>(() => [mode !== 'watch' && user?.displayName || sideLabel(mode, 0), sideLabel(mode, 1)], [mode, user]);
+  const names = remote?.names ?? localNames;
+  const home: Side = remote?.seat ?? (mode === 'watch' ? 1 : 0);
+  const [view, setView] = useState<Side>(home);
   const [selected, setSelected] = useState<string | null>(null);
   const [attacker, setAttacker] = useState<string | null>(null);
   const [paused, setPaused] = useState(false);
@@ -51,8 +54,9 @@ export function useBoard(container: RefObject<HTMLDivElement | null>) {
   const cpuSides = useMemo<Side[]>(() => replaying ? [0, 1] : cpuSidesOf(mode), [mode, replaying]);
   const animations = useBoardAnimations({ game, view, mode, cpuSides, replaying, container });
   const { run: animate, skipNext: skipAnimation, flights, strike, turnNotice, announcement, ping, blocked, order, effectRoll, choiceNote, busy: animating } = animations;
-  /** A human acts for this side (nobody does while watching two CPUs). */
-  const canControl = useCallback((side: Side) => !cpuSides.includes(side), [cpuSides]);
+  /** This screen acts for the side (nobody does while watching two CPUs; in a room only the own seat). */
+  const seat = remote?.seat;
+  const canControl = useCallback((side: Side) => seat === undefined ? !cpuSides.includes(side) : side === seat, [cpuSides, seat]);
 
   /** Sends a command (with its animation). Clears the local selection of the acting side. */
   const act = useCallback((command: Command) => {
@@ -64,9 +68,9 @@ export function useBoard(container: RefObject<HTMLDivElement | null>) {
     animate(command, () => send(command));
   }, [view, animate, send]);
 
-  const dice = useOpeningDice({ game, act, paused: loading, cpuSides, cpuRolls: ready && !loading && !paused && !animating });
+  const dice = useOpeningDice({ game, act, paused: loading, cpuSides, cpuRolls: ready && !loading && !paused && !animating, remote: !!remote });
   const { busy: rollingDice } = dice;
-  const busy = animating || rollingDice;
+  const busy = animating || rollingDice || !!remote?.waiting;
   const modelUsed = useCpuPlayer({
     enabled: ready && !replaying && cpuSides.length > 0 && !loading && !paused, sides: cpuSides, levels, game, act, flights,
     busy: { any: busy, blocking: rollingDice || !!strike || !!turnNotice || !!announcement || !!ping || !!blocked || !!order || !!effectRoll || !!choiceNote },
@@ -94,6 +98,39 @@ export function useBoard(container: RefObject<HTMLDivElement | null>) {
     const timer = setTimeout(() => act(replayNext), game.phase === 'playing' ? REPLAY_DELAY : REPLAY_OPENING_DELAY);
     return () => clearTimeout(timer);
   }, [replaying, paused, busy, replayNext, error, endReplay, skipAnimation, act, game.phase]);
+
+  // ── Room ──
+  // Shows the changes the server sends, one at a time: the answer to this seat's own command goes
+  // straight onto the table (its animation already ran), the other side's is announced first.
+  const next = remote?.next, accept = remote?.accept;
+  const handling = useRef<string | null>(null);
+  const { reset: resetAnimations } = animations, { reset: resetDice, show: showDie } = dice;
+  useEffect(() => {
+    if (!next || !accept || seat === undefined || handling.current === next.key) return;
+    const { key, command, cardId, fresh, game: after } = next;
+    if (fresh) {
+      handling.current = key;
+      resetAnimations();
+      resetDice();
+      setSelected(null);
+      setAttacker(null);
+      setExchanges([]);
+      setPanel(null);
+      return accept();
+    }
+    if (command?.type === 'roll') {
+      if (rollingDice) return;
+      handling.current = key;
+      return showDie(command.actor, after.dice?.rolls[command.actor] ?? 1, accept);
+    }
+    if (!command || command.actor === seat) {
+      handling.current = key;
+      return accept();
+    }
+    if (animating || rollingDice) return;
+    handling.current = key;
+    animate(command, accept, cardId);
+  }, [next, accept, seat, animating, rollingDice, animate, resetAnimations, resetDice, showDie]);
 
   // Watching starts from CPU 2's seat, so CPU 1 is on top and CPU 2 at the bottom (on the table and the versus screen).
   useEffect(() => { if (mode === 'watch') setView(1); }, [mode]);
@@ -191,13 +228,14 @@ export function useBoard(container: RefObject<HTMLDivElement | null>) {
   // ── Session ──
   /** Back to the game menu. The match stays saved and can be resumed from there. */
   function leave() {
-    router.push(HOME_PATH);
+    if (remote) remote.leave();
+    else router.push(HOME_PATH);
   }
   /** Switching to another match (rematch, replay, back from a replay): nothing carries over. */
   function resetTable() {
     animations.reset();
     dice.reset();
-    setView(mode === 'watch' ? 1 : 0);
+    setView(home);
     setSelected(null);
     setAttacker(null);
     setExchanges([]);
@@ -223,7 +261,7 @@ export function useBoard(container: RefObject<HTMLDivElement | null>) {
   }
 
   return {
-    game, mode, levels, view, me, panel, ready, busy, paused, names,
+    game, mode, levels, view, me, panel, ready, busy, paused, names, remote,
     setup, canRematch, canReplay, replaying,
     error: error || saveError, canUndo,
     selected, attacker, pending, ours, playEnabled,

@@ -3,8 +3,11 @@
 import { turnOf } from '@pplale/game-core';
 import type { Command, CpuLevel, Deck, GameState, Rules, Side } from '@pplale/game-core';
 
-/** cpu: you (side 0) vs CPU. hotseat: one device controls both sides. watch: CPU vs CPU. */
-export type Mode = 'cpu' | 'hotseat' | 'watch';
+/**
+ * cpu: you (side 0) vs CPU. hotseat: one device controls both sides. watch: CPU vs CPU.
+ * room: another player over the network; the match lives on the server, not in this browser.
+ */
+export type Mode = 'cpu' | 'hotseat' | 'watch' | 'room';
 /** CPU level per side; a side's entry is unused while a human controls it. */
 export type Levels = [CpuLevel, CpuLevel];
 /** What the match was made from, so the same one can be started again. */
@@ -29,8 +32,13 @@ export interface StoredSession {
 const STORAGE_KEY = 'pplale-game-session-v2';
 /** Where the game opens and returns to: the CPU対決 tab (preparation against the CPU). */
 export const HOME_PATH = '/game/';
-/** Preparation of a match between people (same device now; rooms later). */
+/** Matches between people: making or entering a room. */
 export const BATTLE_PATH = '/game/battle/';
+/** A room before its match (`?id=`): the page a shared link opens. */
+export const ROOM_PATH = '/game/battle/room/';
+/** The board of a room's match (`?id=`). */
+export const ROOM_PLAY_PATH = '/game/room/';
+export const roomHref = (path: typeof ROOM_PATH | typeof ROOM_PLAY_PATH, id: string) => `${path}?id=${id}`;
 export const CARDS_PATH = '/game/cards/';
 export const CARD_GALLERY_PATH = '/game/cards/zukan/';
 export const PLAY_PATH = '/game/play/';
