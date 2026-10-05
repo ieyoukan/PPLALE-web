@@ -1,7 +1,7 @@
 'use client';
 
 // The バトル tab: make a room (choosing its rules) or enter one by its id.
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/lib/auth';
@@ -67,15 +67,18 @@ function ServerStatus({ stats }: { stats: RoomServerStats | null | undefined }) 
   </details>;
 }
 
-/** The picture on each door: a table being watched, a door standing open, a new door. */
+/** The picture on each door: people watching a table, a door standing open, a new door. */
 function DoorArt({ kind }: { kind: 'watch' | 'enter' | 'create' }) {
   if (kind === 'watch') return <svg viewBox="0 0 120 120">
-    <ellipse cx="60" cy="92" rx="46" ry="13" fill="#fffdeb" opacity=".9" />
-    <ellipse cx="60" cy="88" rx="46" ry="13" fill="#fff" stroke="#6b4a3a" strokeWidth="2.5" />
-    <rect x="34" y="70" width="18" height="25" rx="3" fill="#f4b0bb" stroke="#6b4a3a" strokeWidth="2.5" transform="rotate(-10 43 82)" />
-    <rect x="68" y="70" width="18" height="25" rx="3" fill="#b3d788" stroke="#6b4a3a" strokeWidth="2.5" transform="rotate(10 77 82)" />
-    <path d="M22 38q38-34 76 0q-38 34-76 0z" fill="#fff" stroke="#6b4a3a" strokeWidth="3" strokeLinejoin="round" />
-    <circle cx="60" cy="38" r="11" fill="#6b4a3a" /><circle cx="64" cy="34" r="3.5" fill="#fff" />
+    {/* The table with a match on it, and two people looking on from this side (seen from behind). */}
+    <path d="M24 20l2.5 6 6 2.5-6 2.5-2.5 6-2.5-6-6-2.5 6-2.5zM97 12l2 4.5 4.5 2-4.5 2-2 4.5-2-4.5-4.5-2 4.5-2z" fill="#fffdeb" stroke="#6b4a3a" strokeWidth="1.8" strokeLinejoin="round" />
+    <ellipse cx="60" cy="56" rx="42" ry="14" fill="#fffdeb" stroke="#6b4a3a" strokeWidth="2.5" />
+    <rect x="38" y="34" width="17" height="24" rx="3" fill="#f4b0bb" stroke="#6b4a3a" strokeWidth="2.5" transform="rotate(-10 46 46)" />
+    <rect x="65" y="34" width="17" height="24" rx="3" fill="#b3d788" stroke="#6b4a3a" strokeWidth="2.5" transform="rotate(10 74 46)" />
+    <path d="M14 116a22 22 0 0 1 44 0z" fill="#e7c3e2" stroke="#6b4a3a" strokeWidth="2.5" strokeLinejoin="round" />
+    <circle cx="36" cy="84" r="13" fill="#c9a27e" stroke="#6b4a3a" strokeWidth="2.5" />
+    <path d="M62 116a22 22 0 0 1 44 0z" fill="#fde9a8" stroke="#6b4a3a" strokeWidth="2.5" strokeLinejoin="round" />
+    <circle cx="84" cy="84" r="13" fill="#f4b0bb" stroke="#6b4a3a" strokeWidth="2.5" />
   </svg>;
   return <svg viewBox="0 0 120 120">
     {/* The doorway, with light coming through it. */}
@@ -124,6 +127,9 @@ export function RoomEntrance() {
   const stats = useServerStats();
   const waiting = fruits.some(fruit => !playableNow.fruits.includes(fruit)) || !playableNow.extendedPlayable;
 
+  // The doors fill the screen, so the form of the chosen one opens below them: bring it into view.
+  const form = useRef<HTMLDivElement>(null);
+  useEffect(() => { if (open) form.current?.scrollIntoView({ behavior: 'smooth', block: 'start' }); }, [open]);
   const door = (kind: 'watch' | 'enter' | 'create', label: string, note: string) =>
     <button className={`${styles.door} ${styles[kind]}`} aria-expanded={open === kind} onClick={() => setOpen(open === kind ? null : kind)}>
       <span className={styles.doorArt} aria-hidden="true"><DoorArt kind={kind} /></span>
@@ -131,7 +137,7 @@ export function RoomEntrance() {
     </button>;
 
   return <div className={styles.stack}>
-    {/* Like a room-match menu: what this is on the left, three tall doors to pick from on the right. */}
+    {/* What this is on the left; on the right three large doors, one under the other. */}
     <div className={styles.entrance}>
       <div className={styles.intro}>
         <h2>ルームマッチ</h2>
@@ -140,11 +146,12 @@ export function RoomEntrance() {
         {latest && <Link href={roomHref(ROOM_PATH, latest)} className={styles.secondary}>前回のルーム（{latest}）に戻る</Link>}
       </div>
       <div className={styles.doors} data-open={open ?? undefined}>
-        {door('watch', '観戦する', '対戦を見る')}
-        {door('enter', 'ルームへ入る', 'IDで参加する')}
-        {door('create', 'ルームを作る', '友だちを招待する')}
+        {door('watch', '観戦する', '観戦できるルームの対戦を見る')}
+        {door('enter', 'ルームへ入る', '教えてもらったルームIDで参加する')}
+        {door('create', 'ルームを作る', 'ルールを決めて、友だちを招待する')}
       </div>
     </div>
+    <div ref={form} className={styles.formAnchor} />
     {open === 'create' && <section className={styles.panel} aria-label="ルームを作る">
       <h2>ルームのルール</h2>
       <fieldset className={styles.checks}>

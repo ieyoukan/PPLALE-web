@@ -1,44 +1,50 @@
 /* Room pages inside the game menu's cream sheet: making / entering a room and waiting in it. */
 .stack { display: grid; gap: clamp(14px, 2vw, 22px); }
-/* The entrance: what room matches are on the left, three tall doors (watch / enter / make) on the right. */
-.entrance { display: grid; grid-template-columns: minmax(180px, 1fr) minmax(0, 2.6fr); gap: clamp(14px, 2.4vw, 28px); align-items: center; }
+/* The entrance: what room matches are on the left; on the right three large doors, one under the other (watch / enter / make). */
+.entrance { display: grid; grid-template-columns: minmax(210px, 1fr) minmax(0, 2.6fr); gap: clamp(14px, 2.4vw, 28px); align-items: center; }
 .intro { display: grid; gap: 12px; justify-items: center; text-align: center; color: #6b4a3a; }
-.intro h2 { width: 100%; padding-bottom: 10px; border-bottom: 2px solid #a8866766; font-size: clamp(22px, 2.6vw, 30px); font-weight: 700; letter-spacing: .12em; }
+.intro h2 { width: 100%; padding-bottom: 10px; border-bottom: 2px solid #a8866766; font-size: clamp(20px, 2.2vw, 28px); font-weight: 700; letter-spacing: .08em; white-space: nowrap; }
 .intro > p { font-size: 16px; line-height: 1.8; }
-.intro .server { width: 100%; text-align: left; font-size: 14px; }
+.intro .server { width: 100%; padding: 10px 12px; text-align: left; font-size: 13px; white-space: nowrap; }
 .intro .server small { display: block; margin: 2px 0 0 18px; }
 .intro .secondary { font-size: 15px; min-height: 44px; padding: 8px 16px; }
-.doors { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: clamp(8px, 1.6vw, 18px); }
-.door { --tone: #e7c3e2; display: grid; grid-template-rows: minmax(0, 1fr) auto; aspect-ratio: 3 / 4.3; padding: 0; overflow: hidden; border: 3px solid #a88667; border-radius: 16px; background: #fff; color: #6b4a3a; font: inherit; cursor: pointer; box-shadow: 0 6px 0 #a8866755, 0 0 0 4px #fffdeb inset; transition: transform .2s, box-shadow .2s, filter .2s; }
+.doors { display: grid; gap: clamp(10px, 1.6vw, 16px); }
+/* Each door: its picture on the left, its name beside it; together they fill the screen's height. */
+.door { --tone: #e7c3e2; display: grid; grid-template-columns: clamp(92px, 30%, 230px) minmax(0, 1fr); align-items: stretch; height: clamp(104px, calc((100dvh - 230px) / 3), 190px); padding: 0; overflow: hidden; border: 3px solid #a88667; border-radius: 18px; background: #fff; color: #6b4a3a; font: inherit; cursor: pointer; box-shadow: 0 6px 0 #a8866755, 0 0 0 4px #fffdeb inset; transition: transform .2s, box-shadow .2s, filter .2s; }
 .watch { --tone: #a9d6ee; }
 .enter { --tone: #e7c3e2; }
 .create { --tone: #f4b0bb; }
 /* The picture: the door's colour as a sky, lighter towards the floor. */
-.doorArt { display: grid; place-items: center; min-height: 0; padding: 8% 10% 2%; background: radial-gradient(circle at 50% 78%, #fffdebcc 0 28%, transparent 62%), linear-gradient(180deg, var(--tone), color-mix(in srgb, var(--tone) 35%, #fffdeb)); }
-.doorArt svg { width: 100%; height: 100%; max-height: 190px; filter: drop-shadow(0 4px 0 #6b4a3a22); }
-/* The name on a plate at the foot, under a rule. */
-.doorPlate { display: grid; gap: 2px; margin: 0 10px; padding: 10px 2px 12px; border-top: 2px solid #a8866766; text-align: center; }
-.doorPlate b { font-size: clamp(15px, 2vw, 22px); letter-spacing: .06em; white-space: nowrap; }
-.doorPlate small { font-size: clamp(11px, 1.3vw, 14px); color: #9a8676; white-space: nowrap; }
-.door:hover { transform: translateY(-4px); box-shadow: 0 10px 0 #a8866755, 0 0 0 4px #fffdeb inset; }
-.door[aria-expanded=true] { transform: translateY(-4px); border-color: #e0607a; box-shadow: 0 10px 0 #e0607a55, 0 0 0 4px #fffdeb inset, 0 0 0 4px #f4b0bb88; }
+.doorArt { position: relative; min-width: 0; min-height: 0; background: radial-gradient(circle at 50% 78%, #fffdebcc 0 28%, transparent 62%), linear-gradient(180deg, var(--tone), color-mix(in srgb, var(--tone) 35%, #fffdeb)); }
+/* Fitted inside the picture, whatever its shape. */
+.doorArt svg { position: absolute; inset: 8px 10px 4px; width: calc(100% - 20px); height: calc(100% - 12px); filter: drop-shadow(0 4px 0 #6b4a3a22); }
+/* The name beside it, behind a rule. */
+.doorPlate { display: grid; align-content: center; gap: 6px; margin: 12px 0; padding: 0 clamp(14px, 2.4vw, 30px); border-left: 2px solid #a8866766; text-align: left; }
+.doorPlate b { font-size: clamp(22px, 3vw, 36px); letter-spacing: .14em; white-space: nowrap; }
+.doorPlate small { font-size: clamp(13px, 1.5vw, 16px); color: #9a8676; }
+.door:hover { transform: translateY(-3px); box-shadow: 0 9px 0 #a8866755, 0 0 0 4px #fffdeb inset; }
+.door[aria-expanded=true] { transform: translateY(-3px); border-color: #e0607a; box-shadow: 0 9px 0 #e0607a55, 0 0 0 4px #fffdeb inset, 0 0 0 4px #f4b0bb88; }
 /* With one chosen, the others step back. */
 .doors[data-open] .door[aria-expanded=false] { filter: saturate(.55) brightness(.97); }
-@media (max-width: 620px) { .entrance { grid-template-columns: minmax(0, 1fr); } }
+/* Narrow: the description goes on top, and the doors take what is left of the screen. */
+@media (max-width: 720px) { .entrance { grid-template-columns: minmax(0, 1fr); } .door { height: clamp(96px, calc((100dvh - 470px) / 3), 170px); } }
 /* A phone held sideways: everything stays on one screen. */
 @media (max-height: 520px) {
-  .entrance { grid-template-columns: minmax(150px, 1fr) minmax(0, 2.6fr); }
-  .door { aspect-ratio: auto; height: min(58dvh, 280px); }
+  .entrance { grid-template-columns: minmax(170px, 1fr) minmax(0, 2.2fr); }
+  .door { height: clamp(64px, calc((100dvh - 150px) / 3), 110px); border-radius: 14px; }
+  .doorArt svg { inset: 3px 6px 2px; width: calc(100% - 12px); height: calc(100% - 5px); }
+  .doorPlate { margin: 6px 0; gap: 2px; }
+  .doorPlate b { font-size: 20px; }
   .intro { gap: 6px; }
   .intro > p { font-size: 14px; line-height: 1.5; }
   .intro .server { padding: 8px 10px; font-size: 12px; }
   .intro .server small { margin-left: 0; font-size: 12px; }
-  .doorPlate { margin: 0 6px; }
-  .doorPlate b { font-size: 15px; letter-spacing: 0; }
-  .doorPlate small { font-size: 11px; }
 }
-@media (max-width: 420px) { .doorPlate small { display: none; } .doorPlate { margin: 0 6px; padding: 8px 0 10px; } }
 @media (prefers-reduced-motion: reduce) { .door { transition: none; } }
+/* The chosen door's form scrolls to just under the page's edge. */
+.formAnchor { scroll-margin-top: 12px; margin-bottom: calc(-1 * clamp(14px, 2vw, 22px)); }
+/* A narrow phone: the name alone, a little smaller. */
+@media (max-width: 420px) { .doorPlate b { font-size: 20px; letter-spacing: .06em; } .doorPlate small { font-size: 12px; } }
 .panel { display: grid; gap: 14px; padding: clamp(16px, 2.4vw, 26px); border: 3px solid #b3d788; border-radius: 20px; background: #fff; color: #6b4a3a; box-shadow: 0 5px 0 #a8866755; }
 .panel h2 { font-size: clamp(20px, 2.6vw, 26px); font-weight: 700; letter-spacing: .08em; }
 .panel p { font-size: 16px; line-height: 1.7; }
