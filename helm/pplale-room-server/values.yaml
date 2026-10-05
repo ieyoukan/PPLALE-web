@@ -1,4 +1,6 @@
-# ルームは1つのプロセスのメモリに持ち、同じ内容を1つのボリュームにファイルで残すので、常に1レプリカで動かす。
+# ルームは Redis に置き、ルームサーバーの Pod は接続しか持たない。Pod は何台でもよく、
+# 入れ替えても進行中の対戦は続く (つながっていたブラウザが別の Pod につなぎ直す)。
+replicaCount: 2
 
 image:
   repository: ghcr.io/ieyoukan/pplale-room-server
@@ -44,22 +46,41 @@ maxRooms: 500
 # だれも操作しなくなってからこの時間が過ぎたルームを消す。
 roomIdleHours: 12
 
-persistence:
-  enabled: true
-  # 空ならクラスタのデフォルト。自宅クラスタでは proxmox-data。
-  storageClass: ""
-  # 1ルームは数十KB。
-  size: 1Gi
-  existingClaim: ""
-
 # 対戦の処理は1手あたり数ミリ秒。
 resources:
   requests:
     cpu: 50m
-    memory: 128Mi
+    memory: 96Mi
   limits:
     cpu: "1"
-    memory: 512Mi
+    memory: 384Mi
+
+redis:
+  # このチャートで Redis を1つ立てる。
+  enabled: true
+  # ほかの Redis を使うときはその URL (redis://[:password@]host:port)。入れるとこのチャートの Redis は作らない。
+  url: ""
+  image:
+    repository: redis
+    tag: 7.4-alpine
+    pullPolicy: IfNotPresent
+  # 1ルームは数十KB。上限を超えると新しいルームを作れなくなる (古いルームは時間で消える)。
+  maxMemory: 256mb
+  # ルームサーバーの Pod 以外から Redis につながせない (CNI が NetworkPolicy に対応している場合に効く)。
+  networkPolicy: true
+  persistence:
+    # 切ると、Redis が入れ替わったときに進行中のルームと対戦が消える。
+    enabled: true
+    # 空ならクラスタのデフォルト。自宅クラスタでは proxmox-data。
+    storageClass: ""
+    size: 1Gi
+  resources:
+    requests:
+      cpu: 20m
+      memory: 64Mi
+    limits:
+      cpu: 500m
+      memory: 384Mi
 
 podSecurityContext:
   runAsNonRoot: true

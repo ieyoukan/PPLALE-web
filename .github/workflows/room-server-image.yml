@@ -11,16 +11,20 @@ name: Publish room server image
 on:
   push:
     branches: [main]
+    # ルームサーバーの動きが変わるものだけ。イメージが変わると Pod が入れ替わり、つながっている
+    # プレイヤーが一瞬つなぎ直すので、関係のない変更 (CPU の思考や学習、文書、テスト) では作らない。
     paths:
-      - services/room-server/**
+      - services/room-server/src/**
+      - services/room-server/package.json
+      - services/room-server/Dockerfile
       - packages/game-core/src/**
+      - '!packages/game-core/src/ai/**'
       - packages/game-core/package.json
       - src/data/yojo.json
       - src/data/sweet.json
       - src/data/playable.json
       - src/data/tokenYojo.json
       - src/data/token.json
-      - .github/workflows/room-server-image.yml
   workflow_dispatch: {}
 
 permissions:
@@ -33,6 +37,12 @@ env:
 jobs:
   test:
     runs-on: ubuntu-latest
+    services:
+      redis:
+        image: redis:7.4-alpine
+        ports:
+          - 6379:6379
+        options: --health-cmd "redis-cli ping" --health-interval 5s --health-timeout 3s --health-retries 10
     steps:
       - uses: actions/checkout@v7
       - name: Install tools from mise.toml
@@ -43,6 +53,10 @@ jobs:
         run: npm ci
       - name: Test the room server
         run: npm run test:room-server
+      - name: Test the room server on Redis
+        run: npm run test:room-server
+        env:
+          REDIS_URL: redis://localhost:6379
 
   tag:
     needs: test

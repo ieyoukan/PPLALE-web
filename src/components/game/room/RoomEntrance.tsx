@@ -51,21 +51,19 @@ function useServerStats() {
   }, []);
   return stats;
 }
-const duration = (seconds: number) => seconds < 3600 ? `${Math.max(1, Math.round(seconds / 60))}分` : seconds < 86400 ? `${Math.round(seconds / 3600)}時間` : `${Math.round(seconds / 86400)}日`;
-
 /** One line about the room server, with the details behind it for when something seems off. */
 function ServerStatus({ stats }: { stats: RoomServerStats | null | undefined }) {
   if (stats === undefined) return <p className={styles.server} role="status"><i className={styles.dot} />ルームサーバーを確認中…</p>;
   if (!stats) return <p className={`${styles.server} ${styles.serverDown}`} role="status"><i className={styles.dot} />
     {roomServerUrl ? 'ルームサーバーにつながりません。しばらくしてからお試しください。' : 'ルームサーバーが設定されていないため、ルームマッチは使えません。'}</p>;
-  const { rooms, connections, since, uptime, version } = stats;
+  const { rooms, connections, total, pods, backend, version } = stats;
   return <details className={`${styles.server} ${styles.serverUp}`}>
     <summary role="status"><i className={styles.dot} />ルームサーバー：稼働中<small>対戦中 {rooms.playing}・募集中 {rooms.lobby}</small></summary>
     <dl>
       <div><dt>接続中のプレイヤー</dt><dd>{connections}</dd></div>
       <div><dt>ルーム</dt><dd>対戦中 {rooms.playing} / 準備中 {rooms.lobby} / 対戦後 {rooms.finished}</dd></div>
-      <div><dt>起動してから</dt><dd>{duration(uptime)}（ルーム {since.roomsCreated}・対戦 {since.matchesStarted}）</dd></div>
-      <div><dt>バージョン</dt><dd>{version}</dd></div>
+      <div><dt>これまでの累計</dt><dd>ルーム {total.roomsCreated} / 対戦 {total.matchesStarted}</dd></div>
+      <div><dt>サーバー</dt><dd>{pods}台{backend === 'memory' ? '（Redisなし）' : ''}・バージョン {version}</dd></div>
     </dl>
   </details>;
 }

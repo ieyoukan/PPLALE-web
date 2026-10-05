@@ -2,7 +2,7 @@
 //
 // Needs a room server and a web app that talks to it; this only runs when PPLALE_ROOM_TEST_URL
 // names that web app, e.g.
-//   PORT=8099 DATA_DIR=$(mktemp -d) npm run start --workspace=@pplale/room-server
+//   PORT=8099 npm run start --workspace=@pplale/room-server
 //   NEXT_PUBLIC_ROOM_SERVER_URL=http://localhost:8099 npx next dev -p 3100
 //   PPLALE_ROOM_TEST_URL=http://localhost:3100 npx playwright test room-match
 import { test, expect } from '@playwright/test';

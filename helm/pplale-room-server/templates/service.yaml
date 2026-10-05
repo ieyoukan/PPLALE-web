@@ -13,3 +13,5 @@ spec:
       name: http
   selector:
     {{- include "pplale-room-server.selectorLabels" . | nindent 4 }}
+    # 同じリリースの Redis の Pod を選ばないようにする。
+    app.kubernetes.io/component: server

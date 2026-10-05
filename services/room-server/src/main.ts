@@ -1,18 +1,20 @@
-// The room server: keeps the rooms of ルームマッチ and plays their matches (the browsers only see
-// their own side). Rooms are also written to DATA_DIR, so a restart does not end them.
+// The room server: plays the matches of ルームマッチ (the browsers only see their own side). The
+// rooms are kept in Redis, so instances can be added, replaced or lost without ending a match.
+import { memoryBackend, redisBackend } from './backend.ts';
 import { catalog } from './catalog.ts';
 import { loadConfig } from './config.ts';
 import { createRoomServer } from './server.ts';
-import { openStore } from './store.ts';
 
-const config = loadConfig(), store = openStore(config.dataDir);
-const server = createRoomServer({ config, store, catalog });
-server.sweep();
-server.listen(config.port, () => console.log(`room-server ${config.version} on :${config.port}, ${store.all().length} rooms`));
+const config = loadConfig();
+if (!config.redisUrl) console.warn('REDIS_URL is not set: rooms are kept in this process only and end when it stops (development)');
+const backend = config.redisUrl ? await redisBackend(config.redisUrl) : memoryBackend();
+const server = createRoomServer({ config, backend, catalog });
+server.listen(config.port, () => console.log(`room-server ${config.version} (${config.pod}) on :${config.port}, rooms in ${backend.kind}`));
 
 for (const signal of ['SIGTERM', 'SIGINT'] as const) process.on(signal, () => {
-    server.shutdown();
-    server.close(() => process.exit(0));
-    // Open keep-alive connections must not hold the pod back.
-    server.closeAllConnections();
+    void server.shutdown().finally(() => {
+        server.close(() => { void backend.close().finally(() => process.exit(0)); });
+        // Open keep-alive connections must not hold the pod back.
+        server.closeAllConnections();
+    });
 });

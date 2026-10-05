@@ -21,7 +21,7 @@ GameLobby (/game/) + Firebase decks ──保存──> BoardEmulator (/game/pla
 | CPU | 合法手から次の Command を選ぶ。強さごとの戦略、非公開情報の推測 | `packages/game-core/src/ai` |
 | 状態復元 | 保存内容の形式とカード参照を確認 | `packages/game-core/src/snapshot.ts` |
 | ルームマッチ（画面） | ルームを作る・入る、招待、デッキ選択、サーバーとの接続 | `src/components/game/room`, `src/lib/game/room` |
-| ルームサーバー | ルームを持ち、Command を検証して実行し、各プレイヤーに盤面を WebSocket で送る。Vercel ではなく自宅クラスタで動く別プロセス | `services/room-server`, `helm/pplale-room-server`, `packages/game-core/src/room.ts` |
+| ルームサーバー | ルームを Redis に持ち、Command を検証して実行し、各プレイヤーに盤面を WebSocket で送る。Vercel ではなく自宅クラスタで動く別プロセス | `services/room-server`, `helm/pplale-room-server`, `packages/game-core/src/room.ts` |
 | CPU サーバー | 「さいきょう」との対戦記録を集めて学習し続け、モデルを配る。Vercel ではなく自宅クラスタで動く別プロセス | `services/cpu-server`, `helm/pplale-cpu-server` |
 
 ### 分離する価値
@@ -67,7 +67,7 @@ UI はドロー前後の手札と山札の差分から移動演出を描く。�
         ← 自分の席から見える盤面（viewFor）
 ```
 
-- **ルームサーバー**は Vercel ではなく自宅クラスタで動く別プロセス（CPU サーバーと同じ形）。Web アプリは `NEXT_PUBLIC_ROOM_SERVER_URL` でつなぐ。未設定やサーバーが落ちている間は、バトルのタブにその旨が出てルームを作れない。API、状態の見方（`/stats`）、デプロイは [services/room-server](../services/room-server/README.md)。
+- **ルームサーバー**は Vercel ではなく自宅クラスタで動く別プロセス（CPU サーバーと同じ形）。ルームは Redis に置き、サーバーの Pod は接続しか持たないので、複数台で動かせて、入れ替えても対戦が続く。Web アプリは `NEXT_PUBLIC_ROOM_SERVER_URL` でつなぐ。未設定やサーバーが落ちている間は、バトルのタブにその旨が出てルームを作れない。API、状態の見方（`/stats`）、デプロイは [services/room-server](../services/room-server/README.md)。
 - **ルームのルール**（`packages/game-core/src/room.ts`）は、デッキに使えるカードの範囲：フルーツごとの可否と、拡張プレイアブルの可否。作成時にチェックボックスで選ぶ。game-core がまだ動かせないもの（いちご以外、拡張プレイアブル）は `playableNow` に入っておらず選べない。カードを実装したら `playableNow` に足す。デッキは、ブラウザ（使えるデッキの表示）とサーバー（決定）の両方で同じ関数が検証する。
 - **席**は、作成・参加のときにサーバーが発行する秘密のトークンで識別する（ブラウザの localStorage に保存）。ログインは不要で、招待リンクを開いて名前を入れればすぐ入れる。保存済みデッキを使うときだけログインする。同じブラウザで開き直せば席に戻れる。
 - **盤面はサーバーだけが持つ。** ブラウザは Command と見ている revision を送り、サーバーが席を確かめて game-core で実行する。ターン中は revision が合わない操作を拒否する（初期ドローと交換は双方が同時に進めるので合わせない）。テスト用の Command は受け付けず、`actor` は送り主の席に置き換える。乱数の種と、デッキのカードの並び（uid とカードの対応）はサーバーで決める。

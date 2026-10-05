@@ -128,15 +128,20 @@ export type ServerMessage =
 
 /** How the room server is doing (`GET /stats`): shown on the バトル tab and useful when something is off. */
 export interface RoomServerStats {
+    /** Of the instance that answered. */
     version: string;
-    /** Seconds since the server started. */
+    /** Seconds since that instance started. */
     uptime: number;
+    /** Where the rooms are kept: `redis`, or `memory` (one instance without Redis; development). */
+    backend: 'redis' | 'memory';
+    /** Instances running now. */
+    pods: number;
     /** Rooms by what they are doing now. */
     rooms: Record<RoomStatus, number>;
-    /** Open sockets, and the players behind them. */
+    /** Open sockets on all instances (about the players looking at a room now). */
     connections: number;
-    /** Since the server started. */
-    since: { roomsCreated: number; matchesStarted: number; matchesFinished: number; commands: number };
+    /** Since the data began (they outlast the instances). */
+    total: { roomsCreated: number; matchesStarted: number; matchesFinished: number; commands: number };
 }
 
 export const ROOM_ID_LENGTH = 6;

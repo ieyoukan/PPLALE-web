@@ -16,12 +16,8 @@ COPY packages/game-core/src packages/game-core/src
 COPY services/room-server/src services/room-server/src
 COPY src/data/yojo.json src/data/sweet.json src/data/playable.json src/data/tokenYojo.json src/data/token.json src/data/
 
-# The rooms (and their matches in progress) live here: mount a volume.
-RUN mkdir /data && chown 65532:65532 /data
-VOLUME /data
-
 ARG APP_VERSION=dev
-ENV APP_VERSION=$APP_VERSION PORT=8080 DATA_DIR=/data
+ENV APP_VERSION=$APP_VERSION PORT=8080
 USER 65532:65532
 EXPOSE 8080
 WORKDIR /app/services/room-server

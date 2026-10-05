@@ -5,18 +5,23 @@ metadata:
   labels:
     {{- include "pplale-room-server.labels" . | nindent 4 }}
 spec:
-  replicas: 1
-  # ルームは1つのプロセスのメモリにあり、ボリュームも1つの Pod からしか書けないので、入れ替えるときは先に止める。
-  # 入れ替えの間は接続が切れるが、ルームはボリュームから読み直され、ブラウザは自分でつなぎ直す。
+  replicas: {{ .Values.replicaCount }}
+  # ルームは Redis にあり、Pod は接続しか持たない。新しい Pod が受けられるようになってから古い Pod を止める。
+  # 止まる Pod につながっていたブラウザは、すぐ別の Pod につなぎ直して続きから遊べる。
   strategy:
-    type: Recreate
+    type: RollingUpdate
+    rollingUpdate:
+      maxUnavailable: 0
+      maxSurge: 1
   selector:
     matchLabels:
       {{- include "pplale-room-server.selectorLabels" . | nindent 6 }}
+      app.kubernetes.io/component: server
   template:
     metadata:
       labels:
         {{- include "pplale-room-server.selectorLabels" . | nindent 8 }}
+        app.kubernetes.io/component: server
     spec:
       automountServiceAccountToken: false
       {{- with .Values.imagePullSecrets }}
@@ -37,8 +42,8 @@ spec:
           env:
             - name: PORT
               value: "8080"
-            - name: DATA_DIR
-              value: /data
+            - name: REDIS_URL
+              value: {{ include "pplale-room-server.redisUrl" . | quote }}
             - name: ALLOWED_ORIGINS
               value: {{ join "," .Values.allowedOrigins | quote }}
             - name: TRUST_PROXY
@@ -58,28 +63,28 @@ spec:
               port: http
             initialDelaySeconds: 5
             periodSeconds: 20
+          # Redis に届かない Pod には新しい接続を回さない。
           readinessProbe:
             httpGet:
-              path: /healthz
+              path: /readyz
               port: http
             initialDelaySeconds: 2
             periodSeconds: 10
           resources:
             {{- toYaml .Values.resources | nindent 12 }}
           volumeMounts:
-            - name: data
-              mountPath: /data
             - name: tmp
               mountPath: /tmp
+      # Pod をなるべく別のノードに置く (1台しかなければ同じノードでよい)。
+      topologySpreadConstraints:
+        - maxSkew: 1
+          topologyKey: kubernetes.io/hostname
+          whenUnsatisfiable: ScheduleAnyway
+          labelSelector:
+            matchLabels:
+              {{- include "pplale-room-server.selectorLabels" . | nindent 14 }}
+              app.kubernetes.io/component: server
       volumes:
-        - name: data
-          {{- if .Values.persistence.enabled }}
-          persistentVolumeClaim:
-            claimName: {{ include "pplale-room-server.claimName" . }}
-          {{- else }}
-          # Pod が入れ替わると進行中のルームと対戦が消える。
-          emptyDir: {}
-          {{- end }}
         # ルート FS は読み取り専用にしている。
         - name: tmp
           emptyDir: {}

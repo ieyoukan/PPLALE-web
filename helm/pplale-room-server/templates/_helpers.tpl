@@ -28,7 +28,15 @@ app.kubernetes.io/name: {{ include "pplale-room-server.name" . }}
 app.kubernetes.io/instance: {{ .Release.Name }}
 {{- end -}}
 
-{{/* 対戦記録とモデルを置くボリューム。 */}}
-{{- define "pplale-room-server.claimName" -}}
-{{- default (include "pplale-room-server.fullname" .) .Values.persistence.existingClaim -}}
+{{- define "pplale-room-server.redisName" -}}
+{{- printf "%s-redis" (include "pplale-room-server.fullname" .) | trunc 63 | trimSuffix "-" -}}
+{{- end -}}
+
+{{/* ルームを置く Redis。redis.url があればそれを、なければこのチャートの Redis を使う。 */}}
+{{- define "pplale-room-server.redisUrl" -}}
+{{- if .Values.redis.url -}}
+{{- .Values.redis.url -}}
+{{- else -}}
+{{- printf "redis://%s:6379" (include "pplale-room-server.redisName" .) -}}
+{{- end -}}
 {{- end -}}

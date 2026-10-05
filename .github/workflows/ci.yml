@@ -10,6 +10,13 @@ jobs:
   build:
     runs-on: ubuntu-latest
 
+    services:
+      redis:
+        image: redis:7.4-alpine
+        ports:
+          - 6379:6379
+        options: --health-cmd "redis-cli ping" --health-interval 5s --health-timeout 3s --health-retries 10
+
     steps:
       - uses: actions/checkout@v7
       - name: Install tools from mise.toml
@@ -28,6 +35,11 @@ jobs:
 
       - name: Test the room server
         run: npm run test:room-server
+
+      - name: Test the room server on Redis
+        run: npm run test:room-server
+        env:
+          REDIS_URL: redis://localhost:6379
 
       - name: Run project checks
         run: mise run check

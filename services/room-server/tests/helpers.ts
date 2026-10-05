@@ -1,29 +1,45 @@
-import { mkdtempSync, readFileSync } from 'node:fs';
+import { randomBytes } from 'node:crypto';
+import { readFileSync } from 'node:fs';
 import type { AddressInfo } from 'node:net';
-import os from 'node:os';
-import path from 'node:path';
 import { WebSocket } from 'ws';
 import type { Deck } from '@pplale/game-core';
 import type { ClientMessage, RoomAction, RoomView, Seated, ServerMessage } from '@pplale/game-core/room';
 import { catalog } from '../src/catalog.ts';
 import type { Config } from '../src/config.ts';
+import { memoryBackend, redisBackend } from '../src/backend.ts';
+import type { Backend } from '../src/backend.ts';
 import { createRoomServer } from '../src/server.ts';
-import { openStore } from '../src/store.ts';
 
-export const temporaryDirectory = () => mkdtempSync(path.join(os.tmpdir(), 'room-server-'));
+/**
+ * What the instances of one test share. With REDIS_URL the tests run against that Redis (each under
+ * its own key prefix), otherwise against the in-process stand-in.
+ */
+export const usingRedis = !!process.env.REDIS_URL;
+export function shared() {
+    const prefix = `pplale-test-${randomBytes(6).toString('hex')}:`, memory = memoryBackend();
+    return { open: (): Promise<Backend> | Backend => usingRedis ? redisBackend(process.env.REDIS_URL!, prefix) : memory };
+}
+export type Shared = ReturnType<typeof shared>;
+let pods = 0;
 export const deck = JSON.parse(readFileSync(new URL('../../../src/data/strawberryStableDeck.json', import.meta.url), 'utf8')) as Deck;
 
-export async function serve(options: Partial<Config> & { directory?: string } = {}) {
-    const store = openStore(options.directory ?? temporaryDirectory());
-    const server = createRoomServer({ config: { origins: ['*'], trustProxy: true, requestsPerHour: 1000, maxRooms: 100, idleHours: 12, version: 'test', ...options }, store, catalog });
+/** One instance of the server. Instances given the same `data` are instances of the same deployment. */
+export async function serve({ data = shared(), ...options }: Partial<Config> & { data?: Shared } = {}) {
+    const backend = await data.open();
+    const server = createRoomServer({ config: { pod: `pod-${++pods}`, origins: ['*'], trustProxy: true, requestsPerHour: 1000, maxRooms: 100, idleHours: 12, beatSeconds: 0.1, version: 'test', ...options }, backend, catalog });
     await new Promise<void>(resolve => server.listen(0, resolve));
+    await server.beat();
     const { port } = server.address() as AddressInfo, url = `http://localhost:${port}`;
     const call = async <T>(route: string, body?: unknown, headers: Record<string, string> = {}) => {
         const response = await fetch(url + route, { method: body === undefined ? 'GET' : 'POST', headers: { 'content-type': 'application/json', ...headers }, ...(body !== undefined && { body: JSON.stringify(body) }) });
         return { status: response.status, data: await response.json() as T & { error?: string } };
     };
-    const close = () => new Promise<void>(resolve => { server.shutdown(); server.close(() => resolve()); server.closeAllConnections(); });
-    return { server, store, url, port, call, close };
+    const close = async () => {
+        await server.shutdown();
+        await new Promise<void>(resolve => { server.close(() => resolve()); server.closeAllConnections(); });
+        await backend.close();
+    };
+    return { server, backend, data, url, port, call, close };
 }
 export type Served = Awaited<ReturnType<typeof serve>>;
 
@@ -67,19 +83,19 @@ export async function connect(served: Pick<Served, 'port'>, id: string, token: s
 }
 export type Client = Awaited<ReturnType<typeof connect>>;
 
-/** A room with both seats taken and connected. */
-export async function seatedRoom(served: Served) {
+/** A room with both seats taken and connected: the host to `served`, the guest to `other` (another instance) when given. */
+export async function seatedRoom(served: Served, other: Served = served) {
     const host = (await served.call<Seated>('/rooms', { rules: { fruits: ['strawberry'], extendedPlayable: false }, name: 'ほすと' })).data;
     const { id } = host.view;
     const guest = (await served.call<Seated>(`/rooms/${id}/join`, { name: 'げすと' })).data;
-    const sockets: [Client, Client] = [await connect(served, id, host.token), await connect(served, id, guest.token)];
+    const sockets: [Client, Client] = [await connect(served, id, host.token), await connect(other, id, guest.token)];
     await Promise.all(sockets.map(socket => socket.until(view => !!view.players[1]?.online && view.players[0].online)));
     return { id, host, guest, sockets };
 }
 
 /** Both ready, dice thrown until someone may choose: returns who goes first after choosing 先攻. */
-export async function startedMatch(served: Served) {
-    const room = await seatedRoom(served), { sockets } = room;
+export async function startedMatch(served: Served, other: Served = served) {
+    const room = await seatedRoom(served, other), { sockets } = room;
     for (const socket of sockets) await socket.act({ action: 'ready', deck });
     await Promise.all(sockets.map(socket => socket.until(view => view.status === 'playing')));
     const command = (seat: 0 | 1, sent: Extract<RoomAction, { action: 'command' }>['command']) => sockets[seat].act({ action: 'command', command: sent, revision: sockets[seat].latest().game!.revision });

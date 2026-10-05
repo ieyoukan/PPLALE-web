@@ -2,7 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { HIDDEN_CARD } from '@pplale/game-core';
 import type { RoomInfo, RoomServerStats, Seated } from '@pplale/game-core/room';
-import { connect, deck, seatedRoom, serve, startedMatch, temporaryDirectory } from './helpers.ts';
+import { connect, deck, seatedRoom, serve, shared, startedMatch } from './helpers.ts';
 
 const rules = { fruits: ['strawberry'], extendedPlayable: false };
 
@@ -116,11 +116,13 @@ test('match: the server plays it; each side sees its own hand, acts only for its
         assert.equal(view.game, null);
         assert.ok(view.players.every(player => player && !player.ready));
     }
+    await new Promise(resolve => setTimeout(resolve, 250));
     const stats = (await served.call<RoomServerStats>('/stats')).data;
     assert.deepEqual(stats.rooms, { lobby: 1, playing: 0, finished: 0, closed: 0 });
     assert.equal(stats.connections, 2);
-    assert.deepEqual({ ...stats.since, commands: 0 }, { roomsCreated: 1, matchesStarted: 1, matchesFinished: 1, commands: 0 });
-    assert.ok(stats.since.commands >= 12);
+    assert.equal(stats.pods, 1);
+    assert.deepEqual({ ...stats.total, commands: 0 }, { roomsCreated: 1, matchesStarted: 1, matchesFinished: 1, commands: 0 });
+    assert.ok(stats.total.commands >= 12);
     assert.equal(stats.version, 'test');
     await served.close();
 });
@@ -139,14 +141,14 @@ test('leaving: a guest frees the seat, the host closes the room', async () => {
 });
 
 test('restart: rooms and their matches are still there, and the seats still work', async () => {
-    const directory = temporaryDirectory();
-    const before = await serve({ directory });
+    const data = shared();
+    const before = await serve({ data });
     const { id, host, first, sockets } = await startedMatch(before);
     const { revision } = sockets[0].latest().game!;
     await before.close();
     assert.equal(await sockets[0].closed, 1012);
 
-    const after = await serve({ directory });
+    const after = await serve({ data });
     const back = await connect(after, id, host.token);
     const view = await back.until(latest => latest.players[0].online);
     assert.equal(view.status, 'playing');
@@ -157,14 +159,53 @@ test('restart: rooms and their matches are still there, and the seats still work
     await after.close();
 });
 
-test('upkeep: idle rooms are removed, and one address cannot ask without end', async () => {
-    const served = await serve({ requestsPerHour: 3 });
+test('two instances: the players of a room may be on different ones, and one can go away', async () => {
+    const data = shared();
+    const a = await serve({ data }), b = await serve({ data });
+    const { id, host, sockets, first, command } = await startedMatch(a, b);
+    // What one does on its instance reaches the other on theirs, with what was done.
+    const drawer = first === 0 ? 1 : 0;
+    assert.equal(await command(drawer, { type: 'openingDraw', actor: drawer, deck: 'yojo' }), undefined);
+    const seen = await sockets[first].until(view => view.last?.command.type === 'openingDraw');
+    assert.equal(seen.game!.players[drawer].hand.length, 1);
+    assert.equal(seen.game!.cards[seen.game!.players[drawer].hand[0]].cardId, HIDDEN_CARD);
+    await new Promise(resolve => setTimeout(resolve, 250));
+    const stats = (await b.call<RoomServerStats>('/stats')).data;
+    assert.equal(stats.pods, 2);
+    assert.equal(stats.connections, 2);
+    assert.deepEqual(stats.rooms, { lobby: 0, playing: 1, finished: 0, closed: 0 });
+
+    // The host's instance is replaced: the host connects to the other one and plays on.
+    await a.close();
+    assert.equal(await sockets[0].closed, 1012);
+    const moved = await connect(b, id, host.token);
+    const view = await moved.until(latest => latest.players[0].online && latest.players[1]!.online);
+    assert.equal(view.game!.players[drawer].hand.length, 1);
+    assert.equal(await moved.act({ action: 'command', command: { type: 'openingDraw', actor: 0, deck: 'yojo' }, revision: view.game!.revision }), undefined);
+    await sockets[1].until(latest => latest.game!.players[0].hand.length === (drawer === 0 ? 2 : 1));
+    await b.close();
+});
+
+test('a player whose instance died without a word is noticed by the others', async () => {
+    const served = await serve();
+    const host = (await served.call<Seated>('/rooms', { rules, name: 'ほすと' })).data, { id } = host.view;
+    const guest = (await served.call<Seated>(`/rooms/${id}/join`, { name: 'げすと' })).data;
+    const socket = await connect(served, id, guest.token);
+    await socket.until(view => view.players[1]!.online);
+    assert.equal(socket.latest().players[0].online, false);
+    // The host's socket is on an instance that stops refreshing it: it counts for a while, then lapses.
+    await served.backend.enter({ id, seat: 0, member: 'dead-pod:1' }, 400);
+    await socket.until(view => view.players[0].online);
+    await socket.until(view => !view.players[0].online);
+    await served.close();
+});
+
+test('upkeep: idle rooms lapse, and one address cannot ask without end', async () => {
+    const served = await serve({ requestsPerHour: 3, idleHours: 0.4 / 3600 });
     const { data } = await served.call<Seated>('/rooms', { rules }, { 'x-forwarded-for': '203.0.113.1' });
     const socket = await connect(served, data.view.id, data.token);
-    served.server.sweep(Date.now() + 11 * 60 * 60 * 1000);
-    assert.equal(served.store.all().length, 1);
-    served.server.sweep(Date.now() + 13 * 60 * 60 * 1000);
-    assert.equal(served.store.all().length, 0);
+    await socket.until(view => view.players[0].online);
+    // Nobody does anything: the room lapses and its socket is told.
     assert.equal(await socket.closed, 4404);
 
     const from = (address: string) => served.call(`/rooms/${data.view.id}`, undefined, { 'x-forwarded-for': address });
@@ -175,5 +216,6 @@ test('upkeep: idle rooms are removed, and one address cannot ask without end', a
     // Looking at the server's state is never limited.
     assert.equal((await served.call('/stats', undefined, { 'x-forwarded-for': '203.0.113.1' })).status, 200);
     assert.equal((await served.call('/healthz')).status, 200);
+    assert.equal((await served.call('/readyz')).status, 200);
     await served.close();
 });

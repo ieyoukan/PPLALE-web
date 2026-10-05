@@ -1,5 +1,5 @@
 // Everything a room can do, on the room as the server keeps it (both decks and the full match).
-// Nothing here knows about sockets or files: a request changes the room or throws RoomError.
+// Nothing here knows about sockets or where rooms are kept: a request changes the room or throws RoomError.
 import { createHash, randomBytes, randomInt, timingSafeEqual } from 'node:crypto';
 import { z } from 'zod';
 import { applyCommand, newGame, other, sandboxRules, viewFor } from '@pplale/game-core';
@@ -26,8 +26,6 @@ export interface Room {
     state: GameState | null;
     last: LastCommand | null;
     resigned: Side | null;
-    /** When it last changed (ms), for removing rooms nobody uses. */
-    touched: number;
 }
 
 /** A request that cannot be done; `status` is the HTTP status and `message` is shown to the player. */
@@ -99,7 +97,7 @@ export function createRoom(id: string, body: unknown): { room: Room; token: stri
     const rules = parseRoomRules(input?.rules);
     if (!rules) throw new RoomError(400, '使えるフルーツを1つ以上選んでください');
     const { seat, token } = newSeat(playerName(input?.name, 'ホスト'));
-    return { room: { id, version: 1, status: 'lobby', match: 0, rules, seats: [seat, null], state: null, last: null, resigned: null, touched: Date.now() }, token };
+    return { room: { id, version: 1, status: 'lobby', match: 0, rules, seats: [seat, null], state: null, last: null, resigned: null }, token };
 }
 
 /** Seats a guest. `body`: `{ name }` as sent. Returns the guest's secret. */

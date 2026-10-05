@@ -9,6 +9,7 @@
   },
   "dependencies": {
     "@pplale/game-core": "*",
+    "redis": "^6.3.0",
     "ws": "^8.22.0",
     "zod": "^4.4.3"
   },

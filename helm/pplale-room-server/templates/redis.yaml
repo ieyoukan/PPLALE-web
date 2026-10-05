@@ -1,0 +1,146 @@
+{{- if and .Values.redis.enabled (not .Values.redis.url) }}
+# ルーム・接続中のプレイヤー・累計を持つ Redis。ルームサーバーの Pod だけが使う。
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ include "pplale-room-server.redisName" . }}
+  labels:
+    {{- include "pplale-room-server.labels" . | nindent 4 }}
+    app.kubernetes.io/component: redis
+spec:
+  type: ClusterIP
+  ports:
+    - port: 6379
+      targetPort: redis
+      protocol: TCP
+      name: redis
+  selector:
+    {{- include "pplale-room-server.selectorLabels" . | nindent 4 }}
+    app.kubernetes.io/component: redis
+---
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: {{ include "pplale-room-server.redisName" . }}
+  labels:
+    {{- include "pplale-room-server.labels" . | nindent 4 }}
+    app.kubernetes.io/component: redis
+spec:
+  serviceName: {{ include "pplale-room-server.redisName" . }}
+  replicas: 1
+  selector:
+    matchLabels:
+      {{- include "pplale-room-server.selectorLabels" . | nindent 6 }}
+      app.kubernetes.io/component: redis
+  template:
+    metadata:
+      labels:
+        {{- include "pplale-room-server.selectorLabels" . | nindent 8 }}
+        app.kubernetes.io/component: redis
+    spec:
+      automountServiceAccountToken: false
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 999
+        runAsGroup: 999
+        fsGroup: 999
+        seccompProfile:
+          type: RuntimeDefault
+      containers:
+        - name: redis
+          image: "{{ .Values.redis.image.repository }}:{{ .Values.redis.image.tag }}"
+          imagePullPolicy: {{ .Values.redis.image.pullPolicy }}
+          args:
+            - --dir
+            - /data
+            # 進行中の対戦を Redis の再起動で失わないよう、書き込みを毎秒ディスクに残す。
+            - --appendonly
+            - {{ ternary "yes" "no" .Values.redis.persistence.enabled | quote }}
+            - --appendfsync
+            - everysec
+            - --save
+            - ""
+            # あふれたら古いルームを黙って消すのではなく、新しい書き込みを断る。
+            - --maxmemory
+            - {{ .Values.redis.maxMemory | quote }}
+            - --maxmemory-policy
+            - noeviction
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            capabilities:
+              drop:
+                - ALL
+          ports:
+            - name: redis
+              containerPort: 6379
+          livenessProbe:
+            exec:
+              command: ["redis-cli", "ping"]
+            initialDelaySeconds: 5
+            periodSeconds: 20
+          readinessProbe:
+            exec:
+              command: ["redis-cli", "ping"]
+            initialDelaySeconds: 2
+            periodSeconds: 10
+          resources:
+            {{- toYaml .Values.redis.resources | nindent 12 }}
+          volumeMounts:
+            - name: data
+              mountPath: /data
+      {{- if not .Values.redis.persistence.enabled }}
+      volumes:
+        # Redis が入れ替わると進行中のルームと対戦が消える。
+        - name: data
+          emptyDir: {}
+      {{- end }}
+      {{- with .Values.nodeSelector }}
+      nodeSelector:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.tolerations }}
+      tolerations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+  {{- if .Values.redis.persistence.enabled }}
+  volumeClaimTemplates:
+    - metadata:
+        name: data
+      spec:
+        accessModes:
+          - ReadWriteOnce
+        {{- with .Values.redis.persistence.storageClass }}
+        storageClassName: {{ . }}
+        {{- end }}
+        resources:
+          requests:
+            storage: {{ .Values.redis.persistence.size }}
+  {{- end }}
+{{- if .Values.redis.networkPolicy }}
+---
+# 認証なしの Redis なので、ルームサーバーの Pod 以外からはつながせない。
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: {{ include "pplale-room-server.redisName" . }}
+  labels:
+    {{- include "pplale-room-server.labels" . | nindent 4 }}
+    app.kubernetes.io/component: redis
+spec:
+  podSelector:
+    matchLabels:
+      {{- include "pplale-room-server.selectorLabels" . | nindent 6 }}
+      app.kubernetes.io/component: redis
+  policyTypes:
+    - Ingress
+  ingress:
+    - from:
+        - podSelector:
+            matchLabels:
+              {{- include "pplale-room-server.selectorLabels" . | nindent 14 }}
+              app.kubernetes.io/component: server
+      ports:
+        - port: 6379
+{{- end }}
+{{- end }}
