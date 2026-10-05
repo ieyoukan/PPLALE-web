@@ -79,3 +79,5 @@ npm run cards:check
 
 ## 環境変数について 
 firebaseを使うためには必要です。
+
+`NEXT_PUBLIC_CPU_SERVER_URL`（任意）: CPU サーバーの URL。設定すると「さいきょう」がそのモデルを使い、同意したプレイヤーの対戦記録を送る（[services/cpu-server](services/cpu-server/README.md)）。

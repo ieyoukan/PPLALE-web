@@ -21,10 +21,10 @@ export default function GameLobby() {
   // localStorage is only available in the browser, after the first render.
   useEffect(() => { setSaved(describeSavedMatch()); }, []);
 
-  function start({ game, setup, mode, levels }: { game: GameState; setup: MatchSetup; mode: Mode; levels: Levels }) {
+  function start({ game, seed, setup, mode, levels }: { game: GameState; seed: number; setup: MatchSetup; mode: Mode; levels: Levels }) {
     try {
       // The first state and the setup are kept for the replay and the rematch on the result screen.
-      saveSession({ game, mode, levels, setup, initial: game, commands: [] });
+      saveSession({ game, mode, levels, setup, initial: game, commands: [], seed });
       router.push(PLAY_PATH);
     } catch { setError('このブラウザに対戦を保存できないため、開始できません'); }
   }

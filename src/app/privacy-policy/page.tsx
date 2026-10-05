@@ -35,6 +35,13 @@ export default function PrivacyPolicy() {
                     <li>デッキデータ（ログイン時のみ保存）</li>
                   </ul>
                 </li>
+                <li>CPUの学習用サーバーに保存される情報（ゲームで「さいきょう」のCPUと対戦し、送信に同意した場合のみ）：
+                  <ul className={css({ listStyleType: 'disc', pl: '6', mt: '2' })}>
+                    <li>対戦の記録（お互いのデッキに入っているカード、お互いが打った手、勝敗、受け取った日付）</li>
+                    <li>名前、アカウントの情報、デッキの名前は含まれません。ログインしていなくても同じ内容です</li>
+                    <li>送信元のIPアドレスは、連続した送信を制限するために一時的に使い、記録には保存しません</li>
+                  </ul>
+                </li>
                 <li>クライアント側でのみ使用される情報（サーバーには保存されません）：
                   <ul className={css({ listStyleType: 'disc', pl: '6', mt: '2' })}>
                     <li>Googleアカウントのユーザー名（ログイン時の表示用）</li>
@@ -52,6 +59,7 @@ export default function PrivacyPolicy() {
               <ul className={css({ listStyleType: 'disc', pl: '6', color: 'gray.700', display: 'flex', flexDirection: 'column', gap: '2' })}>
                 <li>ユーザー認証</li>
                 <li>デッキデータの保存、共有</li>
+                <li>ゲームのCPUの学習と、その強さの計測</li>
               </ul>
             </div>
 
@@ -83,6 +91,7 @@ export default function PrivacyPolicy() {
               </p>
               <ul className={css({ listStyleType: 'disc', pl: '6', color: 'gray.700', display: 'flex', flexDirection: 'column', gap: '2' })}>
                 <li>自身のデータの削除要求権</li>
+                <li>対戦の記録の送信は、ゲームの準備画面からいつでもやめられます。すでに送られた記録は、だれの対戦かを区別できないため、個別に取り出して削除することはできません</li>
               </ul>
             </div>
 

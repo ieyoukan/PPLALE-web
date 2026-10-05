@@ -7,6 +7,7 @@ import type { RefObject } from 'react';
 import { useRouter } from 'next/navigation';
 import { gameCatalog } from '@/lib/game/catalog';
 import { useAuth } from '@/lib/auth';
+import { learningConsent, reportMatch } from '@/lib/game/cpuServer';
 import { HOME_PATH } from '@/lib/game/sessionStore';
 import { useBoardAnimations } from './useBoardAnimations';
 import { useCardDrag } from './useCardDrag';
@@ -66,10 +67,18 @@ export function useBoard(container: RefObject<HTMLDivElement | null>) {
   const dice = useOpeningDice({ game, act, paused: loading, cpuSides, cpuRolls: ready && !loading && !paused && !animating });
   const { busy: rollingDice } = dice;
   const busy = animating || rollingDice;
-  useCpuPlayer({
+  const modelUsed = useCpuPlayer({
     enabled: ready && !replaying && cpuSides.length > 0 && !loading && !paused, sides: cpuSides, levels, game, act, flights,
     busy: { any: busy, blocking: rollingDice || !!strike || !!turnNotice || !!announcement || !!ping || !!blocked || !!order || !!effectRoll || !!choiceNote },
   });
+  // A finished match against さいきょう goes to the CPU server once, if this browser agreed to it.
+  const { record, markReported } = session;
+  useEffect(() => {
+    if (mode !== 'cpu' || levels[1] !== 'master' || typeof game.winner !== 'number') return;
+    if (!record || record.reported || !learningConsent.given()) return;
+    reportMatch({ seed: record.seed, decks: record.decks, commands: record.commands, model: modelUsed.current ?? 'unknown' });
+    markReported();
+  }, [mode, levels, game.winner, record, markReported, modelUsed]);
 
   // ── Replay ──
   const { stopReplay: endReplay } = session;

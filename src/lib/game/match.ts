@@ -4,12 +4,16 @@ import { gameCatalog } from './catalog';
 import { sideLabel } from './sessionStore';
 import type { MatchSetup, Mode } from './sessionStore';
 
-/** A new match from `setup` with a fresh random seed. Throws when a deck is not usable. */
-export function createMatch(setup: MatchSetup, mode: Mode): GameState {
+export function randomSeed(): number {
   const seed = new Uint32Array(1);
   crypto.getRandomValues(seed);
+  return seed[0];
+}
+
+/** A new match from `setup`, shuffled by `seed`. Throws when a deck is not usable. */
+export function createMatch(setup: MatchSetup, mode: Mode, seed: number): GameState {
   const named = (side: Side): Deck => ({ ...setup.decks[side], name: `${sideLabel(mode, side)} · ${setup.decks[side].name}` });
-  return newGame([named(0), named(1)], gameCatalog, setup.rules, seed[0]);
+  return newGame([named(0), named(1)], gameCatalog, setup.rules, seed);
 }
 
 /** A saved setup that can still start a match (the decks are valid with today's cards). */

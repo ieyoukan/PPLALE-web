@@ -189,6 +189,15 @@
 .ruleSettings p { white-space: pre-wrap; margin: 10px 0; line-height: 1.8; }
 .startButton { display: block; width: 100%; margin-top: 20px; padding: 12px; border: 1px solid #9bb18d; border-radius: 5px; background: #e1ecd3; color: #37532e; font-size: 13px; font-weight: 700; }
 .startButton span { float: right; }
+/* Asked before the first match against さいきょう: its matches are sent for training. */
+.consentBackdrop { position: fixed; z-index: 200; inset: 0; border: 0; background: #30203588; backdrop-filter: blur(5px); }
+.consent { position: fixed; z-index: 201; top: 50%; left: 50%; transform: translate(-50%, -50%); box-sizing: border-box; width: min(560px, 92vw); max-height: 90dvh; overflow: auto; padding: 28px; border-radius: 24px; background: #fff9f0; color: #685441; box-shadow: 0 12px 40px #33202a55; font-size: 16px; line-height: 1.8; }
+.consent h2 { margin-bottom: 14px; font-size: 22px; }
+.consent p { margin: 10px 0; }
+.consent ul { margin: 10px 0 10px 1.4em; list-style: disc; }
+.consent a, .textButton { text-decoration: underline; }
+.consent .secondaryButton { display: block; width: 100%; margin-top: 12px; }
+.textButton { font-size: inherit; color: inherit; }
 .error { padding: 7px; background: #fbe5dc; color: #ac655b; font-size: 10px; }
 .skillButton { display: flex; align-items: center; gap: 8px; width: 100%; padding: 12px 8px; border: 1px solid #d9c8ad; border-radius: 5px; background: #fffdf6; text-align: left; font-size: 11px; margin: 9px 0; }
 .skillButton b { box-sizing: border-box; display: grid; place-items: center; width: 76px; height: 76px; min-width: 76px; flex-shrink: 0; padding: 0; font-size: 22px; text-align: center; border-radius: 50%; background: #dfedcd; }

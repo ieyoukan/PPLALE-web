@@ -20,6 +20,10 @@ export interface StoredSession {
   /** The match before its first command and every command since: together they replay it. */
   initial?: GameState;
   commands?: Command[];
+  /** The shuffle seed `initial` was made from: with the decks it rebuilds the match anywhere. */
+  seed?: number;
+  /** The finished match was already sent to the CPU server. */
+  reported?: boolean;
 }
 
 const STORAGE_KEY = 'pplale-game-session-v2';
