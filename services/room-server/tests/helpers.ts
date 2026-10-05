@@ -43,8 +43,8 @@ export async function serve({ data = shared(), ...options }: Partial<Config> & {
 }
 export type Served = Awaited<ReturnType<typeof serve>>;
 
-/** A seat's socket: collects what it is sent, and sends actions waiting for their result. */
-export async function connect(served: Pick<Served, 'port'>, id: string, token: string, headers: Record<string, string> = {}) {
+/** A seat's socket (or, without a token, a spectator's): collects what it is sent, and sends actions waiting for their result. */
+export async function connect(served: Pick<Served, 'port'>, id: string, token: string | null, headers: Record<string, string> = {}) {
     const socket = new WebSocket(`ws://localhost:${served.port}/rooms/${id}/socket`, { headers });
     const views: RoomView[] = [], results = new Map<number, (error: string | undefined) => void>(), waiting: (() => void)[] = [];
     let gone: string | null = null, n = 0;
@@ -59,7 +59,7 @@ export async function connect(served: Pick<Served, 'port'>, id: string, token: s
     });
     const say = (message: ClientMessage) => socket.send(JSON.stringify(message));
     await new Promise<void>((resolve, reject) => { socket.once('open', () => resolve()); socket.once('error', reject); socket.once('unexpected-response', () => reject(new Error('refused'))); });
-    say({ type: 'hello', token });
+    say(token === null ? { type: 'hello', watch: true } : { type: 'hello', token });
     const next = () => new Promise<void>(resolve => waiting.push(resolve));
     return {
         socket, views, closed,
@@ -84,8 +84,8 @@ export async function connect(served: Pick<Served, 'port'>, id: string, token: s
 export type Client = Awaited<ReturnType<typeof connect>>;
 
 /** A room with both seats taken and connected: the host to `served`, the guest to `other` (another instance) when given. */
-export async function seatedRoom(served: Served, other: Served = served) {
-    const host = (await served.call<Seated>('/rooms', { rules: { fruits: ['strawberry'], extendedPlayable: false }, name: 'ほすと' })).data;
+export async function seatedRoom(served: Served, other: Served = served, spectators = false) {
+    const host = (await served.call<Seated>('/rooms', { rules: { fruits: ['strawberry'], extendedPlayable: false, spectators }, name: 'ほすと' })).data;
     const { id } = host.view;
     const guest = (await served.call<Seated>(`/rooms/${id}/join`, { name: 'げすと' })).data;
     const sockets: [Client, Client] = [await connect(served, id, host.token), await connect(other, id, guest.token)];
@@ -94,8 +94,8 @@ export async function seatedRoom(served: Served, other: Served = served) {
 }
 
 /** Both ready, dice thrown until someone may choose: returns who goes first after choosing 先攻. */
-export async function startedMatch(served: Served, other: Served = served) {
-    const room = await seatedRoom(served, other), { sockets } = room;
+export async function startedMatch(served: Served, other: Served = served, spectators = false) {
+    const room = await seatedRoom(served, other, spectators), { sockets } = room;
     for (const socket of sockets) await socket.act({ action: 'ready', deck });
     await Promise.all(sockets.map(socket => socket.until(view => view.status === 'playing')));
     const command = (seat: 0 | 1, sent: Extract<RoomAction, { action: 'command' }>['command']) => sockets[seat].act({ action: 'command', command: sent, revision: sockets[seat].latest().game!.revision });

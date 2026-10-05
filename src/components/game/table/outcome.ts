@@ -4,7 +4,7 @@ import type { Board } from '../board/useBoard';
 
 export interface Outcome {
   winner: Side;
-  /** `neutral`: nobody at this screen won or lost (both sides on one device, or watching two CPUs). */
+  /** `neutral`: nobody at this screen won or lost (both sides on one device, watching two CPUs, or watching a room). */
   kind: 'win' | 'lose' | 'neutral';
   text: string;
 }
@@ -16,10 +16,10 @@ export interface Outcome {
 export const winnerOf = (game: GameState): Side | null => game.winner === 'draw' ? other(game.rules.firstPlayer) : game.winner;
 
 /** How the finished match reads for the viewer, or null while it is still going. */
-export function outcomeOf({ game, view, mode, names }: Pick<Board, 'game' | 'view' | 'mode' | 'names'>): Outcome | null {
+export function outcomeOf({ game, view, mode, names, remote }: Pick<Board, 'game' | 'view' | 'mode' | 'names' | 'remote'>): Outcome | null {
   const winner = winnerOf(game);
   if (winner === null) return null;
   const text = `${names[winner]}の勝ち`;
-  if (mode !== 'cpu' && mode !== 'room') return { winner, kind: 'neutral', text };
+  if (mode !== 'cpu' && mode !== 'room' || remote?.watching) return { winner, kind: 'neutral', text };
   return winner === view ? { winner, kind: 'win', text: '勝利!!' } : { winner, kind: 'lose', text };
 }

@@ -5,7 +5,6 @@
 import type { Change, ChangeKind, GameState, Side, Zone } from '@pplale/game-core';
 import type { DrawFlight } from '../BoardPieces';
 import { keywordNames } from '../labels';
-import type { Mode } from './useGameSession';
 
 export type Rect = { x: number; y: number; width: number; height: number };
 /** Elements a presenter can point at. */
@@ -19,7 +18,8 @@ export interface Scene {
   before: GameState;
   after: GameState;
   view: Side;
-  mode: Mode;
+  /** Every hand is face up (watching two CPUs, or a room's match as a spectator). */
+  open: boolean;
   /** The command was an attack (its damage is shown as a scuffle). */
   byAttack: boolean;
   /** Where a spot was just before the command, or where it is now. */
@@ -45,7 +45,7 @@ const signed = (n: number) => `${n >= 0 ? '+' : '−'}${Math.abs(n)}`;
 const isVisible = (place: { side: Side; zone: Zone } | null, state: GameState, uid: string, scene: Scene) => {
   if (!place) return false;
   if (place.zone === 'yojo' || place.zone === 'sweet') return false;
-  if (place.zone === 'hand') return place.side === scene.view || scene.mode === 'watch' || !!state.cards[uid]?.revealed;
+  if (place.zone === 'hand') return place.side === scene.view || scene.open || !!state.cards[uid]?.revealed;
   return true;
 };
 /** Everything on the far side (field, piles and hand) is drawn upside down. */

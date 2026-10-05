@@ -6,14 +6,15 @@ import type { RoomConnection } from '@/lib/game/room/client';
 import { isRoomId } from '@pplale/game-core/room';
 import type { RoomAction, RoomInfo, RoomView, SeatKey } from '@pplale/game-core/room';
 
-/** visitor: the room exists and this browser has no seat in it. gone: no such room (any more). */
+/** visitor: the room exists and this browser has no seat in it. seated: its view is here (a spectator's too). gone: no such room (any more), or it may not be watched. */
 export type RoomStage = 'loading' | 'visitor' | 'seated' | 'gone';
 
 /**
  * A room as this browser knows it: its seat (kept from creating or joining), the seat's view as
  * the server sends it, and the requests a seated player can make. Views only ever move forward.
+ * With `watch` it looks on without a seat instead (where the room allows it).
  */
-export function useRoom(id: string | null) {
+export function useRoom(id: string | null, watch = false) {
   const [stage, setStage] = useState<RoomStage>('loading');
   const [info, setInfo] = useState<RoomInfo | null>(null);
   const [view, setView] = useState<RoomView | null>(null);
@@ -35,7 +36,7 @@ export function useRoom(id: string | null) {
   // The seat this browser has, or what a visitor may know.
   useEffect(() => {
     if (!isRoomId(id)) return setStage('gone');
-    if (key) return;
+    if (key || watch) return;
     version.current = 0;
     const seat = seatFor(id);
     if (seat) return setKey(seat);
@@ -50,13 +51,17 @@ export function useRoom(id: string | null) {
       setError(failure instanceof Error ? failure.message : 'ルームを読み込めませんでした');
     });
     return () => { current = false; };
-  }, [id, key]);
+  }, [id, key, watch]);
   useEffect(() => {
-    if (!id || !key) return;
-    const opened = connection.current = connectRoom(id, key.token, {
+    if (!isRoomId(id) || !key && !watch) return;
+    const opened = connection.current = connectRoom(id, watch ? null : key!.token, {
       onView: take, onLink: setLinked,
       // The seat is not valid any more: look at the room as a visitor (or find it gone).
-      onGone() {
+      onGone(message) {
+        if (watch) {
+          setError(message);
+          return setStage('gone');
+        }
         dropSeat(id);
         setView(null);
         setStage('loading');
@@ -67,7 +72,7 @@ export function useRoom(id: string | null) {
       opened.close();
       if (connection.current === opened) connection.current = null;
     };
-  }, [id, key, take]);
+  }, [id, key, watch, take]);
 
   const join = useCallback(async (name: string) => {
     if (!id) return;
@@ -90,10 +95,10 @@ export function useRoom(id: string | null) {
   /** Leaves the room for good: gives up a match in progress and forgets the seat. */
   const leave = useCallback(async () => {
     if (!id) return;
-    await connection.current?.send({ action: 'leave' }).catch(() => {});
+    if (!watch) await connection.current?.send({ action: 'leave' }).catch(() => {});
     connection.current?.close();
-    dropSeat(id);
-  }, [id]);
+    if (!watch) dropSeat(id);
+  }, [id, watch]);
 
   return { stage, info, view, seat: key?.seat ?? null, linked, error, join, send, subscribe, leave };
 }

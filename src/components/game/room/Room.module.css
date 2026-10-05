@@ -50,6 +50,12 @@
 /* Over the board: this side or the other lost its connection. */
 .badge { position: fixed; top: 10px; left: 50%; z-index: 60; transform: translateX(-50%); max-width: calc(100vw - 140px); padding: 8px 18px; border-radius: 999px; background: #3b2a22e6; color: #fffdeb; font-size: 15px; text-align: center; pointer-events: none; }
 .badgeDown { background: #a4483be6; }
+/* Nothing is wrong: only who is looking on. */
+/* Under the menu button, clear of the far hand. */
+.badgeQuiet { top: 84px; left: auto; right: 12px; transform: none; max-width: 120px; background: #3b2a2299; font-size: 13px; padding: 5px 12px; }
+/* A room page outside the game menu (a spectator between matches). */
+.standalone { min-height: 100dvh; display: grid; place-items: center; padding: 20px; background: #2a1f24; }
+.standalone .panel { width: min(100%, 560px); }
 
 .seats { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; }
 .seat { display: grid; gap: 4px; padding: 14px; border: 2px solid #eadfce; border-radius: 16px; background: #fffdf7; }

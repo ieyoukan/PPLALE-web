@@ -82,14 +82,20 @@ export function seatOf(room: Room, token: unknown): Side | null {
     return index < 0 ? null : index as Side;
 }
 
-/** What `seat` is told about the room. `online`: whether each seat is connected right now. */
-export function seatView(room: Room, seat: Side, online: [boolean, boolean]): RoomView {
+/** Who is connected right now: each seat, and how many are watching. */
+export interface Present { online: [boolean, boolean]; watching: number }
+
+/** What `seat` is told about the room, or (`'spectator'`) what someone watching is. */
+export function seatView(room: Room, seat: Side | 'spectator', { online, watching }: Present): RoomView {
     const { id, version, status, match, rules, last, resigned, seats, state } = room;
     const players = seats.map((s, index) => s && { name: s.name, ready: s.ready, online: online[index], ...(s.left && { left: true }), ...(index === seat && s.deck && { deck: s.deck.name }) }) as RoomView['players'];
-    return { id, version, seat, status, match, rules, players, game: state && viewFor(state, seat), last, resigned };
+    return {
+        id, version, seat: seat === 'spectator' ? 0 : seat, ...(seat === 'spectator' && { watching: true as const }), spectators: watching,
+        status, match, rules, players, game: state && viewFor(state, seat), last, resigned,
+    };
 }
 export const roomInfo = (room: Room): RoomInfo =>
-    ({ id: room.id, rules: room.rules, host: room.seats[0].name, open: room.status === 'lobby' && !room.seats[1] });
+    ({ id: room.id, rules: room.rules, host: room.seats[0].name, open: room.status === 'lobby' && !room.seats[1], spectators: !!room.rules.spectators });
 
 /** A new room with its host seated. `body`: `{ rules, name }` as sent. */
 export function createRoom(id: string, body: unknown): { room: Room; token: string } {

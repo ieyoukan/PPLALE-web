@@ -8,7 +8,7 @@ import { useAuth } from '@/lib/auth';
 import { createRoom, keepSeat, latestRoom, readServerStats, roomServerUrl } from '@/lib/game/room/client';
 import { MAX_NAME_LENGTH, ROOM_ID_LENGTH, defaultRoomRules, fruitNames, fruits, isRoomId, playableNow } from '@pplale/game-core/room';
 import type { Fruit, RoomRules, RoomServerStats } from '@pplale/game-core/room';
-import { ROOM_PATH, roomHref } from '@/lib/game/sessionStore';
+import { ROOM_PATH, roomHref, watchHref } from '@/lib/game/sessionStore';
 import tiles from '../home/CardsMenu.module.css';
 import styles from './Room.module.css';
 
@@ -70,7 +70,7 @@ function ServerStatus({ stats }: { stats: RoomServerStats | null | undefined }) 
 
 export function RoomEntrance() {
   const router = useRouter();
-  const [open, setOpen] = useState<'create' | 'enter' | null>(null);
+  const [open, setOpen] = useState<'create' | 'enter' | 'watch' | null>(null);
   const [name, setName] = usePlayerName();
   const [rules, setRules] = useState<RoomRules>(defaultRoomRules);
   const [id, setId] = useState('');
@@ -102,6 +102,7 @@ export function RoomEntrance() {
     <div className={tiles.tiles}>
       <button className={`${tiles.tile} ${styles.tileButton}`} aria-expanded={open === 'create'} onClick={() => setOpen(open === 'create' ? null : 'create')}><b>ルームを作る</b><span>ルールを決めて、友だちを招待する</span></button>
       <button className={`${tiles.tile} ${styles.tileButton}`} aria-expanded={open === 'enter'} onClick={() => setOpen(open === 'enter' ? null : 'enter')}><b>ルームへ入る</b><span>教えてもらったルームIDで参加する</span></button>
+      <button className={`${tiles.tile} ${styles.tileButton}`} aria-expanded={open === 'watch'} onClick={() => setOpen(open === 'watch' ? null : 'watch')}><b>観戦する</b><span>観戦できるルームの対戦を見る</span></button>
     </div>
     {open === 'create' && <section className={styles.panel} aria-label="ルームを作る">
       <h2>ルームのルール</h2>
@@ -124,18 +125,29 @@ export function RoomEntrance() {
           </label>
         </div>
       </fieldset>
+      <fieldset className={styles.checks}>
+        <legend>観戦</legend>
+        <div className={styles.checkRow}>
+          <label className={styles.check}>
+            <input type="checkbox" checked={!!rules.spectators} onChange={event => setRules(current => ({ ...current, spectators: event.target.checked }))} />
+            観戦を許可する
+          </label>
+        </div>
+        <p className={styles.note}>観戦している人には、2人の手札が両方とも見えます。ルームIDを知っている人はだれでも観戦できます。</p>
+      </fieldset>
       {waiting && <p className={styles.note}>「準備中」のカードは、まだ対戦で動かせないため選べません。対応したものから選べるようになります。</p>}
       <NameField name={name} onChange={setName} />
       <button className={styles.primary} disabled={busy || !rules.fruits.length || stats === null} onClick={create}>{busy ? '作成中…' : 'このルールでルームを作る'}</button>
       {!rules.fruits.length && <p className={styles.note}>使えるフルーツを1つ以上選んでください。</p>}
     </section>}
-    {open === 'enter' && <form className={styles.panel} aria-label="ルームへ入る" onSubmit={event => { event.preventDefault(); if (isRoomId(id)) router.push(roomHref(ROOM_PATH, id)); }}>
-      <h2>ルームIDを入力</h2>
+    {(open === 'enter' || open === 'watch') && <form className={styles.panel} aria-label={open === 'watch' ? '観戦する' : 'ルームへ入る'}
+      onSubmit={event => { event.preventDefault(); if (isRoomId(id)) router.push(open === 'watch' ? watchHref(id) : roomHref(ROOM_PATH, id)); }}>
+      <h2>{open === 'watch' ? '観戦するルームのIDを入力' : 'ルームIDを入力'}</h2>
       <label className={styles.field}>ルームID（数字{ROOM_ID_LENGTH}けた）
         <input type="text" className={styles.idInput} value={id} inputMode="numeric" autoComplete="off" maxLength={ROOM_ID_LENGTH} placeholder={'0'.repeat(ROOM_ID_LENGTH)}
           onChange={event => setId(event.target.value.replace(/\D/g, '').slice(0, ROOM_ID_LENGTH))} />
       </label>
-      <button className={styles.primary} disabled={!isRoomId(id)}>ルームを見る</button>
+      <button className={styles.primary} disabled={!isRoomId(id)}>{open === 'watch' ? '観戦する' : 'ルームを見る'}</button>
     </form>}
     {error && <p role="alert" className={styles.error}>{error}</p>}
   </div>;

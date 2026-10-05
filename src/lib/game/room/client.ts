@@ -72,11 +72,11 @@ export interface RoomConnection {
 }
 
 /**
- * Keeps a socket to the room open for the seat until `close`: `onView` gets the seat's view now and
+ * Keeps a socket to the room open for the seat (or, without a token, for a spectator) until `close`: `onView` gets the view now and
  * after every change, `onLink` whether the socket is up (it connects again by itself when it drops),
  * `onGone` is called once when the room or the seat no longer exists.
  */
-export function connectRoom(id: string, token: string, handlers: { onView: (view: RoomView) => void; onLink: (up: boolean) => void; onGone: (message: string) => void }): RoomConnection {
+export function connectRoom(id: string, token: string | null, handlers: { onView: (view: RoomView) => void; onLink: (up: boolean) => void; onGone: (message: string) => void }): RoomConnection {
   let socket: WebSocket | null = null, stopped = false, attempt = 0, n = 0;
   let timer: ReturnType<typeof setTimeout> | undefined;
   const waiting = new Map<number, { resolve: () => void; reject: (error: RoomRequestError) => void }>();
@@ -87,7 +87,7 @@ export function connectRoom(id: string, token: string, handlers: { onView: (view
   function open() {
     if (stopped || !roomServerUrl) return;
     const next = socket = new WebSocket(`${roomServerUrl.replace(/^http/, 'ws')}/rooms/${id}/socket`);
-    next.addEventListener('open', () => next.send(JSON.stringify({ type: 'hello', token } satisfies ClientMessage)));
+    next.addEventListener('open', () => next.send(JSON.stringify((token === null ? { type: 'hello', watch: true } : { type: 'hello', token }) satisfies ClientMessage)));
     next.addEventListener('message', event => {
       if (stopped || socket !== next) return;
       const message = JSON.parse(String(event.data)) as ServerMessage;

@@ -12,7 +12,8 @@
 2. 相手はルームIDか招待リンクで `GET /rooms/{id}`（ルール・ホストの名前・空きの有無）を見て、`POST /rooms/{id}/join` で席をもらう。
 3. 席のあるブラウザは `WS /rooms/{id}/socket` につなぎ、最初に `{ type: "hello", token }` を送る。以後、ルームが変わるたびに `{ type: "view", view }` が届く。
 4. 操作は `{ type: "action", n, action }` で送る。サーバーは実行して全員に新しい `view` を送り、送り主には `{ type: "result", n }`（拒否したときは `error` つき）を返す。
-5. 2人とも `ready`（デッキつき）になると対戦が始まる。デッキはルームのルール（使えるフルーツ、拡張プレイアブルの可否）とエンジンの両方で検証する。
+5. 観戦を許可したルームには、席のない人も `{ type: "hello", watch: true }` でつなげる。届く `view` は `watching: true` つきで、両方の手札が見える（山札は見えない）。操作は送れない。いま何人が観戦しているか（`spectators`）は全員の `view` に入る。
+6. 2人とも `ready`（デッキつき）になると対戦が始まる。デッキはルームのルール（使えるフルーツ、拡張プレイアブルの可否）とエンジンの両方で検証する。
 
 メッセージと盤面の型は `packages/game-core/src/room.ts`（Web アプリと共有）。
 
@@ -20,23 +21,23 @@
 
 | | |
 | --- | --- |
-| `POST /rooms` | `{ rules: { fruits, extendedPlayable }, name }` → `{ seat: 0, token, view }` |
-| `GET /rooms/{id}` | `{ id, rules, host, open }`。なければ 404 |
+| `POST /rooms` | `{ rules: { fruits, extendedPlayable, spectators }, name }` → `{ seat: 0, token, view }` |
+| `GET /rooms/{id}` | `{ id, rules, host, open, spectators }`。なければ 404 |
 | `POST /rooms/{id}/join` | `{ name }` → `{ seat: 1, token, view }`。満員 409 / 解散済み 410 |
-| `WS /rooms/{id}/socket` | 上の流れ。`action` は `ready` `unready` `command` `resign` `rematch` `leave` |
+| `WS /rooms/{id}/socket` | 上の流れ。`action` は `ready` `unready` `command` `resign` `rematch` `leave`。観戦は `hello` に `watch: true` |
 | `GET /stats` | サーバーの状態（下） |
 | `GET /healthz` | プロセスが動いている（liveness） |
 | `GET /readyz` | Redis に届く（readiness）。届かなければ 503 |
 
 上の3つ（作る・入る・調べる）は送信元ごとに1時間あたりの回数を制限する（429。Pod ごとに数える）。対戦中の操作と `/stats` は数えない。
 
-WebSocket を閉じるコード: `4404` ルームか席がない（直前に `{ type: "gone" }`）、`4400` 形式が違う、`4408` hello が来ない、`1012` Pod の入れ替え（ブラウザはつなぎ直す）。
+WebSocket を閉じるコード: `4404` ルームか席がない・観戦できない（直前に `{ type: "gone" }`）、`4400` 形式が違う、`4408` hello が来ない、`1012` Pod の入れ替え（ブラウザはつなぎ直す）。
 
 ## Redis の使い方（`src/backend.ts`）
 
 ```
 pplale:room:{id}        hash    json（ルーム全体）, v（バージョン）, st（状態）。最後の変更から ROOM_IDLE_HOURS で消える
-pplale:on:{id}:{seat}   zset    その席の開いている接続。スコアは「更新されなければ消える時刻」
+pplale:on:{id}:{spot}   zset    席（0, 1）または観戦者（2）の開いている接続。スコアは「更新されなければ消える時刻」
 pplale:pod:{pod}        string  その Pod の接続数。Pod が止まると消える
 pplale:totals           hash    累計（作ったルーム、始まった対戦、終わった対戦、操作）
 pplale:rooms            channel ルームが変わったことを Pod どうしで知らせる
@@ -183,5 +184,6 @@ docker run --rm -p 8080:8080 -e REDIS_URL=redis://host.docker.internal:6379 ppla
 - **Redis は1台。** Redis が止まっている間はルームマッチが使えない（`/readyz` が 503 になり、つなぎ直しを待つ）。データはボリュームに毎秒書いているので、Redis が戻れば続きから遊べる。チャートの Redis の代わりに `redis.url` で別の Redis を指せる。
 - **エンジンやカードが変わる入れ替えでは、進行中の対戦が続けられないことがある。** 保存してあるのは対戦の状態そのものなので、状態の形が変わると読めない。入れ替えの途中は新旧の Pod が同じルームを扱う。
 - **Web アプリとサーバーのバージョンがずれている間**（Vercel と自宅クラスタは別々に入れ替わる）、新しいカードやルールの見え方が食い違うことがある。対戦を進めるのは常にサーバーの側。
+- **観戦者には両方の手札が見える。** 観戦を許可したルームでは、対戦している本人が別のブラウザで観戦すれば相手の手札を見られる。防ぐ仕組みはなく、観戦の可否と人数を2人に見せているだけ。既定は観戦なしで、ルームを作る人が選ぶ。観戦は1ルーム30人まで。
 - **ルームIDは6けたの数字。** 空いているルームには ID を当てれば入れる（2人そろえば入れない）。回数の制限で総当たりを抑えているだけなので、知らない人に入られて困る用途には向かない。
 - **切断した相手を待つ時間に上限はない。** 相手の接続が切れたことは画面に出る。戻らないときは自分が投了するかルームを出る。

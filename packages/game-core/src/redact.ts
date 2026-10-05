@@ -17,10 +17,10 @@ const serialOf = (uid: string) => Number(uid.slice(1)) || 0;
  * The match as `viewer` sees it. Hidden: the cards in both decks and their order (also the
  * viewer's own), the opponent's unrevealed hand, the random seed, queued effect steps, and the
  * hidden cards among the options of a choice the opponent is making.
+ * A `spectator` sees both hands, and of the decks as little as the players do.
  */
-export function viewFor(state: GameState, viewer: Side): GameState {
+export function viewFor(state: GameState, viewer: Side | 'spectator'): GameState {
     const s: GameState = JSON.parse(JSON.stringify(state));
-    const foe = other(viewer);
     const hidden = new Set<string>();
     for (const side of sides) {
         for (const kind of ['yojo', 'sweet'] as const) {
@@ -29,7 +29,7 @@ export function viewFor(state: GameState, viewer: Side): GameState {
             s.players[side][kind].sort((a, b) => serialOf(a) - serialOf(b));
         }
     }
-    for (const uid of s.players[foe].hand) if (!s.cards[uid].revealed) hidden.add(uid);
+    if (viewer !== 'spectator') for (const uid of s.players[other(viewer)].hand) if (!s.cards[uid].revealed) hidden.add(uid);
     if (s.pending) {
         if (s.pending.task.actor === viewer) {
             // A search of the viewer's own deck shows the cards it offers.

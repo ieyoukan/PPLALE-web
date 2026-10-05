@@ -4,7 +4,7 @@
 // can be replaced without ending a match.
 //
 //   pplale:room:{id}        hash   json (the room), v (its version), st (its status); expires when idle
-//   pplale:on:{id}:{seat}   zset   one member per open socket of the seat, scored with when it lapses
+//   pplale:on:{id}:{spot}   zset   one member per open socket of a seat (0, 1) or of the spectators (2), scored with when it lapses
 //   pplale:pod:{pod}        string that instance's socket count; lapses when the instance is gone
 //   pplale:totals           hash   counters since the data began
 //   pplale:rooms            channel
@@ -21,11 +21,14 @@ export interface RoomEvent {
     from: string;
     room: Room;
     online: [boolean, boolean];
+    watching: number;
     /** That seat was given up: its sockets have no room any more. */
     dismiss?: Side;
 }
 export type Totals = RoomServerStats['total'];
-export interface Member { id: string; seat: Side; member: string }
+/** Where a socket is in a room: a seat, or (2) among the spectators. */
+export type Spot = Side | 2;
+export interface Member { id: string; seat: Spot; member: string }
 export interface Overview { rooms: Record<RoomStatus, number>; total: Totals; pods: number; connections: number }
 
 export interface Backend {
@@ -42,6 +45,8 @@ export interface Backend {
     /** A socket of the seat closed. True when the seat has none left (the player is gone). */
     leave(entry: Member): Promise<boolean>;
     online(id: string): Promise<[boolean, boolean]>;
+    /** Open sockets of spectators. */
+    watching(id: string): Promise<number>;
     /** Says that these sockets are still open; one that is not refreshed lapses after `ttl`. */
     refresh(entries: Member[], ttl: number): Promise<void>;
     count(name: keyof Totals): Promise<void>;
@@ -72,12 +77,12 @@ export async function redisBackend(url: string, prefix = 'pplale:'): Promise<Bac
     client.on('error', error => console.error('redis', error instanceof Error ? error.message : error));
     await client.connect();
     let subscriber: typeof client | undefined;
-    const roomKey = (id: string) => `${prefix}room:${id}`, seatKey = (id: string, seat: Side) => `${prefix}on:${id}:${seat}`;
+    const roomKey = (id: string) => `${prefix}room:${id}`, seatKey = (id: string, seat: Spot) => `${prefix}on:${id}:${seat}`;
     const channel = `${prefix}rooms`, totalsKey = `${prefix}totals`, podKey = (pod: string) => `${prefix}pod:${pod}`;
     const store = async (room: Room, expected: string, ttl: number) =>
         await client.eval(STORE, { keys: [roomKey(room.id)], arguments: [expected, String(room.version), JSON.stringify(room), room.status, String(Math.ceil(ttl))] }) === 1;
     /** Open sockets of a seat, after dropping the ones whose instance stopped refreshing them. */
-    const present = async (id: string, seat: Side) => {
+    const present = async (id: string, seat: Spot) => {
         await client.zRemRangeByScore(seatKey(id, seat), '-inf', Date.now());
         return client.zCard(seatKey(id, seat));
     };
@@ -118,6 +123,7 @@ export async function redisBackend(url: string, prefix = 'pplale:'): Promise<Bac
             const [a, b] = await Promise.all([present(id, 0), present(id, 1)]);
             return [a > 0, b > 0];
         },
+        watching: id => present(id, 2),
         async refresh(entries, ttl) { await Promise.all(entries.map(entry => mark(entry, ttl))); },
         async count(name) { await client.hIncrBy(totalsKey, name, 1); },
         async beat(pod, connections, ttl) { await client.set(podKey(pod), String(connections), { PX: Math.ceil(ttl) }); },
@@ -149,7 +155,7 @@ export function memoryBackend(): Backend {
         if (kept && kept.until <= Date.now()) rooms.delete(id);
         return rooms.get(id);
     };
-    const members = (id: string, seat: Side) => {
+    const members = (id: string, seat: Spot) => {
         const key = `${id}:${seat}`, now = Date.now();
         let found = seats.get(key);
         if (!found) seats.set(key, found = new Map());
@@ -189,6 +195,7 @@ export function memoryBackend(): Backend {
             return found.size === 0;
         },
         async online(id) { return [members(id, 0).size > 0, members(id, 1).size > 0]; },
+        async watching(id) { return members(id, 2).size; },
         async refresh(entries, ttl) { for (const { id, seat, member } of entries) members(id, seat).set(member, Date.now() + ttl); },
         async count(name) { total[name]++; },
         async beat(pod, connections, ttl) { pods.set(pod, { connections, until: Date.now() + ttl }); },

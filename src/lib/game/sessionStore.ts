@@ -39,6 +39,8 @@ export const ROOM_PATH = '/game/battle/room/';
 /** The board of a room's match (`?id=`). */
 export const ROOM_PLAY_PATH = '/game/room/';
 export const roomHref = (path: typeof ROOM_PATH | typeof ROOM_PLAY_PATH, id: string) => `${path}?id=${id}`;
+/** The board of a room's match for someone watching it. */
+export const watchHref = (id: string) => `${ROOM_PLAY_PATH}?id=${id}&watch=1`;
 export const CARDS_PATH = '/game/cards/';
 export const CARD_GALLERY_PATH = '/game/cards/zukan/';
 export const PLAY_PATH = '/game/play/';

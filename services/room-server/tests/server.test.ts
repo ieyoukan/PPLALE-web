@@ -4,7 +4,7 @@ import { HIDDEN_CARD } from '@pplale/game-core';
 import type { RoomInfo, RoomServerStats, Seated } from '@pplale/game-core/room';
 import { connect, deck, seatedRoom, serve, shared, startedMatch } from './helpers.ts';
 
-const rules = { fruits: ['strawberry'], extendedPlayable: false };
+const rules = { fruits: ['strawberry'], extendedPlayable: false, spectators: false };
 
 test('rooms: made with the rules the game can play, looked up and joined once', async () => {
     const served = await serve(), { call } = served;
@@ -17,7 +17,7 @@ test('rooms: made with the rules the game can play, looked up and joined once', 
     assert.equal((await call('/rooms', { rules: { fruits: ['grape'] } })).status, 400);
 
     const info = await call<RoomInfo>(`/rooms/${view.id}`);
-    assert.deepEqual(info.data, { id: view.id, rules, host: 'ほすと太郎ながいなまえで', open: true });
+    assert.deepEqual(info.data, { id: view.id, rules, host: 'ほすと太郎ながいなまえで', open: true, spectators: false });
     assert.equal((await call('/rooms/000')).status, 404);
     assert.equal((await call('/rooms/999999')).status, 404);
 
@@ -125,6 +125,50 @@ test('match: the server plays it; each side sees its own hand, acts only for its
     assert.ok(stats.total.commands >= 12);
     assert.equal(stats.version, 'test');
     await served.close();
+});
+
+test('spectators: only where the room allows them; they see both hands, are counted, and cannot act', async () => {
+    const data = shared();
+    const a = await serve({ data }), b = await serve({ data });
+    const closed = await seatedRoom(a);
+    const refused = await connect(a, closed.id, null);
+    assert.equal(await refused.closed, 4404);
+    assert.equal(refused.gone(), 'このルームは観戦できません');
+    assert.equal(closed.sockets[0].latest().spectators, 0);
+
+    // The players are on one instance, the spectator on the other.
+    const { id, sockets, first, command } = await startedMatch(a, a, true);
+    assert.equal((await a.call<RoomInfo>(`/rooms/${id}`)).data.spectators, true);
+    const drawer = first === 0 ? 1 : 0;
+    assert.equal(await command(drawer, { type: 'openingDraw', actor: drawer, deck: 'yojo' }), undefined);
+    assert.equal(await command(first, { type: 'openingDraw', actor: first, deck: 'sweet' }), undefined);
+    const watcher = await connect(b, id, null);
+    const view = await watcher.until(latest => latest.spectators === 1);
+    assert.equal(view.watching, true);
+    assert.deepEqual(view.players.map(player => player!.name), ['ほすと', 'げすと']);
+    assert.equal(view.players[0].deck, undefined);
+    for (const side of [0, 1] as const) {
+        const hand = view.game!.players[side].hand.map(uid => view.game!.cards[uid].cardId);
+        assert.equal(hand.length, 1);
+        assert.ok(hand.every(card => card !== HIDDEN_CARD));
+        assert.ok(view.game!.players[side].yojo.every(uid => view.game!.cards[uid].cardId === HIDDEN_CARD));
+    }
+    // The players learn that someone watches, and still do not see each other's hand.
+    for (const socket of sockets) {
+        const seen = await socket.until(latest => latest.spectators === 1);
+        assert.equal(seen.watching, undefined);
+        const foe = seen.seat === 0 ? 1 : 0;
+        assert.ok(seen.game!.players[foe].hand.every(uid => seen.game!.cards[uid].cardId === HIDDEN_CARD));
+    }
+    assert.equal(await watcher.act({ action: 'resign' }), '観戦中は操作できません');
+    assert.equal(sockets[0].latest().status, 'playing');
+    // What a player does reaches the spectator with what was done.
+    assert.equal(await command(drawer, { type: 'openingDraw', actor: drawer, deck: 'yojo' }), undefined);
+    assert.deepEqual((await watcher.until(latest => latest.last !== null)).last, { command: { type: 'openingDraw', actor: drawer, deck: 'yojo' } });
+    await watcher.close();
+    await sockets[0].until(latest => latest.spectators === 0);
+    await a.close();
+    await b.close();
 });
 
 test('leaving: a guest frees the seat, the host closes the room', async () => {

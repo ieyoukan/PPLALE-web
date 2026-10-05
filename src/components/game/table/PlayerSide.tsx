@@ -15,11 +15,13 @@ const FIELD_SLOTS = 7;
 /** One player's half of the table: decks, piles, playable, counters, field and (far side) hand backs. */
 export function PlayerSide({ side }: { side: Side }) {
   const board = useBoardContext();
-  const { game, view, mode, busy, attacker, attackLeader } = board;
+  const { game, view, mode, busy, attacker, attackLeader, remote } = board;
   const player = game.players[side], near = side === view;
   // In a room either seat may be this screen's; elsewhere side 0 is the player.
   const who = (mode === 'room' ? near : side === 0) ? 'あなた' : '相手';
   const sandbox = mode === 'hotseat' && game.phase === 'playing' && !game.pending && !busy;
+  /** Every hand is face up: the far one sits lower so its cards can be read, and a tap enlarges one. */
+  const open = mode === 'watch' || !!remote?.watching;
   const leaderTarget = !!attacker && side !== view && board.canStrike(attacker, 'leader');
   return <section className={`${styles.playerSide} ${near ? styles.near : styles.far}`} aria-label={`${who}の盤面`}>
     <Zone side={side} kind="yojo" className={styles.deckYojo} />
@@ -42,11 +44,12 @@ export function PlayerSide({ side }: { side: Side }) {
       <span className={styles.fieldLabel}>Field</span>
       {Array.from({ length: FIELD_SLOTS }, (_, slot) => <FieldSlot key={slot} side={side} slot={slot} />)}
     </div>
-    {!near && <div className={styles.opponentHand} role="group" aria-label={`相手の手札 ${player.hand.length}枚`}>
+    {!near && <div className={`${styles.opponentHand} ${open ? styles.openHand : ''}`} role="group" aria-label={`相手の手札 ${player.hand.length}枚`}>
       {player.hand.map((uid, i) => <span key={uid} data-hand={uid} className={`${styles.hiddenCard} ${board.flying(uid) ? styles.dealing : ''}`}
+        onClick={open ? () => board.setPanel({ type: 'inspect', uid }) : undefined}
         style={{ '--hand-index': i - (player.hand.length - 1) / 2, '--fan-step': `${Math.min(56, 360 / Math.max(1, player.hand.length))}px` } as CSSProperties}>
         {/* The opponent holds their cards facing them, so they are upside down from here. */}
-        <span className={styles.hiddenFace}>{(game.cards[uid].revealed || mode === 'watch') && <GameCard id={game.cards[uid].cardId} />}</span>
+        <span className={styles.hiddenFace}>{(game.cards[uid].revealed || open) && <GameCard id={game.cards[uid].cardId} />}</span>
       </span>)}
     </div>}
   </section>;

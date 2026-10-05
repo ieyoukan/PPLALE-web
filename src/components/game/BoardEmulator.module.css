@@ -318,6 +318,8 @@
 .turnControl button:not(:disabled):active { transform: translateY(5px); }
 .turnControl button:disabled { opacity: 1; filter: saturate(.45) brightness(.9); }
 .opponentHand { left: 50%; right: auto; top: -82px; width: 0; height: 165px; z-index: 18; perspective: 700px; }
+.openHand { top: -36px; }
+.openHand .hiddenCard { pointer-events: auto; cursor: pointer; }
 .hiddenCard { width: 104px; height: 156px; top: 0; left: -52px; border: 2px solid #e5ceae; border-radius: 7px; transform-origin: 50% 5%; transform: translateX(calc(var(--hand-index) * var(--fan-step))) rotate(calc(var(--hand-index) * -7deg)) rotateX(-12deg); box-shadow: 4px 10px 12px #341e2866; transition: transform .4s cubic-bezier(.2,.8,.2,1); }
 .die { width: 54px; height: 54px; padding: 9px; gap: 4px; border-radius: 10px; }
 .handDock { position: fixed; z-index: 45; left: 50%; bottom: -105px; transform: translateX(-50%); width: min(850px, 90vw); min-width: 0; min-height: 0; padding: 0; background: none; transition: bottom .35s cubic-bezier(.2,.8,.2,1), width .35s; pointer-events: none; }
@@ -364,7 +366,7 @@
 @keyframes deckLift { 50% { transform: translateY(-12px) rotateX(8deg) rotateY(-10deg); } }
 @keyframes beckon { 50% { transform: translateY(8px); } }
 @media (max-width: 700px) { .skillModal { padding: 65px 18px 20px; } .skillButton { flex-wrap: wrap; padding: 16px; gap: 12px; } .skillButton > span { flex: 1; min-width: 160px; } .skillButton small { width: 100%; } .drawer { border-radius: 0; } }
-@media (max-height: 600px) { .counterControls { display: none; } .opponentHand { top: -115px; } }
+@media (max-height: 600px) { .counterControls { display: none; } .opponentHand { top: -115px; } .openHand { top: -80px; } }
 @media (max-height: 600px) { .near .field { top: 46%; } .far .field { top: auto; bottom: 59%; } }
 @media (prefers-reduced-motion: reduce) { .strikeCard, .impact { animation-duration: .01s; } .drawReady .stack, .drawReady::after { animation: none; } .handDock, .handCard, .hiddenCard { transition: none; } }
 .near .playableZone { top: 72%; height: 17%; }

@@ -56,3 +56,16 @@ test('a view is still a match the board can read after every opening command', (
     assert.equal(Object.keys(view.cards).length, Object.keys(s.cards).length);
   }
 });
+
+test('a spectator sees both hands, and of the decks and a choice only what is public', () => {
+  const s = arena({ me: { hand: ['y_1'] }, foe: { hand: ['y_4', 'y_5'], field: ['y_6'] } });
+  const inDeck = s.players[1].yojo[0], [inHand] = s.players[1].hand;
+  s.pending = { prompt: '選ぶ', task: { op: 'searchRole', actor: 1, candidates: [inDeck] }, options: [{ id: inHand, label: 'てふだ' }, { id: inDeck, label: 'やま' }] };
+  const view = viewFor(s, 'spectator');
+  const ids = uids => uids.map(uid => view.cards[uid].cardId);
+  assert.deepEqual(ids(view.players[0].hand), ['y_1']);
+  assert.deepEqual(ids(view.players[1].hand), ['y_4', 'y_5']);
+  for (const side of [0, 1]) for (const kind of ['yojo', 'sweet']) assert.ok(ids(view.players[side][kind]).every(id => id === HIDDEN_CARD));
+  assert.deepEqual(view.pending.options.map(o => o.id), [inHand]);
+  assert.equal(view.rng, 0);
+});

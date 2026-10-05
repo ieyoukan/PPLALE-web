@@ -78,7 +78,11 @@ function captureRects(root: HTMLElement | null): Map<string, Rect> {
  * cards and choices, and the turn / match announcements. Nothing here changes the game; `busy` tells
  * the board to wait.
  */
-export function useBoardAnimations({ game, view, mode, cpuSides, replaying, container }: { game: GameState; view: Side; mode: Mode; cpuSides: Side[]; replaying: boolean; container: RefObject<HTMLDivElement | null> }) {
+export function useBoardAnimations({ game, view, mode, cpuSides, replaying, container, spectating }: {
+  game: GameState; view: Side; mode: Mode; cpuSides: Side[]; replaying: boolean; container: RefObject<HTMLDivElement | null>;
+  /** Watching a room's match without a seat: both players' names, used where a player would read あなた / 相手. */
+  spectating?: [string, string];
+}) {
   const [flights, setFlights] = useState<DrawFlight[]>([]);
   const [strike, setStrike] = useState<Strike | null>(null);
   const [turnNotice, setTurnNotice] = useState<TurnNotice | null>(null);
@@ -108,7 +112,7 @@ export function useBoardAnimations({ game, view, mode, cpuSides, replaying, cont
     const root = container.current;
     // Everything the command changed, shown by the presenter registered for each kind of change.
     const shown = present(changesBetween(old, game), {
-      before: old, after: game, view, mode, byAttack: lastCommand.current === 'attack',
+      before: old, after: game, view, open: mode === 'watch' || !!spectating, byAttack: lastCommand.current === 'attack',
       rect: (spot, when) => when === 'before' ? rectsBefore.current.get(spotKey(spot)) : liveRect(root, spot),
     });
     if (shown.blocks.length) {
@@ -155,13 +159,13 @@ export function useBoardAnimations({ game, view, mode, cpuSides, replaying, cont
     if (beginsTurn) {
       const announce = () => {
         const { order, number } = turnOf(game);
-        setTurnNotice({ id: game.turn, own: mode === 'hotseat' || game.active === view, order: order === 'first' ? '先攻' : '後攻', number, pp: game.players[game.active].pp, label: mode === 'watch' ? `${sideLabel(mode, game.active)}のターン` : undefined });
+        setTurnNotice({ id: game.turn, own: mode === 'hotseat' || game.active === view, order: order === 'first' ? '先攻' : '後攻', number, pp: game.players[game.active].pp, label: mode === 'watch' ? `${sideLabel(mode, game.active)}のターン` : spectating ? `${spectating[game.active]}のターン` : undefined });
         later(() => setTurnNotice(null), TURN_NOTICE_DURATION);
       };
       if (next.length) later(announce, Math.max(...next.map(f => f.delay)) + DRAW_DURATION);
       else announce();
     }
-  }, [game, view, mode, replaying, container, later]);
+  }, [game, view, mode, replaying, container, later, spectating]);
   useEffect(() => () => timers.current.forEach(clearTimeout), []);
 
   /**
@@ -177,7 +181,8 @@ export function useBoardAnimations({ game, view, mode, cpuSides, replaying, cont
       rectsBefore.current = captureRects(root);
       commit();
     };
-    const opponent = command.actor !== view || cpuSides.includes(command.actor);
+    // A spectator is shown either side's cards and choices like an opponent's.
+    const opponent = command.actor !== view || cpuSides.includes(command.actor) || !!spectating;
     const shown = opponent ? describe(game, command, cardId) : null;
     if (shown) {
       setAnnouncement(shown);
@@ -215,7 +220,7 @@ export function useBoardAnimations({ game, view, mode, cpuSides, replaying, cont
       }
     }
     apply();
-  }, [game, view, cpuSides, container, later]);
+  }, [game, view, cpuSides, container, later, spectating]);
 
   /** Loads, restores and undo jump without animating the difference. */
   const skipNext = useCallback(() => { enabled.current = false; }, []);

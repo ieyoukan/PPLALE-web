@@ -52,11 +52,12 @@ export function useBoard(container: RefObject<HTMLDivElement | null>, session: B
   const loading = !ready;
   // Nobody controls a replay: both sides are driven, like watching two CPUs.
   const cpuSides = useMemo<Side[]>(() => replaying ? [0, 1] : cpuSidesOf(mode), [mode, replaying]);
-  const animations = useBoardAnimations({ game, view, mode, cpuSides, replaying, container });
+  const watching = !!remote?.watching;
+  const animations = useBoardAnimations({ game, view, mode, cpuSides, replaying, container, spectating: watching ? names : undefined });
   const { run: animate, skipNext: skipAnimation, flights, strike, turnNotice, announcement, ping, blocked, order, effectRoll, choiceNote, busy: animating } = animations;
   /** This screen acts for the side (nobody does while watching two CPUs; in a room only the own seat). */
   const seat = remote?.seat;
-  const canControl = useCallback((side: Side) => seat === undefined ? !cpuSides.includes(side) : side === seat, [cpuSides, seat]);
+  const canControl = useCallback((side: Side) => seat === undefined ? !cpuSides.includes(side) : !watching && side === seat, [cpuSides, seat, watching]);
 
   /** Sends a command (with its animation). Clears the local selection of the acting side. */
   const act = useCallback((command: Command) => {
@@ -101,7 +102,8 @@ export function useBoard(container: RefObject<HTMLDivElement | null>, session: B
 
   // ── Room ──
   // Shows the changes the server sends, one at a time: the answer to this seat's own command goes
-  // straight onto the table (its animation already ran), the other side's is announced first.
+  // straight onto the table (its animation already ran), the other side's is announced first
+  // (for a spectator, either side's).
   const next = remote?.next, accept = remote?.accept;
   const handling = useRef<string | null>(null);
   const { reset: resetAnimations } = animations, { reset: resetDice, show: showDie } = dice;
@@ -123,14 +125,14 @@ export function useBoard(container: RefObject<HTMLDivElement | null>, session: B
       handling.current = key;
       return showDie(command.actor, after.dice?.rolls[command.actor] ?? 1, accept);
     }
-    if (!command || command.actor === seat) {
+    if (!command || !watching && command.actor === seat) {
       handling.current = key;
       return accept();
     }
     if (animating || rollingDice) return;
     handling.current = key;
     animate(command, accept, cardId);
-  }, [next, accept, seat, animating, rollingDice, animate, resetAnimations, resetDice, showDie]);
+  }, [next, accept, seat, watching, animating, rollingDice, animate, resetAnimations, resetDice, showDie]);
 
   // Watching starts from CPU 2's seat, so CPU 1 is on top and CPU 2 at the bottom (on the table and the versus screen).
   useEffect(() => { if (mode === 'watch') setView(1); }, [mode]);

@@ -22,6 +22,7 @@ function reducer({ shown, queue }: Table, action: Played | 'accept'): Table {
  * the view it (or the other side's command) leads to waits in a queue until the board has shown it.
  */
 export function useRoomSession({ room, initial, seat, onLeave }: { room: Pick<Room, 'send' | 'subscribe'>; initial: Played; seat: Side; onLeave: () => void }): BoardSession {
+  const watching = !!initial.watching;
   const { send: request, subscribe } = room;
   const [{ shown, queue }, dispatch] = useReducer(reducer, { shown: initial, queue: [] });
   const [sending, setSending] = useState(false);
@@ -36,11 +37,12 @@ export function useRoomSession({ room, initial, seat, onLeave }: { room: Pick<Ro
 
   const { revision } = shown.game;
   const send = useCallback((command: Command) => {
+    if (watching) return;
     setSending(true);
     request({ action: 'command', command: command as RoomCommand, revision })
       .then(() => setError(''), (failure: unknown) => setError(failure instanceof Error ? failure.message : '操作を送れませんでした'))
       .finally(() => setSending(false));
-  }, [request, revision]);
+  }, [request, revision, watching]);
   const ask = useCallback((action: 'resign' | 'rematch') => {
     request({ action }).catch((failure: unknown) => setError(failure instanceof Error ? failure.message : '操作を送れませんでした'));
   }, [request]);
@@ -48,13 +50,13 @@ export function useRoomSession({ room, initial, seat, onLeave }: { room: Pick<Ro
   const rematch = useCallback(() => ask('rematch'), [ask]);
 
   const names = useMemo<[string, string]>(() => [shown.players[0].name, shown.players[1]?.name ?? '相手'], [shown.players]);
-  const remote = useMemo(() => ({ seat, names, waiting: sending || queue.length > 0, next, accept, resign, resigned: shown.resigned, leave: onLeave }),
-    [seat, names, sending, queue.length, next, accept, resign, shown.resigned, onLeave]);
+  const remote = useMemo(() => ({ seat, watching, names, waiting: sending || queue.length > 0, next, accept, resign, resigned: shown.resigned, leave: onLeave }),
+    [seat, watching, names, sending, queue.length, next, accept, resign, shown.resigned, onLeave]);
   return {
     game: shown.game, error, history: [], commands: [], mode: 'room', levels: ['normal', 'normal'], ready: true, saveError: '',
     send, undo: nothing, canUndo: false, remote,
     // Back to choosing decks together; the room page opens the board again when both are ready.
-    setup: null, rematch, canRematch: true,
+    setup: null, rematch, canRematch: !watching,
     record: null, markReported: nothing,
     replaying: false, startReplay: nothing, stopReplay: nothing, canReplay: false, replayNext: null,
   };

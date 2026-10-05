@@ -42,7 +42,7 @@ export default function BoardEmulator() {
 export function BoardTable({ session }: { session: BoardSession }) {
   const container = useRef<HTMLDivElement>(null);
   const board = useBoard(container, session);
-  const { game, me, view, mode, paused, attacker, drag, mulligan, ready, panel, error, replaying, setPanel, setPaused, setAttacker, stopReplay } = board;
+  const { game, me, view, mode, paused, attacker, drag, mulligan, ready, panel, error, replaying, remote, setPanel, setPaused, setAttacker, stopReplay } = board;
   // The saved match is still loading (or missing, and the preparation page is opening).
   if (!ready) return <div className={styles.emulator} aria-busy="true" />;
   // Any open panel (drawer or modal) is closed from the same corner button.
@@ -82,7 +82,7 @@ export function BoardTable({ session }: { session: BoardSession }) {
       <SelectedCard />
       {/* While the replacements are drawn the table itself is used: the decks glow and the hand shows. */}
       {mulligan.remaining > 0 && board.canControl(view) && <div className={styles.drawHint} role="status">あと{mulligan.remaining}枚、好きな山札から引く</div>}
-      {game.phase === 'mulligan' && !game.pending && mulligan.remaining === 0 && <MulliganBoard key={view}
+      {game.phase === 'mulligan' && !game.pending && mulligan.remaining === 0 && !remote?.watching && <MulliganBoard key={view}
         cards={me.hand.map(uid => ({ uid, id: game.cards[uid].cardId, name: displayCards[game.cards[uid].cardId].name, deck: gameCatalog[game.cards[uid].cardId].type as DeckKind }))}
         selected={mulligan.selected} enabled={mulligan.enabled} confirmed={game.mulligan.confirmed[view]}
         onToggle={mulligan.toggle} onConfirm={mulligan.confirm} />}

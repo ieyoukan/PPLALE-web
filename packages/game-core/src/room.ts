@@ -14,8 +14,13 @@ export interface RoomRules {
     fruits: Fruit[];
     /** Whether 拡張プレイアブル may lead a deck. */
     extendedPlayable: boolean;
+    /**
+     * Whether others may watch. A spectator sees both hands, so a room that allows them trusts
+     * its players not to watch their own match; both players are told, and how many are watching.
+     */
+    spectators?: boolean;
 }
-export const defaultRoomRules: RoomRules = { fruits: ['strawberry'], extendedPlayable: false };
+export const defaultRoomRules: RoomRules = { fruits: ['strawberry'], extendedPlayable: false, spectators: false };
 /**
  * What the engine can play today (see `validateDeck`). A room cannot allow more than this; add a
  * fruit here when its cards are implemented.
@@ -26,7 +31,7 @@ export const playableNow: RoomRules = { fruits: ['strawberry'], extendedPlayable
 export function parseRoomRules(value: unknown): RoomRules | null {
     const raw = value as Partial<RoomRules> | null | undefined;
     const chosen = Array.isArray(raw?.fruits) ? fruits.filter(fruit => raw.fruits!.includes(fruit) && playableNow.fruits.includes(fruit)) : [];
-    return chosen.length ? { fruits: chosen, extendedPlayable: raw?.extendedPlayable === true && playableNow.extendedPlayable } : null;
+    return chosen.length ? { fruits: chosen, extendedPlayable: raw?.extendedPlayable === true && playableNow.extendedPlayable, spectators: raw?.spectators === true } : null;
 }
 
 const isExtended = (catalog: Catalog, id: string) => catalog[id]?.type === 'playable' && (catalog[id].version ?? 'normal') !== 'normal';
@@ -40,9 +45,9 @@ export function roomDeckErrors(deck: Deck, rules: RoomRules, catalog: Catalog): 
     return errors.length ? errors : validateDeck(deck, catalog);
 }
 
-/** One line for the lobby and for sharing, e.g. 「フルーツ：いちご ／ 拡張プレイアブル：なし」. */
+/** One line for the lobby and for sharing, e.g. 「フルーツ：いちご ／ 拡張プレイアブル：なし ／ 観戦：なし」. */
 export const describeRoomRules = (rules: RoomRules) =>
-    `フルーツ：${rules.fruits.map(fruit => fruitNames[fruit]).join('・')} ／ 拡張プレイアブル：${rules.extendedPlayable ? 'あり' : 'なし'}`;
+    `フルーツ：${rules.fruits.map(fruit => fruitNames[fruit]).join('・')} ／ 拡張プレイアブル：${rules.extendedPlayable ? 'あり' : 'なし'} ／ 観戦：${rules.spectators ? 'あり' : 'なし'}`;
 
 // ── What a seat is told ──
 /** lobby: choosing decks. playing / finished: a match. closed: the host left before a match. */
@@ -58,12 +63,17 @@ export interface LastCommand {
     cardId?: string;
 }
 
-/** A room as one seat sees it. `game` hides what that seat may not know (`viewFor`). */
+/** A room as one seat (or a spectator) sees it. `game` hides what they may not know (`viewFor`). */
 export interface RoomView {
     id: string;
     /** Grows with every change of the room; an older view never replaces a newer one. */
     version: number;
+    /** The seat this view is for. A spectator's is 0: the side shown near. */
     seat: Side;
+    /** Set on a spectator's view: nothing can be done with it, and `game` shows both hands. */
+    watching?: true;
+    /** People watching right now. */
+    spectators: number;
     status: RoomStatus;
     /** Counts the matches played in this room; a new number means a new match. */
     match: number;
@@ -93,6 +103,8 @@ export interface RoomInfo {
     host: string;
     /** A seat is free and no match has started. */
     open: boolean;
+    /** The room may be watched. */
+    spectators: boolean;
 }
 
 /** A seat and the secret that acts for it (kept in that player's browser only). */
@@ -113,9 +125,12 @@ export type RoomAction =
     | { action: 'leave' };
 
 // ── The socket of a seat (`/rooms/{id}/socket`) ──
-/** `hello` comes first and names the seat. `n` numbers an action so its `result` can be told apart. */
+/**
+ * `hello` comes first: with the seat's token, or `watch` to look on without a seat.
+ * `n` numbers an action so its `result` can be told apart.
+ */
 export type ClientMessage =
-    | { type: 'hello'; token: string }
+    | { type: 'hello'; token?: string; watch?: true }
     | { type: 'action'; n: number; action: RoomAction };
 /**
  * `view`: the seat's view, now and after every change. `result`: what became of action `n`

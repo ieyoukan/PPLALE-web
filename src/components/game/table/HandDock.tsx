@@ -10,9 +10,10 @@ import styles from '../BoardEmulator.module.css';
 /** The viewer's hand as a fan. Tap selects (or picks for an effect), drag plays. */
 export function HandDock() {
   const board = useBoardContext();
-  const { game, view, me, selected, drag, mulligan } = board;
+  const { game, view, me, selected, drag, mulligan, remote } = board;
   // The mulligan screen shows the hand itself, except while its replacements are drawn from the table.
-  if (!me.hand.length || game.phase === 'mulligan' && !mulligan.remaining) return null;
+  // (A spectator has no mulligan screen, so the hand stays on the table.)
+  if (!me.hand.length || game.phase === 'mulligan' && !mulligan.remaining && !remote?.watching) return null;
   return <div className={styles.handDock}>
     <div className={styles.hand} data-hand-list>{me.hand.map((uid, index) => {
       const card = game.cards[uid], offset = index - (me.hand.length - 1) / 2;

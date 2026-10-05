@@ -10,7 +10,7 @@ import { demoDeck, gameCatalog } from '@/lib/game/catalog';
 import { describeRoomRules, roomDeckErrors } from '@pplale/game-core/room';
 import type { RoomView } from '@pplale/game-core/room';
 import type { SavedGameDeck } from '@/lib/game/savedDecks';
-import { BATTLE_PATH, ROOM_PLAY_PATH, roomHref } from '@/lib/game/sessionStore';
+import { BATTLE_PATH, ROOM_PLAY_PATH, roomHref, watchHref } from '@/lib/game/sessionStore';
 import { NameField, usePlayerName } from './RoomEntrance';
 import { RoomShare } from './RoomShare';
 import { useRoom } from './useRoom';
@@ -43,7 +43,7 @@ export function RoomLobby() {
       <button className={styles.primary} disabled={joining} onClick={() => { setJoining(true); void room.join(name).finally(() => setJoining(false)); }}>{joining ? '参加中…' : 'このルームに入る'}</button>
     </> : <p>このルームは満員です（対戦中、または2人そろっています）。</p>}
     {error && <p role="alert" className={styles.error}>{error}</p>}
-    <div className={styles.row}>{back}</div>
+    <div className={styles.row}>{info.spectators && <Link href={watchHref(info.id)} className={styles.secondary}>観戦する</Link>}{back}</div>
   </section>;
   if (stage !== 'seated' || !view || onBoard) return <section className={styles.panel} aria-busy="true">
     <p>{error || 'ルームを読み込み中…'}</p>
@@ -92,7 +92,8 @@ function Waiting({ room, view }: { room: Room; view: RoomView }) {
     <section className={styles.panel}>
       <div className={styles.roomId}><small>ROOM ID</small><output aria-label={`ルームID ${view.id}`}>{view.id}</output></div>
       <p className={styles.rules}>{describeRoomRules(view.rules)}</p>
-      {!foe && <RoomShare id={view.id} rules={view.rules} />}
+      {view.rules.spectators && <p className={styles.note}>観戦している人には、2人の手札が両方とも見えます。{view.spectators > 0 && `いま${view.spectators}人が観戦しています。`}</p>}
+      {(!foe || view.rules.spectators) && <RoomShare id={view.id} rules={view.rules} />}
     </section>
     <section className={styles.panel}>
       <div className={styles.seats}>{seat('あなた', me)}{seat('相手', foe)}</div>
