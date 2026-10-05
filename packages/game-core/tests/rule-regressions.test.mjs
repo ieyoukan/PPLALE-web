@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import { canAttack, restoreGame } from '../dist/index.js';
 import { rollDie } from '../dist/core/rng.js';
 import { cloneState } from '../dist/core/state.js';
-import { arena, catalog, choose, draws, failure, field, hand, optionIds, play, run } from './helpers.mjs';
+import { arena, catalog, choose, draws, failure, field, hand, idsOf, optionIds, play, run } from './helpers.mjs';
 
 test('stealing always reduces the opponent and heals the actor by X, ignoring the legacy toggle', () => {
   const s = arena({ me: { hand: ['s_22'], points: 2 }, rules: { stealHeals: false } });
@@ -105,4 +105,25 @@ test('1d6 advances the random state once and returns one face from 1 through 6',
     faces.add(value);
   }
   assert.equal(faces.size, 6);
+});
+
+// イチゴFAQ①-4: 同時に倒れたときは自ターン側の破壊時効果が先。
+test('ゼロオレンジ and レンテ trading: the active side\'s destruction effect resolves first', () => {
+  const trade = (mine, theirs) => {
+    const s = arena({ me: { field: mine }, foe: { field: theirs } });
+    return run(s, { type: 'attack', actor: 0, uid: field(s)[0], target: field(s, 1)[0] });
+  };
+  // My ゼロオレンジ attacks: its 2 damage finds nobody (レンテ is already gone), then the cat appears and stays.
+  let s = trade(['y_10'], ['y_7']);
+  assert.deepEqual(idsOf(s, field(s)), []);
+  assert.deepEqual(idsOf(s, field(s, 1)), ['token_cat']);
+  assert.equal(s.cards[field(s, 1)[0]].damage, 0);
+  // My レンテ attacks: my cat appears first, then the opponent's ゼロオレンジ hits it.
+  s = trade(['y_7'], ['y_10']);
+  assert.deepEqual(idsOf(s, field(s)), []);
+  assert.deepEqual(idsOf(s, field(s, 1)), []);
+  assert.deepEqual(idsOf(s, s.players[0].nap), ['y_7', 'token_cat']);
+  // With another opposing unit, ゼロオレンジ's damage lands on it instead of missing.
+  s = trade(['y_10'], ['y_7', 'y_9']);
+  assert.deepEqual(idsOf(s, field(s, 1)), ['token_cat']);
 });
