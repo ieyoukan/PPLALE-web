@@ -136,6 +136,18 @@ test('y_15 まこぽに / y_16 いのむー: cost 2 and +1/+1 for both when い�
   assert.deepEqual(stats(s, field(s)[0]), [3, 4]);
 });
 
+test('y_15 まこぽに: a copy made by さら also gets +1/+1 while いのむー is present', () => {
+  let s = arena({ me: { hand: ['y_15', 'y_19'], field: ['y_16'], pp: 6 } });
+  s = play(s, hand(s)[0]);
+  const original = newest(s);
+  s = play(s, hand(s)[0]);
+  s = choose(s, original);
+  const copy = field(s).find(uid => s.cards[uid].cardId === 'y_15');
+  assert.notEqual(copy, original);
+  assert.deepEqual(stats(s, copy), [3, 3]);
+  assert.deepEqual(stats(s, field(s)[0]), [4, 5]);
+});
+
 test('y_17 まめろん: cannot attack the sweets directly', () => {
   const s = arena({ me: { field: ['y_17'] } });
   assert.match(failure(s, { type: 'attack', actor: 0, uid: field(s)[0], target: 'leader' }), /攻撃/);

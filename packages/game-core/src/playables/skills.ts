@@ -106,11 +106,11 @@ export const playableSkills: Record<string, SkillScript[]> = {
     // p_3 ももか
     p_3: [
         {
-            // 【応急手当】お菓子を1回復。共通スキルの残り回数を1回復。
+            // 【応急手当】お菓子を1回復。共通スキルの残り回数を1回復（使用回数制限の2回は超えない）。
             name: '応急手当', cost: 0, uses: 2,
             use(fx) {
                 fx.heal(1);
-                fx.me.skills[0]++;
+                fx.me.skills[0] = Math.min(fx.me.skills[0] + 1, commonSkill.uses);
             },
             cpu: fx => fx.me.points < fx.me.maxPoints,
         },

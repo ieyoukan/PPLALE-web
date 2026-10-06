@@ -62,15 +62,21 @@ test('p_2 ストラ: borrows 2 PP from the next turn and cannot borrow on consec
 
 test('p_3 ももか: 応急手当 refunds a common use, 買ってきた gives guard, 元気 raises the maximum', () => {
   let s = arena({ me: { playable: 'p_3', points: 5, field: ['y_9'] } });
+  // The common skill is limited to 2 uses, so an unused one is not raised above that.
   s = skill(s, 1);
   assert.equal(s.players[0].points, 6);
-  assert.equal(s.players[0].skills[0], 3);
+  assert.equal(s.players[0].skills[0], 2);
+  s = skill(s, 0);
+  if (s.pending) s = choose(s, field(s)[0]);
+  assert.equal(s.players[0].skills[0], 1);
+  s = skill(s, 1);
+  assert.equal(s.players[0].skills[0], 2);
   s = skill(s, 2);
-  assert.equal(s.players[0].points, 7);
-  assert.deepEqual(s.cards[field(s)[0]].keywords, ['guard']);
+  assert.equal(s.players[0].points, 8);
+  assert.deepEqual(s.cards[field(s)[0]].keywords, ['charge', 'guard']);
   s = skill(s, 3);
   assert.equal(s.players[0].maxPoints, 15);
-  assert.equal(s.players[0].points, 10);
+  assert.equal(s.players[0].points, 11);
 });
 
 test('p_4 りくす: leadership is +2/+2 with two or fewer units; punishment can pay 2 more for all', () => {

@@ -118,10 +118,11 @@ export const strawberryYojo: CardScripts = {
         },
     },
     // y_15 まこぽに: 早食い。いのむーが場にいれば2コスト扱い、+1/+1。
+    // +1/+1 は「手札から」に限らないので、さらの複製などで出たときも乗る。
     y_15: {
         keywords: ['fast'],
         baseCost: (s, side) => s.players[side].field.some(uid => s.cards[uid].cardId === 'y_16') ? 2 : undefined,
-        onPlay(ctx) {
+        onEnter(ctx) {
             if (onField(ctx, 'y_16')) ctx.buff(ctx.uid, 1, 1);
         },
     },
