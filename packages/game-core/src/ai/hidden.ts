@@ -17,9 +17,11 @@ export function determinize(s: GameState, side: Side, catalog: Catalog, seed: nu
     t.rng = seed >>> 0;
     const me = t.players[side], foe = t.players[other(side)];
     for (const kind of ['yojo', 'sweet'] as const) {
-        me[kind] = shuffled(t, me[kind]);
+        // Sorted before shuffling, so the guess cannot depend on the real order or on which of the
+        // cards is the one in hand (uids follow the public deck lists).
+        me[kind] = shuffled(t, [...me[kind]].sort(byUid));
         const hidden = foe.hand.filter(uid => !t.cards[uid].revealed && kindOf(t, catalog, uid) === kind);
-        const pool = shuffled(t, [...hidden, ...foe[kind]]);
+        const pool = shuffled(t, [...hidden, ...foe[kind]].sort(byUid));
         const swap = new Map(hidden.map((uid, i) => [uid, pool[i]]));
         foe.hand = foe.hand.map(uid => swap.get(uid) ?? uid);
         foe[kind] = pool.slice(hidden.length);
@@ -27,4 +29,5 @@ export function determinize(s: GameState, side: Side, catalog: Catalog, seed: nu
     return t;
 }
 
+const byUid = (a: string, b: string) => a.length - b.length || (a < b ? -1 : a > b ? 1 : 0);
 const kindOf = (s: GameState, catalog: Catalog, uid: string): DeckKind => catalog[s.cards[uid].cardId].type === 'sweet' ? 'sweet' : 'yojo';

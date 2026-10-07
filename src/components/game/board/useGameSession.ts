@@ -148,6 +148,8 @@ export function useGameSession({ onMissing }: { onMissing: () => void }) {
   return {
     ...session, mode, levels, ready, saveError, send, undo, canUndo: session.history.length > 0 && !replay,
     remote: null as RemoteSession | null,
+    /** The match's first state: with `commands` it rebuilds every position (the course of the match, the replay). */
+    initial: initial as GameState | null,
     setup, rematch, canRematch: !!setup,
     /** What the CPU server needs to rebuild this match, when all of it is known. */
     record: initial && setup && seed !== null && !replay ? { seed, decks: setup.decks, commands: session.commands, reported } : null,

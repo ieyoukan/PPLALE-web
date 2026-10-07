@@ -1,0 +1,24 @@
+/* The current chance of winning, as a bar along the left edge (far side on top). */
+.bar { position: fixed; z-index: 130; left: 10px; top: 50%; transform: translateY(-50%); display: flex; flex-direction: column; align-items: center; gap: 6px; padding: 8px 5px; border-radius: 999px; background: #000000a0; color: #fffdeb; font-size: 12px; pointer-events: none; }
+.name b { font-size: 14px; }
+.track { position: relative; display: block; width: 10px; height: clamp(120px, 40vh, 320px); border-radius: 999px; background: #e88ea0; overflow: hidden; }
+.near { position: absolute; inset: auto 0 0 0; background: #9fd3a8; transition: height .6s ease; }
+@media (max-height: 500px) { .bar { left: 4px; } .track { height: 34vh; } }
+@media (prefers-reduced-motion: reduce) { .near { transition: none; } }
+
+/* The whole match, on the result screen. */
+.graph { display: grid; gap: 8px; }
+.graph h3 { font-size: clamp(14px, 1.6vw, 18px); margin: 0; }
+.graph h3 small { margin-left: 8px; opacity: .75; font-size: .8em; }
+.graph svg { width: 100%; height: clamp(90px, 18vh, 160px); border-radius: 8px; background: #ffffff14; }
+.ahead { fill: #9fd3a822; }
+.even { stroke: #fffdeb88; stroke-dasharray: 6 6; }
+.tickFirst, .tickSecond { stroke: #fffdeb22; }
+.curve { fill: none; stroke: #fffdeb; stroke-width: 2.5; stroke-linejoin: round; }
+.blunder { fill: #ff7b7b; stroke: #fffdeb; }
+.dubious { fill: #ffc66b; stroke: #fffdeb; }
+.mistakes { display: grid; gap: 4px; margin: 0; padding: 0; list-style: none; font-size: clamp(12px, 1.4vw, 16px); }
+.mistakes small { opacity: .75; }
+.blunderTag, .dubiousTag { display: inline-block; margin-right: 8px; padding: 0 8px; border-radius: 999px; font-size: .85em; color: #3b2530; }
+.blunderTag { background: #ff9b9b; }
+.dubiousTag { background: #ffd28a; }

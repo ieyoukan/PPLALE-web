@@ -8,6 +8,7 @@ import { useBoardContext } from '../board/BoardContext';
 import { GameCard } from '../GameCard';
 import { outcomeOf } from './outcome';
 import type { Outcome } from './outcome';
+import { AssessmentGraph } from './Assessment';
 import styles from './MatchScreens.module.css';
 
 const tones = { win: styles.resultWin, lose: styles.resultLose, neutral: styles.resultNeutral } as const;
@@ -44,6 +45,7 @@ function Result({ outcome: { winner, kind } }: { outcome: Outcome }) {
     </div>
     <div className={styles.resultBody}>
       <dl className={styles.summary}>{rows.map(([label, value]) => <div key={label}><dt>{label}</dt><dd>{value}</dd></div>)}</dl>
+      <AssessmentGraph side={featured} />
       {deck && <div className={styles.deckRow}>
         <span>使用デッキ</span>
         <button className={styles.plateButton} onClick={() => setDeckOpen(true)}>確認</button>

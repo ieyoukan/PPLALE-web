@@ -12,6 +12,7 @@ import { HOME_PATH } from '@/lib/game/sessionStore';
 import { useBoardAnimations } from './useBoardAnimations';
 import { useCardDrag } from './useCardDrag';
 import type { DragSource } from './useCardDrag';
+import { useAssessment, useAssessmentSetting } from './useAssessment';
 import { useCpuPlayer } from './useCpuPlayer';
 import { cpuSidesOf, sideLabel } from './useGameSession';
 import type { BoardSession } from './useGameSession';
@@ -77,6 +78,11 @@ export function useBoard(container: RefObject<HTMLDivElement | null>, session: B
     busy: { any: busy, blocking: rollingDice || !!strike || !!turnNotice || !!announcement || !!ping || !!blocked || !!order || !!effectRoll || !!choiceNote },
   });
   // A finished match against さいきょう goes to the CPU server once, if this browser agreed to it.
+  // The course of the match (形勢), judged with what side 0 can know.
+  const [showAssessment, setShowAssessment] = useAssessmentSetting();
+  const assessable = mode === 'cpu' || mode === 'watch';
+  const { initial, commands } = session;
+  const assessment = useAssessment({ enabled: assessable && showAssessment && ready, initial, commands, viewer: 0 });
   const { record, markReported } = session;
   useEffect(() => {
     if (mode !== 'cpu' || levels[1] !== 'master' || typeof game.winner !== 'number') return;
@@ -264,6 +270,7 @@ export function useBoard(container: RefObject<HTMLDivElement | null>, session: B
 
   return {
     game, mode, levels, view, me, panel, ready, busy, paused, names, remote,
+    assessment, assessable, showAssessment, setShowAssessment,
     setup, canRematch, canReplay, replaying,
     error: error || saveError, canUndo,
     selected, attacker, pending, ours, playEnabled,

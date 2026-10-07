@@ -23,6 +23,7 @@ import { EffectDie } from './table/EffectDie';
 import { OrderNotice } from './table/OrderNotice';
 import { PlayerSide } from './table/PlayerSide';
 import { TurnControl } from './table/TurnControl';
+import { AssessmentBar } from './table/Assessment';
 import { displayCards, gameCatalog } from '@/lib/game/catalog';
 import { HOME_PATH } from '@/lib/game/sessionStore';
 import type { DeckKind } from '@pplale/game-core';
@@ -71,6 +72,7 @@ export function BoardTable({ session }: { session: BoardSession }) {
         </div>
       </div>
       <TurnControl />
+      <AssessmentBar />
       <DiceStage />
       <ChoiceTray />
       {error && <div className={styles.errorToast} role="alert">{error}</div>}

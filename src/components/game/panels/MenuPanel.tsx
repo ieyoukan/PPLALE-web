@@ -7,7 +7,7 @@ import styles from '../BoardEmulator.module.css';
 
 /** In-match actions only. Choosing the mode, levels and decks belongs to the preparation page. */
 export function MenuPanel() {
-  const { game, mode, paused, view, busy, canUndo, replaying, remote, setPanel, setPaused, setView, undo, toggleFullscreen, leave, stopReplay } = useBoardContext();
+  const { game, mode, paused, view, busy, canUndo, replaying, remote, assessable, showAssessment, setShowAssessment, setPanel, setPaused, setView, undo, toggleFullscreen, leave, stopReplay } = useBoardContext();
   // Giving up ends the match for both players, so it is asked twice.
   const [resigning, setResigning] = useState(false);
   const close = (action: () => void) => () => { action(); setPanel(null); };
@@ -20,6 +20,7 @@ export function MenuPanel() {
         : (mode === 'cpu' || mode === 'watch') && <button onClick={close(() => setPaused(!paused))}>{paused ? 'CPU再開' : 'CPU一時停止'}</button>}
       {(mode === 'hotseat' || mode === 'watch' || remote?.watching) && <button onClick={close(() => setView(other(view)))}>反対側を見る</button>}
       {mode === 'hotseat' && !replaying && <button disabled={!canUndo || busy} onClick={close(undo)}>一手戻す</button>}
+      {assessable && <button onClick={close(() => setShowAssessment(!showAssessment))}>{showAssessment ? '形勢を隠す' : '形勢を表示する'}</button>}
       <button onClick={close(toggleFullscreen)}>全画面</button>
       {replaying
         ? <button className={styles.menuLeave} onClick={stopReplay}>リプレイをやめる</button>
