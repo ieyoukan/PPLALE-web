@@ -2,6 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { cpuCommand, legalMoves } from '../dist/index.js';
 import { createMaster, searchTurn } from '../dist/ai/index.js';
+import { pointless } from '../dist/ai/moves.js';
 import { drawValue, evaluatePlan } from '../dist/ai/planning.js';
 import { arena, catalog, field, hand, run } from './helpers.mjs';
 
@@ -67,4 +68,50 @@ test('turn search: respects a small node budget, returns a legal move and leaves
   assert.ok(moves.includes(result.move));
   assert.deepEqual(s, original);
   assert.equal(createMaster({ maxNodes: 100 }).level, 'master');
+});
+
+/** さいきょう plays side 0 until its turn ends; returns the commands. */
+function playTurn(s) {
+  const sent = [];
+  while (s.winner === null && s.active === 0 && sent.length < 30) {
+    const next = command(s);
+    sent.push(next);
+    s = run(s, next);
+  }
+  return { s, sent };
+}
+const fresh = (s, uid) => { s.cards[uid].entered = s.turn; return s; };
+
+test('charge: giving it is pointless unless a unit that just entered can then attack a unit', () => {
+  const skill = { type: 'skill', actor: 0, index: 0 };
+  const useless = (s, command) => pointless(s, { command, next: s });
+  let s = arena({ me: { field: ['y_10'] }, foe: { field: ['y_9'] } });
+  assert.equal(useless(s, skill), true, 'the unit could attack anyway');
+  s = fresh(s, field(s)[0]);
+  assert.equal(useless(s, skill), false);
+  s = arena({ me: { field: ['y_10'] } });
+  s = fresh(s, field(s)[0]);
+  assert.equal(useless(s, skill), true, 'charge cannot reach the sweets');
+  // Choosing the target: an old or exhausted unit is pointless while a fresh one can take it.
+  s = arena({ me: { field: ['y_10', 'y_3'] }, foe: { field: ['y_9'] } });
+  const [young, old] = field(s);
+  s = run(fresh(s, young), skill);
+  assert.equal(useless(s, { type: 'choose', actor: 0, option: old }), true);
+  assert.equal(useless(s, { type: 'choose', actor: 0, option: young }), false);
+});
+
+test('master: gives charge to attack with it, never just to spend the skill', () => {
+  // The opponent has no skills left, so the trade is plainly good: ぷらむ dies, ゼロオレンジ survives.
+  let s = emptyDecks(arena({ me: { field: ['y_10'], pp: 0 }, foe: { field: ['y_9'] } }));
+  s.players[1].skills = s.players[1].skills.map(() => 0);
+  s = fresh(s, field(s)[0]);
+  let { s: after, sent } = playTurn(s);
+  assert.ok(sent.some(c => c.type === 'skill'), 'uses the charge skill');
+  assert.ok(sent.some(c => c.type === 'attack'), 'and attacks with it');
+  assert.deepEqual(field(after, 1), []);
+  // Nothing to attack: the skill stays unused.
+  s = emptyDecks(arena({ me: { field: ['y_10'], pp: 0 } }));
+  ({ s: after, sent } = playTurn(fresh(s, field(s)[0])));
+  assert.ok(!sent.some(c => c.type === 'skill'));
+  assert.equal(after.players[0].skills[0], s.players[0].skills[0]);
 });

@@ -5,7 +5,7 @@ import type { Catalog, Command, GameState, Side } from '../model.ts';
 import { other } from '../model.ts';
 import { WIN } from './evaluate.ts';
 import { determinize } from './hidden.ts';
-import { legalMoves } from './moves.ts';
+import { legalMoves, pointless } from './moves.ts';
 import type { Move } from './moves.ts';
 import { drawValue, evaluatePlan, orderPlan } from './planning.ts';
 import type { CpuDecision } from './types.ts';
@@ -177,7 +177,7 @@ function turnLines(start: GameState, actor: Side, p: Planner, limits: Limits, in
             seen.add(key);
             nodes++;
             const chooser = s.pending?.task.actor ?? actor;
-            let moves = depth === 0 && initial ? initial : legalMoves(s, chooser, catalog);
+            let moves = (depth === 0 && initial ? initial : legalMoves(s, chooser, catalog)).filter(move => !pointless(s, move));
             if (chooser !== actor && moves.length) moves = [preferredChoice(s, p, moves)];
             for (const move of moves) {
                 const child: Line = {
@@ -227,7 +227,8 @@ export function searchTurn(d: CpuDecision, fallback: Move, options: TurnSearchOp
     const width = bounded(options.beamWidth, 4, 1, 32), depth = bounded(options.maxDepth, 14, 2, 32);
     const worldCount = bounded(options.worlds, 3, 1, 8), candidateCount = bounded(options.candidates, 4, 1, 12);
     const preparationBudget = Math.min(Math.floor(maxNodes / 4), 180);
-    const preparation = turnLines(state, side, p, { nodes: preparationBudget, width, depth }, moves);
+    const useful = moves.filter(move => !pointless(state, move));
+    const preparation = turnLines(state, side, p, { nodes: preparationBudget, width, depth }, useful.length ? useful : moves);
     let nodes = preparation.nodes;
     const candidates = new Map<string, Move>();
     for (const line of preparation.lines) {

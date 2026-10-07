@@ -5,7 +5,7 @@ import { canAttack } from '../core/combat.ts';
 import { isRevealable } from '../view.ts';
 import { other, sides } from '../model.ts';
 import type { Catalog, Command, GameState, Side } from '../model.ts';
-import { skillsFor } from '../playables/skills.ts';
+import { commonSkill, skillsFor } from '../playables/skills.ts';
 
 export interface Move {
     command: Command;
@@ -85,3 +85,31 @@ export function legalMoves(s: GameState, side: Side, catalog: Catalog): Move[] {
     });
 }
 
+/**
+ * Charge only lets a unit that entered this turn attack another unit. Giving it to anyone else,
+ * or when the opponent has no units, changes nothing the rules care about.
+ */
+function chargeUseless(s: GameState, side: Side, uid: string): boolean {
+    const c = s.cards[uid];
+    return !s.players[other(side)].field.length || !c || c.entered !== s.turn || c.exhausted
+        || c.keywords.some(k => k === 'charge' || k === 'fast' || k === 'immobile');
+}
+
+/**
+ * Legal moves the search should not spend its budget on, because they only use up something
+ * (a limited skill) without any effect. The evaluation cannot always see that, and these moves
+ * crowd the useful ones out of a narrow search.
+ */
+export function pointless(s: GameState, move: Move): boolean {
+    const c = move.command;
+    if (c.type === 'skill' && skillsFor(s.players[c.actor].playable)[c.index]?.name === commonSkill.name) {
+        // Only the charge skill so far; it targets a unit of its own side.
+        return s.players[c.actor].field.every(uid => chargeUseless(s, c.actor, uid));
+    }
+    const task = s.pending?.task;
+    if (c.type === 'choose' && task?.op === 'keyword' && task.keyword === 'charge' && task.actor === c.actor) {
+        // Picking among the targets: keep at least one so the effect can still resolve.
+        return chargeUseless(s, c.actor, c.option) && s.pending!.options.some(o => !chargeUseless(s, c.actor, o.id));
+    }
+    return false;
+}
