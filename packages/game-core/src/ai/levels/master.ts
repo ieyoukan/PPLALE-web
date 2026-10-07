@@ -7,7 +7,7 @@ import type { TurnSearchOptions } from '../turn-search.ts';
 import type { CpuStrategy } from '../types.ts';
 import { createValueEvaluator } from '../value.ts';
 import { valueModel } from '../value-model.ts';
-import { hard } from './hard.ts';
+import { plainHard as hard } from './hard.ts';
 
 /** Lethal search is bounded separately from the turn/reply search. */
 const SEARCH_NODES = 4000;
