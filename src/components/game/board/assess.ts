@@ -1,7 +1,7 @@
 // The course of a match (形勢): each position's chance of winning and a grade for each move,
 // computed one position at a time in a worker (assess.worker.ts) or, without one, on the main thread.
 import { applyCommand, turnOf } from '@pplale/game-core';
-import { createValueEvaluator, gradeMove, valueModel, winProbability } from '@pplale/game-core/ai';
+import { createValueEvaluator, gradeOf, moveLoss, valueModel, winProbability } from '@pplale/game-core/ai';
 import type { Command, GameState, Side } from '@pplale/game-core';
 import type { MoveGrade } from '@pplale/game-core/ai';
 import { gameCatalog } from '@/lib/game/catalog';
@@ -14,6 +14,8 @@ export interface AssessedPoint {
   turn: { order: 'first' | 'second'; number: number };
   /** The command that led here, in words, its grade and how much of its player's chance it cost. */
   command?: Command;
+  /** The turn the command was played in (`turn` is already the next one after ending a turn). */
+  playedIn?: AssessedPoint['turn'];
   label?: string;
   grade?: MoveGrade;
   loss?: number;
@@ -43,7 +45,7 @@ function describe(state: GameState, command: Command): string {
  * `viewer`'s knowledge only: the opponent's hand and the deck order stay guessed.
  */
 export function* assessMatch({ initial, commands, viewer }: Omit<AssessRequest, 'id'>, known: Map<number, AssessedPoint>): Generator<AssessedPoint> {
-  let state = initial, previous: { state: GameState; win: number } | null = null;
+  let state = initial, previous: { state: GameState } | null = null;
   for (let index = 0; index <= commands.length; index++) {
     if (index > 0) {
       const result = applyCommand(state, commands[index - 1], gameCatalog, true);
@@ -57,10 +59,14 @@ export function* assessMatch({ initial, commands, viewer }: Omit<AssessRequest, 
       const win = SEEDS.reduce((sum, seed) => sum + winProbability(state, gameCatalog, evaluate, valueModel.scale, { viewer, seed }), 0) / SEEDS.length;
       point = { index, win, turn: turnOf(state) };
       const command = commands[index - 1];
-      if (previous && command) Object.assign(point, { command, label: describe(previous.state, command), ...gradeMove(previous.state, state, command, previous.win, win) });
+      if (previous && command) {
+        // Judged from the position it was played in, against the best plan there (viewer's knowledge only).
+        const loss = moveLoss(previous.state, command, gameCatalog, evaluate, valueModel.scale, { viewer, seeds: SEEDS });
+        Object.assign(point, { command, playedIn: turnOf(previous.state), label: describe(previous.state, command), ...(loss !== null && { loss, grade: gradeOf(loss) }) });
+      }
       known.set(index, point);
       yield point;
     }
-    previous = { state, win: point.win };
+    previous = { state };
   }
 }

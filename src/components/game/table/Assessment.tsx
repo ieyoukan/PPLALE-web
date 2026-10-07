@@ -46,7 +46,7 @@ export function AssessmentGraph({ side }: { side: Side }) {
     </svg>
     {mistakes.length > 0 && <ul className={styles.mistakes}>{mistakes.map(p => <li key={p.index}>
       <span className={p.grade === 'blunder' ? styles.blunderTag : styles.dubiousTag}>{p.grade === 'blunder' ? '悪手' : '疑問手'}</span>
-      {turnName(p.turn)}　{p.label}　<small>−{Math.round((p.loss ?? 0) * 100)}%</small>
+      {turnName(p.playedIn ?? p.turn)}　{p.label}　<small>−{Math.round((p.loss ?? 0) * 100)}%</small>
     </li>)}</ul>}
   </section>;
 }

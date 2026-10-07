@@ -49,7 +49,7 @@ export { playMatch, randomStrawberryDeck } from './selfplay.ts';
 export { createHard } from './levels/hard.ts';
 export { createMaster } from './levels/master.ts';
 export { searchTurn } from './turn-search.ts';
-export { BLUNDER, DUBIOUS, gradeMove, winProbability } from './assess.ts';
+export { BLUNDER, DUBIOUS, gradeOf, moveLoss, winProbability } from './assess.ts';
 export type { MoveGrade, WinOptions } from './assess.ts';
 export { createValueEvaluator, parseValueModel, valueFeatures, valueLayout, valueLogit } from './value.ts';
 export { valueModel } from './value-model.ts';

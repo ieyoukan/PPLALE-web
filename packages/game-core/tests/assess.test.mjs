@@ -1,8 +1,8 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { createValueEvaluator, gradeMove, valueModel, winProbability } from '../dist/ai/index.js';
+import { BLUNDER, DUBIOUS, createValueEvaluator, gradeOf, moveLoss, valueModel, winProbability } from '../dist/ai/index.js';
 import { playMatch } from '../dist/index.js';
-import { arena, catalog, field, hand, run } from './helpers.mjs';
+import { arena, catalog, field, hand } from './helpers.mjs';
 
 const evaluate = createValueEvaluator(valueModel);
 const win = (s, options) => winProbability(s, catalog, evaluate, valueModel.scale, options);
@@ -35,15 +35,16 @@ test('assess: the other player\'s choice in the middle of a turn is resolved bef
   assert.ok(Number.isFinite(p));
 });
 
-test('assess: grades only moves of skill, by how much of its player\'s chance they cost', () => {
-  const s = arena({ me: { field: ['y_3'], hand: ['y_9'] }, foe: { field: ['y_17'] } });
-  const end = { type: 'end', actor: 0 }, after = run(s, end);
-  assert.deepEqual(gradeMove(s, s, { type: 'attack', actor: 0, uid: field(s)[0], target: 'leader' }, 0.6, 0.4), { loss: 0.6 - 0.4, grade: 'blunder' });
-  assert.equal(gradeMove(s, s, end, 0.6, 0.5).grade, 'dubious');
-  assert.equal(gradeMove(s, s, end, 0.6, 0.58).grade, null);
-  // Side 1's chance is the other way round.
-  assert.equal(gradeMove(s, s, { type: 'end', actor: 1 }, 0.4, 0.6).grade, 'blunder');
-  // Ending the turn drew a card for the opponent: luck, not graded.
-  assert.equal(gradeMove(s, after, end, 0.9, 0.1).grade, after.rng !== s.rng || after.players[1].yojo.length !== s.players[1].yojo.length ? null : 'blunder');
-  assert.ok(hand(s).length === 1);
+test('assess: a move is judged against the best plan from the same position', () => {
+  // ゼロオレンジ can eat the last sweet point: ending the turn instead throws the win away.
+  const s = arena({ me: { field: ['y_10'] }, foe: { points: 2 } });
+  const attack = { type: 'attack', actor: 0, uid: field(s)[0], target: 'leader' };
+  assert.equal(moveLoss(s, attack, catalog, evaluate, valueModel.scale), 0);
+  assert.ok(moveLoss(s, { type: 'end', actor: 0 }, catalog, evaluate, valueModel.scale) >= BLUNDER);
+  assert.equal(gradeOf(BLUNDER), 'blunder');
+  assert.equal(gradeOf(DUBIOUS), 'dubious');
+  assert.equal(gradeOf(0.01), null);
+  // Not this side's decision: nothing to judge.
+  assert.equal(moveLoss(s, { type: 'end', actor: 1 }, catalog, evaluate, valueModel.scale), null);
+  assert.ok(hand(s).length === 0);
 });
