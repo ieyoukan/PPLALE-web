@@ -148,6 +148,20 @@ test('y_15 まこぽに: a copy made by さら also gets +1/+1 while いのむ�
   assert.deepEqual(stats(s, field(s)[0]), [4, 5]);
 });
 
+test('y_15 まこぽに: the bonus is fixed on entry; いのむー arriving or leaving later changes nothing', () => {
+  let s = arena({ me: { hand: ['y_16'], field: ['y_15'] } });
+  const makoponi = field(s)[0];
+  s = play(s, hand(s)[0]);
+  assert.deepEqual(stats(s, makoponi), [2, 2]);
+  assert.deepEqual(stats(s, newest(s)), [2, 3]);
+  s = arena({ me: { hand: ['y_15'], field: ['y_16'] } });
+  s = play(s, hand(s)[0]);
+  // いのむー leaves the field afterwards: まこぽに keeps its +1/+1.
+  const inomu = field(s)[0];
+  s.players[0].field = s.players[0].field.filter(uid => uid !== inomu);
+  assert.deepEqual(stats(s, newest(s)), [3, 3]);
+});
+
 test('y_17 まめろん: cannot attack the sweets directly', () => {
   const s = arena({ me: { field: ['y_17'] } });
   assert.match(failure(s, { type: 'attack', actor: 0, uid: field(s)[0], target: 'leader' }), /攻撃/);
