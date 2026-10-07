@@ -70,7 +70,7 @@ curl https://pplale-room.youkan.uk/stats
 - `connections`：全 Pod の開いている WebSocket の数（≒いま画面を開いているプレイヤー）。`pods`：動いている Pod の数。どちらも Pod が15秒ごとに申告した値。
 - `total`：Redis のデータが始まってからの累計（Pod が入れ替わっても続く）。
 - `version` と `uptime`（秒）は、答えた Pod のもの。`backend` が `memory` なら Redis なしで動いている。
-- 同じ内容がバトルのタブの「ルームサーバー：稼働中」を開くと見られる。名前・デッキ・ルームIDなど、個々のルームの中身は出さない。数は最大5秒前のもの。
+- 名前・デッキ・ルームIDなど、個々のルームの中身は出さない。数は最大5秒前のもの。
 
 Redis を直接見るとき（名前空間 `pplale-room-server`）:
 
@@ -85,7 +85,7 @@ kubectl exec -n pplale-room-server sts/pplale-room-server-redis -- redis-cli hge
 
 環境変数。意味とデフォルトは `helm/pplale-room-server/values.yaml` を参照。
 
-`PORT` `REDIS_URL` `ALLOWED_ORIGINS` `TRUST_PROXY` `REQUESTS_PER_HOUR` `MAX_ROOMS` `ROOM_IDLE_HOURS` `BEAT_SECONDS` `APP_VERSION` `CARD_DATA_DIR`
+`PORT` `REDIS_URL` `ALLOWED_ORIGINS` `TRUST_PROXY` `REQUESTS_PER_HOUR` `ROOMS_PER_HOUR` `LOBBY_GRACE_MINUTES` `ABANDON_MINUTES` `MAX_ROOMS` `ROOM_IDLE_HOURS` `BEAT_SECONDS` `APP_VERSION` `CARD_DATA_DIR`
 
 Redis に入るのは、ルームのルール、両者の名前・デッキ・トークンのハッシュ、進行中の対戦の完全な状態。送信元のアドレスは保存しない。
 
@@ -177,6 +177,18 @@ docker run --rm -p 8080:8080 -e REDIS_URL=redis://host.docker.internal:6379 ppla
 
 4. ghcr のパッケージを公開にする（または `imagePullSecrets` を設定する）。
 5. Web アプリ（Vercel）の環境変数に `NEXT_PUBLIC_ROOM_SERVER_URL=https://pplale-room.youkan.uk` を設定して再デプロイする。ここで初めてルームマッチが使えるようになる。
+
+## ルームが消えるとき
+
+- **対戦前にホストがいない**：ホストの接続が `LOBBY_GRACE_MINUTES`（10分）ないとルームは解散する。作っただけで開かなかったルームも同じ。募集を X や Discord に貼りに行く間（スマホでは画面を離れると接続が切れることがある）に消えないよう長めにしている。ホストが「ルームを解散する」を押せばすぐ消える。
+- **対戦前にゲストがいない**：同じ時間で席が空き、別の人が入れるようになる。
+- **対戦中・対戦後に2人ともいない**：`ABANDON_MINUTES`（30分）で解散する。片方だけ残っているときは、その人が投了するか出るまで残る。
+- **それ以外**：最後の変更から `ROOM_IDLE_HOURS`（12時間）で消える。解散したルームは10分残してから消す（最後のプレイヤーに解散を伝えるため）。
+- Pod はそれぞれ `BEAT_SECONDS` ごとに全ルームを見て判断する（同時に見ても compare-and-set なので二重には効かない）。
+
+ルームの数の上限は `MAX_ROOMS`（500）。1つの送信元が作れるのは1時間に `ROOMS_PER_HOUR`（10、Pod ごと）までで、開かないルームは10分で消えるため、1人が場を埋めることはできない。
+
+`/stats` のルームの数や接続数は運用のためのもので、ゲームの画面には出さない（「稼働中 / つながらない」だけを出す）。
 
 ## 知っておくこと
 

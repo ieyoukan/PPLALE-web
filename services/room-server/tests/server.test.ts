@@ -244,6 +244,43 @@ test('a player whose instance died without a word is noticed by the others', asy
     await served.close();
 });
 
+test('unattended: a host gone before the match closes the room, a guest gone loses the seat, an abandoned match closes', async () => {
+    const grace = 0.4 / 60; // minutes
+    const served = await serve({ lobbyGraceMinutes: grace, abandonMinutes: grace });
+    // Made and never opened: closed once the grace is over.
+    const lonely = (await served.call<Seated>('/rooms', { rules })).data.view.id;
+    await new Promise(resolve => setTimeout(resolve, 800));
+    assert.equal((await served.call<RoomInfo>(`/rooms/${lonely}`)).data.open, false);
+
+    // The guest goes away before the match: the host keeps the room, and the seat is free again.
+    const { id, sockets: [host, guest] } = await seatedRoom(served);
+    await guest.close();
+    const freed = await host.until(view => view.players[1] === null);
+    assert.equal(freed.status, 'lobby');
+    assert.equal((await served.call<RoomInfo>(`/rooms/${id}`)).data.open, true);
+    // A host who comes back in time keeps it; one who does not, loses it.
+    await host.close();
+    await new Promise(resolve => setTimeout(resolve, 800));
+    assert.equal((await served.call(`/rooms/${id}/join`, {})).status, 410);
+
+    // Both players leave a match: it closes.
+    const match = await startedMatch(served);
+    await Promise.all(match.sockets.map(socket => socket.close()));
+    await new Promise(resolve => setTimeout(resolve, 900));
+    assert.equal((await served.call(`/rooms/${match.id}/join`, {})).status, 410);
+    await served.close();
+});
+
+test('making rooms is limited per address', async () => {
+    const served = await serve({ roomsPerHour: 2 });
+    const make = () => served.call('/rooms', { rules }, { 'x-forwarded-for': '203.0.113.9' });
+    assert.equal((await make()).status, 200);
+    assert.equal((await make()).status, 200);
+    assert.equal((await make()).status, 429);
+    assert.equal((await served.call('/rooms', { rules }, { 'x-forwarded-for': '203.0.113.10' })).status, 200);
+    await served.close();
+});
+
 test('upkeep: idle rooms lapse, and one address cannot ask without end', async () => {
     const served = await serve({ requestsPerHour: 3, idleHours: 0.4 / 3600 });
     const { data } = await served.call<Seated>('/rooms', { rules }, { 'x-forwarded-for': '203.0.113.1' });

@@ -36,6 +36,8 @@ export interface Backend {
     /** False when the id is taken. `ttl` (ms): how long the room lasts without another change. */
     create(room: Room, ttl: number): Promise<boolean>;
     get(id: string): Promise<Room | null>;
+    /** Ids of every room there is. */
+    ids(): Promise<string[]>;
     /** Stores the room if it is still at version `expected`; false when someone else changed it first. */
     replace(room: Room, expected: number, ttl: number): Promise<boolean>;
     publish(event: RoomEvent): Promise<void>;
@@ -102,6 +104,7 @@ export async function redisBackend(url: string, prefix = 'pplale:'): Promise<Bac
             const json = await client.hGet(roomKey(id), 'json');
             return json ? JSON.parse(json) as Room : null;
         },
+        async ids() { return (await keys(roomKey('*'))).map(key => key.slice(roomKey('').length)); },
         replace: (room, expected, ttl) => store(room, String(expected), ttl),
         async publish(event) { await client.publish(channel, JSON.stringify(event)); },
         async subscribe(listener) {
@@ -173,6 +176,7 @@ export function memoryBackend(): Backend {
             const kept = live(id);
             return kept ? JSON.parse(kept.json) as Room : null;
         },
+        async ids() { return Array.from(rooms.keys()).filter(id => live(id)); },
         async replace(room, expected, ttl) {
             const kept = live(room.id);
             if (!kept || (JSON.parse(kept.json) as Room).version !== expected) return false;

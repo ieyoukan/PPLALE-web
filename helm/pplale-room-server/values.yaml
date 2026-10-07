@@ -41,6 +41,13 @@ allowedOrigins:
 requestsPerHour: 120
 # Ingress / Tunnel の後ろで X-Forwarded-For から送信元を読む。
 trustProxy: true
+# そのうち「ルームを作る」の回数 (Pod ごとに数える)。
+roomsPerHour: 10
+# 対戦が始まる前に、ホストがこれだけの時間つながっていなければルームを解散する
+# (ゲストなら席を空ける)。X や Discord に募集を貼りに行く間に切れても戻れるよう長めにする。
+lobbyGraceMinutes: 10
+# 対戦中・対戦後に、2人ともこれだけの時間つながっていなければルームを解散する。
+abandonMinutes: 30
 # 同時に持つルームの上限。超えると新しいルームを作れない。
 maxRooms: 500
 # だれも操作しなくなってからこの時間が過ぎたルームを消す。

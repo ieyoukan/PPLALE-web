@@ -18,6 +18,12 @@ export interface Config {
     trustProxy: boolean;
     /** Rooms made, joined or looked up per client address and hour (counted by each instance). */
     requestsPerHour: number;
+    /** Of those, rooms made. */
+    roomsPerHour: number;
+    /** Before a match, a host away this long closes the room (a guest away this long loses the seat). */
+    lobbyGraceMinutes: number;
+    /** During or after a match, both players away this long closes the room. */
+    abandonMinutes: number;
     /** Rooms kept at once; making another is refused beyond this. */
     maxRooms: number;
     /** A room nobody touched for this long is removed. */
@@ -36,6 +42,9 @@ export function loadConfig(): Config {
         origins: (process.env.ALLOWED_ORIGINS ?? '*').split(',').map(origin => origin.trim()).filter(Boolean),
         trustProxy: process.env.TRUST_PROXY !== 'false',
         requestsPerHour: number('REQUESTS_PER_HOUR', 120, 1),
+        roomsPerHour: number('ROOMS_PER_HOUR', 10, 1),
+        lobbyGraceMinutes: number('LOBBY_GRACE_MINUTES', 10, 0.0001),
+        abandonMinutes: number('ABANDON_MINUTES', 30, 0.0001),
         maxRooms: number('MAX_ROOMS', 500, 1),
         idleHours: number('ROOM_IDLE_HOURS', 12, 0.00001),
         beatSeconds: number('BEAT_SECONDS', 15, 0.01),

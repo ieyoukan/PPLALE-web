@@ -26,6 +26,8 @@ export interface Room {
     state: GameState | null;
     last: LastCommand | null;
     resigned: Side | null;
+    /** Since when (ms) each seat has had no connection; null while connected. Absent in older rooms. */
+    away?: [number | null, number | null];
 }
 
 /** A request that cannot be done; `status` is the HTTP status and `message` is shown to the player. */
@@ -140,6 +142,42 @@ function giveUp(room: Room, seat: Side) {
     state.revision++;
     room.status = 'finished';
     room.resigned = seat;
+}
+
+/** How long a room may go unattended (ms). */
+export interface Patience {
+    /** Before a match: the host away this long closes the room, the guest away this long frees the seat. */
+    lobby: number;
+    /** During or after a match: both players away this long closes the room. */
+    match: number;
+}
+/**
+ * Looks after a room nobody may be looking at: notes since when each seat has been away
+ * (`online`: connected right now) and closes the room or frees the guest's seat once that is too
+ * long. Returns what it did, or null when the room stays exactly as it was.
+ */
+export function tidy(room: Room, online: [boolean, boolean], now: number, patience: Patience): 'closed' | 'vacated' | 'away' | null {
+    if (room.status === 'closed') return null;
+    const before = room.away ?? [null, null];
+    const away = room.seats.map((seat, index) => !seat || online[index] ? null : before[index] ?? now) as [number | null, number | null];
+    const changed = away.some((since, index) => since !== before[index]);
+    room.away = away;
+    const longer = (index: Side, limit: number) => away[index] !== null && now - away[index]! >= limit;
+    if (room.status === 'lobby' && longer(0, patience.lobby)) {
+        room.status = 'closed';
+        return 'closed';
+    }
+    if (room.status === 'lobby' && room.seats[1] && longer(1, patience.lobby)) {
+        room.seats[1] = null;
+        away[1] = null;
+        return 'vacated';
+    }
+    if (room.status !== 'lobby' && longer(0, patience.match) && longer(1, patience.match)) {
+        room.status = 'closed';
+        room.state = null;
+        return 'closed';
+    }
+    return changed ? 'away' : null;
 }
 
 /** What a request did besides changing the room, for the server's counters and sockets. */

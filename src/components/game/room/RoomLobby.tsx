@@ -93,6 +93,7 @@ function Waiting({ room, view }: { room: Room; view: RoomView }) {
       <div className={styles.roomId}><small>ROOM ID</small><output aria-label={`ルームID ${view.id}`}>{view.id}</output></div>
       <p className={styles.rules}>{describeRoomRules(view.rules)}</p>
       {view.rules.spectators && <p className={styles.note}>観戦している人には、2人の手札が両方とも見えます。{view.spectators > 0 && `いま${view.spectators}人が観戦しています。`}</p>}
+      {!foe && <p className={styles.note}>この画面を閉じたまま10分たつと、ルームは解散します。</p>}
       {(!foe || view.rules.spectators) && <RoomShare id={view.id} rules={view.rules} />}
     </section>
     <section className={styles.panel}>

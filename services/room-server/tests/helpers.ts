@@ -26,7 +26,7 @@ export const deck = JSON.parse(readFileSync(new URL('../../../src/data/strawberr
 /** One instance of the server. Instances given the same `data` are instances of the same deployment. */
 export async function serve({ data = shared(), ...options }: Partial<Config> & { data?: Shared } = {}) {
     const backend = await data.open();
-    const server = createRoomServer({ config: { pod: `pod-${++pods}`, origins: ['*'], trustProxy: true, requestsPerHour: 1000, maxRooms: 100, idleHours: 12, beatSeconds: 0.1, version: 'test', ...options }, backend, catalog });
+    const server = createRoomServer({ config: { pod: `pod-${++pods}`, origins: ['*'], trustProxy: true, requestsPerHour: 1000, roomsPerHour: 1000, lobbyGraceMinutes: 10, abandonMinutes: 30, maxRooms: 100, idleHours: 12, beatSeconds: 0.1, version: 'test', ...options }, backend, catalog });
     await new Promise<void>(resolve => server.listen(0, resolve));
     await server.beat();
     const { port } = server.address() as AddressInfo, url = `http://localhost:${port}`;

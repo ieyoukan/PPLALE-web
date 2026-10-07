@@ -22,7 +22,7 @@ import { ROOM_ID_LENGTH, isRoomId } from '@pplale/game-core/room';
 import type { ClientMessage, RoomServerStats, Seated, ServerMessage } from '@pplale/game-core/room';
 import type { Backend, Member, Overview, RoomEvent } from './backend.ts';
 import type { Config } from './config.ts';
-import { RoomError, act, createRoom, joinRoom, roomInfo, seatOf, seatView } from './rooms.ts';
+import { RoomError, act, createRoom, joinRoom, roomInfo, seatOf, seatView, tidy } from './rooms.ts';
 import type { Present, Room } from './rooms.ts';
 
 /** A request or a socket message is a few kilobytes (a deck at most); anything much larger is not one. */
@@ -69,10 +69,11 @@ function readBody(request: IncomingMessage): Promise<unknown> {
 type Attached = WebSocket & { alive?: boolean; entry?: Member };
 
 export function createRoomServer({ config, backend, catalog }: {
-    config: Pick<Config, 'pod' | 'origins' | 'trustProxy' | 'requestsPerHour' | 'maxRooms' | 'idleHours' | 'beatSeconds' | 'version'>; backend: Backend; catalog: Catalog;
+    config: Pick<Config, 'pod' | 'origins' | 'trustProxy' | 'requestsPerHour' | 'roomsPerHour' | 'lobbyGraceMinutes' | 'abandonMinutes' | 'maxRooms' | 'idleHours' | 'beatSeconds' | 'version'>; backend: Backend; catalog: Catalog;
 }): Server & { stats(): Promise<RoomServerStats>; beat(): Promise<void>; shutdown(): Promise<void> } {
-    const { pod, origins, trustProxy, requestsPerHour, maxRooms, idleHours, beatSeconds, version } = config;
-    const allowed = limiter(requestsPerHour);
+    const { pod, origins, trustProxy, requestsPerHour, roomsPerHour, lobbyGraceMinutes, abandonMinutes, maxRooms, idleHours, beatSeconds, version } = config;
+    const allowed = limiter(requestsPerHour), mayCreate = limiter(roomsPerHour);
+    const patience = { lobby: lobbyGraceMinutes * 60_000, match: abandonMinutes * 60_000 };
     const started = Date.now();
     const beatInterval = beatSeconds * 1000;
     /** A socket or an instance that stops saying it is here counts as gone after three missed beats. */
@@ -181,6 +182,7 @@ export function createRoomServer({ config, backend, catalog }: {
             if (route !== 'POST /rooms' && !id) return send(response, 404, { error: 'not found' });
             if (!allowed(address(request))) throw new RoomError(429, '操作が多すぎます。しばらく待ってからお試しください');
             if (route === 'POST /rooms') {
+                if (!mayCreate(address(request))) throw new RoomError(429, 'ルームを作りすぎています。しばらく待ってからお試しください');
                 const { rooms } = await counts();
                 if (rooms.lobby + rooms.playing + rooms.finished + rooms.closed >= maxRooms) throw new RoomError(503, 'いまはルームがいっぱいです。しばらく待ってからお試しください');
                 const body = await readBody(request);
@@ -329,9 +331,31 @@ export function createRoomServer({ config, backend, catalog }: {
                 if (!await backend.get(id)) dismiss(id);
                 else if (key(await present(id)) !== told.get(id)) await presenceChanged(id);
             }
+            await tidyAll();
         } catch (error) {
             console.error('beat failed', error instanceof Error ? error.message : error);
         } finally { beating = false; }
+    }
+    /**
+     * Rooms nobody attends do not linger: a room whose host left before a match closes, a guest who
+     * left before it loses the seat, and a match both players left closes. Every instance looks at
+     * every room (changes are compare-and-set, so doing it twice does nothing more).
+     */
+    async function tidyAll(now = Date.now()) {
+        for (const id of await backend.ids()) {
+            const room = await backend.get(id);
+            if (!room) continue;
+            const online = await backend.online(id);
+            // Most rooms are as they were: they are not written again (it would keep them from expiring).
+            if (tidy(structuredClone(room), online, now, patience) === null) continue;
+            try {
+                const { room: tidied, result } = await update(id, target => tidy(target, online, now, patience));
+                if (result === 'closed' || result === 'vacated') await announce(tidied, result === 'vacated' ? 1 : undefined);
+                if (result === 'vacated') dismiss(id, 1);
+            } catch (error) {
+                if (!(error instanceof RoomError)) throw error;
+            }
+        }
     }
     const beats = setInterval(() => { void beat(); }, beatInterval);
     const pinging = setInterval(() => {

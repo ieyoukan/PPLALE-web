@@ -44,7 +44,7 @@ test('two players meet in a room, play the opening and one gives up', async ({ b
 
   // The host makes a room; only what the game can play is selectable.
   await host.goto(`${base}/game/battle/`);
-  await expect(host.getByText('ルームサーバー：稼働中')).toBeVisible();
+  await expect(host.getByText('ルームマッチを利用できます')).toBeVisible();
   await host.getByRole('button', { name: /ルームを作る/ }).click();
   await expect(host.getByRole('checkbox', { name: /いちご/ })).toBeChecked();
   await expect(host.getByRole('checkbox', { name: /ぶどう/ })).toBeDisabled();

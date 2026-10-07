@@ -50,6 +50,12 @@ spec:
               value: {{ .Values.trustProxy | quote }}
             - name: REQUESTS_PER_HOUR
               value: {{ .Values.requestsPerHour | quote }}
+            - name: ROOMS_PER_HOUR
+              value: {{ .Values.roomsPerHour | quote }}
+            - name: LOBBY_GRACE_MINUTES
+              value: {{ .Values.lobbyGraceMinutes | quote }}
+            - name: ABANDON_MINUTES
+              value: {{ .Values.abandonMinutes | quote }}
             - name: MAX_ROOMS
               value: {{ .Values.maxRooms | quote }}
             - name: ROOM_IDLE_HOURS
