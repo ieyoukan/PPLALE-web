@@ -37,7 +37,7 @@ export function winProbability(state: GameState, catalog: Catalog, evaluate: Eva
         if (answers.length) return side === 0 ? Math.max(...answers) : Math.min(...answers);
     }
     const toSide0 = (p: number) => side === 0 ? p : 1 - p;
-    if (findLethal(known, side, catalog, { maxNodes: 1000 }).status === 'win') return toSide0(1);
+    if (findLethal(known, side, catalog, { maxNodes: 250 }).status === 'win') return toSide0(1);
     const moves = legalMoves(known, side, catalog);
     if (!moves.length) return 0.5;
     const decision = { state: known, side, catalog, moves, random: (size: number) => random(known, size) };

@@ -2,4 +2,6 @@ dist/
 node_modules/
 scripts/weights.json
 scripts/value-data.bin
+scripts/value-search*.bin
+scripts/value-records.bin
 scripts/value-model.json

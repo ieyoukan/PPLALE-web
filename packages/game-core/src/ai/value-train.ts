@@ -3,11 +3,12 @@
 // (scripts/value.mjs and the CPU server).
 import type { Catalog, Deck, GameState } from '../model.ts';
 import { defaultWeights } from './evaluate.ts';
+import { winProbability } from './assess.ts';
 import { createHard } from './levels/hard.ts';
 import { playMatch } from './selfplay.ts';
 import type { CpuStrategy } from './types.ts';
 import { valueFeatures, valueLayout, valueLogit } from './value.ts';
-import type { ValueModel } from './value.ts';
+import type { Evaluator, ValueModel } from './value.ts';
 
 const { full: FULL, inputs: INPUTS } = valueLayout;
 /** Numbers per position: the features of both sides. */
@@ -22,8 +23,8 @@ const EXPLORE = 0.25;
 /** Positions and the outcome of their match. `x` holds VALUE_ROW numbers per position. */
 export interface ValueData {
     x: Float32Array;
-    /** 1 when side 0 won the match. */
-    y: Uint8Array;
+    /** 1 when side 0 won the match, or a probability of it (a target from a search, see winProbability). */
+    y: Uint8Array | Float32Array;
     /** Match id: positions of one match stay together in the training or the validation part. */
     match: Uint32Array;
     /** Weight per position; 1 when absent. */
@@ -60,6 +61,31 @@ export function selfPlayPositions(catalog: Catalog, seed: number, share: number,
         if (begins(state) && chance() < share) rows.push(valueFeatures(state, catalog));
     } });
     return typeof result.winner === 'number' ? { rows, won: result.winner === 0 ? 1 : 0 } : null;
+}
+
+/**
+ * Like selfPlayPositions, and each kept position also gets search labels (winProbability), with
+ * and without seeing the hidden cards.
+ */
+export function labeledSelfPlay(catalog: Catalog, seed: number, share: number, evaluate: Evaluator, scale: number)
+    : { rows: Float32Array[]; won: 0 | 1; search: number[]; oracle: number[] } | null {
+    const hard = createHard(defaultWeights);
+    const explorer: CpuStrategy = {
+        ...hard,
+        choose: d => d.state.phase === 'playing' && d.random(1000) < EXPLORE * 1000 ? d.moves[d.random(d.moves.length)] : hard.choose(d),
+    };
+    let r = Math.imul(seed, 2654435761) >>> 0;
+    const chance = () => { r = (Math.imul(r, 1664525) + 1013904223) >>> 0; return r / 4294967296; };
+    const kept: GameState[] = [], begins = turnStarts();
+    const result = playMatch(catalog, { levels: [explorer, explorer], seed, onStep(state) {
+        if (begins(state) && chance() < share) kept.push(state);
+    } });
+    if (typeof result.winner !== 'number') return null;
+    return {
+        rows: kept.map(state => valueFeatures(state, catalog)), won: result.winner === 0 ? 1 : 0,
+        search: kept.map((state, i) => winProbability(state, catalog, evaluate, scale, { seed: seed * 31 + i })),
+        oracle: kept.map(state => winProbability(state, catalog, evaluate, scale, { oracle: true })),
+    };
 }
 
 /** Joins the positions of several matches into one data set. */
@@ -149,7 +175,7 @@ export function trainValue(data: ValueData, { hidden = 32, epochs = 4, onEpoch }
     const logit = (i: number) => { row = x.subarray(i * VALUE_ROW, (i + 1) * VALUE_ROW); return forward(0, FULL, act[0]) - forward(FULL, 0, act[1]); };
     const fitOf = (score: (i: number) => number): Fit => {
         let total = 0, correct = 0;
-        for (const i of validation) { const z = score(i); total += loss(z) - y[i] * z; if ((z > 0) === (y[i] === 1)) correct++; }
+        for (const i of validation) { const z = score(i); total += loss(z) - y[i] * z; if ((z > 0) === (y[i] > 0.5)) correct++; }
         return { loss: total / validation.length, accuracy: correct / validation.length };
     };
 
