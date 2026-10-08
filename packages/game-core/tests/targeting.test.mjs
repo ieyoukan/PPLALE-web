@@ -66,6 +66,8 @@ test('targeting: しゅれい② with one taunt hits only it, even when the firs
   }
 });
 
+// Confirmed by the user (FAQ ⑤-2): own units can be chosen (to put them out again); an enemy taunt
+// narrows the choice to the enemy taunts; a taunt on the own side (TAUNT below) changes nothing.
 test('targeting: みゅーとん chooses from both sides, but only enemy taunts when there are any', () => {
   for (const taunts of [0, 1, 2]) {
     let s = arena({ me: { hand: ['y_30'], field: [PLAIN, TAUNT] }, foe: { field: enemies(taunts) } });

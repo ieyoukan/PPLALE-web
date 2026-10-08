@@ -17,8 +17,10 @@ const uyuchi = (next?: string): CardScript => ({
     onDestroyed: next ? ctx => ctx.queue('addHand', { cardId: next }) : undefined,
 });
 
-/** さら / みゅーとん: 選んだ幼女を破壊し、同名の幼女を自分の場に出す。破壊できなくても複製する（FAQ ②-1）。 */
-/** さら / みゅーとん: 「他の」幼女を1人破壊し、同名の幼女を自分の場に出す。自分自身は選べない（`ids` は選べない幼女）。 */
+/**
+ * さら / みゅーとん: 「他の」幼女を1人破壊し、同名の幼女を自分の場に出す。破壊できなくても複製する（FAQ ②-1）。
+ * 自分自身は選べない（`ids` は選べない幼女）。選べる幼女がいなければ何も起きない。
+ */
 const copier = (scope: 'friendly' | 'any'): CardScript => ({ onPlay: ctx => ctx.queue('copy', { scope, ids: [ctx.uid] }) });
 
 export const strawberryYojo: CardScripts = {
@@ -239,6 +241,7 @@ export const strawberryYojo: CardScripts = {
             ctx.heal(Math.abs(own - enemy), gainer);
         },
     },
-    // y_30 みゅーとん: 場の他の幼女1人を破壊し、同名の幼女を自分の場に出す。
+    // y_30 みゅーとん: 場の他の幼女1人を破壊し、同名の幼女を自分の場に出す。自分の場の幼女も選べる（出し直し）。
+    // 相手に挑発がいれば相手の挑発だけ。自分の挑発は関係ない（FAQ ⑤-2、ユーザー確認済み）。
     y_30: copier('any'),
 };
