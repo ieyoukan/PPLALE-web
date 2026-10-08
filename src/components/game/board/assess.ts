@@ -27,7 +27,7 @@ const evaluate = createValueEvaluator(valueModel);
 const SEEDS = [1, 2, 3];
 
 /** A command in a few words, named from the position it was played in. */
-function describe(state: GameState, command: Command): string {
+export function describe(state: GameState, command: Command): string {
   const name = (uid: string) => gameCatalog[state.cards[uid]?.cardId]?.name ?? 'カード';
   switch (command.type) {
     case 'play': return `「${name(command.uid)}」を出す`;

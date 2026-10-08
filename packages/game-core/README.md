@@ -20,6 +20,7 @@ Next.js / React / Firebase に依存しない、ぷぷりえーるのローカ�
 | `ai/` | CPU。`moves.ts` 合法手、`hidden.ts` 見えない情報の推測、`evaluate.ts` 盤面評価、`lethal.ts` このターンの勝ち筋の完全探索、`turn-search.ts` 自分のターンと相手の返しの探索、`value.ts` 学習した局面の価値、`selfplay.ts` CPU同士の対戦、`levels/` 強さごとの戦略 |
 | `core/state.ts` | `cloneState`。探索で大量に呼ぶ状態コピー（structuredClone の約10倍速い） |
 | `snapshot.ts` | 保存された状態の検証・復元と旧形式の移行 |
+| `position.ts` | 盤面エディタの盤面（`Position`）。`buildPosition` で対戦中の状態にし、`positionOf` で対戦中の盤面を書き出す。`encodePosition` / `decodePosition` は共有コード（`PPL1.…`） |
 
 ## カード効果の読み方・追加方法
 
@@ -42,7 +43,7 @@ y_8: {
 - そのカードだけの手順は、カードの `ops` に書く（例：しゅれいの `shurei`、ポッキーの `pocky`）。`model.ts` の `TaskOp` に名前を追加する。
 - CPU 向けの判断（対象がいないなら使わない等）は `cpu.worthPlaying`、選択の好みは op の `cpu`。
 - **使える条件**: 対象を選ぶ効果で対象がいないときなど、使えない条件は `canPlay`（スキルは `blocked`）に書く。エンジンが拒否し、UI も手札を光らせず「使う」を押せなくする。
-- テストは `tests/cards.*.test.mjs` / `tests/skills.test.mjs` に、`arena()` で盤面を作って1カード1テストで書く。
+- テストは `tests/cards.*.test.mjs` / `tests/skills.test.mjs` に、`arena()` で盤面を作って1カード1テストで書く。盤面エディタの共有コードをもらったときは `fromCode('PPL1.…')` でその盤面から始められる。
 
 ### 演出（何もしなくても付く）
 

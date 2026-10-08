@@ -18,6 +18,7 @@
 .pink { --tone: #f4b0bb; }
 .green { --tone: #b3d788; }
 .lilac { --tone: #e7c3e2; }
+.yellow { --tone: #ffef93; }
 .foot { display: grid; gap: 10px; margin-top: auto; }
 .player { display: grid; gap: 2px; padding: 10px 14px; border: 1px solid #fffdeb33; border-radius: 14px; background: #0006; }
 .player small { font: 11px Georgia, serif; letter-spacing: .14em; color: #e7c3e2; }

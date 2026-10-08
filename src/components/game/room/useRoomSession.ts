@@ -57,7 +57,7 @@ export function useRoomSession({ room, initial, seat, onLeave }: { room: Pick<Ro
     send, undo: nothing, canUndo: false, remote,
     // Back to choosing decks together; the room page opens the board again when both are ready.
     setup: null, rematch, canRematch: !watching,
-    record: null, markReported: nothing, initial: null,
+    record: null, markReported: nothing, initial: null, position: null,
     replaying: false, startReplay: nothing, stopReplay: nothing, canReplay: false, replayNext: null,
   };
 }

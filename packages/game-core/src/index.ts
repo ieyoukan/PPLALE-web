@@ -3,6 +3,8 @@ export * from './model.ts';
 export { applyCommand } from './commands/index.ts';
 export { newGame, validateDeck } from './setup.ts';
 export { restoreGame } from './snapshot.ts';
+export { buildPosition, checkPosition, decodePosition, encodePosition, parsePosition, positionOf } from './position.ts';
+export type { Position, PositionHandCard, PositionSide, PositionUnit } from './position.ts';
 export { actingSides, cpuCommand, cpuStrategies, createHard, createMaster, createValueEvaluator, determinize, evaluate, defaultWeights, findLethal, legalMoves, playMatch, randomStrawberryDeck, valueFeatures, valueLayout, valueLogit } from './ai/index.ts';
 export type { CpuDecision, CpuLevel, CpuOptions, CpuStrategy, Evaluator, LethalOptions, LethalResult, MatchOptions, MatchResult, Move, TurnSearchOptions, ValueModel, Weights } from './ai/index.ts';
 export { attackOf, availablePpMaximum, costOf, hpOf, maxPp, spawnCard } from './core/cards.ts';

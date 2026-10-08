@@ -1,11 +1,11 @@
 'use client';
 
 import { useCallback, useEffect, useReducer, useState } from 'react';
-import { applyCommand, cpuLevels, newGame, sandboxRules } from '@pplale/game-core';
-import type { Command, CpuLevel, GameState, Side } from '@pplale/game-core';
+import { applyCommand, buildPosition, cpuLevels, newGame, parsePosition, sandboxRules } from '@pplale/game-core';
+import type { Command, CpuLevel, GameState, Position, Side } from '@pplale/game-core';
 import { demoDeck, gameCatalog } from '@/lib/game/catalog';
 import { createMatch, randomSeed, usableSetup } from '@/lib/game/match';
-import { readSession, saveSession } from '@/lib/game/sessionStore';
+import { readSession, saveSession, sideLabel } from '@/lib/game/sessionStore';
 import type { Levels, MatchSetup, Mode } from '@/lib/game/sessionStore';
 
 export { cpuSidesOf, sideLabel } from '@/lib/game/sessionStore';
@@ -17,7 +17,7 @@ type Action = { type: 'command'; command: Command; sandbox: boolean } | { type: 
  * Where the match came from: its first state (for the replay), its setup (for a rematch) and the
  * shuffle seed (for the report to the CPU server, which rebuilds the match from decks and seed).
  */
-type Origin = { initial: GameState | null; setup: MatchSetup | null; seed: number | null; reported: boolean };
+type Origin = { initial: GameState | null; setup: MatchSetup | null; seed: number | null; reported: boolean; position: Position | null };
 
 /** One change of a room's match waiting to be shown: the view after it and what caused it. */
 export interface Incoming {
@@ -75,7 +75,7 @@ export function useGameSession({ onMissing }: { onMissing: () => void }) {
   const [session, dispatch] = useReducer(reducer, undefined, placeholder);
   const [mode, setMode] = useState<Mode>('cpu');
   const [levels, setLevels] = useState<Levels>(['normal', 'normal']);
-  const [origin, setOrigin] = useState<Origin>({ initial: null, setup: null, seed: null, reported: false });
+  const [origin, setOrigin] = useState<Origin>({ initial: null, setup: null, seed: null, reported: false, position: null });
   /** While replaying: the finished match to return to. */
   const [replay, setReplay] = useState<{ game: GameState; commands: Command[] } | null>(null);
   const [ready, setReady] = useState(false);
@@ -94,7 +94,7 @@ export function useGameSession({ onMissing }: { onMissing: () => void }) {
       const initial = saved.initial ? restoreGame(saved.initial, gameCatalog) : null;
       const replayable = !!initial && state.revision - initial.revision === commands.length;
       dispatch({ type: 'load', game: state, commands: replayable ? commands : [] });
-      setOrigin({ initial: replayable ? initial : null, setup: usableSetup(saved.setup), seed: replayable && typeof saved.seed === 'number' ? saved.seed : null, reported: saved.reported === true });
+      setOrigin({ initial: replayable ? initial : null, setup: usableSetup(saved.setup), seed: replayable && typeof saved.seed === 'number' ? saved.seed : null, reported: saved.reported === true, position: parsePosition(saved.position) });
       setMode(modes.includes(saved.mode as Mode) ? saved.mode as Mode : 'cpu');
       // Saves from before the watch mode only stored the opponent's level.
       const valid = (value: unknown): value is CpuLevel => cpuLevels.includes(value as CpuLevel);
@@ -117,6 +117,7 @@ export function useGameSession({ onMissing }: { onMissing: () => void }) {
         ...(origin.initial && { initial: origin.initial, commands: session.commands }),
         ...(origin.seed !== null && { seed: origin.seed }),
         ...(origin.reported && { reported: true }),
+        ...(origin.position && { position: origin.position }),
       });
     } catch { setSaveError('このブラウザに対戦を保存できません'); }
   }, [ready, replay, session.game, session.commands, mode, levels, origin]);
@@ -125,7 +126,7 @@ export function useGameSession({ onMissing }: { onMissing: () => void }) {
   const send = useCallback((command: Command) => dispatch({ type: 'command', command, sandbox: mode === 'hotseat' || !!replay }), [mode, replay]);
   const undo = useCallback(() => dispatch({ type: 'undo' }), []);
 
-  const { initial, setup, seed, reported } = origin;
+  const { initial, setup, seed, reported, position } = origin;
   const startReplay = useCallback(() => {
     if (!initial || replay) return;
     setReplay({ game: session.game, commands: session.commands });
@@ -136,21 +137,30 @@ export function useGameSession({ onMissing }: { onMissing: () => void }) {
     dispatch({ type: 'load', game: replay.game, commands: replay.commands });
     setReplay(null);
   }, [replay]);
-  /** The same decks, rules, mode and levels with a new shuffle. */
+  /** The same decks, rules, mode and levels with a new shuffle; a match from the editor starts from its board again. */
   const rematch = useCallback(() => {
+    if (position) {
+      const game = buildPosition(position, gameCatalog, { names: [sideLabel(mode, 0), sideLabel(mode, 1)] });
+      setReplay(null);
+      setOrigin(previous => ({ ...previous, initial: game, reported: false }));
+      dispatch({ type: 'load', game, commands: [] });
+      return;
+    }
     if (!setup) return;
     const seed = randomSeed(), game = createMatch(setup, mode, seed);
     setReplay(null);
-    setOrigin({ initial: game, setup, seed, reported: false });
+    setOrigin({ initial: game, setup, seed, reported: false, position: null });
     dispatch({ type: 'load', game, commands: [] });
-  }, [setup, mode]);
+  }, [setup, mode, position]);
 
   return {
     ...session, mode, levels, ready, saveError, send, undo, canUndo: session.history.length > 0 && !replay,
     remote: null as RemoteSession | null,
     /** The match's first state: with `commands` it rebuilds every position (the course of the match, the replay). */
     initial: initial as GameState | null,
-    setup, rematch, canRematch: !!setup,
+    setup, rematch, canRematch: !!setup || !!position,
+    /** The editor's board this match started from. */
+    position,
     /** What the CPU server needs to rebuild this match, when all of it is known. */
     record: initial && setup && seed !== null && !replay ? { seed, decks: setup.decks, commands: session.commands, reported } : null,
     markReported: useCallback(() => setOrigin(previous => ({ ...previous, reported: true })), []),

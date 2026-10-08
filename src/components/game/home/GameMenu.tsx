@@ -1,6 +1,6 @@
 'use client';
 
-// The frame around everything outside the board: a column of tabs (CPU対決 / バトル / カード) with the
+// The frame around everything outside the board: a column of tabs (CPU対決 / バトル / カード / 盤面エディタ) with the
 // logo and the player on the left, and the chosen tab's page on the right. There is no separate
 // home screen; the first tab is where the game opens.
 import type { ReactNode } from 'react';
@@ -8,13 +8,14 @@ import Image from 'next/image';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { useAuth } from '@/lib/auth';
-import { BATTLE_PATH, CARDS_PATH, HOME_PATH } from '@/lib/game/sessionStore';
+import { BATTLE_PATH, CARDS_PATH, EDITOR_PATH, HOME_PATH } from '@/lib/game/sessionStore';
 import styles from './GameMenu.module.css';
 
 const tabs = [
   { href: HOME_PATH, label: 'CPU対決', note: 'ひとりであそぶ', tone: styles.pink },
   { href: BATTLE_PATH, label: 'バトル', note: 'ルームマッチ', tone: styles.green },
   { href: CARDS_PATH, label: 'カード', note: '図鑑・デッキ構築', tone: styles.lilac },
+  { href: EDITOR_PATH, label: '盤面エディタ', note: '好きな盤面から', tone: styles.yellow },
 ];
 
 export default function GameMenu({ children }: { children: ReactNode }) {

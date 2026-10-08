@@ -5,14 +5,15 @@ import dynamic from 'next/dynamic';
 import { useBoardContext } from '../board/BoardContext';
 import type { Panel } from '../board/useBoard';
 import styles from '../BoardEmulator.module.css';
+const AnalysisPanel = dynamic(() => import('./AnalysisPanel').then(module => module.AnalysisPanel));
 const InspectPanel = dynamic(() => import('./InspectPanel').then(module => module.InspectPanel));
 const LogPanel = dynamic(() => import('./LogPanel').then(module => module.LogPanel));
 const MenuPanel = dynamic(() => import('./MenuPanel').then(module => module.MenuPanel));
 const SkillPanel = dynamic(() => import('./SkillPanel').then(module => module.SkillPanel));
 const ZonePanel = dynamic(() => import('./ZonePanel').then(module => module.ZonePanel));
 
-type DrawerPanel = Extract<NonNullable<Panel>, { type: 'menu' | 'logs' | 'zone' }>;
-const isDrawer = (panel: Panel): panel is DrawerPanel => !!panel && ['menu', 'logs', 'zone'].includes(panel.type);
+type DrawerPanel = Extract<NonNullable<Panel>, { type: 'menu' | 'logs' | 'zone' | 'analysis' }>;
+const isDrawer = (panel: Panel): panel is DrawerPanel => !!panel && ['menu', 'logs', 'zone', 'analysis'].includes(panel.type);
 
 /**
  * Menu, log and pile lists slide in from the right and are closed with the toolbar button, which
@@ -29,6 +30,8 @@ export function SidePanel() {
     <aside className={`${styles.drawer} ${styles.slideDrawer} ${drawer ? styles.drawerOpen : ''}`} inert={!drawer} aria-label="メニュー">
       {last?.type === 'menu' && <MenuPanel />}
       {last?.type === 'logs' && <LogPanel />}
+      {/* Only searches while open: the search is heavy. */}
+      {drawer?.type === 'analysis' && <AnalysisPanel />}
       {last?.type === 'zone' && <ZonePanel side={last.side} kind={last.kind} />}
     </aside>
     {modal && <button className={styles.modalBackdrop} aria-label="スキルを閉じる" onClick={() => setPanel(null)} />}

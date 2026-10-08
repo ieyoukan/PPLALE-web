@@ -2,7 +2,7 @@
 // playing through the opening, so each test only states the cards it is about.
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
-import { applyCommand, newGame, sandboxRules, spawnCard } from '../dist/index.js';
+import { applyCommand, buildPosition, decodePosition, newGame, sandboxRules, spawnCard } from '../dist/index.js';
 
 const data = name => JSON.parse(readFileSync(new URL(`../../../src/data/${name}.json`, import.meta.url)))[name];
 export const catalog = Object.fromEntries([
@@ -34,6 +34,13 @@ export function arena({ me = {}, foe = {}, rules = {}, seed = 7 } = {}) {
     });
   });
   return s;
+}
+
+/** A board from the 盤面エディタ's share code (PPL1.…): reported situations become tests as they are. */
+export function fromCode(code) {
+  const position = decodePosition(code);
+  assert.ok(position, 'not a board code');
+  return buildPosition(position, catalog);
 }
 
 export function run(s, command, adjust = false) {

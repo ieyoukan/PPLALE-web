@@ -1,7 +1,7 @@
 // The match in progress, kept in this browser. The preparation page writes it, the board reads
 // and updates it; both go through here so the format lives in one place.
 import { turnOf } from '@pplale/game-core';
-import type { Command, CpuLevel, Deck, GameState, Rules, Side } from '@pplale/game-core';
+import type { Command, CpuLevel, Deck, GameState, Position, Rules, Side } from '@pplale/game-core';
 
 /**
  * cpu: you (side 0) vs CPU. hotseat: one device controls both sides. watch: CPU vs CPU.
@@ -27,6 +27,8 @@ export interface StoredSession {
   seed?: number;
   /** The finished match was already sent to the CPU server. */
   reported?: boolean;
+  /** The board made in the editor that the match started from (instead of decks and a shuffle). */
+  position?: Position;
 }
 
 const STORAGE_KEY = 'pplale-game-session-v2';
@@ -42,6 +44,8 @@ export const roomHref = (path: typeof ROOM_PATH | typeof ROOM_PLAY_PATH, id: str
 /** The board of a room's match for someone watching it. */
 export const watchHref = (id: string) => `${ROOM_PLAY_PATH}?id=${id}&watch=1`;
 export const CARDS_PATH = '/game/cards/';
+/** 盤面エディタ: place cards freely, then play from there. */
+export const EDITOR_PATH = '/game/editor/';
 export const CARD_GALLERY_PATH = '/game/cards/zukan/';
 export const PLAY_PATH = '/game/play/';
 

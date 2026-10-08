@@ -1,14 +1,15 @@
 'use client';
 
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { attackTargets, canPlay, costOf, other, pendingView } from '@pplale/game-core';
+import { attackTargets, canPlay, costOf, other, pendingView, positionOf } from '@pplale/game-core';
 import type { Command, DeckKind, GameState, Side } from '@pplale/game-core';
 import type { RefObject } from 'react';
 import { useRouter } from 'next/navigation';
 import { gameCatalog } from '@/lib/game/catalog';
 import { useAuth } from '@/lib/auth';
 import { learningConsent, reportMatch } from '@/lib/game/cpuServer';
-import { HOME_PATH } from '@/lib/game/sessionStore';
+import { saveDraft } from '@/lib/game/positions';
+import { EDITOR_PATH, HOME_PATH } from '@/lib/game/sessionStore';
 import { useBoardAnimations } from './useBoardAnimations';
 import { useCardDrag } from './useCardDrag';
 import type { DragSource } from './useCardDrag';
@@ -19,7 +20,7 @@ import type { BoardSession } from './useGameSession';
 import { useOpeningDice } from './useOpeningDice';
 
 export type Panel =
-  | { type: 'menu' } | { type: 'logs' }
+  | { type: 'menu' } | { type: 'logs' } | { type: 'analysis' }
   | { type: 'inspect'; uid: string } | { type: 'skills'; side: Side } | { type: 'zone'; side: Side; kind: 'nap' | 'exile' }
   | null;
 
@@ -37,7 +38,7 @@ export function useBoard(container: RefObject<HTMLDivElement | null>, session: B
   const router = useRouter();
   /** Set in a room: the seat this browser plays, and the changes arriving from the server. */
   const { remote } = session;
-  const { game, mode, levels, ready, error, saveError, canUndo, send, undo: undoCommand, replaying, replayNext, setup, canRematch, canReplay } = session;
+  const { game, mode, levels, ready, error, saveError, canUndo, send, undo: undoCommand, replaying, replayNext, setup, canRematch, canReplay, position } = session;
   const { user } = useAuth();
   /** Names for the versus and result screens: the signed-in user's name for the human seat. */
   const localNames = useMemo<[string, string]>(() => [mode !== 'watch' && user?.displayName || sideLabel(mode, 0), sideLabel(mode, 1)], [mode, user]);
@@ -251,6 +252,11 @@ export function useBoard(container: RefObject<HTMLDivElement | null>, session: B
     setPaused(false);
   }
   function rematch() { resetTable(); session.rematch(); }
+  /** Opens the 盤面エディタ with the position on the table. */
+  function editBoard() {
+    saveDraft({ ...positionOf(game, gameCatalog), ...(position?.title && { title: position.title }) });
+    router.push(EDITOR_PATH);
+  }
   function startReplay() { resetTable(); session.startReplay(); }
   function stopReplay() { resetTable(); session.stopReplay(); }
   function undo() {
@@ -271,7 +277,7 @@ export function useBoard(container: RefObject<HTMLDivElement | null>, session: B
   return {
     game, mode, levels, view, me, panel, ready, busy, paused, names, remote,
     assessment, assessable, showAssessment, setShowAssessment,
-    setup, canRematch, canReplay, replaying,
+    setup, canRematch, canReplay, replaying, position, editBoard,
     error: error || saveError, canUndo,
     selected, attacker, pending, ours, playEnabled,
     animations, dice, drag, mulligan,
