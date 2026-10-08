@@ -289,6 +289,11 @@ export function useBoard(container: RefObject<HTMLDivElement | null>, session: B
     resetTable();
     session.startEdit();
   }
+  /** Edit mode on the board the match started from. */
+  function editStartingBoard() {
+    resetTable();
+    session.editStart();
+  }
   function startReplay() { resetTable(); session.startReplay(); }
   function stopReplay() { resetTable(); session.stopReplay(); }
   function undo() {
@@ -309,7 +314,7 @@ export function useBoard(container: RefObject<HTMLDivElement | null>, session: B
   return {
     game, mode, levels, view, me, panel, ready, busy, paused, names, remote,
     assessment, assessable, showAssessment, setShowAssessment,
-    setup, canRematch, canReplay, replaying, position, editBoard: openEditor,
+    setup, canRematch, canReplay, replaying, position, editBoard: openEditor, editStartingBoard,
     editing, edit: editBoard, picking, setPicking, session,
     error: error || saveError, canUndo,
     selected, attacker, pending, ours, playEnabled,

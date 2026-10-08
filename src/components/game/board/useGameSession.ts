@@ -63,10 +63,12 @@ export interface Editor {
   startPlay: (as: 'hotseat' | 'cpu', level: CpuLevel) => string[];
   /** Edits the position on the table (the match in play becomes the board being edited). */
   startEdit: () => void;
+  /** Edits the board the match started from (after the match, the table is no longer a position to play). */
+  editStart: () => void;
 }
 /** For a session whose board is never edited. */
 export const withoutEditor: Editor = {
-  editing: false, edit: () => {}, replaceBoard: () => {}, currentPosition: null, setTitle: () => {}, startPlay: () => [], startEdit: () => {},
+  editing: false, edit: () => {}, replaceBoard: () => {}, currentPosition: null, setTitle: () => {}, startPlay: () => [], startEdit: () => {}, editStart: () => {},
 };
 const sideNames = (as: Mode): [string, string] => [sideLabel(as, 0), sideLabel(as, 1)];
 
@@ -220,6 +222,14 @@ export function useGameSession({ onMissing }: { onMissing: () => void }) {
       setOrigin({ initial: null, setup: null, seed: null, reported: false, position: board });
       dispatch({ type: 'load', game: buildPosition(board, gameCatalog, { names: sideNames('hotseat') }), commands: [] });
     }, [session.game, position]),
+    editStart: useCallback(() => {
+      if (!position) return;
+      setReplay(null);
+      setMode('hotseat');
+      setEditing(true);
+      setOrigin({ initial: null, setup: null, seed: null, reported: false, position });
+      dispatch({ type: 'load', game: buildPosition(position, gameCatalog, { names: sideNames('hotseat') }), commands: [] });
+    }, [position]),
   };
 
   return {

@@ -93,6 +93,10 @@
 .deckRow strong { grid-column: 1 / -1; padding: 8px 14px; border: 1px solid #fffdeb55; border-radius: 12px; background: #0006; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-weight: 400; }
 .actions { display: flex; flex-wrap: wrap; justify-content: flex-end; gap: 12px; }
 
+.boardRow { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 14px; font-size: clamp(14px, 1.7vw, 20px); }
+.boardRow span { flex: 1 1 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.boardCode { display: grid; gap: 6px; font-size: clamp(13px, 1.5vw, 17px); }
+.boardCode textarea { padding: 8px 10px; border: 1px solid #fffdeb55; border-radius: 12px; background: #0006; color: inherit; font: inherit; font-size: 13px; resize: none; }
 .plateButton { display: inline-flex; align-items: center; justify-content: center; min-height: 48px; padding: 8px clamp(16px, 2.6vw, 34px); border: 3px solid #fffdeb; border-radius: 14px; background: #b3d788; color: #6b4a3a; font-size: clamp(15px, 1.8vw, 21px); font-weight: 700; text-decoration: none; box-shadow: 0 4px 0 #a88667, 0 8px 16px #0008; transition: filter .2s, transform .2s; }
 .plateButton:hover { filter: brightness(1.06); transform: translateY(-2px); }
 .primaryPlate { min-width: min(100%, 240px); background: #f4b0bb; }

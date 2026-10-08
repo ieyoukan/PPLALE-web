@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { cpuProfiles, matchTurns, other } from '@pplale/game-core';
+import { cpuProfiles, encodePosition, matchTurns, other } from '@pplale/game-core';
 import type { Deck, Side } from '@pplale/game-core';
 import { displayCards } from '@/lib/game/catalog';
 import { useBoardContext } from '../board/BoardContext';
@@ -22,8 +22,20 @@ export function ResultScreen() {
 }
 
 function Result({ outcome: { winner, kind } }: { outcome: Outcome }) {
-  const { game, view, mode, levels, names, setup, remote, canRematch, canReplay, rematch, startReplay, leave } = useBoardContext();
+  const { game, view, mode, levels, names, setup, remote, position, canRematch, canReplay, rematch, startReplay, leave, editStartingBoard } = useBoardContext();
   const [deckOpen, setDeckOpen] = useState(false);
+  /** The share code of the board this match started from, once asked for (also shown, in case copying is refused). */
+  const [code, setCode] = useState('');
+  const [copied, setCopied] = useState(false);
+  async function copyCode() {
+    if (!position) return;
+    const text = encodePosition(position);
+    setCode(text);
+    try {
+      await navigator.clipboard.writeText(text);
+      setCopied(true);
+    } catch { setCopied(false); }
+  }
   // Against the CPU the screen is about you; otherwise about whoever won.
   const featured: Side = kind === 'neutral' ? winner : view;
   const foe = other(view), deck = setup?.decks[featured];
@@ -51,11 +63,21 @@ function Result({ outcome: { winner, kind } }: { outcome: Outcome }) {
         <button className={styles.plateButton} onClick={() => setDeckOpen(true)}>確認</button>
         <strong>{deck.name}</strong>
       </div>}
+      {/* A match played from a board of the 盤面エディタ: that board can be changed again or shared. */}
+      {position && <div className={styles.boardRow}>
+        <span>{position.title ?? '作った盤面'}</span>
+        <button className={styles.plateButton} onClick={editStartingBoard}>盤面を編集し直す</button>
+        <button className={styles.plateButton} onClick={() => void copyCode()}>コードをコピー</button>
+      </div>}
+      {code && <label className={styles.boardCode}>
+        <span role="status">{copied ? '始めの盤面のコードをコピーしました' : 'コピーできませんでした。下から選んでコピーしてください'}</span>
+        <textarea readOnly value={code} rows={2} onFocus={event => event.target.select()} />
+      </label>}
       <div className={styles.actions}>
         {canReplay && <button className={styles.plateButton} onClick={startReplay}>リプレイ</button>}
         {/* The game's own home (preparation, cards, battles), not the site's top page. */}
         <button className={styles.plateButton} onClick={leave}>{remote?.watching ? '観戦をやめる' : remote ? 'ルームを出る' : 'ホーム'}</button>
-        {canRematch && <button className={`${styles.plateButton} ${styles.primaryPlate}`} onClick={rematch}>{remote ? 'もう一度（デッキ選択へ）' : '再戦する'}</button>}
+        {canRematch && <button className={`${styles.plateButton} ${styles.primaryPlate}`} onClick={rematch}>{remote ? 'もう一度（デッキ選択へ）' : position ? '同じ盤面でもう一度' : '再戦する'}</button>}
       </div>
     </div>
     {deck && deckOpen && <DeckSheet deck={deck} onClose={() => setDeckOpen(false)} />}
