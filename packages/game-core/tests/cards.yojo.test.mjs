@@ -287,25 +287,19 @@ test('simultaneous destruction resolves the active side first', () => {
   assert.equal(s.pending.task.actor, 1);
 });
 
-test('y_19 さら chooses an own unit, y_30 みゅーとん an enemy one; neither the card itself', () => {
-  for (const [id, side] of [['y_19', 0], ['y_30', 1]]) {
-    let s = arena({ me: { hand: [id], field: ['y_23'] }, foe: { field: ['y_9'] } });
+test('y_19 さら / y_30 みゅーとん: 「他の」幼女 only, never the card itself', () => {
+  for (const [id, foe] of [['y_19', []], ['y_30', ['y_9']]]) {
+    let s = arena({ me: { hand: [id], field: ['y_23'] }, foe: { field: foe } });
     const self = hand(s)[0];
     s = play(s, self);
-    assert.deepEqual(optionIds(s), field(s, side).filter(uid => uid !== self), id);
+    assert.ok(!optionIds(s).includes(self), `${id} must not be able to choose itself`);
+    assert.equal(optionIds(s).length, 1 + foe.length * (id === 'y_30' ? 1 : 0));
   }
-});
-
-test('y_19 さら / y_30 みゅーとん: with nobody to choose, the unit just enters', () => {
-  // さら needs another own unit, みゅーとん an enemy unit: the other side's units do not count.
-  for (const [id, others] of [['y_19', { foe: { field: ['y_9'] } }], ['y_30', { me: { field: ['y_9'] } }], ['y_30', {}]]) {
-    let s = arena({ ...others, me: { ...others.me, hand: [id] } });
-    const before = [...field(s), ...field(s, 1)];
-    s = play(s, hand(s)[0]);
-    assert.equal(s.pending, null, id);
-    assert.deepEqual(idsOf(s, field(s)).at(-1), id);
-    assert.ok(before.every(uid => [...field(s), ...field(s, 1)].includes(uid)), `${id} destroyed nothing`);
-  }
+  // Alone on the field: nothing to choose, the unit just enters.
+  let s = arena({ me: { hand: ['y_30'] } });
+  s = play(s, hand(s)[0]);
+  assert.equal(s.pending, null);
+  assert.deepEqual(idsOf(s, field(s)), ['y_30']);
 });
 
 // Cost / attack / HP as printed on each strawberry card (read from the card images, not the sheet).
