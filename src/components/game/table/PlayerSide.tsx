@@ -15,20 +15,20 @@ const FIELD_SLOTS = 7;
 /** One player's half of the table: decks, piles, playable, counters, field and (far side) hand backs. */
 export function PlayerSide({ side }: { side: Side }) {
   const board = useBoardContext();
-  const { game, view, mode, busy, attacker, attackLeader, remote } = board;
+  const { game, view, mode, busy, attacker, attackLeader, remote, editing } = board;
   const player = game.players[side], near = side === view;
   // In a room either seat may be this screen's; elsewhere side 0 is the player.
   const who = (mode === 'room' ? near : side === 0) ? 'あなた' : '相手';
-  const sandbox = mode === 'hotseat' && game.phase === 'playing' && !game.pending && !busy;
+  const sandbox = editing || mode === 'hotseat' && game.phase === 'playing' && !game.pending && !busy;
   /** Every hand is face up: the far one sits lower so its cards can be read, and a tap enlarges one. */
-  const open = mode === 'watch' || !!remote?.watching;
+  const open = mode === 'watch' || !!remote?.watching || editing;
   const leaderTarget = !!attacker && side !== view && board.canStrike(attacker, 'leader');
   return <section className={`${styles.playerSide} ${near ? styles.near : styles.far}`} aria-label={`${who}の盤面`}>
     <Zone side={side} kind="yojo" className={styles.deckYojo} />
     <Zone side={side} kind="sweet" className={styles.deckSweet} />
     <Zone side={side} kind="nap" className={styles.napZone} />
     <Zone side={side} kind="exile" className={styles.exileZone} />
-    <button className={styles.playableZone} onClick={() => board.setPanel({ type: 'skills', side })} aria-label={`${who}のスキル`}>
+    <button className={styles.playableZone} onClick={() => board.setPanel(editing ? { type: 'editPlayer', side } : { type: 'skills', side })} aria-label={editing ? `${who}の設定` : `${who}のスキル`}>
       <span className={styles.playableCard}><GameCard id={player.playable} sizes="90px" /></span>
     </button>
     <div className={styles.turnCounter}>
@@ -46,11 +46,12 @@ export function PlayerSide({ side }: { side: Side }) {
     </div>
     {!near && <div className={`${styles.opponentHand} ${open ? styles.openHand : ''}`} role="group" aria-label={`相手の手札 ${player.hand.length}枚`}>
       {player.hand.map((uid, i) => <span key={uid} data-hand={uid} className={`${styles.hiddenCard} ${board.flying(uid) ? styles.dealing : ''}`}
-        onClick={open ? () => board.setPanel({ type: 'inspect', uid }) : undefined}
+        onClick={editing ? () => board.setPanel({ type: 'editHand', uid }) : open ? () => board.setPanel({ type: 'inspect', uid }) : undefined}
         style={{ '--hand-index': i - (player.hand.length - 1) / 2, '--fan-step': `${Math.min(56, 360 / Math.max(1, player.hand.length))}px` } as CSSProperties}>
         {/* The opponent holds their cards facing them, so they are upside down from here. */}
         <span className={styles.hiddenFace}>{(game.cards[uid].revealed || open) && <GameCard id={game.cards[uid].cardId} />}</span>
       </span>)}
+      {editing && <button className={styles.addFarHand} aria-label="相手の手札に加える" onClick={() => board.setPicking({ side, zone: 'hand' })}>＋</button>}
     </div>}
   </section>;
 }
@@ -62,14 +63,14 @@ function Zone({ side, kind, className }: { side: Side; kind: ZoneKind; className
   const deck = kind === 'yojo' || kind === 'sweet';
   const drawing = deck && board.deckReady(side, kind as DeckKind);
   return <div className={className}>
-    <DeckStack side={side} kind={kind} ids={player[kind]} thresholds={player.milestones} enabled={deck ? drawing : true} drawing={drawing}
-      onClick={() => deck ? board.clickDeck(side, kind as DeckKind) : board.setPanel({ type: 'zone', side, kind: kind as 'nap' | 'exile' })} />
+    <DeckStack side={side} kind={kind} ids={player[kind]} thresholds={player.milestones} enabled={deck ? drawing || board.editing : true} drawing={drawing}
+      onClick={() => board.editing ? board.setPanel({ type: 'editPile', side, kind }) : deck ? board.clickDeck(side, kind as DeckKind) : board.setPanel({ type: 'zone', side, kind: kind as 'nap' | 'exile' })} />
   </div>;
 }
 
 function FieldSlot({ side, slot }: { side: Side; slot: number }) {
   const board = useBoardContext();
-  const { game, view, attacker, selected, playEnabled, drag, animations } = board;
+  const { game, view, attacker, selected, playEnabled, drag, animations, editing } = board;
   const near = side === view;
   const uid = game.players[side].field.find(id => game.cards[id].slot === slot), card = uid ? game.cards[uid] : null;
   const targeting = !!uid && (board.isOption(uid) || !!attacker && side !== view && board.canStrike(attacker, uid));
@@ -77,7 +78,7 @@ function FieldSlot({ side, slot }: { side: Side; slot: number }) {
   const classes = [
     styles.fieldSlot, card && styles.occupied, (targeting || placing) && styles.targetable, uid === attacker && styles.attacking,
     card?.exhausted && styles.exhausted, uid && (drag.held?.uid === uid || animations.strike?.uid === uid) && styles.dealing,
-    card?.keywords.includes('taunt') && styles.tauntCard,
+    card?.keywords.includes('taunt') && styles.tauntCard, editing && !card && styles.editSlot,
   ].filter(Boolean).join(' ');
   return <button data-slot={slot} data-side={side} data-unit={uid} disabled={!!attacker && side !== view && !targeting} className={classes}
     aria-label={`${side === 0 ? 'あなた' : '相手'}の場 ${slot + 1} ${card ? displayCards[card.cardId].name : '空き'}`}
@@ -86,6 +87,7 @@ function FieldSlot({ side, slot }: { side: Side; slot: number }) {
     onContextMenu={event => { event.preventDefault(); if (uid) board.setPanel({ type: 'inspect', uid }); }}>
     {card && <>
       <GameCard id={card.cardId} instance={card} abilities />
+      {editing && card.entered === game.turn && <span className={styles.editFlag}>出たばかり</span>}
       {!card.exhausted && board.canAttackNow(uid!) && <span className={styles.readyGem} />}
     </>}
   </button>;

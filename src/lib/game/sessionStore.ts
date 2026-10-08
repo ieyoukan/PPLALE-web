@@ -29,6 +29,8 @@ export interface StoredSession {
   reported?: boolean;
   /** The board made in the editor that the match started from (instead of decks and a shuffle). */
   position?: Position;
+  /** The board is being edited (盤面エディタ), not played. */
+  editing?: true;
 }
 
 const STORAGE_KEY = 'pplale-game-session-v2';
@@ -71,6 +73,7 @@ export function describeSavedMatch(): string | null {
   const saved = readSession();
   const game = saved?.game as Partial<GameState> | undefined;
   if (!game || game.winner !== null || !Array.isArray(game.players)) return null;
+  if (saved?.editing === true) return '盤面を編集中';
   const mode = saved?.mode === 'watch' ? 'CPU同士を観戦' : saved?.mode === 'hotseat' ? 'ふたり対戦' : 'CPUと対戦';
   if (game.phase !== 'playing' || game.active === undefined || !game.rules) return `${mode}・開始前`;
   const { order, number } = turnOf({ active: game.active, rules: game.rules, players: game.players });

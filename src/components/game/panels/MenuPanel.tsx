@@ -23,7 +23,7 @@ export function MenuPanel() {
       {mode === 'hotseat' && !replaying && <button disabled={!canUndo || busy} onClick={close(undo)}>一手戻す</button>}
       {/* Looking at every card is fair on a board the player made, or when playing both sides. */}
       {local && playing && game.winner === null && (mode === 'hotseat' || position) && <button onClick={() => setPanel({ type: 'analysis' })}>最善手を調べる</button>}
-      {local && playing && <button onClick={editBoard}>この盤面を編集</button>}
+      {local && playing && <button disabled={busy} onClick={editBoard}>この盤面を編集する</button>}
       {local && position && <button disabled={busy} onClick={close(rematch)}>最初の盤面に戻す</button>}
       {assessable && <button onClick={close(() => setShowAssessment(!showAssessment))}>{showAssessment ? '形勢を隠す' : '形勢を表示する'}</button>}
       <button onClick={close(toggleFullscreen)}>全画面</button>

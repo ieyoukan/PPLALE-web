@@ -1,12 +1,10 @@
-// Boards made in the 盤面エディタ, kept in this browser: the one being edited, and the saved ones.
-// A board is played by turning it into a match and saving that as the session the board page opens.
+// Boards made in the 盤面エディタ and saved in this browser. A board is edited on the board page itself:
+// it becomes the session that page opens, in edit mode.
 import { buildPosition, parsePosition } from '@pplale/game-core';
 import type { Position, PositionSide } from '@pplale/game-core';
 import { gameCatalog } from './catalog';
 import { saveSession, sideLabel } from './sessionStore';
-import type { Levels, Mode } from './sessionStore';
 
-const DRAFT_KEY = 'pplale-editor-draft';
 const SAVED_KEY = 'pplale-editor-saved';
 
 export interface SavedPosition {
@@ -24,13 +22,6 @@ function read(key: string): unknown {
     const raw = localStorage.getItem(key);
     return raw ? JSON.parse(raw) : null;
   } catch { return null; }
-}
-
-export function loadDraft(): Position | null {
-  return parsePosition(read(DRAFT_KEY));
-}
-export function saveDraft(position: Position) {
-  try { localStorage.setItem(DRAFT_KEY, JSON.stringify(position)); } catch { /* only this page then */ }
 }
 
 export function loadSaved(): SavedPosition[] {
@@ -54,8 +45,8 @@ export function deleteSaved(id: string): SavedPosition[] {
   return list;
 }
 
-/** Makes the board the match the board page opens. Throws with the reasons when it cannot be played. */
-export function startPosition(position: Position, mode: Extract<Mode, 'cpu' | 'hotseat'>, levels: Levels) {
-  const game = buildPosition(position, gameCatalog, { names: [sideLabel(mode, 0), sideLabel(mode, 1)] });
-  saveSession({ game, mode, levels, position, initial: game, commands: [] });
+/** Makes the board the one the board page opens in edit mode. Throws when it is not a usable board. */
+export function openInEditor(position: Position) {
+  const game = buildPosition(position, gameCatalog, { names: [sideLabel('hotseat', 0), sideLabel('hotseat', 1)] });
+  saveSession({ game, mode: 'hotseat', levels: ['master', 'master'], position, editing: true });
 }

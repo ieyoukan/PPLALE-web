@@ -8,9 +8,9 @@ import styles from '../BoardEmulator.module.css';
 
 /** 「最善手を調べる」 for the position on the table; looked at again whenever the position changes. */
 export function AnalysisPanel() {
-  const { game, names, setPanel } = useBoardContext();
+  const { game, names, editing, setPanel } = useBoardContext();
   const worker = useRef<Worker | null>(null), request = useRef(0);
-  const [result, setResult] = useState<{ revision: number; analysis: Analysis | null } | null>(null);
+  const [result, setResult] = useState<{ game: unknown; analysis: Analysis | null } | null>(null);
   useEffect(() => {
     try {
       const instance = new Worker(new URL('../board/analysis.worker.ts', import.meta.url), { type: 'module' });
@@ -19,20 +19,21 @@ export function AnalysisPanel() {
     } catch { worker.current = null; }
   }, []);
   useEffect(() => {
-    const id = ++request.current, revision = game.revision;
+    const id = ++request.current;
     const instance = worker.current;
     if (!instance) {
       // Without workers the board waits for the search.
-      const timer = setTimeout(() => setResult({ revision, analysis: analyze(game) }), 0);
+      const timer = setTimeout(() => setResult({ game, analysis: analyze(game) }), 0);
       return () => clearTimeout(timer);
     }
-    const listen = (event: MessageEvent<AnalysisResponse>) => { if (event.data.id === id) setResult({ revision, analysis: event.data.analysis }); };
+    const listen = (event: MessageEvent<AnalysisResponse>) => { if (event.data.id === id) setResult({ game, analysis: event.data.analysis }); };
     instance.addEventListener('message', listen);
     instance.postMessage({ id, game } satisfies AnalysisRequest);
     return () => instance.removeEventListener('message', listen);
   }, [game]);
 
-  const analysis = result?.revision === game.revision ? result.analysis : undefined;
+  // Edits do not count as moves, so the board itself (not its revision) tells whether the answer is current.
+  const analysis = result?.game === game ? result.analysis : undefined;
   return <>
     <h2>最善手を調べる</h2>
     <div className={styles.analysis}>
@@ -52,7 +53,7 @@ export function AnalysisPanel() {
         </section>}
         <p className={styles.analysisNote}>相手の手札や山札の順番も含め、盤面のすべてを見て調べています。おすすめは CPU の判断で、正解とは限りません。</p>
       </>}
-      <button onClick={() => setPanel({ type: 'menu' })}>メニューへ戻る</button>
+      <button onClick={() => setPanel({ type: editing ? 'editMenu' : 'menu' })}>メニューへ戻る</button>
     </div>
   </>;
 }

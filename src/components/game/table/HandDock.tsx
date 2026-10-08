@@ -10,10 +10,10 @@ import styles from '../BoardEmulator.module.css';
 /** The viewer's hand as a fan. Tap selects (or picks for an effect), drag plays. */
 export function HandDock() {
   const board = useBoardContext();
-  const { game, view, me, selected, drag, mulligan, remote } = board;
+  const { game, view, me, selected, drag, mulligan, remote, editing } = board;
   // The mulligan screen shows the hand itself, except while its replacements are drawn from the table.
   // (A spectator has no mulligan screen, so the hand stays on the table.)
-  if (!me.hand.length || game.phase === 'mulligan' && !mulligan.remaining && !remote?.watching) return null;
+  if (!me.hand.length && !editing || game.phase === 'mulligan' && !mulligan.remaining && !remote?.watching) return null;
   return <div className={styles.handDock}>
     <div className={styles.hand} data-hand-list>{me.hand.map((uid, index) => {
       const card = game.cards[uid], offset = index - (me.hand.length - 1) / 2;
@@ -28,7 +28,9 @@ export function HandDock() {
         <GameCard id={card.cardId} instance={card} currentCost={costOf(game, uid, gameCatalog, view)} sizes="(max-width: 900px) 130px, 160px" />
         {card.revealed && <span className={styles.revealed}>公開</span>}
       </button>;
-    })}</div>
+    })}
+    {editing && <button className={styles.addHand} aria-label="手札に加える" onClick={() => board.setPicking({ side: view, zone: 'hand' })}>＋</button>}
+    </div>
   </div>;
 }
 

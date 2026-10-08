@@ -24,6 +24,7 @@ import { OrderNotice } from './table/OrderNotice';
 import { PlayerSide } from './table/PlayerSide';
 import { TurnControl } from './table/TurnControl';
 import { AssessmentBar } from './table/Assessment';
+import { CardPicker, EditBar, EditButton } from './table/EditMode';
 import { displayCards, gameCatalog } from '@/lib/game/catalog';
 import { HOME_PATH } from '@/lib/game/sessionStore';
 import type { DeckKind } from '@pplale/game-core';
@@ -43,7 +44,7 @@ export default function BoardEmulator() {
 export function BoardTable({ session }: { session: BoardSession }) {
   const container = useRef<HTMLDivElement>(null);
   const board = useBoard(container, session);
-  const { game, me, view, mode, paused, attacker, drag, mulligan, ready, panel, error, replaying, remote, setPanel, setPaused, setAttacker, stopReplay } = board;
+  const { game, me, view, mode, paused, attacker, drag, mulligan, ready, panel, error, replaying, remote, editing, setPanel, setPaused, setAttacker, stopReplay } = board;
   // The saved match is still loading (or missing, and the preparation page is opening).
   if (!ready) return <div className={styles.emulator} aria-busy="true" />;
   // Any open panel (drawer or modal) is closed from the same corner button.
@@ -55,11 +56,13 @@ export function BoardTable({ session }: { session: BoardSession }) {
       <header className={styles.toolbar}>
         {/* One button in one place: opens the menu, and closes whatever drawer is open. */}
         <button className={`${styles.menuButton} ${drawerOpen ? styles.menuButtonOpen : ''}`} aria-expanded={drawerOpen}
-          onClick={() => setPanel(drawerOpen ? null : { type: 'menu' })} aria-label={drawerOpen ? 'メニューを閉じる' : 'メニュー'}>
+          onClick={() => setPanel(drawerOpen ? null : { type: editing ? 'editMenu' : 'menu' })} aria-label={drawerOpen ? 'メニューを閉じる' : 'メニュー'}>
           <span aria-hidden="true">{drawerOpen ? '×' : '☰'}</span>
         </button>
+        <EditButton />
         {(mode === 'cpu' || mode === 'watch' || replaying) && paused && <button className={styles.menuButton} onClick={() => setPaused(false)} aria-label={replaying ? '再生する' : 'CPU再開'}>▶</button>}
       </header>
+      <EditBar />
       {replaying && <div className={styles.replayBadge}><span>リプレイ中</span><button onClick={stopReplay}>やめる</button></div>}
       <div className={`${styles.tableViewport} ${styles.withTurnControl}`}>
         <div className={styles.table} data-table>
@@ -89,6 +92,7 @@ export function BoardTable({ session }: { session: BoardSession }) {
         selected={mulligan.selected} enabled={mulligan.enabled} confirmed={game.mulligan.confirmed[view]}
         onToggle={mulligan.toggle} onConfirm={mulligan.confirm} />}
       <SidePanel />
+      <CardPicker />
       <HeldCard />
       <AnimationLayer />
       <TargetPing />

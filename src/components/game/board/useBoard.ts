@@ -1,15 +1,15 @@
 'use client';
 
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { attackTargets, canPlay, costOf, other, pendingView, positionOf } from '@pplale/game-core';
-import type { Command, DeckKind, GameState, Side } from '@pplale/game-core';
+import { attackTargets, canPlay, costOf, other, pendingView } from '@pplale/game-core';
+import type { BoardEdit, Command, DeckKind, EditZone, GameState, Side } from '@pplale/game-core';
+import type { ZoneKind } from '../BoardPieces';
 import type { RefObject } from 'react';
 import { useRouter } from 'next/navigation';
 import { gameCatalog } from '@/lib/game/catalog';
 import { useAuth } from '@/lib/auth';
 import { learningConsent, reportMatch } from '@/lib/game/cpuServer';
-import { saveDraft } from '@/lib/game/positions';
-import { EDITOR_PATH, HOME_PATH } from '@/lib/game/sessionStore';
+import { HOME_PATH } from '@/lib/game/sessionStore';
 import { useBoardAnimations } from './useBoardAnimations';
 import { useCardDrag } from './useCardDrag';
 import type { DragSource } from './useCardDrag';
@@ -22,7 +22,12 @@ import { useOpeningDice } from './useOpeningDice';
 export type Panel =
   | { type: 'menu' } | { type: 'logs' } | { type: 'analysis' }
   | { type: 'inspect'; uid: string } | { type: 'skills'; side: Side } | { type: 'zone'; side: Side; kind: 'nap' | 'exile' }
+  // 盤面エディタ (edit mode)
+  | { type: 'editUnit'; uid: string } | { type: 'editHand'; uid: string } | { type: 'editPile'; side: Side; kind: ZoneKind }
+  | { type: 'editPlayer'; side: Side } | { type: 'editMenu' } | { type: 'play' }
   | null;
+/** Where a card chosen in the card picker goes (edit mode). */
+export type Picking = { side: Side; zone: EditZone | 'played'; slot?: number };
 
 const typeOf = (game: GameState, uid: string) => gameCatalog[game.cards[uid].cardId].type;
 // A replay moves quickly through the opening and leaves time to follow each turn.
@@ -35,10 +40,11 @@ const REPLAY_OPENING_DELAY = 150;
  */
 export function useBoard(container: RefObject<HTMLDivElement | null>, session: BoardSession) {
   const [panel, setPanel] = useState<Panel>(null);
+  const [picking, setPicking] = useState<Picking | null>(null);
   const router = useRouter();
   /** Set in a room: the seat this browser plays, and the changes arriving from the server. */
   const { remote } = session;
-  const { game, mode, levels, ready, error, saveError, canUndo, send, undo: undoCommand, replaying, replayNext, setup, canRematch, canReplay, position } = session;
+  const { game, mode, levels, ready, error, saveError, canUndo, send, undo: undoCommand, replaying, replayNext, setup, canRematch, canReplay, position, editing, edit: editSession } = session;
   const { user } = useAuth();
   /** Names for the versus and result screens: the signed-in user's name for the human seat. */
   const localNames = useMemo<[string, string]>(() => [mode !== 'watch' && user?.displayName || sideLabel(mode, 0), sideLabel(mode, 1)], [mode, user]);
@@ -53,7 +59,7 @@ export function useBoard(container: RefObject<HTMLDivElement | null>, session: B
   /** The saved match is still loading; nothing may act yet. */
   const loading = !ready;
   // Nobody controls a replay: both sides are driven, like watching two CPUs.
-  const cpuSides = useMemo<Side[]>(() => replaying ? [0, 1] : cpuSidesOf(mode), [mode, replaying]);
+  const cpuSides = useMemo<Side[]>(() => replaying ? [0, 1] : editing ? [] : cpuSidesOf(mode), [mode, replaying, editing]);
   const watching = !!remote?.watching;
   const animations = useBoardAnimations({ game, view, mode, cpuSides, replaying, container, spectating: watching ? names : undefined });
   const { run: animate, skipNext: skipAnimation, flights, strike, turnNotice, announcement, ping, blocked, order, effectRoll, choiceNote, busy: animating } = animations;
@@ -81,7 +87,7 @@ export function useBoard(container: RefObject<HTMLDivElement | null>, session: B
   // A finished match against さいきょう goes to the CPU server once, if this browser agreed to it.
   // The course of the match (形勢), judged with what side 0 can know.
   const [showAssessment, setShowAssessment] = useAssessmentSetting();
-  const assessable = mode === 'cpu' || mode === 'watch';
+  const assessable = !editing && (mode === 'cpu' || mode === 'watch');
   const { initial, commands } = session;
   const assessment = useAssessment({ enabled: assessable && showAssessment && ready, initial, commands, viewer: 0 });
   const { record, markReported } = session;
@@ -145,15 +151,17 @@ export function useBoard(container: RefObject<HTMLDivElement | null>, session: B
   useEffect(() => { if (mode === 'watch') setView(1); }, [mode]);
   // Same-device play follows whoever has to act.
   useEffect(() => {
-    if (mode === 'hotseat' && (game.phase === 'playing' || game.phase === 'mulligan') && !busy) setView(game.pending?.task.actor ?? game.active);
-  }, [mode, game.phase, game.active, game.pending, busy]);
+    if (mode === 'hotseat' && !editing && (game.phase === 'playing' || game.phase === 'mulligan') && !busy) setView(game.pending?.task.actor ?? game.active);
+  }, [mode, editing, game.phase, game.active, game.pending, busy]);
+  // The board is edited from the near side's seat, whoever's turn it is set to be.
+  useEffect(() => { if (editing) setView(0); }, [editing]);
 
   // ── Derived state ──
   const me = game.players[view];
   const pending = useMemo(() => pendingView(game), [game]);
   const ours = !!pending && canControl(pending.actor);
   const attacks = useMemo(() => attackTargets(game, game.active, gameCatalog), [game]);
-  const playEnabled = game.phase === 'playing' && canControl(view) && game.active === view && !game.pending && !busy && !loading && game.winner === null;
+  const playEnabled = !editing && game.phase === 'playing' && canControl(view) && game.active === view && !game.pending && !busy && !loading && game.winner === null;
   const flying = (uid: string) => flights.some(f => f.uid === uid);
   const canStrike = useCallback((uid: string, target: string | 'leader') => game.active === view && !!attacks[uid]?.includes(target), [attacks, game.active, view]);
   const canAttackNow = (uid: string) => !!attacks[uid];
@@ -164,7 +172,16 @@ export function useBoard(container: RefObject<HTMLDivElement | null>, session: B
   // ── Actions ──
   const choose = (option: string) => { if (ours && pending && !busy) act({ type: 'choose', actor: pending.actor, option }); };
   const play = (uid: string, slot?: number) => act({ type: 'play', actor: view, uid, slot });
-  const adjust = (side: Side, resource: 'points' | 'ppBonus' | 'pp', delta: number) => act({ type: 'adjust', actor: side, resource, delta });
+  /** One change of the board in edit mode, shown at once (no animation). */
+  const editBoard = useCallback((change: BoardEdit) => {
+    skipAnimation();
+    editSession(change);
+  }, [skipAnimation, editSession]);
+  const adjust = (side: Side, resource: 'points' | 'ppBonus' | 'pp', delta: number) => {
+    const p = game.players[side];
+    if (editing) return editBoard({ type: 'player', side, [resource]: p[resource] + delta });
+    act({ type: 'adjust', actor: side, resource, delta });
+  };
 
   function deckReady(side: Side, kind: DeckKind) {
     // Opening draws, and the redraws after giving cards back in the mulligan (once those have landed in the deck).
@@ -173,11 +190,13 @@ export function useBoard(container: RefObject<HTMLDivElement | null>, session: B
     return ours && !busy && !loading && pending!.actor === side && pending!.decks.includes(kind);
   }
   function clickDeck(side: Side, kind: DeckKind) {
+    if (editing) return setPanel({ type: 'editPile', side, kind });
     if (game.phase === 'opening' || game.phase === 'mulligan') act({ type: 'openingDraw', actor: side, deck: kind });
     else choose(kind);
   }
   /** Tap on a field slot: pick an effect target, attack, place the selected unit, or inspect. */
   function clickSlot(side: Side, uid: string | undefined, slot: number) {
+    if (editing) return uid ? setPanel({ type: 'editUnit', uid }) : setPicking({ side, zone: 'field', slot });
     if (uid && isOption(uid)) return choose(uid);
     if (attacker && side !== view && uid && canStrike(attacker, uid)) return act({ type: 'attack', actor: view, uid: attacker, target: uid });
     if (selected && side === view && !uid && playEnabled && typeOf(game, selected) === 'yojo') return play(selected, slot);
@@ -190,6 +209,7 @@ export function useBoard(container: RefObject<HTMLDivElement | null>, session: B
   }
   /** Tap on a hand card: pick it for an effect, or select it to show its actions. */
   function clickHand(uid: string) {
+    if (editing) return setPanel({ type: 'editHand', uid });
     if (isOption(uid)) return choose(uid);
     setSelected(selected === uid ? null : uid);
     setAttacker(null);
@@ -201,15 +221,27 @@ export function useBoard(container: RefObject<HTMLDivElement | null>, session: B
   const drag = useCardDrag({
     container,
     canPick: useCallback((uid: string, kind: DragSource) => {
+      // Edit mode: units move between slots, hand units are put on the field.
+      if (editing) return { canDrag: true };
       if (busy || kind === 'field' && (!playEnabled || !attacks[uid])) return null;
       return { canDrag: playEnabled && (kind === 'field' || costOf(game, uid, gameCatalog, view) <= game.players[view].pp && canPlay(game, view, uid, gameCatalog)) };
-    }, [busy, playEnabled, attacks, game, view]),
+    }, [editing, busy, playEnabled, attacks, game, view]),
     onDragStart: useCallback((uid: string, kind: DragSource) => {
+      // Edit mode only moves the card: nothing is selected to attack with or to play.
+      if (editing) return;
       setAttacker(kind === 'field' ? uid : null);
       setSelected(kind === 'hand' ? uid : null);
-    }, []),
+    }, [editing]),
     // Drop a unit on an enemy / their sweets to attack; a hand card on an empty slot or the table to play.
     onDrop: useCallback((uid: string, kind: DragSource, target: Element | null) => {
+      if (editing) {
+        const slot = target?.closest<HTMLElement>('[data-slot]');
+        if (!slot || slot.dataset.unit || slot.dataset.side !== String(view)) return;
+        const at = Number(slot.dataset.slot);
+        if (kind === 'field') return editBoard({ type: 'move', uid, slot: at });
+        if (typeOf(game, uid) === 'yojo') editBoard({ type: 'toField', uid, slot: at });
+        return;
+      }
       if (kind === 'field') {
         const unit = target?.closest<HTMLElement>('[data-unit]')?.dataset.unit;
         const leader = target?.closest<HTMLElement>('[data-leader]')?.dataset.leader;
@@ -220,7 +252,7 @@ export function useBoard(container: RefObject<HTMLDivElement | null>, session: B
       const slot = target?.closest<HTMLElement>('[data-slot]');
       if (slot?.dataset.side === String(view) && !slot.dataset.unit && typeOf(game, uid) === 'yojo') act({ type: 'play', actor: view, uid, slot: Number(slot.dataset.slot) });
       else if (target?.closest('[data-table]') && typeOf(game, uid) === 'sweet') act({ type: 'play', actor: view, uid });
-    }, [view, canStrike, act, game]),
+    }, [editing, editBoard, view, canStrike, act, game]),
   });
 
   // ── Mulligan ──
@@ -252,10 +284,10 @@ export function useBoard(container: RefObject<HTMLDivElement | null>, session: B
     setPaused(false);
   }
   function rematch() { resetTable(); session.rematch(); }
-  /** Opens the 盤面エディタ with the position on the table. */
-  function editBoard() {
-    saveDraft({ ...positionOf(game, gameCatalog), ...(position?.title && { title: position.title }) });
-    router.push(EDITOR_PATH);
+  /** Edit mode on the position on the table. */
+  function openEditor() {
+    resetTable();
+    session.startEdit();
   }
   function startReplay() { resetTable(); session.startReplay(); }
   function stopReplay() { resetTable(); session.stopReplay(); }
@@ -277,7 +309,8 @@ export function useBoard(container: RefObject<HTMLDivElement | null>, session: B
   return {
     game, mode, levels, view, me, panel, ready, busy, paused, names, remote,
     assessment, assessable, showAssessment, setShowAssessment,
-    setup, canRematch, canReplay, replaying, position, editBoard,
+    setup, canRematch, canReplay, replaying, position, editBoard: openEditor,
+    editing, edit: editBoard, picking, setPicking, session,
     error: error || saveError, canUndo,
     selected, attacker, pending, ours, playEnabled,
     animations, dice, drag, mulligan,

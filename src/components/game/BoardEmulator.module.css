@@ -505,3 +505,67 @@
   .announcement, .announcementText { animation: none; }
   .announcementCard, .targetPing { animation: none; }
 }
+
+/* ── 盤面エディタ (edit mode on the table) ── */
+.editBar { position: fixed; z-index: 60; top: 88px; right: 16px; display: grid; gap: 8px; justify-items: center; width: clamp(136px, 11vw, 172px); padding: 10px 8px; border: 2px solid #fff1d3; border-radius: 18px; background: #fff9edf2; color: #6b4a3a; font-size: 15px; text-align: center; box-shadow: 0 6px 18px #2a1b3055; }
+.editBar b { color: #b0577a; font-size: 17px; }
+.editBarHint { font-size: 12px; line-height: 1.5; opacity: .85; }
+.editBarTurn { display: flex; flex-wrap: wrap; align-items: center; justify-content: center; gap: 4px; }
+.editBarTurn span { flex: 1 1 100%; font-size: 13px; }
+.editBarTurn button, .editSwitch, .editPair button { padding: 6px 14px; border: 2px solid #e7c3e2; border-radius: 999px; background: #fff; color: #6b4a3a; font-size: 15px; }
+.editBarTurn button { padding: 5px 10px; font-size: 14px; }
+.editBarTurn button[aria-pressed=true], .editSwitch[aria-pressed=true], .editPair button[aria-pressed=true] { border-color: #a88667; background: #f4b0bb; font-weight: 700; }
+.editToggle { height: 56px; padding: 0 18px; border: 2px solid #fff1d3; border-radius: 18px; background: linear-gradient(#fffaf0, #ecd9ba); color: #826452; font-size: 18px; font-weight: 700; box-shadow: 0 5px 0 #9a7457, 0 9px 20px #43272840; }
+.editToggle:disabled { opacity: .6; }
+@media (max-height: 700px) { .editBarHint { display: none; } .editBar { top: 70px; padding: 6px; gap: 4px; } }
+@media (max-height: 500px) { .editBar { top: 56px; } .editToggle { height: 46px; font-size: 16px; } }
+
+.editSlot::after { content: '＋'; position: absolute; inset: 0; display: grid; place-items: center; color: #fffdeb; font-size: 2.2cqw; text-shadow: 0 1px 4px #4d3a2c99; opacity: .75; pointer-events: none; }
+.editSlot:hover::after { opacity: 1; transform: scale(1.2); }
+.editFlag { position: absolute; left: 4%; right: 4%; bottom: 4%; z-index: 3; padding: 1px 0; border-radius: 6px; background: #4d3a2ccc; color: #fffdeb; font-size: .8cqw; text-align: center; pointer-events: none; }
+.addHand { align-self: flex-end; flex: none; width: 96px; height: 144px; margin: 0 0 70px 14px; border: 3px dashed #fffdeb; border-radius: 12px; background: #4d3a2c88; color: #fffdeb; font-size: 40px; pointer-events: auto; }
+.addFarHand { position: absolute; left: -28px; top: 236px; width: 56px; height: 48px; border: 3px dashed #fffdeb; border-radius: 14px; background: #4d3a2c88; color: #fffdeb; font-size: 28px; pointer-events: auto; }
+.addHand:hover, .addFarHand:hover { background: #4d3a2ccc; }
+.turnControl .playButton { background: radial-gradient(circle at 38% 25%, #dff0c4, #9cc76a 60%, #5d8a35); font-size: clamp(19px, 1.6vw, 24px); }
+
+.picker { position: fixed; inset: 0; z-index: 140; display: grid; place-items: center; padding: 16px; background: #000a; backdrop-filter: blur(4px); }
+.pickerSheet { display: grid; grid-template-rows: auto auto 1fr; gap: 12px; width: min(1100px, 96vw); max-height: 92dvh; padding: 18px; border-radius: 24px; background: #fff9f0; color: #6b4a3a; }
+.pickerSheet header { display: flex; flex-wrap: wrap; align-items: center; gap: 12px; }
+.pickerSheet h2 { flex: 1 1 auto; font-size: 22px; font-weight: 700; }
+.pickerSheet input { padding: 10px 14px; border: 2px solid #e7c3e2; border-radius: 14px; background: #fff; color: inherit; font-size: 17px; }
+.pickerSheet header button { padding: 10px 20px; border: 2px solid #e7c3e2; border-radius: 14px; background: #fff; color: inherit; font-size: 17px; }
+.pickerSheet > p { font-size: 15px; }
+.pickerSheet ul { display: grid; grid-template-columns: repeat(auto-fill, minmax(clamp(88px, 10vw, 130px), 1fr)); gap: 10px; overflow: auto; margin: 0; padding: 6px; list-style: none; }
+.pickerSheet li button { position: relative; display: block; width: 100%; aspect-ratio: 533 / 800; padding: 0; border-radius: 8px; transition: transform .12s; }
+.pickerSheet li button:hover { transform: translateY(-4px) scale(1.04); }
+
+.editCard { position: relative; width: min(60%, 200px); aspect-ratio: 533 / 800; margin: 0 auto 12px; }
+.editNow { margin-bottom: 8px; text-align: center; font-weight: 700; }
+.drawer h3 { margin: 18px 0 8px; font-size: 17px; font-weight: 700; }
+.stepper { display: flex; align-items: center; gap: 10px; padding: 6px 0; }
+.stepper > span { flex: 1; display: grid; }
+.stepper small, .editNote { font-size: 14px; opacity: .8; }
+.stepper button { width: 48px; height: 48px; border-radius: 14px; background: #f1e4d4; font-size: 24px; }
+.stepper b { min-width: 2.2em; text-align: center; font-size: 22px; }
+.editChips { display: flex; flex-wrap: wrap; gap: 8px; }
+.editPair { display: flex; align-items: center; gap: 8px; }
+.editPair > span { flex: 1; }
+.editActions { display: flex; flex-wrap: wrap; gap: 10px; margin: 16px 0; }
+.editActions button { flex: 1 1 auto; min-height: 50px; padding: 10px 16px; border-radius: 14px; background: #f1e4d4; font-size: 17px; }
+.editPile { display: grid; grid-template-columns: repeat(auto-fill, minmax(110px, 1fr)); gap: 12px; margin: 0; padding: 0; list-style: none; }
+.editPile li { display: grid; gap: 4px; align-content: start; }
+.editPileTop { padding: 6px; border-radius: 10px; background: #b3d788; font-size: 14px; font-weight: 700; text-align: center; }
+.editPile li button { padding: 6px; border-radius: 10px; background: #f1e4d4; font-size: 14px; }
+.editPileCard { position: relative; aspect-ratio: 533 / 800; }
+.editPlayables { display: grid; grid-template-columns: repeat(6, 1fr); gap: 6px; margin-bottom: 12px; }
+.editPlayables button { position: relative; aspect-ratio: 533 / 800; border: 3px solid transparent; border-radius: 8px; opacity: .6; }
+.editPlayables button[aria-pressed=true] { border-color: #f08aa0; opacity: 1; }
+.editMenu { display: grid; gap: 16px; }
+.editField { display: grid; gap: 4px; font-size: 15px; }
+.editField input, .editField textarea { padding: 10px; border: 2px solid #e7c3e2; border-radius: 12px; background: #fff; color: inherit; font: inherit; font-size: 16px; }
+.editMessage { padding: 8px 12px; border-radius: 10px; background: #eef6e4; font-size: 15px; }
+.editErrors { display: grid; gap: 4px; margin: 12px 0; padding: 10px 14px; border-radius: 10px; background: #fbe5dc; color: #ac655b; font-size: 15px; }
+.editSaved { display: grid; gap: 8px; padding: 0; list-style: none; }
+.editSaved li { display: flex; gap: 8px; }
+.editSaved li button { padding: 10px 14px; border-radius: 12px; background: #f1e4d4; font-size: 16px; }
+.editSaved li button:first-child { flex: 1; text-align: left; font-weight: 700; }

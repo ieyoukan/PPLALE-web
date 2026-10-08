@@ -5,6 +5,12 @@ import dynamic from 'next/dynamic';
 import { useBoardContext } from '../board/BoardContext';
 import type { Panel } from '../board/useBoard';
 import styles from '../BoardEmulator.module.css';
+const EditUnitPanel = dynamic(() => import('./EditPanels').then(module => module.EditUnitPanel));
+const EditHandPanel = dynamic(() => import('./EditPanels').then(module => module.EditHandPanel));
+const EditPilePanel = dynamic(() => import('./EditPanels').then(module => module.EditPilePanel));
+const EditPlayerPanel = dynamic(() => import('./EditPanels').then(module => module.EditPlayerPanel));
+const EditMenuPanel = dynamic(() => import('./EditPanels').then(module => module.EditMenuPanel));
+const PlayPanel = dynamic(() => import('./EditPanels').then(module => module.PlayPanel));
 const AnalysisPanel = dynamic(() => import('./AnalysisPanel').then(module => module.AnalysisPanel));
 const InspectPanel = dynamic(() => import('./InspectPanel').then(module => module.InspectPanel));
 const LogPanel = dynamic(() => import('./LogPanel').then(module => module.LogPanel));
@@ -12,8 +18,9 @@ const MenuPanel = dynamic(() => import('./MenuPanel').then(module => module.Menu
 const SkillPanel = dynamic(() => import('./SkillPanel').then(module => module.SkillPanel));
 const ZonePanel = dynamic(() => import('./ZonePanel').then(module => module.ZonePanel));
 
-type DrawerPanel = Extract<NonNullable<Panel>, { type: 'menu' | 'logs' | 'zone' | 'analysis' }>;
-const isDrawer = (panel: Panel): panel is DrawerPanel => !!panel && ['menu', 'logs', 'zone', 'analysis'].includes(panel.type);
+const drawers = ['menu', 'logs', 'zone', 'analysis', 'editUnit', 'editHand', 'editPile', 'editPlayer', 'editMenu', 'play'] as const;
+type DrawerPanel = Extract<NonNullable<Panel>, { type: (typeof drawers)[number] }>;
+const isDrawer = (panel: Panel): panel is DrawerPanel => !!panel && (drawers as readonly string[]).includes(panel.type);
 
 /**
  * Menu, log and pile lists slide in from the right and are closed with the toolbar button, which
@@ -32,6 +39,13 @@ export function SidePanel() {
       {last?.type === 'logs' && <LogPanel />}
       {/* Only searches while open: the search is heavy. */}
       {drawer?.type === 'analysis' && <AnalysisPanel />}
+      {/* 盤面エディタ: shown from the live board, so a card removed in the panel closes it. */}
+      {drawer?.type === 'editUnit' && <EditUnitPanel uid={drawer.uid} />}
+      {drawer?.type === 'editHand' && <EditHandPanel uid={drawer.uid} />}
+      {drawer?.type === 'editPile' && <EditPilePanel side={drawer.side} kind={drawer.kind} />}
+      {drawer?.type === 'editPlayer' && <EditPlayerPanel side={drawer.side} />}
+      {drawer?.type === 'editMenu' && <EditMenuPanel />}
+      {drawer?.type === 'play' && <PlayPanel />}
       {last?.type === 'zone' && <ZonePanel side={last.side} kind={last.kind} />}
     </aside>
     {modal && <button className={styles.modalBackdrop} aria-label="スキルを閉じる" onClick={() => setPanel(null)} />}

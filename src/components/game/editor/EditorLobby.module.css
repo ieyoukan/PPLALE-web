@@ -1,0 +1,17 @@
+.lobby { display: grid; gap: 22px; color: #6b4a3a; }
+.lobby button { cursor: pointer; }
+.lobby h2 { margin-bottom: 8px; font-size: 19px; font-weight: 700; }
+.lead { font-size: 17px; line-height: 1.8; }
+.doors { display: flex; flex-wrap: wrap; gap: 14px; }
+.doors button, .saved li button:first-child { display: grid; gap: 4px; padding: 18px 26px; border: 2px solid #e7c3e2; border-radius: 18px; background: #fff; color: inherit; text-align: left; }
+.doors b { font-size: 21px; }
+.doors small, .saved small { font-size: 14px; }
+.doors .primary { border-color: #a88667; background: #b3d788; }
+.saved { display: grid; gap: 8px; padding: 0; list-style: none; }
+.saved li { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; }
+.saved li button:first-child { padding: 12px 18px; }
+.remove { padding: 8px 14px; border-radius: 12px; color: #ac655b; }
+.lobby textarea { display: block; width: 100%; margin-bottom: 10px; padding: 10px; border: 2px solid #e7c3e2; border-radius: 12px; background: #fff; color: inherit; font: inherit; }
+.lobby section > button { padding: 12px 22px; border: 2px solid #e7c3e2; border-radius: 14px; background: #fff; color: inherit; font-size: 17px; }
+.lobby section > button:disabled { opacity: .5; cursor: not-allowed; }
+.error { padding: 10px; border-radius: 10px; background: #fbe5dc; color: #ac655b; font-size: 16px; }

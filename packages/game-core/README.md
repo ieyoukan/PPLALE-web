@@ -21,6 +21,7 @@ Next.js / React / Firebase に依存しない、ぷぷりえーるのローカ�
 | `core/state.ts` | `cloneState`。探索で大量に呼ぶ状態コピー（structuredClone の約10倍速い） |
 | `snapshot.ts` | 保存された状態の検証・復元と旧形式の移行 |
 | `position.ts` | 盤面エディタの盤面（`Position`）。`buildPosition` で対戦中の状態にし、`positionOf` で対戦中の盤面を書き出す。`encodePosition` / `decodePosition` は共有コード（`PPL1.…`） |
+| `edit.ts` | 盤面エディタの編集モードでの変更（`editGame`）。カードを置く・外す・動かす、幼女やプレイヤーの数値、手番。uid は変えない |
 
 ## カード効果の読み方・追加方法
 

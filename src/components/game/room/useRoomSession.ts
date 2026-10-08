@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useMemo, useReducer, useState } from 'react';
 import type { Command, GameState, Side } from '@pplale/game-core';
 import type { BoardSession, Incoming } from '../board/useGameSession';
+import { withoutEditor } from '../board/useGameSession';
 import type { RoomCommand, RoomView } from '@pplale/game-core/room';
 import type { Room } from './useRoom';
 
@@ -57,7 +58,7 @@ export function useRoomSession({ room, initial, seat, onLeave }: { room: Pick<Ro
     send, undo: nothing, canUndo: false, remote,
     // Back to choosing decks together; the room page opens the board again when both are ready.
     setup: null, rematch, canRematch: !watching,
-    record: null, markReported: nothing, initial: null, position: null,
+    record: null, markReported: nothing, initial: null, position: null, ...withoutEditor,
     replaying: false, startReplay: nothing, stopReplay: nothing, canReplay: false, replayNext: null,
   };
 }
