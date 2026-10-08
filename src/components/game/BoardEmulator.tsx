@@ -47,8 +47,9 @@ export function BoardTable({ session }: { session: BoardSession }) {
   const { game, me, view, mode, paused, attacker, drag, mulligan, ready, panel, error, replaying, remote, editing, setPanel, setPaused, setAttacker, stopReplay } = board;
   // The saved match is still loading (or missing, and the preparation page is opening).
   if (!ready) return <div className={styles.emulator} aria-busy="true" />;
-  // Any open panel (drawer or modal) is closed from the same corner button.
-  const drawerOpen = !!panel;
+  // An open drawer is closed from the corner button. An enlarged card and the skills are not: they
+  // have 閉じる beside them, where the buttons of a chosen hand card are.
+  const drawerOpen = !!panel && panel.type !== 'inspect' && panel.type !== 'skills';
   return <BoardContext.Provider value={board}>
     <div className={styles.emulator} ref={container}
       onKeyDown={event => { if (event.key === 'Escape') board.clearSelection(); }}

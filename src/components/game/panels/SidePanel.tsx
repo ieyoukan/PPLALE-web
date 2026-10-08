@@ -24,7 +24,7 @@ const isDrawer = (panel: Panel): panel is DrawerPanel => !!panel && (drawers as 
 
 /**
  * Menu, log and pile lists slide in from the right and are closed with the toolbar button, which
- * sits in the same corner. Card inspection and skills are modals with their own close button.
+ * sits in the same corner. Card inspection and skills are closed with their own 閉じる button.
  */
 export function SidePanel() {
   const { panel, setPanel } = useBoardContext();
@@ -51,7 +51,7 @@ export function SidePanel() {
     {modal && <button className={styles.modalBackdrop} aria-label="スキルを閉じる" onClick={() => setPanel(null)} />}
     {(panel?.type === 'skills' || panel?.type === 'inspect') && <aside className={[styles.drawer, modal ? styles.skillModal : styles.inspection].join(' ')}
       role={modal ? 'dialog' : undefined} aria-modal={modal || undefined} aria-label={modal ? 'スキル' : 'カード情報'}>
-      <button className={styles.close} onClick={() => setPanel(null)} aria-label="パネルを閉じる">×</button>
+      {/* Both end with their own 閉じる, placed like the buttons of a hand card chosen in play. */}
       {panel.type === 'inspect' && <InspectPanel uid={panel.uid} />}
       {panel.type === 'skills' && <SkillPanel side={panel.side} />}
     </aside>}

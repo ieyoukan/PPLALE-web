@@ -30,5 +30,6 @@ export function SkillPanel({ side }: { side: Side }) {
       <h3>テスト用の追加ドロー</h3>
       {(['yojo', 'sweet'] as const).map(deck => <button key={deck} disabled={!!game.pending || game.phase !== 'playing'} onClick={() => act({ type: 'draw', actor: side, deck })}>{deck === 'yojo' ? '幼女' : 'お菓子'}</button>)}
     </div>}
+    <div className={styles.skillClose}><button onClick={() => setPanel(null)}>閉じる</button></div>
   </>;
 }
