@@ -20,6 +20,7 @@ const enemyChoosers = {
   '猫カフェオレ（お菓子）': foe => playOnly(['s_6'], foe),
   'うぃまるのスキル': foe => skill(arena({ me: { playable: 'p_1' }, foe: { field: foe } }), 1),
   'レンテのうち来ない？': foe => skill(arena({ me: { playable: 'p_5', points: 9 }, foe: { field: foe } }), 1),
+  'みゅーとん': foe => playOnly(['y_30'], foe),
   'しゅれい②（1人目）': foe => {
     const s = arena({ me: { hand: ['y_26'] }, foe: { field: foe } });
     return choose(play(s, hand(s)[0]), 'two');
@@ -66,12 +67,11 @@ test('targeting: しゅれい② with one taunt hits only it, even when the firs
   }
 });
 
-test('targeting: みゅーとん chooses from both sides, but only enemy taunts when there are any', () => {
+test('targeting: みゅーとん never chooses an own unit, with or without enemy taunts', () => {
   for (const taunts of [0, 1, 2]) {
     let s = arena({ me: { hand: ['y_30'], field: [PLAIN, TAUNT] }, foe: { field: enemies(taunts) } });
-    const self = hand(s)[0];
-    s = play(s, self);
-    same(optionIds(s), taunts ? tauntsOf(s) : [...field(s).filter(uid => uid !== self), ...field(s, 1)], `${taunts} taunt(s)`);
+    s = play(s, hand(s)[0]);
+    same(optionIds(s), taunts ? tauntsOf(s) : field(s, 1), `${taunts} taunt(s)`);
   }
 });
 
