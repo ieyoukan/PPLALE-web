@@ -28,10 +28,13 @@ export function DeckStack({ side, kind, ids, thresholds = [], enabled, drawing =
   </button>;
 }
 
-export function Counter({ label, value, points, bonus = 0, temporaryBonus = 0, pp, onAdjust, onReset, test, target, onClick }: {
+export function Counter({ label, value, points, bonus = 0, temporaryBonus = 0, pp, adjusts, onAdjust, onReset, test, target, onClick }: {
   label: string; value: number; points?: boolean; bonus?: number; temporaryBonus?: number; pp?: string;
+  /** What the − / ＋ buttons change, when it is not the points or the extra PP (edit mode: the turn count). */
+  adjusts?: string;
   onAdjust: (delta: number) => void; onReset: () => void; test: boolean; target?: boolean; onClick?: () => void;
 }) {
+  const name = adjusts ?? (points ? 'お菓子ポイント' : '追加PP');
   return <div className={`${styles.counter} ${target ? styles.counterTarget : ''}`}>
     <button className={styles.counterLabel} onClick={onClick} aria-label={`${label} ${value}`}>
       {label}
@@ -41,11 +44,11 @@ export function Counter({ label, value, points, bonus = 0, temporaryBonus = 0, p
       {!!temporaryBonus && <span className={styles.whiteMarble} role="img" aria-label={`このターンの追加PP ${temporaryBonus}`}>+{temporaryBonus}</span>}
     </div>
     <div className={styles.counterControls}>
-      <button disabled={!test} onClick={() => onAdjust(-5)} aria-label={`${points ? 'お菓子ポイント' : '追加PP'}を5減らす`}>≪</button>
-      <button disabled={!test} onClick={() => onAdjust(-1)} aria-label={`${points ? 'お菓子ポイント' : '追加PP'}を1減らす`}>＜</button>
+      <button disabled={!test} onClick={() => onAdjust(-5)} aria-label={`${name}を5減らす`}>≪</button>
+      <button disabled={!test} onClick={() => onAdjust(-1)} aria-label={`${name}を1減らす`}>＜</button>
       <button disabled={!test} onClick={onReset}>Reset</button>
-      <button disabled={!test} onClick={() => onAdjust(1)} aria-label={`${points ? 'お菓子ポイント' : '追加PP'}を1増やす`}>＞</button>
-      <button disabled={!test} onClick={() => onAdjust(5)} aria-label={`${points ? 'お菓子ポイント' : '追加PP'}を5増やす`}>≫</button>
+      <button disabled={!test} onClick={() => onAdjust(1)} aria-label={`${name}を1増やす`}>＞</button>
+      <button disabled={!test} onClick={() => onAdjust(5)} aria-label={`${name}を5増やす`}>≫</button>
     </div>
   </div>;
 }

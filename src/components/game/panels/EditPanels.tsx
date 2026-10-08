@@ -3,7 +3,6 @@
 // 盤面エディタ: what opens beside the board in edit mode when a unit, a hand card, a pile, a playable
 // or the menu is tapped. Every change is one `board.edit(...)` (see core edit.ts) and shows at once.
 import { useEffect, useState } from 'react';
-import type { ReactNode } from 'react';
 import { attackOf, costOf, cpuLevels, cpuProfiles, decodePosition, encodePosition, hpOf, keywords, other, skillsFor } from '@pplale/game-core';
 import type { CpuLevel, Keyword, Side } from '@pplale/game-core';
 import { demoDeck, displayCards, gameCatalog } from '@/lib/game/catalog';
@@ -31,17 +30,6 @@ function Stepper({ label, value, onChange, note }: { label: string; value: numbe
 }
 function Switch({ label, on, onChange }: { label: string; on: boolean; onChange: (on: boolean) => void }) {
   return <button className={styles.editSwitch} aria-pressed={on} onClick={() => onChange(!on)}>{label}</button>;
-}
-/**
- * The bottom of every edit panel, always in the same place: what can be done with the card, and
- * 閉じる last (like the buttons beside a hand card chosen in play).
- */
-function Footer({ children }: { children?: ReactNode }) {
-  const { setPanel } = useBoardContext();
-  return <div className={styles.editFooter}>
-    {children}
-    <button onClick={() => setPanel(null)}>閉じる</button>
-  </div>;
 }
 function Pair({ label, value, onChange }: { label: string; value: Side; onChange: (side: Side) => void }) {
   return <div className={styles.editPair} role="group" aria-label={label}><span>{label}</span>
@@ -72,10 +60,10 @@ export function EditUnitPanel({ uid }: { uid: string }) {
       <Switch label="バリア（うぃまる）" on={card.shield} onChange={shield => change({ shield })} />
       <Switch label="直前の相手ターンに食べた" on={card.ateOn === game.turn - 1} onChange={ate => change({ ate })} />
     </div>
-    <Footer>
+    <div className={styles.editActions}>
       <button onClick={() => { edit({ type: 'toHand', uid }); setPanel(null); }}>手札に戻す</button>
       <button className={styles.menuLeave} onClick={() => { edit({ type: 'remove', uid }); setPanel(null); }}>場から外す</button>
-    </Footer>
+    </div>
   </>;
 }
 
@@ -89,9 +77,9 @@ export function EditHandPanel({ uid }: { uid: string }) {
     <div className={styles.editCard}><GameCard id={card.cardId} instance={card} currentCost={costOf(game, uid, gameCatalog, owner)} sizes="200px" /></div>
     <Stepper label="コストの変化" value={card.costDelta} onChange={cost => edit({ type: 'handCard', uid, cost })} />
     <div className={styles.editChips}><Switch label="公開している" on={card.revealed} onChange={revealed => edit({ type: 'handCard', uid, revealed })} /></div>
-    <Footer>
+    <div className={styles.editActions}>
       <button className={styles.menuLeave} onClick={() => { edit({ type: 'remove', uid }); setPanel(null); }}>手札から外す</button>
-    </Footer>
+    </div>
   </>;
 }
 
@@ -115,7 +103,6 @@ export function EditPilePanel({ side, kind }: { side: Side; kind: ZoneKind }) {
         : <span className={styles.editPileTop}>一番上</span>)}
       <button className={styles.menuLeave} onClick={() => edit({ type: 'remove', uid })} aria-label={`${nameOf(game.cards[uid].cardId)}を外す`}>外す</button>
     </li>)}</ul>
-    <Footer />
   </>;
 }
 
@@ -131,8 +118,9 @@ export function EditPlayerPanel({ side }: { side: Side }) {
     </div>
     <Stepper label="お菓子ポイント" value={p.points} onChange={points => change({ points })} />
     <Stepper label="お菓子の最大値" value={p.maxPoints} onChange={maxPoints => change({ maxPoints })} />
-    <Stepper label="ターン数" note="自分の何ターン目か" value={p.turns} onChange={turns => change({ turns })} />
-    <Stepper label="最大PP" note="ターン数＋追加分" value={p.turns + p.ppBonus} onChange={max => change({ ppBonus: max - p.turns })} />
+    {/* Like the start of a turn, the PP is filled to the new maximum; 今のPP below lowers it. */}
+    <Stepper label="ターン数" note="自分の何ターン目か" value={p.turns} onChange={turns => change({ turns, pp: turns + p.ppBonus })} />
+    <Stepper label="最大PP" note="ターン数＋追加分" value={p.turns + p.ppBonus} onChange={max => change({ ppBonus: max - p.turns, pp: max })} />
     <Stepper label="今のPP" value={p.pp} onChange={pp => change({ pp })} />
     <h3>スキルの残り回数</h3>
     {skills.map((skill, index) => <Stepper key={skill.name} label={skill.name} note={`${skill.uses}回まで`} value={p.skills[index]}
@@ -147,7 +135,6 @@ export function EditPlayerPanel({ side }: { side: Side }) {
         onClick={() => edit({ type: 'played', side, cardIds: p.played.filter((_, i) => i !== index) })}>{nameOf(cardId)} ×</button>)}
       <button className={styles.editSwitch} onClick={() => setPicking({ side, zone: 'played' })}>＋ 加える</button>
     </div>
-    <Footer />
   </>;
 }
 
@@ -206,7 +193,6 @@ export function EditMenuPanel() {
         <button className={styles.menuLeave} onClick={leave}>エディタをやめる</button>
       </div>
     </div>
-    <Footer />
   </>;
 }
 
@@ -231,6 +217,5 @@ export function PlayPanel() {
     <div className={styles.editChips} role="group" aria-label="CPUの強さ">{cpuLevels.map(id =>
       <Switch key={id} label={cpuProfiles[id].name} on={level === id} onChange={() => setLevel(id)} />)}
     </div>
-    <Footer />
   </>;
 }

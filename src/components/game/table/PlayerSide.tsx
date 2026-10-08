@@ -32,11 +32,17 @@ export function PlayerSide({ side }: { side: Side }) {
       <span className={styles.playableCard}><GameCard id={player.playable} sizes="90px" /></span>
     </button>
     <div className={styles.turnCounter}>
-      <Counter label="ターン数(+pp)" value={player.turns} bonus={player.ppBonus} temporaryBonus={player.turnPpBonus} pp={`${player.pp} / ${availablePpMaximum(game, side)}`} test={sandbox}
-        onAdjust={delta => board.adjust(side, 'ppBonus', delta)} onReset={() => board.adjust(side, 'ppBonus', -player.ppBonus)} />
+      {/* Edit mode: the number shown (the turn count) is what the buttons change, and the PP is filled to the
+          new maximum as at the start of a turn; the rest of the player is behind the label. */}
+      {editing
+        ? <Counter label="ターン数(+pp)" value={player.turns} bonus={player.ppBonus} pp={`${player.pp} / ${availablePpMaximum(game, side)}`} test adjusts="ターン数"
+          onClick={() => board.setPanel({ type: 'editPlayer', side })}
+          onAdjust={delta => board.edit({ type: 'player', side, turns: player.turns + delta, pp: player.turns + delta + player.ppBonus })} onReset={() => board.edit({ type: 'player', side, turns: 1, ppBonus: 0, pp: 1 })} />
+        : <Counter label="ターン数(+pp)" value={player.turns} bonus={player.ppBonus} temporaryBonus={player.turnPpBonus} pp={`${player.pp} / ${availablePpMaximum(game, side)}`} test={sandbox}
+          onAdjust={delta => board.adjust(side, 'ppBonus', delta)} onReset={() => board.adjust(side, 'ppBonus', -player.ppBonus)} />}
     </div>
     <div className={styles.pointsCounter} data-leader={side}>
-      <Counter label="お菓子ポイント" value={player.points} points target={leaderTarget} test={sandbox} onClick={attackLeader}
+      <Counter label="お菓子ポイント" value={player.points} points target={leaderTarget} test={sandbox} onClick={editing ? () => board.setPanel({ type: 'editPlayer', side }) : attackLeader}
         onAdjust={delta => board.adjust(side, 'points', delta)} onReset={() => board.adjust(side, 'points', player.maxPoints - player.points)} />
       {player.shield && <span className={styles.shieldIndicator}>パンケーキ保護</span>}
     </div>
