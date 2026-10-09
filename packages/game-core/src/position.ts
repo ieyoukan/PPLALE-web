@@ -92,7 +92,7 @@ const sideSchema = z.object({
     playable: id, points: count, maxPoints: count, turns: count, maxPp: count, pp: count,
     skills: z.array(count).max(8).optional(), field: z.array(unit.nullable()).max(FIELD_SIZE), hand: z.array(handCard).max(60),
     nap: ids, exile: ids.optional(), yojo: ids, sweet: ids, played: ids.optional(), shield: z.boolean().optional(), sweetBoost: count.optional(),
-    skillHistory: z.array(count).optional(),
+    skillHistory: z.array(count).max(500).optional(),
     exSkills: z.partialRecord(z.enum(['dice', 'strawberryHunt', 'healing', 'abyss', 'dagger', 'alice', 'smoke']), z.object({ uses: count, lastTurn: z.number().int().optional(), usedThisTurn: count.optional() })).optional(),
     ice: count.optional(), acorns: count.optional(), mochidaLeft: count.optional(), skipDraw: count.optional(), strawberryOnlyUntil: z.number().int().optional(),
     cardTraits: z.array(z.object({ zone: z.enum(['field', 'hand', 'nap', 'exile', 'yojo', 'sweet']), index: count, fruitTypes: z.array(z.enum(['strawberry', 'grape', 'melon', 'orange'])).optional(), evasion: z.number().int().min(-12).max(6).optional(), hiding: z.boolean().optional(), silenced: z.boolean().optional() })).max(500).optional(),

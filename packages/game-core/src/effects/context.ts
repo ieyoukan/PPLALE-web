@@ -21,7 +21,10 @@ export interface Effects {
     readonly multiplier: number;
     readonly source?: string;
 
-    /** Adds a step to the end of the queue (resolved in order, may wait for a choice). */
+    /**
+     * Adds a step after the ones this effect already queued (resolved in order, may wait for a choice).
+     * Steps queued while a step runs resolve before the steps that were already waiting (resolve.ts).
+     */
     queue(op: TaskOp, extra?: Partial<Task>): void;
     /** Adds a step that resolves right after the current one. */
     next(task: Task): void;
