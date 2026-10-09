@@ -112,7 +112,7 @@ export const strawberryYojo: CardScripts = {
                     if (found) {
                         fx.me.yojo = fx.me.yojo.filter(uid => uid !== found);
                         fx.me.hand.push(found);
-                        fx.s.cards[found].revealed = true;
+                        fx.reveal(found);
                     }
                     fx.shuffleDeck('yojo');
                 },

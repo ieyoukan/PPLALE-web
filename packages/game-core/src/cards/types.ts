@@ -53,6 +53,11 @@ export interface CardScript {
     onPlay?(ctx: CardContext): void;
     /** 場に出たとき, however it entered (hand, summon, steal). Runs before onPlay. */
     onEnter?(ctx: CardContext): void;
+    /**
+     * After everything that playing this card from hand caused: its own on-play steps and the allies'
+     * reactions to it entering. For effects written 「その後、〜」 that must come last (ようかん: 自分のターンを終了する).
+     */
+    afterPlay?(ctx: CardContext): void;
     /** While this unit is on the field, another friendly unit entered. */
     onAllyEnter?(ctx: CardContext, ally: string): void;
     /** 破壊されたとき. The card is already in the nap. */

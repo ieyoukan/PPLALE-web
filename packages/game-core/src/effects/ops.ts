@@ -72,7 +72,12 @@ export const genericOps: OpTable = {
         },
     },
     /** Ally reactions to a unit played from hand, after its own on-play steps (FAQ). */
-    enterAuras: { run: (fx, t) => applyEnterAuras(fx.s, t.actor, t.source!, fx.catalog) },
+    enterAuras: {
+        run(fx, t) {
+            applyEnterAuras(fx.s, t.actor, t.source!, fx.catalog);
+            scriptFor(fx.s, t.source!).afterPlay?.(cardContext(fx.s, fx.catalog, t.actor, t.source!));
+        },
+    },
 
     // ── Sweet points / PP ──
     heal: { run: (fx, t) => fx.heal(amount(t)) },
@@ -124,7 +129,7 @@ export const genericOps: OpTable = {
         run(fx, t) {
             if (!t.target) return fx.pick('コストを変更するお菓子を選んでください', fx.me.hand.filter(id => isRealSweet(fx.catalog, fx.s.cards[id].cardId)), t);
             const card = fx.s.cards[t.target];
-            card.revealed = true;
+            fx.reveal(t.target);
             if (t.text === 'temporary') card.temporaryCost += amount(t);
             else card.costDelta += amount(t);
         },

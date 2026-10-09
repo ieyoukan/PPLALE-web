@@ -4,7 +4,7 @@ import { addKeyword, buff, gainPp, hit, isRealSweet, maxPp, note, spawnCard } fr
 import { heal, losePoints } from '../core/points.ts';
 import type { PointLoss } from '../core/points.ts';
 import { random, rollDie, shuffled } from '../core/rng.ts';
-import { bounce, destroy, discard, exile, summon } from '../core/zones.ts';
+import { bounce, destroy, discard, exile, reveal, summon } from '../core/zones.ts';
 import { colorProtected, fruitsOf } from '../core/protection.ts';
 import { other } from '../model.ts';
 import type { Catalog, DeckKind, Definition, GameState, Instance, Keyword, Player, Side, Task, TaskOp } from '../model.ts';
@@ -38,6 +38,8 @@ export interface Effects {
     destroy(uid: string): void;
     exile(uid: string, owner?: Side): void;
     bounce(uid: string): void;
+    /** Shows a hand card to both players; fires 「公開されたとき」 once. */
+    reveal(uid: string): void;
     protected(uid: string): boolean;
     fruits(uid: string): string[];
     /** Rolls through a queued step so レンテ can choose its value, then resumes with task.value. */
@@ -89,6 +91,7 @@ export function effects(s: GameState, catalog: Catalog, side: Side, source?: str
         destroy: uid => { if (!protectedTarget(uid)) destroy(s, uid, true, catalog); },
         exile: (uid, owner) => { if (!protectedTarget(uid)) exile(s, uid, catalog, owner); },
         bounce: uid => { if (!protectedTarget(uid)) bounce(s, uid, catalog); },
+        reveal: uid => reveal(s, uid, catalog),
         protected: protectedTarget,
         fruits: uid => fruitsOf(s, uid, catalog),
         die: resume => { s.queue.unshift({ op: 'die', actor: side, source, resume }); },

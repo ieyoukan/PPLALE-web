@@ -19,7 +19,7 @@ export function revealStep(ctx: CardContext, t: Task, eligible: (uid: string) =>
         ctx.ask('公開する手札を選んでください（任意）', [{ id: 'done', label: '公開を完了' }, ...cards.map(id => ({ id, label: ctx.defOf(id).name }))], { ...t, ids: selected, target: undefined });
         return;
     }
-    for (const uid of selected) ctx.s.cards[uid].revealed = true;
+    for (const uid of selected) ctx.reveal(uid);
     done();
 }
 
@@ -36,11 +36,12 @@ export function take(ctx: CardContext, uid: string, zone: 'yojo' | 'sweet' | 'na
     const c = ctx.s.cards[uid];
     c.costDelta = zero ? -ctx.defOf(uid).cost : 0;
     c.temporaryCost = 0;
-    c.revealed = reveal;
+    c.revealed = false;
     if (zone === 'nap' && ctx.defOf(uid).type === 'yojo') Object.assign(c, {
         attackBonus: 0, hpBonus: 0, damage: 0, shield: false, links: [], silenced: false,
         keywords: [...(scriptOf(c.cardId).keywords ?? [])], evasion: scriptOf(c.cardId).evasion,
     });
+    if (reveal) ctx.reveal(uid);
 }
 export function randomSearch(ctx: CardContext, fruit: string, except?: string) {
     const eligible = ctx.me.yojo.filter(uid => ctx.fruits(uid).includes(fruit) && ctx.s.cards[uid].cardId !== except);

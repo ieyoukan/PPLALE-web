@@ -4,7 +4,7 @@ import { scriptFor } from '../cards/registry.ts';
 import { costOf, isRealSweet, note } from '../core/cards.ts';
 import { canAttack, resolveAttack } from '../core/combat.ts';
 import { markAction } from '../core/stall.ts';
-import { enterField, FIELD_SIZE, openSlot } from '../core/zones.ts';
+import { enterField, FIELD_SIZE, openSlot, reveal } from '../core/zones.ts';
 import { cardContext, effects } from '../effects/context.ts';
 import { RuleError } from '../model.ts';
 import type { Catalog, Definition, GameState, Player, Side } from '../model.ts';
@@ -70,9 +70,7 @@ export const turnCommands: Handlers<'play' | 'attack' | 'end' | 'reveal' | 'skil
     reveal(s, c, catalog) {
         if (s.phase !== 'playing' || s.pending) throw new RuleError('効果の選択を先に完了してください');
         if (!s.players[c.actor].hand.includes(c.uid) || !scriptFor(s, c.uid).revealable) throw new RuleError('公開できるカードではありません');
-        if (s.cards[c.uid].revealed) return;
-        s.cards[c.uid].revealed = true;
-        scriptFor(s, c.uid).onReveal?.(cardContext(s, catalog, c.actor, c.uid));
+        reveal(s, c.uid, catalog);
     },
     skill(s, c, catalog) {
         assertMainPhase(s, c.actor);
@@ -97,6 +95,7 @@ export const turnCommands: Handlers<'play' | 'attack' | 'end' | 'reveal' | 'skil
     },
     acorn(s, c) {
         if (s.phase !== 'playing' || s.pending || !(s.players[c.actor].acorns ?? 0)) throw new RuleError('どんぐりを使用できません');
+        if (c.mode !== 'draw' && s.players[c.actor].pp >= 12) throw new RuleError('PPはこれ以上増やせません');
         s.players[c.actor].acorns!--;
         if (c.mode === 'draw') s.queue.push({ op: 'draw', actor: c.actor });
         else s.players[c.actor].pp = Math.min(12, s.players[c.actor].pp + 1);

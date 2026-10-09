@@ -22,10 +22,18 @@ export const grapeYojo: CardScripts = {
         },
     },
     y_33: { onTurnStart(ctx, active, zone) { if (active === ctx.side && zone === 'hand' && costOf(ctx.s, ctx.uid, ctx.catalog, ctx.side) >= 4) ctx.queue('reduce', { scope: 'friendly', amount: 4 }); } },
-    y_34: { onSkill: ctx => ctx.addKeyword(ctx.uid, 'hide') },
+    // y_34 とここ: スキルが使われたら、次の自分のターン開始時までかくれんぼを持つ。
+    // スキルの処理（対象の選択を含む）が終わってから持つので、そのスキルの対象にはなる。
+    y_34: {
+        onSkill: ctx => step(ctx, 'hide'),
+        effect(ctx) { if (ctx.me.field.includes(ctx.uid)) ctx.addKeyword(ctx.uid, 'hide'); },
+        // 持っている間だけの能力なので、切れたら能力そのものも失う（印刷されたかくれんぼとは違う）。
+        onTurnStart(ctx, active, zone) { if (active === ctx.side && zone === 'field') ctx.card.keywords = ctx.card.keywords.filter(k => k !== 'hide'); },
+    },
     y_35: {
         keywords: ['charge'], onAttack: ctx => step(ctx, 'pay'),
         effect(ctx, t) {
+            if (!ctx.me.field.includes(ctx.uid)) return;
             if (!t.target) return ctx.ask('お菓子ポイントを2減らして+2/+1しますか？', [{ id: 'no', label: '減らさない' }, { id: 'yes', label: '2減らして+2/+1' }], t);
             if (t.target === 'yes') { ctx.losePoints(ctx.side, 2, 'reduce'); ctx.buff(ctx.uid, 2, 1); }
         },
@@ -64,16 +72,20 @@ export const grapeYojo: CardScripts = {
     y_42: {
         onPlay: ctx => step(ctx, 'pay'),
         effect(ctx, t) {
+            // HP0 のうゆちは効果の前にお昼寝場所へ行くが、自分自身は選べない（FAQ②-2: 効果を処理してから行く扱い）。
+            const others = (limit: number) => napUnits(ctx).filter(uid => uid !== ctx.uid && napCost(ctx, uid) <= limit);
             if (t.step === 'pay') {
-                if (!t.target && ctx.me.pp >= 3) return ctx.ask('追加3PPでコスト7以下を場に出しますか？', [{ id: 'no', label: 'コスト3以下' }, { id: 'yes', label: '3PP払ってコスト7以下' }], t);
+                // 追加の3PPは、それで選べる幼女が増えるときだけ聞く。
+                if (!t.target && ctx.me.pp >= 3 && others(7).length > others(3).length) return ctx.ask('追加3PPでコスト7以下を場に出しますか？', [{ id: 'no', label: 'コスト3以下' }, { id: 'yes', label: '3PP払ってコスト7以下' }], t);
                 if (t.target === 'yes') ctx.me.pp -= 3;
                 step(ctx, 'revive', { amount: t.target === 'yes' ? 7 : 3 });
-            } else if (!t.target) ctx.pick('場に出す幼女を選んでください', napUnits(ctx).filter(uid => napCost(ctx, uid) <= t.amount!), t);
+            } else if (!t.target) ctx.pick('場に出す幼女を選んでください', others(t.amount!), t);
             else revive(ctx, t.target);
         },
     },
     y_43: {
-        onPlay: ctx => step(ctx, 'pay'),
+        // 付与する相手がいなければ、PPを払うかも聞かない。
+        onPlay(ctx) { if (ctx.me.field.some(uid => uid !== ctx.uid)) step(ctx, 'pay'); },
         effect(ctx, t) {
             if (t.step === 'pay') {
                 if (!t.target) return ctx.ask('追加で支払うPPを選んでください', Array.from({ length: ctx.me.pp + 1 }, (_, i) => ({ id: String(i), label: `${i}PP：1d6≧${5 - i}` })), t);
@@ -106,7 +118,7 @@ export const grapeYojo: CardScripts = {
                     const eligible = ctx.me.hand.filter(uid => ctx.defOf(uid).name === 'レンス');
                     if (eligible.length) return ctx.ask('レンスを公開して6ダメージにしますか？', [{ id: 'roll', label: '1d6を振る' }, ...eligible.map(id => ({ id, label: 'レンスを公開して6ダメージ' }))], t);
                 }
-                if (t.target && t.target !== 'roll') { ctx.s.cards[t.target].revealed = true; ctx.queue('randomDamage', { amount: 6 }); }
+                if (t.target && t.target !== 'roll') { ctx.reveal(t.target); ctx.queue('randomDamage', { amount: 6 }); }
                 else ctx.die({ ...t, step: 'rolled', target: undefined });
             } else ctx.queue('randomDamage', { amount: t.value });
         },

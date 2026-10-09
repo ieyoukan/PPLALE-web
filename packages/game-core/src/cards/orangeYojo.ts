@@ -27,7 +27,9 @@ export const orangeYojo: CardScripts = {
     y_122: { onPlay: ctx => { ctx.foe.skipDraw = (ctx.foe.skipDraw ?? 0) + 1; } },
     y_123: { keywords: ['guard'], onPlay(ctx) { if (namesOnFieldOrNap(ctx, 'いろは')) gainEx(ctx, 'healing', 3); } },
     y_124: { onTurnStart(ctx, active, zone) { if (active !== ctx.side && zone === 'field' && ctx.me.pp >= 4) ctx.me.ppBonus++; } },
-    y_125: { onPlay(ctx) { ctx.queue('draw', { count: 2 }); ctx.queue('trimHand'); ctx.queue('endEffects'); } },
+    // y_125 ようかん: 2枚引く。その後、自分のターンを終了する。
+    // ターンの終了は、味方の反応（とここの+1/-1など）まで終わってから。
+    y_125: { onPlay: ctx => ctx.queue('draw', { count: 2 }), afterPlay(ctx) { ctx.queue('trimHand'); ctx.queue('endEffects'); } },
     y_126: {
         onPlay: ctx => step(ctx, 'declare'),
         effect(ctx, t) {

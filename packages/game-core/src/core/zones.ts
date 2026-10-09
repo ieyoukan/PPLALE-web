@@ -1,5 +1,5 @@
 // Moving cards between deck, hand, field and nap, and the triggers those moves cause.
-import { scriptFor } from '../cards/registry.ts';
+import { scriptFor, scriptOf } from '../cards/registry.ts';
 import { cardContext } from '../effects/context.ts';
 import { deckLabel, other, sides } from '../model.ts';
 import type { Catalog, DeckKind, GameState, Side } from '../model.ts';
@@ -29,6 +29,18 @@ export function draw(s: GameState, side: Side, kind: DeckKind): string | undefin
     return uid;
 }
 
+/**
+ * A card in a hand is shown to both players. Every reveal goes through here, whatever caused it (the
+ * reveal button, a search 「公開状態で手札に加える」, あみのの参謀 …), so 「このカードが公開されたとき」 fires once.
+ */
+export function reveal(s: GameState, uid: string, catalog: Catalog) {
+    const card = s.cards[uid];
+    if (!card || card.revealed) return;
+    card.revealed = true;
+    const side = sides.find(side => s.players[side].hand.includes(uid));
+    if (side !== undefined) scriptFor(s, uid).onReveal?.(cardContext(s, catalog, side, uid));
+}
+
 /** Hand → nap. Triggers 「手札から直接お昼寝場所に捨てられたとき」. */
 export function discard(s: GameState, side: Side, uid: string, catalog: Catalog) {
     const p = s.players[side];
@@ -37,6 +49,19 @@ export function discard(s: GameState, side: Side, uid: string, catalog: Catalog)
     s.cards[uid].costDelta = 0;
     s.cards[uid].temporaryCost = 0;
     scriptFor(s, uid).onDiscarded?.(cardContext(s, catalog, side, uid));
+}
+
+/**
+ * What a unit has only while it is on the field: lost effects (りくす), keywords and おにごっこ given
+ * by effects, かくれんぼ, the one-time barrier, and ポッキーの links (on both cards). Cleared once
+ * it has left — after its own leaving triggers, which still see the state it left with.
+ */
+export function clearFieldState(s: GameState, uid: string) {
+    const card = s.cards[uid], script = scriptOf(card.cardId);
+    for (const partner of card.links) if (s.cards[partner]) s.cards[partner].links = s.cards[partner].links.filter(id => id !== uid);
+    Object.assign(card, { silenced: false, keywords: [...(script.keywords ?? [])], hiding: false, shield: false, links: [] });
+    if (script.evasion !== undefined) card.evasion = script.evasion;
+    else delete card.evasion;
 }
 
 export function leaveField(s: GameState, side: Side, uid: string) {
@@ -51,10 +76,12 @@ export function exile(s: GameState, uid: string, catalog: Catalog, owner?: Side)
     if (side === undefined) return;
     const p = s.players[side];
     if (p.nap.includes(uid) && s.cards[uid].cardId === 'y_146' && !s.cards[uid].silenced) return;
-    if (p.field.includes(uid)) leaveField(s, side, uid);
+    const fromField = p.field.includes(uid);
+    if (fromField) leaveField(s, side, uid);
     for (const zone of ['hand', 'nap', 'yojo', 'sweet'] as const) p[zone] = p[zone].filter(id => id !== uid);
     p.exile.push(uid);
     scriptFor(s, uid).onExiled?.(cardContext(s, catalog, side, uid));
+    if (fromField) clearFieldState(s, uid);
 }
 
 export function bounce(s: GameState, uid: string, catalog: Catalog) {
@@ -62,7 +89,9 @@ export function bounce(s: GameState, uid: string, catalog: Catalog) {
     if (side === undefined) return;
     leaveField(s, side, uid);
     const c = s.cards[uid];
-    Object.assign(c, { attackBonus: 0, hpBonus: 0, damage: 0, costDelta: 0, temporaryCost: 0, revealed: false, shield: false, hiding: false });
+    Object.assign(c, { attackBonus: 0, hpBonus: 0, damage: 0, costDelta: 0, temporaryCost: 0, revealed: false });
+    // Back in hand it is the printed card again: its on-play effects work when it is played again (FAQ④-1).
+    clearFieldState(s, uid);
     s.players[side].hand.push(uid);
     note(s, `${catalog[c.cardId].name}を手札へ戻しました`);
 }
@@ -128,6 +157,8 @@ export function destroy(s: GameState, uid: string, byEffect: boolean, catalog: C
     for (const enemy of s.players[other(side)].field) {
         if (s.cards[enemy].cardId === 'y_147' && !s.cards[enemy].silenced) s.queue.push({ op: 'reduce', actor: other(side), source: enemy, amount: 1 });
     }
+    // Lost effects end with the unit leaving the field: in the nap it is the printed card again.
+    clearFieldState(s, uid);
 }
 
 /**

@@ -147,7 +147,9 @@ export const playableSkills: Record<string, SkillScript[]> = {
         {
             // 【おしおきなん！】直前の相手ターンにお菓子を食べた幼女1人を破壊。追加で2支払えば全員。
             name: 'おしおきなん！', cost: 1, uses: 1,
-            blocked: fx => ateLastTurn(fx).length ? undefined : '直前の相手ターンにお菓子を食べた幼女がいません',
+            // 1人を選べない（かくれんぼ中など）ときは、追加の2PPで全員を破壊できる場合だけ使える。
+            blocked: fx => !ateLastTurn(fx).length ? '直前の相手ターンにお菓子を食べた幼女がいません'
+                : selectable(fx.s, fx.side, ateLastTurn(fx)).length || fx.me.pp >= 3 ? undefined : '選べる幼女がいません',
             use: fx => fx.queue('punish'),
             ops: {
                 punish: {

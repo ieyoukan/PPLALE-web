@@ -123,7 +123,7 @@ export type TaskOp =
     // card / skill specific
     | 'searchRole' | 'diceDiscard' | 'shurei' | 'doughnut' | 'float' | 'floatSearch' | 'pocky' | 'pockyEnemy' | 'gift'
     | 'bonusDamage' | 'punish'
-    | 'cardEffect' | 'die' | 'avoidEffect' | 'attackStart' | 'attackHooks' | 'attackResponses' | 'combat' | 'eatResponse'
+    | 'cardEffect' | 'die' | 'avoidEffect' | 'attackStart' | 'attackHooks' | 'defendHooks' | 'attackResponses' | 'combat' | 'eatResponse'
     | 'endEffects' | 'beginTurn' | 'turnDraw' | 'turnDrawResponse' | 'exile' | 'bounce';
 /** Why a draw happens; also the tag that keeps a hand-cost change temporary. */
 export type TaskTag = 'opening' | 'turn' | 'threshold' | 'temporary';

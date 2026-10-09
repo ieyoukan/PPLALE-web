@@ -90,6 +90,8 @@ export function editGame(state: GameState, edit: BoardEdit, catalog: Catalog): G
             p.hand = p.hand.filter(id => id !== edit.uid);
             p.field.push(edit.uid);
             Object.assign(card, { slot: edit.slot, entered: 0, exhausted: false, costDelta: 0, temporaryCost: 0, revealed: false });
+            // As when it is put there: a かくれんぼ unit is hidden.
+            if (card.keywords.includes('hide')) card.hiding = true;
             break;
         }
         case 'toTop': {

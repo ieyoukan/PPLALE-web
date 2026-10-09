@@ -77,9 +77,16 @@ export const expandedOps: OpTable = {
     attackHooks: {
         run(fx, t) {
             scriptFor(fx.s, t.source!).onAttack?.(cardContext(fx.s, fx.catalog, t.actor, t.source!), t.target!);
-            if (t.target !== 'leader' && fx.foe.field.includes(t.target!) && !colorProtected(fx.s, t.source!, fx.foeSide, t.target, fx.catalog))
-                scriptFor(fx.s, t.target!).onDefend?.(cardContext(fx.s, fx.catalog, fx.foeSide, t.target!), t.source!);
+            // The attacking (active) side's 攻撃時 steps resolve first, then the defender's 被攻撃時.
+            fx.queue('defendHooks', { source: t.source, subject: t.target });
             fx.queue('attackResponses', { actor: fx.foeSide, source: t.source, subject: t.target, ids: [] });
+        },
+    },
+    defendHooks: {
+        run(fx, t) {
+            const target = t.subject!;
+            if (target === 'leader' || !fx.me.field.includes(t.source!) || !fx.foe.field.includes(target) || colorProtected(fx.s, t.source!, fx.foeSide, target, fx.catalog)) return;
+            scriptFor(fx.s, target).onDefend?.(cardContext(fx.s, fx.catalog, fx.foeSide, target), t.source!);
         },
     },
     attackResponses: {
@@ -87,7 +94,7 @@ export const expandedOps: OpTable = {
             if (!fx.foe.field.includes(t.source!)) return;
             if (t.target && t.target !== 'skip') {
                 const card = fx.s.cards[t.target];
-                card.revealed = true;
+                fx.reveal(t.target);
                 card.costDelta++;
                 cardContext(fx.s, fx.catalog, t.actor, t.target).buff(t.source!, -1, 0);
                 t = { ...t, ids: [...(t.ids ?? []), t.target], target: undefined };
@@ -112,8 +119,9 @@ export const expandedOps: OpTable = {
             const a = attackOf(attacker, fx.catalog), b = attackOf(defender, fx.catalog);
             if (!colorProtected(fx.s, t.target!, t.actor, t.source, fx.catalog)) hit(fx.s, t.target!, a, false);
             if (!colorProtected(fx.s, t.source!, fx.foeSide, t.target, fx.catalog)) hit(fx.s, t.source!, b, false);
+            // 「相手幼女からの攻撃で破壊されたとき」: only the unit that was attacked. An attacker that dies
+            // to the damage it takes back was not destroyed by an attack.
             if (hpOf(defender, fx.catalog) <= 0) defender.destroyedBy = t.source;
-            if (hpOf(attacker, fx.catalog) <= 0) attacker.destroyedBy = t.target;
             note(fx.s, `${fx.defOf(t.source!).name}が${fx.defOf(t.target!).name}を攻撃`);
         },
     },
@@ -122,7 +130,7 @@ export const expandedOps: OpTable = {
             if ((t.amount ?? 0) <= 0) return;
             fx.s.cards[t.source!].ateOn = fx.s.turn;
             if (t.target && t.target !== 'skip') {
-                fx.s.cards[t.target].revealed = true;
+                fx.reveal(t.target);
                 fx.discard(t.target);
                 // The deck choice belongs to the defending player. Empty decks do not prevent activation.
                 fx.next({ op: 'cardEffect', actor: t.actor, source: t.target, step: 'barrier', count: Math.floor(t.amount! * 1.5) });

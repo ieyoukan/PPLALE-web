@@ -8,7 +8,8 @@ export type PointLoss = 'eat' | 'steal' | 'reduce';
 export function heal(s: GameState, side: Side, amount: number) {
     const p = s.players[side];
     const skill = p.exSkills?.healing;
-    if (amount > 0 && skill && skill.uses > 0) { amount++; skill.uses--; }
+    // ここあの献身 is used when points are actually recovered: at the maximum nothing recovers, so no use is spent.
+    if (amount > 0 && p.points < p.maxPoints && skill && skill.uses > 0) { amount++; skill.uses--; }
     p.points = Math.min(p.maxPoints, p.points + amount);
 }
 

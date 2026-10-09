@@ -228,7 +228,7 @@ export const strawberrySweets: CardScripts = {
                     fx.me.exile.push(t.target);
                     const copy = fx.spawn(fx.s.cards[t.target].cardId);
                     fx.foe.hand.push(copy);
-                    fx.s.cards[copy].revealed = true;
+                    fx.reveal(copy);
                 },
             },
         },
