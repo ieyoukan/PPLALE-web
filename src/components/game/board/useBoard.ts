@@ -144,7 +144,9 @@ export function useBoard(container: RefObject<HTMLDivElement | null>, session: B
     }
     if (animating || rollingDice) return;
     handling.current = key;
-    animate(command, accept, cardId);
+    // A hand reaction reveals its card in the resulting public zone, even if the previous hand was hidden.
+    const shownCardId = cardId ?? (command.type === 'choose' ? after.cards[command.option]?.cardId : undefined);
+    animate(command, accept, shownCardId);
   }, [next, accept, seat, watching, animating, rollingDice, animate, resetAnimations, resetDice, showDie]);
 
   // Watching starts from CPU 2's seat, so CPU 1 is on top and CPU 2 at the bottom (on the table and the versus screen).

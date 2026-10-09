@@ -2,7 +2,7 @@
 // mistakes (wrong trigger timing, missing keyword, wrong use limit) fails here instead of in play.
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { scriptOf, skillsFor } from '../dist/index.js';
+import { playableNow, scriptOf, skillsFor } from '../dist/index.js';
 import { catalog } from './helpers.mjs';
 
 const units = Object.values(catalog).filter(c => c.type === 'yojo' && (c.fruit === 'strawberry' || c.id.startsWith('yt_')));
@@ -40,6 +40,42 @@ for (const card of units) {
     }
     const own = (script.keywords ?? []).filter(k => Object.values(printedKeywords).includes(k)).sort();
     assert.deepEqual(own, leadingKeywords(card.effect));
+  });
+}
+
+// The other fruits write most effects as steps of one `effect` function, so only the hooks that say
+// WHEN something happens are compared, and the keywords the text opens with.
+const laterUnits = Object.values(catalog).filter(c => c.type === 'yojo' && c.fruit !== 'strawberry' && playableNow.fruits.includes(c.fruit));
+const laterKeywords = { ...printedKeywords, かくれんぼ: 'hide' };
+const laterTimings = {
+  onPlay: text => /この幼女が手札から場に出た(とき|時)/.test(text),
+  onEnter: text => /この幼女が場に出た(とき|時)/.test(text),
+  onDestroyed: text => /この幼女が(相手幼女からの攻撃で)?破壊された(とき|時)/.test(text),
+  // 「相手幼女の攻撃時」 is a reaction from the hand, 「被攻撃時」 is the defender's.
+  onAttack: text => /攻撃時/.test(text.replace(/被攻撃時|相手幼女の攻撃時/g, '')),
+  onDefend: text => /被攻撃時/.test(text),
+  onTurnEnd: text => /ターン終了時/.test(text),
+};
+/** 「早食い。挑発。」「おにごっこ(1d6≧5)。」「色おに（オレンジ）。」 at the start of the text. */
+function openingAbilities(text) {
+  const found = [];
+  for (const sentence of text.split('。')) {
+    if (sentence in laterKeywords) found.push(laterKeywords[sentence]);
+    else if (/^おにごっこ[（(]/.test(sentence)) found.push('evade');
+    else if (/^色おに[（(]/.test(sentence)) found.push('color');
+    else break;
+  }
+  return found.sort();
+}
+const openingOf = keywords => keywords.map(k => k.startsWith('color') ? 'color' : k).filter(k => [...Object.values(laterKeywords), 'evade', 'color'].includes(k)).sort();
+
+for (const card of laterUnits) {
+  test(`card text: ${card.id} ${card.name}（${card.fruit}） uses the hooks and keywords its text describes`, () => {
+    const script = scriptOf(card.id);
+    for (const [hook, described] of Object.entries(laterTimings)) {
+      assert.equal(typeof script[hook] === 'function', described(card.effect), `${hook}: ${card.effect}`);
+    }
+    assert.deepEqual(openingOf(script.keywords ?? []), openingAbilities(card.effect));
   });
 }
 
