@@ -116,7 +116,7 @@ export function checkPosition(position: Position, catalog: Catalog): string[] {
     const errors: string[] = [];
     position.players.forEach((p, index) => {
         const side = label(index as Side);
-        if (!(p.playable in playableSkills)) errors.push(`${side}：通常プレイアブルを選んでください`);
+        if (!(p.playable in playableSkills)) errors.push(`${side}：使えるプレイアブルを選んでください`);
         const known = (cardId: string, place: string, types: string[]) => {
             const def = catalog[cardId];
             if (!def) errors.push(`${side}の${place}：${cardId} というカードはありません`);

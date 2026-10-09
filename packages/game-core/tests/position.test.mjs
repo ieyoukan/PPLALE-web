@@ -65,7 +65,7 @@ test('position: is played like any match (詰み: とここ + ストラ + さら
 
 test('position: explains what cannot be played', () => {
   const errors = checkPosition(position({ field: [{ id: 's_6' }, { id: 'y_9', damage: 2 }], points: 13, maxPp: 13, skills: [3] }, { playable: 'p_6', hand: ['nope'] }, { active: 1 }), catalog);
-  for (const words of ['場：猫カフェオレは置けません', 'HPが0以下', 'お菓子が最大値を超えて', '最大PPは12まで', '残り回数は2回まで', '奥：通常プレイアブル', 'nope というカード']) {
+  for (const words of ['場：猫カフェオレは置けません', 'HPが0以下', 'お菓子が最大値を超えて', '最大PPは12まで', '残り回数は2回まで', '奥：使えるプレイアブル', 'nope というカード']) {
     assert.ok(errors.some(e => e.includes(words)), `${words} in ${errors.join(' / ')}`);
   }
   assert.throws(() => buildPosition(position({ points: 13 }), catalog), /最大値/);

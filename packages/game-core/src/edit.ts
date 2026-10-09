@@ -131,7 +131,7 @@ export function editGame(state: GameState, edit: BoardEdit, catalog: Catalog): G
         case 'player': {
             const p = s.players[edit.side];
             if (edit.playable !== undefined) {
-                if (!(edit.playable in playableSkills)) throw new RuleError('通常プレイアブルを選んでください');
+                if (!(edit.playable in playableSkills)) throw new RuleError('使えるプレイアブルを選んでください');
                 p.playable = edit.playable;
                 p.skills = skillsFor(p.playable).map(skill => skill.uses);
             }

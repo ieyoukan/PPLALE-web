@@ -4,9 +4,12 @@ import { shuffled } from './core/rng.ts';
 import { sides } from './model.ts';
 import type { Catalog, Deck, GameState, Player, Rules } from './model.ts';
 import { playableSkills, skillsFor } from './playables/skills.ts';
-import { implementedCard } from './cards/registry.ts';
+import { implementedCard, implementedFruits } from './cards/registry.ts';
 
-/** Decks use implemented strawberry, grape and orange cards and a normal playable. */
+/**
+ * Decks use cards of the implemented fruits and an implemented playable. Which fruits and whether a
+ * 拡張プレイアブル are allowed in a match is decided by its rules (rules.ts `deckRuleErrors`).
+ */
 export function validateDeck(deck: Deck, catalog: Catalog): string[] {
     const errors: string[] = [];
     if (deck.yojo.length !== 20) errors.push('幼女デッキは20枚にしてください');
@@ -14,11 +17,11 @@ export function validateDeck(deck: Deck, catalog: Catalog): string[] {
     for (const kind of ['yojo', 'sweet'] as const) {
         for (const id of deck[kind]) {
             const c = catalog[id];
-            if (!c || c.type !== kind || !['strawberry', 'grape', 'orange'].includes(c.fruit) || !implementedCard(id) || !(kind === 'yojo' ? /^y_\d+$/ : /^s_\d+$/).test(id))
+            if (!c || c.type !== kind || !implementedFruits.includes(c.fruit) || !implementedCard(id) || !(kind === 'yojo' ? /^y_\d+$/ : /^s_\d+$/).test(id))
                 errors.push(`${id}: 対応している${kind === 'yojo' ? '幼女' : 'お菓子'}デッキに入れられません`);
         }
     }
-    if (!catalog[deck.playable] || !(deck.playable in playableSkills)) errors.push('通常プレイアブルを選んでください');
+    if (catalog[deck.playable]?.type !== 'playable' || !(deck.playable in playableSkills)) errors.push('使えるプレイアブルを選んでください');
     for (const id of Array.from(new Set(deck.sweet))) {
         if (catalog[id]?.sweetType === 'animal_soda' && deck.sweet.filter(c => c === id).length > 1) errors.push(`${catalog[id].name}は1枚までです`);
         if (/^s_(28|29|30|31)$/.test(id) && deck.sweet.filter(c => c === id).length > 1) errors.push(`${catalog[id].name}は1枚までです`);

@@ -16,3 +16,5 @@ export const scriptOf = (cardId: string): CardScript => scripts[cardId] ?? none;
 export const allScripts = (): CardScript[] => Object.values(scripts);
 export const scriptFor = (s: GameState, uid: string): CardScript => s.cards[uid]?.silenced ? none : scriptOf(s.cards[uid]?.cardId);
 export const implementedCard = (cardId: string) => Object.hasOwn(scripts, cardId);
+/** Fruits whose cards are all implemented: decks (and the rules of a match) may use them. Add a fruit when its set is done. */
+export const implementedFruits: readonly string[] = ['strawberry', 'grape', 'orange'];

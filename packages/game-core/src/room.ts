@@ -2,53 +2,33 @@
 // what the browser and the room server (services/room-server) say to each other. The server keeps
 // the match; a browser only ever gets its own seat's view of it (redact.ts).
 import type { Catalog, Command, Deck, GameState, Side } from './model.ts';
-import { validateDeck } from './setup.ts';
+import { defaultMatchRules, deckRuleErrors, describeMatchRules, parseMatchRules } from './rules.ts';
+import type { MatchRules } from './rules.ts';
 
-// ── The rules of a room: which cards its decks may use ──
-export const fruits = ['strawberry', 'grape', 'melon', 'orange'] as const;
-export type Fruit = typeof fruits[number];
-export const fruitNames: Record<Fruit, string> = { strawberry: 'いちご', grape: 'ぶどう', melon: 'めろん', orange: 'おれんじ' };
+// ── The rules of a room: which cards its decks may use (rules.ts), and whether others may watch ──
+export { describeMatchRules, fruitNames, fruits, playableNow } from './rules.ts';
+export type { Fruit, MatchRules } from './rules.ts';
 
-export interface RoomRules {
-    /** Fruits whose 幼女 and お菓子 may be in a deck. */
-    fruits: Fruit[];
-    /** Whether 拡張プレイアブル may lead a deck. */
-    extendedPlayable: boolean;
+export interface RoomRules extends MatchRules {
     /**
      * Whether others may watch. A spectator sees both hands, so a room that allows them trusts
      * its players not to watch their own match; both players are told, and how many are watching.
      */
     spectators?: boolean;
 }
-export const defaultRoomRules: RoomRules = { fruits: ['strawberry'], extendedPlayable: false, spectators: false };
-/**
- * What the engine can play today (see `validateDeck`). A room cannot allow more than this; add a
- * fruit here when its cards are implemented.
- */
-export const playableNow: RoomRules = { fruits: ['strawberry', 'grape', 'orange'], extendedPlayable: false };
+export const defaultRoomRules: RoomRules = { ...defaultMatchRules, spectators: false };
 
 /** The usable part of anything sent as rules, or null when no fruit is left. */
 export function parseRoomRules(value: unknown): RoomRules | null {
-    const raw = value as Partial<RoomRules> | null | undefined;
-    const chosen = Array.isArray(raw?.fruits) ? fruits.filter(fruit => raw.fruits!.includes(fruit) && playableNow.fruits.includes(fruit)) : [];
-    return chosen.length ? { fruits: chosen, extendedPlayable: raw?.extendedPlayable === true && playableNow.extendedPlayable, spectators: raw?.spectators === true } : null;
+    const rules = parseMatchRules(value);
+    return rules && { ...rules, spectators: (value as RoomRules).spectators === true };
 }
-
-const isExtended = (catalog: Catalog, id: string) => catalog[id]?.type === 'playable' && (catalog[id].version ?? 'normal') !== 'normal';
 
 /** Why the deck cannot be used in a room with these rules (empty when it can). */
-export function roomDeckErrors(deck: Deck, rules: RoomRules, catalog: Catalog): string[] {
-    const errors: string[] = [];
-    const used = new Set([...deck.yojo, ...deck.sweet].map(id => catalog[id]?.fruit).filter((fruit): fruit is Fruit => fruits.includes(fruit as Fruit)));
-    for (const fruit of Array.from(used)) if (!rules.fruits.includes(fruit)) errors.push(`このルームでは${fruitNames[fruit]}のカードを使えません`);
-    if (isExtended(catalog, deck.playable) && !rules.extendedPlayable) errors.push('このルームでは拡張プレイアブルを使えません');
-    if (rules.fruits.includes('orange') && deck.sweet.includes('s_24')) errors.push('ぷぷりえーるはオレンジ環境以降では使用できません');
-    return errors.length ? errors : validateDeck(deck, catalog);
-}
+export const roomDeckErrors = (deck: Deck, rules: RoomRules, catalog: Catalog): string[] => deckRuleErrors(deck, rules, catalog, 'このルーム');
 
 /** One line for the lobby and for sharing, e.g. 「フルーツ：いちご ／ 拡張プレイアブル：なし ／ 観戦：なし」. */
-export const describeRoomRules = (rules: RoomRules) =>
-    `フルーツ：${rules.fruits.map(fruit => fruitNames[fruit]).join('・')} ／ 拡張プレイアブル：${rules.extendedPlayable ? 'あり' : 'なし'} ／ 観戦：${rules.spectators ? 'あり' : 'なし'}`;
+export const describeRoomRules = (rules: RoomRules) => `${describeMatchRules(rules)} ／ 観戦：${rules.spectators ? 'あり' : 'なし'}`;
 
 // ── What a seat is told ──
 /** lobby: choosing decks. playing / finished: a match. closed: the host left before a match. */

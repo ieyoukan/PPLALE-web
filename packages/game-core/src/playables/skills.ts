@@ -188,6 +188,9 @@ export const playableSkills: Record<string, SkillScript[]> = {
     ],
 };
 
+/** 拡張プレイアブル (version β). They lead a deck only when its rules allow it; each is playable once it has skills here. */
+export const extendedPlayables: readonly string[] = ['p_6', 'p_7', 'p_8'];
+
 export function skillsFor(playable: string): SkillScript[] {
     return [commonSkill, ...(playableSkills[playable] ?? [])];
 }
