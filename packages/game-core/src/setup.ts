@@ -4,8 +4,9 @@ import { shuffled } from './core/rng.ts';
 import { sides } from './model.ts';
 import type { Catalog, Deck, GameState, Player, Rules } from './model.ts';
 import { playableSkills, skillsFor } from './playables/skills.ts';
+import { implementedCard } from './cards/registry.ts';
 
-/** Currently only strawberry decks with a normal playable are supported. */
+/** Decks use implemented strawberry, grape and orange cards and a normal playable. */
 export function validateDeck(deck: Deck, catalog: Catalog): string[] {
     const errors: string[] = [];
     if (deck.yojo.length !== 20) errors.push('幼女デッキは20枚にしてください');
@@ -13,19 +14,23 @@ export function validateDeck(deck: Deck, catalog: Catalog): string[] {
     for (const kind of ['yojo', 'sweet'] as const) {
         for (const id of deck[kind]) {
             const c = catalog[id];
-            if (!c || c.type !== kind || c.fruit !== 'strawberry' || !(kind === 'yojo' ? /^y_(?:\d|[12]\d|30)$/ : /^s_(?:\d|1\d|2[0-7])$/).test(id))
-                errors.push(`${id}: いちごの${kind === 'yojo' ? '幼女' : 'お菓子'}デッキに入れられません`);
+            if (!c || c.type !== kind || !['strawberry', 'grape', 'orange'].includes(c.fruit) || !implementedCard(id) || !(kind === 'yojo' ? /^y_\d+$/ : /^s_\d+$/).test(id))
+                errors.push(`${id}: 対応している${kind === 'yojo' ? '幼女' : 'お菓子'}デッキに入れられません`);
         }
     }
     if (!catalog[deck.playable] || !(deck.playable in playableSkills)) errors.push('通常プレイアブルを選んでください');
     for (const id of Array.from(new Set(deck.sweet))) {
         if (catalog[id]?.sweetType === 'animal_soda' && deck.sweet.filter(c => c === id).length > 1) errors.push(`${catalog[id].name}は1枚までです`);
+        if (/^s_(28|29|30|31)$/.test(id) && deck.sweet.filter(c => c === id).length > 1) errors.push(`${catalog[id].name}は1枚までです`);
+        if (id === 's_24' && [...deck.yojo, ...deck.sweet].some(id => catalog[id]?.fruit === 'orange')) errors.push('ぷぷりえーるはオレンジ環境以降では使用できません');
     }
     return Array.from(new Set(errors));
 }
 
 /** Starts at the dice phase; nobody has drawn yet. */
 export function newGame(decks: [Deck, Deck], catalog: Catalog, rules: Rules, seed: number): GameState {
+    if (decks.some(d => [...d.yojo, ...d.sweet].some(id => catalog[id]?.fruit === 'orange')) && decks.some(d => d.sweet.includes('s_24')))
+        throw new Error('ぷぷりえーるはオレンジ環境以降では使用できません');
     for (const d of decks) {
         const errors = validateDeck(d, catalog);
         if (errors.length) throw new Error(errors.join(' / '));

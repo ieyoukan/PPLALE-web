@@ -1,9 +1,11 @@
 import type { Choice, GameState, Instance, Player, Task } from '../model.ts';
 
-const cloneTask = (t: Task): Task => ({ ...t, ids: t.ids && [...t.ids], candidates: t.candidates && [...t.candidates] });
+const cloneTask = (t: Task): Task => ({ ...t, ids: t.ids && [...t.ids], candidates: t.candidates && [...t.candidates], ...(t.resume ? { resume: cloneTask(t.resume) } : {}) });
 const clonePlayer = (p: Player): Player => ({
     ...p, yojo: [...p.yojo], sweet: [...p.sweet], hand: [...p.hand], field: [...p.field], nap: [...p.nap], exile: [...p.exile],
     milestones: [...p.milestones], played: [...p.played], skills: [...p.skills],
+    ...(p.skillHistory ? { skillHistory: [...p.skillHistory] } : {}),
+    ...(p.exSkills ? { exSkills: Object.fromEntries(Object.entries(p.exSkills).map(([id, skill]) => [id, { ...skill }])) } : {}),
 });
 const cloneChoice = (c: Choice): Choice => ({ prompt: c.prompt, options: c.options.map(o => ({ ...o })), task: cloneTask(c.task) });
 
@@ -16,7 +18,7 @@ export function cloneState(s: GameState): GameState {
     const cards: Record<string, Instance> = {};
     for (const uid in s.cards) {
         const c = s.cards[uid];
-        cards[uid] = { ...c, keywords: [...c.keywords], links: [...c.links] };
+        cards[uid] = { ...c, keywords: [...c.keywords], links: [...c.links], ...(c.fruitTypes ? { fruitTypes: [...c.fruitTypes] } : {}) };
     }
     return {
         ...s,

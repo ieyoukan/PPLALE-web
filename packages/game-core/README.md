@@ -7,11 +7,13 @@ Next.js / React / Firebase に依存しない、ぷぷりえーるのローカ�
 | 場所 | 責務 |
 | --- | --- |
 | `model.ts` | 型（GameState・Command・Task など）と暫定ルール `sandboxRules` |
-| `cards/strawberryYojo.ts`, `cards/strawberrySweets.ts`, `cards/tokens.ts` | **カードごとの効果**。カード ID → `CardScript`（いつ・何をするか） |
+| `cards/strawberryYojo.ts`, `cards/grapeYojo.ts`, `cards/orangeYojo.ts`, `cards/strawberrySweets.ts`, `cards/fruitSweets.ts`, `cards/tokens.ts` | **カードごとの効果**。カード ID → `CardScript`（いつ・何をするか） |
 | `cards/registry.ts` | カード ID から効果を引く。カードセットを追加したらここに登録 |
 | `playables/skills.ts` | 通常プレイアブルのスキル（共通スキル＋固有スキル） |
+| `playables/exSkills.ts` | 取得済みExスキルの説明・手動発動。自動発動は回復・破壊・ドロー等の処理側 |
 | `effects/context.ts` | カード・スキルが使える操作の一覧（`ctx.buff` / `ctx.queue` など） |
 | `effects/ops.ts` | 複数のカードで共有する効果の手順（ダメージ・ドロー・捨てる…） |
+| `effects/expandedOps.ts` | 回避、ダイス、手札誘発、攻撃とターンの段階処理、カード固有の継続手順 |
 | `effects/resolve.ts` | 効果キューの解決。対象選択が必要なら `pending` で待つ |
 | `core/` | カード・ポイント・領域移動・戦闘の基本処理 |
 | `commands/` | Command ごとの処理（`opening.ts` 開始前 / `turn.ts` ターン中 / `sandbox.ts` テスト操作）と `applyCommand` |
@@ -38,10 +40,11 @@ y_8: {
 },
 ```
 
-- **いつ**: `onPlay`（手札から出す／使う）、`onEnter`、`onAllyEnter`、`onDestroyed`、`onDiscarded`、`onAttack`、`onOwnerPlayed`、`onDrawn`。一覧と意味は `cards/types.ts`。
+- **いつ**: `onPlay`（手札から出す／使う）、`onEnter`、`onAllyEnter`、`onDestroyed`、`onDiscarded`、`onExiled`、`onAttack`、`onDefend`、`onEvade`、`onReveal`、`onTurnStart`、`onTurnEnd`、`onSkill`、`onOwnerPlayed`、`onDrawn`。一覧と意味は `cards/types.ts`。
 - **何を**: すぐ反映する処理は `ctx.buff` / `ctx.heal` など、順番に解決する・選択が必要な処理は `ctx.queue(op, …)`。使える操作は `effects/context.ts` の `Effects` がすべて。
 - **どう選ぶか（UI）**: `ops.ts` の `target: 'unit'` は場の幼女から、`ctx.pick` に手札の uid を渡せば手札から、`ctx.ask` はボタンで選ぶ。UI は `pendingView` を通して、選択肢を場・手札・山札・ボタンのどこに出すか自動で決める。カードを追加しても UI の変更は不要。
 - そのカードだけの手順は、カードの `ops` に書く（例：しゅれいの `shurei`、ポッキーの `pocky`）。`model.ts` の `TaskOp` に名前を追加する。
+- ぶどう・オレンジのカード固有の手順は `effect(ctx, task)` にまとめ、`cardEffect` の `step` で分岐する。`cards/helpers.ts` の `step` / `revealStep` / `take` / `revive` 等で共通処理を使える。
 - CPU 向けの判断（対象がいないなら使わない等）は `cpu.worthPlaying`、選択の好みは op の `cpu`。
 - **使える条件**: 対象を選ぶ効果で対象がいないときなど、使えない条件は `canPlay`（スキルは `blocked`）に書く。エンジンが拒否し、UI も手札を光らせず「使う」を押せなくする。
 - テストは `tests/cards.*.test.mjs` / `tests/skills.test.mjs` に、`arena()` で盤面を作って1カード1テストで書く。盤面エディタの共有コードをもらったときは `fromCode('PPL1.…')` でその盤面から始められる。
@@ -55,7 +58,7 @@ y_8: {
 - `Instance` / `Player` / `GameState` の各フィールドは `changes.ts` で「どの変化として見せるか／見せない理由」に分類してある。フィールドを足して分類しないと `tests/changes.test.mjs` が落ちる。
 - 変化の種類（`ChangeKind`）を足すと、`presenters.ts` に見せ方を書くまで型エラーになる。
 - `tests/changes.test.mjs` は、`onPlay` を持つすべてのいちごカードを実際にプレイし、何の変化も出ないカードがあれば落ちる。
-- 状態に残らない出来事（ダイスの出目、効果耐性で止まったこと）は、`ctx.rollDie()` のように `effects` の操作が記録する。乱数でダイスを振るときは `ctx.random` ではなく `ctx.rollDie` を使う。
+- 状態に残らない出来事（ダイスの出目、効果耐性で止まったこと）は `effects` の操作が記録する。カードテキストの1d6は `ctx.die(resumeTask)` を使い、レンテの出目指定を待ってから `task.value` で再開する。ランダムな対象の選択には `ctx.random` を使う。
 
 相手が盤面のカード以外を選んだとき（「1PP追加」など）は、選んだ内容が自動で表示される。カードの説明画面やカード専用の大きな演出が欲しい場合だけ、UI 側に追加する。
 

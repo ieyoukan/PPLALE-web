@@ -1,9 +1,9 @@
 // Generic effect steps shared by many cards. Card-only steps are declared next to the card.
 import { finishTurn } from '../commands/phases.ts';
-import { scriptOf } from '../cards/registry.ts';
+import { scriptFor } from '../cards/registry.ts';
 import type { OpTable } from '../cards/types.ts';
 import { isRealSweet } from '../core/cards.ts';
-import { applyEnterAuras, draw, enterField, FIELD_SIZE } from '../core/zones.ts';
+import { applyEnterAuras, draw, enterField, FIELD_SIZE, leaveField } from '../core/zones.ts';
 import { deckLabel } from '../model.ts';
 import type { DeckKind, Task } from '../model.ts';
 import { cardContext } from './context.ts';
@@ -21,7 +21,7 @@ export const genericOps: OpTable = {
         run(fx, t) {
             fx.damage(t.target!, amount(t));
             // Multi-target damage: pick the next one from the original candidates.
-            if ((t.count ?? 1) > 1) fx.next({ ...t, target: undefined, count: t.count! - 1, ids: [...(t.ids ?? []), t.target!] });
+            if ((t.count ?? 1) > 1) fx.next({ ...t, target: undefined, checked: false, blockedTarget: undefined, count: t.count! - 1, ids: [...(t.ids ?? []), t.target!] });
         },
     },
     buff: {
@@ -47,7 +47,8 @@ export const genericOps: OpTable = {
         target: 'unit',
         run(fx, t) {
             if (fx.me.field.length >= FIELD_SIZE) return;
-            fx.foe.field = fx.foe.field.filter(id => id !== t.target);
+            if (fx.protected(t.target!)) return;
+            leaveField(fx.s, fx.foeSide, t.target!);
             enterField(fx.s, fx.side, t.target!, fx.catalog, false);
         },
     },
@@ -95,7 +96,8 @@ export const genericOps: OpTable = {
             const total = (t.count ?? 1) * (t.multiplier ?? 1);
             if (total > 1) fx.next({ ...t, count: total - 1, target: undefined, ids: drawn, multiplier: 1 });
             const source = t.source && fx.s.cards[t.source];
-            if (source) scriptOf(source.cardId).onDrawn?.(cardContext(fx.s, fx.catalog, t.actor, source.uid), { kind, uid, drawn, done: total <= 1 });
+            if (uid && !['turn', 'opening', 'threshold'].includes(t.text ?? '') && fx.me.exSkills?.smoke) fx.losePoints(fx.side, 1, 'reduce');
+            if (source) scriptFor(fx.s, source.uid).onDrawn?.(cardContext(fx.s, fx.catalog, t.actor, source.uid), { kind, uid, drawn, done: total <= 1 });
         },
     },
     /** End-turn hand limit: exile chosen cards, without discard triggers. */

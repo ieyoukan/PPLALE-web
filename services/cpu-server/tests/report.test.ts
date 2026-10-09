@@ -47,6 +47,16 @@ test('report: unfinished, unplayable and other-level matches are rejected', () =
     rejected(null);
 });
 
+test('report: Ex skill and acorn commands are parsed and checked by replay', () => {
+    const { report } = playedReport(15);
+    for (const next of [{ type: 'exSkill', actor: 0, skill: 'alice' }, { type: 'acorn', actor: 0, mode: 'pp' }, { type: 'acorn', actor: 0, mode: 'draw' }]) {
+        assert.deepEqual(verifyReport({ ...report, commands: [next] }, catalog), { error: 'the match cannot be replayed' });
+    }
+    for (const next of [{ type: 'exSkill', actor: 0, skill: 'unknown' }, { type: 'acorn', actor: 0, mode: 'unknown' }]) {
+        assert.deepEqual(verifyReport({ ...report, commands: [next] }, catalog), { error: 'decks or commands' });
+    }
+});
+
 test('report: a stored match gives one training position per turn', () => {
     const { report, winner } = playedReport(16);
     const record = accepted(report), positions = recordPositions(record, catalog);

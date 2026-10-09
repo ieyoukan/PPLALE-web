@@ -23,6 +23,9 @@ export function PlayerSide({ side }: { side: Side }) {
   /** Every hand is face up: the far one sits lower so its cards can be read, and a tap enlarges one. */
   const open = mode === 'watch' || !!remote?.watching || editing;
   const leaderTarget = !!attacker && side !== view && board.canStrike(attacker, 'leader');
+  const concealed = player.hand.filter(uid => !game.cards[uid].revealed);
+  const revealed = player.hand.filter(uid => game.cards[uid].revealed);
+  const mixed = concealed.length > 0 && revealed.length > 0;
   return <section className={`${styles.playerSide} ${near ? styles.near : styles.far}`} aria-label={`${who}の盤面`}>
     <Zone side={side} kind="yojo" className={styles.deckYojo} />
     <Zone side={side} kind="sweet" className={styles.deckSweet} />
@@ -50,13 +53,19 @@ export function PlayerSide({ side }: { side: Side }) {
       <span className={styles.fieldLabel}>Field</span>
       {Array.from({ length: FIELD_SLOTS }, (_, slot) => <FieldSlot key={slot} side={side} slot={slot} />)}
     </div>
-    {!near && <div className={`${styles.opponentHand} ${open ? styles.openHand : ''}`} role="group" aria-label={`相手の手札 ${player.hand.length}枚`}>
-      {player.hand.map((uid, i) => <span key={uid} data-hand={uid} className={`${styles.hiddenCard} ${board.flying(uid) ? styles.dealing : ''}`}
-        onClick={editing ? () => board.setPanel({ type: 'editHand', uid }) : open ? () => board.setPanel({ type: 'inspect', uid }) : undefined}
-        style={{ '--hand-index': i - (player.hand.length - 1) / 2, '--fan-step': `${Math.min(56, 360 / Math.max(1, player.hand.length))}px` } as CSSProperties}>
-        {/* The opponent holds their cards facing them, so they are upside down from here. */}
-        <span className={styles.hiddenFace}>{(game.cards[uid].revealed || open) && <GameCard id={game.cards[uid].cardId} />}</span>
-      </span>)}
+    {!near && <div className={`${styles.opponentHand} ${open ? styles.openHand : ''} ${mixed ? styles.opponentHandWithRevealed : ''}`} role="group" aria-label={`相手の手札 ${player.hand.length}枚`}>
+      {[...concealed, ...revealed].map((uid, i) => {
+        const card = game.cards[uid], visible = card.revealed || open;
+        return <button key={uid} type="button" data-hand={uid} data-revealed={card.revealed || undefined}
+          className={`${styles.hiddenCard} ${card.revealed ? styles.revealedOpponentCard : ''} ${board.flying(uid) ? styles.dealing : ''}`}
+          disabled={!visible} aria-label={visible ? `相手の${card.revealed ? '公開' : ''}手札 ${displayCards[card.cardId].name}` : '相手の非公開手札'}
+          onClick={() => board.setPanel(editing ? { type: 'editHand', uid } : { type: 'inspect', uid })}
+          style={{ '--hand-index': i - (player.hand.length - 1) / 2, '--fan-step': `${Math.min(56, 360 / Math.max(1, player.hand.length))}px`, '--reveal-shift': mixed ? card.revealed ? 'calc((104px - var(--fan-step) + 32px) / 2)' : 'calc((var(--fan-step) - 104px - 32px) / 2)' : '0px' } as CSSProperties}>
+          {/* The opponent holds their cards facing them, so they are upside down from here. */}
+          <span className={styles.hiddenFace}>{visible && <GameCard id={card.cardId} />}</span>
+          {card.revealed && <span className={styles.revealed}>公開</span>}
+        </button>;
+      })}
       {editing && <button className={styles.addFarHand} aria-label="相手の手札に加える" onClick={() => board.setPicking({ side, zone: 'hand' })}>＋</button>}
     </div>}
   </section>;

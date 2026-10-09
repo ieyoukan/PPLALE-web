@@ -10,6 +10,7 @@ import { deleteSaved, emptyPosition, loadSaved, openInEditor } from '@/lib/game/
 import type { SavedPosition } from '@/lib/game/positions';
 import { EDITOR_PATH, PLAY_PATH, readSession } from '@/lib/game/sessionStore';
 import styles from './EditorLobby.module.css';
+import { effectPositions } from '@/lib/game/effectPositions';
 
 export default function EditorLobby() {
   const router = useRouter();
@@ -43,6 +44,12 @@ export default function EditorLobby() {
       {inProgress && <button className={styles.primary} onClick={() => router.push(PLAY_PATH)}><b>編集のつづき</b><small>前回の盤面を開く</small></button>}
       <button className={inProgress ? '' : styles.primary} onClick={() => open(emptyPosition())}><b>新しい盤面を作る</b><small>何もない盤面から</small></button>
     </div>
+    <section>
+      <h2>カード効果を試す盤面</h2>
+      <div className={styles.doors}>{effectPositions.map(position => <button key={position.title} onClick={() => open(position)}>
+        <b>{position.title}</b><small>{position.note}</small>
+      </button>)}</div>
+    </section>
     {saved.length > 0 && <section>
       <h2>保存した盤面</h2>
       <ul className={styles.saved}>{saved.map(s => <li key={s.id}>

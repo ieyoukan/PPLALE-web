@@ -47,7 +47,9 @@ test('two players meet in a room, play the opening and one gives up', async ({ b
   await expect(host.getByText('ルームマッチを利用できます')).toBeVisible();
   await host.getByRole('button', { name: /ルームを作る/ }).click();
   await expect(host.getByRole('checkbox', { name: /いちご/ })).toBeChecked();
-  await expect(host.getByRole('checkbox', { name: /ぶどう/ })).toBeDisabled();
+  await expect(host.getByRole('checkbox', { name: /ぶどう/ })).toBeEnabled();
+  await expect(host.getByRole('checkbox', { name: /おれんじ/ })).toBeEnabled();
+  await expect(host.getByRole('checkbox', { name: /めろん/ })).toBeDisabled();
   await expect(host.getByRole('checkbox', { name: /拡張プレイアブル/ })).not.toBeChecked();
   await host.getByPlaceholder('なまえ').fill('ほすと');
   await host.getByRole('button', { name: 'このルールでルームを作る' }).click();

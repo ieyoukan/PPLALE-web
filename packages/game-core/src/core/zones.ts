@@ -1,5 +1,5 @@
 // Moving cards between deck, hand, field and nap, and the triggers those moves cause.
-import { scriptOf } from '../cards/registry.ts';
+import { scriptFor } from '../cards/registry.ts';
 import { cardContext } from '../effects/context.ts';
 import { deckLabel, other, sides } from '../model.ts';
 import type { Catalog, DeckKind, GameState, Side } from '../model.ts';
@@ -34,7 +34,37 @@ export function discard(s: GameState, side: Side, uid: string, catalog: Catalog)
     const p = s.players[side];
     p.hand = p.hand.filter(id => id !== uid);
     p.nap.push(uid);
-    scriptOf(s.cards[uid].cardId).onDiscarded?.(cardContext(s, catalog, side, uid));
+    s.cards[uid].costDelta = 0;
+    s.cards[uid].temporaryCost = 0;
+    scriptFor(s, uid).onDiscarded?.(cardContext(s, catalog, side, uid));
+}
+
+export function leaveField(s: GameState, side: Side, uid: string) {
+    s.players[side].field = s.players[side].field.filter(id => id !== uid);
+    s.cards[uid].slot = null;
+    if (s.cards[uid].cardId === 'token_mochida') s.players[side].mochidaLeft = (s.players[side].mochidaLeft ?? 0) + 1;
+}
+
+/** Effect exile from any zone, with separate triggers from discarding or hand-limit removal. */
+export function exile(s: GameState, uid: string, catalog: Catalog, owner?: Side) {
+    const side = owner ?? sides.find(side => ['field', 'hand', 'nap', 'yojo', 'sweet'].some(zone => s.players[side][zone as 'field'].includes(uid)));
+    if (side === undefined) return;
+    const p = s.players[side];
+    if (p.nap.includes(uid) && s.cards[uid].cardId === 'y_146' && !s.cards[uid].silenced) return;
+    if (p.field.includes(uid)) leaveField(s, side, uid);
+    for (const zone of ['hand', 'nap', 'yojo', 'sweet'] as const) p[zone] = p[zone].filter(id => id !== uid);
+    p.exile.push(uid);
+    scriptFor(s, uid).onExiled?.(cardContext(s, catalog, side, uid));
+}
+
+export function bounce(s: GameState, uid: string, catalog: Catalog) {
+    const side = ownerOnField(s, uid);
+    if (side === undefined) return;
+    leaveField(s, side, uid);
+    const c = s.cards[uid];
+    Object.assign(c, { attackBonus: 0, hpBonus: 0, damage: 0, costDelta: 0, temporaryCost: 0, revealed: false, shield: false, hiding: false });
+    s.players[side].hand.push(uid);
+    note(s, `${catalog[c.cardId].name}を手札へ戻しました`);
 }
 
 /**
@@ -45,11 +75,13 @@ export function discard(s: GameState, side: Side, uid: string, catalog: Catalog)
 export function enterField(s: GameState, side: Side, uid: string, catalog: Catalog, fromHand: boolean, slot = openSlot(s, side)) {
     const card = s.cards[uid];
     Object.assign(card, { slot, entered: s.turn, exhausted: false });
+    card.destroyedBy = undefined;
+    if (card.keywords.includes('hide')) card.hiding = true;
     s.players[side].field.push(uid);
     const ctx = cardContext(s, catalog, side, uid);
-    scriptOf(card.cardId).onEnter?.(ctx);
+    scriptFor(s, uid).onEnter?.(ctx);
     if (fromHand) {
-        scriptOf(card.cardId).onPlay?.(ctx);
+        scriptFor(s, uid).onPlay?.(ctx);
         s.queue.push({ op: 'enterAuras', actor: side, source: uid });
     } else {
         applyEnterAuras(s, side, uid, catalog);
@@ -59,7 +91,7 @@ export function enterField(s: GameState, side: Side, uid: string, catalog: Catal
 export function applyEnterAuras(s: GameState, side: Side, uid: string, catalog: Catalog) {
     if (!s.players[side].field.includes(uid)) return;
     for (const friend of s.players[side].field.filter(id => id !== uid)) {
-        scriptOf(s.cards[friend].cardId).onAllyEnter?.(cardContext(s, catalog, side, friend), uid);
+        scriptFor(s, friend).onAllyEnter?.(cardContext(s, catalog, side, friend), uid);
     }
 }
 
@@ -78,17 +110,24 @@ export function destroy(s: GameState, uid: string, byEffect: boolean, catalog: C
     const side = ownerOnField(s, uid);
     if (side === undefined) return;
     const card = s.cards[uid];
-    if (byEffect && card.keywords.includes('effectImmune')) {
+    if (byEffect && (card.keywords.includes('effectImmune') || card.keywords.includes('destroyImmune'))) {
         recordEffectBlock(s, uid, 'destroy');
         return;
     }
     const p = s.players[side];
-    p.field = p.field.filter(id => id !== uid);
-    card.slot = null;
-    p.nap.push(uid);
+    leaveField(s, side, uid);
+    card.costDelta = 0;
+    card.temporaryCost = 0;
+    if (card.cardId === 'token_mochida' && !card.silenced) p.exile.push(uid);
+    else p.nap.push(uid);
     note(s, `${catalog[card.cardId].name}がお昼寝場所へ`);
     for (const linked of card.links) destroy(s, linked, true, catalog);
-    scriptOf(card.cardId).onDestroyed?.(cardContext(s, catalog, side, uid));
+    scriptFor(s, uid).onDestroyed?.(cardContext(s, catalog, side, uid));
+    const abyss = p.exSkills?.abyss;
+    if (abyss && abyss.uses > 0) { abyss.uses--; s.queue.push({ op: 'reduce', actor: side, amount: 1 }); }
+    for (const enemy of s.players[other(side)].field) {
+        if (s.cards[enemy].cardId === 'y_147' && !s.cards[enemy].silenced) s.queue.push({ op: 'reduce', actor: other(side), source: enemy, amount: 1 });
+    }
 }
 
 /**

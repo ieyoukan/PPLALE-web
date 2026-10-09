@@ -6,6 +6,8 @@ import { isRevealable } from '../view.ts';
 import { other, sides } from '../model.ts';
 import type { Catalog, Command, GameState, Side } from '../model.ts';
 import { commonSkill, skillsFor } from '../playables/skills.ts';
+import { exSkillInfo } from '../playables/exSkills.ts';
+import type { ExSkillId } from '../model.ts';
 
 export interface Move {
     command: Command;
@@ -54,6 +56,8 @@ function candidates(s: GameState, side: Side): Command[] {
         ...p.hand.map((uid): Command => ({ type: 'play', actor: side, uid })),
         ...p.field.flatMap(uid => targets.map((target): Command => ({ type: 'attack', actor: side, uid, target }))),
         ...skillsFor(p.playable).map((_, index): Command => ({ type: 'skill', actor: side, index })),
+        ...(Object.keys(p.exSkills ?? {}) as ExSkillId[]).filter(id => !exSkillInfo[id].automatic && (p.exSkills![id]?.uses ?? 0) > 0).map((skill): Command => ({ type: 'exSkill', actor: side, skill })),
+        ...((p.acorns ?? 0) > 0 ? (['draw', 'pp'] as const).map((mode): Command => ({ type: 'acorn', actor: side, mode })) : []),
         ...p.hand.filter(uid => isRevealable(s.cards[uid].cardId) && !s.cards[uid].revealed).map((uid): Command => ({ type: 'reveal', actor: side, uid })),
         { type: 'end', actor: side },
     ];

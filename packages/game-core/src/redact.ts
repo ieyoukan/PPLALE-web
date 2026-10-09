@@ -45,5 +45,5 @@ export function viewFor(state: GameState, viewer: Side | 'spectator'): GameState
 function publicChoice({ prompt, options, task }: Choice, hidden: Set<string>): Choice {
     const { op, actor, source, text, deck, count } = task;
     const shown: Task = { op, actor, ...(source !== undefined && { source }), ...(text !== undefined && { text }), ...(deck !== undefined && { deck }), ...(count !== undefined && { count }) };
-    return { prompt, options: options.filter(option => !hidden.has(option.id)), task: shown };
+    return { prompt: op === 'cardEffect' ? '相手がカード効果を選択しています' : prompt, options: options.filter(option => !hidden.has(option.id)), task: shown };
 }

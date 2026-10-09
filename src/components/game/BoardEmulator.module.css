@@ -326,16 +326,26 @@
 .hand { height: 210px; padding: 0 12px; overflow: visible; align-items: flex-end; perspective: 1000px; }
 .handCard { pointer-events: auto; touch-action: none; width: 140px; height: 210px; border-radius: 7px; border: 2px solid #dfc5a0; background: #634237; transform: translateY(var(--lift)) rotate(var(--angle)) rotateX(7deg); box-shadow: -5px 9px 8px #341c2866, inset 0 -3px #eedcba; transition: transform .25s, width .3s, height .3s, box-shadow .25s; }
 .handCard:hover, .handCard:focus-visible, .selectedHand { transform: translateY(-25px) rotate(0) scale(1.05); }
+.handCard.revealedHandCard { transform: translateY(-28px) rotateX(7deg); border-color: #d8afd6; }
+.handCard.revealedHandStart { margin-left: clamp(32px, 4vw, 56px); }
+.handCard.revealedHandCard:hover, .handCard.revealedHandCard:focus-visible, .revealedHandCard.selectedHand { transform: translateY(-42px) scale(1.05); }
+.revealedHandCard .revealed { top: 6px; bottom: auto; background: #785773ed; }
+.hiddenCard { padding: 0; }
+.opponentHandWithRevealed .hiddenCard { transform: translateX(calc(var(--hand-index) * var(--fan-step) + var(--reveal-shift))) rotate(clamp(-8deg, calc(var(--hand-index) * -7deg), 8deg)) rotateX(-12deg); }
+.hiddenCard.revealedOpponentCard { pointer-events: auto; transform: translateX(calc(var(--hand-index) * var(--fan-step) + var(--reveal-shift))) translateY(28px) rotateX(-12deg); border-color: #d8afd6; }
+.revealedOpponentCard .revealed { bottom: 6px; background: #785773ed; font-size: 14px; }
 .attackActions { display: flex; justify-content: center; gap: 12px; pointer-events: auto; padding: 12px; }
 .attackActions button { min-height: 52px; min-width: 100px; padding: 10px 24px; background: #fff7e4; border: 2px solid #ffebc7; border-radius: 24px; color: #7f5a64; font-size: 20px; box-shadow: 0 4px 0 #b48b90; }
 .attackActions { position: fixed; z-index: 50; bottom: 120px; left: 50%; transform: translateX(-50%); }
 .revealed { font-size: 18px; }
-.choiceTray { position: fixed; z-index: 65; left: 50%; bottom: 24px; transform: translateX(-50%); max-width: 92vw; max-height: 70dvh; overflow: auto; display: flex; flex-wrap: wrap; align-items: center; justify-content: center; gap: 14px; padding: 18px; border: 2px solid #ffedc7; border-radius: 24px; background: #fff8edee; box-shadow: 0 10px 30px #45304444; font-size: 20px; }
+.choiceTray { position: fixed; z-index: 65; left: 50%; top: 50%; transform: translate(-50%, -50%); max-width: 92vw; max-height: 70dvh; overflow: auto; display: flex; flex-wrap: wrap; align-items: center; justify-content: center; gap: 14px; padding: 18px; border: 2px solid #ffedc7; border-radius: 24px; background: #fff8edee; box-shadow: 0 10px 30px #45304444; font-size: 20px; }
 .choiceTray strong { width: 100%; text-align: center; }
-/* Picking from the hand: keep the hand uncovered. */
-.choiceTrayTop { bottom: auto; top: 24px; }
 .choiceTray button { min-width: 72px; min-height: 52px; padding: 10px 16px; background: #d9ebc9; border-radius: 16px; font-size: 20px; }
 .choiceThumb { width: 160px; }
+.revealComplete { position: fixed; z-index: 65; left: 50%; bottom: 160px; transform: translateX(-50%); }
+.revealComplete button { min-height: 52px; padding: 10px 24px; border: 2px solid #fff0c9; border-radius: 24px; background: #d9ebc9; color: #527652; box-shadow: 0 4px 0 #8d9e78, 0 8px 18px #442a3c44; font-size: 20px; font-weight: 700; white-space: nowrap; }
+.handCard[data-reveal-pending] .revealed { left: 6px; width: calc(100% - 46px); font-size: 16px; }
+@media (max-height: 600px) { .revealComplete { bottom: 110px; } .revealComplete button { min-height: 44px; padding: 8px 20px; } .handCard[data-reveal-pending] .revealed { font-size: 12px; } }
 .errorToast { position: fixed; top: 18px; left: 50%; transform: translateX(-50%); z-index: 180; max-width: 80vw; padding: 16px 24px; border-radius: 18px; background: #ffe6e2; color: #98464a; font-size: 18px; box-shadow: 0 5px 15px #5a353344; }
 .drawer { top: 0; width: min(560px, 100vw); padding: 70px 28px 30px; border-radius: 28px 0 0 28px; background: #fff9f0; font-size: 18px; }
 .drawer > h2, .dialogHeading h2 { font-size: 26px; }

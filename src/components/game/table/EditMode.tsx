@@ -3,16 +3,17 @@
 // 盤面エディタ on the table itself: the strip that says the board is being edited, and the card
 // picker that opens when an empty slot, a hand's ＋ or a pile's ＋ is tapped.
 import { useState } from 'react';
+import { implementedCard } from '@pplale/game-core';
 import type { Side } from '@pplale/game-core';
+import { fruitNames } from '@pplale/game-core/room';
 import { displayCards } from '@/lib/game/catalog';
 import { useBoardContext } from '../board/BoardContext';
 import type { Picking } from '../board/useBoard';
 import { GameCard } from '../GameCard';
 import styles from '../BoardEmulator.module.css';
 
-const range = (from: number, to: number) => Array.from({ length: to - from + 1 }, (_, i) => from + i);
-const yojoPool = [...range(0, 30).map(n => `y_${n}`), 'yt_0', 'yt_1', 'token_cat', 'token_pudding'];
-const sweetPool = range(0, 27).map(n => `s_${n}`);
+const yojoPool = Object.values(displayCards).filter(c => c.type === 'yojo' && implementedCard(c.id)).map(c => c.id);
+const sweetPool = Object.values(displayCards).filter(c => c.type === 'sweet' && implementedCard(c.id)).map(c => c.id);
 const poolOf = (zone: Picking['zone']) => zone === 'field' || zone === 'yojo' ? yojoPool : zone === 'sweet' ? sweetPool : [...yojoPool, ...sweetPool];
 const places: Record<Picking['zone'], string> = { field: '場', hand: '手札', nap: 'お昼寝場所', exile: '除外カード', yojo: '幼女デッキ', sweet: 'お菓子デッキ', played: 'このゲームで出したカード' };
 const who = (side: Side) => side === 0 ? 'あなた' : '相手';
@@ -41,10 +42,11 @@ export function EditButton() {
 export function CardPicker() {
   const { game, picking, setPicking, edit } = useBoardContext();
   const [query, setQuery] = useState('');
+  const [fruit, setFruit] = useState('all');
   const [added, setAdded] = useState<string[]>([]);
   if (!picking) return null;
   const { side, zone, slot } = picking, single = zone === 'field';
-  const close = () => { setPicking(null); setQuery(''); setAdded([]); };
+  const close = () => { setPicking(null); setQuery(''); setFruit('all'); setAdded([]); };
   function add(cardId: string) {
     if (zone === 'played') edit({ type: 'played', side, cardIds: [...game.players[side].played, cardId] });
     else edit({ type: 'add', side, zone, cardId, slot });
@@ -52,17 +54,20 @@ export function CardPicker() {
     close();
   }
   const name = (cardId: string) => displayCards[cardId]?.name ?? cardId;
-  const shown = poolOf(zone).filter(cardId => name(cardId).includes(query.trim()));
+  const shown = poolOf(zone).filter(cardId => name(cardId).includes(query.trim()) && (fruit === 'all' || displayCards[cardId]?.fruit === fruit));
   return <div className={styles.picker} role="dialog" aria-modal="true" aria-label={`${who(side)}の${places[zone]}に置くカード`} onClick={close}>
     <div className={styles.pickerSheet} onClick={event => event.stopPropagation()}>
       <header>
         <h2>{who(side)}の{places[zone]}に置くカード</h2>
         <input value={query} placeholder="名前でさがす" aria-label="名前でさがす" onChange={event => setQuery(event.target.value)} />
+        <select aria-label="フルーツで絞る" value={fruit} onChange={event => setFruit(event.target.value)}>
+          <option value="all">すべて</option><option value="strawberry">いちご</option><option value="grape">ぶどう</option><option value="orange">オレンジ</option>
+        </select>
         <button onClick={close}>{single ? 'やめる' : '閉じる'}</button>
       </header>
       {added.length > 0 && <p>加えたカード：{added.map(name).join('、')}</p>}
       <ul>{shown.map(cardId => <li key={cardId}>
-        <button aria-label={name(cardId)} onClick={() => add(cardId)}><GameCard id={cardId} sizes="130px" /></button>
+        <button aria-label={`${name(cardId)}（${fruitNames[displayCards[cardId]?.fruit as keyof typeof fruitNames] ?? 'トークン'}）`} onClick={() => add(cardId)}><GameCard id={cardId} sizes="130px" /></button>
       </li>)}</ul>
     </div>
   </div>;

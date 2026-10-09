@@ -2,7 +2,7 @@
 // can really be played are stored. Nothing in it identifies the player.
 import { createHash } from 'node:crypto';
 import { applyCommand, matchTurns, newGame, sandboxRules } from '@pplale/game-core';
-import type { Catalog, Command, Deck, GameState, Side } from '@pplale/game-core';
+import type { Catalog, Command, Deck, ExSkillId, GameState, Side } from '@pplale/game-core';
 import { valueFeatures } from '@pplale/game-core/ai';
 import { turnStarts } from '@pplale/game-core/train';
 
@@ -52,6 +52,8 @@ function command(value: unknown): Command | null {
         case 'choose': return isText(c.option, 64) ? { type: 'choose', actor, option: c.option } : null;
         case 'skill': return Number.isInteger(c.index) && (c.index as number) >= 0 && (c.index as number) < 8 ? { type: 'skill', actor, index: c.index as number } : null;
         case 'reveal': return isText(c.uid) ? { type: 'reveal', actor, uid: c.uid } : null;
+        case 'exSkill': return typeof c.skill === 'string' && ['dice', 'strawberryHunt', 'healing', 'abyss', 'dagger', 'alice', 'smoke'].includes(c.skill) ? { type: 'exSkill', actor, skill: c.skill as ExSkillId } : null;
+        case 'acorn': return c.mode === 'draw' || c.mode === 'pp' ? { type: 'acorn', actor, mode: c.mode } : null;
         default: return null;
     }
 }

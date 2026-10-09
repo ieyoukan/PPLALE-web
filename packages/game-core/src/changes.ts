@@ -65,6 +65,11 @@ export const instanceFields: Record<keyof Instance, ChangeKind | null> = {
     exhausted: null, // shown by the board (the tilted card)
     ateOn: null, // bookkeeping for りくす
     links: 'link',
+    fruitTypes: null, // shown in card inspection and editor
+    evasion: null, // shown with the evade keyword
+    hiding: null, // current hide duration, shown on the card
+    silenced: null, // shown in card inspection
+    destroyedBy: null, // source for destruction reactions
 };
 
 /** How each player field is presented. The six zones produce `move`. */
@@ -85,6 +90,10 @@ export const playerFields: Record<keyof Player, ChangeKind | null> = {
     milestones: null, // shown by the board (the blue marbles); the draw itself is a move
     played: null, // history for 「既に〜をプレイしていたなら」
     lastBorrow: null, // bookkeeping for ストラ
+    skillHistory: null, // persistent history, separate from remaining uses
+    exSkills: null, // shown in the skill panel
+    ice: null, acorns: null, // shown in the skill panel
+    mochidaLeft: null, skipDraw: null, strawberryOnlyUntil: null, // effect bookkeeping
 };
 
 /** Top-level fields: presented by the board's own screens, or per command through `roll` / `blocked`. */

@@ -10,6 +10,6 @@ import type { TokenCard } from '@/lib/schema';
 export const displayCards: Record<string, CardInfo | TokenCard> = Object.fromEntries([
     ...yojo.yojo, ...sweet.sweet, ...playable.playable, ...tokenYojo.tokenYojo, ...token.token,
 ].map(card => [card.id, card])) as Record<string, CardInfo | TokenCard>;
-export const gameCatalog: Catalog = Object.fromEntries(Object.values(displayCards).map(({ id, name, type, fruit, cost, attack, hp, sweetType, role, version }) => [id, { id, name, type, fruit, cost, attack, hp, sweetType, role, version }]));
+export const gameCatalog: Catalog = Object.fromEntries(Object.values(displayCards).map(({ id, name, type, fruit, cost, attack, hp, sweetType, role, version, effect }) => [id, { id, name, type, fruit, cost, attack, hp, sweetType, role, version, effect }]));
 export const strawberryStableDeck: Deck = strawberryStableDeckData;
 export const demoDeck: Deck = { ...strawberryStableDeck, name: 'いちごのおためしデッキ' };

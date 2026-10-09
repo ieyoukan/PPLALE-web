@@ -7,6 +7,8 @@ export type PointLoss = 'eat' | 'steal' | 'reduce';
 
 export function heal(s: GameState, side: Side, amount: number) {
     const p = s.players[side];
+    const skill = p.exSkills?.healing;
+    if (amount > 0 && skill && skill.uses > 0) { amount++; skill.uses--; }
     p.points = Math.min(p.maxPoints, p.points + amount);
 }
 

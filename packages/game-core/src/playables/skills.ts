@@ -21,7 +21,7 @@ export interface SkillScript {
 }
 
 /** 「相手の幼女1人に〜」は対象の選択が必要。相手の場に幼女がいなければ使えない。 */
-const needsEnemyUnit = (fx: Effects) => fx.foe.field.length ? undefined : '対象にできる相手の幼女がいません';
+const needsEnemyUnit = (fx: Effects) => selectable(fx.s, fx.side, fx.foe.field).length ? undefined : '対象にできる相手の幼女がいません';
 const ateLastTurn = (fx: Effects) => fx.foe.field.filter(uid => fx.s.cards[uid].ateOn === fx.s.turn - 1);
 
 // 【突撃！隣のおやつタイム】コスト0, 場の幼女1人に突撃を付与する。2回。
@@ -158,7 +158,7 @@ export const playableSkills: Record<string, SkillScript[]> = {
                             fx.ask('直前にお菓子を食べた幼女を破壊', [
                                 ...selectable(fx.s, fx.side, ate).map(id => ({ id, label: fx.defOf(id).name })),
                                 ...(fx.me.pp >= 2 ? [{ id: 'all', label: '追加2PPで全員' }] : []),
-                            ], t);
+                            ], { ...t, selected: true });
                             return;
                         }
                         if (t.target !== 'all') return fx.destroy(t.target);

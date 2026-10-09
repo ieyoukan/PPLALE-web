@@ -34,12 +34,21 @@ export interface DrawEvent {
 export interface CardScript {
     /** Printed keywords (常在能力). */
     keywords?: Keyword[];
+    evasion?: number;
     /** Overrides the printed cost while in hand. */
     baseCost?(s: GameState, side: Side): number | undefined;
     /** False when the card cannot be played now (e.g. it must select a unit and none is there). */
     canPlay?(ctx: CardContext): boolean;
     /** The card can be revealed from hand at any time. */
     revealable?: boolean;
+    onReveal?(ctx: CardContext): void;
+    onTurnStart?(ctx: CardContext, active: Side, zone: 'hand' | 'field'): void;
+    onTurnEnd?(ctx: CardContext): void;
+    onSkill?(ctx: CardContext): void;
+    onDefend?(ctx: CardContext, attacker: string): void;
+    onEvade?(ctx: CardContext, attacker: string): void;
+    onExiled?(ctx: CardContext): void;
+    effect?(ctx: CardContext, task: Task): void;
     /** 手札から場に出たとき（幼女）／使ったとき（お菓子）. */
     onPlay?(ctx: CardContext): void;
     /** 場に出たとき, however it entered (hand, summon, steal). Runs before onPlay. */

@@ -3,8 +3,9 @@
 // 盤面エディタ: what opens beside the board in edit mode when a unit, a hand card, a pile, a playable
 // or the menu is tapped. Every change is one `board.edit(...)` (see core edit.ts) and shows at once.
 import { useEffect, useState } from 'react';
-import { attackOf, costOf, cpuLevels, cpuProfiles, decodePosition, encodePosition, hpOf, keywords, other, skillsFor } from '@pplale/game-core';
-import type { CpuLevel, Keyword, Side } from '@pplale/game-core';
+import { attackOf, costOf, cpuLevels, cpuProfiles, decodePosition, encodePosition, exSkillInfo, hpOf, keywords, other, skillsFor } from '@pplale/game-core';
+import type { BoardEdit, CpuLevel, ExSkillId, Keyword, Side } from '@pplale/game-core';
+import { fruitNames, fruits } from '@pplale/game-core/room';
 import { demoDeck, displayCards, gameCatalog } from '@/lib/game/catalog';
 import { deleteSaved, emptyPosition, loadSaved, savePosition } from '@/lib/game/positions';
 import type { SavedPosition } from '@/lib/game/positions';
@@ -42,7 +43,7 @@ export function EditUnitPanel({ uid }: { uid: string }) {
   const { game, edit, setPanel } = useBoardContext();
   const card = game.cards[uid];
   if (!card || card.slot === null) return null;
-  const change = (values: { attack?: number; hp?: number; damage?: number; keywords?: Keyword[]; fresh?: boolean; acted?: boolean; shield?: boolean; ate?: boolean }) => edit({ type: 'unit', uid, ...values });
+  const change = (values: Omit<Extract<BoardEdit, { type: 'unit' }>, 'type' | 'uid'>) => edit({ type: 'unit', uid, ...values });
   const toggle = (keyword: Keyword) => change({ keywords: card.keywords.includes(keyword) ? card.keywords.filter(k => k !== keyword) : [...card.keywords, keyword] });
   return <>
     <h2>{nameOf(card.cardId)}</h2>
@@ -53,6 +54,11 @@ export function EditUnitPanel({ uid }: { uid: string }) {
     <Stepper label="受けたダメージ" value={card.damage} onChange={damage => change({ damage })} />
     <h3>能力</h3>
     <div className={styles.editChips}>{keywords.map(k => <Switch key={k} label={keywordNames[k]} on={card.keywords.includes(k)} onChange={() => toggle(k)} />)}</div>
+    {card.keywords.includes('evade') && <Stepper label="おにごっこ成功条件（1d6≧）" value={card.evasion ?? 5} onChange={evasion => change({ evasion })} />}
+    {card.keywords.includes('hide') && <Switch label="かくれんぼ有効中" on={!!card.hiding} onChange={hiding => change({ hiding })} />}
+    <Switch label="カード効果を失っている" on={!!card.silenced} onChange={silenced => change({ silenced })} />
+    <h3>追加のフルーツタイプ</h3>
+    <div className={styles.editChips}>{fruits.map(fruit => <Switch key={fruit} label={fruitNames[fruit]} on={!!card.fruitTypes?.includes(fruit)} onChange={on => change({ fruitTypes: on ? [...(card.fruitTypes ?? []), fruit] : (card.fruitTypes ?? []).filter(f => f !== fruit) })} />)}</div>
     <h3>このターンの状態</h3>
     <div className={styles.editChips}>
       <Switch label="出たばかり" on={card.entered === game.turn} onChange={fresh => change({ fresh })} />
@@ -77,6 +83,8 @@ export function EditHandPanel({ uid }: { uid: string }) {
     <div className={styles.editCard}><GameCard id={card.cardId} instance={card} currentCost={costOf(game, uid, gameCatalog, owner)} sizes="200px" /></div>
     <Stepper label="コストの変化" value={card.costDelta} onChange={cost => edit({ type: 'handCard', uid, cost })} />
     <div className={styles.editChips}><Switch label="公開している" on={card.revealed} onChange={revealed => edit({ type: 'handCard', uid, revealed })} /></div>
+    <h3>追加のフルーツタイプ</h3>
+    <div className={styles.editChips}>{fruits.map(fruit => <Switch key={fruit} label={fruitNames[fruit]} on={!!card.fruitTypes?.includes(fruit)} onChange={on => edit({ type: 'handCard', uid, fruitTypes: on ? [...(card.fruitTypes ?? []), fruit] : (card.fruitTypes ?? []).filter(f => f !== fruit) })} />)}</div>
     <div className={styles.editActions}>
       <button className={styles.menuLeave} onClick={() => { edit({ type: 'remove', uid }); setPanel(null); }}>手札から外す</button>
     </div>
@@ -110,7 +118,7 @@ export function EditPilePanel({ side, kind }: { side: Side; kind: ZoneKind }) {
 export function EditPlayerPanel({ side }: { side: Side }) {
   const { game, edit, setPicking } = useBoardContext();
   const p = game.players[side], skills = skillsFor(p.playable);
-  const change = (values: { playable?: string; points?: number; maxPoints?: number; turns?: number; ppBonus?: number; pp?: number; skills?: number[]; shield?: boolean; sweetBoost?: number }) => edit({ type: 'player', side, ...values });
+  const change = (values: Omit<Extract<BoardEdit, { type: 'player' }>, 'type' | 'side'>) => edit({ type: 'player', side, ...values });
   return <>
     <h2>{who(side)}</h2>
     <div className={styles.editPlayables} role="group" aria-label="プレイアブル">{playables.map(id =>
@@ -125,6 +133,23 @@ export function EditPlayerPanel({ side }: { side: Side }) {
     <h3>スキルの残り回数</h3>
     {skills.map((skill, index) => <Stepper key={skill.name} label={skill.name} note={`${skill.uses}回まで`} value={p.skills[index]}
       onChange={left => change({ skills: p.skills.map((uses, i) => i === index ? left : uses) })} />)}
+    <h3>スキルを使った履歴</h3>
+    <div className={styles.editChips}>{skills.map((skill, index) => <Switch key={skill.name} label={`${skill.name}を使用済み`} on={!!p.skillHistory?.includes(index)} onChange={on => change({ skillHistory: on ? [...(p.skillHistory ?? []), index] : (p.skillHistory ?? []).filter(i => i !== index) })} />)}</div>
+    <h3>Exスキル</h3>
+    {(Object.keys(exSkillInfo) as ExSkillId[]).map(id => <div key={id}>
+      <Switch label={exSkillInfo[id].name} on={!!p.exSkills?.[id]} onChange={on => {
+        const exSkills = { ...p.exSkills };
+        if (on) exSkills[id] = { uses: id === 'healing' ? 3 : id === 'abyss' ? 2 : 1 };
+        else delete exSkills[id];
+        change({ exSkills });
+      }} />
+      {p.exSkills?.[id] && <Stepper label={`${exSkillInfo[id].name}の残り回数`} value={p.exSkills[id]!.uses} onChange={uses => change({ exSkills: { ...p.exSkills, [id]: { ...p.exSkills![id], uses: Math.max(0, uses) } } })} />}
+    </div>)}
+    <h3>カードのカウント</h3>
+    <Stepper label="アイスカウント" value={p.ice ?? 0} onChange={ice => change({ ice })} />
+    <Stepper label="どんぐりカウント" value={p.acorns ?? 0} onChange={acorns => change({ acorns })} />
+    <Stepper label="場を離れたもちだの数" value={p.mochidaLeft ?? 0} onChange={mochidaLeft => change({ mochidaLeft })} />
+    <Stepper label="次の通常ドローをスキップ" value={p.skipDraw ?? 0} onChange={skipDraw => change({ skipDraw })} />
     <h3>お菓子の効果</h3>
     <div className={styles.editChips}><Switch label="パンケーキの守り" on={p.shield} onChange={shield => change({ shield })} /></div>
     <Stepper label="おいしくなる呪文" note="次のお菓子に重ねた回数" value={p.sweetBoost} onChange={sweetBoost => change({ sweetBoost })} />

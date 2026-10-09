@@ -3,6 +3,7 @@
 import type { CardContext } from '../effects/context.ts';
 import type { Keyword } from '../model.ts';
 import type { CardScript, CardScripts, OpTable } from './types.ts';
+import { selectable } from '../effects/targets.ts';
 
 const ofType = (ctx: CardContext, sweetType: string) => (cardId: string) => ctx.catalog[cardId]?.sweetType === sweetType;
 /** このカードを含めて、このゲーム中にプレイした `sweetType` の種類数。 */
@@ -11,7 +12,7 @@ const kindsIncludingThis = (ctx: CardContext, sweetType: string) =>
 
 const needsEnemyUnit = { worthPlaying: (ctx: CardContext) => ctx.foe.field.length > 0 };
 /** 「相手の幼女1人に〜」は対象の選択が必要。相手の場に幼女がいなければ使えない。 */
-const enemyUnitOnField = (ctx: CardContext) => ctx.foe.field.length > 0;
+const enemyUnitOnField = (ctx: CardContext) => selectable(ctx.s, ctx.side, ctx.foe.field).length > 0;
 /** 「自分の場にいる幼女1人を〜」も同じく、自分の場に幼女がいなければ使えない。 */
 const ownUnitOnField = (ctx: CardContext) => ctx.me.field.length > 0;
 const needsOwnUnit = { worthPlaying: (ctx: CardContext) => ctx.me.field.length > 0 };
@@ -41,8 +42,7 @@ const floatOps: OpTable = {
                 return;
             }
             if (t.target === 'skip') return;
-            fx.me.hand = fx.me.hand.filter(id => id !== t.target);
-            fx.me.exile.push(t.target);
+            fx.exile(t.target);
             fx.next({ ...t, op: 'floatSearch', target: undefined });
         },
         cpu: () => 'skip',
@@ -183,6 +183,7 @@ export const strawberrySweets: CardScripts = {
                 target: 'unit',
                 run(fx, t) {
                     const [mine] = t.ids!, theirs = t.target!;
+                    if (fx.protected(theirs)) return;
                     fx.s.cards[theirs].links.push(mine);
                     fx.s.cards[mine].links.push(theirs);
                 },

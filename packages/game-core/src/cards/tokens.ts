@@ -6,6 +6,9 @@ export const tokens: CardScripts = {
     token_cat: {},
     // ギガプリン（5コスト 0/7 挑発。防衛。行動不能。）
     token_pudding: { keywords: ['taunt', 'guard', 'immobile'] },
-    // もちだ（0コスト 1/1 突撃）と お仕置き棒（2コスト ギミック）は token.json にデータだけある。
-    // いちごのカードからは生成されないので、効果は生成元のフルーツを実装するときに書く。
+    token_mochida: {
+        keywords: ['charge'],
+        onPlay(ctx) { for (const uid of ctx.me.hand) if (ctx.s.cards[uid].cardId === 's_24' && ctx.s.cards[uid].revealed) ctx.s.cards[uid].costDelta++; },
+    },
+    token_stick: { canPlay: ctx => ctx.foe.field.some(uid => ctx.s.cards[uid].ateOn === ctx.s.turn - 1), onPlay(ctx) { ctx.queue('destroy', { candidates: ctx.foe.field.filter(uid => ctx.s.cards[uid].ateOn === ctx.s.turn - 1) }); } },
 };

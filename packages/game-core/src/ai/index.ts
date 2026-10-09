@@ -33,7 +33,10 @@ export function cpuCommand(s: GameState, catalog: Catalog, { level = 'normal', s
     if (actor === undefined || !acting.includes(actor)) return null;
     // A fixed seed per position: the same situation gives the same decision (replays, tests).
     const known = determinize(s, actor, catalog, (s.rng ^ 0x5bd1e995 ^ s.revision) >>> 0);
-    const moves = legalMoves(known, actor, catalog);
+    // Human reveal choices are reversible; the CPU advances through each card at most once.
+    const draft = known.pending?.task;
+    const selected = draft?.op === 'cardEffect' && draft.step === 'reveal' ? draft.ids ?? [] : [];
+    const moves = legalMoves(known, actor, catalog).filter(move => move.command.type !== 'choose' || !selected.includes(move.command.option));
     if (!moves.length) return null;
     const command = strategy.choose({ state: known, side: actor, catalog, moves, random: size => random(known, size) }).command;
     if (!applyCommand(s, command, catalog).error) return command;

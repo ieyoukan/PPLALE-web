@@ -2,8 +2,10 @@
 
 export type Side = 0 | 1;
 export type DeckKind = 'yojo' | 'sweet';
-export type Keyword = 'charge' | 'fast' | 'taunt' | 'guard' | 'pierce' | 'immobile' | 'noEat' | 'effectImmune';
-export const keywords: readonly Keyword[] = ['charge', 'fast', 'taunt', 'guard', 'pierce', 'immobile', 'noEat', 'effectImmune'];
+export type Keyword = 'charge' | 'fast' | 'taunt' | 'guard' | 'pierce' | 'immobile' | 'noEat' | 'effectImmune' | 'destroyImmune' | 'hide' | 'evade' | 'colorOrange' | 'colorStrawberry' | 'colorGrape' | 'colorMelon';
+export const keywords: readonly Keyword[] = ['charge', 'fast', 'taunt', 'guard', 'pierce', 'immobile', 'noEat', 'effectImmune', 'destroyImmune', 'hide', 'evade', 'colorOrange', 'colorStrawberry', 'colorGrape', 'colorMelon'];
+export type ExSkillId = 'dice' | 'strawberryHunt' | 'healing' | 'abyss' | 'dagger' | 'alice' | 'smoke';
+export interface ExSkillState { uses: number; lastTurn?: number; usedThisTurn?: number }
 
 /** Printed card data passed in from the app (no images). */
 export interface Definition {
@@ -18,6 +20,7 @@ export interface Definition {
     sweetType?: string;
     role?: string;
     version?: string;
+    effect?: string;
 }
 export type Catalog = Record<string, Definition>;
 export interface Deck {
@@ -64,6 +67,11 @@ export interface Instance {
     revealed: boolean;
     /** Units destroyed together with this one (くっつくポッキー). */
     links: string[];
+    fruitTypes?: string[];
+    evasion?: number;
+    hiding?: boolean;
+    silenced?: boolean;
+    destroyedBy?: string;
 }
 
 export interface Player {
@@ -95,6 +103,13 @@ export interface Player {
     /** Remaining uses per skill, indexed like `skillsFor(playable)`. */
     skills: number[];
     lastBorrow: number;
+    skillHistory?: number[];
+    exSkills?: Partial<Record<ExSkillId, ExSkillState>>;
+    ice?: number;
+    acorns?: number;
+    mochidaLeft?: number;
+    skipDraw?: number;
+    strawberryOnlyUntil?: number;
 }
 
 /**
@@ -107,7 +122,9 @@ export type TaskOp =
     | 'heal' | 'reduce' | 'steal' | 'pp' | 'summon' | 'addHand' | 'draw' | 'discard' | 'handCost' | 'enterAuras' | 'trimHand' | 'finishTurn'
     // card / skill specific
     | 'searchRole' | 'diceDiscard' | 'shurei' | 'doughnut' | 'float' | 'floatSearch' | 'pocky' | 'pockyEnemy' | 'gift'
-    | 'bonusDamage' | 'punish';
+    | 'bonusDamage' | 'punish'
+    | 'cardEffect' | 'die' | 'avoidEffect' | 'attackStart' | 'attackHooks' | 'attackResponses' | 'combat' | 'eatResponse'
+    | 'endEffects' | 'beginTurn' | 'turnDraw' | 'turnDrawResponse' | 'exile' | 'bounce';
 /** Why a draw happens; also the tag that keeps a hand-cost change temporary. */
 export type TaskTag = 'opening' | 'turn' | 'threshold' | 'temporary';
 
@@ -134,6 +151,14 @@ export interface Task {
     multiplier?: number;
     text?: TaskTag;
     deck?: DeckKind;
+    step?: string;
+    value?: number;
+    subject?: string;
+    selected?: boolean;
+    checked?: boolean;
+    ignoreAvoidance?: boolean;
+    blockedTarget?: string;
+    resume?: Task;
 }
 export interface Choice {
     prompt: string;
@@ -193,6 +218,8 @@ export type Command =
     | { type: 'end'; actor: Side }
     | { type: 'choose'; actor: Side; option: string }
     | { type: 'skill'; actor: Side; index: number }
+    | { type: 'exSkill'; actor: Side; skill: ExSkillId }
+    | { type: 'acorn'; actor: Side; mode: 'draw' | 'pp' }
     | { type: 'reveal'; actor: Side; uid: string }
     // Sandbox (test) operations, accepted only with `allowAdjust`.
     | { type: 'adjust'; actor: Side; resource: 'points' | 'pp' | 'ppBonus' | 'damage'; delta: number; uid?: string }

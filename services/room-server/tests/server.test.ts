@@ -12,12 +12,15 @@ test('rooms: made with the rules the game can play, looked up and joined once', 
     assert.equal(made.status, 200);
     const { view } = made.data;
     assert.match(view.id, /^\d{6}$/);
-    assert.deepEqual(view.rules, rules);
+    const supportedRules = { ...rules, fruits: ['strawberry', 'grape'] };
+    assert.deepEqual(view.rules, supportedRules);
     assert.equal(view.players[0].name, 'ほすと太郎ながいなまえで');
-    assert.equal((await call('/rooms', { rules: { fruits: ['grape'] } })).status, 400);
+    assert.equal((await call('/rooms', { rules: { fruits: ['grape'] } })).status, 200);
+    assert.equal((await call('/rooms', { rules: { fruits: ['orange'] } })).status, 200);
+    assert.equal((await call('/rooms', { rules: { fruits: ['melon'] } })).status, 400);
 
     const info = await call<RoomInfo>(`/rooms/${view.id}`);
-    assert.deepEqual(info.data, { id: view.id, rules, host: 'ほすと太郎ながいなまえで', open: true, spectators: false });
+    assert.deepEqual(info.data, { id: view.id, rules: supportedRules, host: 'ほすと太郎ながいなまえで', open: true, spectators: false });
     assert.equal((await call('/rooms/000')).status, 404);
     assert.equal((await call('/rooms/999999')).status, 404);
 

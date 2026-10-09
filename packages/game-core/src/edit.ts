@@ -6,7 +6,7 @@ import { hpOf, spawnCard } from './core/cards.ts';
 import { cloneState } from './core/state.ts';
 import { FIELD_SIZE } from './core/zones.ts';
 import { MAX_PP, RuleError, sides } from './model.ts';
-import type { Catalog, GameState, Keyword, Side } from './model.ts';
+import type { Catalog, ExSkillId, ExSkillState, GameState, Keyword, Side } from './model.ts';
 import { playableSkills, skillsFor } from './playables/skills.ts';
 
 export type EditZone = 'field' | 'hand' | 'nap' | 'exile' | 'yojo' | 'sweet';
@@ -22,9 +22,9 @@ export type BoardEdit =
     | { type: 'toField'; uid: string; slot: number }
     /** A deck card to the top of its deck. */
     | { type: 'toTop'; uid: string }
-    | { type: 'unit'; uid: string; attack?: number; hp?: number; damage?: number; keywords?: Keyword[]; fresh?: boolean; acted?: boolean; shield?: boolean; ate?: boolean }
-    | { type: 'handCard'; uid: string; cost?: number; revealed?: boolean }
-    | { type: 'player'; side: Side; playable?: string; points?: number; maxPoints?: number; turns?: number; ppBonus?: number; pp?: number; skills?: number[]; shield?: boolean; sweetBoost?: number }
+    | { type: 'unit'; uid: string; attack?: number; hp?: number; damage?: number; keywords?: Keyword[]; fresh?: boolean; acted?: boolean; shield?: boolean; ate?: boolean; hiding?: boolean; evasion?: number; silenced?: boolean; fruitTypes?: string[] }
+    | { type: 'handCard'; uid: string; cost?: number; revealed?: boolean; fruitTypes?: string[] }
+    | { type: 'player'; side: Side; playable?: string; points?: number; maxPoints?: number; turns?: number; ppBonus?: number; pp?: number; skills?: number[]; shield?: boolean; sweetBoost?: number; skillHistory?: number[]; exSkills?: Partial<Record<ExSkillId, ExSkillState>>; ice?: number; acorns?: number; mochidaLeft?: number; skipDraw?: number }
     /** Cards played from hand earlier this game (conditions like うゆち / カフェオレ / ケーキ). */
     | { type: 'played'; side: Side; cardIds: string[] }
     | { type: 'deck'; side: Side; kind: 'yojo' | 'sweet'; cardIds: string[] }
@@ -56,6 +56,7 @@ export function editGame(state: GameState, edit: BoardEdit, catalog: Catalog): G
                 const slot = edit.slot ?? Array.from({ length: FIELD_SIZE }, (_, i) => i).find(i => free(s, edit.side, i));
                 if (slot === undefined || !free(s, edit.side, slot)) throw new RuleError('その場所には置けません');
                 Object.assign(s.cards[uid], { slot, entered: 0 });
+                if (s.cards[uid].keywords.includes('hide')) s.cards[uid].hiding = true;
                 p.field.push(uid);
             } else if (edit.top) p[edit.zone].unshift(uid);
             else p[edit.zone].push(uid);
@@ -105,7 +106,14 @@ export function editGame(state: GameState, edit: BoardEdit, catalog: Catalog): G
             if (edit.damage !== undefined) card.damage = Math.max(0, edit.damage);
             // A unit on the field keeps at least 1 HP; at 0 it would already be gone.
             card.damage = Math.min(card.damage, Math.max(0, hpOf({ ...card, damage: 0 }, catalog) - 1));
-            if (edit.keywords) card.keywords = Array.from(new Set(edit.keywords));
+            if (edit.keywords) {
+                if (!card.keywords.includes('hide') && edit.keywords.includes('hide')) card.hiding = true;
+                card.keywords = Array.from(new Set(edit.keywords));
+            }
+            if (edit.hiding !== undefined) card.hiding = edit.hiding;
+            if (edit.evasion !== undefined) card.evasion = Math.max(-12, Math.min(6, edit.evasion));
+            if (edit.silenced !== undefined) card.silenced = edit.silenced;
+            if (edit.fruitTypes) card.fruitTypes = [...edit.fruitTypes];
             if (edit.fresh !== undefined) card.entered = edit.fresh ? s.turn : 0;
             if (edit.acted !== undefined) card.exhausted = edit.acted;
             if (edit.shield !== undefined) card.shield = edit.shield;
@@ -117,6 +125,7 @@ export function editGame(state: GameState, edit: BoardEdit, catalog: Catalog): G
             const card = s.cards[edit.uid];
             if (edit.cost !== undefined) card.costDelta = edit.cost;
             if (edit.revealed !== undefined) card.revealed = edit.revealed;
+            if (edit.fruitTypes) card.fruitTypes = [...edit.fruitTypes];
             break;
         }
         case 'player': {
@@ -138,6 +147,9 @@ export function editGame(state: GameState, edit: BoardEdit, catalog: Catalog): G
             if (edit.skills) p.skills = skillsFor(p.playable).map((skill, i) => Math.max(0, Math.min(skill.uses, edit.skills![i] ?? p.skills[i])));
             if (edit.shield !== undefined) p.shield = edit.shield;
             if (edit.sweetBoost !== undefined) p.sweetBoost = Math.max(0, edit.sweetBoost);
+            if (edit.skillHistory) p.skillHistory = [...edit.skillHistory];
+            if (edit.exSkills) p.exSkills = Object.fromEntries(Object.entries(edit.exSkills).map(([id, skill]) => [id, { ...skill }]));
+            for (const key of ['ice', 'acorns', 'mochidaLeft', 'skipDraw'] as const) if (edit[key] !== undefined) p[key] = Math.max(0, Math.min(999, edit[key]));
             break;
         }
         case 'played':

@@ -2,6 +2,7 @@
 
 import { useBoardContext } from '../board/BoardContext';
 import { GameCard } from '../GameCard';
+import { displayCards } from '@/lib/game/catalog';
 import styles from './EffectBlockAnnouncement.module.css';
 
 /** Show which Jonko stopped damage or destruction, without interrupting with a dialog. */
@@ -17,7 +18,7 @@ export function EffectBlockAnnouncement() {
     <div className={styles.notice}>
       <div className={styles.card}><GameCard id={first.cardId} sizes="(max-width: 700px) 30vw, 220px" /></div>
       <div className={styles.words}>
-        <strong>じょんこが止めた！</strong>
+        <strong>{displayCards[first.cardId]?.name ?? '効果耐性'}が止めた！</strong>
         <span>{first.kind === 'damage' ? 'ダメージを防いだ' : '破壊を防いだ'}</span>
       </div>
     </div>

@@ -4,6 +4,8 @@ import { settleStall } from '../core/stall.ts';
 import { resolveQueue } from '../effects/resolve.ts';
 import { other } from '../model.ts';
 import type { Catalog, GameState, Side } from '../model.ts';
+import { scriptFor } from '../cards/registry.ts';
+import { cardContext } from '../effects/context.ts';
 
 export function startTurn(s: GameState, side: Side) {
     s.active = side;
@@ -30,8 +32,7 @@ export function advancePhase(s: GameState, catalog: Catalog) {
     }
     if (s.phase === 'mulligan' && s.mulligan.confirmed.every(Boolean) && idle(s)) {
         s.phase = 'playing';
-        startTurn(s, s.rules.firstPlayer);
-        s.queue.push({ op: 'draw', actor: s.active, text: 'turn' });
+        s.queue.push({ op: 'beginTurn', actor: s.rules.firstPlayer });
         resolveQueue(s, catalog);
     }
 }
@@ -40,10 +41,24 @@ export function advancePhase(s: GameState, catalog: Catalog) {
 export function finishTurn(s: GameState, side: Side, catalog: Catalog) {
     const p = s.players[side];
     p.hand.forEach(uid => { s.cards[uid].temporaryCost = 0; });
-    p.pp = 0;
+    // Orange reactions inspect/spend the remaining PP during the opponent's turn.
+    // It is always replaced on this player's next turn; ordinary decks keep their old end reset.
+    const usesOffTurnPp = p.field.some(uid => ['y_114', 'y_118', 'y_124', 'y_141'].includes(s.cards[uid].cardId) && !s.cards[uid].silenced)
+        || p.hand.some(uid => ['y_122', 'y_148'].includes(s.cards[uid].cardId) && !s.cards[uid].silenced);
+    if (!usesOffTurnPp) p.pp = 0;
     p.turnPpBonus = 0;
     // 膠着: three turns without any action (or none possible ever) end the match on points.
     if (settleStall(s, catalog)) return;
-    startTurn(s, other(side));
-    s.queue.push({ op: 'draw', actor: s.active, text: 'turn' });
+    s.queue.push({ op: 'beginTurn', actor: other(side) });
+}
+
+export function beginTurn(s: GameState, side: Side, catalog: Catalog) {
+    startTurn(s, side);
+    for (const uid of s.players[side].field) s.cards[uid].hiding = false;
+    for (const owner of [side, other(side)]) {
+        const p = s.players[owner];
+        for (const zone of ['field', 'hand'] as const) for (const uid of [...p[zone]])
+            scriptFor(s, uid).onTurnStart?.(cardContext(s, catalog, owner, uid), side, zone);
+    }
+    s.queue.push({ op: 'turnDraw', actor: side });
 }

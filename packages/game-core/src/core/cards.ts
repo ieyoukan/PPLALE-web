@@ -1,6 +1,6 @@
 // Card instances and their current values (attack, HP, cost, keywords).
 import { MAX_PP } from '../model.ts';
-import { scriptOf } from '../cards/registry.ts';
+import { scriptFor, scriptOf } from '../cards/registry.ts';
 import type { Catalog, GameState, Instance, Keyword, Side } from '../model.ts';
 
 export function note(s: GameState, text: string) {
@@ -15,6 +15,7 @@ export function spawnCard(s: GameState, cardId: string): string {
         uid, cardId, attackBonus: 0, hpBonus: 0, damage: 0, costDelta: 0, temporaryCost: 0,
         keywords: [...(scriptOf(cardId).keywords ?? [])], shield: false, slot: null,
         entered: -1, exhausted: false, ateOn: -1, revealed: false, links: [],
+        ...(scriptOf(cardId).evasion ? { evasion: scriptOf(cardId).evasion } : {}),
     };
     return uid;
 }
@@ -27,6 +28,8 @@ export const hasKeyword = (s: GameState, uid: string, keyword: Keyword) => !!s.c
 export function addKeyword(s: GameState, uid: string, keyword: Keyword) {
     const card = s.cards[uid];
     if (card && !card.keywords.includes(keyword)) card.keywords.push(keyword);
+    if (card && keyword === 'hide') card.hiding = true;
+    if (card && keyword === 'evade' && card.evasion === undefined) card.evasion = 5;
 }
 
 export function buff(s: GameState, uid: string, attack: number, hp: number) {
@@ -55,7 +58,7 @@ export function recordEffectBlock(s: GameState, uid: string, kind: 'damage' | 'd
     const revision = s.revision + 1;
     const events = s.effectBlocks?.revision === revision ? s.effectBlocks.events : [];
     s.effectBlocks = { revision, events: [...events, { uid, kind }] };
-    note(s, `じょんこの効果耐性：${kind === 'damage' ? 'ダメージ' : '破壊'}を無効化`);
+    note(s, `効果耐性：${kind === 'damage' ? 'ダメージ' : '破壊'}を無効化`);
 }
 
 export function maxPp(s: GameState, side: Side) {
@@ -68,14 +71,19 @@ export function availablePpMaximum(s: GameState, side: Side) {
 }
 export function gainPp(s: GameState, side: Side, amount: number) {
     const p = s.players[side];
+    const dagger = p.exSkills?.dagger;
+    if (amount > 0 && s.active === side && dagger) {
+        if (dagger.lastTurn !== s.turn) { dagger.lastTurn = s.turn; dagger.usedThisTurn = 0; }
+        if ((dagger.usedThisTurn ?? 0) < 2) { amount += 2; dagger.usedThisTurn = (dagger.usedThisTurn ?? 0) + 1; }
+    }
     p.pp = Math.min(availablePpMaximum(s, side), p.pp + amount);
 }
 
 export function costOf(s: GameState, uid: string, catalog: Catalog, side: Side) {
     const card = s.cards[uid];
-    const base = scriptOf(card.cardId).baseCost?.(s, side) ?? catalog[card.cardId].cost;
+    const base = scriptFor(s, uid).baseCost?.(s, side) ?? catalog[card.cardId].cost;
     return Math.max(0, base + card.costDelta + card.temporaryCost);
 }
 
 /** A sweet that counts as お菓子 for effects (back menus do not). */
-export const isRealSweet = (catalog: Catalog, cardId: string) => catalog[cardId]?.type === 'sweet' && catalog[cardId].sweetType !== 'back_menu';
+export const isRealSweet = (catalog: Catalog, cardId: string) => catalog[cardId]?.type === 'sweet' && !['back_menu', 'currency'].includes(catalog[cardId].sweetType ?? '') && cardId !== 's_38';

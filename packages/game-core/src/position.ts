@@ -5,7 +5,7 @@ import { z } from 'zod';
 import { scriptOf } from './cards/registry.ts';
 import { hpOf, note, spawnCard } from './core/cards.ts';
 import { keywords, MAX_PP, sandboxRules, sides } from './model.ts';
-import type { Catalog, GameState, Keyword, Player, Side } from './model.ts';
+import type { Catalog, ExSkillId, ExSkillState, GameState, Keyword, Player, Side } from './model.ts';
 import { playableSkills, skillsFor } from './playables/skills.ts';
 import { FIELD_SIZE } from './core/zones.ts';
 
@@ -57,6 +57,15 @@ export interface PositionSide {
     shield?: boolean;
     /** おいしくなる呪文 waiting for the next sweet. */
     sweetBoost?: number;
+    skillHistory?: number[];
+    exSkills?: Partial<Record<ExSkillId, ExSkillState>>;
+    ice?: number;
+    acorns?: number;
+    mochidaLeft?: number;
+    skipDraw?: number;
+    strawberryOnlyUntil?: number;
+    /** Per-card traits, indexed within their zone; field indices are slot numbers. */
+    cardTraits?: { zone: 'field' | 'hand' | 'nap' | 'exile' | 'yojo' | 'sweet'; index: number; fruitTypes?: string[]; evasion?: number; hiding?: boolean; silenced?: boolean }[];
 }
 export interface Position {
     version: 1;
@@ -83,6 +92,10 @@ const sideSchema = z.object({
     playable: id, points: count, maxPoints: count, turns: count, maxPp: count, pp: count,
     skills: z.array(count).max(8).optional(), field: z.array(unit.nullable()).max(FIELD_SIZE), hand: z.array(handCard).max(60),
     nap: ids, exile: ids.optional(), yojo: ids, sweet: ids, played: ids.optional(), shield: z.boolean().optional(), sweetBoost: count.optional(),
+    skillHistory: z.array(count).optional(),
+    exSkills: z.partialRecord(z.enum(['dice', 'strawberryHunt', 'healing', 'abyss', 'dagger', 'alice', 'smoke']), z.object({ uses: count, lastTurn: z.number().int().optional(), usedThisTurn: count.optional() })).optional(),
+    ice: count.optional(), acorns: count.optional(), mochidaLeft: count.optional(), skipDraw: count.optional(), strawberryOnlyUntil: z.number().int().optional(),
+    cardTraits: z.array(z.object({ zone: z.enum(['field', 'hand', 'nap', 'exile', 'yojo', 'sweet']), index: count, fruitTypes: z.array(z.enum(['strawberry', 'grape', 'melon', 'orange'])).optional(), evasion: z.number().int().min(-12).max(6).optional(), hiding: z.boolean().optional(), silenced: z.boolean().optional() })).max(500).optional(),
 });
 const schema = z.object({
     version: z.literal(1), active: z.union([z.literal(0), z.literal(1)]), first: z.union([z.literal(0), z.literal(1)]),
@@ -145,6 +158,10 @@ export function buildPosition(position: Position, catalog: Catalog, { names = ['
         milestones: ([10, 5] as const).filter(threshold => p.points <= threshold), played: [...(p.played ?? [])],
         shield: !!p.shield, sweetBoost: p.sweetBoost ?? 0,
         skills: skillsFor(p.playable).map((skill, i) => Math.min(skill.uses, p.skills?.[i] ?? skill.uses)), lastBorrow: -10,
+        ...(p.skillHistory ? { skillHistory: [...p.skillHistory] } : {}),
+        ...(p.exSkills ? { exSkills: Object.fromEntries(Object.entries(p.exSkills).map(([id, skill]) => [id, { ...skill }])) } : {}),
+        ice: p.ice ?? 0, acorns: p.acorns ?? 0, mochidaLeft: p.mochidaLeft ?? 0, skipDraw: p.skipDraw ?? 0,
+        ...(p.strawberryOnlyUntil !== undefined ? { strawberryOnlyUntil: p.strawberryOnlyUntil } : {}),
     })) as [Player, Player];
     const s: GameState = {
         version: 1, effectTauntRules: true, turnRules: true, phase: 'playing', openingRemaining: [0, 0],
@@ -168,6 +185,7 @@ export function buildPosition(position: Position, catalog: Catalog, { names = ['
                 slot, attackBonus: u.attack ?? 0, hpBonus: u.hp ?? 0, damage: u.damage ?? 0,
                 keywords: [...(u.keywords ?? scriptOf(u.id).keywords ?? [])],
                 entered: u.fresh ? turn : 0, exhausted: !!u.acted, shield: !!u.shield, ateOn: u.ate ? turn - 1 : -1,
+                hiding: (u.keywords ?? scriptOf(u.id).keywords ?? []).includes('hide'),
             });
             p.field.push(uid);
         });
@@ -175,6 +193,10 @@ export function buildPosition(position: Position, catalog: Catalog, { names = ['
         p.exile = (from.exile ?? []).map(spawn);
         p.yojo = from.yojo.map(spawn);
         p.sweet = from.sweet.map(spawn);
+        for (const { zone, index, ...traits } of from.cardTraits ?? []) {
+            const uid = zone === 'field' ? p.field.find(uid => s.cards[uid].slot === index) : p[zone][index];
+            if (uid) Object.assign(s.cards[uid], { ...traits, ...(traits.fruitTypes ? { fruitTypes: [...traits.fruitTypes] } : {}) });
+        }
     }
     note(s, position.title ? `盤面「${position.title}」から開始` : '作った盤面から開始');
     return s;
@@ -218,6 +240,21 @@ export function positionOf(s: GameState, catalog: Catalog): Position {
         if (p.played.length) side.played = [...p.played];
         if (p.shield) side.shield = true;
         if (p.sweetBoost) side.sweetBoost = p.sweetBoost;
+        if (p.skillHistory?.length) side.skillHistory = [...p.skillHistory];
+        if (p.exSkills) side.exSkills = Object.fromEntries(Object.entries(p.exSkills).map(([id, skill]) => [id, { ...skill, ...(skill.lastTurn !== undefined ? { lastTurn: skill.lastTurn === s.turn ? Math.max(2, s.players[0].turns + s.players[1].turns) : -1 } : {}) }]));
+        for (const key of ['ice', 'acorns', 'mochidaLeft', 'skipDraw'] as const) if (p[key] !== undefined && p[key] !== 0) side[key] = p[key];
+        if (p.strawberryOnlyUntil !== undefined) side.strawberryOnlyUntil = p.strawberryOnlyUntil - s.turn + Math.max(2, s.players[0].turns + s.players[1].turns);
+        const traits: NonNullable<PositionSide['cardTraits']> = [];
+        for (const zone of ['field', 'hand', 'nap', 'exile', 'yojo', 'sweet'] as const) p[zone].forEach((uid, index) => {
+            const c = s.cards[uid];
+            const entry: NonNullable<PositionSide['cardTraits']>[number] = { zone, index: zone === 'field' ? c.slot ?? index : index };
+            if (c.fruitTypes?.length) entry.fruitTypes = [...c.fruitTypes];
+            if (c.evasion !== undefined) entry.evasion = c.evasion;
+            if (c.hiding || c.keywords.includes('hide')) entry.hiding = !!c.hiding;
+            if (c.silenced) entry.silenced = true;
+            if (Object.keys(entry).length > 2) traits.push(entry);
+        });
+        if (traits.length) side.cardTraits = traits;
         return side;
     }) as [PositionSide, PositionSide];
     return { version: 1, active: s.active, first: s.rules.firstPlayer, players };
@@ -235,7 +272,7 @@ export function encodePosition(position: Position): string {
 
 /** The position in a share code (surrounding spaces or a pasted URL around it are ignored), or null. */
 export function decodePosition(code: string): Position | null {
-    const found = code.match(/PPL1\.([A-Za-z0-9_-]+)/);
+    const found = code.match(/PPL1\.([\w-]+)/);
     if (!found) return null;
     try {
         const binary = atob(found[1].replace(/-/g, '+').replace(/_/g, '/'));

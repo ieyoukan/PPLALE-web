@@ -19,6 +19,7 @@ function certainlyStuck(s: GameState, catalog: Catalog): boolean {
     return sides.every(side => {
         const p = s.players[side];
         if (p.yojo.length || p.sweet.length || p.hand.length) return false;
+        if ((p.acorns ?? 0) > 0 || (p.exSkills?.alice?.uses ?? 0) > 0 || (p.exSkills?.strawberryHunt?.uses ?? 0) > 0) return false;
         if (p.field.some(uid => attackOf(s.cards[uid], catalog) > 0 && !s.cards[uid].keywords.includes('immobile'))) return false;
         // The common skill (index 0) needs a unit on the field; with no cards left none can arrive.
         return skillsFor(p.playable).every((_, index) => p.skills[index] <= 0 || index === 0 && !p.field.length);

@@ -1,6 +1,6 @@
 // Commands during a turn: play, attack, skills, choices and ending the turn.
 import { canPlay } from '../view.ts';
-import { scriptOf } from '../cards/registry.ts';
+import { scriptFor } from '../cards/registry.ts';
 import { costOf, isRealSweet, note } from '../core/cards.ts';
 import { canAttack, resolveAttack } from '../core/combat.ts';
 import { markAction } from '../core/stall.ts';
@@ -9,6 +9,8 @@ import { cardContext, effects } from '../effects/context.ts';
 import { RuleError } from '../model.ts';
 import type { Catalog, Definition, GameState, Player, Side } from '../model.ts';
 import { skillsFor } from '../playables/skills.ts';
+import { fruitsOf } from '../core/protection.ts';
+import { activateExSkill } from '../playables/exSkills.ts';
 import type { Handlers } from './types.ts';
 
 function assertMainPhase(s: GameState, actor: Side) {
@@ -25,12 +27,13 @@ function sweetMultiplier(p: Player, def: Definition, catalog: Catalog): number {
     return multiplier;
 }
 
-export const turnCommands: Handlers<'play' | 'attack' | 'end' | 'reveal' | 'skill' | 'choose'> = {
+export const turnCommands: Handlers<'play' | 'attack' | 'end' | 'reveal' | 'skill' | 'choose' | 'exSkill' | 'acorn'> = {
     play(s, c, catalog) {
         assertMainPhase(s, c.actor);
         const p = s.players[c.actor];
         if (!p.hand.includes(c.uid)) throw new RuleError('そのカードは手札にありません');
         const card = s.cards[c.uid], def = catalog[card.cardId], cost = costOf(s, c.uid, catalog, c.actor);
+        if (def.type === 'yojo' && (p.strawberryOnlyUntil ?? -1) >= s.turn && !fruitsOf(s, c.uid, catalog).includes('strawberry')) throw new RuleError('イチゴ狩り：このターンはイチゴタイプの幼女だけプレイできます');
         if (cost > p.pp) throw new RuleError('PPが足りません');
         if (!canPlay(s, c.actor, c.uid, catalog)) throw new RuleError('対象にできる幼女がいないので使えません');
         const slot = c.slot ?? openSlot(s, c.actor);
@@ -46,11 +49,11 @@ export const turnCommands: Handlers<'play' | 'attack' | 'end' | 'reveal' | 'skil
             enterField(s, c.actor, c.uid, catalog, true, slot);
         } else {
             p.nap.push(c.uid);
-            scriptOf(card.cardId).onPlay?.(cardContext(s, catalog, c.actor, c.uid, sweetMultiplier(p, def, catalog)));
+            scriptFor(s, c.uid).onPlay?.(cardContext(s, catalog, c.actor, c.uid, sweetMultiplier(p, def, catalog)));
         }
         for (const zone of ['hand', 'field'] as const) {
             for (const uid of [...p[zone]].filter(id => id !== c.uid))
-                scriptOf(s.cards[uid].cardId).onOwnerPlayed?.(cardContext(s, catalog, c.actor, uid), c.uid, zone);
+                scriptFor(s, uid).onOwnerPlayed?.(cardContext(s, catalog, c.actor, uid), c.uid, zone);
         }
         // Recorded after the effect, so 「既に」 conditions do not count this card.
         p.played.push(card.cardId);
@@ -58,16 +61,18 @@ export const turnCommands: Handlers<'play' | 'attack' | 'end' | 'reveal' | 'skil
     attack(s, c, catalog) {
         if (!canAttack(s, c.actor, c.uid, c.target, catalog)) throw new RuleError('その対象には攻撃できません');
         markAction(s);
-        resolveAttack(s, c.actor, c.uid, c.target, catalog);
+        resolveAttack(s, c.actor, c.uid, c.target);
     },
     end(s, c) {
         assertMainPhase(s, c.actor);
-        s.queue.push({ op: 'trimHand', actor: c.actor }, { op: 'finishTurn', actor: c.actor });
+        s.queue.push({ op: 'trimHand', actor: c.actor }, { op: 'endEffects', actor: c.actor });
     },
-    reveal(s, c) {
-        assertMainPhase(s, c.actor);
-        if (!s.players[c.actor].hand.includes(c.uid) || !scriptOf(s.cards[c.uid].cardId).revealable) throw new RuleError('公開できるカードではありません');
+    reveal(s, c, catalog) {
+        if (s.phase !== 'playing' || s.pending) throw new RuleError('効果の選択を先に完了してください');
+        if (!s.players[c.actor].hand.includes(c.uid) || !scriptFor(s, c.uid).revealable) throw new RuleError('公開できるカードではありません');
+        if (s.cards[c.uid].revealed) return;
         s.cards[c.uid].revealed = true;
+        scriptFor(s, c.uid).onReveal?.(cardContext(s, catalog, c.actor, c.uid));
     },
     skill(s, c, catalog) {
         assertMainPhase(s, c.actor);
@@ -80,8 +85,22 @@ export const turnCommands: Handlers<'play' | 'attack' | 'end' | 'reveal' | 'skil
         markAction(s);
         p.pp -= skill.cost;
         p.skills[c.index]--;
+        p.skillHistory = [...(p.skillHistory ?? []), c.index];
         note(s, `${p.name}：${skill.name}`);
         skill.use(fx);
+        for (const owner of [c.actor, c.actor === 0 ? 1 : 0] as Side[]) for (const uid of s.players[owner].field)
+            scriptFor(s, uid).onSkill?.(cardContext(s, catalog, owner, uid));
+    },
+    exSkill(s, c, catalog) {
+        assertMainPhase(s, c.actor);
+        activateExSkill(s, c.actor, c.skill, catalog);
+    },
+    acorn(s, c) {
+        if (s.phase !== 'playing' || s.pending || !(s.players[c.actor].acorns ?? 0)) throw new RuleError('どんぐりを使用できません');
+        s.players[c.actor].acorns!--;
+        if (c.mode === 'draw') s.queue.push({ op: 'draw', actor: c.actor });
+        else s.players[c.actor].pp = Math.min(12, s.players[c.actor].pp + 1);
+        markAction(s);
     },
     // Answers the pending choice; the waiting step re-runs with the option as its target.
     choose(s, c) {

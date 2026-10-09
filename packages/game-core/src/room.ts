@@ -25,7 +25,7 @@ export const defaultRoomRules: RoomRules = { fruits: ['strawberry'], extendedPla
  * What the engine can play today (see `validateDeck`). A room cannot allow more than this; add a
  * fruit here when its cards are implemented.
  */
-export const playableNow: RoomRules = { fruits: ['strawberry'], extendedPlayable: false };
+export const playableNow: RoomRules = { fruits: ['strawberry', 'grape', 'orange'], extendedPlayable: false };
 
 /** The usable part of anything sent as rules, or null when no fruit is left. */
 export function parseRoomRules(value: unknown): RoomRules | null {
@@ -42,6 +42,7 @@ export function roomDeckErrors(deck: Deck, rules: RoomRules, catalog: Catalog): 
     const used = new Set([...deck.yojo, ...deck.sweet].map(id => catalog[id]?.fruit).filter((fruit): fruit is Fruit => fruits.includes(fruit as Fruit)));
     for (const fruit of Array.from(used)) if (!rules.fruits.includes(fruit)) errors.push(`このルームでは${fruitNames[fruit]}のカードを使えません`);
     if (isExtended(catalog, deck.playable) && !rules.extendedPlayable) errors.push('このルームでは拡張プレイアブルを使えません');
+    if (rules.fruits.includes('orange') && deck.sweet.includes('s_24')) errors.push('ぷぷりえーるはオレンジ環境以降では使用できません');
     return errors.length ? errors : validateDeck(deck, catalog);
 }
 

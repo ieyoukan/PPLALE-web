@@ -1,6 +1,7 @@
 // Read-only helpers that tell a UI where to show things. No React / DOM here.
-import { scriptOf } from './cards/registry.ts';
+import { scriptFor, scriptOf } from './cards/registry.ts';
 import { canAttack } from './core/combat.ts';
+import { fruitsOf } from './core/protection.ts';
 import { cardContext, effects } from './effects/context.ts';
 import { skillsFor } from './playables/skills.ts';
 import { other } from './model.ts';
@@ -19,12 +20,17 @@ export interface PendingView {
     decks: DeckKind[];
     /** `cardId` is set when the option is a card outside field / hand (e.g. a deck search). */
     buttons: { id: string; label: string; cardId?: string }[];
+    /** Private draft: the cards stay unrevealed until the `done` choice. */
+    reveal?: { selected: string[] };
 }
 
 export function pendingView(s: GameState): PendingView | null {
     if (!s.pending) return null;
     const { task, prompt, options } = s.pending;
     const view: PendingView = { actor: task.actor, op: task.op, prompt, units: [], hand: [], decks: [], buttons: [] };
+    if (task.op === 'cardEffect' && task.step === 'reveal' && options.some(option => option.id === 'done')) {
+        view.reveal = { selected: [...(task.ids ?? [])] };
+    }
     for (const option of options) {
         if (task.op === 'draw' && (option.id === 'yojo' || option.id === 'sweet')) view.decks.push(option.id);
         else if (s.players.some(p => p.field.includes(option.id))) view.units.push(option.id);
@@ -46,7 +52,8 @@ export function attackTargets(s: GameState, side: Side, catalog: Catalog): Recor
 
 /** The card's own play condition holds (cost and field space are checked separately). */
 export const canPlay = (s: GameState, side: Side, uid: string, catalog: Catalog) =>
-    scriptOf(s.cards[uid].cardId).canPlay?.(cardContext(s, catalog, side, uid)) ?? true;
+    !(catalog[s.cards[uid].cardId].type === 'yojo' && (s.players[side].strawberryOnlyUntil ?? -1) >= s.turn && !fruitsOf(s, uid, catalog).includes('strawberry'))
+    && (scriptFor(s, uid).canPlay?.(cardContext(s, catalog, side, uid)) ?? true);
 
 /** Why the skill cannot be used now apart from PP and remaining uses (e.g. nothing to select), or undefined. */
 export const skillBlocked = (s: GameState, side: Side, index: number, catalog: Catalog) =>
