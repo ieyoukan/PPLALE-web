@@ -16,8 +16,8 @@ import { sideLabel } from './useGameSession';
 import type { Mode } from './useGameSession';
 
 export type Strike = { uid: string; cardId: string; x: number; y: number; dx: number; dy: number; width: number; height: number };
-/** A card or skill the opponent used, shown large before it resolves. */
-export type Announcement = { id: number; kind: 'play' | 'skill' | 'reveal'; side: Side; cardId: string; title: string; text: string };
+/** A card, skill or hand reaction, shown large before it resolves. */
+export type Announcement = { id: number; kind: 'play' | 'skill' | 'reveal' | 'reaction'; side: Side; cardId: string; title: string; text: string };
 /** Immunity outcomes to present after a command resolves. */
 export type EffectBlockNotice = { id: number; targets: (Ping & { cardId: string; kind: 'damage' | 'destroy' })[] };
 /** Who goes first, shown once it is decided. */
@@ -183,7 +183,9 @@ export function useBoardAnimations({ game, view, mode, cpuSides, replaying, cont
     };
     // A spectator is shown either side's cards and choices like an opponent's.
     const opponent = command.actor !== view || cpuSides.includes(command.actor) || !!spectating;
-    const shown = opponent ? describe(game, command, cardId) : null;
+    // Discarding うぃまる is an activation, including when the human uses it on the CPU's turn.
+    const handReaction = command.type === 'choose' && game.pending?.task.op === 'eatResponse' && command.option !== 'skip';
+    const shown = opponent || handReaction ? describe(game, command, cardId) : null;
     if (shown) {
       setAnnouncement(shown);
       later(apply, ANNOUNCE_HIT);
@@ -249,9 +251,14 @@ export function useBoardAnimations({ game, view, mode, cpuSides, replaying, cont
 
 let choiceId = 0;
 let announcementId = 0;
-/** What to show for the opponent's play / skill / reveal, or null for other commands. */
+/** Announced plays, skills, reveals and activated hand effects. */
 function describe(game: GameState, command: Command, cardId?: string): Announcement | null {
   const id = ++announcementId;
+  if (command.type === 'choose' && game.pending?.task.op === 'eatResponse' && command.option !== 'skip'
+    && game.pending.task.actor === command.actor && game.players[command.actor].hand.includes(command.option)
+    && (cardId ?? game.cards[command.option]?.cardId) === 'y_64') {
+    return { id, kind: 'reaction', side: command.actor, cardId: 'y_64', title: 'うぃまるを使った！', text: '手札から公開してお昼寝場所へ\nお菓子ポイントの変動を無効化' };
+  }
   if (command.type === 'play' || command.type === 'reveal') {
     const card = displayCards[cardId ?? game.cards[command.uid]?.cardId];
     return card && { id, kind: command.type, side: command.actor, cardId: card.id, title: card.name, text: card.effect ?? '' };

@@ -5,9 +5,9 @@ import { sideName, useBoardContext } from '../board/BoardContext';
 import { GameCard } from '../GameCard';
 import styles from '../BoardEmulator.module.css';
 
-const verb = { play: 'プレイ', skill: 'スキル', reveal: '公開' } as const;
+const verb = { play: 'プレイ', skill: 'スキル', reveal: '公開', reaction: '手札の効果' } as const;
 
-/** A card / skill used by the opponent (or by either CPU when watching), large, with its text — shown before it resolves. */
+/** Used cards / skills and either side's hand reactions, shown before they resolve. */
 export function PlayAnnouncement() {
   const board = useBoardContext();
   const shown = board.animations.announcement;
