@@ -11,8 +11,9 @@ export const tokens: CardScripts = {
     token_cat: {},
     // ギガプリン（5コスト 0/7 挑発。防衛。行動不能。）
     token_pudding: { keywords: ['taunt', 'guard', 'immobile'] },
+    // もちだ: 突撃。破壊されたとき、お昼寝場所には行かず、このゲームから除外する。
     token_mochida: {
-        keywords: ['charge'],
+        keywords: ['charge'], destroyedTo: 'exile',
         onPlay(ctx) { for (const uid of ctx.me.hand) if (ctx.s.cards[uid].cardId === 's_24' && ctx.s.cards[uid].revealed) ctx.s.cards[uid].costDelta++; },
     },
     // お仕置き棒（2コスト）: 直前の相手ターンにお菓子を食べた幼女を1人破壊する。選べる幼女がいなければ使えない。

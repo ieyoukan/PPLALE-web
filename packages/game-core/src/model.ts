@@ -2,10 +2,17 @@
 
 export type Side = 0 | 1;
 export type DeckKind = 'yojo' | 'sweet';
-export type Keyword = 'charge' | 'fast' | 'taunt' | 'guard' | 'pierce' | 'immobile' | 'noEat' | 'effectImmune' | 'destroyImmune' | 'hide' | 'evade' | 'colorOrange' | 'colorStrawberry' | 'colorGrape' | 'colorMelon';
-export const keywords: readonly Keyword[] = ['charge', 'fast', 'taunt', 'guard', 'pierce', 'immobile', 'noEat', 'effectImmune', 'destroyImmune', 'hide', 'evade', 'colorOrange', 'colorStrawberry', 'colorGrape', 'colorMelon'];
-export type ExSkillId = 'dice' | 'strawberryHunt' | 'healing' | 'abyss' | 'dagger' | 'alice' | 'smoke';
+/**
+ * `exileAtEnd`: 「自分のターン終了時、この幼女をこのゲームから除外する」 (リマチャン).
+ * `encore`: 「攻撃終了時、お昼寝場所のメロンタイプの幼女4人を除外したならば +1/+1 し、再行動を得る」 (えーりん).
+ */
+export type Keyword = 'charge' | 'fast' | 'taunt' | 'guard' | 'pierce' | 'immobile' | 'noEat' | 'effectImmune' | 'destroyImmune' | 'hide' | 'evade' | 'colorOrange' | 'colorStrawberry' | 'colorGrape' | 'colorMelon' | 'exileAtEnd' | 'encore';
+export const keywords: readonly Keyword[] = ['charge', 'fast', 'taunt', 'guard', 'pierce', 'immobile', 'noEat', 'effectImmune', 'destroyImmune', 'hide', 'evade', 'colorOrange', 'colorStrawberry', 'colorGrape', 'colorMelon', 'exileAtEnd', 'encore'];
+export type ExSkillId = 'dice' | 'strawberryHunt' | 'healing' | 'abyss' | 'dagger' | 'alice' | 'smoke' | 'kamikakushi';
+export const exSkillIds: readonly ExSkillId[] = ['dice', 'strawberryHunt', 'healing', 'abyss', 'dagger', 'alice', 'smoke', 'kamikakushi'];
 export interface ExSkillState { uses: number; lastTurn?: number; usedThisTurn?: number }
+/** A skill taken from the other playable (レンテ): `index` is its place in `skillsFor(playable)`. */
+export interface ExtraSkill { playable: string; index: number; uses: number }
 
 /** Printed card data passed in from the app (no images). */
 export interface Definition {
@@ -72,6 +79,12 @@ export interface Instance {
     hiding?: boolean;
     silenced?: boolean;
     destroyedBy?: string;
+    /** Actions taken this turn, for units that may act more than once a turn (ふろんとさん). */
+    actions?: number;
+    /** Last game turn of a 行動不能 given for a limited time; the keyword goes when that turn is over. */
+    immobileUntil?: number;
+    /** Fruit types held only until the end of a game turn (レンス): type → last turn. */
+    timedFruits?: Record<string, number>;
 }
 
 export interface Player {
@@ -110,6 +123,12 @@ export interface Player {
     mochidaLeft?: number;
     skipDraw?: number;
     strawberryOnlyUntil?: number;
+    /** +N/+N for every unit that enters this side's field, for the rest of the game (ビデカメ). */
+    entryBuff?: number;
+    /** 幼女 discarded from this hand straight to the nap this game (しゅみあ). */
+    discardedYojo?: number;
+    /** Skills taken from the opponent (レンテ). The `skill` command reaches them with the indices after the playable's own. */
+    extraSkills?: ExtraSkill[];
 }
 
 /**
@@ -124,7 +143,8 @@ export type TaskOp =
     | 'searchRole' | 'diceDiscard' | 'shurei' | 'doughnut' | 'float' | 'floatSearch' | 'pocky' | 'pockyEnemy' | 'gift'
     | 'bonusDamage' | 'punish'
     | 'cardEffect' | 'die' | 'avoidEffect' | 'attackStart' | 'attackHooks' | 'defendHooks' | 'attackResponses' | 'combat' | 'eatResponse'
-    | 'endEffects' | 'beginTurn' | 'turnDraw' | 'turnDrawResponse' | 'exile' | 'bounce';
+    | 'endEffects' | 'beginTurn' | 'turnDraw' | 'turnDrawResponse' | 'exile' | 'bounce'
+    | 'swapStats' | 'immobilize' | 'healHooks' | 'attackEnd' | 'playResponse';
 /** Why a draw happens; also the tag that keeps a hand-cost change temporary. */
 export type TaskTag = 'opening' | 'turn' | 'threshold' | 'temporary';
 

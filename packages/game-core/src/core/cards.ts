@@ -39,7 +39,19 @@ export function buff(s: GameState, uid: string, attack: number, hp: number) {
     card.hpBonus += hp;
 }
 
-/** Deals damage. Effect damage is ignored by `effectImmune`; うぃまる's barrier absorbs any one hit. */
+/** Swaps a unit's current attack and HP (ふろんとさん, ぎってぃ). At 0 attack it is left with 0 HP. */
+export function swapStats(s: GameState, uid: string, catalog: Catalog) {
+    const card = s.cards[uid];
+    if (!card) return;
+    const attack = attackOf(card, catalog), hp = hpOf(card, catalog);
+    card.attackBonus = hp - catalog[card.cardId].attack;
+    card.hpBonus += attack - hp;
+}
+
+/**
+ * Deals damage. Effect damage is ignored by `effectImmune`; うぃまる's barrier absorbs any one hit;
+ * a unit with a damage limit (もなか) never takes more than it at once.
+ */
 export function hit(s: GameState, uid: string, amount: number, byEffect = true) {
     const card = s.cards[uid];
     if (!card || amount <= 0) return;
@@ -51,7 +63,7 @@ export function hit(s: GameState, uid: string, amount: number, byEffect = true) 
         card.shield = false;
         return;
     }
-    card.damage += amount;
+    card.damage += Math.min(amount, scriptFor(s, uid).maxDamage ?? amount);
 }
 
 export function recordEffectBlock(s: GameState, uid: string, kind: 'damage' | 'destroy') {

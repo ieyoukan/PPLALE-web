@@ -35,6 +35,14 @@ export interface CardScript {
     /** Printed keywords (常在能力). */
     keywords?: Keyword[];
     evasion?: number;
+    /** 「1ターンにN回行動できる」. Omitted: once. */
+    actionsPerTurn?: number;
+    /** 「この幼女へのN+1以上のダメージはNになる」: no single hit deals more than this. */
+    maxDamage?: number;
+    /** 「攻撃時この幼女はダメージを受けない」: the unit it attacks deals no combat damage back. */
+    unharmedAttacking?: boolean;
+    /** 「破壊されたとき、お昼寝場所には行かず〜」: where it goes instead (`deck`: its owner's 幼女デッキ, then shuffled). */
+    destroyedTo?: 'exile' | 'deck';
     /** Overrides the printed cost while in hand. */
     baseCost?(s: GameState, side: Side): number | undefined;
     /** False when the card cannot be played now (e.g. it must select a unit and none is there). */
@@ -66,6 +74,14 @@ export interface CardScript {
     onDiscarded?(ctx: CardContext): void;
     /** 攻撃時, before combat damage. */
     onAttack?(ctx: CardContext, target: string | 'leader'): void;
+    /** 攻撃終了時: its attack was carried out (not dodged or cancelled) and it is still on the field. */
+    onAttackEnd?(ctx: CardContext, target: string | 'leader'): void;
+    /** It took `taken` (> 0) combat damage in an attack, attacking or attacked, and was not destroyed. */
+    onCombatDamage?(ctx: CardContext, taken: number): void;
+    /** It attacked `target` and destroyed it in combat. `excess`: its attack minus the HP `target` had. */
+    onAttackKill?(ctx: CardContext, target: string, excess: number): void;
+    /** 自分のお菓子ポイントが回復するたび, while this card is on its owner's field or in their nap. */
+    onHealed?(ctx: CardContext, zone: 'field' | 'nap'): void;
     /** The owner played a card while this one is in their hand or on their field. */
     onOwnerPlayed?(ctx: CardContext, played: string, zone: 'hand' | 'field'): void;
     /** A draw step queued by this card resolved one card. */
@@ -75,6 +91,8 @@ export interface CardScript {
     cpu?: {
         /** False when playing it now would waste it (e.g. no target). */
         worthPlaying?(ctx: CardContext): boolean;
+        /** Preferred answer to a choice asked by this card's `effect` step. Omitted or undefined: the level decides. */
+        choose?(ctx: CardContext, task: Task, options: string[]): string | undefined;
     };
 }
 export type CardScripts = Record<string, CardScript>;
