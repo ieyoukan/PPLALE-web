@@ -1,6 +1,6 @@
 'use client';
 
-import { useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react';
+import { useCallback, useLayoutEffect, useRef, useState } from 'react';
 import type { RefObject } from 'react';
 import { canAttack, changesBetween, other, skillsFor, turnOf } from '@pplale/game-core';
 import type { Command, GameState, Side } from '@pplale/game-core';
@@ -101,8 +101,17 @@ export function useBoardAnimations({ game, view, mode, cpuSides, replaying, cont
   const lastCommand = useRef<Command['type'] | null>(null);
   const previous = useRef(game);
   const enabled = useRef(false);
-  const timers = useRef<ReturnType<typeof setTimeout>[]>([]);
-  const later = useCallback((callback: () => void, delay: number) => { timers.current.push(setTimeout(callback, delay)); }, []);
+  /**
+   * Timers still to fire. They are only cancelled by `reset` (another match on the table), never when
+   * React takes the effects down: that also happens while the board stays on screen with its state
+   * (a lazily loaded part arriving, development refresh), and a cancelled timer would then leave a card
+   * flying forever, or never apply the command whose announcement it was waiting for.
+   */
+  const timers = useRef(new Set<ReturnType<typeof setTimeout>>());
+  const later = useCallback((callback: () => void, delay: number) => {
+    const id = setTimeout(() => { timers.current.delete(id); callback(); }, delay);
+    timers.current.add(id);
+  }, []);
 
   // Compare with the previous state and present the difference.
   useLayoutEffect(() => {
@@ -166,7 +175,6 @@ export function useBoardAnimations({ game, view, mode, cpuSides, replaying, cont
       else announce();
     }
   }, [game, view, mode, replaying, container, later, spectating]);
-  useEffect(() => () => timers.current.forEach(clearTimeout), []);
 
   /**
    * Runs `commit` (applying the command) with its animation: attacks lunge first; cards, skills and
@@ -228,7 +236,7 @@ export function useBoardAnimations({ game, view, mode, cpuSides, replaying, cont
   const skipNext = useCallback(() => { enabled.current = false; }, []);
   const reset = useCallback(() => {
     timers.current.forEach(clearTimeout);
-    timers.current = [];
+    timers.current.clear();
     enabled.current = false;
     setFlights([]);
     setStrike(null);
