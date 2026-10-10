@@ -92,7 +92,8 @@ function choose(d: CpuDecision): Move {
         if (!c) return 0;
         if (harmful) {
             const lethal = task.op !== 'damage' || hpOf(c, catalog) <= (task.amount ?? 0) * (task.multiplier ?? 1);
-            return (c.keywords.includes('effectImmune') ? -100 : 0) + (lethal ? 20 : 0) + (c.keywords.includes('taunt') || c.keywords.includes('guard') ? 10 : 0) + attackOf(c, catalog);
+            const immune = c.keywords.includes('effectImmune') || task.op === 'destroy' && c.keywords.includes('destroyImmune');
+            return (immune ? -100 : 0) + (lethal ? 20 : 0) + (c.keywords.includes('taunt') || c.keywords.includes('guard') ? 10 : 0) + attackOf(c, catalog);
         }
         if (discarding) return -costOf(s, id, catalog, side);
         return attackOf(c, catalog);

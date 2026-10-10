@@ -7,12 +7,15 @@ import type { Weights } from '../evaluate.ts';
 import { legalMoves } from '../moves.ts';
 import type { Move } from '../moves.ts';
 import type { CpuDecision, CpuStrategy } from '../types.ts';
+import { other } from '../../model.ts';
 import { normal } from './normal.ts';
 
 /** How many of its own follow-up choices (targets etc.) are resolved before scoring a move. */
 const FOLLOW_UP_DEPTH = 3;
 /** Ending the turn wins ties: an action must improve the score by more than this. */
 const MIN_GAIN = 0.5;
+/** What a PP the opponent will not have next turn is worth (the same as in planning.ts). */
+const NEXT_PP_VALUE = 3;
 
 /**
  * Positions the winning-line search of つよい may examine. Most sure wins are a few commands away:
@@ -31,6 +34,8 @@ export const createHard = (weights: Weights, { lethalNodes = 0 }: { lethalNodes?
     choose(d) {
         // Before the first turn there is little to compare; the rule of thumb is fine there.
         if (d.state.phase !== 'playing') return normal.choose(d);
+        // What a reaction skill costs (its one use, PP of the next turn) is not on the board to be scored: its script decides.
+        if (d.state.pending?.task.op === 'skillReaction') return normal.choose(d);
         if (lethalNodes > 0 && d.state.active === d.side) {
             const { line } = findLethal(d.state, d.side, d.catalog, { maxNodes: lethalNodes });
             const first = line[0] && d.moves.find(m => JSON.stringify(m.command) === JSON.stringify(line[0]));
@@ -57,6 +62,15 @@ function valueAfter(d: CpuDecision, state: CpuDecision['state'], depth: number, 
     if (depth > 0 && state.pending?.task.actor === d.side) {
         const follow = legalMoves(state, d.side, d.catalog);
         if (follow.length) return Math.max(...follow.map(m => valueAfter(d, m.next, depth - 1, weights)));
+    }
+    // The opponent's answer to a reaction skill decides whether the attack happens at all: assume what
+    // its script would do, and count the PP it gives up for it (nothing on the board shows that cost).
+    if (depth > 0 && state.pending?.task.op === 'skillReaction') {
+        const foe = other(d.side), answers = legalMoves(state, foe, d.catalog);
+        if (answers.length) {
+            const answer = normal.choose({ ...d, state, side: foe, moves: answers }).next;
+            return valueAfter(d, answer, depth - 1, weights) + (answer.players[foe].nextPpDebt - state.players[foe].nextPpDebt) * NEXT_PP_VALUE;
+        }
     }
     return evaluate(state, d.side, d.catalog, weights);
 }

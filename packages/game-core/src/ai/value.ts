@@ -3,7 +3,7 @@
 import { attackOf, costOf, hpOf, maxPp } from '../core/cards.ts';
 import { other } from '../model.ts';
 import type { Catalog, GameState, Keyword, Side } from '../model.ts';
-import { WIN } from './evaluate.ts';
+import { MP_VALUE, WIN } from './evaluate.ts';
 import { evaluatePlan, pressure } from './planning.ts';
 
 /** Scores a state for `side`; higher is better, a finished match is ±WIN. */
@@ -125,8 +125,9 @@ export function createValueEvaluator(m: ValueModel): Evaluator {
     return (s, side, catalog) => {
         if (s.winner === 'draw') return 0;
         if (s.winner !== null) return s.winner === side ? WIN : -WIN;
-        const logit = valueLogit(m, valueFeatures(s, catalog), hidden) * m.scale;
-        return side === 0 ? logit : -logit;
+        // MP is not among the features the model was trained on; it is added at its hand-set value.
+        const value = valueLogit(m, valueFeatures(s, catalog), hidden) * m.scale + ((s.players[0].mp ?? 0) - (s.players[1].mp ?? 0)) * MP_VALUE;
+        return side === 0 ? value : -value;
     };
 }
 

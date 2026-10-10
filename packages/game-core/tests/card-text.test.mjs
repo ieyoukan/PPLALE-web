@@ -2,7 +2,7 @@
 // mistakes (wrong trigger timing, missing keyword, wrong use limit) fails here instead of in play.
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { playableNow, scriptOf, skillsFor } from '../dist/index.js';
+import { extendedPlayables, playableMp, playableNow, playablePassives, scriptOf, skillsFor } from '../dist/index.js';
 import { catalog } from './helpers.mjs';
 
 const units = Object.values(catalog).filter(c => c.type === 'yojo' && (c.fruit === 'strawberry' || c.id.startsWith('yt_')));
@@ -94,5 +94,29 @@ test('card text: skill costs and use limits match the playable cards', () => {
       const cost = Number(line.match(/コスト(\d+)/)[1]), uses = Number(line.match(/使用回数制限(\d+)回/)[1]);
       assert.deepEqual([skills[index].cost, skills[index].uses], [cost, uses], `${id} ${line}`);
     });
+  }
+});
+
+// 拡張プレイアブル: a cost may be in MP (消費MP), a line may state no cost (a reaction: 0) or no use
+// limit (none), and the card has lines that are not skills: its MP and its 固有パッシブスキル.
+test('card text: 拡張プレイアブル skills, passives and MP match the playable cards', () => {
+  const number = (line, wording) => { const found = line.match(wording); return found ? Number(found[1]) : undefined; };
+  for (const id of extendedPlayables) {
+    const all = catalog[id].effect.split('\n');
+    const lines = all.filter(line => /スキル\d/.test(line)), skills = skillsFor(id);
+    assert.equal(skills.length, lines.length, id);
+    lines.forEach((line, index) => {
+      const skill = skills[index];
+      assert.deepEqual([skill.cost, skill.mp, skill.uses], [number(line, /コスト(\d+)/) ?? 0, number(line, /消費MP(\d+)/), number(line, /使用回数制限(\d+)回/)], `${id} ${line}`);
+      assert.ok(line.includes(`【${skill.name}】`), `${id} ${skill.name}: ${line}`);
+      // 「相手ターン中、〜とき」 is used in answer to the opponent, not on the owner's turn.
+      assert.equal(!!skill.reaction, /相手ターン中/.test(line), `${id} ${line}`);
+    });
+    const passive = all.find(line => /パッシブスキル/.test(line));
+    assert.equal(passive?.match(/【(.+?)】/)?.[1], playablePassives[id]?.name, `${id} パッシブ`);
+    const mp = [number(catalog[id].effect, /初期MP(\d+)/), number(catalog[id].effect, /最大MP(\d+)/)];
+    assert.deepEqual([playableMp[id]?.initial, playableMp[id]?.max], mp, `${id} MP`);
+    // Every line of the card is one of the three.
+    assert.equal(all.length, lines.length + (passive ? 1 : 0) + mp.filter(n => n !== undefined).length, id);
   }
 });

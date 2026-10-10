@@ -1,6 +1,6 @@
 // Evaluation for multi-action plans. Hand/deck values are estimates, never deck-top predictions.
 import { scriptOf } from '../cards/registry.ts';
-import { attackOf, costOf, hpOf, isRealSweet, maxPp } from '../core/cards.ts';
+import { attackOf, costOf, hpOf, immobilized, isRealSweet, maxPp } from '../core/cards.ts';
 import { other } from '../model.ts';
 import type { Catalog, DeckKind, GameState, Side } from '../model.ts';
 import { defaultWeights, evaluate, WIN } from './evaluate.ts';
@@ -131,7 +131,8 @@ export function pressure(s: GameState, side: Side, catalog: Catalog): number {
     const guarded = enemy.field.some(uid => s.cards[uid].keywords.includes('guard'));
     const attacks = p.field.flatMap(uid => {
         const c = s.cards[uid];
-        if (c.keywords.includes('immobile') || c.keywords.includes('noEat')) return [];
+        // 行動不能 for a time counts while it covers the turn these units attack in (this one, or their next).
+        if (c.keywords.includes('immobile') || c.keywords.includes('noEat') || immobilized(s, uid, s.active === side ? s.turn : s.turn + 1)) return [];
         if (s.active === side && (c.exhausted || c.entered === s.turn && !c.keywords.includes('fast'))) return [];
         const face = !guarded || c.keywords.includes('pierce') ? attackOf(c, catalog) : 0;
         const extra = c.cardId === 'y_20' ? 2 : 0;
