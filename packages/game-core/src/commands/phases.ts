@@ -47,6 +47,11 @@ export function finishTurn(s: GameState, side: Side, catalog: Catalog) {
         || p.hand.some(uid => ['y_122', 'y_148'].includes(s.cards[uid].cardId) && !s.cards[uid].silenced);
     if (!usesOffTurnPp) p.pp = 0;
     p.turnPpBonus = 0;
+    // 行動不能 given 「〜ターン終了時まで」 ends with the turn it was given up to.
+    for (const uid of s.players.flatMap(player => player.field)) {
+        const card = s.cards[uid];
+        if (card.immobileUntil !== undefined && card.immobileUntil <= s.turn) delete card.immobileUntil;
+    }
     // 膠着: three turns without any action (or none possible ever) end the match on points.
     if (settleStall(s, catalog)) return;
     s.queue.push({ op: 'beginTurn', actor: other(side) });

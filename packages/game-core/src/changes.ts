@@ -37,6 +37,8 @@ export type Change =
     | { kind: 'maxPp'; side: Side; amount: number }
     /** PP owed to next turn (ストラ). */
     | { kind: 'ppDebt'; side: Side; amount: number }
+    /** MP changed by `amount` (しゅれい). */
+    | { kind: 'mp'; side: Side; amount: number }
     /** ふわふわパンケーキ protection. */
     | { kind: 'sweetShield'; side: Side; on: boolean }
     /** おいしくなる呪文 casts waiting for the next sweet. */
@@ -70,6 +72,7 @@ export const instanceFields: Record<keyof Instance, ChangeKind | null> = {
     hiding: null, // current hide duration, shown on the card
     silenced: null, // shown in card inspection
     destroyedBy: null, // source for destruction reactions
+    immobileUntil: 'keywords', // 行動不能 given for a time is announced like the ability; the card shows it while it lasts
 };
 
 /** How each player field is presented. The six zones produce `move`. */
@@ -94,6 +97,7 @@ export const playerFields: Record<keyof Player, ChangeKind | null> = {
     exSkills: null, // shown in the skill panel
     ice: null, acorns: null, // shown in the skill panel
     mochidaLeft: null, skipDraw: null, strawberryOnlyUntil: null, // effect bookkeeping
+    mp: 'mp',
 };
 
 /** Top-level fields: presented by the board's own screens, or per command through `roll` / `blocked`. */
@@ -137,6 +141,8 @@ export function changesBetween(before: GameState, after: GameState): Change[] {
         if (b.damage > a.damage) changes.push({ kind: 'damage', uid, amount: b.damage - a.damage });
         if (b.attackBonus !== a.attackBonus || b.hpBonus !== a.hpBonus) changes.push({ kind: 'stats', uid, attack: b.attackBonus - a.attackBonus, hp: b.hpBonus - a.hpBonus });
         const added = b.keywords.filter(k => !a.keywords.includes(k)), removed = a.keywords.filter(k => !b.keywords.includes(k));
+        // 行動不能 for a time is not a keyword of the card, but it is shown as that ability being given.
+        if (b.immobileUntil !== undefined && a.immobileUntil === undefined && !b.keywords.includes('immobile')) added.push('immobile');
         if (added.length || removed.length) changes.push({ kind: 'keywords', uid, added, removed });
         if (b.costDelta !== a.costDelta || b.temporaryCost !== a.temporaryCost) changes.push({ kind: 'cost', uid });
         if (b.revealed !== a.revealed) changes.push({ kind: 'reveal', uid, revealed: b.revealed });
@@ -153,6 +159,7 @@ export function changesBetween(before: GameState, after: GameState): Change[] {
         if (delta('pp')) changes.push({ kind: 'pp', side, amount: delta('pp'), turnStart });
         if (delta('ppBonus')) changes.push({ kind: 'maxPp', side, amount: delta('ppBonus') });
         if (delta('nextPpDebt')) changes.push({ kind: 'ppDebt', side, amount: delta('nextPpDebt') });
+        if ((b.mp ?? 0) !== (a.mp ?? 0)) changes.push({ kind: 'mp', side, amount: (b.mp ?? 0) - (a.mp ?? 0) });
         if (b.shield !== a.shield) changes.push({ kind: 'sweetShield', side, on: b.shield });
         if (delta('sweetBoost')) changes.push({ kind: 'sweetBoost', side, amount: delta('sweetBoost') });
         b.skills.forEach((uses, index) => { if (uses !== a.skills[index]) changes.push({ kind: 'skillUses', side, index, amount: uses - (a.skills[index] ?? 0) }); });

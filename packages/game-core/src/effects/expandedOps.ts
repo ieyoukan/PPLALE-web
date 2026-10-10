@@ -6,6 +6,9 @@ import { rollDie } from '../core/rng.ts';
 import { losePoints } from '../core/points.ts';
 import { cardContext } from './context.ts';
 import { beginTurn } from '../commands/phases.ts';
+import type { Task } from '../model.ts';
+import { skillsFor } from '../playables/skills.ts';
+import { reactionSkills, useSkill } from '../playables/usage.ts';
 
 export const expandedOps: OpTable = {
     endEffects: {
@@ -58,8 +61,38 @@ export const expandedOps: OpTable = {
     },
     exile: { target: 'unit', run: (fx, t) => fx.exile(t.target!) },
     bounce: { target: 'unit', run: (fx, t) => fx.bounce(t.target!) },
+    /**
+     * The owner of a reaction skill is asked whether to use it in answer to `step` (what happened:
+     * `source` did it to `subject`), then `resume` continues, changed by what the used skill returns.
+     * A playable's skills and their remaining uses are public, so the question is not hidden (redact.ts).
+     */
+    skillReaction: {
+        run(fx, t) {
+            const skills = skillsFor(fx.me.playable);
+            if (t.target && t.target !== 'skip') {
+                const change = useSkill(fx.s, t.actor, Number(t.target), fx.catalog, t);
+                fx.next({ ...t.resume!, ...change });
+                return;
+            }
+            const usable = t.target ? [] : reactionSkills(fx.s, t.actor, t, fx.catalog);
+            if (usable.length) {
+                fx.ask('スキルを使いますか？', [{ id: 'skip', label: '使わない' }, ...usable.map(index => ({ id: String(index), label: `${skills[index].name}を使う` }))], t);
+                return;
+            }
+            fx.next(t.resume!);
+        },
+        cpu: (fx, t, options) => options.find(id => id !== 'skip' && skillsFor(fx.me.playable)[Number(id)]?.cpu?.(fx, t)) ?? 'skip',
+    },
     attackStart: {
         run(fx, t) {
+            // Before anything else the defender may answer the attack with a reaction skill (ちょり), once.
+            if (t.target !== 'leader' && t.value === undefined && t.step !== 'answered') {
+                const event: Task = { op: 'skillReaction', actor: fx.foeSide, source: t.source, subject: t.target, step: 'attacked', resume: { ...t, step: 'answered' } };
+                if (reactionSkills(fx.s, fx.foeSide, event, fx.catalog).length) {
+                    fx.next(event);
+                    return;
+                }
+            }
             if (t.target !== 'leader' && fx.s.cards[t.target!].keywords.includes('evade')) {
                 if (t.value === undefined) {
                     fx.next({ op: 'die', actor: fx.foeSide, source: t.target, resume: t });

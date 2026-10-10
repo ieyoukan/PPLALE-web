@@ -3,7 +3,7 @@ import { note, spawnCard } from './core/cards.ts';
 import { shuffled } from './core/rng.ts';
 import { sides } from './model.ts';
 import type { Catalog, Deck, GameState, Player, Rules } from './model.ts';
-import { playableSkills, skillsFor } from './playables/skills.ts';
+import { playableMp, playableSkills, skillLimits } from './playables/skills.ts';
 import { implementedCard, implementedFruits } from './cards/registry.ts';
 
 /**
@@ -41,7 +41,8 @@ export function newGame(decks: [Deck, Deck], catalog: Catalog, rules: Rules, see
     const players = decks.map((d): Player => ({
         name: d.name, yojo: [], sweet: [], hand: [], field: [], nap: [], exile: [], playable: d.playable,
         points: rules.initialPoints, maxPoints: rules.initialPoints, turns: 0, pp: 0, ppBonus: 0, turnPpBonus: 0, nextPpDebt: 0,
-        milestones: [], played: [], shield: false, sweetBoost: 0, skills: skillsFor(d.playable).map(s => s.uses), lastBorrow: -10,
+        milestones: [], played: [], shield: false, sweetBoost: 0, skills: skillLimits({ playable: d.playable, played: [] }, catalog), lastBorrow: -10,
+        ...(playableMp[d.playable] ? { mp: playableMp[d.playable].initial } : {}),
     })) as [Player, Player];
     const s: GameState = {
         version: 1, effectTauntRules: true, turnRules: true, phase: 'dice', openingRemaining: [0, 0], mulligan: { eligible: [[], []], confirmed: [false, false] }, dice: null,

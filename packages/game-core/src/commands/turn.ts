@@ -5,10 +5,11 @@ import { costOf, isRealSweet, note } from '../core/cards.ts';
 import { canAttack, resolveAttack } from '../core/combat.ts';
 import { markAction } from '../core/stall.ts';
 import { enterField, FIELD_SIZE, openSlot, reveal } from '../core/zones.ts';
-import { cardContext, effects } from '../effects/context.ts';
+import { cardContext } from '../effects/context.ts';
 import { RuleError } from '../model.ts';
 import type { Catalog, Definition, GameState, Player, Side } from '../model.ts';
-import { skillsFor } from '../playables/skills.ts';
+import { withSkillLimits } from '../playables/skills.ts';
+import { useSkill } from '../playables/usage.ts';
 import { fruitsOf } from '../core/protection.ts';
 import { activateExSkill } from '../playables/exSkills.ts';
 import type { Handlers } from './types.ts';
@@ -56,7 +57,9 @@ export const turnCommands: Handlers<'play' | 'attack' | 'end' | 'reveal' | 'skil
                 scriptFor(s, uid).onOwnerPlayed?.(cardContext(s, catalog, c.actor, uid), c.uid, zone);
         }
         // Recorded after the effect, so 「既に」 conditions do not count this card.
-        p.played.push(card.cardId);
+        // A passive whose condition this play fulfils holds from here on (いのまこ).
+        const passive = withSkillLimits(p, catalog, () => { p.played.push(card.cardId); });
+        if (passive) note(s, `${p.name}：パッシブ「${passive.name}」の条件を達成`);
     },
     attack(s, c, catalog) {
         if (!canAttack(s, c.actor, c.uid, c.target, catalog)) throw new RuleError('その対象には攻撃できません');
@@ -74,20 +77,7 @@ export const turnCommands: Handlers<'play' | 'attack' | 'end' | 'reveal' | 'skil
     },
     skill(s, c, catalog) {
         assertMainPhase(s, c.actor);
-        const p = s.players[c.actor], skill = skillsFor(p.playable)[c.index];
-        if (!skill || p.skills[c.index] <= 0) throw new RuleError('スキルの残り回数がありません');
-        if (skill.cost > p.pp) throw new RuleError('PPが足りません');
-        const fx = effects(s, catalog, c.actor);
-        const blocked = skill.blocked?.(fx);
-        if (blocked) throw new RuleError(blocked);
-        markAction(s);
-        p.pp -= skill.cost;
-        p.skills[c.index]--;
-        p.skillHistory = [...(p.skillHistory ?? []), c.index];
-        note(s, `${p.name}：${skill.name}`);
-        skill.use(fx);
-        for (const owner of [c.actor, c.actor === 0 ? 1 : 0] as Side[]) for (const uid of s.players[owner].field)
-            scriptFor(s, uid).onSkill?.(cardContext(s, catalog, owner, uid));
+        useSkill(s, c.actor, c.index, catalog);
     },
     exSkill(s, c, catalog) {
         assertMainPhase(s, c.actor);

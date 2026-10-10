@@ -32,6 +32,17 @@ export function addKeyword(s: GameState, uid: string, keyword: Keyword) {
     if (card && keyword === 'evade' && card.evasion === undefined) card.evasion = 5;
 }
 
+/**
+ * 行動不能 for a time: the unit cannot act up to the end of game turn `until`. A longer one already
+ * running stays. It ends with that turn (commands/phases.ts) or when the unit leaves the field.
+ */
+export function immobilize(s: GameState, uid: string, until: number) {
+    const card = s.cards[uid];
+    if (card) card.immobileUntil = Math.max(card.immobileUntil ?? until, until);
+}
+/** Whether a 行動不能 given for a time stops the unit from acting in game turn `turn` (default: now). */
+export const immobilized = (s: GameState, uid: string, turn = s.turn) => (s.cards[uid]?.immobileUntil ?? -1) >= turn;
+
 export function buff(s: GameState, uid: string, attack: number, hp: number) {
     const card = s.cards[uid];
     if (!card) return;

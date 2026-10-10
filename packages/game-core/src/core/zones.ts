@@ -1,6 +1,7 @@
 // Moving cards between deck, hand, field and nap, and the triggers those moves cause.
 import { scriptFor, scriptOf } from '../cards/registry.ts';
-import { cardContext } from '../effects/context.ts';
+import { cardContext, effects } from '../effects/context.ts';
+import { activePassive } from '../playables/skills.ts';
 import { deckLabel, other, sides } from '../model.ts';
 import type { Catalog, DeckKind, GameState, Side } from '../model.ts';
 import { markAction } from './stall.ts';
@@ -62,6 +63,7 @@ export function clearFieldState(s: GameState, uid: string) {
     Object.assign(card, { silenced: false, keywords: [...(script.keywords ?? [])], hiding: false, shield: false, links: [] });
     if (script.evasion !== undefined) card.evasion = script.evasion;
     else delete card.evasion;
+    delete card.immobileUntil;
 }
 
 export function leaveField(s: GameState, side: Side, uid: string) {
@@ -107,6 +109,8 @@ export function enterField(s: GameState, side: Side, uid: string, catalog: Catal
     card.destroyedBy = undefined;
     if (card.keywords.includes('hide')) card.hiding = true;
     s.players[side].field.push(uid);
+    // The owner's passive applies to every unit that enters, before the unit's own effects (ちょり).
+    activePassive(s.players[side], catalog)?.onUnitEnter?.(effects(s, catalog, side), uid);
     const ctx = cardContext(s, catalog, side, uid);
     scriptFor(s, uid).onEnter?.(ctx);
     if (fromHand) {

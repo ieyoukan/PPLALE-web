@@ -22,6 +22,7 @@ const player = z.object({
     sweetBoost: positive.optional(), doubleSweet: z.boolean().optional(),
     skills: z.array(positive), lastBorrow: integer,
     skillHistory: z.array(positive).optional(), exSkills: exSkills.optional(), ice: positive.optional(), acorns: positive.optional(), mochidaLeft: positive.optional(), skipDraw: positive.optional(), strawberryOnlyUntil: integer.optional(),
+    mp: positive.max(999).optional(),
 }).transform(({ doubleSweet, sweetBoost, ...rest }) => ({ ...rest, sweetBoost: sweetBoost ?? (doubleSweet ? 1 : 0) }));
 const schema = z.object({
     version: z.literal(1), effectTauntRules: z.literal(true).optional(), turnRules: z.literal(true).optional(), phase: z.enum(['dice', 'initiative', 'opening', 'mulligan', 'playing']).default('playing'), dice: z.object({ rolls: z.tuple([integer.min(1).max(6).nullable(), integer.min(1).max(6).nullable()]), ties: positive }).nullable().default(null), rng: positive, serial: positive, revision: positive, active: side, turn: positive,
@@ -32,7 +33,7 @@ const schema = z.object({
     effectBlocks: z.object({ revision: positive, events: z.array(z.object({ uid: z.string(), kind: z.enum(['damage', 'destroy']) })).max(500) }).optional(),
     mulligan: z.object({ eligible: z.tuple([ids, ids]), confirmed: z.tuple([z.boolean(), z.boolean()]) }).default({ eligible: [[], []], confirmed: [false, false] }),
     players: z.tuple([player, player]),
-    cards: z.record(z.string(), z.object({ uid: z.string(), cardId: z.string(), attackBonus: integer, hpBonus: integer, damage: positive, costDelta: integer, temporaryCost: integer, keywords: z.array(keyword), shield: z.boolean(), slot: integer.min(0).max(6).nullable().default(null), entered: integer, exhausted: z.boolean(), ateOn: integer, revealed: z.boolean(), links: ids, fruitTypes: z.array(z.string()).optional(), evasion: integer.optional(), hiding: z.boolean().optional(), silenced: z.boolean().optional(), destroyedBy: z.string().optional() })),
+    cards: z.record(z.string(), z.object({ uid: z.string(), cardId: z.string(), attackBonus: integer, hpBonus: integer, damage: positive, costDelta: integer, temporaryCost: integer, keywords: z.array(keyword), shield: z.boolean(), slot: integer.min(0).max(6).nullable().default(null), entered: integer, exhausted: z.boolean(), ateOn: integer, revealed: z.boolean(), links: ids, fruitTypes: z.array(z.string()).optional(), evasion: integer.optional(), hiding: z.boolean().optional(), silenced: z.boolean().optional(), destroyedBy: z.string().optional(), immobileUntil: integer.optional() })),
     queue: z.array(task).max(500), pending: z.object({ prompt: z.string(), options: z.array(z.object({ id: z.string(), label: z.string() })), task }).nullable(), winner: z.union([side, z.literal('draw')]).nullable(), log: z.array(z.string()).max(100),
 });
 type Saved = z.infer<typeof schema>;

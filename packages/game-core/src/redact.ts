@@ -42,7 +42,11 @@ export function viewFor(state: GameState, viewer: Side | 'spectator'): GameState
     return s;
 }
 
-/** Steps that ask a player whether to use a card from their hand in answer to the other player's action. */
+/**
+ * Steps that ask a player whether to use a card from their hand in answer to the other player's action.
+ * A playable's reaction skill (`skillReaction`, ちょり) is not one of them: the playable, its skills and
+ * their remaining uses are public, like MP and a unit's 行動不能, so that question is shown as it is.
+ */
 const handReactions: readonly string[] = ['attackResponses', 'eatResponse', 'turnDrawResponse'];
 function publicChoice({ prompt, options, task }: Choice, hidden: Set<string>): Choice {
     const { op, actor, source, text, deck, count } = task;

@@ -1,6 +1,7 @@
 // The API a card or skill script uses. Scripts only touch the game through this object, so the
 // list below is the complete vocabulary of effects.
-import { addKeyword, buff, gainPp, hit, isRealSweet, maxPp, note, spawnCard } from '../core/cards.ts';
+import { addKeyword, buff, gainPp, hit, immobilize, isRealSweet, maxPp, note, spawnCard } from '../core/cards.ts';
+import { gainMp } from '../playables/usage.ts';
 import { heal, losePoints } from '../core/points.ts';
 import type { PointLoss } from '../core/points.ts';
 import { random, rollDie, shuffled } from '../core/rng.ts';
@@ -35,6 +36,8 @@ export interface Effects {
 
     buff(uid: string, attack: number, hp: number): void;
     addKeyword(uid: string, keyword: Keyword): void;
+    /** 行動不能 for a time: the unit cannot act up to the end of game turn `until`. */
+    immobilize(uid: string, until: number): void;
     /** Effect damage (blocked by effectImmune). */
     damage(uid: string, amount: number): void;
     /** Effect destruction (blocked by effectImmune). */
@@ -56,6 +59,8 @@ export interface Effects {
     losePoints(side: Side, amount: number, mode: PointLoss): number;
     eat(uid: string, amount: number): void;
     gainPp(amount: number): void;
+    /** Restores MP up to the playable's maximum (nothing for a playable without MP). */
+    gainMp(amount: number): void;
     maxPp(): number;
     random(size: number): number;
     /** Rolls a six-sided die and records it so the UI can show the roll. */
@@ -86,6 +91,7 @@ export function effects(s: GameState, catalog: Catalog, side: Side, source?: str
         pick: (prompt, uids, task) => { if (uids.length) s.pending = { prompt, options: uids.map(id => ({ id, label: label(id) })), task }; },
         buff: (uid, attack, hp) => { if (!protectedTarget(uid)) buff(s, uid, attack, hp); },
         addKeyword: (uid, keyword) => { if (!protectedTarget(uid)) addKeyword(s, uid, keyword); },
+        immobilize: (uid, until) => { if (!protectedTarget(uid)) immobilize(s, uid, until); },
         damage: (uid, amount) => {
             if (protectedTarget(uid)) return;
             const extra = s.cards[uid]?.cardId === 'y_58' && !s.cards[uid].silenced && source && isRealSweet(catalog, s.cards[source].cardId) && s.players[other(side)].field.includes(uid) ? 2 : 0;
@@ -106,6 +112,7 @@ export function effects(s: GameState, catalog: Catalog, side: Side, source?: str
         losePoints: (target, amount, mode) => losePoints(s, target, amount, mode).lost,
         eat: (uid, amount) => { s.queue.push({ op: 'eatResponse', actor: other(side), source: uid, amount }); },
         gainPp: amount => gainPp(s, side, amount),
+        gainMp: amount => gainMp(s, side, amount),
         maxPp: () => maxPp(s, side),
         random: size => random(s, size),
         rollDie() {

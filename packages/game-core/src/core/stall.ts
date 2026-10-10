@@ -22,7 +22,8 @@ function certainlyStuck(s: GameState, catalog: Catalog): boolean {
         if ((p.acorns ?? 0) > 0 || (p.exSkills?.alice?.uses ?? 0) > 0 || (p.exSkills?.strawberryHunt?.uses ?? 0) > 0) return false;
         if (p.field.some(uid => attackOf(s.cards[uid], catalog) > 0 && !s.cards[uid].keywords.includes('immobile'))) return false;
         // The common skill (index 0) needs a unit on the field; with no cards left none can arrive.
-        return skillsFor(p.playable).every((_, index) => p.skills[index] <= 0 || index === 0 && !p.field.length);
+        // A skill without a use limit (しゅれい) can always be used again in a later turn.
+        return skillsFor(p.playable).every((skill, index) => skill.uses !== undefined && (p.skills[index] <= 0 || index === 0 && !p.field.length));
     });
 }
 

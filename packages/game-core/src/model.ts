@@ -72,6 +72,11 @@ export interface Instance {
     hiding?: boolean;
     silenced?: boolean;
     destroyedBy?: string;
+    /**
+     * 行動不能 given for a time (ちょり): it cannot act up to the end of this game turn (`GameState.turn`).
+     * Removed when that turn ends, so while it is set the unit cannot act.
+     */
+    immobileUntil?: number;
 }
 
 export interface Player {
@@ -100,7 +105,7 @@ export interface Player {
     shield: boolean;
     /** Pending おいしくなる呪文 casts. The next real sweet is multiplied by 1 + this. */
     sweetBoost: number;
-    /** Remaining uses per skill, indexed like `skillsFor(playable)`. */
+    /** Remaining uses per skill, indexed like `skillsFor(playable)`. A skill without a use limit stays at 0. */
     skills: number[];
     lastBorrow: number;
     skillHistory?: number[];
@@ -110,6 +115,8 @@ export interface Player {
     mochidaLeft?: number;
     skipDraw?: number;
     strawberryOnlyUntil?: number;
+    /** MP of a playable that has it (しゅれい); see `playableMp` for the starting and largest amount. */
+    mp?: number;
 }
 
 /**
@@ -120,6 +127,7 @@ export type TaskOp =
     // generic, see effects/ops.ts
     | 'damage' | 'allDamage' | 'randomDamage' | 'buff' | 'allBuff' | 'keyword' | 'destroy' | 'copy' | 'stealUnit'
     | 'heal' | 'reduce' | 'steal' | 'pp' | 'summon' | 'addHand' | 'draw' | 'discard' | 'handCost' | 'enterAuras' | 'trimHand' | 'finishTurn'
+    | 'immobilize' | 'skillReaction'
     // card / skill specific
     | 'searchRole' | 'diceDiscard' | 'shurei' | 'doughnut' | 'float' | 'floatSearch' | 'pocky' | 'pockyEnemy' | 'gift'
     | 'bonusDamage' | 'punish'
