@@ -96,7 +96,6 @@ export function toDeck(s: GameState, uid: string, catalog: Catalog) {
     clearFieldState(s, uid);
     Object.assign(card, { attackBonus: 0, hpBonus: 0, damage: 0, costDelta: 0, temporaryCost: 0, revealed: false });
     p[kind] = shuffled(s, [...p[kind], uid]);
-    note(s, `${catalog[card.cardId].name}を${deckLabel(kind)}デッキへ戻しました`);
 }
 
 export function leaveField(s: GameState, side: Side, uid: string) {
@@ -178,10 +177,7 @@ export function summon(s: GameState, side: Side, cardId: string, catalog: Catalo
     return uid;
 }
 
-/**
- * Field → nap, or where the card says it goes instead (もちだ: out of the game; いのむー・まこぽに: back
- * into the 幼女デッキ). `byEffect` destruction is ignored by `effectImmune`. Linked units follow.
- */
+/** Field → nap. `byEffect` destruction is ignored by `effectImmune`. Linked units follow. */
 export function destroy(s: GameState, uid: string, byEffect: boolean, catalog: Catalog) {
     const side = ownerOnField(s, uid);
     if (side === undefined) return;
@@ -190,12 +186,13 @@ export function destroy(s: GameState, uid: string, byEffect: boolean, catalog: C
         recordEffectBlock(s, uid, 'destroy');
         return;
     }
-    const p = s.players[side], to = scriptFor(s, uid).destroyedTo;
+    const p = s.players[side];
     leaveField(s, side, uid);
     card.costDelta = 0;
     card.temporaryCost = 0;
-    p[to === 'exile' ? 'exile' : to === 'deck' ? 'yojo' : 'nap'].push(uid);
-    note(s, `${catalog[card.cardId].name}が${to === 'exile' ? '破壊され、除外' : to === 'deck' ? '破壊され、幼女デッキ' : 'お昼寝場所'}へ`);
+    if (card.cardId === 'token_mochida' && !card.silenced) p.exile.push(uid);
+    else p.nap.push(uid);
+    note(s, `${catalog[card.cardId].name}がお昼寝場所へ`);
     for (const linked of card.links) destroy(s, linked, true, catalog);
     scriptFor(s, uid).onDestroyed?.(cardContext(s, catalog, side, uid));
     const abyss = p.exSkills?.abyss;
@@ -205,10 +202,6 @@ export function destroy(s: GameState, uid: string, byEffect: boolean, catalog: C
     }
     // Lost effects end with the unit leaving the field: in the nap it is the printed card again.
     clearFieldState(s, uid);
-    if (to === 'deck') {
-        Object.assign(card, { attackBonus: 0, hpBonus: 0, damage: 0 });
-        p.yojo = shuffled(s, p.yojo);
-    }
 }
 
 /**

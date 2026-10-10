@@ -70,6 +70,9 @@ export const instanceFields: Record<keyof Instance, ChangeKind | null> = {
     hiding: null, // current hide duration, shown on the card
     silenced: null, // shown in card inspection
     destroyedBy: null, // source for destruction reactions
+    actions: null, // bookkeeping for a second action in a turn; `exhausted` is what the board shows
+    immobileUntil: null, // when the 行動不能 keyword (presented as `keywords`) ends
+    timedFruits: null, // shown in card inspection, like fruitTypes
 };
 
 /** How each player field is presented. The six zones produce `move`. */
@@ -94,6 +97,9 @@ export const playerFields: Record<keyof Player, ChangeKind | null> = {
     exSkills: null, // shown in the skill panel
     ice: null, acorns: null, // shown in the skill panel
     mochidaLeft: null, skipDraw: null, strawberryOnlyUntil: null, // effect bookkeeping
+    discardedYojo: null, // effect bookkeeping (しゅみあ)
+    entryBuff: null, // each unit shows its own +1/+1 as `stats` when it enters
+    extraSkills: null, // shown in the skill panel; the skill taken is a `skillUses` change of the other side
 };
 
 /** Top-level fields: presented by the board's own screens, or per command through `roll` / `blocked`. */

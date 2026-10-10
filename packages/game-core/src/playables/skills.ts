@@ -4,6 +4,7 @@ import type { OpTable } from '../cards/types.ts';
 import { costOf } from '../core/cards.ts';
 import type { Effects } from '../effects/context.ts';
 import { MAX_PP } from '../model.ts';
+import type { Player } from '../model.ts';
 import { selectable } from '../effects/targets.ts';
 
 export interface SkillScript {
@@ -197,3 +198,26 @@ export function skillsFor(playable: string): SkillScript[] {
     return [commonSkill, ...(playableSkills[playable] ?? [])];
 }
 export const allSkills = (): SkillScript[] => [commonSkill, ...Object.values(playableSkills).flat()];
+
+/** One skill a player can use: where it comes from and how many uses are left. */
+export interface SkillSlot {
+    skill: SkillScript;
+    uses: number;
+    /** The playable it belongs to, and its index in that playable's `skillsFor`. */
+    playable: string;
+    origin: number;
+    /** Set for a skill taken from the opponent: its index in `extraSkills`. */
+    extra?: number;
+}
+/**
+ * Every skill of a player in the order the `skill` command numbers them: the playable's own, then
+ * the ones taken from the opponent (レンテ).
+ */
+export function skillSlots(p: Pick<Player, 'playable' | 'skills' | 'extraSkills'>): SkillSlot[] {
+    const own = skillsFor(p.playable).map((skill, index): SkillSlot => ({ skill, uses: p.skills[index] ?? 0, playable: p.playable, origin: index }));
+    const taken = (p.extraSkills ?? []).flatMap((entry, extra): SkillSlot[] => {
+        const skill = skillsFor(entry.playable)[entry.index];
+        return skill ? [{ skill, uses: entry.uses, playable: entry.playable, origin: entry.index, extra }] : [];
+    });
+    return [...own, ...taken];
+}

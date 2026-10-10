@@ -6,7 +6,7 @@ import { cardContext, effects } from '../../effects/context.ts';
 import { opDef } from '../../effects/resolve.ts';
 import { other } from '../../model.ts';
 import type { Catalog, Command, GameState, Side } from '../../model.ts';
-import { skillsFor } from '../../playables/skills.ts';
+import { skillSlots } from '../../playables/skills.ts';
 import type { Move } from '../moves.ts';
 import type { CpuDecision, CpuStrategy } from '../types.ts';
 
@@ -62,7 +62,7 @@ function mainPhase(d: CpuDecision): Move {
         .sort((a, b) => costOf(s, b.command.uid, catalog, side) - costOf(s, a.command.uid, catalog, side));
     if (plays.length) return plays[0];
     const fx = effects(s, catalog, side);
-    const skill = of(moves, 'skill').find(m => skillsFor(p.playable)[m.command.index].cpu?.(fx));
+    const skill = of(moves, 'skill').find(m => skillSlots(p)[m.command.index]?.skill.cpu?.(fx));
     if (skill) return skill;
     // Each unit in field order: the sweets if possible, otherwise the weakest enemy.
     for (const uid of p.field) {

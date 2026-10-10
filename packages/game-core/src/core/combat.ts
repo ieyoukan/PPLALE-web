@@ -1,6 +1,7 @@
 // Attacks between units and on the opponent's sweets.
 import { other } from '../model.ts';
 import type { Catalog, GameState, Side } from '../model.ts';
+import { scriptFor } from '../cards/registry.ts';
 import { attackOf } from './cards.ts';
 import { isHidden } from './protection.ts';
 import { losePoints } from './points.ts';
@@ -37,7 +38,10 @@ export function eat(s: GameState, side: Side, uid: string, amount: number) {
 /** Call only after `canAttack`. */
 export function resolveAttack(s: GameState, side: Side, uid: string, target: string | 'leader') {
     const attacker = s.cards[uid];
-    attacker.exhausted = true;
+    // 「1ターンに2回行動できる」 (ふろんとさん): it has acted once all its actions are used.
+    const perTurn = scriptFor(s, uid).actionsPerTurn ?? 1;
+    if (perTurn > 1) attacker.actions = (attacker.actions ?? 0) + 1;
+    attacker.exhausted = (attacker.actions ?? 1) >= perTurn;
     attacker.hiding = false;
     s.queue.push({ op: 'attackStart', actor: side, source: uid, target });
 }

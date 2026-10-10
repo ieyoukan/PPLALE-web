@@ -3,7 +3,7 @@ import { scriptFor, scriptOf } from './cards/registry.ts';
 import { canAttack } from './core/combat.ts';
 import { fruitsOf } from './core/protection.ts';
 import { cardContext, effects } from './effects/context.ts';
-import { skillsFor } from './playables/skills.ts';
+import { skillSlots } from './playables/skills.ts';
 import { other } from './model.ts';
 import type { Catalog, DeckKind, GameState, Side, TaskOp } from './model.ts';
 
@@ -57,7 +57,7 @@ export const canPlay = (s: GameState, side: Side, uid: string, catalog: Catalog)
 
 /** Why the skill cannot be used now apart from PP and remaining uses (e.g. nothing to select), or undefined. */
 export const skillBlocked = (s: GameState, side: Side, index: number, catalog: Catalog) =>
-    skillsFor(s.players[side].playable)[index]?.blocked?.(effects(s, catalog, side));
+    skillSlots(s.players[side])[index]?.skill.blocked?.(effects(s, catalog, side));
 
 /** The card can be revealed from hand with the `reveal` command. */
 export const isRevealable = (cardId: string) => !!scriptOf(cardId).revealable;

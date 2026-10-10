@@ -66,6 +66,19 @@ export function hit(s: GameState, uid: string, amount: number, byEffect = true) 
     card.damage += Math.min(amount, scriptFor(s, uid).maxDamage ?? amount);
 }
 
+/** Ends what a unit only had until an earlier turn was over: 行動不能 for some turns, a fruit type for a while. */
+export function expireTimed(s: GameState, uid: string) {
+    const card = s.cards[uid];
+    if (card.immobileUntil !== undefined && card.immobileUntil < s.turn) {
+        card.keywords = card.keywords.filter(k => k !== 'immobile');
+        delete card.immobileUntil;
+    }
+    if (!card.timedFruits) return;
+    const kept = Object.entries(card.timedFruits).filter(([, until]) => until >= s.turn);
+    if (kept.length) card.timedFruits = Object.fromEntries(kept);
+    else delete card.timedFruits;
+}
+
 export function recordEffectBlock(s: GameState, uid: string, kind: 'damage' | 'destroy') {
     const revision = s.revision + 1;
     const events = s.effectBlocks?.revision === revision ? s.effectBlocks.events : [];

@@ -33,6 +33,10 @@ export const genericOps: OpTable = {
     },
     keyword: { target: 'unit', run: (fx, t) => fx.addKeyword(t.target!, t.keyword!) },
     destroy: { target: 'unit', run: (fx, t) => fx.destroy(t.target!) },
+    /** 攻撃力と体力を入れ替える. */
+    swapStats: { target: 'unit', run: (fx, t) => fx.swapStats(t.target!) },
+    /** 行動不能 for `amount` game turns, the current one included. */
+    immobilize: { target: 'unit', run: (fx, t) => fx.immobilize(t.target!, t.amount ?? 1) },
     // FAQ ②-1: the copy is summoned even when the target survives destruction.
     copy: {
         target: 'unit',

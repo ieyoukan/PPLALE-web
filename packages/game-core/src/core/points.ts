@@ -1,4 +1,5 @@
 // お菓子ポイント: 食べる / 奪う / 減らす / 回復.
+import { scriptFor } from '../cards/registry.ts';
 import { other } from '../model.ts';
 import type { GameState, Side } from '../model.ts';
 import { note } from './cards.ts';
@@ -10,7 +11,10 @@ export function heal(s: GameState, side: Side, amount: number) {
     const skill = p.exSkills?.healing;
     // ここあの献身 is used when points are actually recovered: at the maximum nothing recovers, so no use is spent.
     if (amount > 0 && p.points < p.maxPoints && skill && skill.uses > 0) { amount++; skill.uses--; }
+    const before = p.points;
     p.points = Math.min(p.maxPoints, p.points + amount);
+    // 「自分のお菓子ポイントが回復するたびに」 (うぃまる・ももか): only when points were actually recovered.
+    if (p.points > before && [...p.field, ...p.nap].some(uid => scriptFor(s, uid).onHealed)) s.queue.push({ op: 'healHooks', actor: side });
 }
 
 /**

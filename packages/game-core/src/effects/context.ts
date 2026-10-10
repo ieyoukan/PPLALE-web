@@ -1,10 +1,10 @@
 // The API a card or skill script uses. Scripts only touch the game through this object, so the
 // list below is the complete vocabulary of effects.
-import { addKeyword, buff, gainPp, hit, isRealSweet, maxPp, note, spawnCard } from '../core/cards.ts';
+import { addKeyword, buff, gainPp, hit, isRealSweet, maxPp, note, spawnCard, swapStats } from '../core/cards.ts';
 import { heal, losePoints } from '../core/points.ts';
 import type { PointLoss } from '../core/points.ts';
 import { random, rollDie, shuffled } from '../core/rng.ts';
-import { bounce, destroy, discard, exile, reveal, summon } from '../core/zones.ts';
+import { bounce, destroy, discard, exile, immobilize, reveal, summon, toDeck } from '../core/zones.ts';
 import { colorProtected, fruitsOf } from '../core/protection.ts';
 import { other } from '../model.ts';
 import type { Catalog, DeckKind, Definition, GameState, Instance, Keyword, Player, Side, Task, TaskOp } from '../model.ts';
@@ -41,13 +41,22 @@ export interface Effects {
     destroy(uid: string): void;
     exile(uid: string, owner?: Side): void;
     bounce(uid: string): void;
+    /** Swaps the unit's attack and HP. */
+    swapStats(uid: string): void;
+    /** 行動不能 for `turns` game turns, the current one included (2 on one's own turn: until the opponent's next turn ends). */
+    immobilize(uid: string, turns: number): void;
+    /** Gives a fruit type; with `turns`, only for that many game turns, the current one included. */
+    addFruit(uid: string, fruit: string, turns?: number): void;
+    /** A card in hand / on the field / in the nap goes back into its owner's deck as the printed card; the deck is shuffled. */
+    toDeck(uid: string): void;
     /** Shows a hand card to both players; fires 「公開されたとき」 once. */
     reveal(uid: string): void;
     protected(uid: string): boolean;
     fruits(uid: string): string[];
     /** Rolls through a queued step so レンテ can choose its value, then resumes with task.value. */
     die(resume: Task): void;
-    summon(cardId: string): string | undefined;
+    /** `silenced`: 全ての能力を失った状態で. */
+    summon(cardId: string, silenced?: boolean): string | undefined;
     /** Creates a card outside every zone; the caller places it. */
     spawn(cardId: string): string;
     shuffleDeck(kind: DeckKind): void;
@@ -94,11 +103,20 @@ export function effects(s: GameState, catalog: Catalog, side: Side, source?: str
         destroy: uid => { if (!protectedTarget(uid)) destroy(s, uid, true, catalog); },
         exile: (uid, owner) => { if (!protectedTarget(uid)) exile(s, uid, catalog, owner); },
         bounce: uid => { if (!protectedTarget(uid)) bounce(s, uid, catalog); },
+        swapStats: uid => { if (!protectedTarget(uid)) swapStats(s, uid, catalog); },
+        immobilize: (uid, turns) => { if (!protectedTarget(uid)) immobilize(s, uid, s.turn + turns - 1); },
+        addFruit(uid, fruit, turns) {
+            const card = s.cards[uid];
+            if (!card || protectedTarget(uid)) return;
+            if (turns === undefined) card.fruitTypes = Array.from(new Set([...(card.fruitTypes ?? []), fruit]));
+            else card.timedFruits = { ...card.timedFruits, [fruit]: Math.max(card.timedFruits?.[fruit] ?? 0, s.turn + turns - 1) };
+        },
+        toDeck: uid => toDeck(s, uid, catalog),
         reveal: uid => reveal(s, uid, catalog),
         protected: protectedTarget,
         fruits: uid => fruitsOf(s, uid, catalog),
         die: resume => { s.queue.unshift({ op: 'die', actor: side, source, resume }); },
-        summon: cardId => summon(s, side, cardId, catalog),
+        summon: (cardId, silenced) => summon(s, side, cardId, catalog, silenced),
         spawn: cardId => spawnCard(s, cardId),
         shuffleDeck: kind => { me[kind] = shuffled(s, me[kind]); },
         discard: (uid, owner = side) => discard(s, owner, uid, catalog),

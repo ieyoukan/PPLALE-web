@@ -12,12 +12,17 @@ export const exSkillInfo: Record<ExSkillId, { name: string; cost: number; automa
     dagger: { name: 'ダブルダガー', cost: 0, automatic: true, description: '自分ターンの効果によるPP回復を+2。1ターン2回。' },
     alice: { name: '不思議の国のアリス', cost: 0, automatic: false, description: '味方全員を+3/+3。1ターン1回。' },
     smoke: { name: '魅惑の水煙', cost: 0, automatic: true, description: 'カード効果で引いた枚数だけ自分のお菓子ポイントを減らす。' },
+    kamikakushi: { name: '神隠し ようじょ贄', cost: 0, automatic: false, description: 'このターン中、手札から幼女を直接お昼寝場所に捨てるたびに、相手のお菓子を捨てた人数×2個奪う。1ターンに1回。' },
 };
+/** Used by hand at most once a turn (`lastTurn` is the turn of the last use). */
+export const oncePerTurn: readonly ExSkillId[] = ['alice', 'kamikakushi'];
 
 export function activateExSkill(s: GameState, side: Side, id: ExSkillId, catalog: Catalog) {
     const p = s.players[side], skill = p.exSkills?.[id], info = exSkillInfo[id];
-    if (!skill || !info || info.automatic || skill.uses <= 0 || p.pp < info.cost || id === 'alice' && skill.lastTurn === s.turn) throw new RuleError('このExスキルは使用できません');
+    if (!skill || !info || info.automatic || skill.uses <= 0 || p.pp < info.cost || oncePerTurn.includes(id) && skill.lastTurn === s.turn) throw new RuleError('このExスキルは使用できません');
     p.pp -= info.cost;
+    // 神隠し ようじょ贄: works for the rest of this turn; core/zones.ts `discard` does the stealing.
+    if (id === 'kamikakushi') { skill.uses--; skill.lastTurn = s.turn; }
     if (id === 'strawberryHunt') { skill.uses--; s.players[other(side)].strawberryOnlyUntil = s.turn + 1; }
     if (id === 'alice') { skill.lastTurn = s.turn; effects(s, catalog, side).queue('allBuff', { scope: 'friendly', amount: 3, hp: 3 }); }
     markAction(s);

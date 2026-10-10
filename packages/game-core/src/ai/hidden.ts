@@ -16,11 +16,13 @@ export function determinize(s: GameState, side: Side, catalog: Catalog, seed: nu
     const t = cloneState(s);
     t.rng = seed >>> 0;
     const me = t.players[side], foe = t.players[other(side)];
+    // A unit being played is known to both while the answer to it (ぶらんちゃん) is awaited.
+    const played = t.pending?.task.op === 'playResponse' ? t.pending.task.source : undefined;
     for (const kind of ['yojo', 'sweet'] as const) {
         // Sorted before shuffling, so the guess cannot depend on the real order or on which of the
         // cards is the one in hand (uids follow the public deck lists).
         me[kind] = shuffled(t, [...me[kind]].sort(byUid));
-        const hidden = foe.hand.filter(uid => !t.cards[uid].revealed && kindOf(t, catalog, uid) === kind);
+        const hidden = foe.hand.filter(uid => uid !== played && !t.cards[uid].revealed && kindOf(t, catalog, uid) === kind);
         const pool = shuffled(t, [...hidden, ...foe[kind]].sort(byUid));
         const swap = new Map(hidden.map((uid, i) => [uid, pool[i]]));
         foe.hand = foe.hand.map(uid => swap.get(uid) ?? uid);

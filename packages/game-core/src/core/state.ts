@@ -6,6 +6,7 @@ const clonePlayer = (p: Player): Player => ({
     milestones: [...p.milestones], played: [...p.played], skills: [...p.skills],
     ...(p.skillHistory ? { skillHistory: [...p.skillHistory] } : {}),
     ...(p.exSkills ? { exSkills: Object.fromEntries(Object.entries(p.exSkills).map(([id, skill]) => [id, { ...skill }])) } : {}),
+    ...(p.extraSkills ? { extraSkills: p.extraSkills.map(skill => ({ ...skill })) } : {}),
 });
 const cloneChoice = (c: Choice): Choice => ({ prompt: c.prompt, options: c.options.map(o => ({ ...o })), task: cloneTask(c.task) });
 
@@ -18,7 +19,7 @@ export function cloneState(s: GameState): GameState {
     const cards: Record<string, Instance> = {};
     for (const uid in s.cards) {
         const c = s.cards[uid];
-        cards[uid] = { ...c, keywords: [...c.keywords], links: [...c.links], ...(c.fruitTypes ? { fruitTypes: [...c.fruitTypes] } : {}) };
+        cards[uid] = { ...c, keywords: [...c.keywords], links: [...c.links], ...(c.fruitTypes ? { fruitTypes: [...c.fruitTypes] } : {}), ...(c.timedFruits ? { timedFruits: { ...c.timedFruits } } : {}) };
     }
     return {
         ...s,

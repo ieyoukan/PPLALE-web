@@ -5,7 +5,7 @@ import { canAttack } from '../core/combat.ts';
 import { isRevealable } from '../view.ts';
 import { other, sides } from '../model.ts';
 import type { Catalog, Command, GameState, Side } from '../model.ts';
-import { commonSkill, skillsFor } from '../playables/skills.ts';
+import { commonSkill, skillSlots } from '../playables/skills.ts';
 import { exSkillInfo } from '../playables/exSkills.ts';
 import type { ExSkillId } from '../model.ts';
 
@@ -55,7 +55,7 @@ function candidates(s: GameState, side: Side): Command[] {
         // Field position has no rule effect, so a unit is offered once (first free slot).
         ...p.hand.map((uid): Command => ({ type: 'play', actor: side, uid })),
         ...p.field.flatMap(uid => targets.map((target): Command => ({ type: 'attack', actor: side, uid, target }))),
-        ...skillsFor(p.playable).map((_, index): Command => ({ type: 'skill', actor: side, index })),
+        ...skillSlots(p).map((_, index): Command => ({ type: 'skill', actor: side, index })),
         ...(Object.keys(p.exSkills ?? {}) as ExSkillId[]).filter(id => !exSkillInfo[id].automatic && (p.exSkills![id]?.uses ?? 0) > 0).map((skill): Command => ({ type: 'exSkill', actor: side, skill })),
         ...((p.acorns ?? 0) > 0 ? (['draw', 'pp'] as const).map((mode): Command => ({ type: 'acorn', actor: side, mode })) : []),
         ...p.hand.filter(uid => isRevealable(s.cards[uid].cardId) && !s.cards[uid].revealed).map((uid): Command => ({ type: 'reveal', actor: side, uid })),
@@ -72,7 +72,10 @@ function worthTrying(s: GameState, command: Command, catalog: Catalog): boolean 
     switch (command.type) {
         case 'attack': return canAttack(s, command.actor, command.uid, command.target, catalog);
         case 'play': return costOf(s, command.uid, catalog, command.actor) <= p.pp;
-        case 'skill': return p.skills[command.index] > 0 && skillsFor(p.playable)[command.index].cost <= p.pp;
+        case 'skill': {
+            const slot = skillSlots(p)[command.index];
+            return !!slot && slot.uses > 0 && slot.skill.cost <= p.pp;
+        }
         default: return true;
     }
 }
@@ -106,7 +109,7 @@ function chargeUseless(s: GameState, side: Side, uid: string): boolean {
  */
 export function pointless(s: GameState, move: Move): boolean {
     const c = move.command;
-    if (c.type === 'skill' && skillsFor(s.players[c.actor].playable)[c.index]?.name === commonSkill.name) {
+    if (c.type === 'skill' && skillSlots(s.players[c.actor])[c.index]?.skill.name === commonSkill.name) {
         // Only the charge skill so far; it targets a unit of its own side.
         return s.players[c.actor].field.every(uid => chargeUseless(s, c.actor, uid));
     }

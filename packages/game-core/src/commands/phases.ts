@@ -1,5 +1,5 @@
 // dice → initiative → opening → mulligan → playing, and the start of each turn.
-import { availablePpMaximum, note } from '../core/cards.ts';
+import { availablePpMaximum, expireTimed, note } from '../core/cards.ts';
 import { settleStall } from '../core/stall.ts';
 import { resolveQueue } from '../effects/resolve.ts';
 import { other } from '../model.ts';
@@ -15,7 +15,8 @@ export function startTurn(s: GameState, side: Side) {
     p.turnPpBonus = side !== s.rules.firstPlayer && p.turns === 5 ? 2 : 0;
     p.pp = Math.max(0, availablePpMaximum(s, side) - p.nextPpDebt);
     p.nextPpDebt = 0;
-    p.field.forEach(uid => { s.cards[uid].exhausted = false; });
+    p.field.forEach(uid => { s.cards[uid].exhausted = false; delete s.cards[uid].actions; });
+    for (const uid of s.players.flatMap(player => player.field)) expireTimed(s, uid);
     note(s, `${p.name}の${p.turns}ターン目`);
     if (p.turnPpBonus) note(s, '後攻5ターン目：このターンだけ追加2PP');
 }
@@ -44,7 +45,8 @@ export function finishTurn(s: GameState, side: Side, catalog: Catalog) {
     // Orange reactions inspect/spend the remaining PP during the opponent's turn.
     // It is always replaced on this player's next turn; ordinary decks keep their old end reset.
     const usesOffTurnPp = p.field.some(uid => ['y_114', 'y_118', 'y_124', 'y_141'].includes(s.cards[uid].cardId) && !s.cards[uid].silenced)
-        || p.hand.some(uid => ['y_122', 'y_148'].includes(s.cards[uid].cardId) && !s.cards[uid].silenced);
+        || p.hand.some(uid => ['y_122', 'y_148'].includes(s.cards[uid].cardId) && !s.cards[uid].silenced)
+        || (['field', 'hand'] as const).some(zone => p[zone].some(uid => scriptFor(s, uid).offTurnPp === zone));
     if (!usesOffTurnPp) p.pp = 0;
     p.turnPpBonus = 0;
     // 膠着: three turns without any action (or none possible ever) end the match on points.

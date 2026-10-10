@@ -41,8 +41,8 @@ export interface CardScript {
     maxDamage?: number;
     /** 「攻撃時この幼女はダメージを受けない」: the unit it attacks deals no combat damage back. */
     unharmedAttacking?: boolean;
-    /** 「破壊されたとき、お昼寝場所には行かず〜」: where it goes instead (`deck`: its owner's 幼女デッキ, then shuffled). */
-    destroyedTo?: 'exile' | 'deck';
+    /** While it is in this zone, its owner's unspent PP stays through the opponent's turn (it is paid or counted then). */
+    offTurnPp?: 'hand' | 'field';
     /** Overrides the printed cost while in hand. */
     baseCost?(s: GameState, side: Side): number | undefined;
     /** False when the card cannot be played now (e.g. it must select a unit and none is there). */
