@@ -3,8 +3,9 @@
 // deck, later a 2pick draft) only offers decks that fit.
 import type { Catalog, Deck } from './model.ts';
 import { implementedFruits } from './cards/registry.ts';
+import { random, shuffled } from './core/rng.ts';
 import { extendedPlayables, playableSkills } from './playables/skills.ts';
-import { validateDeck } from './setup.ts';
+import { deckCard, singleCopy, validateDeck } from './setup.ts';
 
 export const fruits = ['strawberry', 'grape', 'melon', 'orange'] as const;
 export type Fruit = typeof fruits[number];
@@ -31,6 +32,8 @@ export function parseMatchRules(value: unknown): MatchRules | null {
 }
 
 export const isExtendedPlayable = (catalog: Catalog, id: string) => catalog[id]?.type === 'playable' && (catalog[id].version ?? 'normal') !== 'normal';
+/** ぷぷりえーる (s_24) left the game with the orange set: no deck has it where orange is allowed. */
+const retired = (id: string, rules: MatchRules) => id === 's_24' && rules.fruits.includes('orange');
 
 /** Why the deck cannot be used under these rules (empty when it can). `where` names them: このルーム, この対戦 … */
 export function deckRuleErrors(deck: Deck, rules: MatchRules, catalog: Catalog, where = 'このルール'): string[] {
@@ -38,8 +41,30 @@ export function deckRuleErrors(deck: Deck, rules: MatchRules, catalog: Catalog, 
     const used = new Set([...deck.yojo, ...deck.sweet].map(id => catalog[id]?.fruit).filter((fruit): fruit is Fruit => fruits.includes(fruit as Fruit)));
     for (const fruit of Array.from(used)) if (!rules.fruits.includes(fruit)) errors.push(`${where}では${fruitNames[fruit]}のカードを使えません`);
     if (isExtendedPlayable(catalog, deck.playable) && !rules.extendedPlayable) errors.push(`${where}では拡張プレイアブルを使えません`);
-    if (rules.fruits.includes('orange') && deck.sweet.includes('s_24')) errors.push('ぷぷりえーるはオレンジ環境以降では使用できません');
+    if (deck.sweet.some(id => retired(id, rules))) errors.push('ぷぷりえーるはオレンジ環境以降では使用できません');
     return errors.length ? errors : validateDeck(deck, catalog);
+}
+
+const cardNumber = (id: string) => Number(id.slice(2));
+/**
+ * A deck made at random from what the rules allow (おまかせデッキ): 20 幼女 and 10 お菓子 of the allowed
+ * fruits and a playable the rules allow, so it always passes `deckRuleErrors`. The same seed gives
+ * the same deck. Null when the allowed cards cannot fill a deck (a fruit without お菓子 on its own).
+ */
+export function randomDeck(rules: MatchRules, catalog: Catalog, seed: number): Deck | null {
+    const rng = { rng: seed >>> 0 };
+    const cards = (kind: 'yojo' | 'sweet', count: number): string[] | null => {
+        const ids = Object.keys(catalog).filter(id => deckCard(catalog, id, kind) && rules.fruits.includes(catalog[id].fruit as Fruit) && !retired(id, rules));
+        // Up to two of a card, as decks are usually built; more only where the allowed cards are too few.
+        const repeatable = ids.filter(id => !singleCopy(catalog, id));
+        const pool = [...ids, ...repeatable];
+        while (pool.length < count && repeatable.length) pool.push(...repeatable);
+        return pool.length < count ? null : shuffled(rng, pool).slice(0, count).sort((a, b) => cardNumber(a) - cardNumber(b));
+    };
+    const playables = Object.keys(playableSkills).filter(id => catalog[id]?.type === 'playable' && (rules.extendedPlayable || !isExtendedPlayable(catalog, id)));
+    const yojo = cards('yojo', 20), sweet = cards('sweet', 10);
+    if (!yojo || !sweet || !playables.length) return null;
+    return { name: 'おまかせデッキ', yojo, sweet, playable: playables[random(rng, playables.length)] };
 }
 
 /** One line for the lobby and for sharing, e.g. 「フルーツ：いちご ／ 拡張プレイアブル：なし」. */

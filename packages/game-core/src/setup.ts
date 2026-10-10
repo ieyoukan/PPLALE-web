@@ -6,6 +6,14 @@ import type { Catalog, Deck, GameState, Player, Rules } from './model.ts';
 import { playableSkills, skillsFor } from './playables/skills.ts';
 import { implementedCard, implementedFruits } from './cards/registry.ts';
 
+/** Whether the card may be in a 幼女 / お菓子 deck at all: an implemented card of an implemented fruit, never a token. */
+export function deckCard(catalog: Catalog, id: string, kind: 'yojo' | 'sweet'): boolean {
+    const c = catalog[id];
+    return !!c && c.type === kind && implementedFruits.includes(c.fruit) && implementedCard(id) && (kind === 'yojo' ? /^y_\d+$/ : /^s_\d+$/).test(id);
+}
+/** お菓子 a deck may hold only one of: each 動物さんソーダ and each チャイ (s_28–s_31). */
+export const singleCopy = (catalog: Catalog, id: string) => catalog[id]?.sweetType === 'animal_soda' || /^s_(28|29|30|31)$/.test(id);
+
 /**
  * Decks use cards of the implemented fruits and an implemented playable. Which fruits and whether a
  * 拡張プレイアブル are allowed in a match is decided by its rules (rules.ts `deckRuleErrors`).
@@ -16,15 +24,12 @@ export function validateDeck(deck: Deck, catalog: Catalog): string[] {
     if (deck.sweet.length !== 10) errors.push('お菓子デッキは10枚にしてください');
     for (const kind of ['yojo', 'sweet'] as const) {
         for (const id of deck[kind]) {
-            const c = catalog[id];
-            if (!c || c.type !== kind || !implementedFruits.includes(c.fruit) || !implementedCard(id) || !(kind === 'yojo' ? /^y_\d+$/ : /^s_\d+$/).test(id))
-                errors.push(`${id}: 対応している${kind === 'yojo' ? '幼女' : 'お菓子'}デッキに入れられません`);
+            if (!deckCard(catalog, id, kind)) errors.push(`${id}: 対応している${kind === 'yojo' ? '幼女' : 'お菓子'}デッキに入れられません`);
         }
     }
     if (catalog[deck.playable]?.type !== 'playable' || !(deck.playable in playableSkills)) errors.push('使えるプレイアブルを選んでください');
     for (const id of Array.from(new Set(deck.sweet))) {
-        if (catalog[id]?.sweetType === 'animal_soda' && deck.sweet.filter(c => c === id).length > 1) errors.push(`${catalog[id].name}は1枚までです`);
-        if (/^s_(28|29|30|31)$/.test(id) && deck.sweet.filter(c => c === id).length > 1) errors.push(`${catalog[id].name}は1枚までです`);
+        if (singleCopy(catalog, id) && deck.sweet.filter(c => c === id).length > 1) errors.push(`${catalog[id].name}は1枚までです`);
         if (id === 's_24' && [...deck.yojo, ...deck.sweet].some(id => catalog[id]?.fruit === 'orange')) errors.push('ぷぷりえーるはオレンジ環境以降では使用できません');
     }
     return Array.from(new Set(errors));

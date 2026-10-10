@@ -6,11 +6,12 @@ import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useAuth } from '@/lib/auth';
-import { demoDeck, gameCatalog } from '@/lib/game/catalog';
-import { describeRoomRules, roomDeckErrors } from '@pplale/game-core/room';
+import { usableChoice } from '@/lib/game/deckSources';
+import { randomSeed } from '@/lib/game/match';
+import { describeRoomRules } from '@pplale/game-core/room';
 import type { RoomView } from '@pplale/game-core/room';
-import type { SavedGameDeck } from '@/lib/game/savedDecks';
 import { BATTLE_PATH, ROOM_PLAY_PATH, roomHref, watchHref } from '@/lib/game/sessionStore';
+import { DeckSelect, UnusableDecks, useDeckChoices } from '../DeckSelect';
 import { NameField, usePlayerName } from './RoomEntrance';
 import { RoomShare } from './RoomShare';
 import { useRoom } from './useRoom';
@@ -57,26 +58,12 @@ function Waiting({ room, view }: { room: Room; view: RoomView }) {
   const router = useRouter();
   const { user, signInWithGoogle } = useAuth();
   const me = view.players[view.seat]!, foe = view.players[view.seat === 0 ? 1 : 0];
-  const [decks, setDecks] = useState<SavedGameDeck[]>([]);
-  const [loading, setLoading] = useState(false);
-  const [selected, setSelected] = useState('demo');
+  const [selected, setSelected] = useState('');
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState('');
-  useEffect(() => {
-    let active = true;
-    setDecks([]);
-    setSelected('demo');
-    if (!user) return;
-    setLoading(true);
-    import('@/lib/game/savedDecks').then(({ loadGameDecks }) => loadGameDecks(user.uid))
-      .then(result => { if (active) setDecks(result); })
-      .catch(() => { if (active) setError('保存済みデッキを読み込めませんでした。接続とログイン状態を確認してください。'); })
-      .finally(() => { if (active) setLoading(false); });
-    return () => { active = false; };
-  }, [user]);
-  // Checked against this room's rules; the server checks again.
-  const choices = [{ id: 'demo', deck: demoDeck }, ...decks].map(({ id, deck }) => ({ id, deck, errors: roomDeckErrors(deck, view.rules, gameCatalog) }));
-  const chosen = choices.find(choice => choice.id === selected) ?? choices[0];
+  // The decks of every source, checked against this room's rules; the server checks the one sent again.
+  const { choices, saved } = useDeckChoices(view.rules, 'このルーム');
+  const chosen = usableChoice(choices, selected);
 
   const ask = (work: Promise<void>) => {
     setBusy(true);
@@ -103,15 +90,15 @@ function Waiting({ room, view }: { room: Room; view: RoomView }) {
         <div className={styles.row}><button className={styles.secondary} disabled={busy} onClick={() => ask(room.send({ action: 'unready' }))}>デッキを選びなおす</button></div>
       </> : <>
         <label className={styles.field}>使うデッキ
-          <select value={chosen.id} onChange={event => setSelected(event.target.value)}>{choices.map(({ id, deck, errors }) =>
-            <option key={id} value={id} disabled={!!errors.length}>{deck.name}{errors.length ? '（このルームでは使えません）' : `（${deck.yojo.length} / ${deck.sweet.length}）`}</option>)}
-          </select>
+          <DeckSelect choices={choices} chosen={chosen} onChange={setSelected} />
         </label>
         {!user ? <div className={styles.row}><button className={styles.secondary} onClick={() => { signInWithGoogle().catch(() => setError('ログインできませんでした')); }}>Googleでログインして保存済みデッキを使う</button></div>
-          : <p className={styles.note}>{loading ? 'デッキを読み込み中…' : `${decks.length}件の保存済みデッキ`} · <Link href="/build">デッキを編集する</Link></p>}
-        {choices.some(choice => choice.errors.length > 0) && <details className={styles.note}><summary>使えないデッキの理由</summary>{choices.filter(choice => choice.errors.length).map(choice => <p key={choice.id}>{choice.deck.name}：{choice.errors.join(' / ')}</p>)}</details>}
-        <button className={styles.primary} disabled={busy || !!chosen.errors.length} onClick={() => ask(room.send({ action: 'ready', deck: chosen.deck }))}>このデッキで準備OK</button>
+          : <p className={styles.note}>{saved.loading ? 'デッキを読み込み中…' : `${saved.decks.length}件の保存済みデッキ`} · <Link href="/build">デッキを編集する</Link></p>}
+        <UnusableDecks choices={choices} className={styles.note} />
+        {/* A deck made on demand (おまかせ) is made when it is sent: choosing again makes another. */}
+        <button className={styles.primary} disabled={busy || !chosen} onClick={() => { if (chosen) ask(room.send({ action: 'ready', deck: chosen.deck(randomSeed()) })); }}>このデッキで準備OK</button>
       </>}
+      {saved.error && <p role="alert" className={styles.error}>{saved.error}</p>}
       {error && <p role="alert" className={styles.error}>{error}</p>}
     </section>
     <button className={styles.danger} disabled={busy} onClick={() => { setBusy(true); void room.leave().then(() => router.push(BATTLE_PATH)); }}>{view.seat === 0 ? 'ルームを解散する' : 'ルームを出る'}</button>
