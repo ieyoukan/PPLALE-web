@@ -1,7 +1,7 @@
 // The API a card or skill script uses. Scripts only touch the game through this object, so the
 // list below is the complete vocabulary of effects.
 import { decideMatch } from '../core/outcome.ts';
-import { addKeyword, buff, gainPp, hit, immobilize, isRealSweet, maxPp, note, spawnCard, swapStats } from '../core/cards.ts';
+import { addKeyword, availablePpMaximum, buff, gainPp, hit, immobilize, isRealSweet, note, spawnCard, swapStats } from '../core/cards.ts';
 import { gainMp } from '../playables/usage.ts';
 import { heal, losePoints } from '../core/points.ts';
 import type { PointLoss } from '../core/points.ts';
@@ -69,6 +69,7 @@ export interface Effects {
     gainPp(amount: number): void;
     /** Restores MP up to the playable's maximum (nothing for a playable without MP). */
     gainMp(amount: number): void;
+    /** The 最大PP a card text asks about: turn count + permanent extra, and the second player's +2 on its fifth turn. */
     maxPp(): number;
     random(size: number): number;
     /** Rolls a six-sided die and records it so the UI can show the roll. */
@@ -133,7 +134,7 @@ export function effects(s: GameState, catalog: Catalog, side: Side, source?: str
         eat: (uid, amount) => { s.queue.push({ op: 'eatResponse', actor: other(side), source: uid, amount }); },
         gainPp: amount => gainPp(s, side, amount),
         gainMp: amount => gainMp(s, side, amount),
-        maxPp: () => maxPp(s, side),
+        maxPp: () => availablePpMaximum(s, side),
         random: size => random(s, size),
         rollDie() {
             const value = rollDie(s);
