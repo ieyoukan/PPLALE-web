@@ -18,8 +18,6 @@ import type { Mode } from './useGameSession';
 export type Strike = { uid: string; cardId: string; x: number; y: number; dx: number; dy: number; width: number; height: number };
 /** A card, skill or hand reaction, shown large before it resolves. */
 export type Announcement = { id: number; kind: 'play' | 'skill' | 'reveal' | 'reaction'; side: Side; cardId: string; title: string; text: string };
-/** Immunity outcomes to present after a command resolves. */
-export type EffectBlockNotice = { id: number; targets: (Ping & { cardId: string; kind: 'damage' | 'destroy' })[] };
 /** Who goes first, shown once it is decided. */
 export type OrderNotice = { chooser: Side; first: Side };
 /** A die a card rolled (ぎってぃ): thrown, then its result is shown. */
@@ -88,7 +86,6 @@ export function useBoardAnimations({ game, view, mode, cpuSides, replaying, cont
   const [turnNotice, setTurnNotice] = useState<TurnNotice | null>(null);
   const [announcement, setAnnouncement] = useState<Announcement | null>(null);
   const [ping, setPing] = useState<Ping | null>(null);
-  const [blocked, setBlocked] = useState<EffectBlockNotice | null>(null);
   const [order, setOrder] = useState<OrderNotice | null>(null);
   const [finale, setFinale] = useState<Finale>(null);
   const [hits, setHits] = useState<Hit[]>([]);
@@ -124,12 +121,6 @@ export function useBoardAnimations({ game, view, mode, cpuSides, replaying, cont
       before: old, after: game, view, open: mode === 'watch' || !!spectating, byAttack: lastCommand.current === 'attack',
       rect: (spot, when) => when === 'before' ? rectsBefore.current.get(spotKey(spot)) : liveRect(root, spot),
     });
-    if (shown.blocks.length) {
-      setAnnouncement(null);
-      setPing(null);
-      setBlocked({ id: game.revision, targets: shown.blocks.map(b => ({ uid: b.uid, kind: b.what, cardId: game.cards[b.uid].cardId, ...b.rect })) });
-      later(() => setBlocked(current => current?.id === game.revision ? null : current), 1200);
-    }
     // A card rolled a die in this command: throw it, then hold the result for a moment.
     if (shown.roll) {
       const roll = { id: game.revision, side: shown.roll.side, value: shown.roll.value, cardId: shown.roll.cardId, rolling: true };
@@ -245,7 +236,6 @@ export function useBoardAnimations({ game, view, mode, cpuSides, replaying, cont
     setTurnNotice(null);
     setAnnouncement(null);
     setPing(null);
-    setBlocked(null);
     setOrder(null);
     setFinale(null);
     setHits([]);
@@ -256,7 +246,7 @@ export function useBoardAnimations({ game, view, mode, cpuSides, replaying, cont
   /** A tap moves on: ゲームセット → verdict → result screen. */
   const advanceFinale = useCallback(() => setFinale(current => current === 'set' ? 'verdict' : current === 'verdict' ? null : current), []);
 
-  return { flights, strike, turnNotice, announcement, ping, blocked, order, finale, hits, pops, effectRoll, choiceNote, advanceFinale, busy: flights.some(blocksPlay) || !!strike || !!turnNotice || !!announcement || !!ping || !!blocked || !!order || !!effectRoll || !!choiceNote, run, skipNext, reset };
+  return { flights, strike, turnNotice, announcement, ping, order, finale, hits, pops, effectRoll, choiceNote, advanceFinale, busy: flights.some(blocksPlay) || !!strike || !!turnNotice || !!announcement || !!ping || !!order || !!effectRoll || !!choiceNote, run, skipNext, reset };
 }
 
 let choiceId = 0;

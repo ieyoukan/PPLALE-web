@@ -59,7 +59,7 @@ for (const viewport of [{ width: 1280, height: 860 }, { width: 844, height: 390 
       expect(errors).toEqual([]);
     });
 
-    test('Jonko concentrates the target, visibly blocks damage, and the bonus draw remains available', async ({ page }) => {
+    test('Jonko concentrates the target, takes 0 damage, and the bonus draw remains available', async ({ page }) => {
       const s = arena({ me: { hand: ['s_6'] }, foe: { field: ['y_28', 'y_9'] } });
       s.players[0].played.push('s_7');
       const [jonko, ordinary] = field(s, 1);
@@ -68,15 +68,11 @@ for (const viewport of [{ width: 1280, height: 860 }, { width: 844, height: 390 
       await expect(page.locator(`[data-unit="${jonko}"]`)).toHaveClass(/targetable/);
       await expect(page.locator(`[data-unit="${ordinary}"]`)).not.toHaveClass(/targetable/);
       await page.locator(`[data-unit="${jonko}"]`).click();
-      await expect(page.getByText('じょんこが止めた！', { exact: true })).toBeVisible();
-      await expect(page.getByText('ダメージを防いだ', { exact: true })).toBeVisible();
-      await expect(page.locator('[data-deck="0-yojo"]')).toBeDisabled();
-      await expect(page.getByText('じょんこが止めた！', { exact: true })).toBeHidden();
+      // The effect is not announced: じょんこ just shows the damage it took, 0.
+      await expect(page.getByRole('status', { name: '0ダメージ' })).toBeVisible();
       await page.locator('[data-deck="0-yojo"]').click();
       await expect.poll(async () => (await savedGame(page)).players[0].hand.length).toBe(1);
       expect((await savedGame(page)).cards[jonko].damage).toBe(0);
-      await page.reload();
-      await expect(page.getByText('じょんこが止めた！', { exact: true })).toBeHidden();
     });
   });
 }

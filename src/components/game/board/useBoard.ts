@@ -62,7 +62,7 @@ export function useBoard(container: RefObject<HTMLDivElement | null>, session: B
   const cpuSides = useMemo<Side[]>(() => replaying ? [0, 1] : editing ? [] : cpuSidesOf(mode), [mode, replaying, editing]);
   const watching = !!remote?.watching;
   const animations = useBoardAnimations({ game, view, mode, cpuSides, replaying, container, spectating: watching ? names : undefined });
-  const { run: animate, skipNext: skipAnimation, flights, strike, turnNotice, announcement, ping, blocked, order, effectRoll, choiceNote, busy: animating } = animations;
+  const { run: animate, skipNext: skipAnimation, flights, strike, turnNotice, announcement, ping, order, effectRoll, choiceNote, busy: animating } = animations;
   /** This screen acts for the side (nobody does while watching two CPUs; in a room only the own seat). */
   const seat = remote?.seat;
   const canControl = useCallback((side: Side) => seat === undefined ? !cpuSides.includes(side) : !watching && side === seat, [cpuSides, seat, watching]);
@@ -82,7 +82,7 @@ export function useBoard(container: RefObject<HTMLDivElement | null>, session: B
   const busy = animating || rollingDice || !!remote?.waiting;
   const modelUsed = useCpuPlayer({
     enabled: ready && !replaying && cpuSides.length > 0 && !loading && !paused, sides: cpuSides, levels, game, act, flights,
-    busy: { any: busy, blocking: rollingDice || !!strike || !!turnNotice || !!announcement || !!ping || !!blocked || !!order || !!effectRoll || !!choiceNote },
+    busy: { any: busy, blocking: rollingDice || !!strike || !!turnNotice || !!announcement || !!ping || !!order || !!effectRoll || !!choiceNote },
   });
   // A finished match against さいきょう goes to the CPU server once, if this browser agreed to it.
   // The course of the match (形勢), judged with what side 0 can know.

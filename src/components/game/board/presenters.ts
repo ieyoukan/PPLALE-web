@@ -29,7 +29,6 @@ export interface Presentation {
   flights: DrawFlight[];
   hits: Hit[];
   pops: Pop[];
-  blocks: { uid: string; what: 'damage' | 'destroy'; rect: Rect }[];
   roll: Extract<Change, { kind: 'roll' }> | null;
 }
 
@@ -138,9 +137,13 @@ export const presenters: { [K in ChangeKind]: Presenter<K> } = {
   roll(change, _scene, out) {
     out.roll = change;
   },
+  // An effect that a unit is immune to (じょんこ) is shown as what happened to it: 0 damage, or
+  // 「無効」 for a destruction that did not happen. No separate announcement.
   blocked(change, scene, out) {
     const rect = scene.rect({ unit: change.uid }, 'after') ?? scene.rect({ unit: change.uid }, 'before');
-    if (rect && !out.blocks.some(b => b.uid === change.uid)) out.blocks.push({ uid: change.uid, what: change.what, rect });
+    if (!rect) return;
+    if (change.what === 'damage') out.hits.push({ id: ++ids, amount: 0, x: rect.x + rect.width / 2, y: rect.y + rect.height / 2, kind: 'effect' });
+    else out.pop({ unit: change.uid }, '無効', 'debuff');
   },
 };
 
@@ -149,7 +152,7 @@ let ids = 0;
 export function present(changes: Change[], scene: Scene): Presentation {
   const stacked = new Map<string, number>();
   const out: Output = {
-    flights: [], hits: [], pops: [], blocks: [], roll: null,
+    flights: [], hits: [], pops: [], roll: null,
     pop(spot, text, tone) {
       const rect = scene.rect(spot, 'after') ?? scene.rect(spot, 'before');
       if (!rect) return;
