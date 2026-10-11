@@ -34,8 +34,9 @@ test('randomDeck: the same seed gives the same deck, and seeds reach every allow
     assert.deepEqual(randomDeck(rules, catalog, 7), randomDeck(rules, catalog, 7));
     const decks = seeds.map(seed => randomDeck(rules, catalog, seed));
     assert.ok(new Set(decks.map(deck => deck.yojo.join())).size > seeds.length / 2);
+    // Every allowed fruit that has cards of the kind (melon has no お菓子).
     for (const kind of ['yojo', 'sweet'])
-      assert.deepEqual(new Set(decks.flatMap(deck => deck[kind].map(id => catalog[id].fruit))), new Set(rules.fruits), `${kind} of ${rules.fruits}`);
+      assert.deepEqual(new Set(decks.flatMap(deck => deck[kind].map(id => catalog[id].fruit))), new Set(rules.fruits.filter(fruit => Object.values(catalog).some(card => card.type === kind && card.fruit === fruit))), `${kind} of ${rules.fruits}`);
     const allowed = Object.keys(catalog).filter(id => catalog[id].type === 'playable' && (rules.extendedPlayable || !isExtendedPlayable(catalog, id))
       && validateDeck({ ...decks[0], playable: id }, catalog).length === 0);
     assert.deepEqual(new Set(decks.map(deck => deck.playable)), new Set(allowed));

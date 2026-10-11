@@ -47,15 +47,23 @@ for (const card of units) {
 // WHEN something happens are compared, and the keywords the text opens with.
 const laterUnits = Object.values(catalog).filter(c => c.type === 'yojo' && c.fruit !== 'strawberry' && playableNow.fruits.includes(c.fruit));
 const laterKeywords = { ...printedKeywords, かくれんぼ: 'hide' };
+// Text in 「」 is an effect given to another unit or a condition about other cards (リマチャン, えーりん,
+// ぶらんちゃん), not this card's own timing.
+const own = text => text.replace(/「[^」]*」/g, '');
 const laterTimings = {
-  onPlay: text => /この幼女が手札から場に出た(とき|時)/.test(text),
-  onEnter: text => /この幼女が場に出た(とき|時)/.test(text),
-  onDestroyed: text => /この幼女が(相手幼女からの攻撃で)?破壊された(とき|時)/.test(text),
+  onPlay: text => /この幼女が手札から場に出た(とき|時)/.test(own(text)),
+  onEnter: text => /この幼女が場に出た(とき|時)/.test(own(text)),
+  onDestroyed: text => /この幼女が(相手幼女からの攻撃で)?破壊された(とき|時)/.test(own(text)),
   // 「相手幼女の攻撃時」 is a reaction from the hand, 「被攻撃時」 is the defender's.
-  onAttack: text => /攻撃時/.test(text.replace(/被攻撃時|相手幼女の攻撃時/g, '')),
-  onDefend: text => /被攻撃時/.test(text),
-  onTurnEnd: text => /ターン終了時/.test(text),
+  onAttack: text => /攻撃時/.test(own(text).replace(/被攻撃時|相手幼女の攻撃時/g, '')),
+  onDefend: text => /被攻撃時/.test(own(text)),
+  // 「ターン終了時まで」 is how long something lasts (ちょり, レンス), not a trigger.
+  onTurnEnd: text => /ターン終了時(?!まで)/.test(own(text)),
 };
+// What happens in the combat itself is written as 攻撃時 / 被攻撃時 but done by the combat step:
+// damage taken (しゅお) and no damage taken back (とここ).
+const combatHooks = { onAttack: ['onCombatDamage', 'unharmedAttacking'], onDefend: ['onCombatDamage'] };
+const hasHook = (script, hook) => typeof script[hook] === 'function' || (combatHooks[hook] ?? []).some(other => script[other] !== undefined);
 /** 「早食い。挑発。」「おにごっこ(1d6≧5)。」「色おに（オレンジ）。」 at the start of the text. */
 function openingAbilities(text) {
   const found = [];
@@ -73,7 +81,7 @@ for (const card of laterUnits) {
   test(`card text: ${card.id} ${card.name}（${card.fruit}） uses the hooks and keywords its text describes`, () => {
     const script = scriptOf(card.id);
     for (const [hook, described] of Object.entries(laterTimings)) {
-      assert.equal(typeof script[hook] === 'function', described(card.effect), `${hook}: ${card.effect}`);
+      assert.equal(hasHook(script, hook), described(card.effect), `${hook}: ${card.effect}`);
     }
     assert.deepEqual(openingOf(script.keywords ?? []), openingAbilities(card.effect));
   });
