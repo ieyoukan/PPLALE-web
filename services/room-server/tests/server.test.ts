@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { HIDDEN_CARD } from '@pplale/game-core';
+import { HIDDEN_CARD, playableNow } from '@pplale/game-core';
 import type { RoomInfo, RoomServerStats, Seated } from '@pplale/game-core/room';
 import { connect, deck, seatedRoom, serve, shared, startedMatch } from './helpers.ts';
 
@@ -12,12 +12,13 @@ test('rooms: made with the rules the game can play, looked up and joined once', 
     assert.equal(made.status, 200);
     const { view } = made.data;
     assert.match(view.id, /^\d{6}$/);
-    const supportedRules = { ...rules, fruits: ['strawberry', 'grape'] };
+    // What the engine cannot play yet is dropped from the rules (rules.ts `playableNow`).
+    const supportedRules = { ...rules, fruits: ['strawberry', 'grape'], extendedPlayable: playableNow.extendedPlayable };
     assert.deepEqual(view.rules, supportedRules);
     assert.equal(view.players[0].name, 'ほすと太郎ながいなまえで');
     assert.equal((await call('/rooms', { rules: { fruits: ['grape'] } })).status, 200);
     assert.equal((await call('/rooms', { rules: { fruits: ['orange'] } })).status, 200);
-    assert.equal((await call('/rooms', { rules: { fruits: ['melon'] } })).status, 400);
+    assert.equal((await call('/rooms', { rules: { fruits: ['melon'] } })).status, playableNow.fruits.includes('melon') ? 200 : 400);
 
     const info = await call<RoomInfo>(`/rooms/${view.id}`);
     assert.deepEqual(info.data, { id: view.id, rules: supportedRules, host: 'ほすと太郎ながいなまえで', open: true, spectators: false });
