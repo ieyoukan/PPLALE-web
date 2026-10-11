@@ -609,11 +609,14 @@
 /* Nine playables: the six normal ones in the first row, the β ones below. */
 .editPlayables button[data-extended]::after { content: 'β'; position: absolute; right: 2px; top: 2px; z-index: 2; padding: 0 5px; border-radius: 8px; background: #fff7e5; color: #7a5967; font: 700 12px Arial, sans-serif; }
 
-/* The opponent's hand lies over the far side's counters. Their numbers stay readable: the counters are
-   drawn above the hand, and each number sits at the outer end of its label, clear of the fan of cards.
-   (The far side is turned around, so its `flex-end` is the left of the screen.) Taps still reach the
-   cards between the buttons. */
+/* The opponent's hand hangs in from the top edge like the player's own from the bottom: only a strip
+   of each card shows, ending above the far side's numbers, which stay where they are. The strip follows
+   the table's size (the counters are placed in cqw too). A revealed card comes down a little further.
+   Where every hand is face up (watching, edit mode) the cards come down to be read; there the counters
+   are drawn above them so the numbers are never covered. Taps still reach the cards between the buttons. */
+.opponentHand { top: calc(3.8cqw - 156px); }
+.openHand { top: -36px; }
+.hiddenCard.revealedOpponentCard { transform: translateX(calc(var(--hand-index) * var(--fan-step) + var(--reveal-shift))) translateY(12px) rotateX(-12deg); }
 .far .turnCounter, .far .pointsCounter { z-index: 19; pointer-events: none; }
-.far .pointsCounter .counterValue { justify-content: flex-end; }
-.far .turnCounter .counterValue { justify-content: flex-start; }
-.far .counterValue > span:first-child { border-radius: 999px; background: #fffbede6; box-shadow: 0 1px 4px #4d3a2c40; }
+.far .counterValue > span:first-child { border-radius: 999px; background: #fffbede6; }
+@media (max-height: 600px) { .opponentHand { top: calc(3.8cqw - 156px); } .openHand { top: -80px; } }
