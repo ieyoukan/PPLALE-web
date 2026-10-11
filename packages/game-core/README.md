@@ -7,9 +7,9 @@ Next.js / React / Firebase に依存しない、ぷぷりえーるのローカ�
 | 場所 | 責務 |
 | --- | --- |
 | `model.ts` | 型（GameState・Command・Task など）と暫定ルール `sandboxRules` |
-| `cards/strawberryYojo.ts`, `cards/grapeYojo.ts`, `cards/orangeYojo.ts`, `cards/strawberrySweets.ts`, `cards/fruitSweets.ts`, `cards/tokens.ts` | **カードごとの効果**。カード ID → `CardScript`（いつ・何をするか） |
+| `cards/strawberryYojo.ts`, `cards/grapeYojo.ts`, `cards/melonYojo.ts`, `cards/orangeYojo.ts`, `cards/strawberrySweets.ts`, `cards/fruitSweets.ts`, `cards/tokens.ts` | **カードごとの効果**。カード ID → `CardScript`（いつ・何をするか） |
 | `cards/registry.ts` | カード ID から効果を引く。カードセットを追加したらここに登録 |
-| `playables/skills.ts` | 通常プレイアブルのスキル（共通スキル＋固有スキル） |
+| `playables/skills.ts`, `playables/usage.ts`, `playables/exSkills.ts` | プレイアブルのスキル（共通スキル＋固有スキル、拡張プレイアブルのMP・パッシブ・反応スキル）、スキルを使う処理、カードが与えるExスキル |
 | `playables/exSkills.ts` | 取得済みExスキルの説明・手動発動。自動発動は回復・破壊・ドロー等の処理側 |
 | `effects/context.ts` | カード・スキルが使える操作の一覧（`ctx.buff` / `ctx.queue` など） |
 | `effects/ops.ts` | 複数のカードで共有する効果の手順（ダメージ・ドロー・捨てる…） |
@@ -24,6 +24,7 @@ Next.js / React / Firebase に依存しない、ぷぷりえーるのローカ�
 | `snapshot.ts` | 保存された状態の検証・復元と旧形式の移行 |
 | `position.ts` | 盤面エディタの盤面（`Position`）。`buildPosition` で対戦中の状態にし、`positionOf` で対戦中の盤面を書き出す。`encodePosition` / `decodePosition` は共有コード（`PPL1.…`） |
 | `edit.ts` | 盤面エディタの編集モードでの変更（`editGame`）。カードを置く・外す・動かす、幼女やプレイヤーの数値、手番。uid は変えない |
+| `rules.ts` | 対戦のルール（`MatchRules`：使えるフルーツ・拡張プレイアブルの可否）。`playableNow` が今選べる範囲、`deckRuleErrors` がデッキの検証、`randomDeck` がルールに合うおまかせデッキ。ルーム（`room.ts`）はこれに観戦の可否を足す |
 
 ## カード効果の読み方・追加方法
 

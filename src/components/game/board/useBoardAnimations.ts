@@ -147,7 +147,9 @@ export function useBoardAnimations({ game, view, mode, cpuSides, replaying, cont
     }
     const next = shown.flights;
     if (next.length) {
-      setFlights(current => [...current, ...next]);
+      // A card is in one flight at a time: one that starts replaces an earlier one still shown
+      // (given back in the mulligan and drawn again right away).
+      setFlights(current => [...current.filter(f => !next.some(n => n.uid === f.uid)), ...next]);
       // The card rests where it lands for a moment: removing it exactly when the flight should end cuts
       // the landing off whenever the animation starts a little late (a busy frame).
       later(() => setFlights(current => current.filter(f => !next.includes(f))), Math.max(...next.map(f => f.delay)) + DRAW_DURATION + FLIGHT_REST);
