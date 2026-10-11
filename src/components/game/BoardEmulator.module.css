@@ -217,7 +217,10 @@
 .flyingCard { position: absolute; transform-origin: top left; animation: drawFlight .8s cubic-bezier(.2,.65,.25,1) var(--fly-delay, 0ms) both; filter: drop-shadow(0 12px 8px #31202566); }
 .flightSpin { position: absolute; inset: 0; perspective: 650px; animation: flightSpin .8s ease-in-out var(--fly-delay, 0ms) both; }
 .lookDown, .lookUp, .lookReveal, .lookHide { position: absolute; inset: 0; transform-style: preserve-3d; }
-.lookUp { transform: rotateY(180deg); }
+/* Face-up moves need no flip: keep the image and frame on the same flat layer. */
+.lookUp { transform-style: flat; }
+.lookUp .flightBack { display: none; }
+.lookUp .flightFront { transform: none; }
 .lookReveal { animation: drawFlip .8s ease-in-out var(--fly-delay, 0ms) both; }
 .lookHide { animation: drawFlip .8s ease-in-out var(--fly-delay, 0ms) both reverse; }
 @keyframes drawFlight {
@@ -294,7 +297,7 @@
 .mat { box-shadow: inset 0 0 25px #ac714426; }
 .near .field { top: 50%; }
 .far .field { top: 26%; }
-.fieldSlot { touch-action: none; transform-style: preserve-3d; }
+.fieldSlot { touch-action: none; }
 .fieldSlot .cardImage { transition: transform .2s, filter .2s; }
 .occupied .cardImage { filter: drop-shadow(2px 7px 4px #41233975); }
 .attacking { z-index: 15; transform: translateY(-20px) rotate(-4deg) scale(1.13); filter: drop-shadow(0 20px 10px #4f2b4860); transition: transform .2s; }
