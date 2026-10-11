@@ -1,12 +1,15 @@
 import type { GameState } from '../model.ts';
 
+/** What the generator needs: a match, or just a seed kept in `rng` (a random deck is made before there is a match). */
+type Rng = Pick<GameState, 'rng'>;
+
 /** Deterministic LCG stored in the state, so a seed and a command list replay the same match. */
-export function random(s: GameState, size: number): number {
+export function random(s: Rng, size: number): number {
     s.rng = (Math.imul(s.rng, 1664525) + 1013904223) >>> 0;
     return Math.floor(s.rng / 0x100000000 * Math.max(1, size));
 }
 
-export function shuffled<T>(s: GameState, items: T[]): T[] {
+export function shuffled<T>(s: Rng, items: T[]): T[] {
     const result = [...items];
     for (let i = result.length - 1; i > 0; i--) {
         const j = random(s, i + 1);
