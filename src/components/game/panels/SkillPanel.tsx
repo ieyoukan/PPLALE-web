@@ -47,7 +47,7 @@ export function SkillPanel({ side }: { side: Side }) {
     {Object.keys(player.exSkills ?? {}).length > 0 && <h3>Exスキル</h3>}
     {(Object.keys(player.exSkills ?? {}) as ExSkillId[]).map(id => {
       const skill = player.exSkills![id]!, info = exSkillInfo[id];
-      return <button className={styles.skillButton} key={id} disabled={!usable || info.automatic || !skill.uses || player.pp < info.cost || id === 'alice' && skill.lastTurn === game.turn}
+      return <button className={styles.skillButton} key={id} disabled={!usable || info.automatic || !skill.uses || player.pp < info.cost || (id === 'alice' || id === 'kamikakushi') && skill.lastTurn === game.turn}
         onClick={() => { act({ type: 'exSkill', actor: side, skill: id }); setPanel(null); }}>
         <b>{info.cost} PP</b><span><strong>{info.name}</strong><p>{info.description}</p></span><small>{info.automatic ? '自動発動' : ''}{['alice', 'dagger', 'smoke'].includes(id) ? '毎ターン／永続' : `残り${skill.uses}回`}</small>
       </button>;

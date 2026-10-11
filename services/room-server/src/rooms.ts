@@ -52,9 +52,9 @@ const command = z.discriminatedUnion('type', [
     z.object({ type: z.literal('attack'), actor: side, uid, target: uid }),
     z.object({ type: z.literal('end'), actor: side }),
     z.object({ type: z.literal('choose'), actor: side, option: z.string().max(32) }),
-    z.object({ type: z.literal('skill'), actor: side, index: z.number().int().min(0).max(8) }),
+    z.object({ type: z.literal('skill'), actor: side, index: z.number().int().min(0).max(30) }),
     z.object({ type: z.literal('reveal'), actor: side, uid }),
-    z.object({ type: z.literal('exSkill'), actor: side, skill: z.enum(['dice', 'strawberryHunt', 'healing', 'abyss', 'dagger', 'alice', 'smoke']) }),
+    z.object({ type: z.literal('exSkill'), actor: side, skill: z.enum(['dice', 'strawberryHunt', 'healing', 'abyss', 'dagger', 'alice', 'smoke', 'kamikakushi']) }),
     z.object({ type: z.literal('acorn'), actor: side, mode: z.enum(['draw', 'pp']) }),
 ]);
 const cardIds = z.array(z.string().max(16)).max(40);

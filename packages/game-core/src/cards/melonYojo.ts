@@ -13,7 +13,7 @@ const rabbit = (ctx: CardContext, uid: string) => /うさぎ|ラビット/.test(
 const isCat = (ctx: CardContext, uid: string) => ctx.s.cards[uid].cardId === 'token_cat';
 const others = (ctx: CardContext) => ctx.me.field.filter(uid => uid !== ctx.uid);
 /** A token is any card that is not a printed deck card (猫まんじゅう, もちだ, うゆちの派生, お仕置き棒 …). */
-const isToken = (cardId: string) => !/^[ys]_\d+$/.test(cardId);
+const isToken = (cardId: string) => !/^[sy]_\d+$/.test(cardId);
 /** A unit's worth for the CPU's picks. */
 const worth = (ctx: CardContext, uid: string) => attackOf(ctx.s.cards[uid], ctx.catalog) + Math.max(0, hpOf(ctx.s.cards[uid], ctx.catalog));
 const cheapest = (ctx: CardContext, options: string[]) => [...options].filter(id => ctx.s.cards[id]).sort((a, b) => costOf(ctx.s, a, ctx.catalog, ctx.side) - costOf(ctx.s, b, ctx.catalog, ctx.side))[0];

@@ -2,7 +2,7 @@
 // must hold whatever cards were involved: limits (skill uses, points, field size) and card bookkeeping.
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { hpOf, mpMax, playMatch, skillLimit, skillsFor } from '../dist/index.js';
+import { hpOf, mpMax, playMatch, randomDeck, skillLimit, skillsFor } from '../dist/index.js';
 import { catalog } from './helpers.mjs';
 
 const FIELD_SIZE = 7;
@@ -45,19 +45,20 @@ function check(s) {
   for (const uid of Object.keys(s.cards)) assert.ok(seen.has(uid), `${s.cards[uid].cardId} がどこにもない`);
 }
 
-test('invariants hold throughout random CPU matches', () => {
-  for (let seed = 1; seed <= MATCHES; seed++) {
+/** Plays one CPU match (random strawberry decks unless given) and checks the invariants before every command. */
+function checkedMatch(seed, decks) {
     let previous;
     playMatch(catalog, {
       levels: seed % 2 ? ['easy', 'normal'] : ['normal', 'easy'],
-      seed,
+      seed, decks,
       onStep(s, command) {
         try {
           check(s);
-          // The hand limit is applied when a turn is handed over.
+          // The hand limit is applied when a turn is handed over, before the turn-end effects:
+          // ぶどうのゆうひ's turn-end draw may leave 10 (ぶどうFAQ⑤-2).
           if (previous && previous.active !== s.active) {
-            const ended = s.players[previous.active];
-            assert.ok(ended.hand.length <= 9, `${ended.name} 手札 ${ended.hand.length}`);
+            const ended = s.players[previous.active], endDraws = previous.players[previous.active].field.filter(uid => previous.cards[uid].cardId === 'y_47').length;
+            assert.ok(ended.hand.length <= 9 + endDraws, `${ended.name} 手札 ${ended.hand.length}`);
           }
         } catch (error) {
           error.message = `seed ${seed} turn ${s.turn} before ${JSON.stringify(command)}: ${error.message}`;
@@ -66,5 +67,25 @@ test('invariants hold throughout random CPU matches', () => {
         previous = s;
       },
     });
+}
+
+test('invariants hold throughout random CPU matches', () => {
+  for (let seed = 1; seed <= MATCHES; seed++) checkedMatch(seed);
+});
+
+// Melon has no お菓子 of its own, so it is played with another fruit; most of the 幼女 are melon.
+const melonUnits = Object.keys(catalog).filter(id => /^y_\d+$/.test(id) && catalog[id].fruit === 'melon');
+function melonDeck(seed, partner) {
+  const deck = randomDeck({ fruits: ['melon', partner], extendedPlayable: true }, catalog, seed);
+  let r = seed >>> 0;
+  const next = n => { r = (Math.imul(r, 1103515245) + 12345) >>> 0; return r % n; };
+  return { ...deck, yojo: [...deck.yojo.slice(0, 4), ...Array.from({ length: 16 }, () => melonUnits[next(melonUnits.length)])] };
+}
+
+test('invariants hold throughout CPU matches with melon decks', () => {
+  for (let seed = 1; seed <= MATCHES; seed++) {
+    // Both decks under the same rules (ぷぷりえーる is not allowed where orange is).
+    const partner = ['strawberry', 'grape', 'orange'][seed % 3];
+    checkedMatch(seed, [melonDeck(seed, partner), melonDeck(Math.imul(seed, 31) + 7, partner)]);
   }
 });
