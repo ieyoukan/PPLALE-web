@@ -13,7 +13,7 @@
   "scripts": {
     "prepare": "panda codegen && husky",
     "predev": "panda codegen",
-    "prebuild": "panda codegen && node scripts/generate-og-images.mjs",
+    "prebuild": "panda codegen && node scripts/generate-og-images.mjs && node scripts/generate-deck-thumbnails.mjs",
     "dev": "next dev",
     "build": "next build",
     "export": "next export",
@@ -31,6 +31,8 @@
     "cards:import-en": "node scripts/import-english-cards.mjs",
     "cards:optimize": "node scripts/optimize-images.mjs",
     "cards:og-images": "node scripts/generate-og-images.mjs",
+    "cards:thumbnails": "node scripts/generate-deck-thumbnails.mjs",
+    "test:deck-images": "node --test tests/ogDeckImage.test.mjs",
     "cards:check": "node scripts/check-cards.mjs",
     "test:e2e": "playwright test",
     "test:e2e:ui": "playwright test --ui"
@@ -47,6 +49,7 @@
     "react": "^19.2.8",
     "react-dom": "^19.2.8",
     "react-hook-form": "^7.85.0",
+    "sharp": "^0.35.3",
     "three": "^0.186.1",
     "uuid": "^14.0.2",
     "zod": "^4.4.3"
@@ -62,6 +65,7 @@
     "@types/react-dom": "^19",
     "@types/three": "^0.186.0",
     "eslint": "^9.39.2",
+    "esbuild": "^0.20.2",
     "eslint-config-next": "^16.2.3",
     "eslint-plugin-react": "^7.37.5",
     "eslint-plugin-react-hooks": "^7.0.1",
@@ -70,7 +74,6 @@
     "file-loader": "^6.2.0",
     "husky": "^9.1.7",
     "postcss": "^8.5.6",
-    "sharp": "^0.35.3",
     "typescript": "^5"
   }
 }

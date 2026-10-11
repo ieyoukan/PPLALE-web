@@ -38,7 +38,8 @@ const config: NextConfig = {
     inlineCss: true,
     optimizePackageImports: ['framer-motion'],
   },
-  serverExternalPackages: ['@vercel/og'],
+  serverExternalPackages: ['@vercel/og', 'sharp'],
+  outputFileTracingIncludes: { '/api/og/**': ['./public/og-cards/**/*.png'] },
   // 本番環境用の設定
   assetPrefix: '',
   basePath: '',
@@ -66,15 +67,6 @@ const config: NextConfig = {
           {
             key: 'X-Frame-Options',
             value: 'DENY',
-          },
-        ],
-      },
-      {
-        source: '/api/og/:path*',
-        headers: [
-          {
-            key: 'Cache-Control',
-            value: 'public, max-age=3600, s-maxage=3600',
           },
         ],
       },
