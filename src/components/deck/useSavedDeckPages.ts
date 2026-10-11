@@ -14,7 +14,6 @@ export interface SavedDeckSummary {
   yojoDeckIds: string[];
   sweetDeckIds: string[];
   playableCardId: string | null;
-  is2pick: boolean;
 }
 
 const cardIds = (value: unknown): string[] => Array.isArray(value) ? value.filter((id): id is string => typeof id === 'string') : [];
@@ -29,7 +28,6 @@ function summary(document: QueryDocumentSnapshot): SavedDeckSummary {
     yojoDeckIds: cardIds(data.yojoDeckIds),
     sweetDeckIds: cardIds(data.sweetDeckIds),
     playableCardId: typeof data.playableCardId === 'string' ? data.playableCardId : null,
-    is2pick: data.is2pick === true,
   };
 }
 

@@ -53,7 +53,7 @@ export function makeDecks() {
     id: `deck-${i}`, name: i === 30 ? '古いオレンジのデッキ' : `デッキ ${String(i).padStart(2, '0')}`,
     updatedAt: 1700000000000 - i * 86400000,
     yojoDeckIds: Array(20).fill(i === 30 ? 'y_116' : 'y_0'),
-    sweetDeckIds: Array(10).fill('s_0'),
+    sweetDeckIds: Array(10).fill(i === 30 ? 's_39' : 's_0'),
     playableCardId: i === 30 ? 'p_0' : null, is2pick: i === 30,
   }));
 }

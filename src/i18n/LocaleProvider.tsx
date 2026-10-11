@@ -32,7 +32,7 @@ const englishText: Record<string, string> = {
   '名前の昇順': 'Name: A–Z',
   '名前の降順': 'Name: Z–A',
   'フルーツ': 'Fruit',
-  '構築方法': 'Deck type',
+  '選択した組み合わせのみ': 'Only the selected combination',
   'すべて': 'All',
   '未選択': 'Not selected',
   '条件をリセット': 'Reset filters and sort',

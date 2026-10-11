@@ -28,18 +28,46 @@ test('scrolling loads every page without duplicate decks', async ({ page }) => {
   expect(new Set(await page.locator('li a').evaluateAll(links => links.map(link => link.href))).size).toBe(31);
 });
 
-test('search finds an older deck and combines fruit, playable and 2pick filters', async ({ page }) => {
+test('search finds an older deck and combines exact fruits and playable filters', async ({ page }) => {
   await openSavedDeckList(page);
   await page.getByLabel('デッキ名でフィルター', { exact: true }).fill('オレンジ');
-  await page.getByRole('combobox', { name: 'フルーツ', exact: true }).selectOption('orange');
+  await page.getByRole('checkbox', { name: 'おれんじ', exact: true }).check();
   await page.getByRole('combobox', { name: 'プレイアブルカード', exact: true }).selectOption('p_0');
-  await page.getByLabel('構築方法').selectOption('2pick');
+  await expect(page.getByRole('combobox', { name: '構築方法', exact: true })).toHaveCount(0);
   await expect(page.locator('li')).toHaveCount(1);
   await expect(page.getByRole('heading', { name: '古いオレンジのデッキ' })).toBeVisible();
-  await page.getByLabel('構築方法').selectOption('normal');
+  await page.getByRole('checkbox', { name: 'いちご', exact: true }).check();
   await expect(page.getByText('条件に合うデッキがありません', { exact: true })).toBeVisible();
   await page.getByRole('button', { name: '条件をリセット' }).click();
   await expect(page.locator('li')).toHaveCount(12);
+});
+
+test('fruit combinations match exactly, including fruits from sweets', async ({ page }) => {
+  const base = { updatedAt: 1700000000000, playableCardId: null };
+  const decks = [
+    { ...base, id: 'mono', name: 'いちご単色', yojoDeckIds: ['y_0'], sweetDeckIds: ['s_0'] },
+    { ...base, id: 'mixed', name: 'いちごとぶどう', yojoDeckIds: ['y_0', 'y_31'], sweetDeckIds: ['s_0'] },
+    { ...base, id: 'sweet-mixed', name: 'お菓子にぶどう', yojoDeckIds: ['y_0'], sweetDeckIds: ['s_28'] },
+    { ...base, id: 'triple', name: '三色デッキ', yojoDeckIds: ['y_0', 'y_31', 'y_65'], sweetDeckIds: ['s_0'] },
+    { ...base, id: 'grape', name: 'ぶどう単色', yojoDeckIds: ['y_31'], sweetDeckIds: ['s_28'] },
+    { ...base, id: 'empty', name: '空のデッキ', yojoDeckIds: [], sweetDeckIds: [] },
+  ];
+  await openSavedDeckList(page, { decks });
+  await expect(page.locator('li')).toHaveCount(6);
+  await page.getByRole('checkbox', { name: 'いちご', exact: true }).check();
+  await expect(page.locator('li h3')).toHaveText(['いちご単色']);
+  await page.getByRole('checkbox', { name: 'ぶどう', exact: true }).check();
+  await expect(page.locator('li')).toHaveCount(2);
+  expect(new Set(await page.locator('li h3').allTextContents())).toEqual(new Set(['いちごとぶどう', 'お菓子にぶどう']));
+  await page.getByRole('checkbox', { name: 'いちご', exact: true }).uncheck();
+  await expect(page.locator('li h3')).toHaveText(['ぶどう単色']);
+  await page.getByRole('checkbox', { name: 'ぶどう', exact: true }).uncheck();
+  await expect(page.locator('li')).toHaveCount(6);
+  await page.getByRole('checkbox', { name: 'めろん', exact: true }).check();
+  await expect(page.getByText('条件に合うデッキがありません', { exact: true })).toBeVisible();
+  await page.getByRole('button', { name: 'すべて', exact: true }).click();
+  await expect(page.locator('li')).toHaveCount(6);
+  await expect(page.getByRole('checkbox', { name: 'めろん', exact: true })).not.toBeChecked();
 });
 
 test('global sort includes records beyond the first page', async ({ page }) => {

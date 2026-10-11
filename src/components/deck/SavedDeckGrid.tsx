@@ -15,6 +15,8 @@ import type { SavedDeckSummary } from './useSavedDeckPages';
 const fieldClass = css({ w: 'full', rounded: 'md', borderWidth: '1px', borderColor: 'gray.300', bg: 'white', px: '3', py: '2', color: 'gray.900', _dark: { borderColor: 'gray.600', bg: 'gray.800', color: 'gray.100' } });
 const labelClass = css({ display: 'grid', gap: '1', fontSize: 'sm', color: 'gray.600', _dark: { color: 'gray.300' } });
 const DISPLAY_PAGE_SIZE = 12;
+const FRUIT_OPTIONS = ['strawberry', 'grape', 'melon', 'orange'] as const;
+type DeckFruit = typeof FRUIT_OPTIONS[number];
 type DeckSort = 'updated-desc' | 'updated-asc' | 'name-asc' | 'name-desc';
 
 export default function SavedDeckGrid({ userId }: { userId: string }) {
@@ -22,36 +24,41 @@ export default function SavedDeckGrid({ userId }: { userId: string }) {
   const { decks, isLoading, hasMore, error, loadMore, removeDeck } = useSavedDeckPages(userId);
   const [filter, setFilter] = useState('');
   const [sort, setSort] = useState<DeckSort>('updated-desc');
-  const [fruit, setFruit] = useState('all');
+  const [fruits, setFruits] = useState<DeckFruit[]>([]);
   const [playable, setPlayable] = useState('all');
-  const [kind, setKind] = useState('all');
   const [displayCount, setDisplayCount] = useState(DISPLAY_PAGE_SIZE);
   const [deleteTarget, setDeleteTarget] = useState<SavedDeckSummary | null>(null);
   const [notice, setNotice] = useState('');
   const [actionError, setActionError] = useState('');
   const sentinel = useRef<HTMLDivElement>(null);
   const search = useDeferredValue(filter.trim().normalize('NFKC').toLocaleLowerCase(locale));
-  const needsAll = !!search || fruit !== 'all' || playable !== 'all' || kind !== 'all' || sort !== 'updated-desc';
+  const needsAll = !!search || fruits.length > 0 || playable !== 'all' || sort !== 'updated-desc';
   const catalog = getCardCatalog(locale);
   const filteredDecks = useMemo(() => {
     const cards = new Map([...catalog.allYojoCards, ...catalog.allSweetCards].map(card => [card.id, card]));
     const collator = new Intl.Collator(locale, { numeric: true, sensitivity: 'base' });
     const filtered = decks.filter(deck => {
       if (!(deck.name || t('無名のデッキ')).normalize('NFKC').toLocaleLowerCase(locale).includes(search)) return false;
-      if (kind !== 'all' && deck.is2pick !== (kind === '2pick')) return false;
       if (playable !== 'all' && (playable === 'none' ? !!deck.playableCardId : deck.playableCardId !== playable)) return false;
-      return fruit === 'all' || [...deck.yojoDeckIds, ...deck.sweetDeckIds].some(id => cards.get(id)?.fruit === fruit);
+      if (fruits.length === 0) return true;
+      const deckFruits = new Set<string>();
+      for (const id of [...deck.yojoDeckIds, ...deck.sweetDeckIds]) {
+        const fruit = cards.get(id)?.fruit;
+        // Common sweets do not add another fruit to the deck's combination.
+        if (fruit && fruit !== 'all') deckFruits.add(fruit);
+      }
+      return deckFruits.size === fruits.length && fruits.every(fruit => deckFruits.has(fruit));
     });
     return filtered.sort((a, b) => {
       const result = sort.startsWith('name') ? collator.compare(a.name || t('無名のデッキ'), b.name || t('無名のデッキ'))
         : (a.updatedAt?.getTime() ?? 0) - (b.updatedAt?.getTime() ?? 0);
       return (sort.endsWith('desc') ? -result : result) || a.id.localeCompare(b.id);
     });
-  }, [decks, search, kind, playable, fruit, sort, catalog, locale, t]);
+  }, [decks, search, playable, fruits, sort, catalog, locale, t]);
   const visibleDecks = filteredDecks.slice(0, displayCount);
   const canShowMore = filteredDecks.length > displayCount || hasMore;
 
-  useEffect(() => { setDisplayCount(DISPLAY_PAGE_SIZE); }, [search, sort, fruit, playable, kind]);
+  useEffect(() => { setDisplayCount(DISPLAY_PAGE_SIZE); }, [search, sort, fruits, playable]);
 
   function showMore() {
     setDisplayCount(previous => previous + DISPLAY_PAGE_SIZE);
@@ -93,24 +100,36 @@ export default function SavedDeckGrid({ userId }: { userId: string }) {
         <h2 id="saved-decks-title" className={css({ fontSize: '2xl', fontWeight: 'semibold', color: 'gray.900', _dark: { color: 'gray.100' } })}>{t('デッキ一覧')}</h2>
       </div>
     </div>
-    <div className={css({ display: 'grid', gap: '3', gridTemplateColumns: 'minmax(0, 1fr)', sm: { gridTemplateColumns: 'repeat(2, minmax(0, 1fr))' }, lg: { gridTemplateColumns: 'repeat(5, minmax(0, 1fr))' }, mb: '4' })}>
+    <div className={css({ display: 'grid', gap: '3', gridTemplateColumns: 'minmax(0, 1fr)', sm: { gridTemplateColumns: 'repeat(2, minmax(0, 1fr))' }, lg: { gridTemplateColumns: 'repeat(3, minmax(0, 1fr))' }, mb: '4' })}>
       <label className={labelClass}>{t('デッキ名でフィルター')}<input type="search" placeholder={t('デッキ名でフィルター')} value={filter} onChange={event => setFilter(event.target.value)} className={fieldClass} /></label>
       <label className={labelClass}>{t('並び順')}<select value={sort} onChange={event => setSort(event.target.value as DeckSort)} className={fieldClass}>
         <option value="updated-desc">{t('更新が新しい順')}</option><option value="updated-asc">{t('更新が古い順')}</option>
         <option value="name-asc">{t('名前の昇順')}</option><option value="name-desc">{t('名前の降順')}</option>
       </select></label>
-      <label className={labelClass}>{t('フルーツ')}<select value={fruit} onChange={event => setFruit(event.target.value)} className={fieldClass}>
-        {(['all', 'strawberry', 'grape', 'melon', 'orange'] as const).map(value => <option key={value} value={value}>{value === 'all' ? t('すべてのフルーツ') : fruitLabel(value)}</option>)}
-      </select></label>
       <label className={labelClass}>{t('プレイアブルカード')}<select value={playable} onChange={event => setPlayable(event.target.value)} className={fieldClass}>
         <option value="all">{t('すべて')}</option><option value="none">{t('未選択')}</option>
         {catalog.allPlayableCards.map(card => <option key={card.id} value={card.id}>{card.name}{card.version === 'beta' ? ' (β)' : ''}</option>)}
       </select></label>
-      <label className={labelClass}>{t('構築方法')}<select value={kind} onChange={event => setKind(event.target.value)} className={fieldClass}>
-        <option value="all">{t('すべて')}</option><option value="normal">{t('通常構築')}</option><option value="2pick">2pick</option>
-      </select></label>
+      <fieldset className={css({ gridColumn: '1 / -1', minW: '0' })}>
+        <legend className={css({ mb: '2', fontSize: 'sm', color: 'gray.600', _dark: { color: 'gray.300' } })}>
+          {t('フルーツ')}<span className={css({ ml: '2', fontSize: 'xs' })}>{t('選択した組み合わせのみ')}</span>
+        </legend>
+        <div className={css({ display: 'flex', flexWrap: 'wrap', gap: '2', alignItems: 'center' })}>
+          <button type="button" aria-pressed={fruits.length === 0} onClick={() => setFruits([])} className={button({ variant: fruits.length === 0 ? 'primary' : 'outline', size: 'sm' })}>{t('すべて')}</button>
+          {FRUIT_OPTIONS.map(fruit => <label key={fruit} className={css({
+            display: 'flex', alignItems: 'center', gap: '2', px: '3', py: '2', rounded: 'md', cursor: 'pointer', fontSize: 'sm',
+            borderWidth: '1px', borderColor: 'gray.300', bg: 'white', color: 'gray.900',
+            _dark: { borderColor: 'gray.600', bg: 'gray.800', color: 'gray.100' },
+          })}>
+            <input type="checkbox" checked={fruits.includes(fruit)} onChange={event => {
+              const checked = event.target.checked;
+              setFruits(previous => checked ? [...previous, fruit] : previous.filter(value => value !== fruit));
+            }} className={css({ w: '4', h: '4', accentColor: 'blue.600' })} />{fruitLabel(fruit)}
+          </label>)}
+        </div>
+      </fieldset>
     </div>
-    {needsAll && <button type="button" onClick={() => { setFilter(''); setSort('updated-desc'); setFruit('all'); setPlayable('all'); setKind('all'); }} className={`${button({ variant: 'ghost', size: 'sm' })} ${css({ mb: '4' })}`}>{t('条件をリセット')}</button>}
+    {needsAll && <button type="button" onClick={() => { setFilter(''); setSort('updated-desc'); setFruits([]); setPlayable('all'); }} className={`${button({ variant: 'ghost', size: 'sm' })} ${css({ mb: '4' })}`}>{t('条件をリセット')}</button>}
     {notice && <p role="status" className={css({ mb: '4', color: 'green.700', _dark: { color: 'green.300' } })}>{notice}</p>}
     {actionError && <p role="alert" className={css({ mb: '4', color: 'red.600', _dark: { color: 'red.300' } })}>{actionError}</p>}
     <ul className={css({ display: 'grid', gridTemplateColumns: 'minmax(0, 1fr)', sm: { gridTemplateColumns: 'repeat(2, minmax(0, 1fr))' }, lg: { gridTemplateColumns: 'repeat(3, minmax(0, 1fr))' }, gap: '5' })}>
