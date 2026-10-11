@@ -1,12 +1,8 @@
 import { test, expect } from '@playwright/test';
+import { grapeBoard, orangeBoard, openEditorBoard } from './fixtures/editorBoards.mjs';
 const key = 'pplale-game-session-v2';
 const session = page => page.evaluate(key => JSON.parse(localStorage.getItem(key)), key);
 
-async function preset(page, title) {
-  await page.goto('/game/editor/');
-  await page.getByRole('button').filter({ hasText: title }).click();
-  await expect(page.getByRole('toolbar', { name: '盤面エディタ' })).toBeVisible();
-}
 async function playBoard(page) {
   await page.getByRole('button', { name: 'メニュー', exact: true }).click();
   await page.getByRole('button', { name: 'この盤面で遊ぶ', exact: true }).click();
@@ -17,6 +13,7 @@ async function playBoard(page) {
 test('editor selects both new fruits and preserves counters, Ex uses and card traits after reload', async ({ page }) => {
   const errors = []; page.on('pageerror', error => errors.push(error.message));
   await page.goto('/game/editor/');
+  await expect(page.getByRole('heading', { name: 'カード効果を試す盤面', exact: true })).toHaveCount(0);
   await page.getByRole('button', { name: /新しい盤面を作る/ }).click();
   await page.getByRole('button', { name: '手札に加える', exact: true }).click();
   const picker = page.getByRole('dialog', { name: 'あなたの手札に置くカード' });
@@ -46,8 +43,8 @@ test('editor selects both new fruits and preserves counters, Ex uses and card tr
   expect(errors).toEqual([]);
 });
 
-test('grape sample plays selected evasion and still offers the cafe bonus draw', async ({ page }) => {
-  await preset(page, 'ぶどう：公開手札とおにごっこ');
+test('grape board plays selected evasion and still offers the cafe bonus draw', async ({ page }) => {
+  await openEditorBoard(page, grapeBoard);
   await playBoard(page);
   const before = (await session(page)).game, target = before.players[1].field[0], sweet = before.players[0].hand.find(uid => before.cards[uid].cardId === 's_6');
   await page.locator(`[data-hand-list] [data-hand="${sweet}"]`).click();
@@ -61,8 +58,8 @@ test('grape sample plays selected evasion and still offers the cafe bonus draw',
   expect(after.cards[target].damage).toBe(0); expect(after.players[1].exSkills.dice.uses).toBe(1);
 });
 
-test('orange sample acquires Alice and uses it through the skill panel', async ({ page }) => {
-  await preset(page, 'オレンジ：色おに・除外・Exスキル');
+test('orange board acquires Alice and uses it through the skill panel', async ({ page }) => {
+  await openEditorBoard(page, orangeBoard);
   await playBoard(page);
   const before = (await session(page)).game, unit = before.players[0].hand.find(uid => before.cards[uid].cardId === 'y_142');
   await page.locator(`[data-hand-list] [data-hand="${unit}"]`).click();
@@ -75,9 +72,9 @@ test('orange sample acquires Alice and uses it through the skill panel', async (
   expect(after.players[0].field.every(uid => after.cards[uid].hpBonus === 3)).toBe(true);
 });
 
-test('orange sample color protection blocks the attack and its all-target damage', async ({ page }) => {
+test('orange board color protection blocks the attack and its all-target damage', async ({ page }) => {
   const errors = []; page.on('pageerror', error => errors.push(error.message));
-  await preset(page, 'オレンジ：色おに・除外・Exスキル');
+  await openEditorBoard(page, orangeBoard);
   await playBoard(page);
   const before = (await session(page)).game, attacker = before.players[0].field[0], target = before.players[1].field[0];
   await page.locator(`[data-unit="${attacker}"]`).click();

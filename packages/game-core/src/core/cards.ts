@@ -50,13 +50,14 @@ export function buff(s: GameState, uid: string, attack: number, hp: number) {
     card.hpBonus += hp;
 }
 
-/** Swaps a unit's current attack and HP (ふろんとさん, ぎってぃ). At 0 attack it is left with 0 HP. */
+/** Swaps current attack and HP without carrying damage over (ふろんとさん, ぎってぃ). At 0 attack it is left with 0 HP. */
 export function swapStats(s: GameState, uid: string, catalog: Catalog) {
     const card = s.cards[uid];
     if (!card) return;
     const attack = attackOf(card, catalog), hp = hpOf(card, catalog);
     card.attackBonus = hp - catalog[card.cardId].attack;
-    card.hpBonus += attack - hp;
+    card.hpBonus = attack - catalog[card.cardId].hp;
+    card.damage = 0;
 }
 
 /**

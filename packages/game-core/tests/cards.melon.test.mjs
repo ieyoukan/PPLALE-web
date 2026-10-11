@@ -44,11 +44,30 @@ test('y_67 ぎってぃ: swaps a unit\'s attack and HP; an enemy taunt concentra
   assert.deepEqual(optionIds(s), [taunt]);
   s = choose(s, taunt);
   assert.deepEqual(stats(s, taunt), [4, 5]);
+  assert.equal(s.cards[taunt].damage, 0);
+  assert.equal(catalog[s.cards[taunt].cardId].hp + s.cards[taunt].hpBonus, 5);
   // Without a taunt any unit, own ones included: みか 0/1 becomes 1/0 and is destroyed.
   s = arena({ me: { hand: ['y_67'], field: ['y_65'] } });
   const mika = field(s)[0];
   s = choose(playFirst(s, 'y_67'), mika);
   assert.ok(s.players[0].nap.includes(mika));
+});
+
+test('swapping damaged しゅお resets damage: later combat heals only new damage and restores the right PP', () => {
+  let s = arena({ me: { hand: ['y_67'], field: ['y_105'], pp: 6 }, foe: { field: ['y_8'] } });
+  const shuo = field(s)[0], defender = field(s, 1)[0];
+  s.cards[shuo].damage = 2;
+  s.cards[defender].attackBonus = 1;
+  const [attackBefore, hpBefore] = stats(s, shuo);
+  s = choose(playFirst(s, 'y_67'), shuo);
+  assert.deepEqual(stats(s, shuo), [hpBefore, attackBefore]);
+  assert.equal(s.cards[shuo].damage, 0);
+  const ppBefore = s.players[0].pp;
+  s = attack(s, defender, shuo);
+  assert.ok(field(s).includes(shuo));
+  assert.equal(s.cards[shuo].damage, 0);
+  assert.deepEqual(stats(s, shuo), [hpBefore, attackBefore]);
+  assert.equal(s.players[0].pp, ppBefore + 1);
 });
 
 test('y_68 みゅーとん: puts a same-named unit with all abilities lost; a full field gets nothing', () => {
@@ -191,6 +210,35 @@ test('y_78 えーりん: 4 extra PP give 早食い and, after its attack, a seco
   // Not enough PP: not asked.
   s = playFirst(arena({ me: { hand: ['y_78'], pp: 5 } }), 'y_78');
   assert.equal(s.pending, null);
+});
+
+test('えーりん does not offer encore when the defeated ゼロオレンジ destroys it', () => {
+  let s = arena({ me: { field: ['y_78'], nap: Array(4).fill('y_65') }, foe: { field: ['y_74'] } });
+  const eirin = field(s)[0], zero = field(s, 1)[0];
+  Object.assign(s.cards[eirin], { attackBonus: 10, hpBonus: 10 });
+  s.cards[eirin].keywords.push('encore');
+  s = attack(s, zero, eirin);
+  assert.ok(s.players[1].nap.includes(zero));
+  assert.ok(s.players[0].nap.includes(eirin));
+  assert.equal(s.pending, null);
+  assert.equal(s.players[0].exile.length, 0);
+});
+
+test('えーりん waits for the defeated unit\'s death draw choice before offering encore', () => {
+  let s = arena({ me: { field: ['y_78'], nap: Array(4).fill('y_65') }, foe: { field: ['y_4'] } });
+  const eirin = field(s)[0];
+  Object.assign(s.cards[eirin], { attackBonus: 10, hpBonus: 10 });
+  s.cards[eirin].keywords.push('encore');
+  s = attack(s);
+  assert.equal(s.pending.task.op, 'draw');
+  assert.equal(s.pending.task.actor, 1);
+  assert.equal(s.players[0].exile.length, 0);
+  s = draws(s);
+  assert.equal(s.pending.task.actor, 0);
+  assert.match(s.pending.prompt, /再行動/);
+  s = choose(s, 'yes');
+  assert.equal(s.players[0].exile.length, 4);
+  assert.equal(s.cards[eirin].exhausted, false);
 });
 
 test('y_79 いろは: −7 then +4 in one step (no loss on the way); destroyed, +3', () => {
@@ -415,8 +463,12 @@ test('y_98 ふろんとさん: swaps before attacking and acts twice a turn', ()
   s = attack(s, field(s, 1)[0]);
   assert.equal(s.cards[uid].exhausted, false);
   assert.deepEqual(stats(s, uid), [2, 3]);
+  assert.equal(s.cards[uid].damage, 1);
   s = attack(s, field(s, 1)[0]);
   assert.equal(s.cards[uid].exhausted, true);
+  assert.deepEqual(stats(s, uid), [3, 1]);
+  assert.equal(s.cards[uid].damage, 1);
+  assert.equal(catalog[s.cards[uid].cardId].hp + s.cards[uid].hpBonus, 2);
   assert.equal(field(s, 1).length, 0);
   assert.equal(canAttack(s, 0, uid, 'leader', catalog), false);
 });

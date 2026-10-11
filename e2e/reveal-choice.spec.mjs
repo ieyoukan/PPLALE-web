@@ -1,5 +1,6 @@
 import { test, expect } from '@playwright/test';
 import { arena, hand } from '../packages/game-core/tests/helpers.mjs';
+import { grapeBoard, openEditorBoard } from './fixtures/editorBoards.mjs';
 
 const key = 'pplale-game-session-v2';
 const savedGame = page => page.evaluate(key => JSON.parse(localStorage.getItem(key)).game, key);
@@ -77,10 +78,8 @@ for (const viewport of [{ width: 1280, height: 860 }, { width: 844, height: 390 
   });
 }
 
-test('editor grape sample reveals selected hand cards on completion before resolving its bonus', async ({ page }) => {
-  await page.goto('/game/editor/');
-  await page.getByRole('button').filter({ hasText: 'ぶどう：公開手札とおにごっこ' }).click();
-  await page.getByRole('toolbar', { name: '盤面エディタ' }).waitFor();
+test('editor grape board reveals selected hand cards on completion before resolving its bonus', async ({ page }) => {
+  await openEditorBoard(page, grapeBoard);
   await page.getByRole('button', { name: 'メニュー', exact: true }).click();
   await page.getByRole('button', { name: 'この盤面で遊ぶ', exact: true }).click();
   await page.getByRole('button', { name: '両側を自分で操作する' }).click();

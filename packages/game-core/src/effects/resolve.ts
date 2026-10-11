@@ -51,6 +51,9 @@ export function resolveQueue(s: GameState, catalog: Catalog) {
     while (s.queue.length && !s.pending && s.winner === null) {
         if (++limit > 500) throw new Error('効果の解決が上限に達しました');
         const task = s.queue.shift()!;
+        // End the attack only after its effects and destruction reactions have finished, including
+        // any further reactions they cause. Choices pause this queue, so the boundary survives them.
+        if (task.op === 'attackEnd' && s.queue.some(t => t.op !== 'attackEnd')) { s.queue.push(task); continue; }
         // An attack is one action: threshold draws wait until its combat damage is complete.
         if (task.op === 'draw' && task.text === 'threshold' && s.queue.some(t => t.op === 'attackResponses' || t.op === 'combat')) { s.queue.push(task); continue; }
         execute(s, task, catalog);
