@@ -1,4 +1,4 @@
-// 拡張プレイアブル (β): p_6 しゅれい (MP), p_7 いのまこ (a passive that makes skills free and adds a use),
+// 拡張プレイアブル (ExP): p_6 しゅれい (MP), p_7 いのまこ (a passive that makes skills free and adds a use),
 // p_8 ちょり (おにごっこ for every unit that enters, a reaction skill on the opponent's turn, 行動不能 for a time).
 import test from 'node:test';
 import assert from 'node:assert/strict';

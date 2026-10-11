@@ -18,7 +18,7 @@ import styles from '../BoardEmulator.module.css';
 
 const nameOf = (cardId: string) => displayCards[cardId]?.name ?? cardId;
 const who = (side: Side) => side === 0 ? 'あなた' : '相手';
-/** Every playable the engine can play: the six normal ones, then the 拡張プレイアブル (β). */
+/** Every playable the engine can play: the six normal ones, then the 拡張プレイアブル (ExP). */
 const playables = Object.keys(playableSkills);
 
 /** − value ＋ for one number. */

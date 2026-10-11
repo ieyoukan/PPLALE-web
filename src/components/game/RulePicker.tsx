@@ -2,10 +2,12 @@
 
 // The rules of a match (which cards its decks may use) chosen on tiles, as on the start screen of
 // the 2pick deck builder: one tile per fruit and per playable version, a mark on those allowed.
+// The fruits are an environment, not a free set: いちご, then ぶどう added, then メロン, then オレンジ
+// (`fruitsUpTo`). Choosing a fruit takes every fruit before it; taking one away also takes those after it.
 // Used where a match is prepared: against the CPU and when making a room.
 import type { CSSProperties, ReactNode } from 'react';
 import Image from 'next/image';
-import { fruitNames, fruits, playableNow } from '@pplale/game-core';
+import { fruitNames, fruits, fruitsUpTo, playableNow } from '@pplale/game-core';
 import type { Fruit, MatchRules } from '@pplale/game-core';
 import styles from './RulePicker.module.css';
 
@@ -45,16 +47,17 @@ function Tile({ name, note, image, tone, on, soon, onChange }: {
  */
 export function RulePicker({ rules, onChange }: { rules: MatchRules; onChange: (rules: MatchRules) => void }) {
   const { extendedPlayable } = rules;
-  // At least one fruit stays chosen: taking the last one away does nothing.
+  // On: this fruit's environment. Off: the environment just before it (いちご itself always stays).
   const toggleFruit = (fruit: Fruit, on: boolean) => {
-    const next = fruits.filter(other => other === fruit ? on : rules.fruits.includes(other));
-    if (next.length) onChange({ fruits: next, extendedPlayable });
+    const index = fruits.indexOf(fruit);
+    if (!on && index === 0) return;
+    onChange({ fruits: fruitsUpTo(on ? fruit : fruits[index - 1]), extendedPlayable });
   };
   const waiting = fruits.some(fruit => !playableNow.fruits.includes(fruit)) || !playableNow.extendedPlayable;
   return <div className={styles.picker}>
     <div className={styles.groups}>
       <fieldset className={styles.group}>
-        <legend>使えるフルーツ<small>1つ以上</small></legend>
+        <legend>使えるフルーツ<small>いちごから順に追加</small></legend>
         <div className={`${styles.tiles} ${styles.fruits}`}>{fruits.map(fruit => {
           const playable = playableNow.fruits.includes(fruit);
           return <Tile key={fruit} name={fruitNames[fruit]} {...fruitArt[fruit]} on={playable && rules.fruits.includes(fruit)} soon={!playable} onChange={on => toggleFruit(fruit, on)} />;
@@ -63,9 +66,9 @@ export function RulePicker({ rules, onChange }: { rules: MatchRules; onChange: (
       <fieldset className={styles.group}>
         <legend>プレイアブル</legend>
         <div className={`${styles.tiles} ${styles.versions}`}>
-          {/* The rules only decide β: a 通常 playable may always lead a deck. */}
+          {/* The rules only decide ExP: a 通常 playable may always lead a deck. */}
           <Tile name="通常" note="いつも使える" image="/images/versions/通常.webp" tone="#a88667" on />
-          <Tile name="β" note="拡張プレイアブル" image="/images/versions/β.webp" tone="#9B4341" on={playableNow.extendedPlayable && extendedPlayable} soon={!playableNow.extendedPlayable}
+          <Tile name="拡張プレイアブル" note="ExP" image="/images/versions/β.webp" tone="#9B4341" on={playableNow.extendedPlayable && extendedPlayable} soon={!playableNow.extendedPlayable}
             onChange={on => onChange({ fruits: rules.fruits, extendedPlayable: on })} />
         </div>
       </fieldset>

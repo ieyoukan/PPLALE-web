@@ -74,3 +74,17 @@ test('randomDeck: no ぷぷりえーる where orange is allowed', () => {
   const strawberry = seeds.map(seed => randomDeck({ fruits: ['strawberry'], extendedPlayable: false }, catalog, seed));
   assert.ok(strawberry.some(deck => deck.sweet.includes('s_24')));
 });
+
+test('rules are always one of the four environments: いちご, ＋ぶどう, ＋メロン, ＋オレンジ', async () => {
+  const { parseMatchRules, fruitsUpTo } = await import('../dist/index.js');
+  assert.deepEqual(parseMatchRules({ fruits: ['grape'] }).fruits, ['strawberry', 'grape']);
+  assert.deepEqual(parseMatchRules({ fruits: ['strawberry', 'melon'] }).fruits, ['strawberry', 'grape', 'melon']);
+  assert.deepEqual(parseMatchRules({ fruits: ['orange'] }).fruits, ['strawberry', 'grape', 'melon', 'orange']);
+  assert.deepEqual(fruitsUpTo('strawberry'), ['strawberry']);
+  assert.equal(parseMatchRules({ fruits: [] }), null);
+  // Every environment can fill a deck (melon is never alone).
+  for (const fruit of ['strawberry', 'grape', 'melon', 'orange']) {
+    const rules = parseMatchRules({ fruits: [fruit], extendedPlayable: true });
+    for (let seed = 1; seed <= 20; seed++) assert.ok(randomDeck(rules, catalog, seed), `${rules.fruits} seed ${seed}`);
+  }
+});

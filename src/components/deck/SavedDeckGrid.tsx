@@ -96,7 +96,7 @@ export default function SavedDeckGrid({ userId }: { userId: string }) {
       </select></label>
       <label className={labelClass}>{t('プレイアブルカード')}<select value={playable} onChange={event => setPlayable(event.target.value)} className={fieldClass}>
         <option value="all">{t('すべて')}</option><option value="none">{t('未選択')}</option>
-        {catalog.allPlayableCards.map(card => <option key={card.id} value={card.id}>{card.name}{card.version === 'beta' ? ' (β)' : ''}</option>)}
+        {catalog.allPlayableCards.map(card => <option key={card.id} value={card.id}>{card.name}{card.version === 'beta' ? '（ExP）' : ''}</option>)}
       </select></label>
       <fieldset className={css({ gridColumn: '1 / -1', minW: '0' })}>
         <legend className={css({ mb: '2', fontSize: 'sm', color: 'gray.600', _dark: { color: 'gray.300' } })}>

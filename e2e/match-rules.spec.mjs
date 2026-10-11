@@ -15,7 +15,7 @@ test('the rule tiles decide which decks can be chosen, and the match keeps the r
   const tile = fruit => page.getByRole('checkbox', { name: new RegExp(fruitNames[fruit]) });
   const beta = page.getByRole('checkbox', { name: /拡張プレイアブル/ });
 
-  // Every fruit and β has a tile; what the game cannot play yet cannot be chosen.
+  // Every fruit and 拡張プレイアブル (ExP) has a tile; what the game cannot play yet cannot be chosen.
   for (const fruit of fruits) await expect(tile(fruit)).toBeEnabled({ enabled: playableNow.fruits.includes(fruit) });
   await expect(beta).toBeEnabled({ enabled: playableNow.extendedPlayable });
   await expect(tile('strawberry')).toBeChecked();
@@ -24,33 +24,32 @@ test('the rule tiles decide which decks can be chosen, and the match keeps the r
   await expect(decks).toHaveCount(2);
   for (const deck of await decks.all()) await expect(deck.locator('option:checked')).toHaveText(/いちごのおためしデッキ/);
 
-  // At least one fruit stays chosen.
+  // The fruits are an environment: いちご, then ぶどう, メロン, オレンジ added in that order.
+  // いちご cannot be taken away; choosing a fruit takes the ones before it, taking one away the ones after it.
   await tile('strawberry').click();
   await expect(tile('strawberry')).toBeChecked();
+  await tile('orange').check();
+  for (const fruit of fruits) await expect(tile(fruit)).toBeChecked();
+  await tile('melon').uncheck();
+  await expect(tile('grape')).toBeChecked();
+  for (const fruit of ['melon', 'orange']) await expect(tile(fruit)).not.toBeChecked();
 
-  // Without strawberry the trial deck no longer fits: it cannot be chosen, and both sides get a deck that fits.
-  await tile('grape').check();
-  await tile('strawberry').uncheck();
-  for (const deck of await decks.all()) {
-    await expect(deck.locator('option', { hasText: 'いちごのおためしデッキ' })).toHaveJSProperty('disabled', true);
-    await expect(deck.locator('option:checked')).toHaveText(/おまかせデッキ/);
-  }
-  await page.getByText('使えないデッキの理由').click();
-  await expect(page.getByText('いちごのおためしデッキ：この対戦ではいちごのカードを使えません')).toBeVisible();
+  // いちご＋ぶどう with おまかせデッキ on both sides.
+  for (const deck of await decks.all()) await deck.selectOption('random:deck');
 
-  // The match starts with two decks of the allowed fruit and keeps its rules (for the rematch).
+  // The match starts with two decks of the allowed fruits and keeps its rules (for the rematch).
   await page.getByRole('button', { name: /対戦をはじめる/ }).click();
   await page.waitForURL(/\/game\/play\//);
-  await expect.poll(async () => (await savedSetup(page))?.matchRules).toEqual({ fruits: ['grape'], extendedPlayable: false });
+  await expect.poll(async () => (await savedSetup(page))?.matchRules).toEqual({ fruits: ['strawberry', 'grape'], extendedPlayable: false });
   const setup = await savedSetup(page);
   for (const deck of setup.decks) {
     expect([deck.yojo.length, deck.sweet.length]).toEqual([20, 10]);
-    for (const id of [...deck.yojo, ...deck.sweet]) expect(catalog[id].fruit).toBe('grape');
+    for (const id of [...deck.yojo, ...deck.sweet]) expect(['strawberry', 'grape']).toContain(catalog[id].fruit);
   }
 
   // The next match is prepared from the same rules.
   await page.goto(url);
   await expect(tile('grape')).toBeChecked();
-  await expect(tile('strawberry')).not.toBeChecked();
+  await expect(tile('melon')).not.toBeChecked();
   expect(errors).toEqual([]);
 });

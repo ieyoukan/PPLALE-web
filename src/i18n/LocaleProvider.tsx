@@ -177,8 +177,8 @@ const sweetTypeLabels: Record<AppLocale, Record<SweetType, string>> = {
 };
 
 const versionLabels: Record<AppLocale, Record<CardVersion, string>> = {
-  ja: { normal: '通常', beta: 'β' },
-  en: { normal: 'Standard', beta: 'Beta' },
+  ja: { normal: '通常', beta: '拡張プレイアブル（ExP）' },
+  en: { normal: 'Standard', beta: 'Extended (ExP)' },
 };
 
 const roleLabels: Record<AppLocale, Record<CardRole, string>> = {

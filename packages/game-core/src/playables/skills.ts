@@ -241,7 +241,7 @@ export const playableSkills: Record<string, SkillScript[]> = {
         // 【ｸﾏｰ（強欲なｸﾏ）】幼女デッキから2枚引く。
         { name: '強欲なｸﾏ', cost: 1, uses: 1, use: fx => fx.queue('draw', { count: 2, deck: 'yojo' }), cpu: fx => fx.me.yojo.length > 0 },
     ],
-    // p_6 しゅれい（β）: 初期MP3・最大MP20（playableMp）。固有スキルに使用回数制限はなく、コスト（PP / MP）だけが制限。
+    // p_6 しゅれい（ExP）: 初期MP3・最大MP20（playableMp）。固有スキルに使用回数制限はなく、コスト（PP / MP）だけが制限。
     p_6: [
         {
             // 【ルナレストア】コスト1, MPを2回復する。
@@ -284,7 +284,7 @@ export const playableSkills: Record<string, SkillScript[]> = {
             wasted: fx => !fx.me.field.length && !fx.foe.field.length,
         },
     ],
-    // p_7 いのまこ（β）。パッシブ【いのまこコンビネーション】は playablePassives。
+    // p_7 いのまこ（ExP）。パッシブ【いのまこコンビネーション】は playablePassives。
     p_7: [
         {
             // 【つまみ食いなのー！】コスト1、自分の場の幼女1人に早食いを付与する。
@@ -302,7 +302,7 @@ export const playableSkills: Record<string, SkillScript[]> = {
                 && fx.me.field.some(uid => ready(fx, uid) && !has(fx, uid, 'pierce')),
         },
     ],
-    // p_8 ちょり（β）。パッシブ【えへへー、みんなであそぼー！】は playablePassives。
+    // p_8 ちょり（ExP）。パッシブ【えへへー、みんなであそぼー！】は playablePassives。
     p_8: [
         {
             // 【きんきゅーかいひー！】相手ターン中、おにごっこを持つ自分の幼女が相手幼女から攻撃を受けたとき、
@@ -364,7 +364,7 @@ export const playableMp: Record<string, { initial: number; max: number }> = {
 /** The most MP the playable can hold; 0 for one without MP. */
 export const mpMax = (playable: string) => playableMp[playable]?.max ?? 0;
 
-/** 拡張プレイアブル (version β). They lead a deck only when its rules allow it; each is playable once it has skills here. */
+/** 拡張プレイアブル (ExP; version `beta` in the card data). They lead a deck only when its rules allow it; each is playable once it has skills here. */
 export const extendedPlayables: readonly string[] = ['p_6', 'p_7', 'p_8'];
 
 export function skillsFor(playable: string): SkillScript[] {

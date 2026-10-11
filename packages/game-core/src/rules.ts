@@ -7,6 +7,10 @@ import { random, shuffled } from './core/rng.ts';
 import { extendedPlayables, playableSkills } from './playables/skills.ts';
 import { deckCard, singleCopy, validateDeck } from './setup.ts';
 
+/**
+ * The fruits in the order the game adds them. A match uses one of four environments: いちご, then
+ * ぶどう added, then メロン, then オレンジ (`fruitsUpTo`). Other sets are not offered.
+ */
 export const fruits = ['strawberry', 'grape', 'melon', 'orange'] as const;
 export type Fruit = typeof fruits[number];
 export const fruitNames: Record<Fruit, string> = { strawberry: 'いちご', grape: 'ぶどう', melon: 'めろん', orange: 'おれんじ' };
@@ -14,7 +18,7 @@ export const fruitNames: Record<Fruit, string> = { strawberry: 'いちご', grap
 export interface MatchRules {
     /** Fruits whose 幼女 and お菓子 may be in a deck. */
     fruits: Fruit[];
-    /** Whether 拡張プレイアブル (version β) may lead a deck. */
+    /** Whether 拡張プレイアブル (ExP; version `beta` in the card data) may lead a deck. */
     extendedPlayable: boolean;
 }
 export const defaultMatchRules: MatchRules = { fruits: ['strawberry'], extendedPlayable: false };
@@ -24,11 +28,18 @@ export const playableNow: MatchRules = {
     extendedPlayable: extendedPlayables.some(id => id in playableSkills),
 };
 
-/** The usable part of anything sent as rules, or null when no fruit is left. */
+/** The environment that ends with `fruit`: いちご and every fruit added up to it. */
+export const fruitsUpTo = (fruit: Fruit): Fruit[] => fruits.slice(0, fruits.indexOf(fruit) + 1);
+
+/**
+ * The usable part of anything sent as rules, or null when no fruit is left. The fruits become the
+ * environment of the newest fruit chosen (`fruitsUpTo`), within what the engine can play.
+ */
 export function parseMatchRules(value: unknown): MatchRules | null {
     const raw = value as Partial<MatchRules> | null | undefined;
     const chosen = Array.isArray(raw?.fruits) ? fruits.filter(fruit => raw.fruits!.includes(fruit) && playableNow.fruits.includes(fruit)) : [];
-    return chosen.length ? { fruits: chosen, extendedPlayable: raw?.extendedPlayable === true && playableNow.extendedPlayable } : null;
+    const newest = chosen.at(-1);
+    return newest ? { fruits: fruitsUpTo(newest).filter(fruit => playableNow.fruits.includes(fruit)), extendedPlayable: raw?.extendedPlayable === true && playableNow.extendedPlayable } : null;
 }
 
 export const isExtendedPlayable = (catalog: Catalog, id: string) => catalog[id]?.type === 'playable' && (catalog[id].version ?? 'normal') !== 'normal';
@@ -69,4 +80,4 @@ export function randomDeck(rules: MatchRules, catalog: Catalog, seed: number): D
 
 /** One line for the lobby and for sharing, e.g. 「フルーツ：いちご ／ 拡張プレイアブル：なし」. */
 export const describeMatchRules = (rules: MatchRules) =>
-    `フルーツ：${rules.fruits.map(fruit => fruitNames[fruit]).join('・')} ／ 拡張プレイアブル：${rules.extendedPlayable ? 'あり' : 'なし'}`;
+    `フルーツ：${rules.fruits.map(fruit => fruitNames[fruit]).join('・')} ／ 拡張プレイアブル（ExP）：${rules.extendedPlayable ? 'あり' : 'なし'}`;
