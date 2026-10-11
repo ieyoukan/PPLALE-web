@@ -3,7 +3,7 @@ import { scriptFor, scriptOf } from './cards/registry.ts';
 import { canAttack } from './core/combat.ts';
 import { fruitsOf } from './core/protection.ts';
 import { cardContext, effects } from './effects/context.ts';
-import { activePassive, playableMp, playablePassives, skillLimit, skillPrice, skillsFor } from './playables/skills.ts';
+import { activePassive, playableMp, playablePassives, skillAt, skillLimit, skillPrice, skillsFor } from './playables/skills.ts';
 import { skillUnavailable } from './playables/usage.ts';
 import { other } from './model.ts';
 import type { Catalog, DeckKind, GameState, Side, TaskOp } from './model.ts';
@@ -58,7 +58,7 @@ export const canPlay = (s: GameState, side: Side, uid: string, catalog: Catalog)
 
 /** Why the skill cannot be used now apart from PP and remaining uses (e.g. nothing to select), or undefined. */
 export const skillBlocked = (s: GameState, side: Side, index: number, catalog: Catalog) =>
-    skillsFor(s.players[side].playable)[index]?.blocked?.(effects(s, catalog, side));
+    skillAt(s.players[side], index)?.skill.blocked?.(effects(s, catalog, side));
 
 /** One skill of a playable as a skill panel shows it. */
 export interface SkillView {
@@ -74,9 +74,18 @@ export interface SkillView {
     /** Why the `skill` command would be rejected now (whose turn it is aside), or undefined. */
     unavailable?: string;
 }
+/** A skill taken from the opponent (レンテ): `index` is the one the `skill` command uses. */
+export interface TakenSkillView extends SkillView {
+    index: number;
+    /** The playable it is printed on and its index there, for its text. */
+    playable: string;
+    origin: number;
+}
 /** A playable's skills, 固有パッシブスキル and MP for one side, with the current costs and limits. */
 export interface PlayableView {
     skills: SkillView[];
+    /** Skills taken from the opponent (レンテ), used like the own ones. */
+    taken: TakenSkillView[];
     /** `active`: its condition holds now (always, for one without a condition). */
     passive?: { name: string; active: boolean };
     mp?: { current: number; max: number };
@@ -90,6 +99,13 @@ export function playableView(s: GameState, side: Side, catalog: Catalog): Playab
             limit: skill.uses === undefined ? null : skillLimit(p, index, catalog),
             unavailable: skillUnavailable(s, side, index, catalog),
         })),
+        taken: (p.extraSkills ?? []).flatMap((entry, extra): TakenSkillView[] => {
+            const index = skillsFor(p.playable).length + extra, skill = skillAt(p, index)?.skill;
+            return skill ? [{
+                name: skill.name, pp: skill.cost, mp: skill.mp ?? 0, reaction: false, left: entry.uses, limit: null,
+                unavailable: skillUnavailable(s, side, index, catalog), index, playable: entry.playable, origin: entry.index,
+            }] : [];
+        }),
         ...(passive ? { passive: { name: passive.name, active: !!activePassive(p, catalog) } } : {}),
         ...(mp ? { mp: { current: p.mp ?? 0, max: mp.max } } : {}),
     };

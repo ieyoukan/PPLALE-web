@@ -1,5 +1,5 @@
 import type { CardContext, Effects } from '../effects/context.ts';
-import type { DeckKind, GameState, Keyword, Side, Task, TaskOp } from '../model.ts';
+import type { Catalog, DeckKind, GameState, Keyword, Side, Task, TaskOp } from '../model.ts';
 
 /**
  * A queued effect step. Generic ones are in effects/ops.ts; a card or skill may declare its own
@@ -35,6 +35,11 @@ export interface CardScript {
     /** Printed keywords (常在能力). */
     keywords?: Keyword[];
     evasion?: number;
+    /**
+     * 「この幼女は行動不能。〜ならば行動可能になり、早食いを持つ」: undefined when it has no such condition,
+     * false while it cannot act, true while it can act right away.
+     */
+    unlocked?(s: GameState, side: Side, catalog: Catalog): boolean;
     /** 「1ターンにN回行動できる」. Omitted: once. */
     actionsPerTurn?: number;
     /** 「この幼女へのN+1以上のダメージはNになる」: no single hit deals more than this. */

@@ -5,6 +5,7 @@ import { costOf, isRealSweet, note } from '../core/cards.ts';
 import { enterField } from '../core/zones.ts';
 import { cardContext } from '../effects/context.ts';
 import type { Catalog, Definition, GameState, Player, Side } from '../model.ts';
+import { withSkillLimits } from '../playables/skills.ts';
 
 /** おいしくなる呪文 (s_25): the next real sweet other than a soda gets ×(1 + casts). */
 function sweetMultiplier(p: Player, def: Definition, catalog: Catalog): number {
@@ -39,5 +40,7 @@ export function commitPlay(s: GameState, actor: Side, uid: string, slot: number,
             scriptFor(s, other).onOwnerPlayed?.(cardContext(s, catalog, actor, other), uid, zone);
     }
     // Recorded after the effect, so 「既に」 conditions do not count this card.
-    p.played.push(card.cardId);
+    // A passive whose condition this play fulfils holds from here on (いのまこ).
+    const passive = withSkillLimits(p, catalog, () => { p.played.push(card.cardId); });
+    if (passive) note(s, `${p.name}：パッシブ「${passive.name}」の条件を達成`);
 }

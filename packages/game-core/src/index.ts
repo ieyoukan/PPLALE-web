@@ -13,7 +13,7 @@ export { actingSides, cpuCommand, cpuStrategies, createHard, createMaster, creat
 export type { CpuDecision, CpuLevel, CpuOptions, CpuStrategy, Evaluator, LethalOptions, LethalResult, MatchOptions, MatchResult, Move, TurnSearchOptions, ValueModel, Weights } from './ai/index.ts';
 export { attackOf, availablePpMaximum, costOf, hpOf, maxPp, spawnCard } from './core/cards.ts';
 export { canAttack } from './core/combat.ts';
-export { activePassive, extendedPlayables, mpMax, playableMp, playablePassives, playableSkills, skillLimit, skillLimits, skillPrice, skillsFor } from './playables/skills.ts';
+export { activePassive, extendedPlayables, mpMax, playableMp, playablePassives, playableSkills, skillLimit, skillLimits, skillAt, skillPrice, skillsFor } from './playables/skills.ts';
 export type { PassiveScript, SkillScript } from './playables/skills.ts';
 export { implementedCard, scriptOf } from './cards/registry.ts';
 export { fruitsOf } from './core/protection.ts';
@@ -22,5 +22,5 @@ export type { CardScript, OpDef } from './cards/types.ts';
 export { changesBetween, instanceFields, playerFields, stateFields, zones } from './changes.ts';
 export type { Change, ChangeKind, Place, Zone } from './changes.ts';
 export { attackTargets, canPlay, isRevealable, pendingView, playableView, skillBlocked } from './view.ts';
-export type { PendingView, PlayableView, SkillView } from './view.ts';
+export type { PendingView, PlayableView, SkillView, TakenSkillView } from './view.ts';
 export { HIDDEN_CARD, viewFor } from './redact.ts';

@@ -17,7 +17,7 @@ export function SkillPanel({ side }: { side: Side }) {
   const { game, busy, mode, act, setPanel } = board;
   const player = game.players[side], card = displayCards[player.playable];
   const usable = game.phase === 'playing' && game.active === side && board.canControl(side) && !game.pending && !busy;
-  const { skills, passive, mp } = playableView(game, side, gameCatalog);
+  const { skills, taken, passive, mp } = playableView(game, side, gameCatalog);
   return <>
     <div className={styles.inspectImage}><GameCard id={player.playable} sizes="120px" /></div>
     <h2>{card.name}</h2>
@@ -35,6 +35,14 @@ export function SkillPanel({ side }: { side: Side }) {
       <span><strong>{skill.name}</strong><p>{skillDescription(card.effect, index)}</p></span>
       {/* A reaction skill is offered by the game when its moment comes. */}
       <small>{skill.reaction && <>相手ターンに確認<br /></>}{skill.left === null ? '回数制限なし' : `残り${skill.left}回`}</small>
+    </button>)}
+    {taken.length > 0 && <h3>相手から奪ったスキル</h3>}
+    {taken.map(skill => <button className={styles.skillButton} key={skill.index}
+      disabled={!usable || !!skill.unavailable}
+      onClick={() => { act({ type: 'skill', actor: side, index: skill.index }); setPanel(null); }}>
+      <b>{costOf(skill)}</b>
+      <span><strong>{skill.name}</strong><p>{skillDescription(displayCards[skill.playable]?.effect, skill.origin)}</p></span>
+      <small>残り{skill.left}回</small>
     </button>)}
     {Object.keys(player.exSkills ?? {}).length > 0 && <h3>Exスキル</h3>}
     {(Object.keys(player.exSkills ?? {}) as ExSkillId[]).map(id => {

@@ -1,15 +1,14 @@
 // Commands during a turn: play, attack, skills, choices and ending the turn.
 import { canPlay } from '../view.ts';
 import { scriptFor } from '../cards/registry.ts';
-import { costOf, isRealSweet, note } from '../core/cards.ts';
+import { costOf } from '../core/cards.ts';
 import { canAttack, resolveAttack } from '../core/combat.ts';
 import { markAction } from '../core/stall.ts';
-import { enterField, FIELD_SIZE, openSlot, reveal } from '../core/zones.ts';
-import { cardContext } from '../effects/context.ts';
-import { RuleError } from '../model.ts';
-import type { Catalog, Definition, GameState, Player, Side } from '../model.ts';
-import { withSkillLimits } from '../playables/skills.ts';
+import { FIELD_SIZE, openSlot, reveal } from '../core/zones.ts';
+import { other, RuleError } from '../model.ts';
+import type { GameState, Side } from '../model.ts';
 import { activateSkill } from '../playables/usage.ts';
+import { commitPlay, playAnswers } from './play.ts';
 import { fruitsOf } from '../core/protection.ts';
 import { activateExSkill } from '../playables/exSkills.ts';
 import type { Handlers } from './types.ts';
@@ -18,14 +17,6 @@ function assertMainPhase(s: GameState, actor: Side) {
     if (s.phase !== 'playing') throw new RuleError('ダイス・先攻後攻の選択・初期ドロー・手札の確認を完了してください');
     if (s.active !== actor) throw new RuleError('相手のターンです');
     if (s.pending) throw new RuleError('効果の選択を先に完了してください');
-}
-
-/** おいしくなる呪文 (s_25): the next real sweet other than a soda gets ×(1 + casts). */
-function sweetMultiplier(p: Player, def: Definition, catalog: Catalog): number {
-    if (!isRealSweet(catalog, def.id) || def.sweetType === 'animal_soda' || !p.sweetBoost) return 1;
-    const multiplier = 1 + p.sweetBoost;
-    p.sweetBoost = 0;
-    return multiplier;
 }
 
 export const turnCommands: Handlers<'play' | 'attack' | 'end' | 'reveal' | 'skill' | 'choose' | 'exSkill' | 'acorn'> = {
@@ -43,23 +34,11 @@ export const turnCommands: Handlers<'play' | 'attack' | 'end' | 'reveal' | 'skil
             if (!Number.isInteger(slot) || slot < 0 || slot >= FIELD_SIZE || p.field.some(id => s.cards[id].slot === slot)) throw new RuleError('空いている場を選んでください');
         }
         markAction(s);
-        p.pp -= cost;
-        p.hand = p.hand.filter(id => id !== c.uid);
-        note(s, `${p.name}：「${def.name}」をプレイ（${cost}PP）`);
-        if (def.type === 'yojo') {
-            enterField(s, c.actor, c.uid, catalog, true, slot);
-        } else {
-            p.nap.push(c.uid);
-            scriptFor(s, c.uid).onPlay?.(cardContext(s, catalog, c.actor, c.uid, sweetMultiplier(p, def, catalog)));
-        }
-        for (const zone of ['hand', 'field'] as const) {
-            for (const uid of [...p[zone]].filter(id => id !== c.uid))
-                scriptFor(s, uid).onOwnerPlayed?.(cardContext(s, catalog, c.actor, uid), c.uid, zone);
-        }
-        // Recorded after the effect, so 「既に」 conditions do not count this card.
-        // A passive whose condition this play fulfils holds from here on (いのまこ).
-        const passive = withSkillLimits(p, catalog, () => { p.played.push(card.cardId); });
-        if (passive) note(s, `${p.name}：パッシブ「${passive.name}」の条件を達成`);
+        // ぶらんちゃん: a unit with a 「手札から場に出たとき」 effect can be answered from the other hand. Until
+        // that is decided the card stays in hand and nothing is paid.
+        if (def.type === 'yojo' && scriptFor(s, c.uid).onPlay && playAnswers(s, other(c.actor)).length)
+            s.queue.push({ op: 'playResponse', actor: other(c.actor), source: c.uid, value: slot });
+        else commitPlay(s, c.actor, c.uid, slot, catalog);
     },
     attack(s, c, catalog) {
         if (!canAttack(s, c.actor, c.uid, c.target, catalog)) throw new RuleError('その対象には攻撃できません');

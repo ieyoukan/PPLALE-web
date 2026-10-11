@@ -6,7 +6,7 @@ import { effects } from '../effects/context.ts';
 import { isRevealable } from '../view.ts';
 import { other, sides } from '../model.ts';
 import type { Catalog, Command, GameState, Side } from '../model.ts';
-import { commonSkill, skillPrice, skillsFor } from '../playables/skills.ts';
+import { commonSkill, skillAt, skillCount, skillPrice, skillsFor } from '../playables/skills.ts';
 import { exSkillInfo } from '../playables/exSkills.ts';
 import type { ExSkillId } from '../model.ts';
 
@@ -56,7 +56,7 @@ function candidates(s: GameState, side: Side): Command[] {
         // Field position has no rule effect, so a unit is offered once (first free slot).
         ...p.hand.map((uid): Command => ({ type: 'play', actor: side, uid })),
         ...p.field.flatMap(uid => targets.map((target): Command => ({ type: 'attack', actor: side, uid, target }))),
-        ...skillsFor(p.playable).map((_, index): Command => ({ type: 'skill', actor: side, index })),
+        ...Array.from({ length: skillCount(p) }, (_, index): Command => ({ type: 'skill', actor: side, index })),
         ...(Object.keys(p.exSkills ?? {}) as ExSkillId[]).filter(id => !exSkillInfo[id].automatic && (p.exSkills![id]?.uses ?? 0) > 0).map((skill): Command => ({ type: 'exSkill', actor: side, skill })),
         ...((p.acorns ?? 0) > 0 ? (['draw', 'pp'] as const).map((mode): Command => ({ type: 'acorn', actor: side, mode })) : []),
         ...p.hand.filter(uid => isRevealable(s.cards[uid].cardId) && !s.cards[uid].revealed).map((uid): Command => ({ type: 'reveal', actor: side, uid })),
@@ -75,6 +75,8 @@ function worthTrying(s: GameState, command: Command, catalog: Catalog): boolean 
         case 'play': return costOf(s, command.uid, catalog, command.actor) <= p.pp;
         case 'skill': {
             // Uses left (when it has a limit), and its current cost in PP and MP; reaction skills are never commands.
+            const taken = skillAt(p, command.index);
+            if (taken?.extra !== undefined) return p.extraSkills![taken.extra].uses > 0 && taken.skill.cost <= p.pp;
             const skill = skillsFor(p.playable)[command.index], price = skillPrice(p, command.index, catalog);
             return !skill.reaction && (skill.uses === undefined || p.skills[command.index] > 0) && price.pp <= p.pp && price.mp <= (p.mp ?? 0);
         }
@@ -111,12 +113,12 @@ function chargeUseless(s: GameState, side: Side, uid: string): boolean {
  */
 export function pointless(s: GameState, move: Move, catalog?: Catalog): boolean {
     const c = move.command;
-    if (c.type === 'skill' && skillsFor(s.players[c.actor].playable)[c.index]?.name === commonSkill.name) {
+    if (c.type === 'skill' && skillAt(s.players[c.actor], c.index)?.skill.name === commonSkill.name) {
         // The charge skill targets a unit of its own side.
         return s.players[c.actor].field.every(uid => chargeUseless(s, c.actor, uid));
     }
     // A skill that says itself it would do nothing now (MP already at its maximum, nobody to hit).
-    if (c.type === 'skill' && catalog) return !!skillsFor(s.players[c.actor].playable)[c.index]?.wasted?.(effects(s, catalog, c.actor));
+    if (c.type === 'skill' && catalog) return !!skillAt(s.players[c.actor], c.index)?.skill.wasted?.(effects(s, catalog, c.actor));
     const task = s.pending?.task;
     if (c.type === 'choose' && task?.op === 'keyword' && task.keyword === 'charge' && task.actor === c.actor) {
         // Picking among the targets: keep at least one so the effect can still resolve.

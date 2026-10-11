@@ -372,6 +372,25 @@ export function skillsFor(playable: string): SkillScript[] {
 }
 export const allSkills = (): SkillScript[] => [commonSkill, ...Object.values(playableSkills).flat()];
 
+/** A skill as the `skill` command numbers them: the playable's own first, then the ones taken from the opponent (レンテ). */
+export interface SkillRef {
+    skill: SkillScript;
+    /** The playable it is printed on, and its index there. */
+    playable: string;
+    origin: number;
+    /** Index in `Player.extraSkills` for a taken skill. */
+    extra?: number;
+}
+export function skillAt(p: Pick<Player, 'playable' | 'extraSkills'>, index: number): SkillRef | undefined {
+    const own = skillsFor(p.playable);
+    if (index < own.length) return own[index] && { skill: own[index], playable: p.playable, origin: index };
+    const extra = index - own.length, entry = p.extraSkills?.[extra];
+    const skill = entry && skillsFor(entry.playable)[entry.index];
+    return skill && { skill, playable: entry.playable, origin: entry.index, extra };
+}
+/** How many skills the `skill` command can name for this player. */
+export const skillCount = (p: Pick<Player, 'playable' | 'extraSkills'>) => skillsFor(p.playable).length + (p.extraSkills?.length ?? 0);
+
 type Owner = Pick<Player, 'playable' | 'played'>;
 /** The playable's passive, when its condition holds for this player now. */
 export function activePassive(p: Owner, catalog: Catalog): PassiveScript | undefined {

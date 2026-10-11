@@ -2,7 +2,7 @@
 
 import { useCallback, useLayoutEffect, useRef, useState } from 'react';
 import type { RefObject } from 'react';
-import { canAttack, changesBetween, other, skillsFor, turnOf } from '@pplale/game-core';
+import { canAttack, changesBetween, other, skillAt, turnOf } from '@pplale/game-core';
 import type { Command, GameState, Side } from '@pplale/game-core';
 import { displayCards, gameCatalog } from '@/lib/game/catalog';
 import { skillDescription } from '@/lib/game/skillText';
@@ -272,8 +272,8 @@ function describe(game: GameState, command: Command, cardId?: string): Announcem
     return card && { id, kind: command.type, side: command.actor, cardId: card.id, title: card.name, text: card.effect ?? '' };
   }
   if (command.type === 'skill') {
-    const playable = game.players[command.actor].playable, skill = skillsFor(playable)[command.index];
-    return skill ? { id, kind: 'skill', side: command.actor, cardId: playable, title: skill.name, text: skillDescription(displayCards[playable].effect, command.index) } : null;
+    const ref = skillAt(game.players[command.actor], command.index);
+    return ref ? { id, kind: 'skill', side: command.actor, cardId: ref.playable, title: ref.skill.name, text: skillDescription(displayCards[ref.playable].effect, ref.origin) } : null;
   }
   return null;
 }
