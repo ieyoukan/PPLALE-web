@@ -1,7 +1,7 @@
 // The match in progress, kept in this browser. The preparation page writes it, the board reads
 // and updates it; both go through here so the format lives in one place.
-import { turnOf } from '@pplale/game-core';
-import type { Command, CpuLevel, Deck, GameState, Position, Rules, Side } from '@pplale/game-core';
+import { parseMatchRules, turnOf } from '@pplale/game-core';
+import type { Command, CpuLevel, Deck, GameState, MatchRules, Position, Rules, Side } from '@pplale/game-core';
 
 /**
  * cpu: you (side 0) vs CPU. hotseat: one device controls both sides. watch: CPU vs CPU.
@@ -14,6 +14,8 @@ export type Levels = [CpuLevel, CpuLevel];
 export interface MatchSetup {
   decks: [Deck, Deck];
   rules: Rules;
+  /** Which cards the decks may use, as chosen on the preparation page. Saves from before it could be chosen have none. */
+  matchRules?: MatchRules;
 }
 export interface StoredSession {
   game: GameState;
@@ -66,6 +68,11 @@ export function readSession(): { [K in keyof StoredSession]?: unknown } & { leve
     const raw = localStorage.getItem(STORAGE_KEY);
     return raw ? JSON.parse(raw) : null;
   } catch { return null; }
+}
+
+/** The rules the saved match was prepared with, to prepare the next one the same way (null without them). */
+export function savedMatchRules(): MatchRules | null {
+  return parseMatchRules((readSession()?.setup as Partial<MatchSetup> | undefined)?.matchRules);
 }
 
 /** A short description of the unfinished saved match (for a "continue" link), or null without one. */

@@ -3,7 +3,8 @@ import { scriptFor, scriptOf } from './cards/registry.ts';
 import { canAttack } from './core/combat.ts';
 import { fruitsOf } from './core/protection.ts';
 import { cardContext, effects } from './effects/context.ts';
-import { skillSlots } from './playables/skills.ts';
+import { activePassive, playableMp, playablePassives, skillLimit, skillPrice, skillsFor } from './playables/skills.ts';
+import { skillUnavailable } from './playables/usage.ts';
 import { other } from './model.ts';
 import type { Catalog, DeckKind, GameState, Side, TaskOp } from './model.ts';
 
@@ -57,7 +58,42 @@ export const canPlay = (s: GameState, side: Side, uid: string, catalog: Catalog)
 
 /** Why the skill cannot be used now apart from PP and remaining uses (e.g. nothing to select), or undefined. */
 export const skillBlocked = (s: GameState, side: Side, index: number, catalog: Catalog) =>
-    skillSlots(s.players[side])[index]?.skill.blocked?.(effects(s, catalog, side));
+    skillsFor(s.players[side].playable)[index]?.blocked?.(effects(s, catalog, side));
+
+/** One skill of a playable as a skill panel shows it. */
+export interface SkillView {
+    name: string;
+    /** What it costs now (a passive can change the printed PP cost). */
+    pp: number;
+    mp: number;
+    /** Uses left and the most it can have; null for a skill without a use limit. */
+    left: number | null;
+    limit: number | null;
+    /** Used in answer to the opponent (the engine asks when it can be), not with the `skill` command. */
+    reaction: boolean;
+    /** Why the `skill` command would be rejected now (whose turn it is aside), or undefined. */
+    unavailable?: string;
+}
+/** A playable's skills, 固有パッシブスキル and MP for one side, with the current costs and limits. */
+export interface PlayableView {
+    skills: SkillView[];
+    /** `active`: its condition holds now (always, for one without a condition). */
+    passive?: { name: string; active: boolean };
+    mp?: { current: number; max: number };
+}
+export function playableView(s: GameState, side: Side, catalog: Catalog): PlayableView {
+    const p = s.players[side], passive = playablePassives[p.playable], mp = playableMp[p.playable];
+    return {
+        skills: skillsFor(p.playable).map((skill, index) => ({
+            name: skill.name, ...skillPrice(p, index, catalog), reaction: !!skill.reaction,
+            left: skill.uses === undefined ? null : p.skills[index] ?? 0,
+            limit: skill.uses === undefined ? null : skillLimit(p, index, catalog),
+            unavailable: skillUnavailable(s, side, index, catalog),
+        })),
+        ...(passive ? { passive: { name: passive.name, active: !!activePassive(p, catalog) } } : {}),
+        ...(mp ? { mp: { current: p.mp ?? 0, max: mp.max } } : {}),
+    };
+}
 
 /** The card can be revealed from hand with the `reveal` command. */
 export const isRevealable = (cardId: string) => !!scriptOf(cardId).revealable;

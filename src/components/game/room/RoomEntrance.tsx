@@ -6,9 +6,10 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/lib/auth';
 import { createRoom, keepSeat, latestRoom, readServerStats, roomServerUrl } from '@/lib/game/room/client';
-import { MAX_NAME_LENGTH, ROOM_ID_LENGTH, defaultRoomRules, fruitNames, fruits, isRoomId, playableNow } from '@pplale/game-core/room';
-import type { Fruit, RoomRules, RoomServerStats } from '@pplale/game-core/room';
+import { MAX_NAME_LENGTH, ROOM_ID_LENGTH, defaultRoomRules, isRoomId } from '@pplale/game-core/room';
+import type { RoomRules, RoomServerStats } from '@pplale/game-core/room';
 import { ROOM_PATH, roomHref, watchHref } from '@/lib/game/sessionStore';
+import { RulePicker } from '../RulePicker';
 import styles from './Room.module.css';
 
 const NAME_KEY = 'pplale-room-name-v1';
@@ -105,7 +106,6 @@ export function RoomEntrance() {
   // localStorage is only available in the browser, after the first render.
   useEffect(() => { setLatest(latestRoom()); }, []);
 
-  const toggleFruit = (fruit: Fruit, on: boolean) => setRules(current => ({ ...current, fruits: fruits.filter(f => f === fruit ? on : current.fruits.includes(f)) }));
   async function create() {
     setBusy(true);
     setError('');
@@ -119,7 +119,6 @@ export function RoomEntrance() {
     }
   }
   const stats = useServerStats();
-  const waiting = fruits.some(fruit => !playableNow.fruits.includes(fruit)) || !playableNow.extendedPlayable;
 
   // The doors fill the screen, so the form of the chosen one opens below them: bring it into view.
   const form = useRef<HTMLDivElement>(null);
@@ -148,25 +147,8 @@ export function RoomEntrance() {
     <div ref={form} className={styles.formAnchor} />
     {open === 'create' && <section className={styles.panel} aria-label="ルームを作る">
       <h2>ルームのルール</h2>
-      <fieldset className={styles.checks}>
-        <legend>使えるフルーツ</legend>
-        <div className={styles.checkRow}>{fruits.map(fruit => {
-          const playable = playableNow.fruits.includes(fruit);
-          return <label key={fruit} className={styles.check}>
-            <input type="checkbox" checked={rules.fruits.includes(fruit)} disabled={!playable} onChange={event => toggleFruit(fruit, event.target.checked)} />
-            {fruitNames[fruit]}{!playable && <small>準備中</small>}
-          </label>;
-        })}</div>
-      </fieldset>
-      <fieldset className={styles.checks}>
-        <legend>プレイアブル</legend>
-        <div className={styles.checkRow}>
-          <label className={styles.check}>
-            <input type="checkbox" checked={rules.extendedPlayable} disabled={!playableNow.extendedPlayable} onChange={event => setRules(current => ({ ...current, extendedPlayable: event.target.checked }))} />
-            拡張プレイアブルも使える{!playableNow.extendedPlayable && <small>準備中</small>}
-          </label>
-        </div>
-      </fieldset>
+      {/* Which cards the decks may use: the same tiles as before a CPU match. Watching is the room's own. */}
+      <RulePicker rules={rules} onChange={next => setRules(current => ({ ...current, ...next }))} />
       <fieldset className={styles.checks}>
         <legend>観戦</legend>
         <div className={styles.checkRow}>
@@ -177,10 +159,8 @@ export function RoomEntrance() {
         </div>
         <p className={styles.note}>観戦している人には、2人の手札が両方とも見えます。ルームIDを知っている人はだれでも観戦できます。</p>
       </fieldset>
-      {waiting && <p className={styles.note}>「準備中」のカードは、まだ対戦で動かせないため選べません。対応したものから選べるようになります。</p>}
       <NameField name={name} onChange={setName} />
-      <button className={styles.primary} disabled={busy || !rules.fruits.length || stats === null} onClick={create}>{busy ? '作成中…' : 'このルールでルームを作る'}</button>
-      {!rules.fruits.length && <p className={styles.note}>使えるフルーツを1つ以上選んでください。</p>}
+      <button className={styles.primary} disabled={busy || stats === null} onClick={create}>{busy ? '作成中…' : 'このルールでルームを作る'}</button>
     </section>}
     {(open === 'enter' || open === 'watch') && <form className={styles.panel} aria-label={open === 'watch' ? '観戦する' : 'ルームへ入る'}
       onSubmit={event => { event.preventDefault(); if (isRoomId(id)) router.push(open === 'watch' ? watchHref(id) : roomHref(ROOM_PATH, id)); }}>

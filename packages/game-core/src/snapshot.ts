@@ -1,7 +1,7 @@
 // Restoring a saved match: validate the shape, check card references, migrate older formats.
 import { z } from 'zod';
-import { deckLabel, exSkillIds, keywords } from './model.ts';
-import type { Catalog, ExSkillId, GameState, Task, TaskOp } from './model.ts';
+import { deckLabel, keywords } from './model.ts';
+import type { Catalog, GameState, Task, TaskOp } from './model.ts';
 import { selectable, unitsInScope } from './effects/targets.ts';
 import { availablePpMaximum } from './core/cards.ts';
 import { opDef, resolveQueue } from './effects/resolve.ts';
@@ -13,8 +13,7 @@ const ids = z.array(z.string()).max(500);
 const keyword = z.enum(keywords as [string, ...string[]]);
 type SavedQueued = Omit<Task, 'op' | 'text' | 'resume'> & { op: string; text?: string; resume?: SavedQueued };
 const task: z.ZodType<SavedQueued> = z.lazy(() => z.object({ op: z.string(), actor: side, source: z.string().optional(), target: z.string().optional(), amount: integer.optional(), hp: integer.optional(), keyword: keyword.optional() as z.ZodType<Task['keyword']>, cardId: z.string().optional(), scope: z.enum(['friendly', 'enemy', 'any']).optional(), ids: ids.optional(), candidates: ids.optional(), count: positive.optional(), multiplier: positive.optional(), text: z.string().optional(), deck: z.enum(['yojo', 'sweet']).optional(), step: z.string().optional(), value: integer.optional(), subject: z.string().optional(), selected: z.boolean().optional(), checked: z.boolean().optional(), ignoreAvoidance: z.boolean().optional(), blockedTarget: z.string().optional(), resume: task.optional() }));
-const exSkills = z.partialRecord(z.enum(exSkillIds as [ExSkillId, ...ExSkillId[]]), z.object({ uses: positive, lastTurn: integer.optional(), usedThisTurn: positive.optional() }));
-const extraSkills = z.array(z.object({ playable: z.string(), index: positive, uses: positive })).max(50);
+const exSkills = z.partialRecord(z.enum(['dice', 'strawberryHunt', 'healing', 'abyss', 'dagger', 'alice', 'smoke']), z.object({ uses: positive, lastTurn: integer.optional(), usedThisTurn: positive.optional() }));
 const player = z.object({
     name: z.string(), yojo: ids, sweet: ids, hand: ids, field: ids.max(7), nap: ids, exile: ids, playable: z.string(),
     points: positive, maxPoints: positive, turns: positive, pp: positive, ppBonus: integer, turnPpBonus: positive.max(2).default(0), nextPpDebt: positive,
@@ -23,7 +22,7 @@ const player = z.object({
     sweetBoost: positive.optional(), doubleSweet: z.boolean().optional(),
     skills: z.array(positive), lastBorrow: integer,
     skillHistory: z.array(positive).optional(), exSkills: exSkills.optional(), ice: positive.optional(), acorns: positive.optional(), mochidaLeft: positive.optional(), skipDraw: positive.optional(), strawberryOnlyUntil: integer.optional(),
-    entryBuff: positive.optional(), discardedYojo: positive.optional(), extraSkills: extraSkills.optional(),
+    mp: positive.max(999).optional(),
 }).transform(({ doubleSweet, sweetBoost, ...rest }) => ({ ...rest, sweetBoost: sweetBoost ?? (doubleSweet ? 1 : 0) }));
 const schema = z.object({
     version: z.literal(1), effectTauntRules: z.literal(true).optional(), turnRules: z.literal(true).optional(), phase: z.enum(['dice', 'initiative', 'opening', 'mulligan', 'playing']).default('playing'), dice: z.object({ rolls: z.tuple([integer.min(1).max(6).nullable(), integer.min(1).max(6).nullable()]), ties: positive }).nullable().default(null), rng: positive, serial: positive, revision: positive, active: side, turn: positive,
@@ -34,7 +33,7 @@ const schema = z.object({
     effectBlocks: z.object({ revision: positive, events: z.array(z.object({ uid: z.string(), kind: z.enum(['damage', 'destroy']) })).max(500) }).optional(),
     mulligan: z.object({ eligible: z.tuple([ids, ids]), confirmed: z.tuple([z.boolean(), z.boolean()]) }).default({ eligible: [[], []], confirmed: [false, false] }),
     players: z.tuple([player, player]),
-    cards: z.record(z.string(), z.object({ uid: z.string(), cardId: z.string(), attackBonus: integer, hpBonus: integer, damage: positive, costDelta: integer, temporaryCost: integer, keywords: z.array(keyword), shield: z.boolean(), slot: integer.min(0).max(6).nullable().default(null), entered: integer, exhausted: z.boolean(), ateOn: integer, revealed: z.boolean(), links: ids, fruitTypes: z.array(z.string()).optional(), evasion: integer.optional(), hiding: z.boolean().optional(), silenced: z.boolean().optional(), destroyedBy: z.string().optional(), actions: positive.optional(), immobileUntil: integer.optional(), timedFruits: z.record(z.string(), integer).optional() })),
+    cards: z.record(z.string(), z.object({ uid: z.string(), cardId: z.string(), attackBonus: integer, hpBonus: integer, damage: positive, costDelta: integer, temporaryCost: integer, keywords: z.array(keyword), shield: z.boolean(), slot: integer.min(0).max(6).nullable().default(null), entered: integer, exhausted: z.boolean(), ateOn: integer, revealed: z.boolean(), links: ids, fruitTypes: z.array(z.string()).optional(), evasion: integer.optional(), hiding: z.boolean().optional(), silenced: z.boolean().optional(), destroyedBy: z.string().optional(), immobileUntil: integer.optional() })),
     queue: z.array(task).max(500), pending: z.object({ prompt: z.string(), options: z.array(z.object({ id: z.string(), label: z.string() })), task }).nullable(), winner: z.union([side, z.literal('draw')]).nullable(), log: z.array(z.string()).max(100),
 });
 type Saved = z.infer<typeof schema>;

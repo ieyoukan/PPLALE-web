@@ -2,7 +2,7 @@
 // must hold whatever cards were involved: limits (skill uses, points, field size) and card bookkeeping.
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { hpOf, playMatch, skillsFor } from '../dist/index.js';
+import { hpOf, mpMax, playMatch, skillLimit, skillsFor } from '../dist/index.js';
 import { catalog } from './helpers.mjs';
 
 const FIELD_SIZE = 7;
@@ -14,9 +14,14 @@ function check(s) {
   const seen = new Map();
   s.players.forEach((p, side) => {
     const where = `${p.name}(${side})`;
+    // The limit is the printed one plus what a passive adds (いのまこ); a skill without a limit stays at 0.
     skillsFor(p.playable).forEach((skill, index) => {
-      assert.ok(p.skills[index] >= 0 && p.skills[index] <= skill.uses, `${where} ${skill.name} の残り回数 ${p.skills[index]} / ${skill.uses}`);
+      const limit = skillLimit(p, index, catalog);
+      assert.ok(p.skills[index] >= 0 && p.skills[index] <= limit, `${where} ${skill.name} の残り回数 ${p.skills[index]} / ${limit}`);
     });
+    assert.equal(p.skills.length, skillsFor(p.playable).length, `${where} スキルの数`);
+    assert.ok((p.mp ?? 0) >= 0 && (p.mp ?? 0) <= mpMax(p.playable), `${where} MP ${p.mp} / ${mpMax(p.playable)}`);
+    assert.ok(p.nextPpDebt >= 0, `${where} 次のターンのPP減少 ${p.nextPpDebt}`);
     assert.ok(p.points >= 0 && p.points <= p.maxPoints, `${where} お菓子 ${p.points} / ${p.maxPoints}`);
     assert.ok(p.pp >= 0, `${where} PP ${p.pp}`);
     assert.ok(p.sweetBoost >= 0, `${where} sweetBoost ${p.sweetBoost}`);

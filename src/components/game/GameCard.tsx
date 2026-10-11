@@ -26,9 +26,11 @@ export const GameCard = memo(function GameCard({ id, instance, stats = false, ab
       <span className={`${styles.buffMarble} ${styles.attackMarble}`} role="img" aria-label={`攻撃力の変化 ${signed(instance.attackBonus)}`}>{signed(instance.attackBonus)}</span>
       <span className={`${styles.buffMarble} ${styles.hpMarble}`} role="img" aria-label={`HPの変化 ${signed(instance.hpBonus)}`}>{signed(instance.hpBonus)}</span>
     </>}
-    {abilities && instance && (instance.keywords.length > 0 || instance.shield) && <span className={styles.keywordBadges}>
+    {abilities && instance && (instance.keywords.length > 0 || instance.shield || instance.immobileUntil !== undefined) && <span className={styles.keywordBadges}>
       {Array.from(new Set(instance.keywords)).map(keyword => <span key={keyword} className={keyword === 'taunt' ? styles.tauntBadge : ''}>{keyword === 'evade' ? `おにごっこ≧${instance.evasion ?? 5}` : keyword === 'hide' ? `かくれんぼ${instance.slot === null ? '' : instance.hiding ? '中' : '終了'}` : keywordNames[keyword]}</span>)}
       {instance.shield && <span>バリア</span>}
+      {/* Given for a time (ちょり); the engine removes it when it ends. */}
+      {instance.immobileUntil !== undefined && !instance.keywords.includes('immobile') && <span>行動不能（一時）</span>}
     </span>}
     {currentCost !== undefined && currentCost !== card.cost && <span key={currentCost} className={`${styles.costMarble} ${currentCost < card.cost ? styles.reducedCost : styles.increasedCost}`}
       role="img" aria-label={`コスト ${card.cost}から${currentCost}に${currentCost < card.cost ? '減少' : '増加'}`}>

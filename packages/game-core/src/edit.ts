@@ -7,7 +7,7 @@ import { cloneState } from './core/state.ts';
 import { FIELD_SIZE } from './core/zones.ts';
 import { MAX_PP, RuleError, sides } from './model.ts';
 import type { Catalog, ExSkillId, ExSkillState, GameState, Keyword, Side } from './model.ts';
-import { playableSkills, skillsFor } from './playables/skills.ts';
+import { mpMax, playableMp, playableSkills, skillLimits, withSkillLimits } from './playables/skills.ts';
 
 export type EditZone = 'field' | 'hand' | 'nap' | 'exile' | 'yojo' | 'sweet';
 export type BoardEdit =
@@ -22,9 +22,10 @@ export type BoardEdit =
     | { type: 'toField'; uid: string; slot: number }
     /** A deck card to the top of its deck. */
     | { type: 'toTop'; uid: string }
-    | { type: 'unit'; uid: string; attack?: number; hp?: number; damage?: number; keywords?: Keyword[]; fresh?: boolean; acted?: boolean; shield?: boolean; ate?: boolean; hiding?: boolean; evasion?: number; silenced?: boolean; fruitTypes?: string[] }
+    /** `immobileTurns`: 行動不能 for this many turns counting the current one (0 ends it). */
+    | { type: 'unit'; uid: string; attack?: number; hp?: number; damage?: number; keywords?: Keyword[]; fresh?: boolean; acted?: boolean; shield?: boolean; ate?: boolean; hiding?: boolean; evasion?: number; silenced?: boolean; fruitTypes?: string[]; immobileTurns?: number }
     | { type: 'handCard'; uid: string; cost?: number; revealed?: boolean; fruitTypes?: string[] }
-    | { type: 'player'; side: Side; playable?: string; points?: number; maxPoints?: number; turns?: number; ppBonus?: number; pp?: number; skills?: number[]; shield?: boolean; sweetBoost?: number; skillHistory?: number[]; exSkills?: Partial<Record<ExSkillId, ExSkillState>>; ice?: number; acorns?: number; mochidaLeft?: number; skipDraw?: number }
+    | { type: 'player'; side: Side; playable?: string; points?: number; maxPoints?: number; turns?: number; ppBonus?: number; pp?: number; mp?: number; skills?: number[]; shield?: boolean; sweetBoost?: number; skillHistory?: number[]; exSkills?: Partial<Record<ExSkillId, ExSkillState>>; ice?: number; acorns?: number; mochidaLeft?: number; skipDraw?: number }
     /** Cards played from hand earlier this game (conditions like うゆち / カフェオレ / ケーキ). */
     | { type: 'played'; side: Side; cardIds: string[] }
     | { type: 'deck'; side: Side; kind: 'yojo' | 'sweet'; cardIds: string[] }
@@ -120,6 +121,10 @@ export function editGame(state: GameState, edit: BoardEdit, catalog: Catalog): G
             if (edit.acted !== undefined) card.exhausted = edit.acted;
             if (edit.shield !== undefined) card.shield = edit.shield;
             if (edit.ate !== undefined) card.ateOn = edit.ate ? s.turn - 1 : -1;
+            if (edit.immobileTurns !== undefined) {
+                if (edit.immobileTurns > 0) card.immobileUntil = s.turn + Math.min(99, edit.immobileTurns) - 1;
+                else delete card.immobileUntil;
+            }
             break;
         }
         case 'handCard': {
@@ -135,7 +140,10 @@ export function editGame(state: GameState, edit: BoardEdit, catalog: Catalog): G
             if (edit.playable !== undefined) {
                 if (!(edit.playable in playableSkills)) throw new RuleError('使えるプレイアブルを選んでください');
                 p.playable = edit.playable;
-                p.skills = skillsFor(p.playable).map(skill => skill.uses);
+                p.skills = skillLimits(p, catalog);
+                // MP belongs to the playable: one that has it starts with its own, another has none.
+                if (playableMp[p.playable]) p.mp = playableMp[p.playable].initial;
+                else delete p.mp;
             }
             if (edit.maxPoints !== undefined) p.maxPoints = Math.max(1, edit.maxPoints);
             if (edit.points !== undefined) p.points = edit.points;
@@ -146,7 +154,8 @@ export function editGame(state: GameState, edit: BoardEdit, catalog: Catalog): G
             if (edit.ppBonus !== undefined) p.ppBonus = edit.ppBonus;
             p.ppBonus = Math.max(-p.turns, Math.min(MAX_PP - p.turns, p.ppBonus));
             if (edit.pp !== undefined) p.pp = Math.max(0, Math.min(MAX_PP, edit.pp));
-            if (edit.skills) p.skills = skillsFor(p.playable).map((skill, i) => Math.max(0, Math.min(skill.uses, edit.skills![i] ?? p.skills[i])));
+            if (edit.mp !== undefined && playableMp[p.playable]) p.mp = Math.max(0, Math.min(mpMax(p.playable), edit.mp));
+            if (edit.skills) p.skills = skillLimits(p, catalog).map((limit, i) => Math.max(0, Math.min(limit, edit.skills![i] ?? p.skills[i])));
             if (edit.shield !== undefined) p.shield = edit.shield;
             if (edit.sweetBoost !== undefined) p.sweetBoost = Math.max(0, edit.sweetBoost);
             if (edit.skillHistory) p.skillHistory = [...edit.skillHistory];
@@ -154,9 +163,12 @@ export function editGame(state: GameState, edit: BoardEdit, catalog: Catalog): G
             for (const key of ['ice', 'acorns', 'mochidaLeft', 'skipDraw'] as const) if (edit[key] !== undefined) p[key] = Math.max(0, Math.min(999, edit[key]));
             break;
         }
-        case 'played':
-            s.players[edit.side].played = [...edit.cardIds];
+        case 'played': {
+            // As in a match: a passive that these plays switch on (or off) moves the uses left with its limit.
+            const p = s.players[edit.side];
+            withSkillLimits(p, catalog, () => { p.played = [...edit.cardIds]; });
             break;
+        }
         case 'deck': {
             const p = s.players[edit.side];
             for (const uid of p[edit.kind]) delete s.cards[uid];

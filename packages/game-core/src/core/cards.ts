@@ -32,6 +32,17 @@ export function addKeyword(s: GameState, uid: string, keyword: Keyword) {
     if (card && keyword === 'evade' && card.evasion === undefined) card.evasion = 5;
 }
 
+/**
+ * 行動不能 for a time: the unit cannot act up to the end of game turn `until`. A longer one already
+ * running stays. It ends with that turn (commands/phases.ts) or when the unit leaves the field.
+ */
+export function immobilize(s: GameState, uid: string, until: number) {
+    const card = s.cards[uid];
+    if (card) card.immobileUntil = Math.max(card.immobileUntil ?? until, until);
+}
+/** Whether a 行動不能 given for a time stops the unit from acting in game turn `turn` (default: now). */
+export const immobilized = (s: GameState, uid: string, turn = s.turn) => (s.cards[uid]?.immobileUntil ?? -1) >= turn;
+
 export function buff(s: GameState, uid: string, attack: number, hp: number) {
     const card = s.cards[uid];
     if (!card) return;
@@ -66,13 +77,9 @@ export function hit(s: GameState, uid: string, amount: number, byEffect = true) 
     card.damage += Math.min(amount, scriptFor(s, uid).maxDamage ?? amount);
 }
 
-/** Ends what a unit only had until an earlier turn was over: 行動不能 for some turns, a fruit type for a while. */
+/** Ends the fruit types a unit only had until an earlier turn was over (レンス). */
 export function expireTimed(s: GameState, uid: string) {
     const card = s.cards[uid];
-    if (card.immobileUntil !== undefined && card.immobileUntil < s.turn) {
-        card.keywords = card.keywords.filter(k => k !== 'immobile');
-        delete card.immobileUntil;
-    }
     if (!card.timedFruits) return;
     const kept = Object.entries(card.timedFruits).filter(([, until]) => until >= s.turn);
     if (kept.length) card.timedFruits = Object.fromEntries(kept);

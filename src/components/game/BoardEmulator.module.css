@@ -181,6 +181,10 @@
 .deckTable .deckNear { border-color: #f4b0bb; }
 .deckTable select { display: block; width: 100%; min-height: 52px; padding: 12px; border: 1px solid #d7c8af; border-radius: 14px; background: #fff; color: #6b5946; font-size: 18px; }
 .deckTable > i { position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%); padding: 2px 16px; border-radius: 999px; background: #a88667; color: #fffdeb; font: italic 700 18px Georgia, serif; }
+/* The rules of the match (RulePicker), above the two decks they apply to. */
+.setupRules { margin: 18px 0; padding: 14px 16px 16px; border: 3px solid #b3d788; border-radius: 22px; background: #fff; color: #6b4a3a; }
+.setupRules h2 { margin-bottom: 10px; font-size: 20px; font-weight: 700; letter-spacing: .08em; }
+.setupRules h2 small { margin-left: 12px; font-size: 14px; font-weight: 400; letter-spacing: 0; color: #a88667; }
 .deckSelectors label { font-size: 11px; }
 .deckSelectors select { display: block; width: 100%; margin-top: 6px; background: #fffcf4; border: 1px solid #d7c8af; border-radius: 3px; padding: 8px; color: #6b5946; font-size: 11px; }
 .secondaryButton { padding: 8px; border: 1px solid #c7b497; border-radius: 4px; font-size: 10px; }
@@ -189,6 +193,7 @@
 .ruleSettings p { white-space: pre-wrap; margin: 10px 0; line-height: 1.8; }
 .startButton { display: block; width: 100%; margin-top: 20px; padding: 12px; border: 1px solid #9bb18d; border-radius: 5px; background: #e1ecd3; color: #37532e; font-size: 13px; font-weight: 700; }
 .startButton span { float: right; }
+.startButton:disabled { opacity: .55; cursor: default; }
 /* Asked before the first match against さいきょう: its matches are sent for training. */
 .consentBackdrop { position: fixed; z-index: 200; inset: 0; border: 0; background: #30203588; backdrop-filter: blur(5px); }
 .consent { position: fixed; z-index: 201; top: 50%; left: 50%; transform: translate(-50%, -50%); box-sizing: border-box; width: min(560px, 92vw); max-height: 90dvh; overflow: auto; padding: 28px; border-radius: 24px; background: #fff9f0; color: #685441; box-shadow: 0 12px 40px #33202a55; font-size: 16px; line-height: 1.8; }
@@ -585,3 +590,20 @@
 .skillClose { position: sticky; bottom: -30px; z-index: 5; display: flex; justify-content: flex-end; clear: both; margin: 18px -30px -30px; padding: 14px 30px 24px; background: linear-gradient(#fff9f000, #fff9f0 18px); pointer-events: none; }
 .skillClose button { pointer-events: auto; }
 .skillClose button { min-width: 145px; min-height: 56px; padding: 12px 20px; border: 2px solid #fff0c9; border-radius: 24px; background: #fff7e5; box-shadow: 0 5px 0 #b78c85, 0 8px 18px #442a3c44; color: #7a5967; font-size: 22px; }
+/* 拡張プレイアブル: MP (on the playable and in its skills), costs paid in MP, and a passive, which is text and not a button. */
+.mpBadge { position: absolute; left: 50%; bottom: 0; z-index: 2; transform: translateX(-50%); padding: 1px 8px; border: 2px solid #a9c3de; border-radius: 12px; background: #f1f8fff0; color: #3f5f86; font: 700 clamp(16px, 1.3cqw, 24px) Arial, sans-serif; white-space: nowrap; pointer-events: none; }
+.far .mpBadge { transform: translateX(-50%) rotate(180deg); }
+.skillMp { margin: -28px 0 20px; font-size: 24px; color: #3f5f86; }
+.skillMp small { font-size: 18px; opacity: .8; }
+.skillButton b.mpCost { background: #d5e6f7; }
+.skillButton:disabled b.mpCost { background: #dfe3e6; color: #7b838c; }
+.skillPassive { clear: both; display: flex; align-items: center; gap: 20px; margin: 16px 0; padding: 16px 20px; border: 2px dashed #d9c8ad; border-radius: 22px; background: #fffdf6; font-size: 20px; }
+.skillPassive b { box-sizing: border-box; display: grid; place-items: center; width: 76px; min-width: 76px; height: 40px; border-radius: 20px; background: #efe6d6; color: #7a6a58; font-size: 15px; }
+.skillPassive strong { font-size: 22px; }
+.skillPassive p { margin-top: 8px; font-size: 18px; line-height: 1.7; color: #7d6961; }
+.skillPassive small { margin-left: auto; white-space: nowrap; font-size: 18px; color: #9c7383; }
+.skillPassive[data-active=true] { border-style: solid; border-color: #a9cf9a; background: #f3fbe9; }
+.skillPassive[data-active=true] small { color: #4f7d2c; font-weight: 700; }
+@media (max-width: 700px) { .skillPassive { flex-wrap: wrap; padding: 16px; gap: 12px; } .skillPassive > span { flex: 1; min-width: 160px; } .skillPassive small { width: 100%; } }
+/* Nine playables: the six normal ones in the first row, the β ones below. */
+.editPlayables button[data-extended]::after { content: 'β'; position: absolute; right: 2px; top: 2px; z-index: 2; padding: 0 5px; border-radius: 8px; background: #fff7e5; color: #7a5967; font: 700 12px Arial, sans-serif; }

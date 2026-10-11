@@ -1,7 +1,7 @@
 import type { CardScripts } from './types.ts';
 import { attackOf, costOf, hpOf } from '../core/cards.ts';
 import { selectable } from '../effects/targets.ts';
-import { skillsFor } from '../playables/skills.ts';
+import { skillLimits } from '../playables/skills.ts';
 import { exileDecks, gainEx, napCost, napUnits, randomSearch, revealedUnits, revealStep, revive, step, take } from './helpers.ts';
 
 export const grapeYojo: CardScripts = {
@@ -61,7 +61,16 @@ export const grapeYojo: CardScripts = {
             if (n >= 3) ctx.queue('draw');
         }); },
     },
-    y_40: { onPlay(ctx) { for (const uid of ctx.s.players.flatMap(p => p.field)) if (!ctx.protected(uid)) Object.assign(ctx.s.cards[uid], { silenced: true, keywords: [], hiding: false, shield: false, links: [] }); } },
+    // 効果で付いた能力・状態も失う。スキルで付いた一時的な行動不能も、付与された能力と同じく消える。
+    y_40: {
+        onPlay(ctx) {
+            for (const uid of ctx.s.players.flatMap(p => p.field)) {
+                if (ctx.protected(uid)) continue;
+                Object.assign(ctx.s.cards[uid], { silenced: true, keywords: [], hiding: false, shield: false, links: [] });
+                delete ctx.s.cards[uid].immobileUntil;
+            }
+        },
+    },
     y_41: {
         onPlay: ctx => step(ctx, 'copyNap', { count: 2, candidates: napUnits(ctx) }),
         effect(ctx, t) {
@@ -142,7 +151,8 @@ export const grapeYojo: CardScripts = {
         },
     },
     y_54: { keywords: ['charge'], onPlay(ctx) { ctx.queue('discard'); ctx.queue('draw', { count: (ctx.me.skillHistory ?? []).some(index => index > 0) ? 1 : 3 }); } },
-    y_55: { onPlay: ctx => { ctx.me.skills = skillsFor(ctx.me.playable).map(skill => skill.uses); } },
+    // 初期値は、その時点の使用回数制限（いのまこのパッシブで増えた分を含む）。回数制限のないスキルは変わらない。
+    y_55: { onPlay: ctx => { ctx.me.skills = skillLimits(ctx.me, ctx.catalog); } },
     y_56: { keywords: ['taunt'], onPlay: ctx => step(ctx, 'exile', { count: 2 }), effect: (ctx, t) => exileDecks(ctx, t, true) },
     y_57: { keywords: ['hide'], onPlay(ctx) { ctx.queue('discard'); ctx.queue('draw'); }, onDiscarded: ctx => ctx.queue('randomDamage', { amount: 3 }) },
     y_58: { keywords: ['guard'], onDefend: (ctx, attacker) => ctx.buff(attacker, -2, -2) },

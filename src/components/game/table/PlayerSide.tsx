@@ -1,6 +1,6 @@
 'use client';
 
-import { availablePpMaximum } from '@pplale/game-core';
+import { availablePpMaximum, playableMp } from '@pplale/game-core';
 import type { CSSProperties } from 'react';
 import type { DeckKind, Side } from '@pplale/game-core';
 import { displayCards, gameCatalog } from '@/lib/game/catalog';
@@ -26,6 +26,7 @@ export function PlayerSide({ side }: { side: Side }) {
   const concealed = player.hand.filter(uid => !game.cards[uid].revealed);
   const revealed = player.hand.filter(uid => game.cards[uid].revealed);
   const mixed = concealed.length > 0 && revealed.length > 0;
+  const mp = playableMp[player.playable];
   return <section className={`${styles.playerSide} ${near ? styles.near : styles.far}`} aria-label={`${who}の盤面`}>
     <Zone side={side} kind="yojo" className={styles.deckYojo} />
     <Zone side={side} kind="sweet" className={styles.deckSweet} />
@@ -33,6 +34,8 @@ export function PlayerSide({ side }: { side: Side }) {
     <Zone side={side} kind="exile" className={styles.exileZone} />
     <button className={styles.playableZone} onClick={() => board.setPanel(editing ? { type: 'editPlayer', side } : { type: 'skills', side })} aria-label={editing ? `${who}の設定` : `${who}のスキル`}>
       <span className={styles.playableCard}><GameCard id={player.playable} sizes="90px" /></span>
+      {/* MP is public, like PP: shown on the playable that has it (しゅれい). */}
+      {mp && <span className={styles.mpBadge} role="img" aria-label={`MP ${player.mp ?? 0} / ${mp.max}`}>MP {player.mp ?? 0}/{mp.max}</span>}
     </button>
     <div className={styles.turnCounter}>
       {/* Edit mode: the number shown (the turn count) is what the buttons change, and the PP is filled to the

@@ -1,10 +1,11 @@
 // The API a card or skill script uses. Scripts only touch the game through this object, so the
 // list below is the complete vocabulary of effects.
-import { addKeyword, buff, gainPp, hit, isRealSweet, maxPp, note, spawnCard, swapStats } from '../core/cards.ts';
+import { addKeyword, buff, gainPp, hit, immobilize, isRealSweet, maxPp, note, spawnCard, swapStats } from '../core/cards.ts';
+import { gainMp } from '../playables/usage.ts';
 import { heal, losePoints } from '../core/points.ts';
 import type { PointLoss } from '../core/points.ts';
 import { random, rollDie, shuffled } from '../core/rng.ts';
-import { bounce, destroy, discard, exile, immobilize, reveal, summon, toDeck } from '../core/zones.ts';
+import { bounce, destroy, discard, exile, reveal, summon, toDeck } from '../core/zones.ts';
 import { colorProtected, fruitsOf } from '../core/protection.ts';
 import { other } from '../model.ts';
 import type { Catalog, DeckKind, Definition, GameState, Instance, Keyword, Player, Side, Task, TaskOp } from '../model.ts';
@@ -35,6 +36,8 @@ export interface Effects {
 
     buff(uid: string, attack: number, hp: number): void;
     addKeyword(uid: string, keyword: Keyword): void;
+    /** 行動不能 for a time: the unit cannot act up to the end of game turn `until`. */
+    immobilize(uid: string, until: number): void;
     /** Effect damage (blocked by effectImmune). */
     damage(uid: string, amount: number): void;
     /** Effect destruction (blocked by effectImmune). */
@@ -43,10 +46,8 @@ export interface Effects {
     bounce(uid: string): void;
     /** Swaps the unit's attack and HP. */
     swapStats(uid: string): void;
-    /** 行動不能 for `turns` game turns, the current one included (2 on one's own turn: until the opponent's next turn ends). */
-    immobilize(uid: string, turns: number): void;
-    /** Gives a fruit type; with `turns`, only for that many game turns, the current one included. */
-    addFruit(uid: string, fruit: string, turns?: number): void;
+    /** Gives a fruit type; with `until`, only up to the end of that game turn. */
+    addFruit(uid: string, fruit: string, until?: number): void;
     /** A card in hand / on the field / in the nap goes back into its owner's deck as the printed card; the deck is shuffled. */
     toDeck(uid: string): void;
     /** Shows a hand card to both players; fires 「公開されたとき」 once. */
@@ -65,6 +66,8 @@ export interface Effects {
     losePoints(side: Side, amount: number, mode: PointLoss): number;
     eat(uid: string, amount: number): void;
     gainPp(amount: number): void;
+    /** Restores MP up to the playable's maximum (nothing for a playable without MP). */
+    gainMp(amount: number): void;
     maxPp(): number;
     random(size: number): number;
     /** Rolls a six-sided die and records it so the UI can show the roll. */
@@ -95,6 +98,7 @@ export function effects(s: GameState, catalog: Catalog, side: Side, source?: str
         pick: (prompt, uids, task) => { if (uids.length) s.pending = { prompt, options: uids.map(id => ({ id, label: label(id) })), task }; },
         buff: (uid, attack, hp) => { if (!protectedTarget(uid)) buff(s, uid, attack, hp); },
         addKeyword: (uid, keyword) => { if (!protectedTarget(uid)) addKeyword(s, uid, keyword); },
+        immobilize: (uid, until) => { if (!protectedTarget(uid)) immobilize(s, uid, until); },
         damage: (uid, amount) => {
             if (protectedTarget(uid)) return;
             const extra = s.cards[uid]?.cardId === 'y_58' && !s.cards[uid].silenced && source && isRealSweet(catalog, s.cards[source].cardId) && s.players[other(side)].field.includes(uid) ? 2 : 0;
@@ -104,12 +108,11 @@ export function effects(s: GameState, catalog: Catalog, side: Side, source?: str
         exile: (uid, owner) => { if (!protectedTarget(uid)) exile(s, uid, catalog, owner); },
         bounce: uid => { if (!protectedTarget(uid)) bounce(s, uid, catalog); },
         swapStats: uid => { if (!protectedTarget(uid)) swapStats(s, uid, catalog); },
-        immobilize: (uid, turns) => { if (!protectedTarget(uid)) immobilize(s, uid, s.turn + turns - 1); },
-        addFruit(uid, fruit, turns) {
+        addFruit(uid, fruit, until) {
             const card = s.cards[uid];
             if (!card || protectedTarget(uid)) return;
-            if (turns === undefined) card.fruitTypes = Array.from(new Set([...(card.fruitTypes ?? []), fruit]));
-            else card.timedFruits = { ...card.timedFruits, [fruit]: Math.max(card.timedFruits?.[fruit] ?? 0, s.turn + turns - 1) };
+            if (until === undefined) card.fruitTypes = Array.from(new Set([...(card.fruitTypes ?? []), fruit]));
+            else card.timedFruits = { ...card.timedFruits, [fruit]: Math.max(card.timedFruits?.[fruit] ?? 0, until) };
         },
         toDeck: uid => toDeck(s, uid, catalog),
         reveal: uid => reveal(s, uid, catalog),
@@ -124,6 +127,7 @@ export function effects(s: GameState, catalog: Catalog, side: Side, source?: str
         losePoints: (target, amount, mode) => losePoints(s, target, amount, mode).lost,
         eat: (uid, amount) => { s.queue.push({ op: 'eatResponse', actor: other(side), source: uid, amount }); },
         gainPp: amount => gainPp(s, side, amount),
+        gainMp: amount => gainMp(s, side, amount),
         maxPp: () => maxPp(s, side),
         random: size => random(s, size),
         rollDie() {

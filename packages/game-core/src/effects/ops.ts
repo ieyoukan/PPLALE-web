@@ -2,7 +2,7 @@
 import { finishTurn } from '../commands/phases.ts';
 import { scriptFor } from '../cards/registry.ts';
 import type { OpTable } from '../cards/types.ts';
-import { isRealSweet } from '../core/cards.ts';
+import { attackOf, immobilized, isRealSweet } from '../core/cards.ts';
 import { applyEnterAuras, draw, enterField, FIELD_SIZE, leaveField } from '../core/zones.ts';
 import { deckLabel } from '../model.ts';
 import type { DeckKind, Task } from '../model.ts';
@@ -31,12 +31,25 @@ export const genericOps: OpTable = {
             if (t.keyword) fx.addKeyword(t.target!, t.keyword);
         },
     },
-    keyword: { target: 'unit', run: (fx, t) => fx.addKeyword(t.target!, t.keyword!) },
+    keyword: {
+        target: 'unit',
+        run: (fx, t) => fx.addKeyword(t.target!, t.keyword!),
+        // 早食い helps a unit that still has to wait this turn, 貫通 one that is about to attack.
+        cpu(fx, t, options) {
+            const quick = (uid: string) => fx.s.cards[uid].entered !== fx.s.turn || fx.s.cards[uid].keywords.includes('fast');
+            const useful = options.filter(uid => {
+                const c = fx.s.cards[uid];
+                if (!c || c.exhausted || c.keywords.includes(t.keyword!) || c.keywords.includes('immobile') || immobilized(fx.s, uid)) return false;
+                return t.keyword === 'fast' ? !quick(uid) : t.keyword === 'pierce' ? quick(uid) : false;
+            });
+            return useful.sort((a, b) => attackOf(fx.s.cards[b], fx.catalog) - attackOf(fx.s.cards[a], fx.catalog))[0];
+        },
+    },
+    /** 行動不能 for a time: up to the end of the turn `amount` turns after this one (1: the next turn). */
+    immobilize: { target: 'unit', run: (fx, t) => fx.immobilize(t.target!, fx.s.turn + (t.amount ?? 1)) },
     destroy: { target: 'unit', run: (fx, t) => fx.destroy(t.target!) },
     /** 攻撃力と体力を入れ替える. */
     swapStats: { target: 'unit', run: (fx, t) => fx.swapStats(t.target!) },
-    /** 行動不能 for `amount` game turns, the current one included. */
-    immobilize: { target: 'unit', run: (fx, t) => fx.immobilize(t.target!, t.amount ?? 1) },
     // FAQ ②-1: the copy is summoned even when the target survives destruction.
     copy: {
         target: 'unit',

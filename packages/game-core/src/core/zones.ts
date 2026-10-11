@@ -1,10 +1,11 @@
 // Moving cards between deck, hand, field and nap, and the triggers those moves cause.
 import { scriptFor, scriptOf } from '../cards/registry.ts';
-import { cardContext } from '../effects/context.ts';
+import { cardContext, effects } from '../effects/context.ts';
+import { activePassive } from '../playables/skills.ts';
 import { deckLabel, other, sides } from '../model.ts';
 import type { Catalog, DeckKind, GameState, Side } from '../model.ts';
 import { markAction } from './stall.ts';
-import { addKeyword, buff, hpOf, note, recordEffectBlock, spawnCard } from './cards.ts';
+import { buff, hpOf, note, recordEffectBlock, spawnCard } from './cards.ts';
 import { shuffled } from './rng.ts';
 
 export const FIELD_SIZE = 7;
@@ -59,8 +60,7 @@ export function discard(s: GameState, side: Side, uid: string, catalog: Catalog)
 
 /**
  * What a unit has only while it is on the field: lost effects (りくす), keywords and おにごっこ given
- * by effects, かくれんぼ, the one-time barrier, ポッキーの links (on both cards), the actions it took
- * this turn, and what it was given for a limited time (行動不能, a fruit type). Cleared once
+ * by effects, かくれんぼ, the one-time barrier, and ポッキーの links (on both cards). Cleared once
  * it has left — after its own leaving triggers, which still see the state it left with.
  */
 export function clearFieldState(s: GameState, uid: string) {
@@ -69,18 +69,9 @@ export function clearFieldState(s: GameState, uid: string) {
     Object.assign(card, { silenced: false, keywords: [...(script.keywords ?? [])], hiding: false, shield: false, links: [] });
     if (script.evasion !== undefined) card.evasion = script.evasion;
     else delete card.evasion;
-    delete card.actions;
     delete card.immobileUntil;
+    delete card.actions;
     delete card.timedFruits;
-}
-
-/** 行動不能 until the end of game turn `until`. A unit that is 行動不能 without a limit stays so. */
-export function immobilize(s: GameState, uid: string, until: number) {
-    const card = s.cards[uid];
-    if (!card || ownerOnField(s, uid) === undefined) return;
-    if (card.keywords.includes('immobile') && card.immobileUntil === undefined) return;
-    addKeyword(s, uid, 'immobile');
-    card.immobileUntil = Math.max(card.immobileUntil ?? 0, until);
 }
 
 /**
@@ -145,6 +136,8 @@ export function enterField(s: GameState, side: Side, uid: string, catalog: Catal
     // ビデカメ: 「このゲーム中、自分の場に出た幼女すべてを+1/+1する」, however the unit arrives.
     const boost = s.players[side].entryBuff ?? 0;
     if (boost) buff(s, uid, boost, boost);
+    // The owner's passive applies to every unit that enters, before the unit's own effects (ちょり).
+    activePassive(s.players[side], catalog)?.onUnitEnter?.(effects(s, catalog, side), uid);
     const ctx = cardContext(s, catalog, side, uid);
     scriptFor(s, uid).onEnter?.(ctx);
     if (fromHand) {

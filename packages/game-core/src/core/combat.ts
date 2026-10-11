@@ -1,15 +1,14 @@
 // Attacks between units and on the opponent's sweets.
 import { other } from '../model.ts';
 import type { Catalog, GameState, Side } from '../model.ts';
-import { scriptFor } from '../cards/registry.ts';
-import { attackOf } from './cards.ts';
+import { attackOf, immobilized } from './cards.ts';
 import { isHidden } from './protection.ts';
 import { losePoints } from './points.ts';
 
 export function canAttack(s: GameState, side: Side, uid: string, target: string | 'leader', catalog: Catalog): boolean {
     const p = s.players[side], c = s.cards[uid];
     const conditionalImmobile = !c?.silenced && (c?.cardId === 'y_47' ? catalog[c.cardId].hp + c.hpBonus - c.damage > 5 : c?.cardId === 'y_50' && p.skills.some(left => left > 0));
-    if (s.phase !== 'playing' || s.active !== side || s.pending || s.winner !== null || !p.field.includes(uid) || !c || c.exhausted || c.keywords.includes('immobile') || conditionalImmobile || attackOf(c, catalog) <= 0)
+    if (s.phase !== 'playing' || s.active !== side || s.pending || s.winner !== null || !p.field.includes(uid) || !c || c.exhausted || c.keywords.includes('immobile') || conditionalImmobile || immobilized(s, uid) || attackOf(c, catalog) <= 0)
         return false;
     // Summoning sickness: fast allows any target, charge only units.
     if (c.entered === s.turn && !c.keywords.includes('fast') && !(target !== 'leader' && c.keywords.includes('charge')))
@@ -38,10 +37,7 @@ export function eat(s: GameState, side: Side, uid: string, amount: number) {
 /** Call only after `canAttack`. */
 export function resolveAttack(s: GameState, side: Side, uid: string, target: string | 'leader') {
     const attacker = s.cards[uid];
-    // 「1ターンに2回行動できる」 (ふろんとさん): it has acted once all its actions are used.
-    const perTurn = scriptFor(s, uid).actionsPerTurn ?? 1;
-    if (perTurn > 1) attacker.actions = (attacker.actions ?? 0) + 1;
-    attacker.exhausted = (attacker.actions ?? 1) >= perTurn;
+    attacker.exhausted = true;
     attacker.hiding = false;
     s.queue.push({ op: 'attackStart', actor: side, source: uid, target });
 }

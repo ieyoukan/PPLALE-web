@@ -1,11 +1,12 @@
 // Legal moves: every command the engine accepts for a side right now, with its result.
 import { applyCommand } from '../commands/index.ts';
-import { costOf } from '../core/cards.ts';
+import { costOf, immobilized } from '../core/cards.ts';
 import { canAttack } from '../core/combat.ts';
+import { effects } from '../effects/context.ts';
 import { isRevealable } from '../view.ts';
 import { other, sides } from '../model.ts';
 import type { Catalog, Command, GameState, Side } from '../model.ts';
-import { commonSkill, skillSlots } from '../playables/skills.ts';
+import { commonSkill, skillPrice, skillsFor } from '../playables/skills.ts';
 import { exSkillInfo } from '../playables/exSkills.ts';
 import type { ExSkillId } from '../model.ts';
 
@@ -55,7 +56,7 @@ function candidates(s: GameState, side: Side): Command[] {
         // Field position has no rule effect, so a unit is offered once (first free slot).
         ...p.hand.map((uid): Command => ({ type: 'play', actor: side, uid })),
         ...p.field.flatMap(uid => targets.map((target): Command => ({ type: 'attack', actor: side, uid, target }))),
-        ...skillSlots(p).map((_, index): Command => ({ type: 'skill', actor: side, index })),
+        ...skillsFor(p.playable).map((_, index): Command => ({ type: 'skill', actor: side, index })),
         ...(Object.keys(p.exSkills ?? {}) as ExSkillId[]).filter(id => !exSkillInfo[id].automatic && (p.exSkills![id]?.uses ?? 0) > 0).map((skill): Command => ({ type: 'exSkill', actor: side, skill })),
         ...((p.acorns ?? 0) > 0 ? (['draw', 'pp'] as const).map((mode): Command => ({ type: 'acorn', actor: side, mode })) : []),
         ...p.hand.filter(uid => isRevealable(s.cards[uid].cardId) && !s.cards[uid].revealed).map((uid): Command => ({ type: 'reveal', actor: side, uid })),
@@ -73,8 +74,9 @@ function worthTrying(s: GameState, command: Command, catalog: Catalog): boolean 
         case 'attack': return canAttack(s, command.actor, command.uid, command.target, catalog);
         case 'play': return costOf(s, command.uid, catalog, command.actor) <= p.pp;
         case 'skill': {
-            const slot = skillSlots(p)[command.index];
-            return !!slot && slot.uses > 0 && slot.skill.cost <= p.pp;
+            // Uses left (when it has a limit), and its current cost in PP and MP; reaction skills are never commands.
+            const skill = skillsFor(p.playable)[command.index], price = skillPrice(p, command.index, catalog);
+            return !skill.reaction && (skill.uses === undefined || p.skills[command.index] > 0) && price.pp <= p.pp && price.mp <= (p.mp ?? 0);
         }
         default: return true;
     }
@@ -99,7 +101,7 @@ export function legalMoves(s: GameState, side: Side, catalog: Catalog): Move[] {
 function chargeUseless(s: GameState, side: Side, uid: string): boolean {
     const c = s.cards[uid];
     return !s.players[other(side)].field.length || !c || c.entered !== s.turn || c.exhausted
-        || c.keywords.some(k => k === 'charge' || k === 'fast' || k === 'immobile');
+        || c.keywords.some(k => k === 'charge' || k === 'fast' || k === 'immobile') || immobilized(s, uid);
 }
 
 /**
@@ -107,12 +109,14 @@ function chargeUseless(s: GameState, side: Side, uid: string): boolean {
  * (a limited skill) without any effect. The evaluation cannot always see that, and these moves
  * crowd the useful ones out of a narrow search.
  */
-export function pointless(s: GameState, move: Move): boolean {
+export function pointless(s: GameState, move: Move, catalog?: Catalog): boolean {
     const c = move.command;
-    if (c.type === 'skill' && skillSlots(s.players[c.actor])[c.index]?.skill.name === commonSkill.name) {
-        // Only the charge skill so far; it targets a unit of its own side.
+    if (c.type === 'skill' && skillsFor(s.players[c.actor].playable)[c.index]?.name === commonSkill.name) {
+        // The charge skill targets a unit of its own side.
         return s.players[c.actor].field.every(uid => chargeUseless(s, c.actor, uid));
     }
+    // A skill that says itself it would do nothing now (MP already at its maximum, nobody to hit).
+    if (c.type === 'skill' && catalog) return !!skillsFor(s.players[c.actor].playable)[c.index]?.wasted?.(effects(s, catalog, c.actor));
     const task = s.pending?.task;
     if (c.type === 'choose' && task?.op === 'keyword' && task.keyword === 'charge' && task.actor === c.actor) {
         // Picking among the targets: keep at least one so the effect can still resolve.

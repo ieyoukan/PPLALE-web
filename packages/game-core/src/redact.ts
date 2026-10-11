@@ -30,8 +30,6 @@ export function viewFor(state: GameState, viewer: Side | 'spectator'): GameState
         }
     }
     if (viewer !== 'spectator') for (const uid of s.players[other(viewer)].hand) if (!s.cards[uid].revealed) hidden.add(uid);
-    // A unit being played is shown to both players while the answer to it (ぶらんちゃん) is awaited.
-    if (s.pending?.task.op === 'playResponse' && s.pending.task.source) hidden.delete(s.pending.task.source);
     if (s.pending) {
         if (s.pending.task.actor === viewer) {
             // A search of the viewer's own deck shows the cards it offers.
@@ -44,8 +42,12 @@ export function viewFor(state: GameState, viewer: Side | 'spectator'): GameState
     return s;
 }
 
-/** Steps that ask a player whether to use a card from their hand in answer to the other player's action. */
-const handReactions: readonly string[] = ['attackResponses', 'eatResponse', 'turnDrawResponse', 'playResponse'];
+/**
+ * Steps that ask a player whether to use a card from their hand in answer to the other player's action.
+ * A playable's reaction skill (`skillReaction`, ちょり) is not one of them: the playable, its skills and
+ * their remaining uses are public, like MP and a unit's 行動不能, so that question is shown as it is.
+ */
+const handReactions: readonly string[] = ['attackResponses', 'eatResponse', 'turnDrawResponse'];
 function publicChoice({ prompt, options, task }: Choice, hidden: Set<string>): Choice {
     const { op, actor, source, text, deck, count } = task;
     const shown: Task = { op, actor, ...(source !== undefined && { source }), ...(text !== undefined && { text }), ...(deck !== undefined && { deck }), ...(count !== undefined && { count }) };
