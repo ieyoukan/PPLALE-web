@@ -42,14 +42,14 @@ test('two players meet in a room, play the opening and one gives up', async ({ b
   test.setTimeout(120000);
   const host = await open(browser, 'host'), guest = await open(browser, 'guest');
 
-  // The host makes a room; only what the game can play is selectable.
+  // The host makes a room; every fruit can be chosen, strawberry is the default.
   await host.goto(`${base}/game/battle/`);
   await expect(host.getByText('ルームマッチを利用できます')).toBeVisible();
   await host.getByRole('button', { name: /ルームを作る/ }).click();
   await expect(host.getByRole('checkbox', { name: /いちご/ })).toBeChecked();
   await expect(host.getByRole('checkbox', { name: /ぶどう/ })).toBeEnabled();
   await expect(host.getByRole('checkbox', { name: /おれんじ/ })).toBeEnabled();
-  await expect(host.getByRole('checkbox', { name: /めろん/ })).toBeDisabled();
+  await expect(host.getByRole('checkbox', { name: /めろん/ })).toBeEnabled();
   await expect(host.getByRole('checkbox', { name: /拡張プレイアブル/ })).not.toBeChecked();
   await host.getByPlaceholder('なまえ').fill('ほすと');
   await host.getByRole('button', { name: 'このルールでルームを作る' }).click();
