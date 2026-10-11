@@ -120,9 +120,25 @@ test('English list uses translated controls and prebuilt English thumbnails', as
 test('sharing copies the selected deck URL', async ({ page, context }) => {
   await context.grantPermissions(['clipboard-read', 'clipboard-write']);
   await openSavedDeckList(page);
-  await page.locator('li').first().getByRole('button', { name: /共有リンクをコピー/ }).click();
-  await expect(page.getByText('共有リンクをコピーしました', { exact: true })).toBeVisible();
+  const copyButton = page.locator('li').first().locator('button').first();
+  await copyButton.click();
+  await expect(copyButton).toHaveText('コピーしました');
+  await expect(page.locator('li').nth(1).locator('button').first()).toHaveText('共有リンクをコピー');
+  await expect(page.locator('section > p[role="status"]')).toHaveCount(0);
   expect(await page.evaluate(() => navigator.clipboard.readText())).toBe('http://localhost:3000/deck/fixture-user/deck-0');
+  await expect(copyButton).toHaveText('共有リンクをコピー');
+});
+
+test('copy failure appears on the pressed button and then clears', async ({ page }) => {
+  await openSavedDeckList(page);
+  await page.evaluate(() => Object.defineProperty(navigator, 'clipboard', { value: {
+    writeText: async () => { throw Error('Clipboard denied'); },
+  } }));
+  const copyButton = page.locator('li').first().locator('button').first();
+  await copyButton.click();
+  await expect(copyButton).toHaveText('コピーできませんでした');
+  await expect(page.locator('section > p[role="alert"]')).toHaveCount(0);
+  await expect(copyButton).toHaveText('共有リンクをコピー');
 });
 
 test('real build page renders creation controls without generating OGP', async ({ page }) => {

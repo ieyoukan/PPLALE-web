@@ -29,7 +29,6 @@ export default function SavedDeckGrid({ userId }: { userId: string }) {
   const [displayCount, setDisplayCount] = useState(DISPLAY_PAGE_SIZE);
   const [deleteTarget, setDeleteTarget] = useState<SavedDeckSummary | null>(null);
   const [notice, setNotice] = useState('');
-  const [actionError, setActionError] = useState('');
   const sentinel = useRef<HTMLDivElement>(null);
   const search = useDeferredValue(filter.trim().normalize('NFKC').toLocaleLowerCase(locale));
   const needsAll = !!search || fruits.length > 0 || playable !== 'all' || sort !== 'updated-desc';
@@ -83,17 +82,6 @@ export default function SavedDeckGrid({ userId }: { userId: string }) {
     if (needsAll && hasMore && !isLoading && !error) void loadMore();
   }, [needsAll, hasMore, isLoading, error, loadMore]);
 
-  async function copyLink(deck: SavedDeckSummary) {
-    setNotice('');
-    setActionError('');
-    try {
-      await navigator.clipboard.writeText(`${window.location.origin}/deck/${userId}/${deck.id}`);
-      setNotice(t('共有リンクをコピーしました'));
-    } catch {
-      setActionError(t('共有リンクをコピーできませんでした'));
-    }
-  }
-
   return <section aria-labelledby="saved-decks-title">
     <div className={css({ display: 'flex', flexWrap: 'wrap', alignItems: 'center', justifyContent: 'space-between', gap: '4', mb: '6' })}>
       <div>
@@ -131,7 +119,6 @@ export default function SavedDeckGrid({ userId }: { userId: string }) {
     </div>
     {needsAll && <button type="button" onClick={() => { setFilter(''); setSort('updated-desc'); setFruits([]); setPlayable('all'); }} className={`${button({ variant: 'ghost', size: 'sm' })} ${css({ mb: '4' })}`}>{t('条件をリセット')}</button>}
     {notice && <p role="status" className={css({ mb: '4', color: 'green.700', _dark: { color: 'green.300' } })}>{notice}</p>}
-    {actionError && <p role="alert" className={css({ mb: '4', color: 'red.600', _dark: { color: 'red.300' } })}>{actionError}</p>}
     <ul className={css({ display: 'grid', gridTemplateColumns: 'minmax(0, 1fr)', sm: { gridTemplateColumns: 'repeat(2, minmax(0, 1fr))' }, lg: { gridTemplateColumns: 'repeat(3, minmax(0, 1fr))' }, gap: '5' })}>
       {visibleDecks.map(deck => <li key={deck.id} className={css({
         minW: '0', display: 'flex', flexDirection: 'column', rounded: 'lg', borderWidth: '1px', borderColor: 'gray.200', bg: 'white',
@@ -145,8 +132,8 @@ export default function SavedDeckGrid({ userId }: { userId: string }) {
           </p>
         </Link>
         <div className={css({ display: 'flex', flexWrap: 'wrap', justifyContent: 'flex-end', gap: '2', borderTopWidth: '1px', borderColor: 'gray.100', px: '3', py: '2', _dark: { borderColor: 'gray.700' } })}>
-          <button type="button" onClick={() => void copyLink(deck)} className={button({ variant: 'ghost', size: 'sm' })} aria-label={`${deck.name || t('無名のデッキ')}: ${t('共有リンクをコピー')}`}>{t('共有リンクをコピー')}</button>
-          <button type="button" onClick={() => { setNotice(''); setActionError(''); setDeleteTarget(deck); }} className={button({ variant: 'ghost', size: 'sm' })} aria-label={`${deck.name || t('無名のデッキ')}: ${t('デッキを削除')}`}>{t('削除')}</button>
+          <CopyDeckLinkButton deck={deck} userId={userId} onCopyStart={() => setNotice('')} />
+          <button type="button" onClick={() => { setNotice(''); setDeleteTarget(deck); }} className={button({ variant: 'ghost', size: 'sm' })} aria-label={`${deck.name || t('無名のデッキ')}: ${t('デッキを削除')}`}>{t('削除')}</button>
         </div>
       </li>)}
     </ul>
@@ -166,6 +153,38 @@ export default function SavedDeckGrid({ userId }: { userId: string }) {
       setNotice(t('デッキを削除しました'));
     }} />}
   </section>;
+}
+
+function CopyDeckLinkButton({ deck, userId, onCopyStart }: { deck: SavedDeckSummary; userId: string; onCopyStart: () => void }) {
+  const { t } = useI18n();
+  const [status, setStatus] = useState<'idle' | 'copying' | 'copied' | 'failed'>('idle');
+
+  useEffect(() => {
+    if (status !== 'copied' && status !== 'failed') return;
+    const timer = window.setTimeout(() => setStatus('idle'), 3000);
+    return () => window.clearTimeout(timer);
+  }, [status]);
+
+  async function copy() {
+    if (status === 'copying') return;
+    onCopyStart();
+    setStatus('copying');
+    try {
+      await navigator.clipboard.writeText(`${window.location.origin}/deck/${userId}/${deck.id}`);
+      setStatus('copied');
+    } catch {
+      setStatus('failed');
+    }
+  }
+
+  const label = t(status === 'copied' ? 'コピーしました' : status === 'failed' ? 'コピーできませんでした' : status === 'copying' ? 'コピー中...' : '共有リンクをコピー');
+  return <button type="button" onClick={() => void copy()} disabled={status === 'copying'}
+    aria-label={`${deck.name || t('無名のデッキ')}: ${label}`}
+    className={`${button({ variant: 'ghost', size: 'sm' })} ${css({ minW: '10rem' })} ${status === 'copied'
+      ? css({ color: 'green.700', bg: 'green.50', _dark: { color: 'green.300', bg: 'green.900' } })
+      : status === 'failed' ? css({ color: 'red.700', bg: 'red.50', _dark: { color: 'red.300', bg: 'red.900' } }) : ''}`}>
+    <span aria-live="polite">{label}</span>
+  </button>;
 }
 
 function DeleteDeckDialog({ deck, userId, onClose, onDeleted }: { deck: SavedDeckSummary; userId: string; onClose: () => void; onDeleted: () => void }) {
