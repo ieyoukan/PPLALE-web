@@ -119,7 +119,7 @@ export const orangeYojo: CardScripts = {
         effect(ctx, t) { revealStep(ctx, t, uid => /うさぎ|ラビット/.test(ctx.defOf(uid).name), () => { const n = ctx.me.hand.filter(uid => ctx.s.cards[uid].revealed && /うさぎ|ラビット/.test(ctx.defOf(uid).name)).length; if (n) ctx.eat(ctx.uid, n); }); },
     },
     y_145: { keywords: ['guard', 'colorOrange', 'destroyImmune'], onDestroyed(ctx) { if (ctx.card.destroyedBy) ctx.queue('reduce', { amount: attackOf(ctx.s.cards[ctx.card.destroyedBy], ctx.catalog) }); } },
-    y_146: { onEnter(ctx) { const costs = new Set(napUnits(ctx).map(uid => napCost(ctx, uid))); if (Array.from({ length: 10 }, (_, i) => i + 1).every(n => costs.has(n))) ctx.s.winner = ctx.side; } },
+    y_146: { onEnter(ctx) { const costs = new Set(napUnits(ctx).map(uid => napCost(ctx, uid))); if (Array.from({ length: 10 }, (_, i) => i + 1).every(n => costs.has(n))) { ctx.note('ちむどんどん！の特殊勝利条件を満たした'); ctx.win(); } } },
     y_147: { keywords: ['fast'], onAttack: ctx => ctx.queue('allDamage', { amount: 2 }) },
     y_148: { revealable: true, onEnter: ctx => ctx.queue('reduce', { amount: 3 }), onTurnStart(ctx, active, zone) { if (active !== ctx.side && zone === 'hand' && ctx.card.revealed && ctx.me.pp >= 4) ctx.card.costDelta -= 2; } },
     y_149: { keywords: ['fast'], revealable: true, onOwnerPlayed(ctx, played, zone) { if (zone === 'hand' && ctx.card.revealed && ctx.isRealSweet(played)) ctx.card.costDelta--; } },

@@ -1,5 +1,6 @@
 // The API a card or skill script uses. Scripts only touch the game through this object, so the
 // list below is the complete vocabulary of effects.
+import { decideMatch } from '../core/outcome.ts';
 import { addKeyword, buff, gainPp, hit, immobilize, isRealSweet, maxPp, note, spawnCard, swapStats } from '../core/cards.ts';
 import { gainMp } from '../playables/usage.ts';
 import { heal, losePoints } from '../core/points.ts';
@@ -73,6 +74,10 @@ export interface Effects {
     /** Rolls a six-sided die and records it so the UI can show the roll. */
     rollDie(): number;
     note(text: string): void;
+    /** 特殊勝利条件: this side wins the match now. */
+    win(): void;
+    /** 敗北条件: this side loses the match now. */
+    lose(): void;
     defOf(uid: string): Definition;
     /** Whether `cardId` was played from hand earlier this game (not counting the current card). */
     playedBefore(cardId: string): boolean;
@@ -136,6 +141,8 @@ export function effects(s: GameState, catalog: Catalog, side: Side, source?: str
             return value;
         },
         note: text => note(s, text),
+        win: () => decideMatch(s, side, 'special'),
+        lose: () => decideMatch(s, other(side), 'defeat'),
         defOf: uid => catalog[s.cards[uid].cardId],
         playedBefore: cardId => me.played.includes(cardId),
         isRealSweet: uid => isRealSweet(catalog, s.cards[uid].cardId),

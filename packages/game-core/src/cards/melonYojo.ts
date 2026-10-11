@@ -454,7 +454,7 @@ export const melonYojo: CardScripts = {
     y_106: {
         keywords: ['destroyImmune'], maxDamage: 3,
         onPlay(ctx) { if (ctx.me.field.includes(ctx.uid)) ctx.card.shield = true; },
-        onDestroyed(ctx) { ctx.s.winner = ctx.foeSide; ctx.note('もなかが破壊されたため敗北'); },
+        onDestroyed(ctx) { ctx.note('もなかが破壊されたため敗北'); ctx.lose(); },
     },
     // y_107 かんらん: Exスキル「神隠し ようじょ贄」（2回）を得る。処理は core/zones.ts の discard と playables/exSkills.ts。
     y_107: { onPlay: ctx => gainEx(ctx, 'kamikakushi', 2) },

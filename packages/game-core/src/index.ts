@@ -2,6 +2,7 @@ export { cpuLevels, cpuProfiles } from './ai/profiles.ts';
 export * from './model.ts';
 export { applyCommand } from './commands/index.ts';
 export { newGame, validateDeck } from './setup.ts';
+export { decideMatch, winReasonOf } from './core/outcome.ts';
 export { deckRuleErrors, defaultMatchRules, describeMatchRules, fruitNames, fruits, isExtendedPlayable, parseMatchRules, playableNow, randomDeck } from './rules.ts';
 export type { Fruit, MatchRules } from './rules.ts';
 export { restoreGame } from './snapshot.ts';

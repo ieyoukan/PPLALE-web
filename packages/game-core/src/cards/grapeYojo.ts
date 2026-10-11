@@ -179,7 +179,7 @@ export const grapeYojo: CardScripts = {
         keywords: ['taunt'],
         onPlay(ctx) {
             const n = ctx.me.played.filter(id => ctx.catalog[id]?.type === 'sweet' && !['back_menu', 'currency'].includes(ctx.catalog[id].sweetType ?? '') && id !== 's_38').length;
-            if (n >= 12) { ctx.s.winner = ctx.side; return; }
+            if (n >= 12) { ctx.note('いろはの特殊勝利条件を満たした'); ctx.win(); return; }
             step(ctx, 'recover', { count: n >= 7 ? 4 : 2, amount: n >= 7 ? 1 : 0 });
         },
         effect(ctx, t) {

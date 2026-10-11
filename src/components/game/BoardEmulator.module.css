@@ -534,7 +534,8 @@
 .editBarTurn button[aria-pressed=true], .editSwitch[aria-pressed=true], .editPair button[aria-pressed=true] { border-color: #a88667; background: #f4b0bb; font-weight: 700; }
 .editToggle { height: 56px; padding: 0 18px; border: 2px solid #fff1d3; border-radius: 18px; background: linear-gradient(#fffaf0, #ecd9ba); color: #826452; font-size: 18px; font-weight: 700; box-shadow: 0 5px 0 #9a7457, 0 9px 20px #43272840; }
 .editToggle:disabled { opacity: .6; }
-@media (max-height: 700px) { .editBarHint { display: none; } .editBar { top: 70px; padding: 6px; gap: 4px; } }
+/* On lower screens the box must end above the PP gauges and the round button beside the table. */
+@media (max-height: 860px) { .editBarHint { display: none; } .editBar { top: 70px; padding: 6px; gap: 4px; } }
 @media (max-height: 500px) { .editBar { top: 56px; } .editToggle { height: 46px; font-size: 16px; } }
 
 .editSlot::after { content: '＋'; position: absolute; inset: 0; display: grid; place-items: center; color: #fffdeb; font-size: 2.2cqw; text-shadow: 0 1px 4px #4d3a2c99; opacity: .75; pointer-events: none; }
@@ -607,3 +608,12 @@
 @media (max-width: 700px) { .skillPassive { flex-wrap: wrap; padding: 16px; gap: 12px; } .skillPassive > span { flex: 1; min-width: 160px; } .skillPassive small { width: 100%; } }
 /* Nine playables: the six normal ones in the first row, the β ones below. */
 .editPlayables button[data-extended]::after { content: 'β'; position: absolute; right: 2px; top: 2px; z-index: 2; padding: 0 5px; border-radius: 8px; background: #fff7e5; color: #7a5967; font: 700 12px Arial, sans-serif; }
+
+/* The opponent's hand lies over the far side's counters. Their numbers stay readable: the counters are
+   drawn above the hand, and each number sits at the outer end of its label, clear of the fan of cards.
+   (The far side is turned around, so its `flex-end` is the left of the screen.) Taps still reach the
+   cards between the buttons. */
+.far .turnCounter, .far .pointsCounter { z-index: 19; pointer-events: none; }
+.far .pointsCounter .counterValue { justify-content: flex-end; }
+.far .turnCounter .counterValue { justify-content: flex-start; }
+.far .counterValue > span:first-child { border-radius: 999px; background: #fffbede6; box-shadow: 0 1px 4px #4d3a2c40; }

@@ -6,7 +6,7 @@ import type { Deck, Side } from '@pplale/game-core';
 import { displayCards } from '@/lib/game/catalog';
 import { useBoardContext } from '../board/BoardContext';
 import { GameCard } from '../GameCard';
-import { outcomeOf } from './outcome';
+import { outcomeOf, reasonOf } from './outcome';
 import type { Outcome } from './outcome';
 import { AssessmentGraph } from './Assessment';
 import styles from './MatchScreens.module.css';
@@ -40,7 +40,7 @@ function Result({ outcome: { winner, kind } }: { outcome: Outcome }) {
   const featured: Side = kind === 'neutral' ? winner : view;
   const foe = other(view), deck = setup?.decks[featured];
   const rows: [string, string][] = [
-    ['決着', game.players[other(winner)].points <= 0 ? 'お菓子ポイントが0になった' : remote?.resigned === other(winner) ? `${names[other(winner)]}が投了した` : '行動のないターンが続き、お菓子ポイントで判定'],
+    ['決着', reasonOf(game, names)],
     ['ターン', `${matchTurns(game)}ターン`],
     ['お菓子ポイント', `${names[view]} ${game.players[view].points} − ${game.players[foe].points} ${names[foe]}`],
     ['先攻', names[game.rules.firstPlayer]],

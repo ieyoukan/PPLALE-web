@@ -111,6 +111,7 @@ export const stateFields: Record<keyof GameState, string | null> = {
     turn: 'board: turn announcement',
     active: 'board: turn announcement',
     winner: 'board: ゲームセット and result',
+    winReason: 'board: the result screen says why',
     pending: 'board: the choice is shown in place',
     dice: 'board: opening dice',
     openingRemaining: 'board: glowing decks',

@@ -15,7 +15,7 @@ test('three turns in a row without any action end the match; more sweet points w
   s = end(end(s));
   assert.equal(s.winner, null, 'two idle turns are not enough');
   s = end(s);
-  assert.equal(s.winner, 1);
+  assert.deepEqual([s.winner, s.winReason], [1, 'stall']);
   assert.match(s.log.at(-1), /3回続いた/);
 });
 

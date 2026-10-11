@@ -2,7 +2,7 @@
 // Nothing here knows about sockets or where rooms are kept: a request changes the room or throws RoomError.
 import { createHash, randomBytes, randomInt, timingSafeEqual } from 'node:crypto';
 import { z } from 'zod';
-import { applyCommand, newGame, other, sandboxRules, viewFor } from '@pplale/game-core';
+import { applyCommand, decideMatch, newGame, other, sandboxRules, viewFor } from '@pplale/game-core';
 import type { Catalog, Deck, GameState, Side } from '@pplale/game-core';
 import { MAX_NAME_LENGTH, parseRoomRules, roomDeckErrors } from '@pplale/game-core/room';
 import type { LastCommand, RoomCommand, RoomInfo, RoomRules, RoomStatus, RoomView } from '@pplale/game-core/room';
@@ -137,7 +137,7 @@ function startMatch(room: Room, catalog: Catalog) {
 }
 function giveUp(room: Room, seat: Side) {
     const state = room.state!;
-    state.winner = other(seat);
+    decideMatch(state, other(seat), 'resign');
     state.pending = null;
     state.queue = [];
     state.log.push(`${state.players[seat].name}が投了しました`);

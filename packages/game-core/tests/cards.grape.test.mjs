@@ -187,7 +187,7 @@ test('y_61 いろは: unplayed sweets can be recovered at zero cost after seven 
   let s = arena({ me: { hand: ['y_61'], nap: ['s_19', 's_6'] } }); s.players[0].played = Array(7).fill('s_19');
   s = playFirst(s, 'y_61'); for (const uid of [...s.players[0].nap]) s = choose(s, uid);
   assert.ok(hand(s).every(uid => costOf(s, uid, catalog, 0) === 0));
-  s = arena({ me: { hand: ['y_61'] } }); s.players[0].played = Array(12).fill('s_19'); s = playFirst(s, 'y_61'); assert.equal(s.winner, 0);
+  s = arena({ me: { hand: ['y_61'] } }); s.players[0].played = Array(12).fill('s_19'); s = playFirst(s, 'y_61'); assert.deepEqual([s.winner, s.winReason], [0, 'special']);
 });
 test('y_62 じょんこ: hide overrides guard/taunt selection, effect damage still applies, reentry hides again', () => {
   let s = arena({ me: { hand: ['s_8'], field: ['y_20'] }, foe: { field: ['y_62'] } }); const uid = field(s, 1)[0]; s.cards[uid].hiding = true; s.cards[uid].keywords.push('guard', 'taunt');

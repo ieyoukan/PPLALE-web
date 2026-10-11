@@ -576,7 +576,7 @@ test('y_106 もなか: a one-time barrier, at most 3 damage a hit, no effect des
   assert.equal(s.cards[theirs].damage, 3);
   s.cards[theirs].damage = 6;
   s = playFirst(s, 's_8');
-  assert.equal(s.winner, 0);
+  assert.deepEqual([s.winner, s.winReason], [0, 'defeat']);
 });
 
 test('y_107 かんらん: 神隠し ようじょ贄 — this turn each 幼女 discarded from hand steals 2; once a turn, twice a game', () => {

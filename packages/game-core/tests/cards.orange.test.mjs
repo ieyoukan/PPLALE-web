@@ -146,7 +146,7 @@ test('y_145 ぶらんちゃん: combat destruction reduces points by the attacke
 test('y_146 ちむどんどん！: nap cost is ten and cannot be effect-exiled; all ten costs win', () => {
   const costs = Array.from({ length: 9 }, (_, i) => Object.values(catalog).find(c => c.type === 'yojo' && c.cost === i + 1)?.id).filter(Boolean);
   assert.equal(costs.length, 9);
-  let s = playFirst(arena({ me: { hand: ['y_146'], nap: [...costs, 'y_146'] } }), 'y_146'); assert.equal(s.winner, 0);
+  let s = playFirst(arena({ me: { hand: ['y_146'], nap: [...costs, 'y_146'] } }), 'y_146'); assert.deepEqual([s.winner, s.winReason], [0, 'special']);
   s = arena({ me: { hand: ['y_130'], nap: ['y_146', 'y_9'] } }); s = playFirst(s, 'y_130'); assert.equal(s.pending, null);
 });
 test('y_147 ほとり丸: attack AoE deaths reduce opponent points before combat', () => {

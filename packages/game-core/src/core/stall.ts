@@ -1,5 +1,6 @@
 // 膠着の決着: no draw, play, unit action or skill for three turns in a row (or for certain from now
 // on) ends the match; more sweet points wins, the second player wins a tie.
+import { decideMatch } from './outcome.ts';
 import { skillsFor } from '../playables/skills.ts';
 import { other, sides } from '../model.ts';
 import type { Catalog, GameState, Side } from '../model.ts';
@@ -40,7 +41,7 @@ export function settleStall(s: GameState, catalog: Catalog): boolean {
     s.stall = { acted: false, idleTurns };
     const stuck = certainlyStuck(s, catalog);
     if (idleTurns < STALL_TURNS && !stuck) return false;
-    s.winner = winnerByPoints(s);
+    decideMatch(s, winnerByPoints(s), 'stall');
     const [a, b] = s.players;
     note(s, `${stuck && idleTurns < STALL_TURNS ? 'お互いに行動できなくなったため' : `行動のないターンが${STALL_TURNS}回続いたため`}試合終了：お菓子ポイント ${a.points} 対 ${b.points}${a.points === b.points ? '（同数のため後攻の勝利）' : ''}`);
     return true;

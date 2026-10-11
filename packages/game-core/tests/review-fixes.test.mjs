@@ -184,3 +184,21 @@ test('y_145 ぶらんちゃん: only an enemy unit\'s attack on it triggers the 
   assert.ok(s.players[0].nap.includes(bran));
   assert.deepEqual([s.players[0].points, s.players[1].points], [12, 12]);
 });
+
+test('every way a match ends records why (the result screen reads it)', async () => {
+  const { decideMatch, restoreGame, winReasonOf } = await import('../dist/index.js');
+  // お菓子ポイントが0。
+  let s = arena({ me: { field: ['y_25'] }, foe: { points: 1 } });
+  s = run(s, { type: 'attack', actor: 0, uid: field(s)[0], target: 'leader' });
+  assert.deepEqual([s.winner, s.winReason], [0, 'points']);
+  // The reason survives saving, and the first decision stands.
+  const saved = restoreGame(JSON.parse(JSON.stringify(s)), catalog);
+  assert.equal(saved.winReason, 'points');
+  decideMatch(saved, 1, 'resign');
+  assert.deepEqual([saved.winner, saved.winReason], [0, 'points']);
+  // A save from before reasons were recorded: read from the points.
+  delete saved.winReason;
+  assert.equal(winReasonOf(saved), 'points');
+  saved.players[1].points = 3;
+  assert.equal(winReasonOf(saved), 'stall');
+});

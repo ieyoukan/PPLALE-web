@@ -1,4 +1,4 @@
-import { other } from '@pplale/game-core';
+import { other, winReasonOf } from '@pplale/game-core';
 import type { GameState, Side } from '@pplale/game-core';
 import type { Board } from '../board/useBoard';
 
@@ -22,4 +22,18 @@ export function outcomeOf({ game, view, mode, names, remote }: Pick<Board, 'game
   const text = `${names[winner]}の勝ち`;
   if (mode !== 'cpu' && mode !== 'room' || remote?.watching) return { winner, kind: 'neutral', text };
   return winner === view ? { winner, kind: 'win', text: '勝利!!' } : { winner, kind: 'lose', text };
+}
+
+/** Why the match ended, in a few words for the result screen. One line per `WinReason`. */
+export function reasonOf(game: GameState, names: [string, string]): string {
+  const winner = winnerOf(game);
+  if (winner === null) return '';
+  const loser = names[other(winner)];
+  switch (winReasonOf(game)) {
+    case 'points': return 'お菓子ポイントが0になった';
+    case 'special': return '特殊勝利条件を満たした';
+    case 'defeat': return `${loser}が敗北条件を満たした`;
+    case 'resign': return `${loser}が投了した`;
+    default: return '行動のないターンが続き、お菓子ポイントで判定';
+  }
 }

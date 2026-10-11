@@ -5,6 +5,7 @@ import { activePassive } from '../playables/skills.ts';
 import { deckLabel, other, sides } from '../model.ts';
 import type { Catalog, DeckKind, GameState, Side } from '../model.ts';
 import { markAction } from './stall.ts';
+import { decideMatch } from './outcome.ts';
 import { buff, hpOf, note, recordEffectBlock, spawnCard } from './cards.ts';
 import { shuffled } from './rng.ts';
 
@@ -209,5 +210,5 @@ export function settle(s: GameState, catalog: Catalog) {
     }
     const lost = sides.filter(side => s.players[side].points <= 0);
     // There is no draw: when both reach 0 in the same step the second player wins, as in the stall rule's tie.
-    if (lost.length) s.winner = lost.length === 2 ? other(s.rules.firstPlayer) : other(lost[0]);
+    if (lost.length) decideMatch(s, lost.length === 2 ? other(s.rules.firstPlayer) : other(lost[0]), 'points');
 }

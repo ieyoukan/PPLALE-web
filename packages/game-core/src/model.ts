@@ -195,6 +195,13 @@ export interface Choice {
     task: Task;
 }
 
+/**
+ * How a match was decided.
+ * points: the loser's お菓子ポイント reached 0. stall: no actions for too long, judged on points.
+ * special: a card's 特殊勝利条件 (ぶどうのいろは, ちむどんどん！). defeat: a card's 敗北条件 (メロンのもなか).
+ * resign: the loser gave up (rooms).
+ */
+export type WinReason = 'points' | 'stall' | 'special' | 'defeat' | 'resign';
 export type Phase = 'dice' | 'initiative' | 'opening' | 'mulligan' | 'playing';
 export interface GameState {
     version: 1;
@@ -221,6 +228,8 @@ export interface GameState {
     queue: Task[];
     pending: Choice | null;
     winner: Side | 'draw' | null;
+    /** Why the match ended; set with `winner` (core/outcome.ts). Absent in older saves. */
+    winReason?: WinReason;
     log: string[];
     /**
      * 膠着の判定: whether the current turn had a draw / play / unit action / skill, and how many
