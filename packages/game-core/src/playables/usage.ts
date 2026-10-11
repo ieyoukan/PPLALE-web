@@ -33,7 +33,7 @@ export function reactionSkills(s: GameState, side: Side, event: Task, catalog: C
  * that react to a skill (とここ). Throws a RuleError when it cannot be used. Returns what a reaction
  * changes in the step it answers.
  */
-export function useSkill(s: GameState, side: Side, index: number, catalog: Catalog, event?: Task): Partial<Task> | void {
+export function activateSkill(s: GameState, side: Side, index: number, catalog: Catalog, event?: Task): Partial<Task> | void {
     const reason = skillUnavailable(s, side, index, catalog, event);
     if (reason) throw new RuleError(reason);
     const p = s.players[side], skill = skillsFor(p.playable)[index], price = skillPrice(p, index, catalog);

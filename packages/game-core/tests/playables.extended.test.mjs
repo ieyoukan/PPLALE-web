@@ -13,7 +13,8 @@ import { arena, catalog, choose, draws, failure, field, hand, idsOf, newest, opt
 const end = s => run(s, { type: 'end', actor: s.active });
 const nextTurn = s => draws(end(s));
 const attack = (s, uid = field(s, s.active)[0], target = field(s, s.active === 0 ? 1 : 0)[0]) => run(s, { type: 'attack', actor: s.active, uid, target });
-const useSkill = (s, index) => failure(s, { type: 'skill', actor: s.active, index });
+/** Why the active side cannot use skill `index` now (undefined when it can). */
+const refused = (s, index) => failure(s, { type: 'skill', actor: s.active, index });
 /** Saved and loaded again, as a room server or the browser storage does. */
 const reloaded = s => restoreGame(JSON.parse(JSON.stringify(s)), catalog);
 const plain = s => JSON.parse(JSON.stringify(s));
@@ -47,7 +48,7 @@ test('p_6 しゅれい: starts with 3 MP; ルナレストア costs 1 PP for 2 MP
   for (let i = 0; i < 9; i++) s = skill(s, 1);
   // 3 + 2 × 10 would be 23.
   assert.deepEqual([s.players[0].mp, s.players[0].pp], [20, 0]);
-  assert.match(useSkill(s, 1), /PP/);
+  assert.match(refused(s, 1), /PP/);
   // Its uses are not counted, but the history of skills used is kept.
   assert.equal(s.players[0].skills[1], 0);
   assert.equal(s.players[0].skillHistory.length, 10);
@@ -58,7 +59,7 @@ test('p_6 しゅれい: starts with 3 MP; ルナレストア costs 1 PP for 2 MP
 test('p_6 しゅれい: MP skills cost MP instead of PP and are refused without enough MP', () => {
   let s = arena({ me: { playable: 'p_6' }, foe: { field: ['y_23', 'y_9'] } });
   const [fura, plum] = field(s, 1);
-  for (const index of [2, 3, 4, 5]) assert.match(useSkill(s, index), /MPが足りません/);
+  for (const index of [2, 3, 4, 5]) assert.match(refused(s, index), /MPが足りません/);
   s.players[0].mp = 20;
   // アイシクルレイン: 5 MP, 1 damage to every enemy unit.
   s = skill(s, 2);
@@ -68,7 +69,7 @@ test('p_6 しゅれい: MP skills cost MP instead of PP and are refused without 
   s = choose(skill(s, 3), fura);
   assert.ok(s.players[1].nap.includes(fura));
   assert.equal(s.players[0].mp, 6);
-  assert.match(useSkill(s, 4), /MPが足りません/);
+  assert.match(refused(s, 4), /MPが足りません/);
   // フロストバーンベール: 9 MP, -3/-3 (a unit left without HP is destroyed).
   s.players[0].mp = 9;
   s = choose(skill(s, 4), plum);
@@ -76,7 +77,7 @@ test('p_6 しゅれい: MP skills cost MP instead of PP and are refused without 
   assert.deepEqual([s.players[0].mp, s.players[0].pp], [0, 10]);
   // Nobody left to select: the targeted skills cannot be used, and nothing is paid for trying.
   s.players[0].mp = 20;
-  for (const index of [3, 4]) assert.match(useSkill(s, index), /幼女がいません/);
+  for (const index of [3, 4]) assert.match(refused(s, index), /幼女がいません/);
   assert.equal(s.players[0].mp, 20);
 });
 
@@ -113,7 +114,7 @@ test('p_6 しゅれい: skills without a limit do not keep ぶどうのもなか
 
 test('p_7 いのまこ: つまみ食い gives 早食い and じゃんがりあーん gives 貫通, once each for 1 PP', () => {
   let s = arena({ me: { playable: 'p_7', hand: ['y_23'] } });
-  for (const index of [1, 2]) assert.match(useSkill(s, index), /場にいません/);
+  for (const index of [1, 2]) assert.match(refused(s, index), /場にいません/);
   s = playFirst(s, 'y_23');
   const unit = newest(s);
   assert.equal(canAttack(s, 0, unit, 'leader', catalog), false);
@@ -121,7 +122,7 @@ test('p_7 いのまこ: つまみ食い gives 早食い and じゃんがりあ�
   assert.ok(s.cards[unit].keywords.includes('fast'));
   assert.equal(canAttack(s, 0, unit, 'leader', catalog), true);
   assert.equal(s.players[0].pp, 10 - 4 - 1);
-  assert.match(useSkill(s, 1), /残り回数/);
+  assert.match(refused(s, 1), /残り回数/);
 
   s = arena({ me: { playable: 'p_7', field: ['y_20'] }, foe: { field: ['y_23'] } });
   assert.equal(canAttack(s, 0, field(s)[0], 'leader', catalog), false, '防衛 protects the sweets');
@@ -129,7 +130,7 @@ test('p_7 いのまこ: つまみ食い gives 早食い and じゃんがりあ�
   assert.ok(s.cards[field(s)[0]].keywords.includes('pierce'));
   assert.equal(canAttack(s, 0, field(s)[0], 'leader', catalog), true);
   assert.equal(s.players[0].pp, 9);
-  assert.match(useSkill(s, 2), /残り回数/);
+  assert.match(refused(s, 2), /残り回数/);
 });
 
 test('p_7 いのまこ: once いのむー and まこぽに were both played, its own skills cost 0 and the common skill has one more use', () => {
@@ -147,7 +148,7 @@ test('p_7 いのまこ: once いのむー and まこぽに were both played, its
   s = choose(skill(s, 2), field(s)[0]);
   assert.equal(s.players[0].pp, pp, 'both cost nothing now');
   for (let i = 0; i < 3; i++) s = choose(skill(s, 0), field(s)[0]);
-  assert.match(useSkill(s, 0), /残り回数/);
+  assert.match(refused(s, 0), /残り回数/);
   assert.deepEqual(s.players[0].skills, [0, 0, 0]);
 });
 
@@ -279,7 +280,7 @@ test('p_8 ちょり: きんきゅーかいひー！ is used once, only for お�
 
   s = arena({ me: { playable: 'p_8', field: ['y_17'] }, foe: { field: ['y_17'] } });
   giveEvade(s, field(s)[0]);
-  assert.match(useSkill(s, 1), /相手ターン中/);
+  assert.match(refused(s, 1), /相手ターン中/);
   assert.equal(playableView(s, 0, catalog).skills[1].reaction, true);
   assert.ok(!legalMoves(s, 0, catalog).some(move => move.command.type === 'skill' && move.command.index === 1));
 });
@@ -306,7 +307,7 @@ test('p_8 ちょり: the question about the reaction skill is public, and the at
 test('p_8 ちょり: an enemy unit is 行動不能 until the end of the next opponent turn', () => {
   let s = arena({ me: { playable: 'p_8' }, foe: { field: ['y_20'] } });
   const target = field(s, 1)[0];
-  assert.match(useSkill(arena({ me: { playable: 'p_8' } }), 2), /幼女がいません/);
+  assert.match(refused(arena({ me: { playable: 'p_8' } }), 2), /幼女がいません/);
   const before = skill(s, 2);
   s = choose(before, target);
   assert.deepEqual([s.cards[target].immobileUntil, s.players[0].pp, s.players[0].skills[2]], [s.turn + 1, 9, 0]);

@@ -1,28 +1,40 @@
 'use client';
 
-import { exSkillInfo, skillBlocked, skillsFor } from '@pplale/game-core';
-import type { ExSkillId, Side } from '@pplale/game-core';
+import { exSkillInfo, playableView } from '@pplale/game-core';
+import type { ExSkillId, Side, SkillView } from '@pplale/game-core';
 import { displayCards, gameCatalog } from '@/lib/game/catalog';
-import { skillDescription } from '@/lib/game/skillText';
+import { passiveDescription, skillDescription } from '@/lib/game/skillText';
 import { useBoardContext } from '../board/BoardContext';
 import { GameCard } from '../GameCard';
 import styles from '../BoardEmulator.module.css';
 
-/** The playable's skills (cost, remaining uses) and, in same-device play, PP / draw test controls. */
+/** 「1 PP」「5 MP」: MP when the skill costs MP (消費MP), otherwise PP. */
+const costOf = (skill: SkillView) => skill.mp ? `${skill.mp} MP${skill.pp > 0 ? `＋${skill.pp} PP` : ''}` : `${skill.pp} PP`;
+
+/** The playable's skills (cost, remaining uses), its passive and MP, and, in same-device play, PP / draw test controls. */
 export function SkillPanel({ side }: { side: Side }) {
   const board = useBoardContext();
   const { game, busy, mode, act, setPanel } = board;
   const player = game.players[side], card = displayCards[player.playable];
   const usable = game.phase === 'playing' && game.active === side && board.canControl(side) && !game.pending && !busy;
+  const { skills, passive, mp } = playableView(game, side, gameCatalog);
   return <>
     <div className={styles.inspectImage}><GameCard id={player.playable} sizes="120px" /></div>
     <h2>{card.name}</h2>
-    {skillsFor(player.playable).map((skill, index) => <button className={styles.skillButton} key={index}
-      disabled={!usable || player.skills[index] <= 0 || player.pp < skill.cost || !!skillBlocked(game, side, index, gameCatalog)}
+    {mp && <p className={styles.skillMp} role="group" aria-label={`MP ${mp.current} / ${mp.max}`}><b>MP</b> {mp.current}<small> / {mp.max}</small></p>}
+    {/* A passive is never used: it is text, not a button. */}
+    {passive && <div className={styles.skillPassive} data-active={passive.active}>
+      <b>パッシブ</b>
+      <span><strong>{passive.name}</strong><p>{passiveDescription(card.effect)}</p></span>
+      <small>{passive.active ? '発動中' : '条件を満たすと発動'}</small>
+    </div>}
+    {skills.map((skill, index) => <button className={styles.skillButton} key={index}
+      disabled={!usable || !!skill.unavailable}
       onClick={() => { act({ type: 'skill', actor: side, index }); setPanel(null); }}>
-      <b>{skill.cost} PP</b>
+      <b className={skill.mp ? styles.mpCost : undefined}>{costOf(skill)}</b>
       <span><strong>{skill.name}</strong><p>{skillDescription(card.effect, index)}</p></span>
-      <small>残り{player.skills[index]}回</small>
+      {/* A reaction skill is offered by the game when its moment comes. */}
+      <small>{skill.reaction && <>相手ターンに確認<br /></>}{skill.left === null ? '回数制限なし' : `残り${skill.left}回`}</small>
     </button>)}
     {Object.keys(player.exSkills ?? {}).length > 0 && <h3>Exスキル</h3>}
     {(Object.keys(player.exSkills ?? {}) as ExSkillId[]).map(id => {

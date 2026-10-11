@@ -121,6 +121,10 @@ export const presenters: { [K in ChangeKind]: Presenter<K> } = {
   ppDebt(change, _scene, out) {
     if (change.amount > 0) out.pop({ pp: change.side }, `次のターン PP−${change.amount}`, 'debuff');
   },
+  mp(change, _scene, out) {
+    // Spending MP is the player's own action (the skill is announced); the playable shows what is left.
+    if (change.amount > 0) out.pop({ pp: change.side }, `+${change.amount} MP`, 'heal');
+  },
   sweetShield(change, _scene, out) {
     if (change.on) out.pop({ leader: change.side }, 'パンケーキ保護', 'info');
   },

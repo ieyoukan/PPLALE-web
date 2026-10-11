@@ -3,7 +3,7 @@
 // 盤面エディタ: what opens beside the board in edit mode when a unit, a hand card, a pile, a playable
 // or the menu is tapped. Every change is one `board.edit(...)` (see core edit.ts) and shows at once.
 import { useEffect, useState } from 'react';
-import { attackOf, costOf, cpuLevels, cpuProfiles, decodePosition, encodePosition, exSkillInfo, hpOf, keywords, other, skillsFor } from '@pplale/game-core';
+import { attackOf, costOf, cpuLevels, cpuProfiles, decodePosition, encodePosition, exSkillInfo, extendedPlayables, hpOf, keywords, other, playableMp, playableSkills, playableView } from '@pplale/game-core';
 import type { BoardEdit, CpuLevel, ExSkillId, Keyword, Side } from '@pplale/game-core';
 import { fruitNames, fruits } from '@pplale/game-core/room';
 import { demoDeck, displayCards, gameCatalog } from '@/lib/game/catalog';
@@ -18,7 +18,8 @@ import styles from '../BoardEmulator.module.css';
 
 const nameOf = (cardId: string) => displayCards[cardId]?.name ?? cardId;
 const who = (side: Side) => side === 0 ? 'あなた' : '相手';
-const playables = ['p_0', 'p_1', 'p_2', 'p_3', 'p_4', 'p_5'];
+/** Every playable the engine can play: the six normal ones, then the 拡張プレイアブル (β). */
+const playables = Object.keys(playableSkills);
 
 /** − value ＋ for one number. */
 function Stepper({ label, value, onChange, note }: { label: string; value: number; onChange: (value: number) => void; note?: string }) {
@@ -66,6 +67,8 @@ export function EditUnitPanel({ uid }: { uid: string }) {
       <Switch label="バリア（うぃまる）" on={card.shield} onChange={shield => change({ shield })} />
       <Switch label="直前の相手ターンに食べた" on={card.ateOn === game.turn - 1} onChange={ate => change({ ate })} />
     </div>
+    <Stepper label="行動不能の残りターン" note="今のターンを含む。0でなし" value={card.immobileUntil === undefined ? 0 : Math.max(0, card.immobileUntil - game.turn + 1)}
+      onChange={immobileTurns => change({ immobileTurns: Math.max(0, immobileTurns) })} />
     <div className={styles.editActions}>
       <button onClick={() => { edit({ type: 'toHand', uid }); setPanel(null); }}>手札に戻す</button>
       <button className={styles.menuLeave} onClick={() => { edit({ type: 'remove', uid }); setPanel(null); }}>場から外す</button>
@@ -117,12 +120,13 @@ export function EditPilePanel({ side, kind }: { side: Side; kind: ZoneKind }) {
 /** A player: playable, points, turn count and PP, skill uses, and what was played earlier. */
 export function EditPlayerPanel({ side }: { side: Side }) {
   const { game, edit, setPicking } = useBoardContext();
-  const p = game.players[side], skills = skillsFor(p.playable);
+  const p = game.players[side], { skills } = playableView(game, side, gameCatalog), mp = playableMp[p.playable];
   const change = (values: Omit<Extract<BoardEdit, { type: 'player' }>, 'type' | 'side'>) => edit({ type: 'player', side, ...values });
   return <>
     <h2>{who(side)}</h2>
     <div className={styles.editPlayables} role="group" aria-label="プレイアブル">{playables.map(id =>
-      <button key={id} aria-pressed={p.playable === id} aria-label={nameOf(id)} onClick={() => change({ playable: id })}><GameCard id={id} sizes="80px" /></button>)}
+      <button key={id} aria-pressed={p.playable === id} aria-label={`${nameOf(id)}${extendedPlayables.includes(id) ? '（拡張）' : ''}`} data-extended={extendedPlayables.includes(id) || undefined}
+        onClick={() => change({ playable: id })}><GameCard id={id} sizes="80px" /></button>)}
     </div>
     <Stepper label="お菓子ポイント" value={p.points} onChange={points => change({ points })} />
     <Stepper label="お菓子の最大値" value={p.maxPoints} onChange={maxPoints => change({ maxPoints })} />
@@ -130,9 +134,13 @@ export function EditPlayerPanel({ side }: { side: Side }) {
     <Stepper label="ターン数" note="自分の何ターン目か" value={p.turns} onChange={turns => change({ turns, pp: turns + p.ppBonus })} />
     <Stepper label="最大PP" note="ターン数＋追加分" value={p.turns + p.ppBonus} onChange={max => change({ ppBonus: max - p.turns, pp: max })} />
     <Stepper label="今のPP" value={p.pp} onChange={pp => change({ pp })} />
+    {mp && <Stepper label="MP" note={`${mp.max}まで`} value={p.mp ?? 0} onChange={value => change({ mp: value })} />}
     <h3>スキルの残り回数</h3>
-    {skills.map((skill, index) => <Stepper key={skill.name} label={skill.name} note={`${skill.uses}回まで`} value={p.skills[index]}
-      onChange={left => change({ skills: p.skills.map((uses, i) => i === index ? left : uses) })} />)}
+    {/* A skill without a use limit (しゅれい) has nothing to count; a limit a passive raised (いのまこ) is the one shown. */}
+    {skills.map((skill, index) => skill.limit === null
+      ? <p key={skill.name} className={styles.editNote}>{skill.name}：回数制限なし</p>
+      : <Stepper key={skill.name} label={skill.name} note={`${skill.limit}回まで`} value={p.skills[index]}
+        onChange={left => change({ skills: p.skills.map((uses, i) => i === index ? left : uses) })} />)}
     <h3>スキルを使った履歴</h3>
     <div className={styles.editChips}>{skills.map((skill, index) => <Switch key={skill.name} label={`${skill.name}を使用済み`} on={!!p.skillHistory?.includes(index)} onChange={on => change({ skillHistory: on ? [...(p.skillHistory ?? []), index] : (p.skillHistory ?? []).filter(i => i !== index) })} />)}</div>
     <h3>Exスキル</h3>

@@ -9,7 +9,7 @@ import { cardContext } from '../effects/context.ts';
 import { RuleError } from '../model.ts';
 import type { Catalog, Definition, GameState, Player, Side } from '../model.ts';
 import { withSkillLimits } from '../playables/skills.ts';
-import { useSkill } from '../playables/usage.ts';
+import { activateSkill } from '../playables/usage.ts';
 import { fruitsOf } from '../core/protection.ts';
 import { activateExSkill } from '../playables/exSkills.ts';
 import type { Handlers } from './types.ts';
@@ -77,7 +77,7 @@ export const turnCommands: Handlers<'play' | 'attack' | 'end' | 'reveal' | 'skil
     },
     skill(s, c, catalog) {
         assertMainPhase(s, c.actor);
-        useSkill(s, c.actor, c.index, catalog);
+        activateSkill(s, c.actor, c.index, catalog);
     },
     exSkill(s, c, catalog) {
         assertMainPhase(s, c.actor);

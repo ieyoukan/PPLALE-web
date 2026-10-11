@@ -8,7 +8,7 @@ import { cardContext } from './context.ts';
 import { beginTurn } from '../commands/phases.ts';
 import type { Task } from '../model.ts';
 import { skillsFor } from '../playables/skills.ts';
-import { reactionSkills, useSkill } from '../playables/usage.ts';
+import { activateSkill, reactionSkills } from '../playables/usage.ts';
 
 export const expandedOps: OpTable = {
     endEffects: {
@@ -70,7 +70,7 @@ export const expandedOps: OpTable = {
         run(fx, t) {
             const skills = skillsFor(fx.me.playable);
             if (t.target && t.target !== 'skip') {
-                const change = useSkill(fx.s, t.actor, Number(t.target), fx.catalog, t);
+                const change = activateSkill(fx.s, t.actor, Number(t.target), fx.catalog, t);
                 fx.next({ ...t.resume!, ...change });
                 return;
             }
