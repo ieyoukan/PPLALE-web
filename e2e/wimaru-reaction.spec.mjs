@@ -49,7 +49,7 @@ for (const viewport of [{ width: 1280, height: 860 }, { width: 844, height: 390 
       }
       const after = await savedGame(page);
       expect(after.players[0].points).toBe(2); expect(after.winner).toBeNull();
-      expect(after.players[0].hand).not.toContain(uid); expect(after.cards[uid].revealed).toBe(true);
+      expect(after.players[0].hand).not.toContain(uid); expect(after.players[0].nap).toContain(uid);
       expect(after.players[0].yojo.length + after.players[0].sweet.length).toBe(deckSize - 4);
       await page.reload(); await expect(used(page)).toBeHidden();
       expect(errors).toEqual([]);
@@ -71,7 +71,7 @@ test('the CPU hand reaction visibly activates and protects its sweets', async ({
   await expect.poll(async () => (await savedGame(page)).players[1].nap.includes(uid)).toBe(true);
   await expect.poll(async () => (await savedGame(page)).players[1].exile.length, { timeout: 10000 }).toBe(1);
   const after = await savedGame(page);
-  expect(after.players[1].points).toBe(1); expect(after.winner).toBeNull(); expect(after.cards[uid].revealed).toBe(true);
+  expect(after.players[1].points).toBe(1); expect(after.winner).toBeNull(); expect(after.players[1].nap).toContain(uid);
 });
 
 test('declining the hand reaction applies the attack without claiming Wimaru was used', async ({ page }) => {

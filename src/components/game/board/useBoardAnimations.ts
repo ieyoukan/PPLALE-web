@@ -2,7 +2,7 @@
 
 import { useCallback, useLayoutEffect, useRef, useState } from 'react';
 import type { RefObject } from 'react';
-import { canAttack, changesBetween, other, skillAt, turnOf } from '@pplale/game-core';
+import { canAttack, changesBetween, HIDDEN_CARD, other, skillAt, turnOf } from '@pplale/game-core';
 import type { Command, GameState, Side } from '@pplale/game-core';
 import { displayCards, gameCatalog } from '@/lib/game/catalog';
 import { skillDescription } from '@/lib/game/skillText';
@@ -32,6 +32,16 @@ export type Ping = { uid: string; x: number; y: number; width: number; height: n
 
 const DRAW_DURATION = 800;
 const STRIKE_HIT = 360;
+/**
+ * 偽ラグ: a real hand reaction to an attack (リンネ, うぃまる, メロンのあみの) makes the attacker wait while
+ * the opponent decides, which would tell that the card is in their hand. So an attack on an opponent
+ * this screen does not play waits as long now and then, at random, whether or not they hold one.
+ */
+const FAKE_LAG_CHANCE = 0.3;
+const FAKE_LAG_MIN = 900;
+const FAKE_LAG_MAX = 2600;
+/** Cards that answer an attack from the hand. When none can be in the match (every card is known), there is nothing to hide. */
+const attackReactions: readonly string[] = ['y_33', 'y_64', 'y_91'];
 const STRIKE_DURATION = 720;
 // The opponent's card stays readable for a moment before its effect resolves.
 const ANNOUNCE_HIT = 1900;
@@ -91,6 +101,8 @@ export function useBoardAnimations({ game, view, mode, cpuSides, replaying, cont
   const [hits, setHits] = useState<Hit[]>([]);
   const [effectRoll, setEffectRoll] = useState<EffectRoll | null>(null);
   const [choiceNote, setChoiceNote] = useState<ChoiceNote | null>(null);
+  /** A fake wait after the viewer's attack (偽ラグ): nothing may be done meanwhile. */
+  const [lagging, setLagging] = useState(false);
   /** Where cards and counters were just before the command, for the ones it moves or removes. */
   const rectsBefore = useRef(new Map<string, Rect>());
   const [pops, setPops] = useState<Pop[]>([]);
@@ -217,13 +229,19 @@ export function useBoardAnimations({ game, view, mode, cpuSides, replaying, cont
       if (source && target) {
         const a = rectOf(source), b = rectOf(target);
         setStrike({ uid: command.uid, cardId: game.cards[command.uid].cardId, ...a, dx: b.x + b.width / 2 - a.x - a.width / 2, dy: b.y + b.height / 2 - a.y - a.height / 2 });
-        later(apply, STRIKE_HIT);
+        // The opponent decides elsewhere (a CPU, or a room's other seat) and a hand reaction may exist.
+        const elsewhere = command.actor === view && !cpuSides.includes(command.actor) && !spectating && (mode === 'room' || cpuSides.includes(other(command.actor)));
+        const possible = Object.values(game.cards).some(card => card.cardId === HIDDEN_CARD || attackReactions.includes(card.cardId));
+        if (elsewhere && possible && Math.random() < FAKE_LAG_CHANCE) {
+          setLagging(true);
+          later(() => { setLagging(false); apply(); }, STRIKE_HIT + FAKE_LAG_MIN + Math.random() * (FAKE_LAG_MAX - FAKE_LAG_MIN));
+        } else later(apply, STRIKE_HIT);
         later(() => setStrike(null), STRIKE_DURATION);
         return;
       }
     }
     apply();
-  }, [game, view, cpuSides, container, later, spectating]);
+  }, [game, view, cpuSides, container, later, spectating, mode]);
 
   /** Loads, restores and undo jump without animating the difference. */
   const skipNext = useCallback(() => { enabled.current = false; }, []);
@@ -242,11 +260,12 @@ export function useBoardAnimations({ game, view, mode, cpuSides, replaying, cont
     setPops([]);
     setEffectRoll(null);
     setChoiceNote(null);
+    setLagging(false);
   }, []);
   /** A tap moves on: ゲームセット → verdict → result screen. */
   const advanceFinale = useCallback(() => setFinale(current => current === 'set' ? 'verdict' : current === 'verdict' ? null : current), []);
 
-  return { flights, strike, turnNotice, announcement, ping, order, finale, hits, pops, effectRoll, choiceNote, advanceFinale, busy: flights.some(blocksPlay) || !!strike || !!turnNotice || !!announcement || !!ping || !!order || !!effectRoll || !!choiceNote, run, skipNext, reset };
+  return { flights, strike, turnNotice, announcement, ping, order, finale, hits, pops, effectRoll, choiceNote, advanceFinale, busy: flights.some(blocksPlay) || !!strike || !!turnNotice || !!announcement || !!ping || !!order || !!effectRoll || !!choiceNote || lagging, run, skipNext, reset };
 }
 
 let choiceId = 0;

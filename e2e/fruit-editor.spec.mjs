@@ -79,7 +79,8 @@ test('orange board color protection blocks the attack and its all-target damage'
   const before = (await session(page)).game, attacker = before.players[0].field[0], target = before.players[1].field[0];
   await page.locator(`[data-unit="${attacker}"]`).click();
   await page.locator(`[data-unit="${target}"]`).click();
-  await expect.poll(async () => (await session(page)).game.cards[attacker].exhausted).toBe(true);
+  // The attacker dies to the retaliation (in the nap it is the printed card again, so wait for it to leave the field).
+  await expect.poll(async () => (await session(page)).game.players[0].field.includes(attacker)).toBe(false);
   const after = (await session(page)).game;
   expect(after.cards[target].damage).toBe(0); expect(after.players[1].field).toContain(target);
   // The defender still deals retaliation damage. Its attacker dies, so the acquired abyss reduces one point.
