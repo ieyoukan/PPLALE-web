@@ -27,9 +27,8 @@ const ice = (gain: number): CardScript => ({
         }
         if (!t.target) {
             const stock = ctx.me.ice ?? 0;
-            // アイスを使っても何も起きないとき（選ぶ相手がいない）は、使うかどうかを聞かない。
-            const useless = kind === 's_32' && !selectable(ctx.s, ctx.side, ctx.foe.field).length || kind === 's_35' && !ctx.me.field.length;
-            const choices = useless ? [0] : kind === 's_32' || kind === 's_36' ? Array.from({ length: stock + 1 }, (_, i) => i) : kind === 's_35' ? [0, 4, 8].filter(n => n <= stock) : [0, 2].filter(n => n <= stock);
+            // 使っても何も起きないとき（選ぶ相手がいない）も聞く（「してもよい」はいつも聞く。ユーザー裁定）。
+            const choices = kind === 's_32' || kind === 's_36' ? Array.from({ length: stock + 1 }, (_, i) => i) : kind === 's_35' ? [0, 4, 8].filter(n => n <= stock) : [0, 2].filter(n => n <= stock);
             if (choices.length === 1) return;
             return ctx.ask('消費するアイスカウントを選んでください', choices.map(n => ({ id: String(n), label: n ? `アイス${n}を消費` : '消費しない' })), t);
         }
@@ -46,13 +45,13 @@ const ice = (gain: number): CardScript => ({
 
 const soda = (fruit: string): CardScript => ({
     onPlay(ctx) {
-        for (const uid of [...ctx.me.hand, ...ctx.me.yojo, ...ctx.me.nap].filter(uid => ctx.defOf(uid).type === 'yojo')) ctx.s.cards[uid].fruitTypes = Array.from(new Set([...(ctx.s.cards[uid].fruitTypes ?? []), fruit]));
+        for (const uid of [...ctx.me.hand, ...ctx.me.yojo, ...ctx.me.nap].filter(uid => ctx.defOf(uid).type === 'yojo')) ctx.s.cards[uid].lastingFruits = Array.from(new Set([...(ctx.s.cards[uid].lastingFruits ?? []), fruit]));
         step(ctx, 'pay');
     },
     effect(ctx, t) {
         if (t.step === 'pay') {
-            // 探す幼女が山札にいなければ、PPを払うかも聞かない。
-            if (ctx.me.pp < 1 || !ctx.me.yojo.some(uid => ctx.fruits(uid).includes(fruit))) return;
+            // 探す幼女が山札にいなくても聞く（「してもよい」はいつも聞く。ユーザー裁定）。
+            if (ctx.me.pp < 1) return;
             if (!t.target) return ctx.ask('追加1PPで幼女を手札に加えますか？', [{ id: 'no', label: '加えない' }, { id: 'yes', label: '1PP払って選ぶ' }], t);
             if (t.target === 'yes') { ctx.me.pp--; step(ctx, 'search'); }
         } else if (!t.target) ctx.pick('手札に加える幼女', ctx.me.yojo.filter(uid => ctx.fruits(uid).includes(fruit)), t);

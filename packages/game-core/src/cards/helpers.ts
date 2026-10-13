@@ -1,7 +1,6 @@
 import type { CardContext } from '../effects/context.ts';
 import type { ExSkillId, Task } from '../model.ts';
 import { enterField, FIELD_SIZE } from '../core/zones.ts';
-import { scriptOf } from './registry.ts';
 
 export const napUnits = (ctx: CardContext) => ctx.me.nap.filter(uid => ctx.defOf(uid).type === 'yojo');
 export const napCost = (ctx: CardContext, uid: string) => ctx.s.cards[uid].cardId === 'y_146' && !ctx.s.cards[uid].silenced ? 10 : ctx.defOf(uid).cost;
@@ -33,14 +32,9 @@ export function gainEx(ctx: CardContext, id: ExSkillId, uses: number, owner = ct
 export function take(ctx: CardContext, uid: string, zone: 'yojo' | 'sweet' | 'nap', reveal = false, zero = false) {
     ctx.me[zone] = ctx.me[zone].filter(id => id !== uid);
     ctx.me.hand.push(uid);
-    const c = ctx.s.cards[uid];
-    c.costDelta = zero ? -ctx.defOf(uid).cost : 0;
-    c.temporaryCost = 0;
-    c.revealed = false;
-    if (zone === 'nap' && ctx.defOf(uid).type === 'yojo') Object.assign(c, {
-        attackBonus: 0, hpBonus: 0, damage: 0, shield: false, links: [], silenced: false,
-        keywords: [...(scriptOf(c.cardId).keywords ?? [])], evasion: scriptOf(c.cardId).evasion,
-    });
+    // Moved into the hand: what effects gave it goes (core/movement.ts), then this effect's cost applies.
+    ctx.touch(uid);
+    if (zero) ctx.s.cards[uid].costDelta = -ctx.defOf(uid).cost;
     if (reveal) ctx.reveal(uid);
 }
 export function randomSearch(ctx: CardContext, fruit: string, except?: string) {
@@ -51,8 +45,7 @@ export function randomSearch(ctx: CardContext, fruit: string, except?: string) {
 export function revive(ctx: CardContext, uid: string) {
     if (ctx.me.field.length >= FIELD_SIZE) return;
     ctx.me.nap = ctx.me.nap.filter(id => id !== uid);
-    const c = ctx.s.cards[uid];
-    Object.assign(c, { attackBonus: 0, hpBonus: 0, damage: 0, costDelta: 0, temporaryCost: 0, shield: false, links: [], silenced: false, keywords: [...(scriptOf(c.cardId).keywords ?? [])], evasion: scriptOf(c.cardId).evasion });
+    // From the nap it arrives as the printed card (enterField resets it).
     enterField(ctx.s, ctx.side, uid, ctx.catalog, false);
 }
 

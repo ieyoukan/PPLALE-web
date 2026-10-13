@@ -17,7 +17,7 @@ export const orangeYojo: CardScripts = {
         onExiled: ctx => step(ctx, 'mode'),
         effect(ctx, t) { if (!t.target) ctx.ask('なかよしの除外時効果', [{ id: 'damage', label: '相手幼女1人に3ダメージ' }, { id: 'draw', label: '1枚引く' }], t); else ctx.queue(t.target === 'damage' ? 'damage' : 'draw', { amount: 3 }); },
     },
-    y_118: { keywords: ['taunt'], onDestroyed: ctx => ctx.queue('draw'), onTurnEnd: ctx => { ctx.me.pp = Math.min(12, ctx.me.pp + 4); } },
+    y_118: { keywords: ['taunt'], onDestroyed: ctx => ctx.queue('draw'), onTurnEnd: ctx => ctx.increasePp(4) },
     y_119: {
         onPlay: ctx => step(ctx, 'search'),
         effect(ctx, t) { if (!t.target) ctx.pick('フロートを選んでください', ctx.me.sweet.filter(uid => ctx.defOf(uid).name.includes('フロート')), t); else take(ctx, t.target, 'sweet', true, true); },

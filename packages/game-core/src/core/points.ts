@@ -9,8 +9,8 @@ export type PointLoss = 'eat' | 'steal' | 'reduce';
 export function heal(s: GameState, side: Side, amount: number) {
     const p = s.players[side];
     const skill = p.exSkills?.healing;
-    // ここあの献身 is used when points are actually recovered: at the maximum nothing recovers, so no use is spent.
-    if (amount > 0 && p.points < p.maxPoints && skill && skill.uses > 0) { amount++; skill.uses--; }
+    // ここあの献身 is automatic: it is used by every recovery, also at the maximum (ユーザー裁定).
+    if (amount > 0 && skill && skill.uses > 0) { amount++; skill.uses--; }
     const before = p.points;
     p.points = Math.min(p.maxPoints, p.points + amount);
     // 「自分のお菓子ポイントが回復するたびに」 (うぃまる・ももか): only when points were actually recovered.

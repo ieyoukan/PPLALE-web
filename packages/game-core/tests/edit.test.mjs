@@ -48,8 +48,8 @@ test('edit: players and the turn; the result plays as a position', () => {
   let s = edit(board(), { type: 'player', side: 1, playable: 'p_3', points: 15, maxPoints: 9, turns: 5, ppBonus: 9, pp: 20, skills: [1, 0] },
     { type: 'played', side: 1, cardIds: ['y_2', 'y_2'] }, { type: 'turn', active: 1, first: 1 });
   const p = s.players[1];
-  // Points stay within the maximum, max PP within 12, unnamed skills keep their uses.
-  assert.deepEqual([p.points, p.maxPoints, p.turns, p.ppBonus, p.pp], [9, 9, 5, 7, 12]);
+  // Points stay within the maximum, max PP within 12 (PP itself may be more: 「PPを増やす」), unnamed skills keep their uses.
+  assert.deepEqual([p.points, p.maxPoints, p.turns, p.ppBonus, p.pp], [9, 9, 5, 7, 20]);
   assert.deepEqual(p.skills, [1, 0, 1, 1]);
   assert.deepEqual(p.milestones, [10]);
   assert.deepEqual([s.active, s.rules.firstPlayer], [1, 1]);

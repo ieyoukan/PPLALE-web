@@ -47,7 +47,9 @@ export function activateSkill(s: GameState, side: Side, index: number, catalog: 
     if (reason) throw new RuleError(reason);
     const p = s.players[side], taken = skillAt(p, index)!, skill = taken.skill;
     const price = taken.extra === undefined ? skillPrice(p, index, catalog) : { pp: skill.cost, mp: skill.mp ?? 0 };
-    markAction(s);
+    // For the stall rule only a skill with a use limit (or one taken from the opponent) is an action:
+    // one without a limit (しゅれい) can be repeated for ever without changing the match (ユーザー裁定).
+    if (skill.uses !== undefined || taken.extra !== undefined) markAction(s);
     p.pp -= price.pp;
     if (price.mp) p.mp = (p.mp ?? 0) - price.mp;
     // A taken skill is not one of the playable's own: it has its own count and is not in the history.
@@ -59,7 +61,7 @@ export function activateSkill(s: GameState, side: Side, index: number, catalog: 
     note(s, `${p.name}：${skill.name}`);
     const change = skill.use(effects(s, catalog, side), event);
     for (const owner of [side, other(side)]) for (const uid of s.players[owner].field)
-        scriptFor(s, uid).onSkill?.(cardContext(s, catalog, owner, uid));
+        scriptFor(s, uid).onSkill?.(cardContext(s, catalog, owner, uid), side);
     return change;
 }
 

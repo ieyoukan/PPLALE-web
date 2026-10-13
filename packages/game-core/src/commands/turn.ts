@@ -1,7 +1,7 @@
 // Commands during a turn: play, attack, skills, choices and ending the turn.
 import { canPlay } from '../view.ts';
 import { scriptFor } from '../cards/registry.ts';
-import { costOf } from '../core/cards.ts';
+import { costOf, increasePp } from '../core/cards.ts';
 import { canAttack, resolveAttack } from '../core/combat.ts';
 import { markAction } from '../core/stall.ts';
 import { FIELD_SIZE, openSlot, reveal } from '../core/zones.ts';
@@ -64,10 +64,11 @@ export const turnCommands: Handlers<'play' | 'attack' | 'end' | 'reveal' | 'skil
     },
     acorn(s, c) {
         if (s.phase !== 'playing' || s.pending || !(s.players[c.actor].acorns ?? 0)) throw new RuleError('どんぐりを使用できません');
-        if (c.mode !== 'draw' && s.players[c.actor].pp >= 12) throw new RuleError('PPはこれ以上増やせません');
         s.players[c.actor].acorns!--;
-        if (c.mode === 'draw') s.queue.push({ op: 'draw', actor: c.actor });
-        else s.players[c.actor].pp = Math.min(12, s.players[c.actor].pp + 1);
+        // The draw is the どんぐりカウント's (a system draw, not a card effect: 魅惑の水煙 does not count it).
+        if (c.mode === 'draw') s.queue.push({ op: 'draw', actor: c.actor, text: 'acorn' });
+        // 「使用できるPPを1増やす」: past the 最大PP, even at 12 (ユーザー裁定).
+        else increasePp(s, c.actor, 1);
         markAction(s);
     },
     // Answers the pending choice; the waiting step re-runs with the option as its target.

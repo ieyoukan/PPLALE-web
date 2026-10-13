@@ -6,6 +6,7 @@ import { deckLabel, other, sides } from '../model.ts';
 import type { Catalog, DeckKind, GameState, Side } from '../model.ts';
 import { markAction } from './stall.ts';
 import { decideMatch } from './outcome.ts';
+import { syncZones, touch } from './movement.ts';
 import { buff, hpOf, note, recordEffectBlock, spawnCard } from './cards.ts';
 import { shuffled } from './rng.ts';
 
@@ -129,11 +130,13 @@ export function bounce(s: GameState, uid: string, catalog: Catalog) {
  */
 export function enterField(s: GameState, side: Side, uid: string, catalog: Catalog, fromHand: boolean, slot = openSlot(s, side)) {
     const card = s.cards[uid];
+    s.players[side].field.push(uid);
+    // From the hand it keeps what effects gave it there; from anywhere else it arrives as the printed card.
+    touch(s, uid);
     Object.assign(card, { slot, entered: s.turn, exhausted: false });
     card.destroyedBy = undefined;
     delete card.actions;
     if (card.keywords.includes('hide')) card.hiding = true;
-    s.players[side].field.push(uid);
     // ビデカメ: 「このゲーム中、自分の場に出た幼女すべてを+1/+1する」, however the unit arrives.
     const boost = s.players[side].entryBuff ?? 0;
     if (boost) buff(s, uid, boost, boost);
@@ -191,8 +194,9 @@ export function destroy(s: GameState, uid: string, byEffect: boolean, catalog: C
     scriptFor(s, uid).onDestroyed?.(cardContext(s, catalog, side, uid));
     const abyss = p.exSkills?.abyss;
     if (abyss && abyss.uses > 0) { abyss.uses--; s.queue.push({ op: 'reduce', actor: side, amount: 1 }); }
+    // ほとり丸 sees the enemies destroyed while it stays; a unit destroyed at the same time (相打ち) does not see them.
     for (const enemy of s.players[other(side)].field) {
-        if (s.cards[enemy].cardId === 'y_147' && !s.cards[enemy].silenced) s.queue.push({ op: 'reduce', actor: other(side), source: enemy, amount: 1 });
+        if (s.cards[enemy].cardId === 'y_147' && !s.cards[enemy].silenced && !dyingTogether.has(enemy)) s.queue.push({ op: 'reduce', actor: other(side), source: enemy, amount: 1 });
     }
     // Lost effects end with the unit leaving the field: in the nap it is the printed card again.
     clearFieldState(s, uid);
@@ -202,12 +206,20 @@ export function destroy(s: GameState, uid: string, byEffect: boolean, catalog: C
  * Removes units at 0 HP and decides the winner. The active side's units go first, oldest first
  * (field order is entry order), so their destruction triggers resolve first.
  */
+/** The units being destroyed together by the current `settle` (not part of the state: it lasts one call). */
+let dyingTogether = new Set<string>();
+
 export function settle(s: GameState, catalog: Catalog) {
+    // Cards that moved in the last step lose what effects gave them (core/movement.ts).
+    syncZones(s);
+    // Units at 0 HP are destroyed together (相打ちは同時判定); only the order of their triggers follows the turn.
+    dyingTogether = new Set(s.players.flatMap(p => p.field).filter(uid => hpOf(s.cards[uid], catalog) <= 0));
     for (const side of [s.active, other(s.active)]) {
         for (const uid of [...s.players[side].field]) {
             if (hpOf(s.cards[uid], catalog) <= 0) destroy(s, uid, false, catalog);
         }
     }
+    dyingTogether = new Set();
     const lost = sides.filter(side => s.players[side].points <= 0);
     // There is no draw: when both reach 0 in the same step the second player wins, as in the stall rule's tie.
     if (lost.length) decideMatch(s, lost.length === 2 ? other(s.rules.firstPlayer) : other(lost[0]), 'points');

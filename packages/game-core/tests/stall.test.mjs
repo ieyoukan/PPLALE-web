@@ -60,11 +60,14 @@ test('when neither side can ever act again the match ends at once', () => {
   assert.equal(end(s).winner, null);
 });
 
-test('remaining acorns or manual Ex skills prevent immediate certainty of a stalled match', () => {
-  for (const extra of [{ acorns: 1 }, { exSkills: { alice: { uses: 1 } } }, { exSkills: { strawberryHunt: { uses: 1 } } }]) {
-    let s = exhausted(); for (const p of s.players) p.skills.fill(0);
-    Object.assign(s.players[0], extra);
-    s = end(s); assert.equal(s.winner, null);
-    s = end(end(s)); assert.equal(s.winner, 1, 'three deliberately idle turns still end the match');
+test('remaining acorns prevent immediate certainty of a stalled match; Exスキル do not (they are not actions)', () => {
+  let s = exhausted(); for (const p of s.players) p.skills.fill(0);
+  Object.assign(s.players[0], { acorns: 1 });
+  s = end(s); assert.equal(s.winner, null);
+  s = end(end(s)); assert.equal(s.winner, 1, 'three deliberately idle turns still end the match');
+  for (const exSkills of [{ alice: { uses: 1 } }, { strawberryHunt: { uses: 1 } }]) {
+    s = exhausted(); for (const p of s.players) p.skills.fill(0);
+    Object.assign(s.players[0], { exSkills });
+    s = end(s); assert.equal(s.winner, 1, 'an Exスキル left does not keep the match going');
   }
 });

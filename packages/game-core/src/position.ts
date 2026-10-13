@@ -83,7 +83,7 @@ export interface PositionSide {
      * `actions`: actions a unit that may act twice a turn (ふろんとさん) has taken this turn.
      * `timedFruits`: fruit types held for a time, as the turns they last after this one (レンス).
      */
-    cardTraits?: { zone: 'field' | 'hand' | 'nap' | 'exile' | 'yojo' | 'sweet'; index: number; fruitTypes?: string[]; evasion?: number; hiding?: boolean; silenced?: boolean; immobile?: number; actions?: number; timedFruits?: Record<string, number> }[];
+    cardTraits?: { zone: 'field' | 'hand' | 'nap' | 'exile' | 'yojo' | 'sweet'; index: number; fruitTypes?: string[]; lastingFruits?: string[]; evasion?: number; hiding?: boolean; silenced?: boolean; immobile?: number; actions?: number; timedFruits?: Record<string, number> }[];
 }
 export interface Position {
     version: 1;
@@ -117,7 +117,7 @@ const sideSchema = z.object({
     ice: count.optional(), acorns: count.optional(), mochidaLeft: count.optional(), skipDraw: count.optional(), strawberryOnlyUntil: z.number().int().optional(),
     mp: count.optional(), entryBuff: count.optional(), discardedYojo: count.optional(),
     extraSkills: z.array(z.object({ playable: id, index: count, uses: count })).max(20).optional(),
-    cardTraits: z.array(z.object({ zone: z.enum(['field', 'hand', 'nap', 'exile', 'yojo', 'sweet']), index: count, fruitTypes: z.array(fruit).optional(), evasion: z.number().int().min(-12).max(6).optional(), hiding: z.boolean().optional(), silenced: z.boolean().optional(), immobile: count.optional(), actions: count.optional(), timedFruits: z.partialRecord(fruit, count).optional() })).max(500).optional(),
+    cardTraits: z.array(z.object({ zone: z.enum(['field', 'hand', 'nap', 'exile', 'yojo', 'sweet']), index: count, fruitTypes: z.array(fruit).optional(), lastingFruits: z.array(fruit).optional(), evasion: z.number().int().min(-12).max(6).optional(), hiding: z.boolean().optional(), silenced: z.boolean().optional(), immobile: count.optional(), actions: count.optional(), timedFruits: z.partialRecord(fruit, count).optional() })).max(500).optional(),
 });
 const schema = z.object({
     version: z.literal(1), active: z.union([z.literal(0), z.literal(1)]), first: z.union([z.literal(0), z.literal(1)]),
@@ -154,7 +154,8 @@ export function checkPosition(position: Position, catalog: Catalog): string[] {
         if (p.maxPoints < 1) errors.push(`${side}：お菓子の最大値は1以上にしてください`);
         if (p.points > p.maxPoints) errors.push(`${side}：お菓子が最大値を超えています`);
         if (p.maxPp > MAX_PP) errors.push(`${side}：最大PPは${MAX_PP}までです`);
-        if (p.pp > MAX_PP) errors.push(`${side}：PPは${MAX_PP}までです`);
+        // 「PPを増やす」 (どんぐり, ストラ) goes past the 最大PP and past 12; only an absurd number is refused.
+        if (p.pp > 99) errors.push(`${side}：PPは99までです`);
         if (index === position.active && p.turns < 1) errors.push(`${side}：手番の側は1ターン目以降にしてください`);
         const skills = p.playable in playableSkills ? skillsFor(p.playable) : [], limits = skills.length ? limitsOf(p, catalog) : [];
         p.skills?.forEach((left, i) => { if (skills[i] && left > limits[i]) errors.push(skills[i].uses === undefined ? `${side}：${skills[i].name}に使用回数の制限はありません（残り回数は0のままにしてください）` : `${side}：${skills[i].name}の残り回数は${limits[i]}回までです`); });
@@ -227,7 +228,7 @@ export function buildPosition(position: Position, catalog: Catalog, { names = ['
         p.sweet = from.sweet.map(spawn);
         for (const { zone, index, immobile, actions, timedFruits, ...traits } of from.cardTraits ?? []) {
             const uid = zone === 'field' ? p.field.find(uid => s.cards[uid].slot === index) : p[zone][index];
-            if (uid) Object.assign(s.cards[uid], { ...traits, ...(traits.fruitTypes ? { fruitTypes: [...traits.fruitTypes] } : {}) });
+            if (uid) Object.assign(s.cards[uid], { ...traits, ...(traits.fruitTypes ? { fruitTypes: [...traits.fruitTypes] } : {}), ...(traits.lastingFruits ? { lastingFruits: [...traits.lastingFruits] } : {}) });
             // Only a unit on the field can be 行動不能.
             if (uid && zone === 'field' && immobile !== undefined) s.cards[uid].immobileUntil = turn + immobile;
             if (uid && zone === 'field' && actions) s.cards[uid].actions = actions;
@@ -292,6 +293,7 @@ export function positionOf(s: GameState, catalog: Catalog): Position {
             const c = s.cards[uid];
             const entry: NonNullable<PositionSide['cardTraits']>[number] = { zone, index: zone === 'field' ? c.slot ?? index : index };
             if (c.fruitTypes?.length) entry.fruitTypes = [...c.fruitTypes];
+            if (c.lastingFruits?.length) entry.lastingFruits = [...c.lastingFruits];
             if (c.evasion !== undefined) entry.evasion = c.evasion;
             if (c.hiding || c.keywords.includes('hide')) entry.hiding = !!c.hiding;
             if (c.silenced) entry.silenced = true;

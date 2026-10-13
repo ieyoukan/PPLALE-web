@@ -25,7 +25,8 @@ export const grapeYojo: CardScripts = {
     // y_34 とここ: スキルが使われたら、次の自分のターン開始時までかくれんぼを持つ。
     // スキルの処理（対象の選択を含む）が終わってから持つので、そのスキルの対象にはなる。
     y_34: {
-        onSkill: ctx => step(ctx, 'hide'),
+        // 自身のプレイアブルキャラのスキルだけ（Exスキルは除く）。ユーザー裁定。
+        onSkill: (ctx, user) => { if (user === ctx.side) step(ctx, 'hide'); },
         effect(ctx) { if (ctx.me.field.includes(ctx.uid)) ctx.addKeyword(ctx.uid, 'hide'); },
         // 持っている間だけの能力なので、切れたら能力そのものも失う（印刷されたかくれんぼとは違う）。
         onTurnStart(ctx, active, zone) { if (active === ctx.side && zone === 'field') ctx.card.keywords = ctx.card.keywords.filter(k => k !== 'hide'); },
@@ -84,8 +85,8 @@ export const grapeYojo: CardScripts = {
             // HP0 のうゆちは効果の前にお昼寝場所へ行くが、自分自身は選べない（FAQ②-2: 効果を処理してから行く扱い）。
             const others = (limit: number) => napUnits(ctx).filter(uid => uid !== ctx.uid && napCost(ctx, uid) <= limit);
             if (t.step === 'pay') {
-                // 追加の3PPは、それで選べる幼女が増えるときだけ聞く。
-                if (!t.target && ctx.me.pp >= 3 && others(7).length > others(3).length) return ctx.ask('追加3PPでコスト7以下を場に出しますか？', [{ id: 'no', label: 'コスト3以下' }, { id: 'yes', label: '3PP払ってコスト7以下' }], t);
+                // 追加の3PPは、選べる幼女が増えなくても聞く（「してもよい」はいつも聞く。ユーザー裁定）。
+                if (!t.target && ctx.me.pp >= 3) return ctx.ask('追加3PPでコスト7以下を場に出しますか？', [{ id: 'no', label: 'コスト3以下' }, { id: 'yes', label: '3PP払ってコスト7以下' }], t);
                 if (t.target === 'yes') ctx.me.pp -= 3;
                 step(ctx, 'revive', { amount: t.target === 'yes' ? 7 : 3 });
             } else if (!t.target) ctx.pick('場に出す幼女を選んでください', others(t.amount!), t);
@@ -93,8 +94,8 @@ export const grapeYojo: CardScripts = {
         },
     },
     y_43: {
-        // 付与する相手がいなければ、PPを払うかも聞かない。
-        onPlay(ctx) { if (ctx.me.field.some(uid => uid !== ctx.uid)) step(ctx, 'pay'); },
+        // 付与する相手がいなくても、追加のPPを払うかは聞く（「してもよい」はいつも聞く。ユーザー裁定）。
+        onPlay: ctx => step(ctx, 'pay'),
         effect(ctx, t) {
             if (t.step === 'pay') {
                 if (!t.target) return ctx.ask('追加で支払うPPを選んでください', Array.from({ length: ctx.me.pp + 1 }, (_, i) => ({ id: String(i), label: `${i}PP：1d6≧${5 - i}` })), t);
@@ -102,7 +103,7 @@ export const grapeYojo: CardScripts = {
                 step(ctx, 'grant', { amount: 5 - n });
             } else {
                 if (!t.target) return ctx.pick('おにごっこを付与する幼女', ctx.me.field.filter(uid => uid !== ctx.uid), t);
-                if (!ctx.s.cards[t.target].keywords.includes('evade')) { ctx.addKeyword(t.target, 'evade'); ctx.s.cards[t.target].evasion = t.amount; }
+                ctx.giveEvasion(t.target, t.amount!);
             }
         },
     },
@@ -171,7 +172,11 @@ export const grapeYojo: CardScripts = {
     y_60: {
         onPlay: ctx => step(ctx, 'reveal'),
         effect(ctx, t) { revealStep(ctx, t, uid => ctx.defOf(uid).type === 'yojo', () => {
-            for (const uid of ctx.me.hand.filter(uid => ctx.s.cards[uid].revealed && ctx.defOf(uid).type === 'yojo')) ctx.s.cards[uid].fruitTypes = Array.from(new Set([...(ctx.s.cards[uid].fruitTypes ?? []), 'strawberry']));
+            for (const uid of ctx.me.hand.filter(uid => ctx.s.cards[uid].revealed && ctx.defOf(uid).type === 'yojo')) {
+                // Held in hand and when played from there; any other move takes it away (core/movement.ts).
+                ctx.touch(uid);
+                ctx.s.cards[uid].fruitTypes = Array.from(new Set([...(ctx.s.cards[uid].fruitTypes ?? []), 'strawberry']));
+            }
             if (revealedUnits(ctx, 'strawberry').length >= 5 && ctx.foe.field.length) ctx.destroy(ctx.foe.field[ctx.random(ctx.foe.field.length)]);
         }); },
     },

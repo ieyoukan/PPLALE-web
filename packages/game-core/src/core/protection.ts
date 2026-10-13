@@ -5,7 +5,7 @@ import { other } from '../model.ts';
 export function fruitsOf(s: GameState, uid: string, catalog: Catalog): string[] {
     const c = s.cards[uid];
     const timed = Object.keys(c.timedFruits ?? {}).filter(fruit => c.timedFruits![fruit] >= s.turn);
-    return Array.from(new Set([catalog[c.cardId].fruit, ...(c.cardId === 'y_60' ? ['strawberry'] : []), ...(c.fruitTypes ?? []), ...timed]));
+    return Array.from(new Set([catalog[c.cardId].fruit, ...(c.cardId === 'y_60' ? ['strawberry'] : []), ...(c.fruitTypes ?? []), ...(c.lastingFruits ?? []), ...timed]));
 }
 export const isHidden = (s: GameState, uid: string) => s.cards[uid].keywords.includes('hide') && !!s.cards[uid].hiding;
 

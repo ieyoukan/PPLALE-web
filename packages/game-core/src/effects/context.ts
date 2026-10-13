@@ -1,7 +1,8 @@
 // The API a card or skill script uses. Scripts only touch the game through this object, so the
 // list below is the complete vocabulary of effects.
+import { touch } from '../core/movement.ts';
 import { decideMatch } from '../core/outcome.ts';
-import { addKeyword, availablePpMaximum, buff, gainPp, hit, immobilize, isRealSweet, note, spawnCard, swapStats } from '../core/cards.ts';
+import { addKeyword, availablePpMaximum, buff, gainPp, giveEvasion, hit, immobilize, increasePp, isRealSweet, note, spawnCard, swapStats } from '../core/cards.ts';
 import { gainMp } from '../playables/usage.ts';
 import { heal, losePoints } from '../core/points.ts';
 import type { PointLoss } from '../core/points.ts';
@@ -37,6 +38,8 @@ export interface Effects {
 
     buff(uid: string, attack: number, hp: number): void;
     addKeyword(uid: string, keyword: Keyword): void;
+    /** おにごっこ(1d6≧X); a unit that already has one keeps the stronger. */
+    giveEvasion(uid: string, x: number): void;
     /** 行動不能 for a time: the unit cannot act up to the end of game turn `until`. */
     immobilize(uid: string, until: number): void;
     /** Effect damage (blocked by effectImmune). */
@@ -53,6 +56,11 @@ export interface Effects {
     toDeck(uid: string): void;
     /** Shows a hand card to both players; fires 「公開されたとき」 once. */
     reveal(uid: string): void;
+    /**
+     * Call before changing a card directly (its cost, types …): a card that moved since it was last
+     * seen first loses what effects gave it (core/movement.ts). buff / addKeyword … already do.
+     */
+    touch(uid: string): void;
     protected(uid: string): boolean;
     fruits(uid: string): string[];
     /** Rolls through a queued step so レンテ can choose its value, then resumes with task.value. */
@@ -66,7 +74,10 @@ export interface Effects {
     heal(amount: number, side?: Side): void;
     losePoints(side: Side, amount: number, mode: PointLoss): number;
     eat(uid: string, amount: number): void;
+    /** 「PPを回復する」: up to the 最大PP; ダブルダガー adds to it. */
     gainPp(amount: number): void;
+    /** 「使用できるPPを増やす」: past the 最大PP; ダブルダガー does not apply. */
+    increasePp(amount: number): void;
     /** Restores MP up to the playable's maximum (nothing for a playable without MP). */
     gainMp(amount: number): void;
     /** The 最大PP a card text asks about: turn count + permanent extra, and the second player's +2 on its fifth turn. */
@@ -103,6 +114,7 @@ export function effects(s: GameState, catalog: Catalog, side: Side, source?: str
         ask: (prompt, options, task) => { if (options.length) s.pending = { prompt, options, task }; },
         pick: (prompt, uids, task) => { if (uids.length) s.pending = { prompt, options: uids.map(id => ({ id, label: label(id) })), task }; },
         buff: (uid, attack, hp) => { if (!protectedTarget(uid)) buff(s, uid, attack, hp); },
+        giveEvasion: (uid, x) => giveEvasion(s, uid, x),
         addKeyword: (uid, keyword) => { if (!protectedTarget(uid)) addKeyword(s, uid, keyword); },
         immobilize: (uid, until) => { if (!protectedTarget(uid)) immobilize(s, uid, until); },
         damage: (uid, amount) => {
@@ -117,11 +129,13 @@ export function effects(s: GameState, catalog: Catalog, side: Side, source?: str
         addFruit(uid, fruit, until) {
             const card = s.cards[uid];
             if (!card || protectedTarget(uid)) return;
+            touch(s, uid);
             if (until === undefined) card.fruitTypes = Array.from(new Set([...(card.fruitTypes ?? []), fruit]));
             else card.timedFruits = { ...card.timedFruits, [fruit]: Math.max(card.timedFruits?.[fruit] ?? 0, until) };
         },
         toDeck: uid => toDeck(s, uid, catalog),
         reveal: uid => reveal(s, uid, catalog),
+        touch: uid => touch(s, uid),
         protected: protectedTarget,
         fruits: uid => fruitsOf(s, uid, catalog),
         die: resume => { s.queue.unshift({ op: 'die', actor: side, source, resume }); },
@@ -133,6 +147,7 @@ export function effects(s: GameState, catalog: Catalog, side: Side, source?: str
         losePoints: (target, amount, mode) => losePoints(s, target, amount, mode).lost,
         eat: (uid, amount) => { s.queue.push({ op: 'eatResponse', actor: other(side), source: uid, amount }); },
         gainPp: amount => gainPp(s, side, amount),
+        increasePp: amount => increasePp(s, side, amount),
         gainMp: amount => gainMp(s, side, amount),
         maxPp: () => availablePpMaximum(s, side),
         random: size => random(s, size),

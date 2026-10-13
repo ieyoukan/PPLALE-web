@@ -96,7 +96,8 @@ test('y_69 リマチャン: +4/+4, 突撃, cannot eat, and leaves the game when 
 });
 
 test('y_70 がと: on attack returns another own unit and grows by half its attack', () => {
-  let s = arena({ me: { field: ['y_70', 'y_28'] }, foe: { field: ['y_17'] } });
+  // ぷらむ (1/2) hits back for 1, so the grown がと (3/3) stays to be looked at.
+  let s = arena({ me: { field: ['y_70', 'y_28'] }, foe: { field: ['y_9'] } });
   const [gato, jonko] = field(s);
   s = attack(s);
   assert.deepEqual(optionIds(s), [jonko]);

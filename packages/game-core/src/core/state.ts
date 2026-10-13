@@ -19,7 +19,7 @@ export function cloneState(s: GameState): GameState {
     const cards: Record<string, Instance> = {};
     for (const uid in s.cards) {
         const c = s.cards[uid];
-        cards[uid] = { ...c, keywords: [...c.keywords], links: [...c.links], ...(c.fruitTypes ? { fruitTypes: [...c.fruitTypes] } : {}), ...(c.timedFruits ? { timedFruits: { ...c.timedFruits } } : {}) };
+        cards[uid] = { ...c, keywords: [...c.keywords], links: [...c.links], ...(c.fruitTypes ? { fruitTypes: [...c.fruitTypes] } : {}), ...(c.timedFruits ? { timedFruits: { ...c.timedFruits } } : {}), ...(c.lastingFruits ? { lastingFruits: [...c.lastingFruits] } : {}) };
     }
     return {
         ...s,

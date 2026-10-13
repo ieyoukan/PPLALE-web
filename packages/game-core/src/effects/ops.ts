@@ -12,7 +12,9 @@ import { unitsInScope } from './targets.ts';
 /** Numbers on a step are multiplied by おいしくなる呪文. Target counts are not. */
 const amount = (t: Task) => (t.amount ?? 0) * (t.multiplier ?? 1);
 const hp = (t: Task) => (t.hp ?? 0) * (t.multiplier ?? 1);
-const drawReason = (t: Task) => ({ opening: '最初の手札', turn: 'ターン開始', threshold: 'お菓子ポイント到達' } as Record<string, string>)[t.text ?? ''] ?? 'カード効果';
+const drawReason = (t: Task) => ({ opening: '最初の手札', turn: 'ターン開始', threshold: 'お菓子ポイント到達', acorn: 'どんぐり' } as Record<string, string>)[t.text ?? ''] ?? 'カード効果';
+/** Draws of the game itself, not of a card effect (魅惑の水煙 counts only card effects; skills are card effects). */
+const systemDraws: readonly string[] = ['turn', 'opening', 'threshold', 'acorn'];
 
 export const genericOps: OpTable = {
     // ── Units (選択した幼女1人) ──
@@ -118,7 +120,7 @@ export const genericOps: OpTable = {
             const total = (t.count ?? 1) * (t.multiplier ?? 1);
             if (total > 1) fx.next({ ...t, count: total - 1, target: undefined, ids: drawn, multiplier: 1 });
             const source = t.source && fx.s.cards[t.source];
-            if (uid && !['turn', 'opening', 'threshold'].includes(t.text ?? '') && fx.me.exSkills?.smoke) fx.losePoints(fx.side, 1, 'reduce');
+            if (uid && !systemDraws.includes(t.text ?? '') && fx.me.exSkills?.smoke) fx.losePoints(fx.side, 1, 'reduce');
             if (source) scriptFor(fx.s, source.uid).onDrawn?.(cardContext(fx.s, fx.catalog, t.actor, source.uid), { kind, uid, drawn, done: total <= 1 });
         },
     },

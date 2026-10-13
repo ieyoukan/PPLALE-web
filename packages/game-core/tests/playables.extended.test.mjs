@@ -451,7 +451,9 @@ test('拡張プレイアブル: legal moves include MP skills only when they can
 });
 
 test('拡張プレイアブル: the CPU turns spare PP into MP and spends MP on a unit worth it', () => {
-  const emptyDecks = s => { for (const p of s.players) { p.yojo = []; p.sweet = []; } return s; };
+  // Small decks: with none at all, destroying the last unit would end the match on points at once
+  // (しゅれい's skills without a limit do not keep it going), which is a different question.
+  const emptyDecks = s => { for (const p of s.players) { p.yojo = p.yojo.slice(0, 3); p.sweet = []; } return s; };
   for (const level of ['normal', 'hard', 'master']) {
     let s = emptyDecks(arena({ me: { playable: 'p_6', pp: 2 } }));
     assert.deepEqual(cpuCommand(s, catalog, { side: 0, level }), { type: 'skill', actor: 0, index: 1 }, `${level}: ルナレストア`);

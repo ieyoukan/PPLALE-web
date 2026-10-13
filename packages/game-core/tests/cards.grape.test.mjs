@@ -27,8 +27,11 @@ test('y_33 リンネ: two hand reactions follow the attacker swap; returning to 
   const attacker = field(s)[0], defender = field(s, 1)[0], linnes = [...hand(s, 1)];
   s = attack(s, defender);
   assert.deepEqual(stats(s, attacker), [5, 1]);
-  s = choose(s, linnes[0]); s = choose(s, linnes[1]);
-  assert.equal(s.cards[attacker].attackBonus, 2);
+  s = choose(s, linnes[0]);
+  assert.equal(s.cards[attacker].attackBonus, 3);
+  // The second −1/0, then the combat: 5−2 = 3 against ちょり's 1 HP; ふろんとさん (1 HP) dies to its 1 attack.
+  s = choose(s, linnes[1]);
+  assert.ok(s.players[0].nap.includes(attacker) && s.players[1].nap.includes(defender));
   assert.ok(linnes.every(uid => s.cards[uid].revealed && costOf(s, uid, catalog, 1) === 2));
   s = arena({ me: { field: ['y_33'], hand: ['y_32'] } });
   const linne = field(s)[0]; s.cards[linne].costDelta = 3;
@@ -40,12 +43,18 @@ test('y_33 リンネ: start-of-turn penalty uses the current hand cost', () => {
   s.cards[hand(s, 1)[0]].costDelta = 3;
   s = draws(end(s)); assert.equal(s.players[1].points, 8);
 });
-test('y_34 とここ: skills on either side reactivate hiding until its next own turn', () => {
+test('y_34 とここ: its own player\'s skills hide it until its next own turn; not the opponent\'s, not Exスキル', () => {
   let s = arena({ me: { field: ['y_34'] } }); const uid = field(s)[0];
   s = choose(skill(s, 0), uid); assert.equal(s.cards[uid].hiding, true);
   s = draws(end(s)); assert.equal(s.cards[uid].hiding, true);
   s = draws(end(s)); assert.equal(s.cards[uid].hiding, false);
   s = choose(skill(s, 0), uid); assert.equal(s.cards[uid].hiding, true);
+  // The opponent's skill does not hide it (自身のプレイアブルキャラのスキル).
+  s = arena({ foe: { field: ['y_34'] }, me: { field: ['y_9'] } }); const theirs = field(s, 1)[0];
+  s = choose(skill(s, 0), field(s)[0]); assert.ok(!s.cards[theirs].hiding);
+  // An Exスキル is not a playable's skill.
+  s = arena({ me: { field: ['y_34'] } }); s.players[0].exSkills = { alice: { uses: 1 } };
+  s = run(s, { type: 'exSkill', actor: 0, skill: 'alice' }); assert.ok(!s.cards[field(s)[0]].hiding);
 });
 test('y_35 えーりん: optional attack payment happens before combat', () => {
   let s = arena({ me: { field: ['y_35'] }, foe: { field: ['y_8'] } }); const uid = field(s)[0];
@@ -114,7 +123,8 @@ test('y_46 ももか: a destroyed unit recovered to hand returns with its printe
   s.cards[uid].attackBonus = 3; s.cards[uid].fruitTypes = ['strawberry'];
   s = run(s, { type: 'adjust', actor: 0, uid, resource: 'damage', delta: 20 }, true);
   s = choose(playFirst(s, 'y_46'), uid); s = playFirst(s, 'y_37');
-  assert.ok(field(s).includes(uid)); assert.deepEqual(stats(s, uid), [2, 2]); assert.deepEqual(s.cards[uid].fruitTypes, ['strawberry']);
+  // Every move but hand → field resets what effects gave it, the type included (user ruling).
+  assert.ok(field(s).includes(uid)); assert.deepEqual(stats(s, uid), [2, 2]); assert.equal(s.cards[uid].fruitTypes, undefined);
 });
 test('y_47 ゆうひ: hand limit is checked before its end draw; HP5 permits action', () => {
   let s = arena({ me: { field: ['y_47'], hand: Array(9).fill('y_9') } }); const uid = field(s)[0];
@@ -171,7 +181,8 @@ test('y_57 かんらん: hand discard hits randomly; hiding does not block rando
 });
 test('y_58 まめろん: defend debuffs attacker; enemy sweets deal two extra damage', () => {
   let s = arena({ me: { field: ['y_49'] }, foe: { field: ['y_58'] } }); const uid = field(s)[0];
-  s = attack(s); assert.equal(s.cards[uid].attackBonus, 2); assert.equal(field(s).length, 0);
+  // ふろんとさん swaps to 5/1, まめろん makes it 3/−1 before the damage: it is gone without hitting back.
+  s = attack(s); assert.equal(field(s).length, 0); assert.equal(s.cards[field(s, 1)[0]].damage, 0);
   s = arena({ me: { hand: ['s_6'] }, foe: { field: ['y_58'] } }); const target = field(s, 1)[0]; s = choose(playFirst(s, 's_6'), target); assert.ok(!field(s, 1).includes(target));
 });
 test('y_59 ストラ: optional loss is before hunger check and chosen die buffs attack', () => {
@@ -199,7 +210,7 @@ test('y_62 じょんこ: hide overrides guard/taunt selection, effect damage sti
 test('y_63 みゅーとん: draw comes before optional revelations and per-fruit/real-sweet counts', () => {
   let s = arena({ me: { hand: ['y_63', 'y_60', 's_19'], points: 8, yojo: ['y_60'] }, foe: { field: ['y_8'] } });
   const target = field(s, 1)[0]; s = choose(playFirst(s, 'y_63'), 'yojo'); for (const uid of [...hand(s)]) s = choose(s, uid); s = draws(choose(s, 'done'));
-  assert.equal(s.players[0].points, 10); assert.equal(s.players[1].points, 10); assert.equal(s.cards[target].damage, 1);
+  assert.equal(s.players[0].points, 10); assert.equal(s.players[1].points, 10); assert.ok(s.players[1].nap.includes(target), '1 damage destroys ちょり');
 });
 test('y_64 うぃまる: barrier can activate with empty decks and still counts as eating', () => {
   let s = arena({ me: { field: ['y_25'] }, foe: { hand: ['y_64'] } }); const attacker = field(s)[0], uid = hand(s, 1)[0]; s.players[1].yojo = []; s.players[1].sweet = [];

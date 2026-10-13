@@ -57,7 +57,8 @@ export interface CardScript {
     onReveal?(ctx: CardContext): void;
     onTurnStart?(ctx: CardContext, active: Side, zone: 'hand' | 'field'): void;
     onTurnEnd?(ctx: CardContext): void;
-    onSkill?(ctx: CardContext): void;
+    /** A playable's skill was used (Exスキル are not playable skills). `user`: the side that used it. */
+    onSkill?(ctx: CardContext, user: Side): void;
     onDefend?(ctx: CardContext, attacker: string): void;
     onEvade?(ctx: CardContext, attacker: string): void;
     onExiled?(ctx: CardContext): void;

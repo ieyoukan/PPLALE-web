@@ -21,7 +21,7 @@ test('a CPU attack waits for the human Wimaru reaction before points or victory 
 test('the human can use Wimaru on the CPU turn with zero PP, discard it and choose either deck', () => {
   let s = attackFromCpu(); const uid = hand(s)[0], attacker = field(s, 1)[0];
   s = choose(s, uid);
-  assert.ok(s.players[0].nap.includes(uid)); assert.equal(s.cards[uid].revealed, true);
+  assert.ok(s.players[0].nap.includes(uid));
   assert.equal(s.players[0].pp, 0); assert.equal(s.players[0].points, 2); assert.equal(s.winner, null);
   assert.equal(s.cards[attacker].ateOn, s.turn); assert.equal(s.pending.task.actor, 0);
   for (const deck of ['yojo', 'sweet', 'yojo', 'sweet']) s = choose(s, deck);

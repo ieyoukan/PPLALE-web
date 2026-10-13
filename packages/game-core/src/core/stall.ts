@@ -20,13 +20,13 @@ function certainlyStuck(s: GameState, catalog: Catalog): boolean {
     return sides.every(side => {
         const p = s.players[side];
         if (p.yojo.length || p.sweet.length || p.hand.length) return false;
-        if ((p.acorns ?? 0) > 0 || (['alice', 'strawberryHunt', 'kamikakushi'] as const).some(id => (p.exSkills?.[id]?.uses ?? 0) > 0)) return false;
+        // Exスキル and skills without a use limit are not actions here (`markAction`), so they do not keep a match going.
+        if ((p.acorns ?? 0) > 0) return false;
         // 行動不能 for a limited time ends, so only a unit that is 行動不能 for good can never attack.
         if (p.field.some(uid => attackOf(s.cards[uid], catalog) > 0 && !(s.cards[uid].keywords.includes('immobile') && s.cards[uid].immobileUntil === undefined))) return false;
         if (p.extraSkills?.some(extra => extra.uses > 0)) return false;
         // The common skill (index 0) needs a unit on the field; with no cards left none can arrive.
-        // A skill without a use limit (しゅれい) can always be used again in a later turn.
-        return skillsFor(p.playable).every((skill, index) => skill.uses !== undefined && (p.skills[index] <= 0 || index === 0 && !p.field.length));
+        return skillsFor(p.playable).every((skill, index) => skill.uses === undefined || p.skills[index] <= 0 || index === 0 && !p.field.length);
     });
 }
 

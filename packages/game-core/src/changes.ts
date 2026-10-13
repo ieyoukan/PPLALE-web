@@ -74,6 +74,8 @@ export const instanceFields: Record<keyof Instance, ChangeKind | null> = {
     destroyedBy: null, // source for destruction reactions
     actions: null, // bookkeeping for a second action in a turn; `exhausted` is what the board shows
     timedFruits: null, // shown in card inspection, like fruitTypes
+    lastingFruits: null, // shown in card inspection, like fruitTypes
+    zone: null, // bookkeeping: where the card was last seen (the moves themselves are `move`)
     immobileUntil: 'keywords', // 行動不能 given for a time is announced like the ability; the card shows it while it lasts
 };
 

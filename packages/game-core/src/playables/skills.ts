@@ -146,7 +146,7 @@ export const playableSkills: Record<string, SkillScript[]> = {
             name: '後で返すからそのお菓子ちょうだい？', cost: 0, uses: 2,
             blocked: fx => fx.me.lastBorrow >= fx.me.turns - 1 ? '2ターン連続では使えません' : undefined,
             use(fx) {
-                fx.me.pp += 2;
+                fx.increasePp(2);
                 fx.me.nextPpDebt += 2;
                 fx.me.lastBorrow = fx.me.turns;
             },

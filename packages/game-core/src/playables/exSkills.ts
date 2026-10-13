@@ -1,8 +1,6 @@
 import { RuleError, other } from '../model.ts';
 import type { Catalog, ExSkillId, GameState, Side } from '../model.ts';
-import { scriptFor } from '../cards/registry.ts';
-import { cardContext, effects } from '../effects/context.ts';
-import { markAction } from '../core/stall.ts';
+import { effects } from '../effects/context.ts';
 
 export const exSkillInfo: Record<ExSkillId, { name: string; cost: number; automatic: boolean; description: string }> = {
     dice: { name: 'クマはサイコロを振らない', cost: 0, automatic: true, description: '1d6を振るとき、出目を指定する。' },
@@ -25,7 +23,6 @@ export function activateExSkill(s: GameState, side: Side, id: ExSkillId, catalog
     if (id === 'kamikakushi') { skill.uses--; skill.lastTurn = s.turn; }
     if (id === 'strawberryHunt') { skill.uses--; s.players[other(side)].strawberryOnlyUntil = s.turn + 1; }
     if (id === 'alice') { skill.lastTurn = s.turn; effects(s, catalog, side).queue('allBuff', { scope: 'friendly', amount: 3, hp: 3 }); }
-    markAction(s);
-    for (const owner of [side, other(side)]) for (const uid of s.players[owner].field)
-        scriptFor(s, uid).onSkill?.(cardContext(s, catalog, owner, uid));
+    // Using an Exスキル is not an action for the stall rule (repeating アリス would never end the match).
+    // An Exスキル is not one of the playable's skills: cards reacting to a skill (ぶどうのとここ) do not react.
 }

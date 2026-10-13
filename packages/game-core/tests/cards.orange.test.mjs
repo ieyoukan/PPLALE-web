@@ -10,7 +10,7 @@ for (const [id, found] of [['y_113', 's_6'], ['y_119', 's_9']]) test(`${id}: sea
 });
 test('y_114 リマチャン: opponent start checks unspent PP before any refill', () => {
   let s = arena({ me: { field: ['y_114'], pp: 3 }, foe: { field: ['y_9'] } }); const target = field(s, 1)[0];
-  s = draws(end(s)); assert.equal(hand(s).length, 1); assert.equal(s.cards[target].damage, 3); assert.equal(s.players[0].pp, 3);
+  s = draws(end(s)); assert.equal(hand(s).length, 1); assert.ok(s.players[1].nap.includes(target), '3 damage destroys ぷらむ'); assert.equal(s.players[0].pp, 3);
 });
 test('y_115 りりぃ: HP0 triggers, makes/bounces もちだ and counts the departure', () => {
   const s = playFirst(arena({ me: { hand: ['y_115'] } }), 'y_115');
@@ -65,7 +65,7 @@ test('y_126 ももか仮: exact declared fruit/card match takes the top at zero 
 test('y_127 ひらくぅ。: a successful dodge counters for attacker attack, canceled attacker effects never run', () => {
   let s = arena({ me: { field: ['y_20'] }, foe: { field: ['y_127'] } }); const attacker = field(s)[0], target = field(s, 1)[0]; s.players[1].exSkills = { dice: { uses: 1 } };
   const amount = stats(s, attacker)[0]; s = run(s, { type: 'attack', actor: 0, uid: attacker, target }); s = draws(choose(s, '6'));
-  assert.equal(s.players[1].points, 12); assert.equal(s.players[0].points, 12 - amount); assert.equal(s.cards[target].damage, 0); assert.equal(s.cards[attacker].damage, amount);
+  assert.equal(s.players[1].points, 12); assert.equal(s.players[0].points, 12 - amount); assert.equal(s.cards[target].damage, 0); assert.ok(s.players[0].nap.includes(attacker), `the counter of ${amount} destroys the attacker`);
 });
 test('y_128 氷花: four tops go one each to hand/deck/nap/exile; exile triggers are retained', () => {
   let s = arena({ me: { hand: ['y_128'], yojo: ['y_9', 'y_8', 'y_5', 'y_116'] } }); const tops = s.players[0].yojo.slice(0, 4); s = playFirst(s, 'y_128');

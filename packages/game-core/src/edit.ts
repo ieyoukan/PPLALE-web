@@ -153,7 +153,7 @@ export function editGame(state: GameState, edit: BoardEdit, catalog: Catalog): G
             if (edit.turns !== undefined) p.turns = Math.max(0, Math.min(99, edit.turns));
             if (edit.ppBonus !== undefined) p.ppBonus = edit.ppBonus;
             p.ppBonus = Math.max(-p.turns, Math.min(MAX_PP - p.turns, p.ppBonus));
-            if (edit.pp !== undefined) p.pp = Math.max(0, Math.min(MAX_PP, edit.pp));
+            if (edit.pp !== undefined) p.pp = Math.max(0, Math.min(99, edit.pp));
             if (edit.mp !== undefined && playableMp[p.playable]) p.mp = Math.max(0, Math.min(mpMax(p.playable), edit.mp));
             if (edit.skills) p.skills = skillLimits(p, catalog).map((limit, i) => Math.max(0, Math.min(limit, edit.skills![i] ?? p.skills[i])));
             if (edit.shield !== undefined) p.shield = edit.shield;

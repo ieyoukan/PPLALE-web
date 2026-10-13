@@ -2,6 +2,7 @@
 import { MAX_PP } from '../model.ts';
 import { scriptFor, scriptOf } from '../cards/registry.ts';
 import type { Catalog, GameState, Instance, Keyword, Side } from '../model.ts';
+import { touch } from './movement.ts';
 
 export function note(s: GameState, text: string) {
     s.log.push(text);
@@ -26,6 +27,7 @@ export const hasKeyword = (s: GameState, uid: string, keyword: Keyword) => !!s.c
 
 /** Adds a keyword once. Keywords do not stack. */
 export function addKeyword(s: GameState, uid: string, keyword: Keyword) {
+    touch(s, uid);
     const card = s.cards[uid];
     if (card && !card.keywords.includes(keyword)) card.keywords.push(keyword);
     if (card && keyword === 'hide') card.hiding = true;
@@ -33,10 +35,22 @@ export function addKeyword(s: GameState, uid: string, keyword: Keyword) {
 }
 
 /**
+ * おにごっこ(1d6≧X) given by an effect. A unit that already has one keeps the stronger (the lower X):
+ * it holds both, and the stronger is the one that counts (ユーザー裁定).
+ */
+export function giveEvasion(s: GameState, uid: string, x: number) {
+    const card = s.cards[uid];
+    if (!card) return;
+    addKeyword(s, uid, 'evade');
+    card.evasion = Math.min(card.evasion ?? x, x);
+}
+
+/**
  * 行動不能 for a time: the unit cannot act up to the end of game turn `until`. A longer one already
  * running stays. It ends with that turn (commands/phases.ts) or when the unit leaves the field.
  */
 export function immobilize(s: GameState, uid: string, until: number) {
+    touch(s, uid);
     const card = s.cards[uid];
     if (card) card.immobileUntil = Math.max(card.immobileUntil ?? until, until);
 }
@@ -44,6 +58,7 @@ export function immobilize(s: GameState, uid: string, until: number) {
 export const immobilized = (s: GameState, uid: string, turn = s.turn) => (s.cards[uid]?.immobileUntil ?? -1) >= turn;
 
 export function buff(s: GameState, uid: string, attack: number, hp: number) {
+    touch(s, uid);
     const card = s.cards[uid];
     if (!card) return;
     card.attackBonus += attack;
@@ -52,6 +67,7 @@ export function buff(s: GameState, uid: string, attack: number, hp: number) {
 
 /** Swaps current attack and HP without carrying damage over (ふろんとさん, ぎってぃ). At 0 attack it is left with 0 HP. */
 export function swapStats(s: GameState, uid: string, catalog: Catalog) {
+    touch(s, uid);
     const card = s.cards[uid];
     if (!card) return;
     const attack = attackOf(card, catalog), hp = hpOf(card, catalog);
@@ -65,6 +81,7 @@ export function swapStats(s: GameState, uid: string, catalog: Catalog) {
  * a unit with a damage limit (もなか) never takes more than it at once.
  */
 export function hit(s: GameState, uid: string, amount: number, byEffect = true) {
+    touch(s, uid);
     const card = s.cards[uid];
     if (!card || amount <= 0) return;
     if (byEffect && card.keywords.includes('effectImmune')) {
@@ -102,6 +119,10 @@ export function maxPp(s: GameState, side: Side) {
 export function availablePpMaximum(s: GameState, side: Side) {
     return Math.min(MAX_PP, maxPp(s, side) + s.players[side].turnPpBonus);
 }
+/**
+ * 「PPを回復する」: up to the PP this turn may hold (最大PP), and ダブルダガー adds 2 on the owner's turn.
+ * 「使用できるPPを増やす」 is `increasePp`.
+ */
 export function gainPp(s: GameState, side: Side, amount: number) {
     const p = s.players[side];
     const dagger = p.exSkills?.dagger;
@@ -109,7 +130,13 @@ export function gainPp(s: GameState, side: Side, amount: number) {
         if (dagger.lastTurn !== s.turn) { dagger.lastTurn = s.turn; dagger.usedThisTurn = 0; }
         if ((dagger.usedThisTurn ?? 0) < 2) { amount += 2; dagger.usedThisTurn = (dagger.usedThisTurn ?? 0) + 1; }
     }
-    p.pp = Math.min(availablePpMaximum(s, side), p.pp + amount);
+    // A recovery stops at the 最大PP but never takes away PP already above it (「PPを増やす」).
+    p.pp = Math.max(p.pp, Math.min(availablePpMaximum(s, side), p.pp + amount));
+}
+
+/** 「PPを増やす」 (どんぐり, ストラの前借り, さおちゃん): goes past the 最大PP, and ダブルダガー does not apply. */
+export function increasePp(s: GameState, side: Side, amount: number) {
+    s.players[side].pp += amount;
 }
 
 export function costOf(s: GameState, uid: string, catalog: Catalog, side: Side) {

@@ -88,7 +88,12 @@ export interface Instance {
     actions?: number;
     /** Fruit types held only until the end of a game turn (レンス): type → last turn. */
     timedFruits?: Record<string, number>;
+    /** Fruit types given 「このゲーム中」 (ソーダ): kept when the card moves, unlike `fruitTypes`. */
+    lastingFruits?: string[];
+    /** The zone the card was last seen in: a move other than hand → field resets what effects gave it (core/movement.ts). */
+    zone?: CardZone;
 }
+export type CardZone = 'yojo' | 'sweet' | 'hand' | 'field' | 'nap' | 'exile';
 
 export interface Player {
     name: string;
@@ -152,7 +157,7 @@ export type TaskOp =
     | 'endEffects' | 'beginTurn' | 'turnDraw' | 'turnDrawResponse' | 'exile' | 'bounce'
     | 'swapStats' | 'healHooks' | 'attackEnd' | 'playResponse';
 /** Why a draw happens; also the tag that keeps a hand-cost change temporary. */
-export type TaskTag = 'opening' | 'turn' | 'threshold' | 'temporary';
+export type TaskTag = 'opening' | 'turn' | 'threshold' | 'acorn' | 'temporary';
 
 /**
  * A queued effect step. It is plain JSON so a match can be saved while an effect waits for a choice.
