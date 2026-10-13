@@ -86,3 +86,32 @@ test('declining the hand reaction applies the attack without claiming Wimaru was
   expect(after.players[0].nap).not.toContain(uid); expect(after.cards[uid].revealed).toBe(false);
   await expect(used(page)).toBeHidden();
 });
+
+// 偽ラグ: while the CPU decides whether to answer from its hand, nothing of the command shows yet.
+test('while the CPU decides on its hand reaction the attack has not happened on the table', async ({ page }) => {
+  const game = arena({ me: { field: ['y_9'] }, foe: { hand: ['y_33'] } });
+  const attacker = field(game)[0];
+  await loadBoard(page, game);
+  await page.locator(`[data-unit="${attacker}"]`).click();
+  await page.locator('[data-leader="1"]').getByRole('button', { name: /^お菓子ポイント/ }).click();
+  await expect.poll(async () => (await savedGame(page)).pending?.task.op, { intervals: [20] }).toBe('attackResponses');
+  await expect(page.locator(`[data-unit="${attacker}"]`)).not.toHaveClass(/exhausted/);
+  // The CPU uses リンネ: from then on the attack is shown.
+  await expect(page.locator(`[data-unit="${attacker}"]`)).toHaveClass(/exhausted/, { timeout: 10000 });
+});
+
+test('the CPU declining ぶらんちゃん is not announced', async ({ page }) => {
+  const game = arena({ me: { hand: ['y_9'], pp: 10 }, foe: { hand: ['y_109', 'y_9', 'y_9'] } });
+  const uid = hand(game)[0];
+  await loadBoard(page, game);
+  await page.evaluate(() => {
+    window.declined = false;
+    new MutationObserver(() => { if (document.body.innerText.includes('発動しない')) window.declined = true; }).observe(document.body, { subtree: true, childList: true, characterData: true });
+  });
+  await page.locator(`[data-hand="${uid}"]`).click();
+  await page.locator('[data-side="0"][data-slot="0"]').click();
+  await expect.poll(async () => (await savedGame(page)).pending?.task.op, { intervals: [20] }).toBe('playResponse');
+  await expect(page.locator(`[data-unit="${uid}"]`)).toBeVisible({ timeout: 10000 });
+  await page.waitForTimeout(1600);
+  expect(await page.evaluate(() => window.declined)).toBe(false);
+});

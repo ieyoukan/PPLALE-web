@@ -49,12 +49,12 @@ export function viewFor(state: GameState, viewer: Side | 'spectator'): GameState
  * A playable's reaction skill (`skillReaction`, ちょり) is not one of them: the playable, its skills and
  * their remaining uses are public, like MP and a unit's 行動不能, so that question is shown as it is.
  */
-const handReactions: readonly string[] = ['attackResponses', 'eatResponse', 'turnDrawResponse', 'playResponse'];
+export const handReactionOps: readonly string[] = ['attackResponses', 'eatResponse', 'turnDrawResponse', 'playResponse'];
 function publicChoice({ prompt, options, task }: Choice, hidden: Set<string>): Choice {
     const { op, actor, source, text, deck, count } = task;
     const shown: Task = { op, actor, ...(source !== undefined && { source }), ...(text !== undefined && { text }), ...(deck !== undefined && { deck }), ...(count !== undefined && { count }) };
     // A choice about a card in the other player's hand (リンネ・うぃまる の手札誘発など) must not name it:
     // neither the question nor its answers are shown.
-    if (handReactions.includes(op)) return { prompt: '相手が選択しています', options: [], task: shown };
+    if (handReactionOps.includes(op)) return { prompt: '相手が選択しています', options: [], task: shown };
     return { prompt: op === 'cardEffect' ? '相手がカード効果を選択しています' : prompt, options: options.filter(option => !hidden.has(option.id)), task: shown };
 }

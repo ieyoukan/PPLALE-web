@@ -1,7 +1,7 @@
 'use client';
 
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { attackTargets, canPlay, costOf, other, pendingView } from '@pplale/game-core';
+import { attackTargets, canPlay, costOf, handReactionOps, other, pendingView } from '@pplale/game-core';
 import type { BoardEdit, Command, DeckKind, EditZone, GameState, Side } from '@pplale/game-core';
 import type { ZoneKind } from '../BoardPieces';
 import type { RefObject } from 'react';
@@ -44,7 +44,7 @@ export function useBoard(container: RefObject<HTMLDivElement | null>, session: B
   const router = useRouter();
   /** Set in a room: the seat this browser plays, and the changes arriving from the server. */
   const { remote } = session;
-  const { game, mode, levels, ready, error, saveError, canUndo, send, undo: undoCommand, replaying, replayNext, setup, canRematch, canReplay, position, editing, edit: editSession } = session;
+  const { game: actual, mode, levels, ready, error, saveError, canUndo, send, undo: undoCommand, replaying, replayNext, setup, canRematch, canReplay, position, editing, edit: editSession } = session;
   const { user } = useAuth();
   /** Names for the versus and result screens: the signed-in user's name for the human seat. */
   const localNames = useMemo<[string, string]>(() => [mode !== 'watch' && user?.displayName || sideLabel(mode, 0), sideLabel(mode, 1)], [mode, user]);
@@ -61,11 +61,20 @@ export function useBoard(container: RefObject<HTMLDivElement | null>, session: B
   // Nobody controls a replay: both sides are driven, like watching two CPUs.
   const cpuSides = useMemo<Side[]>(() => replaying ? [0, 1] : editing ? [] : cpuSidesOf(mode), [mode, replaying, editing]);
   const watching = !!remote?.watching;
-  const animations = useBoardAnimations({ game, view, mode, cpuSides, replaying, container, spectating: watching ? names : undefined });
-  const { run: animate, skipNext: skipAnimation, flights, strike, turnNotice, announcement, ping, order, effectRoll, choiceNote, busy: animating } = animations;
   /** This screen acts for the side (nobody does while watching two CPUs; in a room only the own seat). */
   const seat = remote?.seat;
   const canControl = useCallback((side: Side) => seat === undefined ? !cpuSides.includes(side) : !watching && side === seat, [cpuSides, seat, watching]);
+  // While the other player decides whether to answer from their hand, the table stays as it was
+  // before: what the command already changed (an attacker that has acted, the next turn begun) would
+  // tell that they hold such a card. Once they answer with one, it is no secret. See 偽ラグ in useBoardAnimations.
+  const task = actual.pending?.task;
+  const deciding = !!task && handReactionOps.includes(task.op) && !(task.op === 'playResponse' ? task.subject : task.ids?.length) && !canControl(task.actor)
+    && mode !== 'watch' && !watching && !replaying;
+  const [before, setBefore] = useState(actual);
+  if (!deciding && before !== actual) setBefore(actual);
+  const game = deciding ? before : actual;
+  const animations = useBoardAnimations({ game: actual, shown: game, view, mode, cpuSides, replaying, container, spectating: watching ? names : undefined });
+  const { run: animate, skipNext: skipAnimation, flights, strike, turnNotice, announcement, ping, order, effectRoll, choiceNote, busy: animating } = animations;
 
   /** Sends a command (with its animation). Clears the local selection of the acting side. */
   const act = useCallback((command: Command) => {
@@ -77,12 +86,13 @@ export function useBoard(container: RefObject<HTMLDivElement | null>, session: B
     animate(command, () => send(command));
   }, [view, animate, send]);
 
-  const dice = useOpeningDice({ game, act, paused: loading, cpuSides, cpuRolls: ready && !loading && !paused && !animating, remote: !!remote });
+  const dice = useOpeningDice({ game: actual, act, paused: loading, cpuSides, cpuRolls: ready && !loading && !paused && !animating, remote: !!remote });
   const { busy: rollingDice } = dice;
-  const busy = animating || rollingDice || !!remote?.waiting;
+  const moving = animating || rollingDice || !!remote?.waiting;
+  const busy = moving || deciding;
   const modelUsed = useCpuPlayer({
-    enabled: ready && !replaying && cpuSides.length > 0 && !loading && !paused, sides: cpuSides, levels, game, act, flights,
-    busy: { any: busy, blocking: rollingDice || !!strike || !!turnNotice || !!announcement || !!ping || !!order || !!effectRoll || !!choiceNote },
+    enabled: ready && !replaying && cpuSides.length > 0 && !loading && !paused, sides: cpuSides, levels, game: actual, act, flights,
+    busy: { any: moving, blocking: rollingDice || !!strike || !!turnNotice || !!announcement || !!ping || !!order || !!effectRoll || !!choiceNote },
   });
   // A finished match against さいきょう goes to the CPU server once, if this browser agreed to it.
   // The course of the match (形勢), judged with what side 0 can know.

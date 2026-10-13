@@ -239,8 +239,9 @@ export const expandedOps: OpTable = {
     },
     eatResponse: {
         run(fx, t) {
-            if ((t.amount ?? 0) <= 0) return;
+            // Attack 0 still counts as having eaten (お仕置き・りくす); there is just no change for うぃまる to stop.
             fx.s.cards[t.source!].ateOn = fx.s.turn;
+            if ((t.amount ?? 0) <= 0) return;
             if (t.target && t.target !== 'skip') {
                 fx.reveal(t.target);
                 fx.discard(t.target);

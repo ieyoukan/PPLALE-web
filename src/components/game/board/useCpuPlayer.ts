@@ -1,10 +1,12 @@
 'use client';
 
 import { useCallback, useEffect, useRef, useState } from 'react';
+import { handReactionOps } from '@pplale/game-core';
 import type { Command, GameState, Side } from '@pplale/game-core';
 import { cpuServerUrl, servedModel } from '@/lib/game/cpuServer';
 import type { ServedModel } from '@/lib/game/cpuServer';
 import type { DrawFlight } from '../BoardPieces';
+import { fakeLag } from './useBoardAnimations';
 import type { CpuRequest, CpuResponse } from './cpu.worker';
 import type { Levels } from './useGameSession';
 
@@ -85,10 +87,11 @@ export function useCpuPlayer({ enabled, sides, levels, game, act, busy, flights 
     if (side === null) return;
     // An answer for an older position (the match changed while thinking) is dropped.
     let cancelled = false;
+    // Deciding on a hand reaction takes as long as a fake wait (偽ラグ), so the wait does not tell which it was.
     const timer = setTimeout(() => think({ id: ++request.current, game, level: levels[side], side, served }, response => {
       if (response.model) modelUsed.current = response.model;
       if (response.command && !cancelled) act(response.command);
-    }), CPU_DELAY);
+    }), handReactionOps.includes(game.pending?.task.op ?? '') ? fakeLag() : CPU_DELAY);
     return () => { clearTimeout(timer); cancelled = true; };
   }, [enabled, sides, levels, game, act, busy.any, busy.blocking, flights, think, wantsServed, served]);
   return modelUsed;

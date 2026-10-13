@@ -289,3 +289,15 @@ test('ぶどうのまこぽに: not another ぶどうのまこぽに, but a い�
   // The type from ソーダ is 「このゲーム中」: it stays after moving.
   assert.deepEqual(s.cards[strawberry].lastingFruits, ['grape']);
 });
+
+test('an attack brought to 0 by リンネ still counts as eating, with no change for うぃまる to stop', () => {
+  let s = arena({ me: { field: ['y_9'] }, foe: { hand: ['y_33', 'y_64'], points: 5 } });
+  const attacker = field(s)[0], linne = hand(s, 1)[0];
+  s.cards[attacker].attackBonus = 1 - stats(s, attacker)[0];
+  s = choose(attack(s, 'leader'), linne);
+  if (s.pending?.task.op === 'attackResponses') s = choose(s, 'skip');
+  assert.equal(s.pending, null);
+  assert.equal(stats(s, attacker)[0], 0);
+  assert.equal(s.cards[attacker].ateOn, s.turn);
+  assert.equal(s.players[1].points, 5);
+});

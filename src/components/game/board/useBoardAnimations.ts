@@ -2,7 +2,7 @@
 
 import { useCallback, useLayoutEffect, useRef, useState } from 'react';
 import type { RefObject } from 'react';
-import { canAttack, changesBetween, HIDDEN_CARD, other, skillAt, turnOf } from '@pplale/game-core';
+import { canAttack, changesBetween, handReactionOps, HIDDEN_CARD, other, scriptOf, skillAt, turnOf } from '@pplale/game-core';
 import type { Command, GameState, Side } from '@pplale/game-core';
 import { displayCards, gameCatalog } from '@/lib/game/catalog';
 import { skillDescription } from '@/lib/game/skillText';
@@ -33,15 +33,13 @@ export type Ping = { uid: string; x: number; y: number; width: number; height: n
 const DRAW_DURATION = 800;
 const STRIKE_HIT = 360;
 /**
- * 偽ラグ: a real hand reaction to an attack (リンネ, うぃまる, メロンのあみの) makes the attacker wait while
- * the opponent decides, which would tell that the card is in their hand. So an attack on an opponent
- * this screen does not play waits as long now and then, at random, whether or not they hold one.
+ * 偽ラグ: a hand reaction the other player may answer with (リンネ・うぃまる・あみの to an attack, ぶらんちゃん
+ * to a play, オレンジのリンネ to the turn's draw) makes the player wait while they decide (the table stays
+ * as it was meanwhile, see useBoard), which would tell that the card is in their hand. So such a command
+ * waits as long now and then, at random, whether or not they hold one, and a CPU takes as long to decide.
  */
 const FAKE_LAG_CHANCE = 0.3;
-const FAKE_LAG_MIN = 900;
-const FAKE_LAG_MAX = 2600;
-/** Cards that answer an attack from the hand. When none can be in the match (every card is known), there is nothing to hide. */
-const attackReactions: readonly string[] = ['y_33', 'y_64', 'y_91'];
+export const fakeLag = () => 900 + Math.random() * 1700;
 const STRIKE_DURATION = 720;
 // The opponent's card stays readable for a moment before its effect resolves.
 const ANNOUNCE_HIT = 1900;
@@ -86,8 +84,12 @@ function captureRects(root: HTMLElement | null): Map<string, Rect> {
  * cards and choices, and the turn / match announcements. Nothing here changes the game; `busy` tells
  * the board to wait.
  */
-export function useBoardAnimations({ game, view, mode, cpuSides, replaying, container, spectating }: {
-  game: GameState; view: Side; mode: Mode; cpuSides: Side[]; replaying: boolean; container: RefObject<HTMLDivElement | null>;
+export function useBoardAnimations({ game, shown, view, mode, cpuSides, replaying, container, spectating }: {
+  /** The match, for the commands to run. */
+  game: GameState;
+  /** What is on the table: `game`, or the state before a hand reaction the other player is still deciding (see useBoard). */
+  shown: GameState;
+  view: Side; mode: Mode; cpuSides: Side[]; replaying: boolean; container: RefObject<HTMLDivElement | null>;
   /** Watching a room's match without a seat: both players' names, used where a player would read あなた / 相手. */
   spectating?: [string, string];
 }) {
@@ -108,7 +110,7 @@ export function useBoardAnimations({ game, view, mode, cpuSides, replaying, cont
   const [pops, setPops] = useState<Pop[]>([]);
   /** The command being applied, so its damage can be shown as an attack or as an effect. */
   const lastCommand = useRef<Command['type'] | null>(null);
-  const previous = useRef(game);
+  const previous = useRef(shown);
   const enabled = useRef(false);
   /**
    * Timers still to fire. They are only cancelled by `reset` (another match on the table), never when
@@ -125,30 +127,30 @@ export function useBoardAnimations({ game, view, mode, cpuSides, replaying, cont
   // Compare with the previous state and present the difference.
   useLayoutEffect(() => {
     const old = previous.current;
-    previous.current = game;
-    if (!enabled.current || old === game || !container.current) return;
+    previous.current = shown;
+    if (!enabled.current || old === shown || !container.current) return;
     const root = container.current;
     // Everything the command changed, shown by the presenter registered for each kind of change.
-    const shown = present(changesBetween(old, game), {
-      before: old, after: game, view, open: mode === 'watch' || !!spectating, byAttack: lastCommand.current === 'attack',
+    const seen = present(changesBetween(old, shown), {
+      before: old, after: shown, view, open: mode === 'watch' || !!spectating, byAttack: lastCommand.current === 'attack',
       rect: (spot, when) => when === 'before' ? rectsBefore.current.get(spotKey(spot)) : liveRect(root, spot),
     });
     // A card rolled a die in this command: throw it, then hold the result for a moment.
-    if (shown.roll) {
-      const roll = { id: game.revision, side: shown.roll.side, value: shown.roll.value, cardId: shown.roll.cardId, rolling: true };
+    if (seen.roll) {
+      const roll = { id: shown.revision, side: seen.roll.side, value: seen.roll.value, cardId: seen.roll.cardId, rolling: true };
       setEffectRoll(roll);
       later(() => setEffectRoll(current => current?.id === roll.id ? { ...current, rolling: false } : current), DICE_THROW_DURATION);
       later(() => setEffectRoll(current => current?.id === roll.id ? null : current), DICE_THROW_DURATION + ROLL_RESULT);
     }
-    if (shown.hits.length) {
-      setHits(current => [...current, ...shown.hits]);
-      later(() => setHits(current => current.filter(hit => !shown.hits.includes(hit))), HIT_DURATION);
+    if (seen.hits.length) {
+      setHits(current => [...current, ...seen.hits]);
+      later(() => setHits(current => current.filter(hit => !seen.hits.includes(hit))), HIT_DURATION);
     }
-    if (shown.pops.length) {
-      setPops(current => [...current, ...shown.pops]);
-      later(() => setPops(current => current.filter(pop => !shown.pops.includes(pop))), POP_DURATION);
+    if (seen.pops.length) {
+      setPops(current => [...current, ...seen.pops]);
+      later(() => setPops(current => current.filter(pop => !seen.pops.includes(pop))), POP_DURATION);
     }
-    const next = shown.flights;
+    const next = seen.flights;
     if (next.length) {
       // A card is in one flight at a time: one that starts replaces an earlier one still shown
       // (given back in the mulligan and drawn again right away).
@@ -158,28 +160,28 @@ export function useBoardAnimations({ game, view, mode, cpuSides, replaying, cont
       later(() => setFlights(current => current.filter(f => !next.includes(f))), Math.max(...next.map(f => f.delay)) + DRAW_DURATION + FLIGHT_REST);
     }
     // Who goes first was decided: show both sides' order before the opening draws.
-    if (old.phase === 'initiative' && game.phase === 'opening') {
-      setOrder({ chooser: old.active, first: game.rules.firstPlayer });
+    if (old.phase === 'initiative' && shown.phase === 'opening') {
+      setOrder({ chooser: old.active, first: shown.rules.firstPlayer });
       later(() => setOrder(null), ORDER_NOTICE_DURATION);
     }
     // The match just ended: ゲームセット, then the verdict, then the result screen (finale = null).
-    if (old.winner === null && game.winner !== null && !replaying) {
+    if (old.winner === null && shown.winner !== null && !replaying) {
       setFinale('wait');
       later(() => setFinale(current => current === 'wait' ? 'set' : current), FINALE_WAIT);
       later(() => setFinale(current => current === 'set' ? 'verdict' : current), FINALE_WAIT + FINALE_SET);
       later(() => setFinale(current => current === 'verdict' ? null : current), FINALE_WAIT + FINALE_SET + FINALE_VERDICT);
     }
-    const beginsTurn = game.phase === 'playing' && (old.phase !== 'playing' || old.turn !== game.turn);
+    const beginsTurn = shown.phase === 'playing' && (old.phase !== 'playing' || old.turn !== shown.turn);
     if (beginsTurn) {
       const announce = () => {
-        const { order, number } = turnOf(game);
-        setTurnNotice({ id: game.turn, own: mode === 'hotseat' || game.active === view, order: order === 'first' ? '先攻' : '後攻', number, pp: game.players[game.active].pp, label: mode === 'watch' ? `${sideLabel(mode, game.active)}のターン` : spectating ? `${spectating[game.active]}のターン` : undefined });
+        const { order, number } = turnOf(shown);
+        setTurnNotice({ id: shown.turn, own: mode === 'hotseat' || shown.active === view, order: order === 'first' ? '先攻' : '後攻', number, pp: shown.players[shown.active].pp, label: mode === 'watch' ? `${sideLabel(mode, shown.active)}のターン` : spectating ? `${spectating[shown.active]}のターン` : undefined });
         later(() => setTurnNotice(null), TURN_NOTICE_DURATION);
       };
       if (next.length) later(announce, Math.max(...next.map(f => f.delay)) + DRAW_DURATION);
       else announce();
     }
-  }, [game, view, mode, replaying, container, later, spectating]);
+  }, [shown, view, mode, replaying, container, later, spectating]);
 
   /**
    * Runs `commit` (applying the command) with its animation: attacks lunge first; cards, skills and
@@ -188,25 +190,33 @@ export function useBoardAnimations({ game, view, mode, cpuSides, replaying, cont
    */
   const run = useCallback((command: Command, commit: () => void, cardId?: string) => {
     const root = container.current;
+    // The answer to a hand reaction finishes the command that asked for it (an attack stays an attack).
+    const answer = command.type === 'choose' && handReactionOps.includes(game.pending?.task.op ?? '');
     const apply = () => {
       enabled.current = true;
-      lastCommand.current = command.type;
+      if (!answer) lastCommand.current = command.type;
       rectsBefore.current = captureRects(root);
       commit();
+    };
+    const lags = !replaying && !spectating && mode !== 'hotseat' && mode !== 'watch' && Math.random() < FAKE_LAG_CHANCE && answerable(game, command, view, cpuSides);
+    const lag = (delay: number) => {
+      setLagging(true);
+      later(() => { setLagging(false); apply(); }, delay + fakeLag());
     };
     // A spectator is shown either side's cards and choices like an opponent's.
     const opponent = command.actor !== view || cpuSides.includes(command.actor) || !!spectating;
     // Discarding うぃまる is an activation, including when the human uses it on the CPU's turn.
     const handReaction = command.type === 'choose' && game.pending?.task.op === 'eatResponse' && command.option !== 'skip';
-    const shown = opponent || handReaction ? describe(game, command, cardId) : null;
-    if (shown) {
-      setAnnouncement(shown);
+    const announced = opponent || handReaction ? describe(game, command, cardId) : null;
+    if (announced) {
+      setAnnouncement(announced);
       later(apply, ANNOUNCE_HIT);
-      later(() => setAnnouncement(current => current?.id === shown.id ? null : current), ANNOUNCE_DURATION);
+      later(() => setAnnouncement(current => current?.id === announced.id ? null : current), ANNOUNCE_DURATION);
       return;
     }
     // The opponent picked an option that is not on the table (pay extra PP, skip …): say which.
-    const option = opponent && command.type === 'choose' && game.pending?.task.op !== 'draw'
+    // Declining a hand reaction is not shown: the question never was.
+    const option = opponent && command.type === 'choose' && game.pending?.task.op !== 'draw' && !(answer && command.option === 'skip')
       && !root?.querySelector(`[data-unit="${command.option}"], [data-hand="${command.option}"]`)
       ? game.pending?.options.find(o => o.id === command.option) : undefined;
     if (option) {
@@ -229,19 +239,15 @@ export function useBoardAnimations({ game, view, mode, cpuSides, replaying, cont
       if (source && target) {
         const a = rectOf(source), b = rectOf(target);
         setStrike({ uid: command.uid, cardId: game.cards[command.uid].cardId, ...a, dx: b.x + b.width / 2 - a.x - a.width / 2, dy: b.y + b.height / 2 - a.y - a.height / 2 });
-        // The opponent decides elsewhere (a CPU, or a room's other seat) and a hand reaction may exist.
-        const elsewhere = command.actor === view && !cpuSides.includes(command.actor) && !spectating && (mode === 'room' || cpuSides.includes(other(command.actor)));
-        const possible = Object.values(game.cards).some(card => card.cardId === HIDDEN_CARD || attackReactions.includes(card.cardId));
-        if (elsewhere && possible && Math.random() < FAKE_LAG_CHANCE) {
-          setLagging(true);
-          later(() => { setLagging(false); apply(); }, STRIKE_HIT + FAKE_LAG_MIN + Math.random() * (FAKE_LAG_MAX - FAKE_LAG_MIN));
-        } else later(apply, STRIKE_HIT);
+        if (lags) lag(STRIKE_HIT);
+        else later(apply, STRIKE_HIT);
         later(() => setStrike(null), STRIKE_DURATION);
         return;
       }
     }
-    apply();
-  }, [game, view, cpuSides, container, later, spectating, mode]);
+    if (lags) lag(0);
+    else apply();
+  }, [game, view, cpuSides, container, later, spectating, mode, replaying]);
 
   /** Loads, restores and undo jump without animating the difference. */
   const skipNext = useCallback(() => { enabled.current = false; }, []);
@@ -266,6 +272,24 @@ export function useBoardAnimations({ game, view, mode, cpuSides, replaying, cont
   const advanceFinale = useCallback(() => setFinale(current => current === 'set' ? 'verdict' : current === 'verdict' ? null : current), []);
 
   return { flights, strike, turnNotice, announcement, ping, order, finale, hits, pops, effectRoll, choiceNote, advanceFinale, busy: flights.some(blocksPlay) || !!strike || !!turnNotice || !!announcement || !!ping || !!order || !!effectRoll || !!choiceNote || lagging, run, skipNext, reset };
+}
+
+/**
+ * The player who is `view` would wait for the other player's hand reaction to `command`, if they hold
+ * one (judged from what `view` can know: a hidden card may be anything). The other player decides
+ * elsewhere: a CPU, or a room's other seat.
+ */
+function answerable(game: GameState, command: Command, view: Side, cpuSides: Side[]): boolean {
+  // The turn's draw is answered by the player who just ended their turn.
+  const waiter = command.type === 'end' ? other(command.actor) : command.actor, decider = other(waiter);
+  if (waiter !== view || cpuSides.includes(waiter)) return false;
+  const exists = (...ids: string[]) => Object.values(game.cards).some(card => card.cardId === HIDDEN_CARD || ids.includes(card.cardId));
+  if (command.type === 'attack') return exists('y_33', 'y_64', 'y_91');
+  if (command.type === 'play') {
+    const cardId = game.cards[command.uid]?.cardId;
+    return gameCatalog[cardId]?.type === 'yojo' && !!scriptOf(cardId).onPlay && game.players[decider].hand.length >= 3 && exists('y_109');
+  }
+  return command.type === 'end' && game.players[decider].pp >= 4 && exists('y_122');
 }
 
 let choiceId = 0;
