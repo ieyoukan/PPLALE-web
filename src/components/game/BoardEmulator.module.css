@@ -176,11 +176,11 @@
 .deckTable { position: relative; display: grid; gap: 34px; margin: 18px 0; padding: 16px; border: 3px solid #e7c3e2; border-radius: 22px; background: #fffdeb repeating-conic-gradient(#f4b0bb33 0 25%, transparent 0 50%) 0 0 / 44px 44px; }
 .deckTable label { display: grid; gap: 6px; padding: 12px 14px; border: 2px solid #e7c3e2; border-radius: 16px; background: #fffdebf2; font-size: 18px; color: #6b5444; }
 .deckTable label span { display: flex; align-items: baseline; justify-content: space-between; font-weight: 700; }
-.deckTable label small { font-size: 14px; font-weight: 400; color: #a88667; }
+.deckTable label small { font-size: 14px; font-weight: 400; color: #6e5546; }
 .deckTable .deckFar { border-color: #c9b3e6; }
 .deckTable .deckNear { border-color: #f4b0bb; }
 .deckTable select { display: block; width: 100%; min-height: 52px; padding: 12px; border: 1px solid #d7c8af; border-radius: 14px; background: #fff; color: #6b5946; font-size: 18px; }
-.deckTable > i { position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%); padding: 2px 16px; border-radius: 999px; background: #a88667; color: #fffdeb; font: italic 700 18px Georgia, serif; }
+.deckTable > i { position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%); padding: 2px 16px; border-radius: 999px; background: #826247; color: #fffdeb; font: italic 700 18px Georgia, serif; }
 /* The rules of the match (RulePicker), above the two decks they apply to. */
 .setupRules { margin: 18px 0; padding: 14px 16px 16px; border: 3px solid #b3d788; border-radius: 22px; background: #fff; color: #6b4a3a; }
 .setupRules h2 { margin-bottom: 10px; font-size: 20px; font-weight: 700; letter-spacing: .08em; }
@@ -416,6 +416,16 @@
   .deckZone::before { top: auto; bottom: 0; left: 10%; right: 10%; border-radius: 10px; background: #fff5e2d9; font-size: 18px; z-index: 30; }
   .stack { height: 60%; top: 10%; }
   .deckCount { bottom: 27px; }
+}
+/* On phones every card has an exposed tap target; horizontal swipes reach the rest of the hand. */
+@media (max-width: 600px) {
+  .handDock { bottom: -65px; }
+  .hand { height: 160px; padding: 0 12px 10px; justify-content: flex-start; gap: 8px; overflow-x: auto; overflow-y: hidden; }
+  .handCard { width: 100px; height: 150px; margin-left: 0; transform: none; }
+  .handCard:hover, .handCard:focus-visible, .selectedHand { transform: translateY(-5px); }
+  .handCard.revealedHandCard { transform: translateY(-12px); }
+  .handCard.revealedHandStart { margin-left: 24px; }
+  .handCard.revealedHandCard:hover, .handCard.revealedHandCard:focus-visible, .revealedHandCard.selectedHand { transform: translateY(-17px); }
 }
 .cardSelection { position: fixed; z-index: 72; left: 50%; bottom: 125px; transform: translateX(-50%); display: flex; align-items: center; gap: 20px; pointer-events: none; }
 .selectedCardImage { position: relative; height: min(62dvh, 480px); aspect-ratio: 533 / 800; padding: 0; border: 2px solid #ffeec6; border-radius: 8px; background: #735047; box-shadow: 12px 22px 20px #36243588; transform: rotate(-2deg); touch-action: none; pointer-events: auto; animation: selectCard .2s ease-out; }

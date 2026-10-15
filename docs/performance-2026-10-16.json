@@ -1,0 +1,664 @@
+{
+  "measuredAt": "2026-10-15T15:41:17.735Z",
+  "sourceCommit": "caa0a2b7915c6d1bb961eaffd46fd7f545593b10",
+  "includesUncommittedChanges": true,
+  "next": "16.3.4",
+  "axe": "4.11.2",
+  "chromium": "151.0.7922.34",
+  "conditions": {
+    "build": "npm run build (Turbopack)",
+    "origin": "http://localhost:3104",
+    "deviceScaleFactor": 1,
+    "freshContextPerRun": true,
+    "login": false,
+    "savedData": false,
+    "networkThrottling": "none",
+    "cpuThrottling": "none",
+    "gzip": "Node gzipSync on unique same-origin JS responses and concatenated inline CSS",
+    "caution": "Local measurements; no historical baseline or production deployment comparison"
+  },
+  "runs": [
+    {
+      "width": 1280,
+      "run": 1,
+      "lcpMs": 144,
+      "canonical": "https://pplale.vercel.app/game/",
+      "externalStylesheets": [],
+      "images": [
+        {
+          "width": 462,
+          "displayWidth": 270,
+          "path": "/_next/image/?url=%2Fimages%2Fgame%2Flogo.webp&w=640&q=75"
+        },
+        {
+          "width": 240,
+          "displayWidth": 122.15625,
+          "path": "/_next/image/?url=%2Fimages%2Ffruits%2F%E3%81%84%E3%81%A1%E3%81%94.webp&w=384&q=75"
+        },
+        {
+          "width": 240,
+          "displayWidth": 122.171875,
+          "path": "/_next/image/?url=%2Fimages%2Ffruits%2F%E3%81%B6%E3%81%A9%E3%81%86.webp&w=384&q=75"
+        },
+        {
+          "width": 240,
+          "displayWidth": 122.15625,
+          "path": "/_next/image/?url=%2Fimages%2Ffruits%2F%E3%82%81%E3%82%8D%E3%82%93.webp&w=384&q=75"
+        },
+        {
+          "width": 240,
+          "displayWidth": 122.171875,
+          "path": "/_next/image/?url=%2Fimages%2Ffruits%2F%E3%81%8A%E3%82%8C%E3%82%93%E3%81%98.webp&w=384&q=75"
+        },
+        {
+          "width": 240,
+          "displayWidth": 125.671875,
+          "path": "/_next/image/?url=%2Fimages%2Fversions%2F%E9%80%9A%E5%B8%B8.webp&w=384&q=75"
+        },
+        {
+          "width": 240,
+          "displayWidth": 125.671875,
+          "path": "/_next/image/?url=%2Fimages%2Fversions%2F%CE%B2.webp&w=384&q=75"
+        }
+      ],
+      "jsGzipBytes": 387732,
+      "jsFiles": 21,
+      "cssGzipBytes": 0,
+      "inlineCssGzipBytes": 23328,
+      "a11y": {
+        "violations": [],
+        "incomplete": [
+          {
+            "id": "color-contrast",
+            "nodes": [
+              {
+                "target": [
+                  ".GameMenu-module__0JpnvG__green > b"
+                ],
+                "failureSummary": "Fix any of the following:\n  Element's background color could not be determined due to a background gradient"
+              },
+              {
+                "target": [
+                  ".GameMenu-module__0JpnvG__green > small"
+                ],
+                "failureSummary": "Fix any of the following:\n  Element's background color could not be determined because it is overlapped by another element"
+              },
+              {
+                "target": [
+                  ".GameMenu-module__0JpnvG__lilac > b"
+                ],
+                "failureSummary": "Fix any of the following:\n  Element's background color could not be determined due to a background gradient"
+              },
+              {
+                "target": [
+                  ".GameMenu-module__0JpnvG__lilac > small"
+                ],
+                "failureSummary": "Fix any of the following:\n  Element's background color could not be determined because it is overlapped by another element"
+              },
+              {
+                "target": [
+                  ".GameMenu-module__0JpnvG__yellow > b"
+                ],
+                "failureSummary": "Fix any of the following:\n  Element's background color could not be determined due to a background gradient"
+              },
+              {
+                "target": [
+                  ".GameMenu-module__0JpnvG__yellow > small"
+                ],
+                "failureSummary": "Fix any of the following:\n  Element's background color could not be determined because it is overlapped by another element"
+              },
+              {
+                "target": [
+                  ".BoardEmulator-module__DNvMtW__deckFar > span"
+                ],
+                "failureSummary": "Fix any of the following:\n  Element's background color could not be determined due to a background gradient"
+              },
+              {
+                "target": [
+                  ".BoardEmulator-module__DNvMtW__deckFar > span > small"
+                ],
+                "failureSummary": "Fix any of the following:\n  Element content is too short to determine if it is actual text content"
+              },
+              {
+                "target": [
+                  ".BoardEmulator-module__DNvMtW__deckNear > span"
+                ],
+                "failureSummary": "Fix any of the following:\n  Element's background color could not be determined due to a background gradient"
+              },
+              {
+                "target": [
+                  ".BoardEmulator-module__DNvMtW__deckNear > span > small"
+                ],
+                "failureSummary": "Fix any of the following:\n  Element's background color could not be determined due to a background gradient"
+              },
+              {
+                "target": [
+                  ".BoardEmulator-module__DNvMtW__startButton > span"
+                ],
+                "failureSummary": "Fix any of the following:\n  Element content contains only non-text characters"
+              }
+            ]
+          }
+        ],
+        "passes": 23
+      }
+    },
+    {
+      "width": 1280,
+      "run": 2,
+      "lcpMs": 68,
+      "canonical": "https://pplale.vercel.app/game/",
+      "externalStylesheets": [],
+      "images": [
+        {
+          "width": 462,
+          "displayWidth": 270,
+          "path": "/_next/image/?url=%2Fimages%2Fgame%2Flogo.webp&w=640&q=75"
+        },
+        {
+          "width": 240,
+          "displayWidth": 122.15625,
+          "path": "/_next/image/?url=%2Fimages%2Ffruits%2F%E3%81%84%E3%81%A1%E3%81%94.webp&w=384&q=75"
+        },
+        {
+          "width": 240,
+          "displayWidth": 122.171875,
+          "path": "/_next/image/?url=%2Fimages%2Ffruits%2F%E3%81%B6%E3%81%A9%E3%81%86.webp&w=384&q=75"
+        },
+        {
+          "width": 240,
+          "displayWidth": 122.15625,
+          "path": "/_next/image/?url=%2Fimages%2Ffruits%2F%E3%82%81%E3%82%8D%E3%82%93.webp&w=384&q=75"
+        },
+        {
+          "width": 240,
+          "displayWidth": 122.171875,
+          "path": "/_next/image/?url=%2Fimages%2Ffruits%2F%E3%81%8A%E3%82%8C%E3%82%93%E3%81%98.webp&w=384&q=75"
+        },
+        {
+          "width": 240,
+          "displayWidth": 125.671875,
+          "path": "/_next/image/?url=%2Fimages%2Fversions%2F%E9%80%9A%E5%B8%B8.webp&w=384&q=75"
+        },
+        {
+          "width": 240,
+          "displayWidth": 125.671875,
+          "path": "/_next/image/?url=%2Fimages%2Fversions%2F%CE%B2.webp&w=384&q=75"
+        }
+      ],
+      "jsGzipBytes": 387732,
+      "jsFiles": 21,
+      "cssGzipBytes": 0,
+      "inlineCssGzipBytes": 23328,
+      "a11y": {
+        "violations": [],
+        "incomplete": [
+          {
+            "id": "color-contrast",
+            "nodes": [
+              {
+                "target": [
+                  ".GameMenu-module__0JpnvG__green > b"
+                ],
+                "failureSummary": "Fix any of the following:\n  Element's background color could not be determined due to a background gradient"
+              },
+              {
+                "target": [
+                  ".GameMenu-module__0JpnvG__green > small"
+                ],
+                "failureSummary": "Fix any of the following:\n  Element's background color could not be determined because it is overlapped by another element"
+              },
+              {
+                "target": [
+                  ".GameMenu-module__0JpnvG__lilac > b"
+                ],
+                "failureSummary": "Fix any of the following:\n  Element's background color could not be determined due to a background gradient"
+              },
+              {
+                "target": [
+                  ".GameMenu-module__0JpnvG__lilac > small"
+                ],
+                "failureSummary": "Fix any of the following:\n  Element's background color could not be determined because it is overlapped by another element"
+              },
+              {
+                "target": [
+                  ".GameMenu-module__0JpnvG__yellow > b"
+                ],
+                "failureSummary": "Fix any of the following:\n  Element's background color could not be determined due to a background gradient"
+              },
+              {
+                "target": [
+                  ".GameMenu-module__0JpnvG__yellow > small"
+                ],
+                "failureSummary": "Fix any of the following:\n  Element's background color could not be determined because it is overlapped by another element"
+              },
+              {
+                "target": [
+                  ".BoardEmulator-module__DNvMtW__deckFar > span"
+                ],
+                "failureSummary": "Fix any of the following:\n  Element's background color could not be determined due to a background gradient"
+              },
+              {
+                "target": [
+                  ".BoardEmulator-module__DNvMtW__deckFar > span > small"
+                ],
+                "failureSummary": "Fix any of the following:\n  Element content is too short to determine if it is actual text content"
+              },
+              {
+                "target": [
+                  ".BoardEmulator-module__DNvMtW__deckNear > span"
+                ],
+                "failureSummary": "Fix any of the following:\n  Element's background color could not be determined due to a background gradient"
+              },
+              {
+                "target": [
+                  ".BoardEmulator-module__DNvMtW__deckNear > span > small"
+                ],
+                "failureSummary": "Fix any of the following:\n  Element's background color could not be determined due to a background gradient"
+              },
+              {
+                "target": [
+                  ".BoardEmulator-module__DNvMtW__startButton > span"
+                ],
+                "failureSummary": "Fix any of the following:\n  Element content contains only non-text characters"
+              }
+            ]
+          }
+        ],
+        "passes": 23
+      }
+    },
+    {
+      "width": 1280,
+      "run": 3,
+      "lcpMs": 52,
+      "canonical": "https://pplale.vercel.app/game/",
+      "externalStylesheets": [],
+      "images": [
+        {
+          "width": 462,
+          "displayWidth": 270,
+          "path": "/_next/image/?url=%2Fimages%2Fgame%2Flogo.webp&w=640&q=75"
+        },
+        {
+          "width": 240,
+          "displayWidth": 122.15625,
+          "path": "/_next/image/?url=%2Fimages%2Ffruits%2F%E3%81%84%E3%81%A1%E3%81%94.webp&w=384&q=75"
+        },
+        {
+          "width": 240,
+          "displayWidth": 122.171875,
+          "path": "/_next/image/?url=%2Fimages%2Ffruits%2F%E3%81%B6%E3%81%A9%E3%81%86.webp&w=384&q=75"
+        },
+        {
+          "width": 240,
+          "displayWidth": 122.15625,
+          "path": "/_next/image/?url=%2Fimages%2Ffruits%2F%E3%82%81%E3%82%8D%E3%82%93.webp&w=384&q=75"
+        },
+        {
+          "width": 240,
+          "displayWidth": 122.171875,
+          "path": "/_next/image/?url=%2Fimages%2Ffruits%2F%E3%81%8A%E3%82%8C%E3%82%93%E3%81%98.webp&w=384&q=75"
+        },
+        {
+          "width": 240,
+          "displayWidth": 125.671875,
+          "path": "/_next/image/?url=%2Fimages%2Fversions%2F%E9%80%9A%E5%B8%B8.webp&w=384&q=75"
+        },
+        {
+          "width": 240,
+          "displayWidth": 125.671875,
+          "path": "/_next/image/?url=%2Fimages%2Fversions%2F%CE%B2.webp&w=384&q=75"
+        }
+      ],
+      "jsGzipBytes": 387732,
+      "jsFiles": 21,
+      "cssGzipBytes": 0,
+      "inlineCssGzipBytes": 23328,
+      "a11y": {
+        "violations": [],
+        "incomplete": [
+          {
+            "id": "color-contrast",
+            "nodes": [
+              {
+                "target": [
+                  ".GameMenu-module__0JpnvG__green > b"
+                ],
+                "failureSummary": "Fix any of the following:\n  Element's background color could not be determined due to a background gradient"
+              },
+              {
+                "target": [
+                  ".GameMenu-module__0JpnvG__green > small"
+                ],
+                "failureSummary": "Fix any of the following:\n  Element's background color could not be determined because it is overlapped by another element"
+              },
+              {
+                "target": [
+                  ".GameMenu-module__0JpnvG__lilac > b"
+                ],
+                "failureSummary": "Fix any of the following:\n  Element's background color could not be determined due to a background gradient"
+              },
+              {
+                "target": [
+                  ".GameMenu-module__0JpnvG__lilac > small"
+                ],
+                "failureSummary": "Fix any of the following:\n  Element's background color could not be determined because it is overlapped by another element"
+              },
+              {
+                "target": [
+                  ".GameMenu-module__0JpnvG__yellow > b"
+                ],
+                "failureSummary": "Fix any of the following:\n  Element's background color could not be determined due to a background gradient"
+              },
+              {
+                "target": [
+                  ".GameMenu-module__0JpnvG__yellow > small"
+                ],
+                "failureSummary": "Fix any of the following:\n  Element's background color could not be determined because it is overlapped by another element"
+              },
+              {
+                "target": [
+                  ".BoardEmulator-module__DNvMtW__deckFar > span"
+                ],
+                "failureSummary": "Fix any of the following:\n  Element's background color could not be determined due to a background gradient"
+              },
+              {
+                "target": [
+                  ".BoardEmulator-module__DNvMtW__deckFar > span > small"
+                ],
+                "failureSummary": "Fix any of the following:\n  Element content is too short to determine if it is actual text content"
+              },
+              {
+                "target": [
+                  ".BoardEmulator-module__DNvMtW__deckNear > span"
+                ],
+                "failureSummary": "Fix any of the following:\n  Element's background color could not be determined due to a background gradient"
+              },
+              {
+                "target": [
+                  ".BoardEmulator-module__DNvMtW__deckNear > span > small"
+                ],
+                "failureSummary": "Fix any of the following:\n  Element's background color could not be determined due to a background gradient"
+              },
+              {
+                "target": [
+                  ".BoardEmulator-module__DNvMtW__startButton > span"
+                ],
+                "failureSummary": "Fix any of the following:\n  Element content contains only non-text characters"
+              }
+            ]
+          }
+        ],
+        "passes": 23
+      }
+    },
+    {
+      "width": 375,
+      "run": 1,
+      "lcpMs": 40,
+      "canonical": "https://pplale.vercel.app/game/",
+      "externalStylesheets": [],
+      "images": [
+        {
+          "width": 462,
+          "displayWidth": 104,
+          "path": "/_next/image/?url=%2Fimages%2Fgame%2Flogo.webp&w=640&q=75"
+        },
+        {
+          "width": 172,
+          "displayWidth": 135.5,
+          "path": "/_next/image/?url=%2Fimages%2Ffruits%2F%E3%81%84%E3%81%A1%E3%81%94.webp&w=384&q=75"
+        },
+        {
+          "width": 172,
+          "displayWidth": 135.5,
+          "path": "/_next/image/?url=%2Fimages%2Ffruits%2F%E3%81%B6%E3%81%A9%E3%81%86.webp&w=384&q=75"
+        },
+        {
+          "width": 172,
+          "displayWidth": 135.5,
+          "path": "/_next/image/?url=%2Fimages%2Ffruits%2F%E3%82%81%E3%82%8D%E3%82%93.webp&w=384&q=75"
+        },
+        {
+          "width": 172,
+          "displayWidth": 135.5,
+          "path": "/_next/image/?url=%2Fimages%2Ffruits%2F%E3%81%8A%E3%82%8C%E3%82%93%E3%81%98.webp&w=384&q=75"
+        },
+        {
+          "width": 172,
+          "displayWidth": 135.5,
+          "path": "/_next/image/?url=%2Fimages%2Fversions%2F%E9%80%9A%E5%B8%B8.webp&w=384&q=75"
+        },
+        {
+          "width": 172,
+          "displayWidth": 135.5,
+          "path": "/_next/image/?url=%2Fimages%2Fversions%2F%CE%B2.webp&w=384&q=75"
+        }
+      ],
+      "jsGzipBytes": 387732,
+      "jsFiles": 21,
+      "cssGzipBytes": 0,
+      "inlineCssGzipBytes": 23328,
+      "a11y": {
+        "violations": [],
+        "incomplete": [
+          {
+            "id": "color-contrast",
+            "nodes": [
+              {
+                "target": [
+                  ".BoardEmulator-module__DNvMtW__deckFar > span"
+                ],
+                "failureSummary": "Fix any of the following:\n  Element's background color could not be determined due to a background gradient"
+              },
+              {
+                "target": [
+                  ".BoardEmulator-module__DNvMtW__deckFar > span > small"
+                ],
+                "failureSummary": "Fix any of the following:\n  Element content is too short to determine if it is actual text content"
+              },
+              {
+                "target": [
+                  ".BoardEmulator-module__DNvMtW__deckNear > span"
+                ],
+                "failureSummary": "Fix any of the following:\n  Element's background color could not be determined due to a background gradient"
+              },
+              {
+                "target": [
+                  ".BoardEmulator-module__DNvMtW__deckNear > span > small"
+                ],
+                "failureSummary": "Fix any of the following:\n  Element's background color could not be determined due to a background gradient"
+              },
+              {
+                "target": [
+                  ".BoardEmulator-module__DNvMtW__startButton > span"
+                ],
+                "failureSummary": "Fix any of the following:\n  Element content contains only non-text characters"
+              }
+            ]
+          }
+        ],
+        "passes": 23
+      }
+    },
+    {
+      "width": 375,
+      "run": 2,
+      "lcpMs": 40,
+      "canonical": "https://pplale.vercel.app/game/",
+      "externalStylesheets": [],
+      "images": [
+        {
+          "width": 462,
+          "displayWidth": 104,
+          "path": "/_next/image/?url=%2Fimages%2Fgame%2Flogo.webp&w=640&q=75"
+        },
+        {
+          "width": 172,
+          "displayWidth": 135.5,
+          "path": "/_next/image/?url=%2Fimages%2Ffruits%2F%E3%81%84%E3%81%A1%E3%81%94.webp&w=384&q=75"
+        },
+        {
+          "width": 172,
+          "displayWidth": 135.5,
+          "path": "/_next/image/?url=%2Fimages%2Ffruits%2F%E3%81%B6%E3%81%A9%E3%81%86.webp&w=384&q=75"
+        },
+        {
+          "width": 172,
+          "displayWidth": 135.5,
+          "path": "/_next/image/?url=%2Fimages%2Ffruits%2F%E3%82%81%E3%82%8D%E3%82%93.webp&w=384&q=75"
+        },
+        {
+          "width": 172,
+          "displayWidth": 135.5,
+          "path": "/_next/image/?url=%2Fimages%2Ffruits%2F%E3%81%8A%E3%82%8C%E3%82%93%E3%81%98.webp&w=384&q=75"
+        },
+        {
+          "width": 172,
+          "displayWidth": 135.5,
+          "path": "/_next/image/?url=%2Fimages%2Fversions%2F%E9%80%9A%E5%B8%B8.webp&w=384&q=75"
+        },
+        {
+          "width": 172,
+          "displayWidth": 135.5,
+          "path": "/_next/image/?url=%2Fimages%2Fversions%2F%CE%B2.webp&w=384&q=75"
+        }
+      ],
+      "jsGzipBytes": 387732,
+      "jsFiles": 21,
+      "cssGzipBytes": 0,
+      "inlineCssGzipBytes": 23328,
+      "a11y": {
+        "violations": [],
+        "incomplete": [
+          {
+            "id": "color-contrast",
+            "nodes": [
+              {
+                "target": [
+                  ".BoardEmulator-module__DNvMtW__deckFar > span"
+                ],
+                "failureSummary": "Fix any of the following:\n  Element's background color could not be determined due to a background gradient"
+              },
+              {
+                "target": [
+                  ".BoardEmulator-module__DNvMtW__deckFar > span > small"
+                ],
+                "failureSummary": "Fix any of the following:\n  Element content is too short to determine if it is actual text content"
+              },
+              {
+                "target": [
+                  ".BoardEmulator-module__DNvMtW__deckNear > span"
+                ],
+                "failureSummary": "Fix any of the following:\n  Element's background color could not be determined due to a background gradient"
+              },
+              {
+                "target": [
+                  ".BoardEmulator-module__DNvMtW__deckNear > span > small"
+                ],
+                "failureSummary": "Fix any of the following:\n  Element's background color could not be determined due to a background gradient"
+              },
+              {
+                "target": [
+                  ".BoardEmulator-module__DNvMtW__startButton > span"
+                ],
+                "failureSummary": "Fix any of the following:\n  Element content contains only non-text characters"
+              }
+            ]
+          }
+        ],
+        "passes": 23
+      }
+    },
+    {
+      "width": 375,
+      "run": 3,
+      "lcpMs": 52,
+      "canonical": "https://pplale.vercel.app/game/",
+      "externalStylesheets": [],
+      "images": [
+        {
+          "width": 462,
+          "displayWidth": 104,
+          "path": "/_next/image/?url=%2Fimages%2Fgame%2Flogo.webp&w=640&q=75"
+        },
+        {
+          "width": 172,
+          "displayWidth": 135.5,
+          "path": "/_next/image/?url=%2Fimages%2Ffruits%2F%E3%81%84%E3%81%A1%E3%81%94.webp&w=384&q=75"
+        },
+        {
+          "width": 172,
+          "displayWidth": 135.5,
+          "path": "/_next/image/?url=%2Fimages%2Ffruits%2F%E3%81%B6%E3%81%A9%E3%81%86.webp&w=384&q=75"
+        },
+        {
+          "width": 172,
+          "displayWidth": 135.5,
+          "path": "/_next/image/?url=%2Fimages%2Ffruits%2F%E3%82%81%E3%82%8D%E3%82%93.webp&w=384&q=75"
+        },
+        {
+          "width": 172,
+          "displayWidth": 135.5,
+          "path": "/_next/image/?url=%2Fimages%2Ffruits%2F%E3%81%8A%E3%82%8C%E3%82%93%E3%81%98.webp&w=384&q=75"
+        },
+        {
+          "width": 172,
+          "displayWidth": 135.5,
+          "path": "/_next/image/?url=%2Fimages%2Fversions%2F%E9%80%9A%E5%B8%B8.webp&w=384&q=75"
+        },
+        {
+          "width": 172,
+          "displayWidth": 135.5,
+          "path": "/_next/image/?url=%2Fimages%2Fversions%2F%CE%B2.webp&w=384&q=75"
+        }
+      ],
+      "jsGzipBytes": 387732,
+      "jsFiles": 21,
+      "cssGzipBytes": 0,
+      "inlineCssGzipBytes": 23328,
+      "a11y": {
+        "violations": [],
+        "incomplete": [
+          {
+            "id": "color-contrast",
+            "nodes": [
+              {
+                "target": [
+                  ".BoardEmulator-module__DNvMtW__deckFar > span"
+                ],
+                "failureSummary": "Fix any of the following:\n  Element's background color could not be determined due to a background gradient"
+              },
+              {
+                "target": [
+                  ".BoardEmulator-module__DNvMtW__deckFar > span > small"
+                ],
+                "failureSummary": "Fix any of the following:\n  Element content is too short to determine if it is actual text content"
+              },
+              {
+                "target": [
+                  ".BoardEmulator-module__DNvMtW__deckNear > span"
+                ],
+                "failureSummary": "Fix any of the following:\n  Element's background color could not be determined due to a background gradient"
+              },
+              {
+                "target": [
+                  ".BoardEmulator-module__DNvMtW__deckNear > span > small"
+                ],
+                "failureSummary": "Fix any of the following:\n  Element's background color could not be determined due to a background gradient"
+              },
+              {
+                "target": [
+                  ".BoardEmulator-module__DNvMtW__startButton > span"
+                ],
+                "failureSummary": "Fix any of the following:\n  Element content contains only non-text characters"
+              }
+            ]
+          }
+        ],
+        "passes": 23
+      }
+    }
+  ]
+}

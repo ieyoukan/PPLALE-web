@@ -192,9 +192,10 @@ export function destroy(s: GameState, uid: string, byEffect: boolean, catalog: C
     card.temporaryCost = 0;
     if (card.cardId === 'token_mochida' && !card.silenced) p.exile.push(uid);
     else p.nap.push(uid);
-    note(s, `${catalog[card.cardId].name}がお昼寝場所へ`);
     for (const linked of card.links) destroy(s, linked, true, catalog);
     scriptFor(s, uid).onDestroyed?.(cardContext(s, catalog, side, uid));
+    const destination = p.yojo.includes(uid) ? '幼女デッキへ戻りました' : p.exile.includes(uid) ? '除外カードへ' : 'お昼寝場所へ';
+    note(s, `${catalog[card.cardId].name}が${destination}`);
     const abyss = p.exSkills?.abyss;
     if (abyss && abyss.uses > 0) { abyss.uses--; s.queue.push({ op: 'reduce', actor: side, amount: 1 }); }
     // ほとり丸 sees the enemies destroyed while it stays; a unit destroyed at the same time (相打ち) does not see them.

@@ -61,7 +61,7 @@ export function CardPicker() {
         <h2>{who(side)}の{places[zone]}に置くカード</h2>
         <input value={query} placeholder="名前でさがす" aria-label="名前でさがす" onChange={event => setQuery(event.target.value)} />
         <select aria-label="フルーツで絞る" value={fruit} onChange={event => setFruit(event.target.value)}>
-          <option value="all">すべて</option><option value="strawberry">いちご</option><option value="grape">ぶどう</option><option value="orange">オレンジ</option>
+          <option value="all">すべて</option><option value="strawberry">いちご</option><option value="grape">ぶどう</option><option value="melon">メロン</option><option value="orange">オレンジ</option>
         </select>
         <button onClick={close}>{single ? 'やめる' : '閉じる'}</button>
       </header>

@@ -1,8 +1,8 @@
 # 対戦ゲームの設計
 
-## 今回の構成
+## 現在の構成
 
-既存の Next.js サイトに `/game/` を追加し、対戦ルールを npm workspace の `@pplale/game-core` に分離する。リポジトリ・Firebase プロジェクト・Vercel プロジェクトは共有する。
+既存の Next.js サイトに `/game/` を追加し、対戦ルールを npm workspace の `@pplale/game-core` に分離する。リポジトリは共有し、Firebase・Vercel を利用する構成。実際のプロジェクト設定や本番稼働状況は今回の確認対象に含めない。実装との照合とテストの結果は [検証記録](verification.md)。
 
 ```text
 src/data/*.json ── catalog.ts ──> game-core
@@ -21,7 +21,7 @@ GameLobby (/game/) + Firebase decks ──保存──> BoardEmulator (/game/pla
 | CPU | 合法手から次の Command を選ぶ。強さごとの戦略、非公開情報の推測 | `packages/game-core/src/ai` |
 | 状態復元 | 保存内容の形式とカード参照を確認 | `packages/game-core/src/snapshot.ts` |
 | ルームマッチ（画面） | ルームを作る・入る、招待、デッキ選択、サーバーとの接続 | `src/components/game/room`, `src/lib/game/room` |
-| ルームサーバー | ルームを Redis に持ち、Command を検証して実行し、各プレイヤーに盤面を WebSocket で送る。Vercel ではなく自宅クラスタで動く別プロセス | `services/room-server`, `helm/pplale-room-server`, `packages/game-core/src/room.ts` |
+| ルームサーバー | Redis 設定時はルームを Redis に持ち、Command を検証して実行し、各プレイヤーに盤面を WebSocket で送る。Vercel ではなく自宅クラスタで動く別プロセス | `services/room-server`, `helm/pplale-room-server`, `packages/game-core/src/room.ts` |
 | CPU サーバー | 「さいきょう」との対戦記録を集めて学習し続け、モデルを配る。Vercel ではなく自宅クラスタで動く別プロセス | `services/cpu-server`, `helm/pplale-cpu-server` |
 
 ### 分離する価値
@@ -29,9 +29,9 @@ GameLobby (/game/) + Firebase decks ──保存──> BoardEmulator (/game/pla
 - ゲーム本体は React / Next.js / Firebase / DOM に依存しない。UI の更新やホスティングを変えてもルールを持ち運べる。
 - 人間と CPU は同じ `applyCommand` を通る。PP、不正な対象、手番などの判定を画面ごとに重複実装しない。
 - ゲーム本体は元の状態を変更せず次の状態を返す。状態内の乱数 seed により、同じ入力とコマンド列で同じ結果を再現できる。
-- 「効果の対象を選ぶ」途中も状態として保存できる。将来の通信層にも渡せる。
+- 「効果の対象を選ぶ」途中も状態として保存できる。ルーム対戦の通信層でも利用する。
 
-分離の単位はライブラリ。現段階で別サービス・別リポジトリにする必要はない。
+分離の単位はライブラリ。game-core は同じリポジトリの Web アプリ・CPU サーバー・ルームサーバーから利用する。サーバーはそれぞれ別プロセスとして実装されている。
 
 ## 対戦の開始とドロー
 
@@ -42,7 +42,7 @@ UI はドロー前後の手札と山札の差分から移動演出を描く。�
 ## Vercel への配置
 
 - Root Directory はリポジトリのルート。既存 Next.js プロジェクトのまま運用する。
-- `npm ci` で root と game-core の依存関係をインストールする。root の `workspaces` と依存関係、共有 `package-lock.json` に登録済み。
+- `npm ci` で root と3つの workspace（game-core・CPU サーバー・ルームサーバー）の依存関係をインストールする。root の `workspaces` と依存関係、共有 `package-lock.json` に登録済み。
 - Build Command は既存の `npm run build`。`transpilePackages` により game-core の TypeScript を Next.js がコンパイルする。core の `dist` を事前生成・コミットする必要はない。
 - Firebase の環境変数と AuthProvider は既存のものを使用する。同一ドメインなら同じログイン状態で保存済みデッキを選べる。
 - Vercel に常駐プロセス、WebSocket サーバー、対戦用 API は追加していない。CPU / 同一端末対戦はブラウザで動く。
@@ -69,7 +69,7 @@ UI はドロー前後の手札と山札の差分から移動演出を描く。�
         ← 自分の席から見える盤面（viewFor）
 ```
 
-- **ルームサーバー**は Vercel ではなく自宅クラスタで動く別プロセス（CPU サーバーと同じ形）。ルームは Redis に置き、サーバーの Pod は接続しか持たないので、複数台で動かせて、入れ替えても対戦が続く。Web アプリは `NEXT_PUBLIC_ROOM_SERVER_URL` でつなぐ。未設定やサーバーが落ちている間は、バトルのタブにその旨が出てルームを作れない。API、状態の見方（`/stats`）、デプロイは [services/room-server](../services/room-server/README.md)。
+- **ルームサーバー**は Vercel ではなく自宅クラスタで動く別プロセス（CPU サーバーと同じ形）。`REDIS_URL` を設定するとルーム状態を Redis で共有し、複数インスタンス間で対戦を継続できる構成。接続・要求回数の制限などは各プロセスにも持つ。Redis 未設定時は開発・テスト用のメモリ保存になり、プロセスの再起動でルームが消える（`services/room-server/src/config.ts`・`backend.ts`）。Web アプリは `NEXT_PUBLIC_ROOM_SERVER_URL` でつなぐ。未設定やサーバーが落ちている間は、バトルのタブにその旨が出てルームを作れない。API、状態の見方（`/stats`）、デプロイは [services/room-server](../services/room-server/README.md)。
 - **ルームのルール**（`packages/game-core/src/room.ts`）は、デッキに使えるカードの範囲：フルーツごとの可否と、拡張プレイアブルの可否。対戦のルール（`rules.ts`）に観戦の可否を足したもの。作成時に CPU対決の準備と同じタイルで選ぶ（観戦だけチェックボックス）。4つのフルーツと拡張プレイアブルはすべて `playableNow` に登録済みで選べる（エンジンが対応していないものがあれば「準備中」と出る）。フルーツは環境の形でしか選べないので、メロンだけのルールはない。デッキは、ブラウザ（使えるデッキの表示）とサーバー（決定）の両方で同じ関数が検証する。
 - **席**は、作成・参加のときにサーバーが発行する秘密のトークンで識別する（ブラウザの localStorage に保存）。ログインは不要で、招待リンクを開いて名前を入れればすぐ入れる。保存済みデッキを使うときだけログインする。同じブラウザで開き直せば席に戻れる。
 - **盤面はサーバーだけが持つ。** ブラウザは Command と見ている revision を送り、サーバーが席を確かめて game-core で実行する。ターン中は revision が合わない操作を拒否する（初期ドローと交換は双方が同時に進めるので合わせない）。テスト用の Command は受け付けず、`actor` は送り主の席に置き換える。乱数の種と、デッキのカードの並び（uid とカードの対応）はサーバーで決める。
@@ -86,15 +86,13 @@ UI はドロー前後の手札と山札の差分から移動演出を描く。�
 
 ## 未確定のルール
 
-先攻3枚・後攻4枚、初期手札の各カード1回の交換、山札の自由選択はユーザー指定を反映済み。提供された能力説明とFAQは [ルール・裁定集](game-rules.md)、現在の処理と差分は [実装状況](card-effect-rules.md) に記録する。PP上限・通常ドロー枚数・先攻初回ドロー・山札切れなど、資料でまだ指定されていない値は `sandboxRules` の暫定設定。確定した裁定は画面ではなく core に反映する。
+先攻3枚・後攻4枚、初期手札の一括交換（交換で引いたカードの再交換は不可）、山札の自由選択はユーザー指定を反映済み。提供された能力説明とFAQは [ルール・裁定集](game-rules.md)、現在の処理と差分は [実装状況](card-effect-rules.md) に記録する。PP上限12・通常ドロー1枚・先攻初回もドロー・山札切れで敗北しない点は、[説明④・⑤の転記](game-rules.md#11-自分のターンとその他のルール説明④⑤) に記載済み。`sandboxRules` という名前だけを根拠に未確定とは扱わない。初期手札の交換で山札へ戻す手順など、資料で指定されていない部分は実装上の選択として区別する。確定した裁定は画面ではなく core に反映する。
 
-## 今回の確認範囲
+## 検証範囲
 
-- root の TypeScript、変更箇所の ESLint、game-core 単独のコンパイルを実施。
-- ローカルブラウザで開始、手札の拡大、4番目の枠へのドラッグ配置、PP調整、10ポイントでのドロー、おはじき、再読み込み後の復元、CPUのターン進行を確認。
-- `next build --webpack` は `/game` を含む本番ページの生成まで成功。
-- 通常の `next build` は、この実行環境でTurbopackの内部ポート利用が許可されず停止。既存 Vercel プロジェクトへの GitHub push による本番デプロイは成功している。
-- Firebase実アカウントでのログイン・保存デッキの読み込み、全カード組み合わせの公式裁定との照合は未確認。
+2026-10-16 の実行結果は [検証記録](verification.md) を参照。以前ここに記載されていたブラウザ操作・ビルド・本番デプロイ成功の記録には、対象コミットや実行ログへの参照がなく、今回の成功結果には含めない。Turbopack のポート制限も過去の実行環境の記録であり、現環境で常に失敗するという意味ではない。
+
+追加検証で通常のTurbopack本番ビルド、実Redisでのプロセス強制終了・復元、未検証だったカードの組み合わせとスキル画面を確認した。Firebaseは従来利用できているとのユーザー確認により、今回の追加検証対象から外した。本番デプロイと、全組み合わせの網羅は含めない。
 
 ### ターン開始の演出
 

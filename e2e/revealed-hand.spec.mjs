@@ -18,7 +18,7 @@ async function gap(page, left, right) {
   return a && b ? b.x - a.x - a.width : -1;
 }
 
-for (const viewport of [{ width: 1280, height: 860 }, { width: 844, height: 390 }]) {
+for (const viewport of [{ width: 1280, height: 860 }, { width: 844, height: 390 }, { width: 375, height: 812 }]) {
   test.describe(`${viewport.width}px revealed hand`, () => {
     test.use({ viewport });
     test('revealed cards sit apart on both sides and still play from hand', async ({ page }) => {
