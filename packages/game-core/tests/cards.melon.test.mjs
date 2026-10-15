@@ -159,14 +159,15 @@ test('y_75 おうか: a cat and a もちだ into the hand', () => {
   assert.deepEqual(idsOf(s, hand(s)).sort(), ['token_cat', 'token_mochida']);
 });
 
-test('y_76 うぃまる: +1/+1 each time its owner\'s points actually recover', () => {
+test('y_76 うぃまる: +1/+1 each time its owner\'s points recover, also at the maximum where nothing is added', () => {
   let s = arena({ me: { field: ['y_76'], hand: ['y_22', 'y_22'], points: 8 } });
   const wimaru = field(s)[0];
   s = draws(playFirst(s, 'y_22'));
   assert.deepEqual(stats(s, wimaru), [2, 3]);
   s.players[0].points = 12;
   s = draws(playFirst(s, 'y_22'));
-  assert.deepEqual(stats(s, wimaru), [2, 3]);
+  assert.equal(s.players[0].points, 12);
+  assert.deepEqual(stats(s, wimaru), [3, 4]);
 });
 
 test('y_77 ちょり: 行動不能 until the next opponent turn ends; exiling four nap units exiles instead', () => {

@@ -123,7 +123,6 @@ export const melonYojo: CardScripts = {
     },
     // y_73 ゆうひ: 自分のターン終了時、お菓子を1回復し、PPを全回復する（相手のターンに使えるよう残す）。
     y_73: {
-        offTurnPp: 'field',
         onTurnEnd(ctx) {
             ctx.queue('heal', { amount: 1 });
             ctx.me.pp = availablePpMaximum(ctx.s, ctx.side);
@@ -295,7 +294,6 @@ export const melonYojo: CardScripts = {
     y_90: { keywords: ['taunt'], onPlay: ctx => randomSearch(ctx, uid => ctx.defOf(uid).hp >= 4) },
     // y_91 あみの: 攻撃時、相手のお昼寝場所の幼女2人を除外。手札誘発（攻撃の無効化）は effects/expandedOps.ts の attackResponses。
     y_91: {
-        offTurnPp: 'hand',
         onAttack: ctx => step(ctx, 'exileNap', { count: 2 }),
         effect(ctx, t) {
             if (t.target) { ctx.exile(t.target, ctx.foeSide); t = { ...t, target: undefined, count: t.count! - 1 }; }

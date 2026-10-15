@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { applyCommand, costOf, fruitsOf, newGame, sandboxRules, validateDeck } from '../dist/index.js';
-import { arena, catalog, choose, draws, field, hand, idsOf, optionIds, playFirst, run, stats } from './helpers.mjs';
+import { applyCommand, costOf, fruitsOf, newGame, sandboxRules, spawnCard, validateDeck } from '../dist/index.js';
+import { arena, catalog, choose, draws, failure, field, hand, idsOf, optionIds, playFirst, run, stats } from './helpers.mjs';
 
 test('orange environment: ぷぷりえーる is forbidden in either player deck', () => {
   const strawberry = { name: 'いちご', playable: 'p_0', yojo: Array(20).fill('y_9'), sweet: ['s_24', ...Array(9).fill('s_41')] };
@@ -41,13 +41,19 @@ test('s_36 チョコミントタワー: blocked before own turn6, spends ice on 
 test('s_37 カップケーキ: draws exactly one chosen card', () => {
   let s = playFirst(arena({ me: { hand: ['s_37'] } }), 's_37'); s = draws(s, 'sweet'); assert.equal(hand(s).length, 1); assert.equal(catalog[s.cards[hand(s)[0]].cardId].type, 'sweet');
 });
-test('s_38 いっしょにおしゃしん: condition declaration controls both draws and consumes no sweet boost', () => {
-  let s = arena({ me: { hand: ['s_38'] } }); s.players[0].sweetBoost = 2; s = playFirst(s, 's_38'); assert.equal(s.players[0].sweetBoost, 2); s = draws(choose(s, 'yes')); assert.equal(hand(s).length, 1); assert.equal(hand(s, 1).length, 1);
-  s = choose(playFirst(arena({ me: { hand: ['s_38'] } }), 's_38'), 'no'); assert.equal(hand(s).length, 0);
+test('s_38 いっしょにおしゃしん: both players simply draw one (the condition is a joke) and no sweet boost is used', () => {
+  let s = arena({ me: { hand: ['s_38'] } }); s.players[0].sweetBoost = 2; s = draws(playFirst(s, 's_38'));
+  assert.equal(s.players[0].sweetBoost, 2); assert.equal(hand(s).length, 1); assert.equal(hand(s, 1).length, 1);
 });
-for (const [id, fruit] of [['s_39', 'melon'], ['s_40', 'grape']]) test(`${id}: permanent fruit addition preserves original types in hand/deck/nap, extraPP searches`, () => {
-  let s = arena({ me: { hand: [id, 'y_9'], yojo: ['y_8'], nap: ['y_37'], field: ['y_9'] } }); const uid = hand(s)[1], top = s.players[0].yojo[0], nap = s.players[0].nap[0], onField = field(s)[0]; s = choose(playFirst(s, id), 'yes'); s = choose(s, top);
-  assert.ok(fruitsOf(s, uid, catalog).includes(fruit)); assert.ok(fruitsOf(s, top, catalog).includes(fruit)); assert.ok(fruitsOf(s, nap, catalog).includes(fruit)); assert.ok(!fruitsOf(s, onField, catalog).includes(fruit)); assert.ok(hand(s).includes(top));
+for (const [id, fruit] of [['s_39', 'melon'], ['s_40', 'grape']]) test(`${id}: every own 幼女 in field, hand, deck and nap has the type for the rest of the game, also later ones; extraPP searches`, () => {
+  let s = arena({ me: { hand: [id, 'y_9'], yojo: ['y_8'], nap: ['y_37'], field: ['y_9'] }, foe: { field: ['y_9'] } }); const uid = hand(s)[1], top = s.players[0].yojo[0], nap = s.players[0].nap[0], onField = field(s)[0], enemy = field(s, 1)[0]; s = choose(playFirst(s, id), 'yes'); s = choose(s, top);
+  for (const own of [uid, top, nap, onField]) assert.ok(fruitsOf(s, own, catalog).includes(fruit));
+  assert.ok(fruitsOf(s, uid, catalog).includes('strawberry')); assert.ok(!fruitsOf(s, enemy, catalog).includes(fruit)); assert.ok(hand(s).includes(top));
+  // A token that comes to the hand later has it too; a card in the exile does not.
+  const token = spawnCard(s, 'token_cat'); s.players[0].hand.push(token);
+  assert.ok(fruitsOf(s, token, catalog).includes(fruit));
+  s.players[0].hand = hand(s).filter(id => id !== uid); s.players[0].exile.push(uid);
+  assert.deepEqual(fruitsOf(s, uid, catalog), ['strawberry']);
 });
 test('s_41 あんこ: damages all and reduces1, prior custard adds another reduction', () => {
   let s = arena({ me: { hand: ['s_41'] }, foe: { field: ['y_49'] } }); const uid = field(s, 1)[0]; s.players[0].played.push('s_42'); s = draws(playFirst(s, 's_41')); assert.equal(s.cards[uid].damage, 1); assert.equal(s.players[1].points, 10);
@@ -59,16 +65,24 @@ test('s_42 カスタード: its additional recovery triggers ここあの献身 
   let s = arena({ me: { hand: ['s_42'], points: 8 } }); s.players[0].played.push('s_41'); s.players[0].exSkills = { healing: { uses: 3 } };
   s = playFirst(s, 's_42'); assert.equal(s.players[0].points, 12); assert.equal(s.players[0].exSkills.healing.uses, 1);
 });
+test('s_43 いぬさんだんご × おいしくなる呪文: four members instead of two, still no same card twice', () => {
+  let s = arena({ me: { hand: ['s_43'], yojo: ['y_13', 'y_13', 'y_37', 'y_40', 'y_24', 'y_25'] } }); s.players[0].sweetBoost = 1;
+  s = playFirst(s, 's_43');
+  for (let i = 0; i < 4 && s.pending; i++) s = choose(s, optionIds(s)[0]);
+  assert.equal(s.pending, null); assert.equal(new Set(idsOf(s, hand(s))).size, idsOf(s, hand(s)).length);
+  assert.equal(hand(s).length, 4);
+});
 test('s_43 いぬさんだんご: cannot take the same card kind twice, different fruits of the same name are allowed', () => {
   let s = arena({ me: { hand: ['s_43'], yojo: ['y_13', 'y_13', 'y_37'] } }); const cards = s.players[0].yojo.slice(0, 3); s = choose(playFirst(s, 's_43'), cards[0]); assert.ok(!optionIds(s).includes(cards[1])); assert.ok(optionIds(s).includes(cards[2])); s = choose(s, cards[2]); assert.deepEqual(idsOf(s, hand(s)), ['y_13', 'y_37']);
 });
 test('s_44 ぜんりょくおうえん: reveal counts distinct nap character/fruit kinds only once, then buffs8/10', () => {
   let s = arena({ me: { hand: ['s_44'], field: ['y_9'], nap: ['y_24', 'y_24', 'y_40', 'y_25'] } }); const uid = hand(s)[0], ally = field(s)[0]; s = run(s, { type: 'reveal', actor: 0, uid }); assert.equal(costOf(s, uid, catalog, 0), 7); s = run(s, { type: 'reveal', actor: 0, uid }); assert.equal(costOf(s, uid, catalog, 0), 7); s = choose(playFirst(s, 's_44'), ally); assert.equal(s.cards[ally].attackBonus, 8); assert.equal(s.cards[ally].hpBonus, 10);
 });
-test('s_45 どんぐり: non-sweet count can be spent during either turn; PP addition exceeds the ordinary refill cap', () => {
+test('s_45 どんぐり: non-sweet count spent during its own turn only; PP addition exceeds the ordinary refill cap', () => {
   let s = arena({ me: { hand: ['s_45'], pp: 2, turns: 2, ppBonus: 0 } }); s.players[0].sweetBoost = 1; s = playFirst(s, 's_45'); assert.equal(s.players[0].acorns, 1); assert.equal(s.players[0].sweetBoost, 1); s.players[0].pp = 2;
   s = run(s, { type: 'acorn', actor: 0, mode: 'pp' }); assert.equal(s.players[0].pp, 3); assert.equal(s.players[0].acorns, 0);
-  s.players[0].acorns = 1; s.active = 1; s = draws(run(s, { type: 'acorn', actor: 0, mode: 'draw' })); assert.equal(hand(s).length, 1);
+  s.players[0].acorns = 1; s = draws(run(s, { type: 'acorn', actor: 0, mode: 'draw' })); assert.equal(hand(s).length, 1);
+  s.players[0].acorns = 1; s.active = 1; assert.match(failure(s, { type: 'acorn', actor: 0, mode: 'draw' }), /自分のターン/);
 });
 test('selected dodge blocks only that target and preserves bonus draw; multi-target rolls independently', () => {
   let s = arena({ me: { hand: ['s_6'] }, foe: { field: ['y_49'] } }); s.players[0].played.push('s_7'); s.players[1].exSkills = { dice: { uses: 1 } }; const uid = field(s, 1)[0]; s = choose(playFirst(s, 's_6'), uid); s = choose(s, '6'); assert.equal(s.cards[uid].damage, 0); s = draws(s); assert.equal(hand(s).length, 1);

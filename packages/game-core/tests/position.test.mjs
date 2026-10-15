@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { buildPosition, checkPosition, decodePosition, encodePosition, findLethal, playMatch, positionOf, restoreGame } from '../dist/index.js';
-import { catalog, fromCode, run, stats } from './helpers.mjs';
+import { arena, catalog, fromCode, run, stats } from './helpers.mjs';
 
 const side = (extra = {}) => ({ playable: 'p_0', points: 12, maxPoints: 12, turns: 3, maxPp: 3, pp: 3, field: [], hand: [], nap: [], yojo: [], sweet: [], ...extra });
 const position = (me = {}, foe = {}, extra = {}) => ({ version: 1, active: 0, first: 0, players: [side(me), side(foe)], ...extra });
@@ -69,4 +69,12 @@ test('position: explains what cannot be played', () => {
     assert.ok(errors.some(e => e.includes(words)), `${words} in ${errors.join(' / ')}`);
   }
   assert.throws(() => buildPosition(position({ points: 13 }), catalog), /最大値/);
+});
+
+test('position: ソーダ types are the side\'s and survive a share code', () => {
+  const s = arena({ me: { hand: ['y_9'] } });
+  s.players[0].lastingFruits = ['grape'];
+  const back = buildPosition(decodePosition(encodePosition(positionOf(s, catalog))), catalog);
+  assert.deepEqual(back.players[0].lastingFruits, ['grape']);
+  assert.equal(back.players[1].lastingFruits, undefined);
 });

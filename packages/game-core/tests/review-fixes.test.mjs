@@ -280,14 +280,12 @@ test('the stall rule: Exスキル and skills without a use limit are not actions
   assert.deepEqual([s.winner, s.winReason], [0, 'stall']);
 });
 
-test('ぶどうのまこぽに: not another ぶどうのまこぽに, but a いちごのまこぽに made grape by ソーダ (lasting) yes', () => {
+test('ぶどうのまこぽに: not another ぶどうのまこぽに, but a いちごのまこぽに made grape by ソーダ (in the deck) yes', () => {
   let s = arena({ me: { hand: ['y_45'], yojo: ['y_45', 'y_15'] } });
-  const strawberry = s.players[0].yojo[1];
-  s.cards[strawberry].lastingFruits = ['grape'];
+  s.players[0].yojo = s.players[0].yojo.slice(0, 2);
+  s.players[0].lastingFruits = ['grape'];
   s = playFirst(s, 'y_45');
   assert.deepEqual(idsOf(s, hand(s)), ['y_15']);
-  // The type from ソーダ is 「このゲーム中」: it stays after moving.
-  assert.deepEqual(s.cards[strawberry].lastingFruits, ['grape']);
 });
 
 test('an attack brought to 0 by リンネ still counts as eating, with no change for うぃまる to stop', () => {

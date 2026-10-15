@@ -88,8 +88,6 @@ export interface Instance {
     actions?: number;
     /** Fruit types held only until the end of a game turn (レンス): type → last turn. */
     timedFruits?: Record<string, number>;
-    /** Fruit types given 「このゲーム中」 (ソーダ): kept when the card moves, unlike `fruitTypes`. */
-    lastingFruits?: string[];
     /** The zone the card was last seen in: a move other than hand → field resets what effects gave it (core/movement.ts). */
     zone?: CardZone;
 }
@@ -139,6 +137,11 @@ export interface Player {
     discardedYojo?: number;
     /** Skills taken from the opponent (レンテ). The `skill` command reaches them with the indices after the playable's own. */
     extraSkills?: ExtraSkill[];
+    /**
+     * Fruit types given 「このゲーム中」 (ソーダ) to every 幼女 in this side's field, hand, 幼女デッキ and nap:
+     * also to the ones that come there later (tokens), for as long as they are there.
+     */
+    lastingFruits?: string[];
 }
 
 /**

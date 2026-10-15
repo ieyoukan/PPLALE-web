@@ -11,10 +11,10 @@ export function heal(s: GameState, side: Side, amount: number) {
     const skill = p.exSkills?.healing;
     // ここあの献身 is automatic: it is used by every recovery, also at the maximum (ユーザー裁定).
     if (amount > 0 && skill && skill.uses > 0) { amount++; skill.uses--; }
-    const before = p.points;
     p.points = Math.min(p.maxPoints, p.points + amount);
-    // 「自分のお菓子ポイントが回復するたびに」 (うぃまる・ももか): only when points were actually recovered.
-    if (p.points > before && [...p.field, ...p.nap].some(uid => scriptFor(s, uid).onHealed)) s.queue.push({ op: 'healHooks', actor: side });
+    // 「自分のお菓子ポイントが回復するたびに」 (うぃまる・ももか): every recovery, also one that adds nothing at the
+    // maximum (user ruling), and the points 「奪う」 brings in.
+    if (amount > 0 && [...p.field, ...p.nap].some(uid => scriptFor(s, uid).onHealed)) s.queue.push({ op: 'healHooks', actor: side });
 }
 
 /**

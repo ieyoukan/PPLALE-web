@@ -43,7 +43,8 @@ test('second player gets two usable PP only on its fifth turn, without a permane
   assert.equal(maxPp(s, 1), 5);
   assert.equal(availablePpMaximum(s, 1), 7);
   s = draws(end(s));
-  assert.equal(s.players[1].pp, 0);
+  // The PP left stays through the opponent's turn (user ruling).
+  assert.equal(s.players[1].pp, 7);
   assert.equal(s.players[1].turnPpBonus, 0);
   assert.equal(s.players[0].pp, 5);
   s = draws(end(s));
@@ -64,7 +65,7 @@ test('ending with 11 cards waits for two chosen exclusions, not discard triggers
   let s = arena({ me: { hand: Array(11).fill('y_5') } });
   s.players[1].yojo = [];
   s.players[1].sweet = [];
-  const original = [...hand(s)], deckSize = s.players[0].yojo.length;
+  const original = [...hand(s)], deckSize = s.players[0].yojo.length, pp = s.players[0].pp;
   s = end(s);
   assert.equal(s.active, 0);
   assert.equal(s.pending.task.op, 'trimHand');
@@ -79,15 +80,15 @@ test('ending with 11 cards waits for two chosen exclusions, not discard triggers
   assert.equal(s.players[0].nap.length, 0);
   assert.equal(s.players[0].yojo.length, deckSize);
   assert.equal(s.active, 1);
-  assert.equal(s.players[0].pp, 0);
+  assert.equal(s.players[0].pp, pp);
   assert.equal(s.pending, null);
   assert.equal(s.winner, null);
 });
 
-test('nine cards need no exclusions and unspent PP is cleared', () => {
+test('nine cards need no exclusions and unspent PP stays until the next own turn', () => {
   const s = end(arena({ me: { hand: Array(9).fill('y_5'), pp: 8 } }));
   assert.equal(s.active, 1);
-  assert.equal(s.players[0].pp, 0);
+  assert.equal(s.players[0].pp, 8);
   assert.equal(s.pending.task.op, 'draw');
   assert.equal(s.players[0].exile.length, 0);
 });

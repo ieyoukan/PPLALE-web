@@ -109,7 +109,8 @@ test('ending with eleven cards requires two hand exclusions before the turn chan
   expect(next.players[0].hand).toHaveLength(9);
   expect(next.players[0].exile).toEqual(chosen);
   expect(next.players[0].nap).toHaveLength(0);
-  expect(next.players[0].pp).toBe(0);
+  // The PP left stays through the opponent's turn.
+  expect(next.players[0].pp).toBe(s.players[0].pp);
   expect(next.pending).toBeNull();
 });
 
@@ -122,7 +123,8 @@ test('second-player fifth-turn PP is shown as seven usable PP and a temporary +2
   await expect(page.getByRole('group', { name: '自分のPP 7 / 7', exact: true })).toBeVisible();
   await page.getByRole('button', { name: /ターン\s*終了/ }).click();
   await expect(page.getByLabel('このターンの追加PP 2', { exact: true })).toBeHidden();
-  expect((await savedGame(page)).players[1].pp).toBe(0);
+  // The 7 PP left stays (and is shown) through the opponent's turn; the +2 was for that turn only.
+  expect((await savedGame(page)).players[1].pp).toBe(7);
 });
 
 test('a threshold draw is mandatory: the only choice is the sweets deck', async ({ page }) => {

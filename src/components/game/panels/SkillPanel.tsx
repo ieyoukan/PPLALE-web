@@ -54,7 +54,7 @@ export function SkillPanel({ side }: { side: Side }) {
     })}
     <p>アイス {player.ice ?? 0} ／ どんぐり {player.acorns ?? 0}</p>
     {(player.acorns ?? 0) > 0 && <div className={styles.menuList}>
-      {(['draw', 'pp'] as const).map(action => <button key={action} disabled={game.phase !== 'playing' || !!game.pending || busy || !board.canControl(side)} onClick={() => { act({ type: 'acorn', actor: side, mode: action }); setPanel(null); }}>どんぐり1：{action === 'draw' ? '1枚引く' : '現在PPを1増やす'}</button>)}
+      {(['draw', 'pp'] as const).map(action => <button key={action} disabled={game.phase !== 'playing' || !!game.pending || game.active !== side || busy || !board.canControl(side)} onClick={() => { act({ type: 'acorn', actor: side, mode: action }); setPanel(null); }}>どんぐり1：{action === 'draw' ? '1枚引く' : '現在PPを1増やす'}</button>)}
     </div>}
     {mode === 'hotseat' && <div className={styles.testControls}>
       <h3>現在PP</h3>

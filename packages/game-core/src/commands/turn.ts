@@ -63,7 +63,8 @@ export const turnCommands: Handlers<'play' | 'attack' | 'end' | 'reveal' | 'skil
         activateExSkill(s, c.actor, c.skill, catalog);
     },
     acorn(s, c) {
-        if (s.phase !== 'playing' || s.pending || !(s.players[c.actor].acorns ?? 0)) throw new RuleError('どんぐりを使用できません');
+        // 「自分のターン中、任意のタイミングで」 (user ruling).
+        if (s.phase !== 'playing' || s.pending || s.active !== c.actor || !(s.players[c.actor].acorns ?? 0)) throw new RuleError('どんぐりは自分のターン中に使えます');
         s.players[c.actor].acorns!--;
         // The draw is the どんぐりカウント's (a system draw, not a card effect: 魅惑の水煙 does not count it).
         if (c.mode === 'draw') s.queue.push({ op: 'draw', actor: c.actor, text: 'acorn' });

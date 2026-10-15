@@ -45,7 +45,8 @@ const ice = (gain: number): CardScript => ({
 
 const soda = (fruit: string): CardScript => ({
     onPlay(ctx) {
-        for (const uid of [...ctx.me.hand, ...ctx.me.yojo, ...ctx.me.nap].filter(uid => ctx.defOf(uid).type === 'yojo')) ctx.s.cards[uid].lastingFruits = Array.from(new Set([...(ctx.s.cards[uid].lastingFruits ?? []), fruit]));
+        // 「このゲーム中」: every 幼女 of this side's field, hand, deck and nap, also the ones that come later (see fruitsOf).
+        ctx.me.lastingFruits = Array.from(new Set([...(ctx.me.lastingFruits ?? []), fruit]));
         step(ctx, 'pay');
     },
     effect(ctx, t) {
@@ -63,18 +64,14 @@ export const fruitSweets: CardScripts = {
     s_28: chai, s_29: chai, s_30: chai, s_31: chai,
     s_32: ice(1), s_33: ice(2), s_34: ice(3), s_35: ice(4), s_36: ice(4),
     s_37: { onPlay: ctx => ctx.queue('draw') },
-    s_38: {
-        onPlay: ctx => step(ctx, 'photo'),
-        effect(ctx, t) {
-            if (!t.target) return ctx.ask('「いっしょにおしゃしん」の条件を達成しましたか？', [{ id: 'no', label: '達成していない' }, { id: 'yes', label: '達成した：双方1ドロー' }], t);
-            if (t.target === 'yes') { ctx.queue('draw'); ctx.queue('draw', { actor: ctx.foeSide }); }
-        },
-    },
+    // いっしょにおしゃしん: the bracketed condition is a joke (user ruling), so both players simply draw.
+    s_38: { onPlay(ctx) { ctx.queue('draw'); ctx.queue('draw', { actor: ctx.foeSide }); } },
     s_39: soda('melon'), s_40: soda('grape'),
     s_41: { onPlay(ctx) { ctx.queue('allDamage', { amount: 1 }); ctx.queue('reduce', { amount: 1 }); if (ctx.playedBefore('s_42')) ctx.queue('reduce', { amount: 1 }); } },
     s_42: { onPlay(ctx) { ctx.queue('allBuff', { scope: 'friendly', hp: 1 }); ctx.queue('heal', { amount: 1 }); if (ctx.playedBefore('s_41')) ctx.queue('heal', { amount: 1 }); } },
     s_43: {
-        onPlay: ctx => step(ctx, 'search', { count: 2, ids: [] }),
+        // おいしくなる呪文 multiplies the number taken, like a draw (user ruling: 2 → 4).
+        onPlay: ctx => step(ctx, 'search', { count: 2 * ctx.multiplier, ids: [] }),
         effect(ctx, t) {
             if (t.target) { take(ctx, t.target, 'yojo'); t = { ...t, target: undefined, count: t.count! - 1, ids: [...(t.ids ?? []), ctx.s.cards[t.target].cardId] }; }
             const members = ['りくす', 'ゆに', 'ビデカメ', 'よみ', 'おうか', 'がと', 'キラチャン', 'ぶらんちゃん', 'ようかん', 'ひらくぅ。'];

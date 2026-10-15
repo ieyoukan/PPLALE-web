@@ -99,13 +99,13 @@ test('p_6 しゅれい: 効果耐性 stops アブソリュートゼロ but not -
   assert.equal(s.players[0].mp, 0);
 });
 
-test('p_6 しゅれい: skills without a limit do not keep ぶどうのもなか from acting, and あみの resets only the counted ones', () => {
+test('p_6 しゅれい: skills without a limit never run out, so ぶどうのもなか never acts; あみの resets only the counted ones', () => {
   let s = arena({ me: { playable: 'p_6', field: ['y_50', 'y_9'], hand: ['y_55'] }, foe: { field: ['y_17'] } });
   const [monaka, plum] = field(s), target = field(s, 1)[0];
   assert.equal(canAttack(s, 0, monaka, target, catalog), false);
   s = choose(skill(s, 0), plum);
   s = choose(skill(s, 0), plum);
-  assert.equal(canAttack(s, 0, monaka, target, catalog), true);
+  assert.equal(canAttack(s, 0, monaka, target, catalog), false);
   s = playFirst(s, 'y_55');
   assert.deepEqual(s.players[0].skills, [2, 0, 0, 0, 0, 0]);
 });

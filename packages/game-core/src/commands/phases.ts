@@ -42,12 +42,8 @@ export function advancePhase(s: GameState, catalog: Catalog) {
 export function finishTurn(s: GameState, side: Side, catalog: Catalog) {
     const p = s.players[side];
     p.hand.forEach(uid => { s.cards[uid].temporaryCost = 0; });
-    // Orange reactions inspect/spend the remaining PP during the opponent's turn.
-    // It is always replaced on this player's next turn; ordinary decks keep their old end reset.
-    const usesOffTurnPp = p.field.some(uid => ['y_114', 'y_118', 'y_124', 'y_141'].includes(s.cards[uid].cardId) && !s.cards[uid].silenced)
-        || p.hand.some(uid => ['y_122', 'y_148'].includes(s.cards[uid].cardId) && !s.cards[uid].silenced)
-        || (['field', 'hand'] as const).some(zone => p[zone].some(uid => scriptFor(s, uid).offTurnPp === zone));
-    if (!usesOffTurnPp) p.pp = 0;
+    // The PP left stays through the opponent's turn (cards pay or count it then) and is replaced at
+    // this player's next turn (user ruling).
     p.turnPpBonus = 0;
     // 行動不能 given 「〜ターン終了時まで」 ends with the turn it was given up to.
     for (const uid of s.players.flatMap(player => player.field)) {
