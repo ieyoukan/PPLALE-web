@@ -4,7 +4,6 @@ import type { CardContext } from '../effects/context.ts';
 import type { CardScripts } from './types.ts';
 import { attackOf, availablePpMaximum, costOf, hpOf } from '../core/cards.ts';
 import { selectable } from '../effects/targets.ts';
-import type { Catalog, GameState, Side } from '../model.ts';
 import { skillsFor } from '../playables/skills.ts';
 import { gainEx, napCost, napUnits, revealStep, revive, step, take } from './helpers.ts';
 
@@ -32,10 +31,16 @@ function mochidaToHand(ctx: CardContext, count: number) {
         ctx.reveal(uid);
     }
 }
-/** ゼロオレンジ: 【レンス】 on its owner's field, or shown in their hand. */
-const lensWith = (s: GameState, side: Side, catalog: Catalog) =>
-    s.players[side].field.some(uid => catalog[s.cards[uid].cardId].name === 'レンス')
-    || s.players[side].hand.some(uid => s.cards[uid].revealed && catalog[s.cards[uid].cardId].name === 'レンス');
+/** ゼロオレンジ: 【レンス】 (of any fruit) on its owner's field, or shown in their hand. */
+const lensWith = (ctx: CardContext) =>
+    ctx.me.field.some(uid => ctx.defOf(uid).name === 'レンス')
+    || ctx.me.hand.some(uid => ctx.s.cards[uid].revealed && ctx.defOf(uid).name === 'レンス');
+
+/** メロンのちょり: the chosen unit is exiled (4 nap 幼女 were exiled) or 行動不能; its おにごっこ is rolled first. */
+function finishChori(ctx: CardContext, target: string, exiled: boolean) {
+    if (!ctx.foe.field.includes(target)) return;
+    ctx.queue(exiled ? 'exile' : 'immobilize', { target, candidates: [target], selected: true, amount: 1 });
+}
 
 export const melonYojo: CardScripts = {
     // y_65 みか: うさぎ / ラビットのカードをデッキから手札に加える。手札のうさぎ / ラビット1枚を公開してコスト0。
@@ -67,7 +72,8 @@ export const melonYojo: CardScripts = {
         cpu: { choose: (ctx, _t, options) => [...options].sort((a, b) => worth(ctx, a) - worth(ctx, b))[0] },
     },
     // y_67 ぎってぃ: 挑発。場の幼女1人の攻撃力と体力を入れ替える。
-    y_67: { keywords: ['taunt'], onPlay: ctx => ctx.queue('swapStats', { scope: 'any' }) },
+    // ぎってぃ自身は選べない（ユーザー裁定）。
+    y_67: { keywords: ['taunt'], onPlay: ctx => ctx.queue('swapStats', { scope: 'any', candidates: [...ctx.me.field, ...ctx.foe.field].filter(uid => uid !== ctx.uid) }) },
     // y_68 みゅーとん: 自分の場の他の幼女と同名の幼女を、全ての能力を失った状態で自分の場に出す。
     y_68: {
         onPlay(ctx) { if (others(ctx).length) step(ctx, 'copy'); },
@@ -102,22 +108,27 @@ export const melonYojo: CardScripts = {
     y_71: {
         onPlay(ctx) { ctx.queue('draw'); step(ctx, 'pay'); },
         effect(ctx, t) {
-            // 引くカードがない、または減らすと負けるなら聞かない。
-            if (!ctx.me.yojo.length && !ctx.me.sweet.length || ctx.me.points <= 2) return;
+            // 減らすと負けるときも、引くカードがないときも聞く（ユーザー裁定）。
             if (!t.target) return ctx.ask('お菓子ポイントを2減らして、もう1枚引きますか？', [{ id: 'no', label: '減らさない' }, { id: 'yes', label: '2減らして1枚引く' }], t);
             if (t.target === 'yes') { ctx.losePoints(ctx.side, 2, 'reduce'); ctx.queue('draw'); }
         },
-        cpu: { choose: ctx => ctx.me.points > 6 ? 'yes' : 'no' },
+        cpu: { choose: ctx => ctx.me.points > 6 && ctx.me.yojo.length + ctx.me.sweet.length > 0 ? 'yes' : 'no' },
     },
     // y_72 うゆち: 猫まんじゅうを場に出し、公開状態で手札に加える。お昼寝場所の幼女が5人以上なら、公開状態の猫まんじゅう1体のコストを0。
     y_72: {
         onPlay(ctx) { ctx.queue('summon', { cardId: 'token_cat' }); step(ctx, 'cat'); },
-        effect(ctx) {
-            const cat = ctx.spawn('token_cat');
-            ctx.me.hand.push(cat);
-            ctx.reveal(cat);
-            if (napUnits(ctx).length < 5) return;
-            const target = ctx.me.hand.find(uid => isCat(ctx, uid) && ctx.s.cards[uid].revealed && costOf(ctx.s, uid, ctx.catalog, ctx.side) > 0);
+        effect(ctx, t) {
+            if (t.step === 'cat') {
+                const cat = ctx.spawn('token_cat');
+                ctx.me.hand.push(cat);
+                ctx.reveal(cat);
+                if (napUnits(ctx).length >= 5) step(ctx, 'free');
+                return;
+            }
+            // 公開状態の猫まんじゅう1体を選ぶ（1体だけなら自動）。
+            const cats = ctx.me.hand.filter(uid => isCat(ctx, uid) && ctx.s.cards[uid].revealed && costOf(ctx.s, uid, ctx.catalog, ctx.side) > 0);
+            if (!t.target && cats.length > 1) return ctx.pick('コストを0にする公開状態の猫まんじゅうを選んでください', cats, t);
+            const target = t.target ?? cats[0];
             if (target) ctx.s.cards[target].costDelta = -ctx.defOf(target).cost;
         },
     },
@@ -129,8 +140,9 @@ export const melonYojo: CardScripts = {
         },
     },
     // y_74 ゼロオレンジ: 行動不能。場か公開した手札にレンスがいる間は行動でき、早食い。破壊されたとき相手のランダムな1人を破壊。
+    // 行動できるかは場に出たときだけ判定する（ユーザー裁定）：そのときレンスがいれば、場にいる間ずっと行動でき、早食いを持つ。
     y_74: {
-        unlocked: lensWith,
+        keywords: ['immobile'],
         onEnter: ctx => step(ctx, 'reveal'),
         onDestroyed: ctx => step(ctx, 'death'),
         effect(ctx, t) {
@@ -139,9 +151,12 @@ export const melonYojo: CardScripts = {
                 return;
             }
             const lens = ctx.me.hand.filter(uid => !ctx.s.cards[uid].revealed && ctx.defOf(uid).name === 'レンス');
-            if (!lens.length) return;
-            if (!t.target) return ctx.ask('手札の【レンス】を公開しますか？', [{ id: 'no', label: '公開しない' }, ...lens.map(id => ({ id, label: 'レンスを公開する' }))], t);
-            if (t.target !== 'no') ctx.reveal(t.target);
+            if (!t.target && lens.length) return ctx.ask('手札の【レンス】を公開しますか？', [{ id: 'no', label: '公開しない' }, ...lens.map(id => ({ id, label: 'レンスを公開する' }))], t);
+            if (t.target && t.target !== 'no') ctx.reveal(t.target);
+            if (!lensWith(ctx) || !ctx.me.field.includes(ctx.uid) || ctx.card.silenced) return;
+            ctx.touch(ctx.uid);
+            ctx.card.keywords = ctx.card.keywords.filter(keyword => keyword !== 'immobile');
+            ctx.addKeyword(ctx.uid, 'fast');
         },
         cpu: { choose: (_ctx, _t, options) => options.find(id => id !== 'no') },
     },
@@ -150,22 +165,31 @@ export const melonYojo: CardScripts = {
     // y_76 うぃまる: 防衛。場にいる間、自分のお菓子ポイントが回復するたびに+1/+1。
     y_76: { keywords: ['guard'], onHealed(ctx, zone) { if (zone === 'field') ctx.buff(ctx.uid, 1, 1); } },
     // y_77 ちょり: 相手幼女1人を次の相手ターン終了時まで行動不能。お昼寝場所の幼女4人を除外したなら、代わりにその幼女を除外。
+    // 順番（ユーザー裁定）：相手の幼女を選ぶ → 4人除外するか聞く → 除外する4人を選ぶ → おにごっこのダイス。
     y_77: {
-        onPlay(ctx) { if (selectable(ctx.s, ctx.side, ctx.foe.field).length) step(ctx, 'mode'); },
+        onPlay(ctx) { if (selectable(ctx.s, ctx.side, ctx.foe.field).length) step(ctx, 'target'); },
         effect(ctx, t) {
+            if (t.step === 'target') {
+                if (!t.target) return ctx.pick('行動不能にする相手の幼女を選んでください', selectable(ctx.s, ctx.side, ctx.foe.field), t);
+                if (exilableNap(ctx).length >= 4) return step(ctx, 'mode', { subject: t.target });
+                return finishChori(ctx, t.target, false);
+            }
             if (t.step === 'mode') {
-                if (!t.target && exilableNap(ctx).length >= 4) return ctx.ask('お昼寝場所の幼女を4人除外して、行動不能の代わりに相手の幼女を除外しますか？', [{ id: 'no', label: '行動不能にする' }, { id: 'yes', label: '4人除外して、相手の幼女を除外' }], t);
-                if (t.target === 'yes') return step(ctx, 'pay', { count: 4, amount: 0 });
-                ctx.queue('immobilize', { scope: 'enemy', amount: 1 });
-                return;
+                if (!t.target) return ctx.ask('お昼寝場所の幼女を4人除外して、行動不能の代わりにその幼女を除外しますか？', [{ id: 'no', label: '行動不能にする' }, { id: 'yes', label: '4人除外して、その幼女を除外' }], t);
+                if (t.target === 'yes') return step(ctx, 'pay', { subject: t.subject, count: 4, amount: 0 });
+                return finishChori(ctx, t.subject!, false);
             }
             if (t.target) { ctx.exile(t.target); t = { ...t, target: undefined, count: t.count! - 1, amount: (t.amount ?? 0) + 1 }; }
             const left = exilableNap(ctx);
             if (t.count! > 0 && left.length > t.count!) return ctx.pick(`除外するお昼寝場所の幼女を選んでください（あと${t.count}人）`, left, t);
             if (t.count! > 0) for (const uid of left.slice(0, t.count)) { ctx.exile(uid); t = { ...t, amount: (t.amount ?? 0) + 1 }; }
-            ctx.queue(t.amount! >= 4 ? 'exile' : 'immobilize', { scope: 'enemy', amount: 1 });
+            finishChori(ctx, t.subject!, t.amount! >= 4);
         },
-        cpu: { choose: (ctx, t, options) => t.step === 'mode' ? 'yes' : cheapest(ctx, options) },
+        cpu: {
+            choose: (ctx, t, options) => t.step === 'mode' ? 'yes'
+                : t.step === 'target' ? [...options].sort((a, b) => attackOf(ctx.s.cards[b], ctx.catalog) - attackOf(ctx.s.cards[a], ctx.catalog))[0]
+                : cheapest(ctx, options),
+        },
     },
     // y_78 えーりん: 突撃。追加で4PP払ったなら、早食いと「攻撃終了時、メロンの幼女4人を除外したなら+1/+1し再行動」を得る。
     y_78: {
@@ -197,9 +221,10 @@ export const melonYojo: CardScripts = {
     y_79: {
         onPlay: ctx => step(ctx, 'swing'),
         onDestroyed: ctx => ctx.queue('heal', { amount: 3 }),
+        // 7減らした時点で0なら負ける（7以下で使うと負け。ユーザー裁定）。
         effect(ctx) {
             ctx.losePoints(ctx.side, 7, 'reduce');
-            ctx.heal(4);
+            if (ctx.me.points > 0) ctx.heal(4);
         },
     },
     // y_80 キラチャン: 自分の手札1枚を除外。デッキからカードを1枚選び、お昼寝場所に捨てる。
@@ -214,8 +239,11 @@ export const melonYojo: CardScripts = {
             }
             const cards = [...ctx.me.yojo, ...ctx.me.sweet];
             if (!t.target) return ctx.pick('お昼寝場所に捨てるデッキのカードを選んでください', cards, t);
-            for (const kind of ['yojo', 'sweet'] as const) ctx.me[kind] = ctx.me[kind].filter(uid => uid !== t.target);
+            const kind = ctx.me.yojo.includes(t.target) ? 'yojo' : 'sweet';
+            ctx.me[kind] = ctx.me[kind].filter(uid => uid !== t.target);
             ctx.me.nap.push(t.target);
+            // 選んだあとはデッキをシャッフルする（ユーザー裁定）。
+            ctx.shuffleDeck(kind);
         },
         cpu: { choose: (ctx, t, options) => t.step === 'exileHand' ? cheapest(ctx, options) : [...options].sort((a, b) => ctx.defOf(b).cost - ctx.defOf(a).cost)[0] },
     },
@@ -325,8 +353,8 @@ export const melonYojo: CardScripts = {
         effect(ctx) {
             if (!ctx.foe.field.length) return;
             const top = Math.max(...ctx.foe.field.map(uid => attackOf(ctx.s.cards[uid], ctx.catalog)));
-            // 相手の自分のターン3回ぶん: 相手のターン中なら今のターンは数えない。
-            const until = ctx.s.turn + (ctx.s.active === ctx.foeSide ? 6 : 5);
+            // その幼女の持ち主がこれから3回ターンを終えるまで。持ち主のターン中なら、そのターンの終わりも数える（ユーザー裁定）。
+            const until = ctx.s.turn + (ctx.s.active === ctx.foeSide ? 4 : 5);
             for (const uid of ctx.foe.field.filter(uid => attackOf(ctx.s.cards[uid], ctx.catalog) === top)) ctx.immobilize(uid, until);
         },
     },
@@ -398,13 +426,15 @@ export const melonYojo: CardScripts = {
     // y_101 ほとり丸: 早食い。手札の猫まんじゅうを任意の数だけ捨て、その数Xだけ+X/+X、相手のお菓子をX個奪う。
     y_101: {
         keywords: ['fast'],
-        onPlay: ctx => step(ctx, 'discard', { count: 0 }),
+        onPlay: ctx => step(ctx, 'discard', { ids: [] }),
         effect(ctx, t) {
-            if (t.target && t.target !== 'done') { ctx.discard(t.target); t = { ...t, target: undefined, count: (t.count ?? 0) + 1 }; }
-            const cats = ctx.me.hand.filter(uid => isCat(ctx, uid));
-            if (t.target !== 'done' && cats.length) return ctx.ask('捨てる猫まんじゅうを選んでください（任意）', [{ id: 'done', label: `捨て終える（${t.count ?? 0}体）` }, ...cats.map(id => ({ id, label: '猫まんじゅうを捨てる' }))], t);
-            const x = t.count ?? 0;
+            // 選び終えてから、X体をまとめて捨てる（神隠し ようじょ贄は1回で2X個。ユーザー裁定）。
+            if (t.target && t.target !== 'done') t = { ...t, target: undefined, ids: [...(t.ids ?? []), t.target] };
+            const chosen = t.ids ?? [], cats = ctx.me.hand.filter(uid => isCat(ctx, uid) && !chosen.includes(uid));
+            if (t.target !== 'done' && cats.length) return ctx.ask('捨てる猫まんじゅうを選んでください（任意）', [{ id: 'done', label: `捨て終える（${chosen.length}体）` }, ...cats.map(id => ({ id, label: '猫まんじゅうを捨てる' }))], t);
+            const x = chosen.length;
             if (!x) return;
+            ctx.discard(chosen);
             ctx.buff(ctx.uid, x, x);
             ctx.queue('steal', { amount: x });
         },

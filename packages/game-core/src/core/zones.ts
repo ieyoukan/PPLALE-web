@@ -46,18 +46,21 @@ export function reveal(s: GameState, uid: string, catalog: Catalog) {
 }
 
 /** Hand → nap. Triggers 「手札から直接お昼寝場所に捨てられたとき」. */
-export function discard(s: GameState, side: Side, uid: string, catalog: Catalog) {
-    const p = s.players[side];
-    p.hand = p.hand.filter(id => id !== uid);
-    p.nap.push(uid);
-    s.cards[uid].costDelta = 0;
-    s.cards[uid].temporaryCost = 0;
-    if (catalog[s.cards[uid].cardId].type === 'yojo') {
-        p.discardedYojo = (p.discardedYojo ?? 0) + 1;
-        // 神隠し ようじょ贄: in the turn it was used, each 幼女 its owner discards steals 2 (人数×2).
-        if (s.active === side && p.exSkills?.kamikakushi?.lastTurn === s.turn) s.queue.push({ op: 'steal', actor: side, amount: 2 });
+export function discard(s: GameState, side: Side, uids: string | string[], catalog: Catalog) {
+    const p = s.players[side], cards = typeof uids === 'string' ? [uids] : uids;
+    let units = 0;
+    for (const uid of cards) {
+        p.hand = p.hand.filter(id => id !== uid);
+        p.nap.push(uid);
+        s.cards[uid].costDelta = 0;
+        s.cards[uid].temporaryCost = 0;
+        if (catalog[s.cards[uid].cardId].type === 'yojo') units++;
     }
-    scriptFor(s, uid).onDiscarded?.(cardContext(s, catalog, side, uid));
+    p.discardedYojo = (p.discardedYojo ?? 0) + units;
+    // 神隠し ようじょ贄: in the turn it was used, each discard steals 2 × the 幼女 discarded together, at once
+    // (user ruling: 3 discarded by one effect steal 6).
+    if (units && s.active === side && p.exSkills?.kamikakushi?.lastTurn === s.turn) s.queue.push({ op: 'steal', actor: side, amount: 2 * units });
+    for (const uid of cards) scriptFor(s, uid).onDiscarded?.(cardContext(s, catalog, side, uid));
 }
 
 /**

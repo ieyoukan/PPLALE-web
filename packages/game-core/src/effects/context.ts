@@ -70,7 +70,8 @@ export interface Effects {
     /** Creates a card outside every zone; the caller places it. */
     spawn(cardId: string): string;
     shuffleDeck(kind: DeckKind): void;
-    discard(uid: string, side?: Side): void;
+    /** Discards hand cards to the nap; several given together are one discard (神隠し ようじょ贄). */
+    discard(uids: string | string[], side?: Side): void;
     heal(amount: number, side?: Side): void;
     losePoints(side: Side, amount: number, mode: PointLoss): number;
     eat(uid: string, amount: number): void;
@@ -142,7 +143,7 @@ export function effects(s: GameState, catalog: Catalog, side: Side, source?: str
         summon: (cardId, silenced) => summon(s, side, cardId, catalog, silenced),
         spawn: cardId => spawnCard(s, cardId),
         shuffleDeck: kind => { me[kind] = shuffled(s, me[kind]); },
-        discard: (uid, owner = side) => discard(s, owner, uid, catalog),
+        discard: (uids, owner = side) => discard(s, owner, uids, catalog),
         heal: (amount, target = side) => heal(s, target, amount),
         losePoints: (target, amount, mode) => losePoints(s, target, amount, mode).lost,
         eat: (uid, amount) => { s.queue.push({ op: 'eatResponse', actor: other(side), source: uid, amount }); },

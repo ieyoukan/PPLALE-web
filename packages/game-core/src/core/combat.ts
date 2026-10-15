@@ -9,9 +9,6 @@ import { skillsFor } from '../playables/skills.ts';
 
 export function canAttack(s: GameState, side: Side, uid: string, target: string | 'leader', catalog: Catalog): boolean {
     const p = s.players[side], c = s.cards[uid];
-    // 「この幼女は行動不能。〜ならば行動可能になり、早食いを持つ」 (ゼロオレンジ).
-    const unlocked = c && !c.silenced ? scriptFor(s, uid).unlocked?.(s, side, catalog) : undefined;
-    if (unlocked === false) return false;
     // ぶどうのもなか: 「スキルすべての残り使用回数が0ならば行動可能」. A skill without a use limit never runs
     // out (user ruling), so with such a playable (しゅれい) it never acts on its own.
     const skillsLeft = () => p.skills.some(left => left > 0) || skillsFor(p.playable).some(skill => skill.uses === undefined);
@@ -19,7 +16,7 @@ export function canAttack(s: GameState, side: Side, uid: string, target: string 
     if (s.phase !== 'playing' || s.active !== side || s.pending || s.winner !== null || !p.field.includes(uid) || !c || c.exhausted || c.keywords.includes('immobile') || conditionalImmobile || immobilized(s, uid) || attackOf(c, catalog) <= 0)
         return false;
     // Summoning sickness: fast allows any target, charge only units.
-    if (c.entered === s.turn && !c.keywords.includes('fast') && !unlocked && !(target !== 'leader' && c.keywords.includes('charge')))
+    if (c.entered === s.turn && !c.keywords.includes('fast') && !(target !== 'leader' && c.keywords.includes('charge')))
         return false;
     const enemy = s.players[other(side)];
     if (target !== 'leader' && (!enemy.field.includes(target) || isHidden(s, target))) return false;

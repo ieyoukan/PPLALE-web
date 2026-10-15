@@ -150,15 +150,15 @@ export const strawberryYojo: CardScripts = {
                         fx.note(`ぎってぃのダイス：${roll}（${count ? `${count}枚捨てる` : '0枚なので何も起きない'}）`);
                         t = { ...t, count };
                     }
-                    if (t.target) {
-                        fx.discard(t.target);
-                        t = { ...t, target: undefined, count: (t.count ?? 0) - 1, amount: (t.amount ?? 0) + 1 };
-                    }
-                    if ((t.count ?? 0) > 0 && fx.me.hand.length) {
-                        fx.pick(`あと${t.count}枚捨てます（ダイス結果）`, fx.me.hand, t);
+                    // The cards are chosen first and discarded together: one discard (神隠し ようじょ贄 steals 2X once).
+                    if (t.target) t = { ...t, target: undefined, count: (t.count ?? 0) - 1, ids: [...(t.ids ?? []), t.target] };
+                    const rest = fx.me.hand.filter(uid => !(t.ids ?? []).includes(uid));
+                    if ((t.count ?? 0) > 0 && rest.length) {
+                        fx.pick(`あと${t.count}枚捨てます（ダイス結果）`, rest, t);
                         return;
                     }
-                    const discarded = t.amount ?? 0;
+                    if (t.ids?.length) fx.discard(t.ids);
+                    const discarded = t.ids?.length ?? 0;
                     if (discarded >= 1) {
                         for (let i = 0; i < 2 && fx.foe.hand.length; i++) fx.discard(fx.foe.hand[fx.random(fx.foe.hand.length)], fx.foeSide);
                     }

@@ -49,7 +49,10 @@ test('y_67 ぎってぃ: swaps a unit\'s attack and HP; an enemy taunt concentra
   // Without a taunt any unit, own ones included: みか 0/1 becomes 1/0 and is destroyed.
   s = arena({ me: { hand: ['y_67'], field: ['y_65'] } });
   const mika = field(s)[0];
-  s = choose(playFirst(s, 'y_67'), mika);
+  s = playFirst(s, 'y_67');
+  // The ぎってぃ just played cannot be chosen.
+  assert.deepEqual(optionIds(s), [mika]);
+  s = choose(s, mika);
   assert.ok(s.players[0].nap.includes(mika));
 });
 
@@ -109,7 +112,7 @@ test('y_70 がと: on attack returns another own unit and grows by half its atta
   assert.equal(s.pending, null);
 });
 
-test('y_71 リンネ: draws, then may pay 2 sweet points for one more; not asked when it would lose', () => {
+test('y_71 リンネ: draws, then may pay 2 sweet points for one more; asked even when it would lose or nothing is left to draw', () => {
   let s = draws(playFirst(arena({ me: { hand: ['y_71'] } }), 'y_71'));
   assert.deepEqual(optionIds(s), ['no', 'yes']);
   s = draws(choose(s, 'yes'));
@@ -117,8 +120,13 @@ test('y_71 リンネ: draws, then may pay 2 sweet points for one more; not asked
   // Two from リンネ, one for reaching 10 points.
   assert.equal(hand(s).length, 3);
   s = draws(playFirst(arena({ me: { hand: ['y_71'], points: 2 } }), 'y_71'));
-  assert.equal(s.pending, null);
-  assert.equal(hand(s).length, 1);
+  assert.deepEqual(optionIds(s), ['no', 'yes']);
+  s = choose(s, 'yes');
+  assert.equal(s.winner, 1);
+  s = arena({ me: { hand: ['y_71'] } });
+  s.players[0].yojo = []; s.players[0].sweet = [];
+  s = playFirst(s, 'y_71');
+  assert.deepEqual(optionIds(s), ['no', 'yes']);
 });
 
 test('y_72 うゆち: a cat on the field and a shown cat in hand, free with five 幼女 in the nap', () => {
@@ -129,6 +137,15 @@ test('y_72 うゆち: a cat on the field and a shown cat in hand, free with five
     assert.equal(s.cards[cat].revealed, true);
     assert.equal(costOf(s, cat, catalog, 0), n >= 5 ? 0 : 1);
   }
+  // With another shown cat already in hand, the player chooses which one becomes free.
+  let s = arena({ me: { hand: ['y_72', 'token_cat'], nap: Array(5).fill('y_9') } });
+  const old = ofId(s, hand(s), 'token_cat')[0];
+  s.cards[old].revealed = true;
+  s = playFirst(s, 'y_72');
+  assert.equal(optionIds(s).length, 2);
+  s = choose(s, old);
+  assert.equal(costOf(s, old, catalog, 0), 0);
+  assert.ok(ofId(s, hand(s), 'token_cat').some(uid => uid !== old && costOf(s, uid, catalog, 0) === 1));
 });
 
 test('y_73 ゆうひ: at its owner\'s turn end recovers 1 point and all PP, kept through the opponent\'s turn', () => {
@@ -148,10 +165,19 @@ test('y_74 ゼロオレンジ: cannot act until a レンス is on the field or s
   assert.equal(canAttack(s, 0, zero, 'leader', catalog), false);
   s = arena({ me: { hand: ['y_74', 'y_100'] }, foe: { field: ['y_9'] } });
   s = playFirst(s, 'y_74');
-  s = choose(s, ofId(s, hand(s), 'y_100')[0]);
+  const lens = ofId(s, hand(s), 'y_100')[0];
+  s = choose(s, lens);
+  assert.equal(canAttack(s, 0, newest(s), 'leader', catalog), true);
+  // Judged only when it came: the レンス leaving the hand later does not stop it.
+  s.players[0].hand = []; s.players[0].nap.push(lens);
   assert.equal(canAttack(s, 0, newest(s), 'leader', catalog), true);
   s = kill(s, newest(s));
   assert.equal(field(s, 1).length, 0);
+  // Not shown when it came: a レンス shown later does not wake it.
+  s = arena({ me: { hand: ['y_74', 'y_100'] }, foe: { field: ['y_9'] } });
+  s = choose(playFirst(s, 'y_74'), 'no');
+  s.cards[ofId(s, hand(s), 'y_100')[0]].revealed = true;
+  assert.equal(canAttack(s, 0, newest(s), 'leader', catalog), false);
 });
 
 test('y_75 おうか: a cat and a もちだ into the hand', () => {
@@ -182,9 +208,10 @@ test('y_77 ちょり: 行動不能 until the next opponent turn ends; exiling fo
   s = draws(end(s));
   assert.equal(s.cards[target].immobileUntil, undefined);
 
+  // The target first, then whether to exile four, then (with more than four) which.
   s = arena({ me: { hand: ['y_77'], nap: Array(4).fill('y_9') }, foe: { field: ['y_17'] } });
-  s = choose(playFirst(s, 'y_77'), 'yes');
-  s = choose(s, field(s, 1)[0]);
+  s = choose(playFirst(s, 'y_77'), field(s, 1)[0]);
+  s = choose(s, 'yes');
   assert.equal(field(s, 1).length, 0);
   assert.equal(s.players[1].exile.length, 1);
   assert.equal(s.players[0].exile.length, 4);
@@ -243,14 +270,14 @@ test('えーりん waits for the defeated unit\'s death draw choice before offer
   assert.equal(s.cards[eirin].exhausted, false);
 });
 
-test('y_79 いろは: −7 then +4 in one step (no loss on the way); destroyed, +3', () => {
+test('y_79 いろは: −7 then +4; at 7 or less the −7 loses the game; destroyed, +3', () => {
   let s = draws(playFirst(arena({ me: { hand: ['y_79'] } }), 'y_79'), 'sweet');
   assert.equal(s.players[0].points, 9);
-  s = playFirst(arena({ me: { hand: ['y_79'], points: 3 } }), 'y_79');
-  assert.equal(s.winner, null);
-  assert.equal(s.players[0].points, 4);
   s = kill(s, newest(s));
-  assert.equal(s.players[0].points, 7);
+  assert.equal(s.players[0].points, 12);
+  s = playFirst(arena({ me: { hand: ['y_79'], points: 7 } }), 'y_79');
+  assert.equal(s.winner, 1);
+  assert.equal(s.players[0].points, 0);
 });
 
 test('y_80 キラチャン: exiles a hand card, then puts a chosen deck card into the nap; empty hand skips the first part', () => {
@@ -259,8 +286,12 @@ test('y_80 キラチャン: exiles a hand card, then puts a chosen deck card int
   s = choose(playFirst(s, 'y_80'), card);
   assert.ok(s.players[0].exile.includes(card));
   const deckCard = s.players[0].yojo[0];
+  const before = s.players[0].yojo.filter(uid => uid !== deckCard);
   s = choose(s, deckCard);
   assert.ok(s.players[0].nap.includes(deckCard));
+  // The deck it came from is shuffled.
+  assert.deepEqual([...s.players[0].yojo].sort(), [...before].sort());
+  assert.notDeepEqual(s.players[0].yojo, before);
   s = playFirst(arena({ me: { hand: ['y_80'] } }), 'y_80');
   assert.ok(optionIds(s).every(uid => s.players[0].yojo.includes(uid) || s.players[0].sweet.includes(uid)));
 });
@@ -428,6 +459,10 @@ test('y_94 オフティ二: draws; destroyed, the strongest enemies cannot act f
   assert.equal(s.cards[a].immobileUntil, s.turn + 5);
   assert.equal(s.cards[b].immobileUntil, s.turn + 5);
   assert.equal(s.cards[c].immobileUntil, undefined);
+  // Destroyed in the turn of the units' owner (it attacked オフティ二): that turn's end is the first of the three.
+  s = arena({ me: { field: ['y_28'] }, foe: { field: ['y_94'] } });
+  s = run(s, { type: 'adjust', actor: 1, resource: 'damage', delta: 99, uid: field(s, 1)[0] }, true);
+  assert.equal(s.cards[field(s)[0]].immobileUntil, s.turn + 4);
 });
 
 test('y_95 氷花: of the top three, one to the nap and two back in the chosen order, then two draws', () => {
@@ -579,6 +614,17 @@ test('y_106 もなか: a one-time barrier, at most 3 damage a hit, no effect des
   s.cards[theirs].damage = 6;
   s = playFirst(s, 's_8');
   assert.deepEqual([s.winner, s.winReason], [0, 'defeat']);
+});
+
+test('神隠し ようじょ贄: cards discarded together steal 2X at once, so one taunt-free steal (ほとり丸 with two cats steals 4 + 2)', () => {
+  let s = arena({ me: { hand: ['y_101', 'token_cat', 'token_cat'], points: 4 } });
+  s.players[0].exSkills = { kamikakushi: { uses: 1, lastTurn: s.turn } };
+  s = playFirst(s, 'y_101');
+  s = choose(s, optionIds(s)[1]);
+  s = draws(choose(s, optionIds(s)[1]), 'sweet');
+  // 2 × 2 cats from the ExSkill (one steal), then X = 2 from ほとり丸.
+  assert.deepEqual([s.players[0].points, s.players[1].points], [10, 6]);
+  assert.equal(s.log.filter(line => line.includes('お菓子ポイント 12 → 8')).length, 1);
 });
 
 test('y_107 かんらん: 神隠し ようじょ贄 — this turn each 幼女 discarded from hand steals 2; once a turn, twice a game', () => {
