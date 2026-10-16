@@ -90,6 +90,8 @@ export interface Instance {
     timedFruits?: Record<string, number>;
     /** The zone the card was last seen in: a move other than hand → field resets what effects gave it (core/movement.ts). */
     zone?: CardZone;
+    /** Whose deck the card goes back to, when not its holder's: a sweet given by すいーつあーん returns to the giver. */
+    owner?: Side;
 }
 export type CardZone = 'yojo' | 'sweet' | 'hand' | 'field' | 'nap' | 'exile';
 
@@ -158,7 +160,7 @@ export type TaskOp =
     | 'bonusDamage' | 'punish'
     | 'cardEffect' | 'die' | 'avoidEffect' | 'attackStart' | 'attackHooks' | 'defendHooks' | 'attackResponses' | 'combat' | 'eatResponse'
     | 'endEffects' | 'beginTurn' | 'turnDraw' | 'turnDrawResponse' | 'exile' | 'bounce'
-    | 'swapStats' | 'healHooks' | 'attackEnd' | 'playResponse';
+    | 'swapStats' | 'healHooks' | 'attackEnd' | 'playResponse' | 'playedAtZero';
 /** Why a draw happens; also the tag that keeps a hand-cost change temporary. */
 export type TaskTag = 'opening' | 'turn' | 'threshold' | 'acorn' | 'temporary';
 

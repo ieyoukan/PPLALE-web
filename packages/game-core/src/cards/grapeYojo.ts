@@ -82,7 +82,7 @@ export const grapeYojo: CardScripts = {
     y_42: {
         onPlay: ctx => step(ctx, 'pay'),
         effect(ctx, t) {
-            // HP0 のうゆちは効果の前にお昼寝場所へ行くが、自分自身は選べない（FAQ②-2: 効果を処理してから行く扱い）。
+            // HP0 のうゆちは効果を処理してからお昼寝場所へ行く（FAQ②-2）。自分自身は選べない（ユーザー裁定）。
             const others = (limit: number) => napUnits(ctx).filter(uid => uid !== ctx.uid && napCost(ctx, uid) <= limit);
             if (t.step === 'pay') {
                 // 追加の3PPは、選べる幼女が増えなくても聞く（「してもよい」はいつも聞く。ユーザー裁定）。

@@ -108,7 +108,11 @@ export const strawberryYojo: CardScripts = {
         ops: {
             searchRole: {
                 run(fx) {
-                    const found = fx.me.yojo.find(uid => ['manager', 'assistant_manager'].includes(fx.defOf(uid).role ?? ''));
+                    const at = fx.me.yojo.findIndex(uid => ['manager', 'assistant_manager'].includes(fx.defOf(uid).role ?? ''));
+                    const found = at < 0 ? undefined : fx.me.yojo[at];
+                    // The cards turned over before it are shown to the opponent (FAQ④-2), here in the log.
+                    const shown = fx.me.yojo.slice(0, at < 0 ? undefined : at);
+                    if (shown.length) fx.note(`ももか：めくったカード ${shown.map(uid => fx.defOf(uid).name).join('、')}`);
                     if (found) {
                         fx.me.yojo = fx.me.yojo.filter(uid => uid !== found);
                         fx.me.hand.push(found);

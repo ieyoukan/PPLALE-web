@@ -118,9 +118,8 @@ test('y_139 yuyuchi: one die at six gives both cumulative buffs', () => {
   let s = arena({ me: { hand: ['y_139'] } }); s.players[0].exSkills = { dice: { uses: 1 } }; s = choose(playFirst(s, 'y_139'), '6'); assert.equal(s.cards[newest(s)].attackBonus, 4); assert.equal(s.cards[newest(s)].hpBonus, 4);
 });
 test('y_140 なお: nonstacking dagger boosts two PP recoveries per own turn', () => {
-  let s = playFirst(arena({ me: { hand: ['y_140', 's_27', 's_27'], pp: 10 } }), 'y_140'); assert.equal(s.players[0].pp, 8);
-  // No real sweet is available to give, so each recovery resolves directly.
-  s = playFirst(s, 's_27'); assert.equal(s.players[0].pp, 10); assert.equal(s.players[0].exSkills.dagger.usedThisTurn, 2);
+  let s = playFirst(arena({ me: { hand: ['y_140', 's_27', 's_6'], pp: 10 } }), 'y_140'); assert.equal(s.players[0].pp, 8);
+  s = choose(playFirst(s, 's_27'), hand(s).find(uid => s.cards[uid].cardId === 's_6')); assert.equal(s.players[0].pp, 10); assert.equal(s.players[0].exSkills.dagger.usedThisTurn, 2);
 });
 test('y_141 オズちゃんぽん: entry recovers PP and leftover four destroys randomly at opponent start', () => {
   let s = playFirst(arena({ me: { hand: ['y_141'], pp: 6 }, foe: { field: ['y_62'] } }), 'y_141'); assert.equal(s.players[0].pp, 5); s = end(s); assert.equal(field(s, 1).length, 1, 'effect destruction immunity protects the target');

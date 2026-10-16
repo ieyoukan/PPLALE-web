@@ -211,8 +211,9 @@ export const strawberrySweets: CardScripts = {
         },
     },
     // s_27 すいーつあーん（裏メニュー）: 手札のお菓子1枚を公開して消滅させ、同名カードを相手の手札に公開状態で加える。PPを2回復。
-    // 渡すお菓子がなくてもPPは回復する（対象のない処理だけ不発）。
+    // 手札に渡せるお菓子がなければプレイできない（ユーザー裁定）。渡したお菓子は、デッキに戻るとき渡した側のデッキへ戻る。
     s_27: {
+        canPlay: ctx => ctx.me.hand.some(id => id !== ctx.uid && ctx.isRealSweet(id)),
         onPlay(ctx) {
             ctx.queue('gift');
             ctx.queue('pp', { amount: 2 });
@@ -227,6 +228,7 @@ export const strawberrySweets: CardScripts = {
                     fx.me.hand = fx.me.hand.filter(id => id !== t.target);
                     fx.me.exile.push(t.target);
                     const copy = fx.spawn(fx.s.cards[t.target].cardId);
+                    fx.s.cards[copy].owner = fx.side;
                     fx.foe.hand.push(copy);
                     fx.reveal(copy);
                 },

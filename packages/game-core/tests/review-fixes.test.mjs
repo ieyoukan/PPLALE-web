@@ -299,3 +299,31 @@ test('an attack brought to 0 by リンネ still counts as eating, with no change
   assert.equal(s.cards[attacker].ateOn, s.turn);
   assert.equal(s.players[1].points, 5);
 });
+
+test('a second かんらん played after 神隠し was used keeps that turn: discards still steal, and it is not usable again', () => {
+  let s = arena({ me: { hand: ['y_107', 'y_107', 'y_5', 'y_9'], points: 8, pp: 30 } });
+  s = playFirst(s, 'y_107');
+  s = run(s, { type: 'exSkill', actor: 0, skill: 'kamikakushi' });
+  s = playFirst(s, 'y_107');
+  assert.equal(s.players[0].exSkills.kamikakushi.uses, 3);
+  assert.ok(failure(s, { type: 'exSkill', actor: 0, skill: 'kamikakushi' }));
+  s = playFirst(s, 'y_5');
+  s = draws(choose(s, hand(s).find(uid => s.cards[uid].cardId === 'y_9')));
+  assert.deepEqual([s.players[0].points, s.players[1].points], [10, 10]);
+});
+
+test('メロンのゆうひ「PPを全回復」 does not take away PP above the max (さおちゃん before it)', () => {
+  let s = arena({ me: { field: ['y_118', 'y_73'], pp: 12, turns: 12, ppBonus: 0 } });
+  s = run(s, { type: 'end', actor: 0 });
+  assert.ok(s.players[0].pp >= 12);
+  const order = arena({ me: { field: ['y_73', 'y_118'], pp: 12, turns: 12, ppBonus: 0 } });
+  assert.equal(run(order, { type: 'end', actor: 0 }).players[0].pp, s.players[0].pp);
+});
+
+test('a 0-HP unit played from hand keeps its slot until its on-play effect is done (FAQ ぶどう②-2): a full field has no room for うゆち', () => {
+  let s = arena({ me: { hand: ['y_42'], field: Array(6).fill('y_9'), nap: ['y_62'] } });
+  s = playFirst(s, 'y_42');
+  if (s.pending?.options.some(o => o.id === 'no')) s = choose(s, 'no');
+  assert.ok(!field(s).some(uid => s.cards[uid].cardId === 'y_62'));
+  assert.ok(s.players[0].nap.some(uid => s.cards[uid].cardId === 'y_42'));
+});

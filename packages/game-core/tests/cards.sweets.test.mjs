@@ -172,7 +172,7 @@ test('s_26 おうたあそび: draws, then reveals a sweet in hand and lowers it
   assert.equal(s.cards[target].costDelta, -1);
 });
 
-test('s_27 すいーつあーん: gives a revealed copy to the opponent and restores 2 PP, even with no sweet to give', () => {
+test('s_27 すいーつあーん: gives a revealed copy to the opponent and restores 2 PP; cannot be played without a sweet to give', () => {
   let s = arena({ me: { hand: ['s_27', 's_6'], pp: 3 } });
   s = play(s, hand(s)[0]);
   s = choose(s, hand(s)[0]);
@@ -180,9 +180,21 @@ test('s_27 すいーつあーん: gives a revealed copy to the opponent and rest
   assert.deepEqual(idsOf(s, hand(s, 1)), ['s_6']);
   assert.equal(s.cards[hand(s, 1)[0]].revealed, true);
   assert.equal(s.players[0].pp, 5);
-  s = arena({ me: { hand: ['s_27'], pp: 3 } });
+  s = arena({ me: { hand: ['s_27', 's_27'], pp: 3 } });
+  assert.ok(failure(s, { type: 'play', actor: 0, uid: hand(s)[0] }));
+});
+
+test('s_27 すいーつあーん: a given sweet sent back to 「元あったデッキ」 (メロンのちむどんどん) returns to the giver\'s deck', () => {
+  let s = arena({ me: { hand: ['s_27', 's_6'], pp: 3 }, foe: { hand: ['y_103'], pp: 10 } });
   s = play(s, hand(s)[0]);
-  assert.equal(s.players[0].pp, 5);
+  s = choose(s, hand(s)[0]);
+  const given = hand(s, 1).find(uid => s.cards[uid].cardId === 's_6');
+  s.active = 1;
+  s = run(s, { type: 'play', actor: 1, uid: hand(s, 1).find(uid => s.cards[uid].cardId === 'y_103') });
+  // Back in the giver's sweet deck (from where it may already be drawn again by the giver's 5 cards).
+  assert.ok(s.players[0].sweet.includes(given) || hand(s).includes(given));
+  assert.ok(!s.players[1].sweet.includes(given) && !hand(s, 1).includes(given));
+  assert.equal(s.cards[given].owner, undefined);
 });
 
 test('single-target damage sweets cannot be played without an enemy unit', () => {

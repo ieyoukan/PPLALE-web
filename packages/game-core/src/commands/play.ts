@@ -1,7 +1,7 @@
 // Playing a card from hand once nothing stops it: pay, place, trigger. The `play` command checks that
 // it is legal; an answer from the other player's hand (ぶらんちゃん) is waited for in between.
 import { scriptFor } from '../cards/registry.ts';
-import { costOf, isRealSweet, note } from '../core/cards.ts';
+import { costOf, hpOf, isRealSweet, note } from '../core/cards.ts';
 import { enterField } from '../core/zones.ts';
 import { cardContext } from '../effects/context.ts';
 import type { Catalog, Definition, GameState, Player, Side } from '../model.ts';
@@ -31,6 +31,8 @@ export function commitPlay(s: GameState, actor: Side, uid: string, slot: number,
     note(s, `${p.name}：「${def.name}」をプレイ（${cost}PP）`);
     if (def.type === 'yojo') {
         enterField(s, actor, uid, catalog, true, slot);
+        // FAQ（ぶどう②-2）: a unit played at 0 HP uses its on-play effect first, then goes to the nap.
+        if (hpOf(card, catalog) <= 0) s.queue.push({ op: 'playedAtZero', actor, target: uid });
     } else {
         p.nap.push(uid);
         scriptFor(s, uid).onPlay?.(cardContext(s, catalog, actor, uid, sweetMultiplier(p, def, catalog)));

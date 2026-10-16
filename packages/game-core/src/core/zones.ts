@@ -86,9 +86,12 @@ export function clearFieldState(s: GameState, uid: string) {
 export function toDeck(s: GameState, uid: string, catalog: Catalog) {
     const side = sides.find(side => (['hand', 'field', 'nap'] as const).some(zone => s.players[side][zone].includes(uid)));
     if (side === undefined) return;
-    const p = s.players[side], card = s.cards[uid], kind: DeckKind = catalog[card.cardId].type === 'sweet' ? 'sweet' : 'yojo';
-    if (p.field.includes(uid)) leaveField(s, side, uid);
-    for (const zone of ['hand', 'nap'] as const) p[zone] = p[zone].filter(id => id !== uid);
+    const holder = s.players[side], card = s.cards[uid], kind: DeckKind = catalog[card.cardId].type === 'sweet' ? 'sweet' : 'yojo';
+    if (holder.field.includes(uid)) leaveField(s, side, uid);
+    for (const zone of ['hand', 'nap'] as const) holder[zone] = holder[zone].filter(id => id !== uid);
+    // 「元あったデッキ」: a card given by the opponent (すいーつあーん) goes back to theirs (user ruling).
+    const p = s.players[card.owner ?? side];
+    delete card.owner;
     clearFieldState(s, uid);
     Object.assign(card, { attackBonus: 0, hpBonus: 0, damage: 0, costDelta: 0, temporaryCost: 0, revealed: false });
     p[kind] = shuffled(s, [...p[kind], uid]);
@@ -217,10 +220,13 @@ export function settle(s: GameState, catalog: Catalog) {
     // Cards that moved in the last step lose what effects gave them (core/movement.ts).
     syncZones(s);
     // Units at 0 HP are destroyed together (相打ちは同時判定); only the order of their triggers follows the turn.
-    dyingTogether = new Set(s.players.flatMap(p => p.field).filter(uid => hpOf(s.cards[uid], catalog) <= 0));
+    // A unit played at 0 HP stays until its on-play effects (and their choices) have resolved (FAQ ぶどう②-2).
+    const playing = new Set(s.queue.filter(t => t.op === 'playedAtZero').map(t => t.target));
+    const dying = (uid: string) => hpOf(s.cards[uid], catalog) <= 0 && !playing.has(uid);
+    dyingTogether = new Set(s.players.flatMap(p => p.field).filter(dying));
     for (const side of [s.active, other(s.active)]) {
         for (const uid of [...s.players[side].field]) {
-            if (hpOf(s.cards[uid], catalog) <= 0) destroy(s, uid, false, catalog);
+            if (dying(uid)) destroy(s, uid, false, catalog);
         }
     }
     dyingTogether = new Set();

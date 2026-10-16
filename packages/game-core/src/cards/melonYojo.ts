@@ -136,10 +136,11 @@ export const melonYojo: CardScripts = {
     y_73: {
         onTurnEnd(ctx) {
             ctx.queue('heal', { amount: 1 });
-            ctx.me.pp = availablePpMaximum(ctx.s, ctx.side);
+            // 「全回復」: up to the max PP, without taking away PP already above it (さおちゃん etc.).
+            ctx.me.pp = Math.max(ctx.me.pp, availablePpMaximum(ctx.s, ctx.side));
         },
     },
-    // y_74 ゼロオレンジ: 行動不能。場か公開した手札にレンスがいる間は行動でき、早食い。破壊されたとき相手のランダムな1人を破壊。
+    // y_74 ゼロオレンジ: 行動不能。場に出たとき場か公開した手札にレンスがいれば行動でき、早食い。破壊されたとき相手のランダムな1人を破壊。
     // 行動できるかは場に出たときだけ判定する（ユーザー裁定）：そのときレンスがいれば、場にいる間ずっと行動でき、早食いを持つ。
     y_74: {
         keywords: ['immobile'],

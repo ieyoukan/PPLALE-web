@@ -100,9 +100,11 @@ test('y_41 さら: zero/one/two nap cards copy only the cards originally present
 });
 test('y_42 うゆち: HP0 still resolves its play effect, optional 3PP raises the revive limit', () => {
   let s = playFirst(arena({ me: { hand: ['y_42'], nap: ['y_62'] } }), 'y_42');
-  assert.equal(field(s).length, 0); assert.ok(idsOf(s, s.players[0].nap).includes('y_42'));
+  // FAQ②-2: the effect first, while うゆち is still on the field; then it goes to the nap.
+  assert.deepEqual(idsOf(s, field(s)), ['y_42']);
   s = choose(s, 'yes'); s = choose(s, s.players[0].nap.find(uid => s.cards[uid].cardId === 'y_62')); s = draws(s);
   assert.equal(s.players[0].pp, 5); assert.deepEqual(idsOf(s, field(s)), ['y_62']); assert.equal(s.cards[field(s)[0]].hiding, true);
+  assert.ok(idsOf(s, s.players[0].nap).includes('y_42'));
 });
 test('y_43 ちょり: extra PP changes the dodge condition; evade does not stack', () => {
   let s = arena({ me: { hand: ['y_43'], field: ['y_8'] } }); const uid = field(s)[0];

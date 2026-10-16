@@ -25,7 +25,8 @@ export function revealStep(ctx: CardContext, t: Task, eligible: (uid: string) =>
 export function gainEx(ctx: CardContext, id: ExSkillId, uses: number, owner = ctx.me, stack = true) {
     owner.exSkills ??= {};
     if (!stack && owner.exSkills[id]) return;
-    owner.exSkills[id] = { uses: (owner.exSkills[id]?.uses ?? 0) + uses };
+    // Added to what is held: the turn it was used (神隠し, 1ターンに1回) stays.
+    owner.exSkills[id] = { ...owner.exSkills[id], uses: (owner.exSkills[id]?.uses ?? 0) + uses };
     ctx.note(`Exスキルを獲得：${id}`);
 }
 

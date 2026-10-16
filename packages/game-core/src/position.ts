@@ -4,7 +4,7 @@
 import { z } from 'zod';
 import { scriptOf } from './cards/registry.ts';
 import { hpOf, note, spawnCard } from './core/cards.ts';
-import { exSkillIds, keywords, MAX_PP, sandboxRules, sides } from './model.ts';
+import { exSkillIds, keywords, MAX_PP, other, sandboxRules, sides } from './model.ts';
 import type { Catalog, ExSkillId, ExSkillState, GameState, Keyword, Player, Side } from './model.ts';
 import { mpMax, playableMp, playableSkills, skillLimits, skillsFor } from './playables/skills.ts';
 import { FIELD_SIZE } from './core/zones.ts';
@@ -85,7 +85,7 @@ export interface PositionSide {
      * `actions`: actions a unit that may act twice a turn (ふろんとさん) has taken this turn.
      * `timedFruits`: fruit types held for a time, as the turns they last after this one (レンス).
      */
-    cardTraits?: { zone: 'field' | 'hand' | 'nap' | 'exile' | 'yojo' | 'sweet'; index: number; fruitTypes?: string[]; evasion?: number; hiding?: boolean; silenced?: boolean; immobile?: number; actions?: number; timedFruits?: Record<string, number> }[];
+    cardTraits?: { zone: 'field' | 'hand' | 'nap' | 'exile' | 'yojo' | 'sweet'; index: number; fruitTypes?: string[]; evasion?: number; hiding?: boolean; silenced?: boolean; immobile?: number; actions?: number; timedFruits?: Record<string, number>; given?: boolean }[];
 }
 export interface Position {
     version: 1;
@@ -119,7 +119,7 @@ const sideSchema = z.object({
     ice: count.optional(), acorns: count.optional(), mochidaLeft: count.optional(), skipDraw: count.optional(), strawberryOnlyUntil: z.number().int().optional(),
     mp: count.optional(), entryBuff: count.optional(), discardedYojo: count.optional(), lastingFruits: z.array(fruit).optional(),
     extraSkills: z.array(z.object({ playable: id, index: count, uses: count })).max(20).optional(),
-    cardTraits: z.array(z.object({ zone: z.enum(['field', 'hand', 'nap', 'exile', 'yojo', 'sweet']), index: count, fruitTypes: z.array(fruit).optional(), evasion: z.number().int().min(-12).max(6).optional(), hiding: z.boolean().optional(), silenced: z.boolean().optional(), immobile: count.optional(), actions: count.optional(), timedFruits: z.partialRecord(fruit, count).optional() })).max(500).optional(),
+    cardTraits: z.array(z.object({ zone: z.enum(['field', 'hand', 'nap', 'exile', 'yojo', 'sweet']), index: count, fruitTypes: z.array(fruit).optional(), evasion: z.number().int().min(-12).max(6).optional(), hiding: z.boolean().optional(), silenced: z.boolean().optional(), immobile: count.optional(), actions: count.optional(), timedFruits: z.partialRecord(fruit, count).optional(), given: z.boolean().optional() })).max(500).optional(),
 });
 const schema = z.object({
     version: z.literal(1), active: z.union([z.literal(0), z.literal(1)]), first: z.union([z.literal(0), z.literal(1)]),
@@ -229,9 +229,9 @@ export function buildPosition(position: Position, catalog: Catalog, { names = ['
         p.exile = (from.exile ?? []).map(spawn);
         p.yojo = from.yojo.map(spawn);
         p.sweet = from.sweet.map(spawn);
-        for (const { zone, index, immobile, actions, timedFruits, ...traits } of from.cardTraits ?? []) {
+        for (const { zone, index, immobile, actions, timedFruits, given, ...traits } of from.cardTraits ?? []) {
             const uid = zone === 'field' ? p.field.find(uid => s.cards[uid].slot === index) : p[zone][index];
-            if (uid) Object.assign(s.cards[uid], { ...traits, ...(traits.fruitTypes ? { fruitTypes: [...traits.fruitTypes] } : {}) });
+            if (uid) Object.assign(s.cards[uid], { ...traits, ...(traits.fruitTypes ? { fruitTypes: [...traits.fruitTypes] } : {}), ...(given ? { owner: other(side) } : {}) });
             // Only a unit on the field can be 行動不能.
             if (uid && zone === 'field' && immobile !== undefined) s.cards[uid].immobileUntil = turn + immobile;
             if (uid && zone === 'field' && actions) s.cards[uid].actions = actions;
@@ -247,7 +247,7 @@ const same = (a: readonly string[], b: readonly string[]) => a.length === b.leng
 /** The position of a match in play, for editing it or sharing it. Effects waiting to resolve are dropped. */
 export function positionOf(s: GameState, catalog: Catalog): Position {
     const ids = (uids: string[]) => uids.map(uid => s.cards[uid].cardId);
-    const players = s.players.map((p): PositionSide => {
+    const players = s.players.map((p, owner): PositionSide => {
         const field: (PositionUnit | null)[] = Array.from({ length: FIELD_SIZE }, () => null);
         for (const uid of p.field) {
             const c = s.cards[uid], printed = scriptOf(c.cardId).keywords ?? [];
@@ -302,6 +302,8 @@ export function positionOf(s: GameState, catalog: Catalog): Position {
             if (c.silenced) entry.silenced = true;
             if (zone === 'field' && c.immobileUntil !== undefined && c.immobileUntil >= s.turn) entry.immobile = c.immobileUntil - s.turn;
             if (zone === 'field' && c.actions && !c.exhausted) entry.actions = c.actions;
+            // すいーつあーん: given by the other side, it goes back to their deck.
+            if (c.owner !== undefined && c.owner !== owner) entry.given = true;
             const timed = Object.entries(c.timedFruits ?? {}).filter(([, until]) => until >= s.turn);
             if (zone === 'field' && timed.length) entry.timedFruits = Object.fromEntries(timed.map(([type, until]) => [type, until - s.turn]));
             if (Object.keys(entry).length > 2) traits.push(entry);

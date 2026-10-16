@@ -24,6 +24,8 @@ export const expandedOps: OpTable = {
         },
     },
     beginTurn: { run: (fx, t) => beginTurn(fx.s, t.actor, fx.catalog) },
+    /** Queued after the on-play effects of a unit played at 0 HP: once it has run, `settle` destroys the unit. */
+    playedAtZero: { run: () => {} },
     turnDraw: {
         run(fx, t) {
             if ((fx.me.skipDraw ?? 0) > 0) { fx.me.skipDraw!--; fx.note('ドローフェイズをスキップ'); return; }
