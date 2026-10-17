@@ -39,7 +39,7 @@
     "value": "npm run build && node scripts/value.mjs"
   },
   "dependencies": {
-    "zod": "^4.6.5"
+    "zod": "^4.6.7"
   },
   "devDependencies": {
     "typescript": "^5"
