@@ -30,11 +30,12 @@ Next.js / game-core の分離方針、Vercelへの配置、未確定ルールは
 
 ```bash
 mise install
-mise run install
-mise run dev
+npm ci
+npm run dev
 ```
 
-miseをシェルへ有効化していれば、従来どおり `npm run dev` も利用できる。
+miseをシェルへ有効化し、このディレクトリで指定のNode.jsが選ばれている状態で実行する。
+`mise run install` と `mise run dev` も、それぞれ同じnpmコマンドを呼び出す補助タスクとして利用できる。
 型チェック・Lint・カードデータ検査をまとめて実行する場合は `mise run check` を使う。
 
 ## 開発経緯
