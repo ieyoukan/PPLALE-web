@@ -116,8 +116,7 @@ export function createOpeningDieScene(
       start.copy(die.quaternion);
     }
     let height = 0;
-    die.position.x = 0;
-    die.position.z = 0;
+    // Keep the throw above its resting position instead of sliding back after landing.
     if (state.rolling && !motion.matches) {
       const elapsed = (now - began) / 1000;
       const u = Math.min(1, elapsed * 1000 / (duration * SETTLE_FRACTION));
@@ -127,8 +126,6 @@ export function createOpeningDieScene(
       spin.setFromEuler(spinEuler.set(4 * remaining, 6 * remaining, 2 * remaining));
       die.quaternion.multiply(spin);
       height = jump(elapsed);
-      die.position.x = -.45 * Math.sin(Math.PI * u);
-      die.position.z = .18 * Math.sin(Math.PI * u);
     } else {
       die.quaternion.copy(target);
     }
