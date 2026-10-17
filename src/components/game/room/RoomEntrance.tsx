@@ -11,6 +11,7 @@ import type { RoomRules, RoomServerStats } from '@pplale/game-core/room';
 import { BATTLE_PATH, ROOM_PATH, roomHref, watchHref } from '@/lib/game/sessionStore';
 import { RulePicker } from '../RulePicker';
 import { BattleIllustration } from './BattleIllustration';
+import { BattleCompanion } from './BattleCompanion';
 import styles from './Room.module.css';
 
 const NAME_KEY = 'pplale-room-name-v1';
@@ -108,14 +109,14 @@ export function RoomEntrance() {
     <div className={styles.entrance}>
       <div className={styles.intro}>
         <h2>オンライン対戦</h2>
-        <p>いま遊んでいる人や<br />友だちと対戦しよう</p>
+        <BattleCompanion mood="welcome" compact />
         <ServerStatus stats={stats} />
         {latest && <Link href={roomHref(ROOM_PATH, latest)} className={styles.secondary}>前回のルーム（{latest}）に戻る</Link>}
       </div>
       <div className={styles.doors} data-open={open ?? undefined}>
         <Link href={`${BATTLE_PATH}free/`} className={`${styles.door} ${styles.free}`}>
           <span className={styles.doorArt} aria-hidden="true"><DoorArt kind="free" /></span>
-          <span className={styles.doorPlate}><b>フリーマッチ</b><small>対戦相手を自動で探す・ランクなし</small></span>
+          <span className={styles.doorPlate}><b>フリーマッチ</b><small>対戦相手を自動で探す</small></span>
         </Link>
         {door('watch', '観戦する', '観戦できるルームの対戦を見る')}
         {door('enter', 'ルームへ入る', '教えてもらったルームIDで参加する')}

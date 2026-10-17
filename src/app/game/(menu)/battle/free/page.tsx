@@ -3,7 +3,7 @@ import { FreeMatch } from '@/components/game/room/FreeMatch';
 
 export const metadata: Metadata = {
     title: 'ぷぷりえーる フリーマッチ',
-    description: 'デッキを選んで対戦相手を探そう。ルームIDなしで遊べる、ランクなしのオンライン対戦。',
+    description: 'デッキを選んで対戦相手を探そう。ルームIDなしで遊べるオンライン対戦。',
     alternates: { canonical: '/game/battle/free/' },
 };
 export default function Page() {
