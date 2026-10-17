@@ -53,15 +53,11 @@ function useServerStats() {
   }, []);
   return stats;
 }
-/**
- * Whether room matches can be used now. The counts (/stats) are for whoever runs the server: to a
- * player, "0 rooms recruiting" only reads as "nobody plays", and a room is entered by its id anyway.
- */
+/** Show a warning only when the server cannot be reached. */
 function ServerStatus({ stats }: { stats: RoomServerStats | null | undefined }) {
-  if (stats === undefined) return <p className={styles.server} role="status"><i className={styles.dot} />ルームサーバーを確認中…</p>;
-  if (!stats) return <p className={`${styles.server} ${styles.serverDown}`} role="status"><i className={styles.dot} />
-    {roomServerUrl ? 'ルームサーバーにつながりません。しばらくしてからお試しください。' : 'ルームサーバーが設定されていないため、オンライン対戦は使えません。'}</p>;
-  return <p className={`${styles.server} ${styles.serverUp}`} role="status"><i className={styles.dot} />オンライン対戦を利用できます</p>;
+  if (stats !== null) return null;
+  return <p className={`${styles.server} ${styles.serverDown}`} role="status"><i className={styles.dot} />
+    対戦サーバーにつながりません。しばらくしてからお試しください。</p>;
 }
 
 /** A different character welcomes players at each entrance. */
@@ -105,22 +101,21 @@ export function RoomEntrance() {
     </button>;
 
   return <div className={styles.stack}>
-    {/* What this is on the left; on the right four illustrated entrances. */}
+    {/* A portrait guide beside the battle actions. */}
     <div className={styles.entrance}>
-      <div className={styles.intro}>
-        <h2>オンライン対戦</h2>
-        <BattleCompanion mood="welcome" compact />
+      <BattleCompanion />
+      <div className={styles.battleActions}>
         <ServerStatus stats={stats} />
+        <div className={styles.doors} data-open={open ?? undefined}>
+          <Link href={`${BATTLE_PATH}free/`} className={`${styles.door} ${styles.free}`}>
+            <span className={styles.doorArt} aria-hidden="true"><DoorArt kind="free" /></span>
+            <span className={styles.doorPlate}><b>フリーマッチ</b><small>対戦相手を自動で探す</small></span>
+          </Link>
+          {door('watch', '観戦する', '観戦できるルームの対戦を見る')}
+          {door('enter', 'ルームへ入る', '教えてもらったルームIDで参加する')}
+          {door('create', 'ルームを作る', 'ルールを決めて、友だちを招待する')}
+        </div>
         {latest && <Link href={roomHref(ROOM_PATH, latest)} className={styles.secondary}>前回のルーム（{latest}）に戻る</Link>}
-      </div>
-      <div className={styles.doors} data-open={open ?? undefined}>
-        <Link href={`${BATTLE_PATH}free/`} className={`${styles.door} ${styles.free}`}>
-          <span className={styles.doorArt} aria-hidden="true"><DoorArt kind="free" /></span>
-          <span className={styles.doorPlate}><b>フリーマッチ</b><small>対戦相手を自動で探す</small></span>
-        </Link>
-        {door('watch', '観戦する', '観戦できるルームの対戦を見る')}
-        {door('enter', 'ルームへ入る', '教えてもらったルームIDで参加する')}
-        {door('create', 'ルームを作る', 'ルールを決めて、友だちを招待する')}
       </div>
     </div>
     <div ref={form} className={styles.formAnchor} />

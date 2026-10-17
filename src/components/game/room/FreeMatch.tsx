@@ -144,7 +144,7 @@ export function FreeMatch() {
       <p>デッキを選んで、いま遊びたい人と対戦しよう。</p>
     </header>
     <div className={styles.matchGrid}>
-      <BattleCompanion mood={cancelling ? 'cancelling' : search ? 'searching' : 'setup'} />
+      <BattleCompanion />
       <section className={`${styles.panel} ${styles.matchPanel}`} aria-label="フリーマッチ">
         {!roomServerUrl && <p role="alert" className={styles.error}>対戦サーバーが設定されていないため、フリーマッチは使えません。</p>}
         {search ? <div className={styles.freeWaiting}>
