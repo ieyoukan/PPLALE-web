@@ -1,11 +1,11 @@
-# VRChatにあるカードゲーム「ぷぷりえーる」のデッキ構築・ゲームプレイができるwebアプリ
+# VRChatカードゲーム「ぷぷりえーる」のデッキ構築・ゲームプレイができるwebアプリ
 https://pplale.vercel.app/
 <img width="1448" height="855" alt="image" src="https://github.com/user-attachments/assets/4e7128e5-89a4-41aa-869d-c545a0651dcb" />
 <img width="1548" height="932" alt="image" src="https://github.com/user-attachments/assets/5ae56c03-4e68-4af7-ba82-518b0fc9dd74" />
 
 
 ## ぷぷりえーるとは
-VRChatのイベント「ロリっ子喫茶ぷぷりえ」のカードゲームで、VRChat上でプレイできます。
+VRChatのイベント「[ロリっ子喫茶ぷぷりえ](https://pple.vr2.info/)」のカードゲームで、VRChat上でプレイできます。
 幼女デッキとお菓子デッキを使って相手のお貸しポイントを先に無くした方が勝ち！
 
 推しのカードでデッキを構築しよう！
