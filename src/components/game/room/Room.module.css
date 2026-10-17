@@ -44,7 +44,7 @@
 .companionCharacter[data-reacting] { animation: companionHop .65s ease-out; }
 .companionCharacter img { padding: 16px 8px 20px; object-fit: contain; transform-origin: 50% 90%; filter: drop-shadow(0 5px 2px #a97f671a); animation: companionBreathe 4.5s ease-in-out infinite; }
 @keyframes companionBreathe { 50% { transform: translateY(-3px) scaleY(1.008); } }
-@keyframes companionHop { 25% { transform: translateY(-10px) rotate(-2deg); } 65% { transform: translateY(-2px) rotate(2deg); } }
+@keyframes companionHop { 25% { transform: translateY(-10px); } 65% { transform: translateY(-2px); } }
 
 .matchDeckPreview { display: flex; align-items: center; gap: 10px; min-width: 0; padding: 8px 10px; overflow: hidden; border: 1px solid #ebdac5; border-radius: 16px; background: linear-gradient(135deg, #fffaf0, #f7efe0); text-align: left; }
 .matchDeckArt { position: relative; flex: 0 0 112px; height: 105px; }
