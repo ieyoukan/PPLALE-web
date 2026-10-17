@@ -8,14 +8,12 @@
 | yellow-friend.webp | touka_usamimika.png |
 | green-friend.webp | touka_yomi.png |
 
-画面を開くごとに、以下の7点から案内役を1人選びます。
+画面を開くごとに、以下の5点から案内役を1人選びます。
 
 | 配置用ファイル | 提供された元ファイル |
 | --- | --- |
 | guide-01.webp | 5e35697cb5bd906c.png |
 | guide-02.webp | 996a9da6ccdee7f9.png |
 | guide-03.webp | cedbf4ae9bf0b1f5.png |
-| guide-04.webp | chisato.png |
-| guide-05.webp | e644cecfd4a93072.png |
 | guide-06.webp | Iriai.png |
 | guide-07.webp | rikusu.png |

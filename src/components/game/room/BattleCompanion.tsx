@@ -5,8 +5,7 @@ import { useEffect, useState } from 'react';
 import styles from './Room.module.css';
 
 const companions = [
-  'guide-01.webp', 'guide-02.webp', 'guide-03.webp', 'guide-04.webp',
-  'guide-05.webp', 'guide-06.webp', 'guide-07.webp',
+  'guide-01.webp', 'guide-02.webp', 'guide-03.webp', 'guide-06.webp', 'guide-07.webp',
 ] as const;
 
 /** Choose once per visit, after hydration; form updates keep the same guide. */
