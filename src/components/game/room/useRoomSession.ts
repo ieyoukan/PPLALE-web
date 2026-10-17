@@ -22,7 +22,7 @@ function reducer({ shown, queue }: Table, action: Played | 'accept'): Table {
  * A room's match as the board plays it. Nothing is decided here: a command goes to the server, and
  * the view it (or the other side's command) leads to waits in a queue until the board has shown it.
  */
-export function useRoomSession({ room, initial, seat, onLeave }: { room: Pick<Room, 'send' | 'subscribe'>; initial: Played; seat: Side; onLeave: () => void }): BoardSession {
+export function useRoomSession({ room, initial, seat, onLeave, onFindNext }: { room: Pick<Room, 'send' | 'subscribe'>; initial: Played; seat: Side; onLeave: () => void; onFindNext?: () => void }): BoardSession {
   const watching = !!initial.watching;
   const { send: request, subscribe } = room;
   const [{ shown, queue }, dispatch] = useReducer(reducer, { shown: initial, queue: [] });
@@ -48,11 +48,11 @@ export function useRoomSession({ room, initial, seat, onLeave }: { room: Pick<Ro
     request({ action }).catch((failure: unknown) => setError(failure instanceof Error ? failure.message : '操作を送れませんでした'));
   }, [request]);
   const resign = useCallback(() => ask('resign'), [ask]);
-  const rematch = useCallback(() => ask('rematch'), [ask]);
+  const rematch = useCallback(() => initial.mode === 'free' ? (onFindNext ?? onLeave)() : ask('rematch'), [ask, initial.mode, onFindNext, onLeave]);
 
   const names = useMemo<[string, string]>(() => [shown.players[0].name, shown.players[1]?.name ?? '相手'], [shown.players]);
-  const remote = useMemo(() => ({ seat, watching, names, waiting: sending || queue.length > 0, next, accept, resign, resigned: shown.resigned, leave: onLeave }),
-    [seat, watching, names, sending, queue.length, next, accept, resign, shown.resigned, onLeave]);
+  const remote = useMemo(() => ({ seat, watching, freeMatch: initial.mode === 'free', names, waiting: sending || queue.length > 0, next, accept, resign, resigned: shown.resigned, leave: onLeave }),
+    [seat, watching, initial.mode, names, sending, queue.length, next, accept, resign, shown.resigned, onLeave]);
   return {
     game: shown.game, error, history: [], commands: [], mode: 'room', levels: ['normal', 'normal'], ready: true, saveError: '',
     send, undo: nothing, canUndo: false, remote,

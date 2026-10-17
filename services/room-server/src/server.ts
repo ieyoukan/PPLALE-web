@@ -24,6 +24,7 @@ import type { Backend, Member, Overview, RoomEvent } from './backend.ts';
 import type { Config } from './config.ts';
 import { RoomError, act, createRoom, joinRoom, roomInfo, seatOf, seatView, tidy } from './rooms.ts';
 import type { Present, Room } from './rooms.ts';
+import { freeMatch } from './matchmaking.ts';
 
 /** A request or a socket message is a few kilobytes (a deck at most); anything much larger is not one. */
 const MAX_BODY = 16 * 1024;
@@ -179,6 +180,18 @@ export function createRoomServer({ config, backend, catalog }: {
             if (route === 'GET /healthz') return send(response, 200, { ok: true });
             if (route === 'GET /readyz') return await backend.ping() ? send(response, 200, { ok: true }) : send(response, 503, { ok: false });
             if (route === 'GET /stats') return send(response, 200, await stats());
+            const freeOperation = request.method === 'POST' ? /^\/free-match\/(start|status|cancel)$/.exec(path)?.[1] as 'start' | 'status' | 'cancel' | undefined : undefined;
+            if (freeOperation) {
+                const result = await freeMatch(backend, catalog, freeOperation, await readBody(request), {
+                    maxRooms, roomTtl: idleHours * HOUR, mayStart: () => allowed(address(request)),
+                });
+                if (result.created) {
+                    overview = undefined;
+                    await backend.count('roomsCreated');
+                    await backend.count('matchesStarted');
+                }
+                return send(response, 200, result.status);
+            }
             if (route !== 'POST /rooms' && !id) return send(response, 404, { error: 'not found' });
             if (!allowed(address(request))) throw new RoomError(429, '操作が多すぎます。しばらく待ってからお試しください');
             if (route === 'POST /rooms') {
@@ -350,7 +363,8 @@ export function createRoomServer({ config, backend, catalog }: {
             if (tidy(structuredClone(room), online, now, patience) === null) continue;
             try {
                 const { room: tidied, result } = await update(id, target => tidy(target, online, now, patience));
-                if (result === 'closed' || result === 'vacated') await announce(tidied, result === 'vacated' ? 1 : undefined);
+                if (result === 'finished') await backend.count('matchesFinished');
+                if (result === 'closed' || result === 'vacated' || result === 'finished') await announce(tidied, result === 'vacated' ? 1 : undefined);
                 if (result === 'vacated') dismiss(id, 1);
             } catch (error) {
                 if (!(error instanceof RoomError)) throw error;

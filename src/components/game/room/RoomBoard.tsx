@@ -44,7 +44,8 @@ function Table({ room, initial, seat }: { room: Room; initial: Played; seat: Sid
   const router = useRouter();
   const { leave } = room;
   const onLeave = useCallback(() => { void leave().then(() => router.push(BATTLE_PATH)); }, [leave, router]);
-  const session = useRoomSession({ room, initial, seat, onLeave });
+  const onFindNext = useCallback(() => { void leave().then(() => router.push(`${BATTLE_PATH}free/`)); }, [leave, router]);
+  const session = useRoomSession({ room, initial, seat, onLeave, onFindNext });
   return <BoardTable session={session} />;
 }
 

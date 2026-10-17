@@ -34,6 +34,7 @@ export interface Incoming {
 }
 /** What a match played in a room adds: the server applies the commands and sends back what this seat may see. */
 export interface RemoteSession {
+  freeMatch?: boolean;
   /** The seat this browser plays; for a spectator the side shown near. */
   seat: Side;
   /** Looking on without a seat: nothing can be done, and both hands are shown. */

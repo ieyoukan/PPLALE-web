@@ -18,6 +18,7 @@ export interface Seat {
 }
 export interface Room {
     id: string;
+    mode?: 'free';
     version: number;
     status: RoomStatus;
     match: number;
@@ -91,10 +92,10 @@ export interface Present { online: [boolean, boolean]; watching: number }
 
 /** What `seat` is told about the room, or (`'spectator'`) what someone watching is. */
 export function seatView(room: Room, seat: Side | 'spectator', { online, watching }: Present): RoomView {
-    const { id, version, status, match, rules, last, resigned, seats, state } = room;
+    const { id, mode, version, status, match, rules, last, resigned, seats, state } = room;
     const players = seats.map((s, index) => s && { name: s.name, ready: s.ready, online: online[index], ...(s.left && { left: true }), ...(index === seat && s.deck && { deck: s.deck.name }) }) as RoomView['players'];
     return {
-        id, version, seat: seat === 'spectator' ? 0 : seat, ...(seat === 'spectator' && { watching: true as const }), spectators: watching,
+        id, ...(mode && { mode }), version, seat: seat === 'spectator' ? 0 : seat, ...(seat === 'spectator' && { watching: true as const }), spectators: watching,
         status, match, rules, players, game: state && viewFor(state, seat), last, resigned,
     };
 }
@@ -158,13 +159,22 @@ export interface Patience {
  * (`online`: connected right now) and closes the room or frees the guest's seat once that is too
  * long. Returns what it did, or null when the room stays exactly as it was.
  */
-export function tidy(room: Room, online: [boolean, boolean], now: number, patience: Patience): 'closed' | 'vacated' | 'away' | null {
+export function tidy(room: Room, online: [boolean, boolean], now: number, patience: Patience): 'closed' | 'vacated' | 'away' | 'finished' | null {
     if (room.status === 'closed') return null;
     const before = room.away ?? [null, null];
     const away = room.seats.map((seat, index) => !seat || online[index] ? null : before[index] ?? now) as [number | null, number | null];
     const changed = away.some((since, index) => since !== before[index]);
     room.away = away;
     const longer = (index: Side, limit: number) => away[index] !== null && now - away[index]! >= limit;
+    // Random opponents must not have to wait indefinitely for someone who closed the page.
+    if (room.mode === 'free' && room.status === 'playing') {
+        const absent = ([0, 1] as const).find(seat => longer(seat, 60_000));
+        if (absent !== undefined) {
+            giveUp(room, absent);
+            room.seats[absent]!.left = true;
+            return 'finished';
+        }
+    }
     if (room.status === 'lobby' && longer(0, patience.lobby)) {
         room.status = 'closed';
         return 'closed';
@@ -238,6 +248,7 @@ export function act(room: Room, seat: Side, body: unknown, catalog: Catalog): Ou
             outcome.finished = true;
             break;
         case 'rematch':
+            if (room.mode === 'free') throw new RoomError(409, 'フリーマッチでは次の対戦相手を探してください');
             if (room.status !== 'finished') throw new RoomError(409, '対戦が終わってから選べます');
             // Back to choosing decks; the next match starts when both are ready again.
             room.status = room.seats[0].left ? 'closed' : 'lobby';

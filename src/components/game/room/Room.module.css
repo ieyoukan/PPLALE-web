@@ -1,6 +1,6 @@
 /* Room pages inside the game menu's cream sheet: making / entering a room and waiting in it. */
 .stack { display: grid; gap: clamp(14px, 2vw, 22px); }
-/* The entrance: what room matches are on the left; on the right three large doors, one under the other (watch / enter / make). */
+/* The entrance: the introduction beside four illustrated doors. */
 .entrance { display: grid; grid-template-columns: minmax(210px, 1fr) minmax(0, 2.6fr); gap: clamp(14px, 2.4vw, 28px); align-items: center; }
 /* Nothing in it may reach into the doors: long lines wrap. */
 .intro { display: grid; gap: 12px; justify-items: center; min-width: 0; text-align: center; color: #6b4a3a; overflow-wrap: anywhere; }
@@ -14,14 +14,41 @@
 .intro .secondary { font-size: 15px; min-height: 44px; padding: 8px 16px; }
 .doors { display: grid; gap: clamp(10px, 1.6vw, 16px); }
 /* Each door: its picture on the left, its name beside it; together they fill the screen's height. */
-.door { --tone: #e7c3e2; display: grid; grid-template-columns: clamp(92px, 30%, 230px) minmax(0, 1fr); align-items: stretch; height: clamp(104px, calc((100dvh - 230px) / 3), 190px); padding: 0; overflow: hidden; border: 3px solid #a88667; border-radius: 18px; background: #fff; color: #6b4a3a; font: inherit; cursor: pointer; box-shadow: 0 6px 0 #a8866755, 0 0 0 4px #fffdeb inset; transition: transform .2s, box-shadow .2s, filter .2s; }
+.door { --tone: #e7c3e2; display: grid; grid-template-columns: clamp(92px, 30%, 230px) minmax(0, 1fr); align-items: stretch; height: clamp(104px, calc((100dvh - 250px) / 4), 170px); padding: 0; overflow: hidden; border: 3px solid #a88667; border-radius: 18px; background: #fff; color: #6b4a3a; font: inherit; text-decoration: none; cursor: pointer; box-shadow: 0 6px 0 #a8866755, 0 0 0 4px #fffdeb inset; transition: transform .2s, box-shadow .2s, filter .2s; }
+.free { --tone: #b3d788; }
+.freeWaiting { display: grid; gap: 12px; padding: 20px; border: 2px solid #b3d788; border-radius: 16px; background: #f3f8eb; }
+.matchIntro { display: grid; grid-template-columns: minmax(0, 1fr) minmax(140px, 220px); gap: 12px; align-items: center; min-width: 0; padding: 20px; border-radius: 16px; background: radial-gradient(circle, #f4b0bb55 1.5px, transparent 2px) 0 0 / 18px 18px, linear-gradient(110deg, #fff8ed, #fce8ee); }
+.matchIntroText { display: grid; gap: 10px; min-width: 0; }
+.matchEyebrow { color: #a44862; font-size: 13px; font-weight: 700; letter-spacing: .08em; }
+.matchBadge { justify-self: start; padding: 5px 12px; border: 1px solid #e9c9a5; border-radius: 999px; background: #fffdf4; color: #82623f; font-size: 12px; font-weight: 700; }
+.matchIntroArt { position: relative; height: 190px; min-width: 0; }
+.matchIntroArt img { object-fit: contain; filter: drop-shadow(0 6px 0 #b1777c22); }
+.waitingFriends { display: flex; justify-content: center; align-items: end; gap: 8px; padding-top: 6px; }
+.waitingFriends span { position: relative; display: block; width: 85px; height: 95px; transform: rotate(-6deg); animation: friendSway 3s ease-in-out infinite; }
+.waitingFriends span:nth-child(2) { width: 95px; height: 110px; animation-delay: -.8s; }
+.waitingFriends span:nth-child(3) { transform: rotate(6deg); animation-delay: -1.6s; }
+.waitingFriends img { object-fit: contain; filter: drop-shadow(0 4px 0 #839a6622); }
+@keyframes friendSway { 50% { translate: 0 -5px; rotate: 4deg; } }
+@media (max-width: 520px) {
+  .matchIntro { grid-template-columns: minmax(0, 1fr) 115px; gap: 6px; padding: 14px 10px; }
+  .matchIntro h2 { font-size: 20px; letter-spacing: .02em; }
+  .matchIntro p { font-size: 14px; }
+  .matchIntroArt { height: 145px; }
+  .matchEyebrow { font-size: 11px; letter-spacing: 0; }
+  .matchBadge { padding: 4px 7px; font-size: 10px; }
+  .freeWaiting { padding: 16px; }
+  .waitingFriends { gap: 2px; }
+  .waitingFriends span { width: 65px; height: 80px; }
+  .waitingFriends span:nth-child(2) { width: 75px; height: 90px; }
+}
 .watch { --tone: #a9d6ee; }
 .enter { --tone: #e7c3e2; }
 .create { --tone: #f4b0bb; }
 /* The picture: the door's colour as a sky, lighter towards the floor. */
 .doorArt { position: relative; min-width: 0; min-height: 0; background: radial-gradient(circle at 50% 78%, #fffdebcc 0 28%, transparent 62%), linear-gradient(180deg, var(--tone), color-mix(in srgb, var(--tone) 35%, #fffdeb)); }
 /* Fitted inside the picture, whatever its shape. */
-.doorArt svg { position: absolute; inset: 8px 10px 4px; width: calc(100% - 20px); height: calc(100% - 12px); filter: drop-shadow(0 4px 0 #6b4a3a22); }
+.doorArt img { padding: 8px 10px 4px; object-fit: contain; filter: drop-shadow(0 4px 0 #6b4a3a22); transition: transform .2s; }
+.door:hover .doorArt img { transform: translateY(-2px) rotate(-3deg); }
 /* The name beside it, behind a rule. */
 .doorPlate { display: grid; align-content: center; gap: 6px; margin: 12px 0; padding: 0 clamp(14px, 2.4vw, 30px); border-left: 2px solid #a8866766; text-align: left; }
 .doorPlate b { font-size: clamp(22px, 3vw, 36px); letter-spacing: .14em; white-space: nowrap; }
@@ -31,12 +58,11 @@
 /* With one chosen, the others step back. */
 .doors[data-open] .door[aria-expanded=false] { filter: saturate(.55) brightness(.97); }
 /* Narrow: the description goes on top, and the doors take what is left of the screen. */
-@media (max-width: 720px) { .entrance { grid-template-columns: minmax(0, 1fr); } .door { height: clamp(96px, calc((100dvh - 470px) / 3), 170px); } }
+@media (max-width: 720px) { .entrance { grid-template-columns: minmax(0, 1fr); } .door { height: clamp(96px, calc((100dvh - 470px) / 4), 150px); } }
 /* A phone held sideways: everything stays on one screen. */
 @media (max-height: 520px) {
   .entrance { grid-template-columns: minmax(170px, 1fr) minmax(0, 2.2fr); }
-  .door { height: clamp(64px, calc((100dvh - 150px) / 3), 110px); border-radius: 14px; }
-  .doorArt svg { inset: 3px 6px 2px; width: calc(100% - 12px); height: calc(100% - 5px); }
+  .door { height: clamp(64px, calc((100dvh - 160px) / 4), 100px); border-radius: 14px; }
   .doorPlate { margin: 6px 0; gap: 2px; }
   .doorPlate b { font-size: 20px; }
   .intro { gap: 6px; }
@@ -44,7 +70,7 @@
   .intro .server { padding: 8px 10px; font-size: 12px; }
   .intro .server small { margin-left: 0; font-size: 12px; }
 }
-@media (prefers-reduced-motion: reduce) { .door { transition: none; } }
+@media (prefers-reduced-motion: reduce) { .door, .doorArt img { transition: none; } .waitingFriends span { animation: none; } }
 /* The chosen door's form scrolls to just under the page's edge. */
 .formAnchor { scroll-margin-top: 12px; margin-bottom: calc(-1 * clamp(14px, 2vw, 22px)); }
 /* A narrow phone: the name alone, a little smaller. */

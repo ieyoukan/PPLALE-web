@@ -2,7 +2,7 @@
 // what the browser and the room server (services/room-server) say to each other. The server keeps
 // the match; a browser only ever gets its own seat's view of it (redact.ts).
 import type { Catalog, Command, Deck, GameState, Side } from './model.ts';
-import { defaultMatchRules, deckRuleErrors, describeMatchRules, parseMatchRules } from './rules.ts';
+import { defaultMatchRules, deckRuleErrors, describeMatchRules, parseMatchRules, playableNow } from './rules.ts';
 import type { MatchRules } from './rules.ts';
 
 // ── The rules of a room: which cards its decks may use (rules.ts), and whether others may watch ──
@@ -17,6 +17,13 @@ export interface RoomRules extends MatchRules {
     spectators?: boolean;
 }
 export const defaultRoomRules: RoomRules = { ...defaultMatchRules, spectators: false };
+/** One queue, using the latest supported environment; spectators cannot expose either hand. */
+export const freeMatchRules: RoomRules = { ...playableNow, spectators: false };
+
+export type FreeMatchStatus =
+    | { status: 'waiting' }
+    | { status: 'cancelled' }
+    | { status: 'matched'; roomId: string; key: SeatKey };
 
 /** The usable part of anything sent as rules, or null when no fruit is left. */
 export function parseRoomRules(value: unknown): RoomRules | null {
@@ -47,6 +54,7 @@ export interface LastCommand {
 /** A room as one seat (or a spectator) sees it. `game` hides what they may not know (`viewFor`). */
 export interface RoomView {
     id: string;
+    mode?: 'free';
     /** Grows with every change of the room; an older view never replaces a newer one. */
     version: number;
     /** The seat this view is for. A spectator's is 0: the side shown near. */

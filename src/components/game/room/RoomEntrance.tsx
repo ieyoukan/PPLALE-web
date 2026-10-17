@@ -8,8 +8,9 @@ import { useAuth } from '@/lib/auth';
 import { createRoom, keepSeat, latestRoom, readServerStats, roomServerUrl } from '@/lib/game/room/client';
 import { MAX_NAME_LENGTH, ROOM_ID_LENGTH, defaultRoomRules, isRoomId } from '@pplale/game-core/room';
 import type { RoomRules, RoomServerStats } from '@pplale/game-core/room';
-import { ROOM_PATH, roomHref, watchHref } from '@/lib/game/sessionStore';
+import { BATTLE_PATH, ROOM_PATH, roomHref, watchHref } from '@/lib/game/sessionStore';
 import { RulePicker } from '../RulePicker';
+import { BattleIllustration } from './BattleIllustration';
 import styles from './Room.module.css';
 
 const NAME_KEY = 'pplale-room-name-v1';
@@ -58,40 +59,13 @@ function useServerStats() {
 function ServerStatus({ stats }: { stats: RoomServerStats | null | undefined }) {
   if (stats === undefined) return <p className={styles.server} role="status"><i className={styles.dot} />ルームサーバーを確認中…</p>;
   if (!stats) return <p className={`${styles.server} ${styles.serverDown}`} role="status"><i className={styles.dot} />
-    {roomServerUrl ? 'ルームサーバーにつながりません。しばらくしてからお試しください。' : 'ルームサーバーが設定されていないため、ルームマッチは使えません。'}</p>;
-  return <p className={`${styles.server} ${styles.serverUp}`} role="status"><i className={styles.dot} />ルームマッチを利用できます</p>;
+    {roomServerUrl ? 'ルームサーバーにつながりません。しばらくしてからお試しください。' : 'ルームサーバーが設定されていないため、オンライン対戦は使えません。'}</p>;
+  return <p className={`${styles.server} ${styles.serverUp}`} role="status"><i className={styles.dot} />オンライン対戦を利用できます</p>;
 }
 
-/** The picture on each door: people watching a table, a door standing open, a new door. */
-function DoorArt({ kind }: { kind: 'watch' | 'enter' | 'create' }) {
-  if (kind === 'watch') return <svg viewBox="0 0 120 120">
-    {/* The table with a match on it, and two people looking on from this side (seen from behind). */}
-    <path d="M24 20l2.5 6 6 2.5-6 2.5-2.5 6-2.5-6-6-2.5 6-2.5zM97 12l2 4.5 4.5 2-4.5 2-2 4.5-2-4.5-4.5-2 4.5-2z" fill="#fffdeb" stroke="#6b4a3a" strokeWidth="1.8" strokeLinejoin="round" />
-    <ellipse cx="60" cy="56" rx="42" ry="14" fill="#fffdeb" stroke="#6b4a3a" strokeWidth="2.5" />
-    <rect x="38" y="34" width="17" height="24" rx="3" fill="#f4b0bb" stroke="#6b4a3a" strokeWidth="2.5" transform="rotate(-10 46 46)" />
-    <rect x="65" y="34" width="17" height="24" rx="3" fill="#b3d788" stroke="#6b4a3a" strokeWidth="2.5" transform="rotate(10 74 46)" />
-    <path d="M14 116a22 22 0 0 1 44 0z" fill="#e7c3e2" stroke="#6b4a3a" strokeWidth="2.5" strokeLinejoin="round" />
-    <circle cx="36" cy="84" r="13" fill="#c9a27e" stroke="#6b4a3a" strokeWidth="2.5" />
-    <path d="M62 116a22 22 0 0 1 44 0z" fill="#fde9a8" stroke="#6b4a3a" strokeWidth="2.5" strokeLinejoin="round" />
-    <circle cx="84" cy="84" r="13" fill="#f4b0bb" stroke="#6b4a3a" strokeWidth="2.5" />
-  </svg>;
-  return <svg viewBox="0 0 120 120">
-    {/* The doorway, with light coming through it. */}
-    <path d="M28 108V52a32 32 0 0 1 64 0v56z" fill="#fffdeb" stroke="#6b4a3a" strokeWidth="3" strokeLinejoin="round" />
-    <path d="M38 108V54a22 22 0 0 1 44 0v54z" fill={kind === 'enter' ? '#fff6b8' : '#e7c3e2'} stroke="#6b4a3a" strokeWidth="2.5" strokeLinejoin="round" />
-    <path d="M18 108h84" stroke="#6b4a3a" strokeWidth="3" strokeLinecap="round" />
-    {kind === 'enter' ? <>
-      {/* The door leaf swung open, and the way in. */}
-      <path d="M38 108V54a22 22 0 0 1 4-12l14 10v64z" fill="#f4b0bb" stroke="#6b4a3a" strokeWidth="2.5" strokeLinejoin="round" />
-      <path d="M96 84H66m10-9-10 9 10 9" fill="none" stroke="#6b4a3a" strokeWidth="5" strokeLinecap="round" strokeLinejoin="round" />
-    </> : <>
-      <path d="M60 33v75" stroke="#6b4a3a" strokeWidth="2.5" />
-      <circle cx="54" cy="78" r="2.6" fill="#6b4a3a" /><circle cx="66" cy="78" r="2.6" fill="#6b4a3a" />
-      {/* A new one. */}
-      <circle cx="92" cy="30" r="15" fill="#b3d788" stroke="#6b4a3a" strokeWidth="3" />
-      <path d="M92 22v16m-8-8h16" stroke="#6b4a3a" strokeWidth="4" strokeLinecap="round" />
-    </>}
-  </svg>;
+/** A different character welcomes players at each entrance. */
+function DoorArt({ kind }: { kind: 'watch' | 'enter' | 'create' | 'free' }) {
+  return <BattleIllustration kind={kind} sizes="(max-width: 720px) 120px, 210px" />;
 }
 
 export function RoomEntrance() {
@@ -130,15 +104,19 @@ export function RoomEntrance() {
     </button>;
 
   return <div className={styles.stack}>
-    {/* What this is on the left; on the right three large doors, one under the other. */}
+    {/* What this is on the left; on the right four illustrated entrances. */}
     <div className={styles.entrance}>
       <div className={styles.intro}>
-        <h2>ルームマッチ</h2>
-        <p>特定の相手と<br />対戦することができます</p>
+        <h2>オンライン対戦</h2>
+        <p>いま遊んでいる人や<br />友だちと対戦しよう</p>
         <ServerStatus stats={stats} />
         {latest && <Link href={roomHref(ROOM_PATH, latest)} className={styles.secondary}>前回のルーム（{latest}）に戻る</Link>}
       </div>
       <div className={styles.doors} data-open={open ?? undefined}>
+        <Link href={`${BATTLE_PATH}free/`} className={`${styles.door} ${styles.free}`}>
+          <span className={styles.doorArt} aria-hidden="true"><DoorArt kind="free" /></span>
+          <span className={styles.doorPlate}><b>フリーマッチ</b><small>対戦相手を自動で探す・ランクなし</small></span>
+        </Link>
         {door('watch', '観戦する', '観戦できるルームの対戦を見る')}
         {door('enter', 'ルームへ入る', '教えてもらったルームIDで参加する')}
         {door('create', 'ルームを作る', 'ルールを決めて、友だちを招待する')}

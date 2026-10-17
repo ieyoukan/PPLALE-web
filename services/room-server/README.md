@@ -1,6 +1,6 @@
 # @pplale/room-server
 
-ルームマッチ（バトルのタブ）のサーバー。ルームを持ち、対戦を進め、各プレイヤーに自分の側から見える盤面だけを WebSocket で送る。
+フリーマッチとルームマッチ（バトルのタブ）のサーバー。対戦相手を探し、ルームを持ち、対戦を進め、各プレイヤーに自分の側から見える盤面だけを WebSocket で送る。
 
 - 対戦はサーバーだけが進める。ブラウザは操作（Command）を送り、相手の手札と山札を伏せた盤面（game-core の `viewFor`）を受け取る。乱数の種もカードの並びもブラウザには渡らない。
 - Web アプリに `NEXT_PUBLIC_ROOM_SERVER_URL` を設定したときだけルームマッチが使える。未設定、またはサーバーが落ちている間は、バトルのタブにその旨が出る（CPU対決はそのまま遊べる）。
@@ -24,6 +24,9 @@
 | `POST /rooms` | `{ rules: { fruits, extendedPlayable, spectators }, name }` → `{ seat: 0, token, view }` |
 | `GET /rooms/{id}` | `{ id, rules, host, open, spectators }`。なければ 404 |
 | `POST /rooms/{id}/join` | `{ name }` → `{ seat: 1, token, view }`。満員 409 / 解散済み 410 |
+| `POST /free-match/start` | `{ token, name, deck }` → `{ status: "waiting" }` または `{ status: "matched", roomId, key: { seat, token } }` |
+| `POST /free-match/status` | `{ token }` → 待機中 / マッチ成立 / キャンセル済み。待機の有効期限を更新する |
+| `POST /free-match/cancel` | `{ token }` → `{ status: "cancelled" }`。先にマッチが成立した場合は成立済みの席を返す |
 | `WS /rooms/{id}/socket` | 上の流れ。`action` は `ready` `unready` `command` `resign` `rematch` `leave`。観戦は `hello` に `watch: true` |
 | `GET /stats` | サーバーの状態（下） |
 | `GET /healthz` | プロセスが動いている（liveness） |
@@ -33,6 +36,16 @@
 
 WebSocket を閉じるコード: `4404` ルームか席がない・観戦できない（直前に `{ type: "gone" }`）、`4400` 形式が違う、`4408` hello が来ない、`1012` Pod の入れ替え（ブラウザはつなぎ直す）。
 
+## フリーマッチ
+
+- `/game/battle/free/` で名前とデッキを選び、相手を探す。ランクなし、`freeMatchRules`（現在実装済みの最新環境・使える拡張プレイアブルあり・観戦なし）で待機列を1つに集める。
+- ブラウザは検索ごとに32バイトの秘密を生成する（小文字の16進数64文字）。サーバーが保存するのはそのSHA-256だけ。マッチが成立すると同じ秘密がそのプレイヤーの席のトークンになる。相手には秘密もハッシュも渡さない。
+- 約3秒ごとの `status` で待機を更新する。30秒更新されなかった人はマッチの対象から外す。キャンセル済みの印は30秒残し、遅れて届いた `start` が再登録しないようにする。画面を離れるときもキャンセルを送る。
+- 待っている人を先着順で組み合わせ、2人のデッキを検証して対戦を開始する。待機列と新しいルームをRedisのLuaで一度に保存するので、別々のPodが同時に処理しても重複しない。リクエストの再送では同じ席が返る。
+- 待機列は `pplale:free-match` のhash（`v`, `json`）。待機中は名前・デッキ・秘密のハッシュ・期限、成立後はルームID・席・期限だけを持つ。成立した席の案内は10分残し、期限切れは次の更新で削除する。hash自体も最後の更新から10分で消える。
+- 新しい検索は `REQUESTS_PER_HOUR` に数える。同じ検索の再送、待機更新、登録済みの検索のキャンセルは数えない。待機列の保存件数は `MAX_ROOMS * 4`、対戦用ルームは既存の `MAX_ROOMS` で制限する。
+- 対戦中の切断が1分以上続いた側は自動で投了する（通常のルームマッチには適用しない）。対戦後は同じ相手とのルーム内再戦ではなく「次の相手を探す」でデッキ選択に戻る。
+
 ## Redis の使い方（`src/backend.ts`）
 
 ```
@@ -41,6 +54,7 @@ pplale:on:{id}:{spot}   zset    席（0, 1）または観戦者（2）の開い�
 pplale:pod:{pod}        string  その Pod の接続数。Pod が止まると消える
 pplale:totals           hash    累計（作ったルーム、始まった対戦、終わった対戦、操作）
 pplale:rooms            channel ルームが変わったことを Pod どうしで知らせる
+pplale:free-match       hash    フリーマッチの待機列と成立済みの席の案内（v, json）。最後の更新から10分で消える
 ```
 
 - **ルームの変更は compare-and-set。** 読む → game-core で実行 → 「バージョンが読んだときのままなら書く」を Lua で1回に行う。別の Pod の操作が先に入っていたら読み直してやり直す。ロックは持たない。
@@ -108,6 +122,7 @@ REDIS_URL=redis://localhost:6379 npm run test:room-server
 ```
 
 2つのブラウザで実際に対戦させる e2e は `e2e/room-match.spec.mjs`（冒頭に動かし方）。
+フリーマッチの検索・キャンセル・対戦開始・再読み込み・次の相手の検索は `e2e/free-match.spec.mjs`。同じサーバー設定で `PPLALE_ROOM_TEST_URL=http://localhost:3100 npx playwright test free-match` を実行する。
 
 コンテナ（リポジトリのルートから）:
 
@@ -199,3 +214,4 @@ docker run --rm -p 8080:8080 -e REDIS_URL=redis://host.docker.internal:6379 ppla
 - **観戦者には両方の手札が見える。** 観戦を許可したルームでは、対戦している本人が別のブラウザで観戦すれば相手の手札を見られる。防ぐ仕組みはなく、観戦の可否と人数を2人に見せているだけ。既定は観戦なしで、ルームを作る人が選ぶ。観戦は1ルーム30人まで。
 - **ルームIDは6けたの数字。** 空いているルームには ID を当てれば入れる（2人そろえば入れない）。回数の制限で総当たりを抑えているだけなので、知らない人に入られて困る用途には向かない。
 - **切断した相手を待つ時間に上限はない。** 相手の接続が切れたことは画面に出る。戻らないときは自分が投了するかルームを出る。
+- 上の切断待ちはルームマッチの場合。フリーマッチでは切断が1分以上続くと自動投了になる。

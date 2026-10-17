@@ -1,7 +1,8 @@
 // The browser's side of a room: asking the room server (services/room-server) for a room or a
 // seat, the seats kept in this browser, and the socket a seat talks through.
 // Without NEXT_PUBLIC_ROOM_SERVER_URL there are no room matches.
-import type { ClientMessage, RoomAction, RoomInfo, RoomRules, RoomServerStats, RoomView, SeatKey, Seated, ServerMessage } from '@pplale/game-core/room';
+import type { Deck } from '@pplale/game-core';
+import type { ClientMessage, FreeMatchStatus, RoomAction, RoomInfo, RoomRules, RoomServerStats, RoomView, SeatKey, Seated, ServerMessage } from '@pplale/game-core/room';
 
 export const roomServerUrl = (process.env.NEXT_PUBLIC_ROOM_SERVER_URL ?? '').replace(/\/+$/, '') || null;
 
@@ -30,6 +31,17 @@ export const joinRoom = (id: string, name: string) => call<Seated>(`/rooms/${id}
 export const readRoomInfo = (id: string) => call<RoomInfo>(`/rooms/${id}`);
 /** How the server is doing: also the way to find out whether it can be reached at all. */
 export const readServerStats = () => call<RoomServerStats>('/stats');
+
+export const startFreeMatch = (token: string, name: string, deck: Deck) => call<FreeMatchStatus>('/free-match/start', { token, name, deck });
+export const pollFreeMatch = (token: string) => call<FreeMatchStatus>('/free-match/status', { token });
+export const cancelFreeMatch = (token: string) => call<FreeMatchStatus>('/free-match/cancel', { token });
+/** Also works while navigating away or closing the page. A lost request expires after 30 seconds. */
+export function abandonFreeMatch(token: string) {
+  if (!roomServerUrl) return;
+  void fetch(`${roomServerUrl}/free-match/cancel`, {
+    method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ token }), keepalive: true,
+  }).catch(() => {});
+}
 
 // ── The seats of this browser ──
 const SEATS_KEY = 'pplale-room-seats-v2';
