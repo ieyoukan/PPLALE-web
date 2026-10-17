@@ -1,29 +1,18 @@
-# VRChatにあるカードゲーム「ぷぷりえーる」のデッキ構築などができるwebアプリ
+# VRChatにあるカードゲーム「ぷぷりえーる」のデッキ構築・ゲームプレイができるwebアプリ
 https://pplale.vercel.app/
-![image](https://github.com/user-attachments/assets/f30d43ca-e1b6-463f-ac5a-f3d9b23f0922)
+<img width="1448" height="855" alt="image" src="https://github.com/user-attachments/assets/4e7128e5-89a4-41aa-869d-c545a0651dcb" />
+<img width="1548" height="932" alt="image" src="https://github.com/user-attachments/assets/5ae56c03-4e68-4af7-ba82-518b0fc9dd74" />
 
-![image](https://github.com/user-attachments/assets/51f9bd05-2cd3-4e7f-9c74-3763ed0fa326)
 
 ## ぷぷりえーるとは
-VRChatのイベント「ロリっ子喫茶ぷぷりえ」のカードゲーム！幼女カードとお菓子カードがある。推しのカードでデッキを構築しよう！
+VRChatのイベント「ロリっ子喫茶ぷぷりえ」のカードゲームで、VRChat上でプレイできます。
+幼女デッキとお菓子デッキを使って相手のお貸しポイントを先に無くした方が勝ち！
 
-## 通常構築
-カードをドラッグ＆ドロップして構築する
-![image](https://github.com/user-attachments/assets/1af293a3-7bbc-4b70-b80d-4d6e29962c78)
-
+推しのカードでデッキを構築しよう！
 
 
-## 2pick構築について
-シャドウバースの2pickのようにある程度ランダムにデッキを構築する。
-```
-フルーツ、プレイアブルカードのバージョン選択
-↓
-最後に選択するプレイアブルカード3枚の確認
-↓
-二枚ずつ選んデッキ構築
-↓
-プレイアブルカード選択
-```
+## ゲームプレイもついにwebでできるように!!
+<img width="1644" height="982" alt="image" src="https://github.com/user-attachments/assets/a40d6d3d-50be-4f9d-9fa3-485078710b2d" />
 
 
 # 開発について
