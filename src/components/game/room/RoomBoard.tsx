@@ -10,6 +10,7 @@ import type { GameState, Side } from '@pplale/game-core';
 import type { RoomView } from '@pplale/game-core/room';
 import { BATTLE_PATH, ROOM_PATH, roomHref } from '@/lib/game/sessionStore';
 import { BoardTable } from '../BoardEmulator';
+import { useWatchingPresence } from '../social/useWatchingPresence';
 import { useRoom } from './useRoom';
 import type { Room } from './useRoom';
 import { useRoomSession } from './useRoomSession';
@@ -26,6 +27,8 @@ export default function RoomBoard() {
   // For a player, anything that is not a match (no seat, still choosing decks, room gone) belongs to the room's page.
   const elsewhere = !watch && (stage === 'gone' || stage === 'visitor' || stage === 'seated' && !view?.game);
   useEffect(() => { if (elsewhere) router.replace(id ? roomHref(ROOM_PATH, id) : BATTLE_PATH); }, [elsewhere, id, router]);
+  // Friends see a signed-in spectator in this room while a match can be watched.
+  useWatchingPresence(watch && stage === 'seated' && view?.game ? id : null);
   // A spectator stays here between matches, and is told when there is nothing to watch.
   if (watch && (stage === 'gone' || view && !view.game)) return <Waiting view={stage === 'gone' ? null : view} reason={error} />;
   if (stage !== 'seated' || !view?.game) return <div className={styles.emulator} aria-busy="true" />;

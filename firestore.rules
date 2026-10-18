@@ -85,6 +85,21 @@ service cloud.firestore {
       allow delete: if isOwner(userId);
     }
 
+    // 観戦中のルーム。募集と同じく、承認済みフレンドだけが読める。観戦中は1分ごとに更新し、古いものは表示しない。
+    match /watching/{userId} {
+      function friends() {
+        let key = request.auth.uid < userId ? request.auth.uid + '~' + userId : userId + '~' + request.auth.uid;
+        return exists(/databases/$(database)/documents/friendships/$(key)) &&
+          get(/databases/$(database)/documents/friendships/$(key)).data.status == 'accepted';
+      }
+      allow get: if request.auth != null && (isOwner(userId) || friends());
+      allow list: if false;
+      allow create, update: if isOwner(userId) && request.resource.data.keys().hasOnly(['roomId', 'updatedAt']) &&
+        request.resource.data.roomId is string && request.resource.data.roomId.matches('[0-9]{6}') &&
+        request.resource.data.updatedAt == request.time;
+      allow delete: if isOwner(userId);
+    }
+
     // その他のドキュメントへのアクセスは拒否
     match /{document=**} {
       allow read, write: if false;

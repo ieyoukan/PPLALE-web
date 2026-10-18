@@ -31,8 +31,8 @@ test('social rules: profiles contain only public allowed fields and only their o
   assert.equal((await getDoc(ref)).data().displayName, '変更');
 });
 
-test('social rules: only the recipient can accept; friend lists and recruitments are private and revoked on removal', { skip: !enabled }, async t => {
-  const a = await client(t), b = await client(t), c = await client(t);
+test('social rules: only the recipient can accept; friend lists, recruitments and watching are private and revoked on removal', { skip: !enabled }, async t => {
+  const a = await client(t), b = await client(t), c = await client(t), shared = ['recruitments', 'watching'];
   for (const user of [a, b, c]) await setDoc(doc(user.db, 'profiles', user.uid), profile());
   const members = [a.uid, b.uid].sort(), id = members.join('~');
   const request = { members, requestedBy: a.uid, status: 'pending', createdAt: serverTimestamp() };
@@ -42,16 +42,16 @@ test('social rules: only the recipient can accept; friend lists and recruitments
   await denied(updateDoc(ref, { status: 'accepted', acceptedAt: serverTimestamp() }));
   await denied(getDoc(doc(c.db, 'friendships', id)));
   await denied(setDoc(doc(a.db, 'friendships', 'different-id'), request));
-  await setDoc(doc(a.db, 'recruitments', a.uid), { roomId: '123456', updatedAt: serverTimestamp() });
-  await denied(getDoc(doc(b.db, 'recruitments', a.uid)));
+  for (const kind of shared) await setDoc(doc(a.db, kind, a.uid), { roomId: '123456', updatedAt: serverTimestamp() });
+  for (const kind of shared) await denied(getDoc(doc(b.db, kind, a.uid)));
   await updateDoc(doc(b.db, 'friendships', id), { status: 'accepted', acceptedAt: serverTimestamp() });
-  assert.equal((await getDoc(doc(b.db, 'recruitments', a.uid))).data().roomId, '123456');
-  await denied(updateDoc(doc(b.db, 'recruitments', a.uid), { roomId: '654321', updatedAt: serverTimestamp() }));
-  await denied(getDoc(doc(c.db, 'recruitments', a.uid)));
+  for (const kind of shared) assert.equal((await getDoc(doc(b.db, kind, a.uid))).data().roomId, '123456');
+  for (const kind of shared) await denied(updateDoc(doc(b.db, kind, a.uid), { roomId: '654321', updatedAt: serverTimestamp() }));
+  for (const kind of shared) await denied(getDoc(doc(c.db, kind, a.uid)));
   const own = await getDocs(query(collection(b.db, 'friendships'), where('members', 'array-contains', b.uid), limit(100)));
   assert.equal(own.docs.length, 1);
   await denied(getDocs(collection(b.db, 'friendships')));
   await denied(updateDoc(doc(b.db, 'friendships', id), { members: [b.uid, c.uid], status: 'accepted', acceptedAt: serverTimestamp() }));
   await deleteDoc(doc(b.db, 'friendships', id));
-  await denied(getDoc(doc(b.db, 'recruitments', a.uid)));
+  for (const kind of shared) await denied(getDoc(doc(b.db, kind, a.uid)));
 });

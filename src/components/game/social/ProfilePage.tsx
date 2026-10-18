@@ -8,6 +8,7 @@ import { displayCards } from '@/lib/game/catalog';
 import { defaultProfile, readProfile, requestFriend, saveProfile } from '@/lib/game/social';
 import type { PlayerProfile } from '@/lib/game/social';
 import { RecordedCard } from '../history/RecordedCard';
+import { Icon } from './Icon';
 import styles from './Social.module.css';
 
 export function ProfilePage() {
@@ -47,7 +48,7 @@ function Profile({ uid, mine, initialName }: { uid: string; mine: boolean; initi
   async function share() { try { await navigator.clipboard.writeText(`${location.origin}/game/profile/?id=${encodeURIComponent(uid)}`); setMessage('プロフィールのリンクをコピーしました'); } catch { setError('リンクをコピーできませんでした'); } }
   return <section className={styles.panel} aria-label="プロフィール">
     <header className={styles.profileHeading}>
-      <button className={styles.avatarLarge} disabled={!mine} onClick={() => setChoosing(value => !value)} aria-label="カードのアイコンを選ぶ"><RecordedCard id={profile.iconCardId} sizes="120px" />{mine && <span>変更 ✎</span>}</button>
+      <button className={styles.avatarLarge} disabled={!mine} onClick={() => setChoosing(value => !value)} aria-label="カードのアイコンを選ぶ"><RecordedCard id={profile.iconCardId} sizes="120px" />{mine && <span>変更 <Icon name="pen" /></span>}</button>
       <div><small>PLAYER PROFILE</small><h2>{profile.displayName}</h2><p className={styles.comment}>{profile.comment || 'よろしくお願いします！'}</p></div>
     </header>
     {mine && <form onSubmit={event => { event.preventDefault(); void save(); }} className={styles.profileForm}>

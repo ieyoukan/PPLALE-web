@@ -4,6 +4,7 @@ import { useState } from 'react';
 import Link from 'next/link';
 import { useAuth } from '@/lib/auth';
 import { FriendTile } from './FriendTile';
+import { Icon } from './Icon';
 import { useSocial } from './useSocial';
 import styles from './Social.module.css';
 
@@ -22,23 +23,23 @@ function Notifications({ uid }: { uid: string }) {
   let target = '';
   try { target = new URL(profileLink).searchParams.get('id') ?? ''; } catch { if (/^[\w-]{1,128}$/.test(profileLink)) target = profileLink; }
   return <section className={styles.panel} aria-label="通知">
-    <header className={styles.socialHeading}><h2><span aria-hidden="true">🔔</span>通知{received.length > 0 && <em>{received.length}</em>}</h2></header>
+    <header className={styles.socialHeading}><h2><Icon name="bell" />通知{received.length > 0 && <em>{received.length}</em>}</h2></header>
     {error && <p className={styles.error} role="alert">{error}</p>}
-    <div className={styles.addFriend}><label><span aria-hidden="true">＋♡</span><input value={profileLink} onChange={event => setProfileLink(event.target.value)} placeholder="受け取ったプロフィールのリンク" aria-label="プロフィールのリンク" /></label>{target && <Link className={styles.primary} href={`/game/profile/?id=${encodeURIComponent(target)}`}>プロフィールを見る ›</Link>}</div>
-    {!received.length && !sent.length && <div className={styles.empty} role="status"><span aria-hidden="true">✉</span><p>{loading ? '読み込み中…' : '通知はありません'}</p></div>}
+    <div className={styles.addFriend}><label><Icon name="add" /><input value={profileLink} onChange={event => setProfileLink(event.target.value)} placeholder="受け取ったプロフィールのリンク" aria-label="プロフィールのリンク" /></label>{target && <Link className={styles.primary} href={`/game/profile/?id=${encodeURIComponent(target)}`}>プロフィールを見る ›</Link>}</div>
+    {!received.length && !sent.length && <div className={styles.empty} role="status"><Icon name="mail" /><p>{loading ? '読み込み中…' : '通知はありません'}</p></div>}
     {received.length > 0 && <details className={styles.group} data-place="pending" open>
-      <summary><span className={styles.chevron} aria-hidden="true" />✉ 届いた申請<em className={styles.badge}>{received.length}</em></summary>
+      <summary><span className={styles.chevron} aria-hidden="true" /><Icon name="mail" />届いた申請<em className={styles.badge}>{received.length}</em></summary>
       <div className={styles.tiles}>{received.map(({ profile, friendship }) => <FriendTile key={friendship.id} profile={profile} place="pending" status="申請">
         <span className={styles.answer}>
-          <button className={styles.accept} aria-label="承認" disabled={!!busy} onClick={() => void respond(friendship, true)}>✓</button>
-          <button className={styles.decline} aria-label="見送る" disabled={!!busy} onClick={() => void respond(friendship, false)}>✕</button>
+          <button className={styles.accept} aria-label="承認" disabled={!!busy} onClick={() => void respond(friendship, true)}><Icon name="check" /></button>
+          <button className={styles.decline} aria-label="見送る" disabled={!!busy} onClick={() => void respond(friendship, false)}><Icon name="close" /></button>
         </span>
       </FriendTile>)}</div>
     </details>}
     {sent.length > 0 && <details className={styles.group} data-place="sent" open>
-      <summary><span className={styles.chevron} aria-hidden="true" />➤ 送った申請<em className={styles.badge}>{sent.length}</em></summary>
+      <summary><span className={styles.chevron} aria-hidden="true" /><Icon name="send" />送った申請<em className={styles.badge}>{sent.length}</em></summary>
       <div className={styles.tiles}>{sent.map(({ profile, friendship }) => <FriendTile key={friendship.id} profile={profile} place="sent" status="返事待ち">
-        <span className={styles.answer}><button className={styles.decline} aria-label="取り消す" disabled={!!busy} onClick={() => void respond(friendship, false)}>✕</button></span>
+        <span className={styles.answer}><button className={styles.decline} aria-label="取り消す" disabled={!!busy} onClick={() => void respond(friendship, false)}><Icon name="close" /></button></span>
       </FriendTile>)}</div>
     </details>}
   </section>;
