@@ -76,7 +76,7 @@ function Result({ outcome: { winner, kind } }: { outcome: Outcome }) {
       <div className={styles.actions}>
         {canReplay && <button className={styles.plateButton} onClick={startReplay}>リプレイ</button>}
         {/* The game's own home (preparation, cards, battles), not the site's top page. */}
-        <button className={styles.plateButton} onClick={leave}>{remote?.watching ? '観戦をやめる' : remote?.freeMatch ? 'バトルへ戻る' : remote ? 'ルームを出る' : 'ホーム'}</button>
+        <button className={styles.plateButton} onClick={leave}>{remote?.recorded ? '対戦履歴へ戻る' : remote?.watching ? '観戦をやめる' : remote?.freeMatch ? 'バトルへ戻る' : remote ? 'ルームを出る' : 'ホーム'}</button>
         {canRematch && <button className={`${styles.plateButton} ${styles.primaryPlate}`} onClick={rematch}>{remote?.freeMatch ? '次の相手を探す' : remote ? 'もう一度（デッキ選択へ）' : position ? '同じ盤面でもう一度' : '再戦する'}</button>}
       </div>
     </div>

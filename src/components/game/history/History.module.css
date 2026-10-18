@@ -26,7 +26,7 @@
 .star:hover { transform: rotate(-12deg) scale(1.1); }
 .star[aria-pressed=true] { color: #ac782c; text-shadow: 0 2px 0 #ffe9a4; }
 .avatar { position: relative; display: block; width: 64px; height: 64px; border: 3px solid #fffdf6; border-radius: 50%; overflow: hidden; background: #f8e7d8; box-shadow: 0 0 0 1px #ddbdac, 0 3px 6px #9d73551c; }
-.avatar img,.leader img { object-fit: cover; object-position: center 27%; transform: scale(1.45); }
+.avatar img { object-fit: cover; object-position: center 27%; transform: scale(1.45); }
 .matchInfo { display: grid; justify-items: start; gap: 5px; min-width: 0; padding: 0; background: transparent; color: inherit; border: 0; text-align: left; cursor: pointer; }
 .matchInfo strong { max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 16px; font-weight: 700; }
 .matchInfo > span { max-width: 100%; overflow-wrap: anywhere; font-size: 11px; color: #8c7164; line-height: 1.5; }
@@ -125,113 +125,6 @@
   .entry,.detail,.empty[data-loading] .emptyIcon { animation: none; }
   .history *,.detail * { transition: none !important; }
 }
-/* A recording is a read-only table: every number comes from the original server frame. */
+/* Shown while a recording loads, or when it cannot be played; the recording itself plays on the game table. */
 .replayPage { min-height: 100dvh; background: radial-gradient(ellipse at 50% 40%,#3c5d5b,#142f39 65%,#0e1d28); color: #fff6e2; padding: 14px 18px 26px; }
-.replayHeading { max-width: 1120px; margin: auto auto 12px; display: flex; align-items: center; justify-content: space-between; gap: 12px; }
-.replayHeading h1 { font-size: 20px; letter-spacing: .18em; color: #efdbab; }
-.replayHeading > a,.replayHeading > button { padding: 9px 12px; border: 1px solid #bda77d; border-radius: 8px; background: #183441; color: #f4e9d1; text-decoration: none; font-size: 13px; cursor: pointer; }
-.replayTable { max-width: 1120px; margin: auto; }
-.replaySide { padding: 12px 18px; border: 1px solid #9eae9a55; border-radius: 18px; background: #0d273b55; box-shadow: inset 0 0 35px #a1d2ba08; }
-.replaySide[data-active] { border-color: #cfb783; }
-.playerHeading { display: flex; align-items: center; gap: 12px; min-width: 0; }
-.leader { position: relative; width: 58px; height: 58px; flex: 0 0 58px; overflow: hidden; border: 2px solid #c6aa73; border-radius: 50%; }
-.playerHeading > div:nth-child(2) { display: grid; gap: 4px; min-width: 0; }
-.playerHeading strong { font-size: 16px; overflow-wrap: anywhere; }
-.playerHeading > div > span { color: #c6d0cc; font-size: 12px; }
-.resources { display: flex; flex-wrap: wrap; justify-content: end; gap: 12px; margin-left: auto; }
-.resources span { white-space: nowrap; }
-.resources b { font-size: 24px; color: #fce6af; padding: 0 4px; }
-.hand { display: flex; align-items: center; justify-content: center; gap: 5px; flex-wrap: wrap; min-height: 75px; padding: 8px 0; }
-.hand small { font-size: 11px; color: #b1c4c6; padding: 6px; }
-.replayCard { position: relative; width: 55px; aspect-ratio: 2 / 3; flex: 0 0 55px; border: 1px solid #e3d3b7; border-radius: 5px; background: #17313d; cursor: pointer; box-shadow: 0 3px 6px #0004; }
-.replayCard img { object-fit: contain; border-radius: 4px; }
-.field { display: grid; grid-template-columns: repeat(7,minmax(0,1fr)); gap: 8px; max-width: 840px; margin: auto; }
-.slot { display: grid; place-items: center; aspect-ratio: 2 / 3; border: 1px dashed #e0dec733; border-radius: 7px; color: #b2cab333; font-size: 30px; }
-.fieldCard { width: 100%; height: 100%; }
-.fieldCard[data-acted] { filter: brightness(.7); }
-.cardStats { position: absolute; bottom: -4px; left: -3px; right: -3px; display: flex; justify-content: space-between; }
-.cardStats b { display: grid; place-content: center; min-width: 24px; height: 24px; border: 1px solid #f0d793; border-radius: 50%; background: #1d4865; font: 700 17px Georgia,serif; }
-.cardStats b:last-child { background: #794458; }
-.cardDamage { position: absolute; top: 0; right: 0; border-radius: 50%; padding: 3px; color: #fff; background: #b44d5c; font-size: 11px; font-style: normal; }
-.piles { display: flex; flex-wrap: wrap; align-items: center; justify-content: center; gap: 8px; padding-top: 14px; }
-.piles button { min-height: 34px; padding: 5px 12px; border: 1px solid #a5b7ac55; border-radius: 99px; color: #e2e3cf; background: #112b38; font-size: 12px; cursor: pointer; }
-.piles b { padding-left: 8px; color: #fce2a7; }
-.piles > span { font-size: 11px; color: #a7bcbd; }
-.timelineNotice { display: grid; justify-items: center; gap: 6px; padding: 12px; text-align: center; font-size: 14px; line-height: 1.6; }
-.timelineNotice p { max-width: 900px; }
-.timelineNotice small { color: #ddcc9f; }
-.recordedDice { display: flex; gap: 25px; align-items: center; }
-.recordedDice span { display: flex; gap: 8px; align-items: center; font-size: 12px; }
-.recordedDice b { display: grid; place-content: center; width: 32px; height: 32px; border: 1px solid #c5a975; border-radius: 7px; color: #654d3d; background: #fff5dc; font-size: 22px; }
-.playback { display: grid; gap: 12px; max-width: 1120px; margin: 14px auto 0; padding: 14px; background: #112834ed; border: 1px solid #c6aa7366; border-radius: 14px; }
-.recordedAssessment { display: grid; gap: 6px; }
-.recordedAssessment > div { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 6px 12px; font-size: 12px; overflow-wrap: anywhere; }
-.recordedAssessment b { color: #b3d788; }
-.recordedAssessment svg { display: block; width: 100%; height: 70px; border-radius: 8px; background: linear-gradient(#b3d78818 50%, #f4b0bb18 50%); }
-.assessmentEven { stroke: #fffdeb66; stroke-dasharray: 5 5; }
-.assessmentCurve { fill: none; stroke: #fffdeb; stroke-width: 2; stroke-linejoin: round; }
-.assessmentCursor { stroke: #ffef93; stroke-width: 2; }
-.playback input { width: 100%; accent-color: #f1c6ce; }
-.playbackButtons { display: flex; flex-wrap: wrap; align-items: center; justify-content: center; gap: 8px; }
-.playbackButtons button { min-width: 40px; min-height: 40px; border: 1px solid #758e94; border-radius: 7px; background: #294b5a; color: #f7ecd7; cursor: pointer; font-size: 22px; }
-.playbackButtons button:disabled { opacity: .3; cursor: default; }
-.playbackButtons .play { width: 52px; border-color: #ddc4a1; background: #eebbc7; color: #543b47; }
-.playbackButtons output { padding: 0 12px; color: #c8d5d4; font-size: 13px; font-variant-numeric: tabular-nums; }
-.playbackButtons select { min-height: 40px; padding: 6px 10px; border: 1px solid #71838b; border-radius: 6px; color: #f7ecd7; background: #1c3b49; }
-.playbackExtra { display: flex; flex-wrap: wrap; justify-content: center; gap: 8px; }
-.playbackExtra button { min-height: 36px; padding: 6px 12px; border: 1px solid #748b8b66; border-radius: 6px; color: #d4dcd6; background: #183743; font-size: 12px; cursor: pointer; }
-.inspectCards { display: grid; gap: 20px; }
-.inspectCards article { display: flex; gap: 18px; padding-top: 16px; border-top: 1px solid #ffffff22; }
-.inspectedCard { position: relative; flex: 0 0 140px; height: 210px; }
-.inspectedCard img { object-fit: contain; }
-.inspectCards h3 { font-size: 18px; font-weight: 700; }
-.inspectCards p { margin-top: 12px; font-size: 14px; line-height: 1.8; white-space: pre-line; }
-.logs { display: grid; gap: 10px; padding: 18px; list-style: decimal; font-size: 14px; line-height: 1.7; }
-@media(max-width: 600px) {
-  .replayPage { padding: 10px 8px 18px; }
-  .replayHeading { gap: 6px; }
-  .replayHeading h1 { font-size: 16px; }
-  .replayHeading > a,.replayHeading > button { font-size: 11px; padding: 8px; }
-  .replaySide { padding: 10px 7px; }
-  .playerHeading { gap: 7px; }
-  .leader { width: 40px; height: 40px; flex-basis: 40px; }
-  .playerHeading strong { font-size: 12px; }
-  .playerHeading > div > span { font-size: 10px; }
-  .resources { gap: 4px; }
-  .resources b { font-size: 18px; }
-  .field { gap: 4px; }
-  .slot { font-size: 18px; }
-  .replayCard { width: 36px; flex-basis: 36px; }
-  .fieldCard { width: 100%; }
-  .cardStats b { min-width: 17px; height: 17px; font-size: 12px; }
-  .piles { gap: 4px; }
-  .piles button { padding: 5px 8px; font-size: 10px; }
-  .hand { min-height: 50px; gap: 3px; }
-  .timelineNotice { font-size: 11px; padding: 10px 4px; }
-  .playback { padding: 10px 6px; }
-  .playbackButtons { gap: 5px; }
-  .playbackButtons button { min-width: 34px; }
-  .playbackButtons output { padding: 0 4px; font-size: 11px; }
-  .inspectedCard { flex-basis: 95px; height: 143px; }
-  .inspectCards article { gap: 12px; }
-}
-
-.replayCard[data-action] { outline: 2px solid #f1c6ce; outline-offset: 2px; }
-.replayPage[data-playing] .replayCard[data-action=play] { animation: recordedPlay .4s ease-out; }
-.replayPage[data-playing] .replayCard[data-action=attack] { animation: recordedAttack .45s ease-in-out; }
-@keyframes recordedPlay { from { opacity: .35; transform: translateY(12px) scale(.94); } to { opacity: 1; transform: none; } }
-@keyframes recordedAttack { 45% { transform: translateY(-8px) scale(1.04); } }
-@media (prefers-reduced-motion: reduce) { .replayPage .replayCard { animation: none !important; } }
-
-.jump { display: flex; flex-wrap: wrap; justify-content: center; align-items: center; gap: 8px; padding: 8px 0; font-size: 12px; }
-.jump label { display: flex; align-items: center; gap: 8px; }
-.jump input { width: 70px; min-height: 40px; padding: 6px; border: 1px solid #71838b; border-radius: 6px; color: #fff7e7; background: #183743; }
-.jump button { min-height: 40px; padding: 6px 12px; border: 1px solid #71838b; border-radius: 6px; color: #fff7e7; background: #294b5a; cursor: pointer; }
-.logSearch { width: 100%; margin: 16px 0; padding: 12px; border: 1px solid #71838b; border-radius: 10px; background: #132c3a; color: #fff7e7; }
-.seekLogs { display: grid; gap: 6px; }
-.seekLogs button { display: grid; grid-template-columns: 110px 1fr 20px; width: 100%; padding: 12px; gap: 12px; text-align: left; border: 1px solid #71838b55; border-radius: 8px; color: #e7e5d8; background: #183743; cursor: pointer; }
-.seekLogs button[aria-current] { border-color: #efc77a; background: #2b4c58; }
-.seekLogs small { color: #c0c8bc; }
-.assessmentSeek { display: flex; justify-content: space-between; gap: 3px; }
-.assessmentSeek button { min-width: 24px; min-height: 30px; color: #d4dcd6; font-size: 10px; cursor: pointer; }
-@media(max-width: 600px) { .seekLogs button { grid-template-columns: 75px 1fr 10px; gap: 6px; font-size: 12px; } .playbackButtons button { min-height: 44px; } }
+@media(max-width: 600px) { .replayPage { padding: 10px 8px 18px; } }

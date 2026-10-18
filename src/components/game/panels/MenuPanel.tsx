@@ -36,7 +36,7 @@ export function MenuPanel() {
               <button onClick={() => setResigning(false)}>対戦を続ける</button>
             </>
             : <button className={styles.menuLeave} onClick={() => setResigning(true)}>投了する</button>
-          : <button className={styles.menuLeave} onClick={leave}>{remote?.watching ? '観戦をやめる' : remote ? 'ルームを出る' : '対戦をやめる'}</button>}
+          : <button className={styles.menuLeave} onClick={leave}>{remote?.recorded ? '対戦履歴へ戻る' : remote?.watching ? '観戦をやめる' : remote ? 'ルームを出る' : '対戦をやめる'}</button>}
     </div>
   </>;
 }

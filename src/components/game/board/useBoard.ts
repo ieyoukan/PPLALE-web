@@ -58,8 +58,8 @@ export function useBoard(container: RefObject<HTMLDivElement | null>, session: B
   const [exchanges, setExchanges] = useState<string[]>([]);
   /** The saved match is still loading; nothing may act yet. */
   const loading = !ready;
-  // Nobody controls a replay: both sides are driven, like watching two CPUs.
-  const cpuSides = useMemo<Side[]>(() => replaying ? [0, 1] : editing ? [] : cpuSidesOf(mode), [mode, replaying, editing]);
+  // Nobody controls a replay: both sides are driven, like watching two CPUs. A recorded room match arrives like a room's.
+  const cpuSides = useMemo<Side[]>(() => replaying && !remote ? [0, 1] : editing ? [] : cpuSidesOf(mode), [mode, replaying, editing, remote]);
   const watching = !!remote?.watching;
   /** This screen acts for the side (nobody does while watching two CPUs; in a room only the own seat). */
   const seat = remote?.seat;
@@ -127,7 +127,7 @@ export function useBoard(container: RefObject<HTMLDivElement | null>, session: B
   const { stopReplay: endReplay } = session;
   // Feeds the recorded commands one at a time. The dice hook throws the dice itself (same result).
   useEffect(() => {
-    if (!replaying || paused || busy) return;
+    if (!replaying || remote || paused || busy) return;
     if (!replayNext || error) {
       // The recorded match is over (or no longer applies): back to its result without animating the jump.
       skipAnimation();
@@ -136,7 +136,7 @@ export function useBoard(container: RefObject<HTMLDivElement | null>, session: B
     if (replayNext.type === 'roll') return;
     const timer = setTimeout(() => act(replayNext), game.phase === 'playing' ? REPLAY_DELAY : REPLAY_OPENING_DELAY);
     return () => clearTimeout(timer);
-  }, [replaying, paused, busy, replayNext, error, endReplay, skipAnimation, act, game.phase]);
+  }, [replaying, remote, paused, busy, replayNext, error, endReplay, skipAnimation, act, game.phase]);
 
   // ── Room ──
   // Shows the changes the server sends, one at a time: the answer to this seat's own command goes
@@ -146,7 +146,7 @@ export function useBoard(container: RefObject<HTMLDivElement | null>, session: B
   const handling = useRef<string | null>(null);
   const { reset: resetAnimations } = animations, { reset: resetDice, show: showDie } = dice;
   useEffect(() => {
-    if (!next || !accept || seat === undefined || handling.current === next.key) return;
+    if (!next || !accept || seat === undefined || handling.current === next.key || replaying && paused) return;
     const { key, command, cardId, fresh, game: after } = next;
     if (fresh) {
       handling.current = key;
@@ -177,7 +177,7 @@ export function useBoard(container: RefObject<HTMLDivElement | null>, session: B
     // A hand reaction reveals its card in the resulting public zone, even if the previous hand was hidden.
     const shownCardId = cardId ?? (command.type === 'choose' ? after.cards[command.option]?.cardId : undefined);
     animate(command, accept, shownCardId);
-  }, [next, accept, seat, watching, animating, rollingDice, animate, resetAnimations, resetDice, showDie, presentingOwn, actual.phase]);
+  }, [next, accept, seat, watching, replaying, paused, animating, rollingDice, animate, resetAnimations, resetDice, showDie, presentingOwn, actual.phase]);
 
   const failed = remote?.failed;
   useEffect(() => {

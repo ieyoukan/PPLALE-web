@@ -18,7 +18,7 @@ export function TurnControl() {
     {editing
       ? <button className={`${styles.endTurnButton} ${styles.playButton}`} onClick={() => setPanel({ type: 'play' })}>この盤面で<br />遊ぶ</button>
       : <button className={`${styles.endTurnButton} ${mine ? '' : styles.enemyTurn}`} disabled={!playEnabled} onClick={() => act({ type: 'end', actor: game.active })}>
-        {remote?.watching ? <>観戦中</> : mine ? <>ターン<br />終了</> : <>相手の<br />ターン</>}
+        {remote?.watching && !remote.recorded ? <>観戦中</> : mine ? <>ターン<br />終了</> : <>相手の<br />ターン</>}
       </button>}
     <PpPanel side={view} name={names[view]} order={orderFor(view)} current={me.pp} maximum={availablePpMaximum(game, view)} own />
   </div>;
