@@ -14,7 +14,13 @@ RUN npm ci --omit=dev --ignore-scripts --workspace=@pplale/room-server --workspa
 
 COPY packages/game-core/src packages/game-core/src
 COPY services/room-server/src services/room-server/src
+COPY services/room-server/scripts/verify-history.ts services/room-server/scripts/verify-history.ts
 COPY src/data/yojo.json src/data/sweet.json src/data/playable.json src/data/tokenYojo.json src/data/token.json src/data/
+
+COPY public/images/yojo public/images/yojo
+COPY public/images/sweet public/images/sweet
+COPY public/images/playable public/images/playable
+COPY public/images/token public/images/token
 
 ARG APP_VERSION=dev
 ENV APP_VERSION=$APP_VERSION PORT=8080

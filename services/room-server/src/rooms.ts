@@ -1,13 +1,16 @@
 // Everything a room can do, on the room as the server keeps it (both decks and the full match).
 // Nothing here knows about sockets or where rooms are kept: a request changes the room or throws RoomError.
-import { createHash, randomBytes, randomInt, timingSafeEqual } from 'node:crypto';
+import { createHash, randomBytes, randomInt, randomUUID, timingSafeEqual } from 'node:crypto';
 import { z } from 'zod';
 import { applyCommand, decideMatch, newGame, other, sandboxRules, viewFor } from '@pplale/game-core';
 import type { Catalog, Deck, GameState, Side } from '@pplale/game-core';
 import { MAX_NAME_LENGTH, parseRoomRules, roomDeckErrors } from '@pplale/game-core/room';
+import type { MatchEnd } from '@pplale/game-core/history';
 import type { LastCommand, RoomCommand, RoomInfo, RoomRules, RoomStatus, RoomView } from '@pplale/game-core/room';
 
 export interface Seat {
+    /** Verified account and/or hashed device owner; never exposed in a RoomView. */
+    historyOwners?: string[];
     /** SHA-256 of the seat's secret; the secret itself is only in that player's browser. */
     tokenHash: string;
     name: string;
@@ -17,6 +20,7 @@ export interface Seat {
     left?: boolean;
 }
 export interface Room {
+    record?: { id: string; startedAt: number; reason?: MatchEnd };
     id: string;
     mode?: 'free';
     version: number;
@@ -133,10 +137,12 @@ function startMatch(room: Room, catalog: Catalog) {
     const decks = room.seats.map(seat => ({ ...seat!.deck!, name: seat!.name, yojo: mixed(seat!.deck!.yojo), sweet: mixed(seat!.deck!.sweet) })) as [Deck, Deck];
     room.state = newGame(decks, catalog, { ...sandboxRules }, randomInt(2 ** 32));
     room.status = 'playing';
+    room.record = { id: randomUUID(), startedAt: Date.now() };
     room.match++;
     room.resigned = null;
 }
-function giveUp(room: Room, seat: Side) {
+function giveUp(room: Room, seat: Side, reason: MatchEnd = 'resign') {
+    if (room.record) room.record.reason = reason;
     const state = room.state!;
     decideMatch(state, other(seat), 'resign');
     state.pending = null;
@@ -170,7 +176,7 @@ export function tidy(room: Room, online: [boolean, boolean], now: number, patien
     if (room.mode === 'free' && room.status === 'playing') {
         const absent = ([0, 1] as const).find(seat => longer(seat, 60_000));
         if (absent !== undefined) {
-            giveUp(room, absent);
+            giveUp(room, absent, 'disconnect');
             room.seats[absent]!.left = true;
             return 'finished';
         }
@@ -261,7 +267,7 @@ export function act(room: Room, seat: Side, body: unknown, catalog: Catalog): Ou
         case 'leave':
             if (room.status === 'playing' || room.status === 'finished') {
                 if (room.status === 'playing') {
-                    giveUp(room, seat);
+                    giveUp(room, seat, 'leave');
                     outcome.finished = true;
                 }
                 own.left = true;

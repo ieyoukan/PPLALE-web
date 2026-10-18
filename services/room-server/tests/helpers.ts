@@ -5,6 +5,7 @@ import { WebSocket } from 'ws';
 import type { Deck } from '@pplale/game-core';
 import type { ClientMessage, RoomAction, RoomView, Seated, ServerMessage } from '@pplale/game-core/room';
 import { catalog } from '../src/catalog.ts';
+import type { HistoryRepository } from '../src/history/repository.ts';
 import type { Config } from '../src/config.ts';
 import { memoryBackend, redisBackend } from '../src/backend.ts';
 import type { Backend } from '../src/backend.ts';
@@ -24,9 +25,9 @@ let pods = 0;
 export const deck = JSON.parse(readFileSync(new URL('../../../src/data/strawberryStableDeck.json', import.meta.url), 'utf8')) as Deck;
 
 /** One instance of the server. Instances given the same `data` are instances of the same deployment. */
-export async function serve({ data = shared(), ...options }: Partial<Config> & { data?: Shared } = {}) {
+export async function serve({ data = shared(), history, ...options }: Partial<Config> & { data?: Shared; history?: HistoryRepository } = {}) {
     const backend = await data.open();
-    const server = createRoomServer({ config: { pod: `pod-${++pods}`, origins: ['*'], trustProxy: true, requestsPerHour: 1000, roomsPerHour: 1000, lobbyGraceMinutes: 10, abandonMinutes: 30, maxRooms: 100, idleHours: 12, beatSeconds: 0.1, version: 'test', ...options }, backend, catalog });
+    const server = createRoomServer({ config: { pod: `pod-${++pods}`, origins: ['*'], trustProxy: true, requestsPerHour: 1000, roomsPerHour: 1000, lobbyGraceMinutes: 10, abandonMinutes: 30, maxRooms: 100, idleHours: 12, beatSeconds: 0.1, version: 'test', ...options }, backend, catalog, history });
     await new Promise<void>(resolve => server.listen(0, resolve));
     await server.beat();
     const { port } = server.address() as AddressInfo, url = `http://localhost:${port}`;

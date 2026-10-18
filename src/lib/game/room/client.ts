@@ -1,6 +1,8 @@
 // The browser's side of a room: asking the room server (services/room-server) for a room or a
 // seat, the seats kept in this browser, and the socket a seat talks through.
 // Without NEXT_PUBLIC_ROOM_SERVER_URL there are no room matches.
+import { historyHeaders } from './historyIdentity';
+import type { HistoryPage, MatchDetails, MatchRecording } from '@pplale/game-core/history';
 import type { Deck } from '@pplale/game-core';
 import type { ClientMessage, FreeMatchStatus, RoomAction, RoomInfo, RoomRules, RoomServerStats, RoomView, SeatKey, Seated, ServerMessage } from '@pplale/game-core/room';
 
@@ -14,17 +16,23 @@ const UNREACHABLE = 'ルームサーバーにつながりません。少し待�
 
 async function call<T>(path: string, body?: unknown): Promise<T> {
   if (!roomServerUrl) throw new RoomRequestError(0, 'ルームサーバーが設定されていません');
+  const headers = body !== undefined ? { 'content-type': 'application/json', ...await historyHeaders() } : undefined;
   let response: Response;
   try {
     response = await fetch(roomServerUrl + path, {
-      method: body === undefined ? 'GET' : 'POST', cache: 'no-store', signal: AbortSignal.timeout(8000),
-      ...(body !== undefined && { headers: { 'content-type': 'application/json' }, body: JSON.stringify(body) }),
+      method: body === undefined ? 'GET' : 'POST', cache: 'no-store', signal: AbortSignal.timeout(path.startsWith('/history/') ? 60_000 : 8000),
+      ...(body !== undefined && { headers, body: JSON.stringify(body) }),
     });
   } catch { throw new RoomRequestError(0, UNREACHABLE); }
   const data = await response.json().catch(() => null) as (T & { error?: string }) | null;
   if (!response.ok || !data) throw new RoomRequestError(response.status, data?.error ?? 'サーバーで問題が起きました');
   return data;
 }
+
+export const readMatchHistory = (cursor?: string, favorites = false) => call<HistoryPage>('/history/list', { cursor, favorites });
+export const readMatchDetail = (id: string) => call<MatchDetails>(`/history/${id}/detail`, {});
+export const readRecording = (id: string) => call<MatchRecording>(`/history/${id}`, {});
+export const favoriteMatch = (id: string, value: boolean) => call<{ ok: true }>(`/history/${id}/favorite`, { value });
 
 export const createRoom = (rules: RoomRules, name: string) => call<Seated>('/rooms', { rules, name });
 export const joinRoom = (id: string, name: string) => call<Seated>(`/rooms/${id}/join`, { name });

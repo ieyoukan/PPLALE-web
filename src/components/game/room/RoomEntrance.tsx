@@ -101,6 +101,7 @@ export function RoomEntrance() {
     </button>;
 
   return <div className={styles.stack}>
+    <Link href={`${BATTLE_PATH}history/`} className={styles.historyLink}>◷ 対戦履歴</Link>
     {/* A portrait guide beside the battle actions. */}
     <div className={styles.entrance}>
       <BattleCompanion />

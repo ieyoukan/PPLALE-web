@@ -12,7 +12,7 @@ import type { Room } from './rooms.ts';
 const WAIT_TTL = 30_000;
 const RESULT_TTL = 10 * 60_000;
 type Entry = { until: number } & (
-    | { status: 'waiting'; since: number; name: string; deck: Deck }
+    | { status: 'waiting'; since: number; name: string; deck: Deck; historyOwners?: string[] }
     | { status: 'cancelled' }
     | { status: 'matched'; roomId: string; seat: Side }
 );
@@ -27,7 +27,7 @@ const startSchema = z.object({
 });
 
 export async function freeMatch(backend: Backend, catalog: Catalog, operation: 'start' | 'status' | 'cancel', body: unknown,
-    options: { maxRooms: number; roomTtl: number; mayStart: () => boolean }): Promise<{ status: FreeMatchStatus; created?: Room }> {
+    options: { maxRooms: number; roomTtl: number; mayStart: () => boolean; owners?: string[] }): Promise<{ status: FreeMatchStatus; created?: Room }> {
     const input = z.object({ token: tokenSchema }).safeParse(body);
     if (!input.success) throw new RoomError(400, 'リクエストの形式が正しくありません');
     const id = createHash('sha256').update(input.data.token).digest('hex');
@@ -66,7 +66,7 @@ export async function freeMatch(backend: Backend, catalog: Catalog, operation: '
                     admitted = true;
                 }
                 if (Object.keys(queue.entries).length >= options.maxRooms * 4) throw new RoomError(503, '混み合っています。少し待ってからお試しください');
-                own = { status: 'waiting', since: now, until: now + WAIT_TTL, name: start.data.name, deck: start.data.deck };
+                own = { status: 'waiting', since: now, until: now + WAIT_TTL, name: start.data.name, deck: start.data.deck, ...(options.owners?.length && { historyOwners: options.owners }) };
                 queue.entries[id] = own;
             }
             own.until = now + WAIT_TTL;
@@ -81,6 +81,8 @@ export async function freeMatch(backend: Backend, catalog: Catalog, operation: '
                 const made = createRoom(roomId, { rules: freeMatchRules, name: opponent[1].name });
                 joinRoom(made.room, { name: own.name });
                 made.room.mode = 'free';
+                made.room.seats[0].historyOwners = opponent[1].historyOwners;
+                made.room.seats[1]!.historyOwners = own.historyOwners;
                 // Each player's search secret also authenticates their seat. Only its hash is
                 // kept in Redis; either player can recover the seat by polling with that secret.
                 made.room.seats[0].tokenHash = opponent[0];

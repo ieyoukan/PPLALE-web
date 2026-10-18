@@ -51,3 +51,6 @@ styled-system-studio
 
 # husky internal (npm run prepare で再生成される)
 .husky/_/
+
+# Local room history databases
+services/room-server/.data/

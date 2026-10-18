@@ -1,0 +1,295 @@
+{{- if .Values.history.enabled }}
+{{- $name := include "pplale-room-server.fullname" . }}
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ $name }}-history-bootstrap
+data:
+  01-replication.sh: |
+    #!/bin/sh
+    set -eu
+    printf '\nhost replication all all scram-sha-256\n' >> "$PGDATA/pg_hba.conf"
+    psql -v ON_ERROR_STOP=1 --username "$POSTGRES_USER" --dbname "$POSTGRES_DB" -c "SELECT pg_create_physical_replication_slot('history_standby');"
+---
+{{- range $role := list "primary" "standby" }}
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ $name }}-history-{{ $role }}
+spec:
+  ports:
+    - { name: postgres, port: 5432, targetPort: postgres }
+  selector:
+    app.kubernetes.io/instance: {{ $.Release.Name }}
+    app.kubernetes.io/component: history-{{ $role }}
+---
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: {{ $name }}-history-{{ $role }}
+spec:
+  replicas: 1
+  serviceName: {{ $name }}-history-{{ $role }}
+  persistentVolumeClaimRetentionPolicy: { whenDeleted: Retain, whenScaled: Retain }
+  selector:
+    matchLabels:
+      app.kubernetes.io/instance: {{ $.Release.Name }}
+      app.kubernetes.io/component: history-{{ $role }}
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/instance: {{ $.Release.Name }}
+        app.kubernetes.io/component: history-{{ $role }}
+        pplale-history-database: "true"
+    spec:
+      automountServiceAccountToken: false
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 70
+        runAsGroup: 70
+        fsGroup: 70
+        seccompProfile: { type: RuntimeDefault }
+      affinity:
+        podAntiAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            - topologyKey: kubernetes.io/hostname
+              labelSelector:
+                matchLabels:
+                  app.kubernetes.io/instance: {{ $.Release.Name }}
+                  pplale-history-database: "true"
+      {{- if eq $role "standby" }}
+      initContainers:
+        - name: base-backup
+          image: {{ $.Values.history.postgres.image | quote }}
+          command: ["sh", "-ec"]
+          args:
+            - |
+              if [ ! -s "$PGDATA/PG_VERSION" ]; then
+                until pg_isready -h "$PGHOST" -U "$PGUSER"; do sleep 2; done
+                pg_basebackup -d "host=$PGHOST user=$PGUSER application_name=history_standby" -D "$PGDATA" -R -X stream -S history_standby
+              fi
+          env:
+            - { name: PGDATA, value: /var/lib/postgresql/data/pgdata }
+            - { name: PGHOST, value: {{ printf "%s-history-primary" $name | quote }} }
+            - { name: PGUSER, value: pplale_history }
+            - name: PGPASSWORD
+              valueFrom: { secretKeyRef: { name: {{ $.Values.history.existingSecret }}, key: password } }
+          volumeMounts:
+            - { name: data, mountPath: /var/lib/postgresql }
+      {{- end }}
+      containers:
+        - name: postgres
+          image: {{ $.Values.history.postgres.image | quote }}
+          {{- if eq $role "primary" }}
+          args: ["postgres", "-c", "wal_level=replica", "-c", "synchronous_standby_names=FIRST 1 (history_standby)", "-c", "synchronous_commit=local", "-c", "max_slot_wal_keep_size=2GB"]
+          {{- else }}
+          args: ["postgres", "-c", "hot_standby=on"]
+          {{- end }}
+          env:
+            - { name: PGDATA, value: /var/lib/postgresql/data/pgdata }
+            - { name: POSTGRES_USER, value: pplale_history }
+            - { name: POSTGRES_DB, value: pplale_history }
+            - { name: PGOPTIONS, value: "-c synchronous_commit=local" }
+            - name: POSTGRES_PASSWORD
+              valueFrom: { secretKeyRef: { name: {{ $.Values.history.existingSecret }}, key: password } }
+            - name: PGPASSWORD
+              valueFrom: { secretKeyRef: { name: {{ $.Values.history.existingSecret }}, key: password } }
+          securityContext: { allowPrivilegeEscalation: false, readOnlyRootFilesystem: true, capabilities: { drop: [ALL] } }
+          ports:
+            - { name: postgres, containerPort: 5432 }
+          readinessProbe:
+            exec: { command: ["pg_isready", "-U", "pplale_history", "-d", "pplale_history"] }
+            periodSeconds: 5
+          livenessProbe:
+            exec: { command: ["pg_isready", "-U", "pplale_history", "-d", "pplale_history"] }
+            initialDelaySeconds: 60
+            periodSeconds: 20
+          resources:
+            {{- toYaml $.Values.history.postgres.resources | nindent 12 }}
+          volumeMounts:
+            - { name: data, mountPath: /var/lib/postgresql }
+            - { name: socket, mountPath: /var/run/postgresql }
+            - { name: tmp, mountPath: /tmp }
+            {{- if eq $role "primary" }}
+            - { name: bootstrap, mountPath: /docker-entrypoint-initdb.d }
+            {{- end }}
+      volumes:
+        - { name: socket, emptyDir: {} }
+        - { name: tmp, emptyDir: {} }
+        {{- if eq $role "primary" }}
+        - name: bootstrap
+          configMap: { name: {{ $name }}-history-bootstrap }
+        {{- end }}
+  volumeClaimTemplates:
+    - metadata:
+        name: data
+        annotations: { helm.sh/resource-policy: keep }
+      spec:
+        accessModes: [ReadWriteOnce]
+        storageClassName: {{ $.Values.history.persistence.storageClass | default $.Values.redis.persistence.storageClass | default "proxmox-data" | quote }}
+        resources:
+          requests:
+            storage: {{ $.Values.history.persistence.size }}
+---
+{{- end }}
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ $name }}-history
+spec:
+  ports:
+    - { name: http, port: 8081, targetPort: http }
+  selector:
+    app.kubernetes.io/instance: {{ .Release.Name }}
+    app.kubernetes.io/component: history
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ $name }}-history
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app.kubernetes.io/instance: {{ .Release.Name }}
+      app.kubernetes.io/component: history
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/instance: {{ .Release.Name }}
+        app.kubernetes.io/component: history
+    spec:
+      automountServiceAccountToken: false
+      securityContext:
+        {{- toYaml .Values.podSecurityContext | nindent 8 }}
+      containers:
+        - name: history
+          image: "{{ .Values.image.repository }}:{{ .Values.image.tag | default .Chart.AppVersion }}"
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          command: ["node", "src/history-main.ts"]
+          securityContext:
+            {{- toYaml .Values.securityContext | nindent 12 }}
+          ports:
+            - { name: http, containerPort: 8081 }
+          env:
+            - { name: PORT, value: "8081" }
+            - { name: HISTORY_SYNCHRONOUS_COMMIT, value: remote_apply }
+            - name: DB_PASSWORD
+              valueFrom: { secretKeyRef: { name: {{ $.Values.history.existingSecret }}, key: password } }
+            - name: HISTORY_DATABASE_URL
+              value: {{ printf "postgresql://pplale_history:$(DB_PASSWORD)@%s-history-primary:5432/pplale_history" $name | quote }}
+          readinessProbe:
+            httpGet: { path: /readyz, port: http }
+            initialDelaySeconds: 3
+            periodSeconds: 5
+          livenessProbe:
+            httpGet: { path: /healthz, port: http }
+            initialDelaySeconds: 30
+            periodSeconds: 20
+          resources:
+            {{- toYaml .Values.history.resources | nindent 12 }}
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: {{ $name }}-history-backups
+  annotations: { helm.sh/resource-policy: keep }
+spec:
+  accessModes: [ReadWriteMany]
+  storageClassName: {{ .Values.history.backup.storageClass | quote }}
+  resources:
+    requests:
+      storage: {{ .Values.history.backup.size }}
+---
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: {{ $name }}-history-backup
+spec:
+  schedule: "17 18 * * *"
+  concurrencyPolicy: Forbid
+  successfulJobsHistoryLimit: 2
+  failedJobsHistoryLimit: 3
+  jobTemplate:
+    spec:
+      backoffLimit: 2
+      template:
+        metadata:
+          labels:
+            app.kubernetes.io/instance: {{ .Release.Name }}
+            app.kubernetes.io/component: history-backup
+        spec:
+          automountServiceAccountToken: false
+          restartPolicy: OnFailure
+          securityContext: { runAsNonRoot: true, runAsUser: 70, runAsGroup: 70, fsGroup: 70 }
+          containers:
+            - name: backup
+              image: {{ .Values.history.postgres.image | quote }}
+              command: ["sh", "-ec"]
+              args:
+                - |
+                  umask 077
+                  file="/backups/history-$(date -u +%Y-%m-%dT%H-%M-%SZ).dump"
+                  pg_dump --format=custom --file="$file.partial"
+                  pg_restore --list "$file.partial" >/dev/null
+                  sync "$file.partial"
+                  mv "$file.partial" "$file"
+                  sha256sum "$file" > "$file.sha256"
+                  sync /backups
+                  ls -1t /backups/history-*.dump | tail -n +15 | while IFS= read -r old; do rm "$old" "$old.sha256"; done
+              env:
+                - { name: PGHOST, value: {{ printf "%s-history-primary" $name | quote }} }
+                - { name: PGUSER, value: pplale_history }
+                - { name: PGDATABASE, value: pplale_history }
+                - name: PGPASSWORD
+                  valueFrom: { secretKeyRef: { name: {{ $.Values.history.existingSecret }}, key: password } }
+              resources:
+                requests: { cpu: 20m, memory: 64Mi }
+                limits: { cpu: 200m, memory: 256Mi }
+              volumeMounts:
+                - { name: backups, mountPath: /backups }
+          volumes:
+            - name: backups
+              persistentVolumeClaim: { claimName: {{ $name }}-history-backups }
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: {{ $name }}-history
+spec:
+  podSelector:
+    matchLabels:
+      app.kubernetes.io/instance: {{ .Release.Name }}
+      app.kubernetes.io/component: history
+  policyTypes: [Ingress]
+  ingress:
+    - from:
+        - podSelector:
+            matchLabels:
+              {{- include "pplale-room-server.selectorLabels" . | nindent 14 }}
+              app.kubernetes.io/component: server
+      ports:
+        - { port: 8081, protocol: TCP }
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: {{ $name }}-history-db
+spec:
+  podSelector:
+    matchLabels:
+      app.kubernetes.io/instance: {{ .Release.Name }}
+      pplale-history-database: "true"
+  policyTypes: [Ingress]
+  ingress:
+    - from:
+        - podSelector:
+            matchLabels:
+              app.kubernetes.io/instance: {{ .Release.Name }}
+            matchExpressions:
+              - key: app.kubernetes.io/component
+                operator: In
+                values: [history, history-backup, history-primary, history-standby]
+      ports:
+        - { port: 5432, protocol: TCP }
+{{- end }}

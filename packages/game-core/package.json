@@ -28,6 +28,10 @@
     "./snapshot": {
       "types": "./src/snapshot.ts",
       "default": "./src/snapshot.ts"
+    },
+    "./history": {
+      "types": "./src/history.ts",
+      "default": "./src/history.ts"
     }
   },
   "scripts": {

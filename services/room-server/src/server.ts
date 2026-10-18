@@ -13,6 +13,7 @@
 // compare-and-set on the room's version, and the instance that made it tells the others, so the
 // two players of a room may be connected to different instances.
 import { randomInt } from 'node:crypto';
+import { gzipSync } from 'node:zlib';
 import { createServer } from 'node:http';
 import type { IncomingMessage, Server, ServerResponse } from 'node:http';
 import { WebSocketServer } from 'ws';
@@ -24,6 +25,8 @@ import type { Backend, Member, Overview, RoomEvent } from './backend.ts';
 import type { Config } from './config.ts';
 import { RoomError, act, createRoom, joinRoom, roomInfo, seatOf, seatView, tidy } from './rooms.ts';
 import type { Present, Room } from './rooms.ts';
+import { historyOwners, seatOwners } from './history/identity.ts';
+import type { HistoryRepository } from './history/repository.ts';
 import { freeMatch } from './matchmaking.ts';
 
 /** A request or a socket message is a few kilobytes (a deck at most); anything much larger is not one. */
@@ -69,8 +72,8 @@ function readBody(request: IncomingMessage): Promise<unknown> {
 
 type Attached = WebSocket & { alive?: boolean; entry?: Member };
 
-export function createRoomServer({ config, backend, catalog }: {
-    config: Pick<Config, 'pod' | 'origins' | 'trustProxy' | 'requestsPerHour' | 'roomsPerHour' | 'lobbyGraceMinutes' | 'abandonMinutes' | 'maxRooms' | 'idleHours' | 'beatSeconds' | 'version'>; backend: Backend; catalog: Catalog;
+export function createRoomServer({ config, backend, catalog, history }: {
+    config: Pick<Config, 'pod' | 'origins' | 'trustProxy' | 'requestsPerHour' | 'roomsPerHour' | 'lobbyGraceMinutes' | 'abandonMinutes' | 'maxRooms' | 'idleHours' | 'beatSeconds' | 'version'>; backend: Backend; catalog: Catalog; history?: HistoryRepository;
 }): Server & { stats(): Promise<RoomServerStats>; beat(): Promise<void>; shutdown(): Promise<void> } {
     const { pod, origins, trustProxy, requestsPerHour, roomsPerHour, lobbyGraceMinutes, abandonMinutes, maxRooms, idleHours, beatSeconds, version } = config;
     const allowed = limiter(requestsPerHour), mayCreate = limiter(roomsPerHour);
@@ -154,8 +157,9 @@ export function createRoomServer({ config, backend, catalog }: {
 
     const send = (response: ServerResponse, status: number, body?: unknown, headers: Record<string, string> = {}) => {
         const text = body === undefined ? '' : JSON.stringify(body);
-        response.writeHead(status, { ...(text && { 'content-type': 'application/json; charset=utf-8' }), 'cache-control': 'no-store', ...headers });
-        response.end(text);
+        const compressed = text.length > 4096 && /\bgzip\b/.test(String(response.req.headers['accept-encoding'] ?? ''));
+        response.writeHead(status, { ...(text && { 'content-type': 'application/json; charset=utf-8' }), ...(compressed && { 'content-encoding': 'gzip' }), 'cache-control': 'no-store', ...headers });
+        response.end(compressed ? gzipSync(text) : text);
     };
     const address = (request: IncomingMessage) => {
         const forwarded = trustProxy ? String(request.headers['x-forwarded-for'] ?? '').split(',')[0].trim() : '';
@@ -175,15 +179,47 @@ export function createRoomServer({ config, backend, catalog }: {
         const route = `${request.method} ${path}`, [, id, tail] = /^\/rooms\/([^/]+)(\/join)?$/.exec(path) ?? [];
         try {
             if (request.method === 'OPTIONS') {
-                return send(response, 204, undefined, { 'access-control-allow-methods': 'GET, POST', 'access-control-allow-headers': 'content-type', 'access-control-max-age': '86400' });
+                return send(response, 204, undefined, { 'access-control-allow-methods': 'GET, POST', 'access-control-allow-headers': 'content-type,authorization,x-history-key', 'access-control-max-age': '86400' });
             }
             if (route === 'GET /healthz') return send(response, 200, { ok: true });
             if (route === 'GET /readyz') return await backend.ping() ? send(response, 200, { ok: true }) : send(response, 503, { ok: false });
             if (route === 'GET /stats') return send(response, 200, await stats());
+            const image = request.method === 'GET' ? /^\/history\/assets\/([\da-f]{64})$/.exec(path) : null;
+            if (image && history) {
+                const asset = await history.asset(image[1]);
+                if (!asset) throw new RoomError(404, '画像が見つかりません');
+                response.writeHead(200, { 'content-type': asset.mime, 'cache-control': 'public,max-age=31536000,immutable', 'x-content-type-options': 'nosniff' });
+                return response.end(Buffer.from(asset.data, 'base64'));
+            }
+            if (request.method === 'POST' && path.startsWith('/history')) {
+                if (!history) throw new RoomError(503, '履歴の保存機能を準備しています');
+                if (!allowed(address(request))) throw new RoomError(429, '少し待ってからお試しください');
+                const owners = await historyOwners(request);
+                if (!owners.length) throw new RoomError(401, 'この端末の履歴を確認できません');
+                const body = await readBody(request) as Record<string, unknown> | null;
+                if (path === '/history/list') {
+                    if (owners.some(owner => owner.startsWith('user:'))) await history.linkGuest(owners);
+                    if (body?.cursor !== undefined && (typeof body.cursor !== 'string' || body.cursor.length > 300)) throw new RoomError(400, 'ページが正しくありません');
+                    return send(response, 200, await history.list(owners, body?.cursor as string | undefined, body?.favorites === true));
+                }
+                const match = /^\/history\/([\da-f-]{36})(\/favorite|\/detail)?$/.exec(path);
+                if (!match) throw new RoomError(404, '履歴が見つかりません');
+                if (match[2] === '/favorite') {
+                    if (typeof body?.value !== 'boolean') throw new RoomError(400, 'お気に入りの指定が正しくありません');
+                    if (!await history.favorite(owners, match[1], body.value)) throw new RoomError(404, '履歴が見つかりません');
+                    return send(response, 200, { ok: true });
+                }
+                const recording = await (match[2] === '/detail' ? history.detail(owners, match[1]) : history.recording(owners, match[1]));
+                if (!recording) throw new RoomError(404, '履歴が見つかりません');
+                return send(response, 200, recording);
+            }
             const freeOperation = request.method === 'POST' ? /^\/free-match\/(start|status|cancel)$/.exec(path)?.[1] as 'start' | 'status' | 'cancel' | undefined : undefined;
             if (freeOperation) {
+                const owners = history && freeOperation === 'start' ? await historyOwners(request) : undefined;
+                if (history && freeOperation === 'start' && !owners?.length) throw new RoomError(426, '画面を更新してから、もう一度お試しください');
                 const result = await freeMatch(backend, catalog, freeOperation, await readBody(request), {
                     maxRooms, roomTtl: idleHours * HOUR, mayStart: () => allowed(address(request)),
+                    owners: owners && seatOwners(owners),
                 });
                 if (result.created) {
                     overview = undefined;
@@ -199,8 +235,11 @@ export function createRoomServer({ config, backend, catalog }: {
                 const { rooms } = await counts();
                 if (rooms.lobby + rooms.playing + rooms.finished + rooms.closed >= maxRooms) throw new RoomError(503, 'いまはルームがいっぱいです。しばらく待ってからお試しください');
                 const body = await readBody(request);
+                const owners = history ? await historyOwners(request) : [];
+                if (history && !owners.length) throw new RoomError(426, '画面を更新してから、もう一度お試しください');
                 for (let attempt = 0; attempt < 8; attempt++) {
                     const made = createRoom(String(randomInt(10 ** ROOM_ID_LENGTH)).padStart(ROOM_ID_LENGTH, '0'), body);
+                    if (owners.length) made.room.seats[0].historyOwners = seatOwners(owners);
                     if (!await backend.create(made.room, lifetime(made.room))) continue;
                     overview = undefined;
                     await backend.count('roomsCreated');
@@ -216,7 +255,13 @@ export function createRoomServer({ config, backend, catalog }: {
             }
             if (request.method === 'POST' && tail) {
                 const body = await readBody(request);
-                const { room, result: token } = await update(id, target => joinRoom(target, body));
+                const owners = history ? await historyOwners(request) : [];
+                if (history && !owners.length) throw new RoomError(426, '画面を更新してから、もう一度お試しください');
+                const { room, result: token } = await update(id, target => {
+                    const token = joinRoom(target, body);
+                    if (owners.length) target.seats[1]!.historyOwners = seatOwners(owners);
+                    return token;
+                });
                 await announce(room);
                 return send(response, 200, await seated(room, 1, token));
             }

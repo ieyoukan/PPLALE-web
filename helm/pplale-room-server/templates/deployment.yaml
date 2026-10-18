@@ -40,6 +40,10 @@ spec:
             - name: http
               containerPort: 8080
           env:
+            {{- if .Values.history.enabled }}
+            - name: HISTORY_URL
+              value: http://{{ include "pplale-room-server.fullname" . }}-history:8081
+            {{- end }}
             - name: PORT
               value: "8080"
             - name: REDIS_URL

@@ -11,3 +11,10 @@
 !src/data/playable.json
 !src/data/tokenYojo.json
 !src/data/token.json
+
+!public/images/yojo
+!public/images/sweet
+!public/images/playable
+!public/images/token
+
+!services/room-server/scripts/verify-history.ts

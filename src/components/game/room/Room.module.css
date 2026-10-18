@@ -114,8 +114,10 @@
 .note { color: #9a8676; font-size: 14px !important; }
 .error { padding: 10px 14px; border-radius: 12px; background: #fbe5dc; color: #a4483b; font-size: 16px; }
 
-.field { display: grid; gap: 6px; font-size: 16px; font-weight: 700; }
+.field { display: grid; gap: 6px; color: #6b4a3a; font-size: 16px; font-weight: 700; }
 .field input[type=text], .field select { width: 100%; min-height: 50px; padding: 10px 14px; border: 2px solid #d8cbbd; border-radius: 14px; background: #fffdf7; color: inherit; font-size: 18px; font-weight: 400; }
+.field select { color-scheme: light; }
+.field option { background: #fffdf7; color: #6b4a3a; }
 .idInput { max-width: 12em; font: 700 30px/1 ui-monospace, Menlo, monospace !important; letter-spacing: .28em; text-align: center; }
 
 .checks { display: grid; gap: 10px; padding: 14px; border: 2px solid #eadfce; border-radius: 16px; }
@@ -171,3 +173,6 @@
 .seatEmpty { border-style: dashed; color: #9a8676; }
 @media (max-width: 520px) { .seats { grid-template-columns: minmax(0, 1fr); } }
 @media (prefers-reduced-motion: reduce) { .primary, .secondary { transition: none; } }
+
+.historyLink { justify-self: end; padding: 8px 16px; border: 2px solid #dfcbb6; border-radius: 999px; background: #fffaf0; color: #80604c; font-size: 14px; text-decoration: none; box-shadow: 0 3px 0 #cfbba544; }
+.historyLink:hover { background: #fbe7ed; }
