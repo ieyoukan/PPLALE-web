@@ -30,7 +30,6 @@ export function MatchInfoPanel({ kind }: { kind: 'deck' | 'counts' }) {
       <h2>自分のデッキ</h2>
       {deck ? <>
         <p>{deck.name} · 対戦開始時の採用カード</p>
-        <CardList ids={[deck.playable]} />
         <h3>幼女 · {deck.yojo.length}枚</h3><CardList ids={deck.yojo} played={game.players[remote?.seat ?? view].played} />
         <h3>お菓子 · {deck.sweet.length}枚</h3><CardList ids={deck.sweet} played={game.players[remote?.seat ?? view].played} />
       </> : <p>この対戦のデッキ情報はありません。</p>}
