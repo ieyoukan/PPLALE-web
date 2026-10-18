@@ -195,7 +195,7 @@ metadata:
   name: {{ $name }}-history-backups
   annotations: { helm.sh/resource-policy: keep }
 spec:
-  accessModes: [ReadWriteMany]
+  accessModes: [{{ .Values.history.backup.accessMode | default "ReadWriteOnce" | quote }}]
   storageClassName: {{ .Values.history.backup.storageClass | quote }}
   resources:
     requests:

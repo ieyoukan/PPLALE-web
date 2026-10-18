@@ -24,7 +24,7 @@ SQLiteは追加DBの運用を避ける当初案だったが、並列アクセス
 
 本番はprimaryと同期standbyの2台（別Kubernetesノード、各10Giの保持PVC）。`synchronous_commit=remote_apply` のCOMMITを待ち、standbyに適用される前に保存成功としない。standby切断時は書き込みが待機する。COMMITへのタイムアウトキャンセルによってprimaryだけの保存を成功扱いしないため、COMMITのstatement_timeoutは無効化する。RPCがタイムアウトした場合も保存待ちStreamを保持し、再試行時は新しいWAL書き込みでそれ以前の記録の同期を確認する。
 
-日次の `pg_dump -Fc` は**独立CronJob**で動かす。HTTPのイベントループでDB全体をコピー・検査しない。PostgreSQLのMVCCスナップショットなので、通常の対戦書き込みをバックアップの完了までロックしない。NAS (`nfs-client`) の保持PVCへチェックサム付きで保存し、成功したスナップショットを14世代残す。失敗したJobは失敗として残り、既存バックアップを消さない。対戦履歴そのものの削除とは別。
+日次の `pg_dump -Fc` は**独立CronJob**で動かす。HTTPのイベントループでDB全体をコピー・検査しない。PostgreSQLのMVCCスナップショットなので、通常の対戦書き込みをバックアップの完了までロックしない。専用Proxmoxディスク (`proxmox-data`、`ReadWriteOnce`) の保持PVCへチェックサム付きで保存し、成功したスナップショットを14世代残す。失敗したJobは失敗として残り、既存バックアップを消さない。対戦履歴そのものの削除とは別。NASを利用できる環境では `history.backup.storageClass=nfs-client`、`history.backup.accessMode=ReadWriteMany` に変更できる。保存先を変更する場合は既存PVCの内容を保全し、新しいPVCへ移行する（StorageClassは既存PVCで変更できない）。
 
 フレームはgzipとSHA-256の連鎖、カタログ・画像・メタデータもハッシュを保存する。破損・欠落は読み出しを失敗させ、壊れたリプレイを返さない。
 
@@ -38,14 +38,14 @@ DBポートと履歴RPCはClusterIP限定、NetworkPolicyでアプリ内の必�
 
 本番の既存DBへ直接上書きせず、隔離した**空のDB**へ復元し、完全性を確認してから接続先を切り替える。
 
-1. NASから `.dump` と `.sha256` を取り出し、`sha256sum -c` を実行する（元のパスを必要に応じて合わせる）。
+1. バックアップPVCから `.dump` と `.sha256` を取り出し、`sha256sum -c` を実行する（元のパスを必要に応じて合わせる）。
 2. PostgreSQL 18以降の `pg_restore --exit-on-error --single-transaction --no-owner --dbname=<隔離DB> <file.dump>` を実行する。`--clean` は付けない。既存のテーブルがある場合はエラーで中止する。
 3. ルームサーバーのコンテナで、隔離DBの `HISTORY_DATABASE_URL` を指定して `node scripts/verify-history.ts` を実行し、全フレーム、メタデータ、カタログ、画像のハッシュと参照を検査する。
 4. 同期standbyを再構築し、同期状態を確認してからルームサーバーの接続先を切り替える。Redisの復旧用コピーと合わせて未処理Streamを回収する。
 
 primary故障時のstandby昇格は自動ではない。元primaryを隔離して二重起動を防ぎ、standbyを昇格し、新しい同期standbyを用意するまでは保存を成功扱いしない。standbyのスロット保持WAL上限は2GB。長期停止で上限を超えた場合は、既存コピーを保全してbase backupから再構築する。
 
-複数のKubernetesノード/PVCが、物理的にも独立した機器とは限らない。既存 `proxmox-data` の配置はインフラの責任範囲。NASを含む全コピーの同時破壊、認証情報の喪失、空き容量不足、長期間放置されたバックアップ失敗まで「絶対に失わない」と保証するものではない。保存容量の定期確認、Job失敗の監視、隔離DBへの定期復元確認が必要。新しいクラウド課金はないが、既存機材のストレージ・CPU・電力は使用する。
+複数のKubernetesノード/PVCが、物理的にも独立した機器とは限らない。既存 `proxmox-data` の配置はインフラの責任範囲。バックアップを含む全コピーの同時破壊、認証情報の喪失、空き容量不足、長期間放置されたバックアップ失敗まで「絶対に失わない」と保証するものではない。保存容量の定期確認、Job失敗の監視、隔離DBへの定期復元確認が必要。新しいクラウド課金はないが、既存機材のストレージ・CPU・電力は使用する。
 
 ## 所有者と認証変更
 
