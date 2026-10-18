@@ -15,6 +15,7 @@ const ICON = 220;
 const FONT = 'M PLUS Rounded 1c';
 const MAX_CACHE = 200;
 const images = new Map<string, Promise<Buffer>>();
+let backdrop: Promise<string> | undefined;
 
 export interface OgProfile { displayName: string; comment: string; iconCardId: string }
 
@@ -34,7 +35,7 @@ export const readOgProfile = cache(async (uid: string): Promise<OgProfile | null
 });
 
 export const profileOgVersion = ({ displayName, comment, iconCardId }: OgProfile) =>
-  createHash('sha256').update(JSON.stringify(['og-p1', displayName, comment, iconCardId])).digest('hex').slice(0, 12);
+  createHash('sha256').update(JSON.stringify(['og-p3', displayName, comment, iconCardId])).digest('hex').slice(0, 12);
 
 /** The face crop the profile avatar shows (object-position 18%, scale 1.6), from the small OG copy of the card. */
 async function face(id: string): Promise<string> {
@@ -54,32 +55,39 @@ async function font(text: string): Promise<ArrayBuffer> {
   return (await fetch(src)).arrayBuffer();
 }
 
-const dot = (left: number, top: number, size: number, color: string) =>
-  <div style={{ position: 'absolute', left, top, width: size, height: size, borderRadius: size, background: color }} />;
+/** The game menu's starry table, framed the way the menu shows it (center 30%), encoded once per process. */
+function background(): Promise<string> {
+  backdrop ??= sharp(join(process.cwd(), 'public', 'images', 'game', 'menu-bg.webp')).resize(WIDTH, 450).extract({ left: 0, top: 9, width: WIDTH, height: HEIGHT }).blur(2.5)
+    .jpeg({ quality: 60 }).toBuffer().then(jpeg => `data:image/jpeg;base64,${jpeg.toString('base64')}`);
+  backdrop.catch(() => { backdrop = undefined; });
+  return backdrop;
+}
 
 async function render({ displayName, comment, iconCardId }: OgProfile): Promise<Buffer> {
   const name = Array.from(displayName).slice(0, 12).join('') || 'プレイヤー';
   const said = Array.from(comment || 'よろしくお願いします！').slice(0, 80).join('');
   const brand = 'ぷぷりえーる';
-  const [icon, data] = await Promise.all([face(iconCardId), font(`${name}${said}${brand}♡★`)]);
+  const [icon, bg, data] = await Promise.all([face(iconCardId), background(), font(`${name}${said}${brand}♡★`)]);
   const nameSize = Math.min(56, Math.floor(390 / Math.max(1, Array.from(name).length)));
   const response = new ImageResponse(
-    <div style={{ width: '100%', height: '100%', display: 'flex', alignItems: 'center', padding: '0 56px', fontFamily: FONT, background: 'linear-gradient(135deg, #ffe7f0 0%, #fff8e6 100%)' }}>
-      {dot(-40, -50, 170, '#ffd3e2')}{dot(690, 300, 190, '#ffefc2')}{dot(640, 40, 26, '#ffc4d8')}{dot(300, 360, 18, '#ffd88f')}{dot(40, 330, 14, '#f7a8c3')}
-      <div style={{ position: 'relative', display: 'flex', width: ICON + 20, height: ICON + 20, borderRadius: ICON, background: 'linear-gradient(135deg, #ff9fc2, #ffd27f)', alignItems: 'center', justifyContent: 'center', boxShadow: '0 10px 0 #f3c3d3' }}>
+    <div style={{ width: '100%', height: '100%', display: 'flex', alignItems: 'center', padding: '0 56px', fontFamily: FONT, background: '#10142a' }}>
+      {/* eslint-disable-next-line @next/next/no-img-element -- Satori draws plain img */}
+      <img alt="" src={bg} width={WIDTH} height={HEIGHT} style={{ position: 'absolute', left: 0, top: 0 }} />
+      <div style={{ position: 'absolute', left: 0, top: 0, width: WIDTH, height: HEIGHT, background: 'linear-gradient(90deg, rgba(0,0,0,.62), rgba(0,0,0,.3) 45%, rgba(0,0,0,.45))' }} />
+      <div style={{ position: 'relative', display: 'flex', width: ICON + 20, height: ICON + 20, borderRadius: ICON, background: 'linear-gradient(135deg, #ff9fc2, #ffd27f)', alignItems: 'center', justifyContent: 'center', boxShadow: '0 8px 24px #000a' }}>
         {/* eslint-disable-next-line @next/next/no-img-element -- Satori draws plain img */}
         <img alt="" src={icon} width={ICON - 4} height={ICON - 4} style={{ borderRadius: ICON, border: '8px solid #fff' }} />
         <div style={{ position: 'absolute', right: -6, top: 4, color: '#ffb800', fontSize: 40 }}>★</div>
         <div style={{ position: 'absolute', left: -2, bottom: 10, color: '#ff7aa8', fontSize: 34 }}>♡</div>
       </div>
       <div style={{ display: 'flex', flexDirection: 'column', marginLeft: 40, marginBottom: 20, flex: 1 }}>
-        <div style={{ display: 'flex', fontSize: nameSize, whiteSpace: 'nowrap', color: '#8a4d67', letterSpacing: 1, textShadow: '0 3px 0 #fff' }}>{name}</div>
+        <div style={{ display: 'flex', fontSize: nameSize, whiteSpace: 'nowrap', color: '#fff', letterSpacing: 1, textShadow: '0 3px 0 #e86f9c, 0 0 18px #000c' }}>{name}</div>
         <div style={{ position: 'relative', display: 'flex', marginTop: 18, padding: '18px 24px', borderRadius: 26, background: '#fff', border: '4px solid #f6bfd2', color: '#6b4a52', fontSize: said.length > 40 ? 20 : 27, lineHeight: 1.4 }}>
           <div style={{ position: 'absolute', left: -15, top: 22, width: 24, height: 24, background: '#fff', borderLeft: '4px solid #f6bfd2', borderBottom: '4px solid #f6bfd2', transform: 'rotate(45deg)' }} />
           {said}
         </div>
       </div>
-      <div style={{ position: 'absolute', right: 28, bottom: 18, display: 'flex', padding: '6px 18px', borderRadius: 30, background: '#ff8fb5', color: '#fff', fontSize: 22 }}>{brand}</div>
+      <div style={{ position: 'absolute', right: 28, bottom: 18, display: 'flex', padding: '6px 18px', borderRadius: 30, background: '#ff8fb5', color: '#fff', fontSize: 22, boxShadow: '0 4px 14px #0008' }}>{brand}</div>
     </div>,
     { width: WIDTH, height: HEIGHT, fonts: [{ name: FONT, data, weight: 800, style: 'normal' }] },
   );
