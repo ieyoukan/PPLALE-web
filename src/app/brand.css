@@ -15,5 +15,5 @@
   --brand-cocoa-deep: #634747;
   --brand-cocoa-soft: #7b5e58;
   --brand-shadow: #78585818;
-  --brand-gingham: linear-gradient(90deg, #e8c8c830 50%, transparent 50%), linear-gradient(#e8c8c830 50%, transparent 50%);
+  --brand-gingham: linear-gradient(#fff8f040, #fff8f040), url("/images/check-pattern.png");
 }

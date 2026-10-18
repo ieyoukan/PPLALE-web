@@ -68,7 +68,7 @@ export default function CardPickupSection() {
           backgroundColor: 'var(--brand-cream)',
           backgroundImage: 'var(--brand-gingham)',
           backgroundRepeat: 'repeat',
-          backgroundSize: '48px 48px',
+          backgroundSize: '100px 100px',
         }}
       >
       </div>

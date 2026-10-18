@@ -2,7 +2,7 @@
   position: relative;
   padding: 48px 20px 72px;
   color: var(--brand-cocoa-deep);
-  background: radial-gradient(circle, var(--brand-pink) 1px, transparent 1.5px) 0 0 / 20px 20px, var(--brand-cream);
+  background: radial-gradient(circle, var(--brand-peach) 1px, transparent 1.5px) 0 0 / 20px 20px, var(--brand-vanilla-wash);
 }
 
 .inner { max-width: 1008px; margin: 0 auto; }

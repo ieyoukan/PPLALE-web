@@ -1,7 +1,7 @@
 .section {
   background-color: var(--brand-cream);
   background-image: var(--brand-gingham);
-  background-size: 48px 48px;
+  background-size: 100px 100px;
 }
 
 .headingWrap {
