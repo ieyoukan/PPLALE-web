@@ -12,7 +12,7 @@ import type { Fruit, MatchRules } from '@pplale/game-core';
 import styles from './RulePicker.module.css';
 
 /** The fruit's colour and picture, as on the 2pick tiles. */
-const fruitArt: Record<Fruit, { tone: string; image: string }> = {
+export const fruitArt: Record<Fruit, { tone: string; image: string }> = {
   strawberry: { tone: '#9B4341', image: '/images/fruits/いちご.webp' },
   grape: { tone: '#6E25AB', image: '/images/fruits/ぶどう.webp' },
   melon: { tone: '#40923D', image: '/images/fruits/めろん.webp' },

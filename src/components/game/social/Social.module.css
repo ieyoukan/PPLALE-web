@@ -26,25 +26,91 @@
 .iconPicker button { display: grid; justify-items: center; gap: 6px; padding: 8px 4px; }
 .iconPicker button[aria-pressed=true] { border-color: #b85d84; background: #fce0eb; }
 .iconPicker small { font-size: 9px; justify-self: center; }
-.socialHeading { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 14px; align-items: center; margin-bottom: 20px; }
-.socialHeading a { font-size: 13px; padding: 8px 12px; border: 1px solid #d6b5c2; border-radius: 15px; background: #fff8fa; }
-.tabs { display: flex; gap: 8px; margin-bottom: 20px; }
-.tabs button { flex: 1; font-size: 13px; }
-.tabs button[aria-current] { background: #efb7ca; border-color: #bd829b; font-weight: 700; }
 .empty { display: grid; place-items: center; gap: 8px; min-height: 180px; padding: 20px; text-align: center; font-size: 13px; color: #a27e7d; }
 .empty > span { font-size: 44px; color: #d8a1b6; }
-.friends { display: grid; gap: 12px; }
-.friends article { max-width: none; width: 100%; display: flex; flex-wrap: wrap; align-items: center; gap: 16px; padding: 14px; border: 1px solid #dec9ad; border-radius: 20px; background: #fffdf6; }
-.friendProfile { display: flex; align-items: center; gap: 12px; flex: 1; min-width: 170px; }
-.friendProfile > div { min-width: 0; }
-.friendProfile h3 { font-size: 16px; font-weight: 700; overflow-wrap: anywhere; }
-.friendProfile p { margin-top: 4px; font-size: 12px; color: #a27e7d; overflow-wrap: anywhere; }
-.friendActions { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; font-size: 12px; margin-left: auto; }
-.friendActions > button:last-child { padding: 6px 10px; }
-.presence { color: #a4988b; font-size: 11px; }
-.remove { display: flex; flex-wrap: wrap; align-items: center; gap: 12px; width: 100%; padding-top: 12px; border-top: 1px solid #ead1d0; font-size: 13px; }
-.addFriend { display: grid; gap: 12px; margin-top: 28px; padding-top: 20px; border-top: 1px dashed #d6b5c2; font-size: 13px; }
-.addFriend label { display: grid; gap: 7px; }
-@media(max-width:600px) { .profileHeading { gap: 15px; } .panel .avatarLarge { width: 86px; height: 86px; flex-basis: 86px; } .profileHeading h2 { font-size: 20px; } .comment { font-size: 12px; padding: 8px; } .tabs { gap: 5px; } .tabs button { padding: 8px 5px; font-size: 11px; } }
+@media(max-width:600px) { .profileHeading { gap: 15px; } .panel .avatarLarge { width: 86px; height: 86px; flex-basis: 86px; } .profileHeading h2 { font-size: 20px; } .comment { font-size: 12px; padding: 8px; } }
 
 .primary:disabled { opacity: .55; cursor: default; }
+
+/* ── フレンドの現在地: friends grouped by the room they host, like VRChat's location list, in ぷぷりえ colours ── */
+.socialHeading { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 14px; align-items: center; margin-bottom: 18px; }
+.socialHeading h2 { display: flex; align-items: center; gap: 10px; color: #8a4d67; }
+.socialHeading h2 > span { color: #e58aac; animation: beat 2.4s ease-in-out infinite; }
+.socialHeading h2 em, .badge { display: inline-grid; place-items: center; min-width: 28px; height: 28px; padding: 0 8px; border-radius: 99px; background: #f3a9c4; color: #fff; font-size: 14px; font-style: normal; box-shadow: inset 0 -2px 0 #d47d9f; }
+.me { display: flex; align-items: center; gap: 8px; padding: 4px 14px 4px 4px; border: 2px solid #f0c3d3; border-radius: 99px; background: #fff; font-size: 13px; font-weight: 700; transition: transform .15s; }
+.me:hover { transform: translateY(-2px); }
+.me .avatar { flex-basis: 34px; width: 34px; height: 34px; }
+.me i { font-style: normal; color: #c98aa4; }
+
+.group { margin-top: 14px; border-top: 2px dotted #edcbd7; }
+.group summary { display: flex; align-items: center; gap: 10px; padding: 12px 4px; cursor: pointer; list-style: none; font-size: 17px; font-weight: 700; color: #7b4d58; }
+.group summary::-webkit-details-marker { display: none; }
+.chevron { width: 10px; height: 10px; border-right: 3px solid #d58aa7; border-bottom: 3px solid #d58aa7; transform: rotate(-45deg); transition: transform .2s; }
+.group[open] .chevron { transform: rotate(45deg); }
+.placeChip { padding: 2px 10px; border-radius: 99px; font-size: 11px; color: #fff; background: var(--place); }
+.group, .tile { --place: #b9aaa3; --glow: #b9aaa333; }
+[data-place=open] { --place: #ef6f9c; --glow: #ef6f9c55; }
+[data-place=playing] { --place: #9a6bd1; --glow: #9a6bd155; }
+[data-place=lobby] { --place: #eaa83c; --glow: #eaa83c55; }
+[data-place=pending] { --place: #64b0d6; --glow: #64b0d655; }
+.groupBody { display: grid; grid-template-columns: 200px minmax(0, 1fr); gap: 14px; align-items: start; padding: 0 0 16px; }
+
+/* The room: its rules' fruit pictures, what can be done there, and how many friends are in it. */
+.room { position: relative; display: grid; grid-template-rows: 112px auto; overflow: hidden; border: 3px solid #fff; border-radius: 18px; background: #fff; box-shadow: 0 0 0 2px var(--place), 0 6px 14px var(--glow); color: #67463e; transition: transform .18s, box-shadow .18s; }
+a.room:hover { transform: translateY(-3px) rotate(-.6deg); box-shadow: 0 0 0 3px var(--place), 0 10px 20px var(--glow); }
+.roomArt { position: relative; display: flex; overflow: hidden; background: repeating-linear-gradient(45deg, #fde9f0 0 10px, #fff6f9 10px 20px); }
+.roomArt > span { position: relative; flex: 1; }
+.roomArt img { object-fit: cover; }
+.sleep { display: grid; place-items: center; font-size: 52px; color: #d9c4d0; }
+.roomBadge { position: absolute; top: 8px; left: 8px; padding: 3px 10px; border-radius: 10px 10px 10px 2px; background: var(--place); color: #fff; font-size: 12px; font-weight: 700; box-shadow: 0 2px 0 #0002; }
+[data-place=open] .roomBadge { animation: bob 1.6s ease-in-out infinite; }
+.roomAction { position: absolute; top: 72px; right: 8px; padding: 5px 12px; border-radius: 99px; background: #fff; color: var(--place); font-size: 13px; font-weight: 800; box-shadow: 0 0 0 2px var(--place); }
+a.room:hover .roomAction { background: var(--place); color: #fff; }
+.roomInfo { display: flex; align-items: center; gap: 8px; padding: 8px 10px; font-size: 13px; }
+.roomInfo b { font-family: Georgia, serif; letter-spacing: .04em; }
+.fruitDots { display: flex; gap: 3px; }
+.fruitDots i { width: 10px; height: 10px; border-radius: 50%; border: 1.5px solid #fff; box-shadow: 0 0 0 1px #0002; }
+.count { margin-left: auto; color: #8f6f6a; }
+
+/* A friend: icon, name and ひとこと on a ribbon showing their card. */
+.tiles { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 10px; }
+.tile { position: relative; display: flex; align-items: center; min-height: 72px; overflow: hidden; border-radius: 16px; background: linear-gradient(100deg, #fffdf8 45%, #fff0f5); box-shadow: 0 0 0 1.5px #ecd3d9, 0 3px 0 #ecd3d9; transition: transform .15s, box-shadow .15s; animation: pop .35s backwards; }
+.tile:hover { transform: translateY(-2px); box-shadow: 0 0 0 2px var(--place), 0 5px 0 var(--glow); }
+.tileArt { position: absolute; inset: 0 0 0 42%; opacity: .5; -webkit-mask-image: linear-gradient(90deg, transparent, #000 70%); mask-image: linear-gradient(90deg, transparent, #000 70%); pointer-events: none; }
+.tileArt img { object-fit: cover; object-position: center 20%; }
+.tileLink { position: relative; display: flex; align-items: center; gap: 10px; flex: 1; min-width: 0; padding: 8px 10px; }
+.tile .avatar { flex-basis: 52px; width: 52px; height: 52px; border: 3px solid #fff; box-shadow: 0 0 0 2.5px var(--place); }
+[data-place=open] .tile .avatar { animation: ring 1.8s ease-out infinite; }
+.tileText { display: grid; min-width: 0; text-shadow: 0 0 6px #fff, 0 0 2px #fff; }
+.tileText b { overflow: hidden; font-size: 15px; text-overflow: ellipsis; white-space: nowrap; }
+.tileText small { display: flex; align-items: center; gap: 5px; overflow: hidden; font-size: 11px; color: #8f6f6a; white-space: nowrap; }
+.dot { flex: 0 0 8px; height: 8px; border-radius: 50%; background: var(--place); }
+.panel .more { position: absolute; top: 4px; right: 4px; min-height: 0; padding: 0 8px; border: 0; background: #fffc; font-size: 14px; line-height: 22px; opacity: 0; transition: opacity .15s; }
+.tile:hover .more, .more:focus-visible { opacity: 1; }
+@media (hover: none) { .panel .more { opacity: .8; } }
+.answer { position: relative; display: flex; gap: 6px; padding-right: 10px; }
+.panel .answer button { width: 38px; min-height: 38px; padding: 0; border: 0; border-radius: 50%; color: #fff; font-size: 17px; font-weight: 800; box-shadow: inset 0 -3px 0 #0002; transition: transform .12s; }
+.panel .answer button:hover { transform: scale(1.12); }
+.panel .accept { background: #ef6f9c; }
+.panel .decline { background: #c7b8b3; }
+.remove { position: absolute; inset: 0; z-index: 1; display: flex; align-items: center; justify-content: center; gap: 8px; background: #fff5f8f0; animation: pop .2s; }
+.removeIcon { font-size: 22px; }
+.panel .remove button { min-height: 32px; padding: 4px 12px; font-size: 12px; }
+.panel .remove button:first-of-type { border-color: #d36f8f; background: #f6c4d4; font-weight: 700; }
+
+.addFriend { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; margin-top: 24px; padding: 14px; border: 2px dashed #efc3d2; border-radius: 18px; background: #fff8fb; font-size: 13px; }
+.addFriend label { display: flex; flex: 1; min-width: 220px; align-items: center; gap: 10px; color: #e07fa3; font-weight: 700; }
+
+@keyframes beat { 0%, 70%, 100% { transform: scale(1); } 80% { transform: scale(1.25); } 90% { transform: scale(.95); } }
+@keyframes bob { 50% { transform: translateY(-3px); } }
+@keyframes ring { 0% { box-shadow: 0 0 0 2.5px var(--place), 0 0 0 2.5px var(--glow); } 100% { box-shadow: 0 0 0 2.5px var(--place), 0 0 0 10px transparent; } }
+@keyframes pop { from { opacity: 0; transform: scale(.94); } }
+@media (prefers-reduced-motion: reduce) { .socialHeading h2 > span, [data-place=open] .roomBadge, [data-place=open] .tile .avatar, .tile, .remove { animation: none; } }
+@media (max-width: 600px) { .groupBody { grid-template-columns: 1fr; } .room { grid-template-rows: 80px auto; } .roomAction { top: 42px; } .tiles { grid-template-columns: 1fr; } }
+[data-place=sent] { --place: #b39ad8; --glow: #b39ad855; }
+.headingLinks { display: flex; align-items: center; gap: 10px; }
+.bell { position: relative; display: grid; place-items: center; width: 44px; height: 44px; border: 2px solid #f0c3d3; border-radius: 50%; background: #fff; font-size: 20px; transition: transform .15s; }
+.bell:hover { transform: rotate(-12deg); }
+.bell .badge { position: absolute; top: -6px; right: -8px; min-width: 22px; height: 22px; padding: 0 6px; font-size: 12px; animation: bob 1.6s ease-in-out infinite; }
+.empty .primary { margin-top: 6px; }
+@media (prefers-reduced-motion: reduce) { .bell .badge { animation: none; } }

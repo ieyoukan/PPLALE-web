@@ -27,12 +27,12 @@ test('profiles, private friend requests, recruitment join/watch and removal work
     await expect(alice.getByLabel('ひとこと', { exact: true })).toHaveCount(0);
     await alice.getByRole('button', { name: '＋ フレンド申請', exact: true }).click();
     await expect(alice.getByRole('status')).toContainText('フレンド申請を送りました');
-    await bob.goto(`${base}/game/social/`);
-    await bob.getByRole('button', { name: '届いた申請 1', exact: true }).click();
-    await expect(bob.getByRole('heading', { name: 'ありす', exact: true })).toBeVisible();
+    await bob.goto(`${base}/game/notifications/`);
+    await expect(bob.getByText('ありす', { exact: true })).toBeVisible();
     await bob.getByRole('button', { name: '承認', exact: true }).click();
-    await bob.getByRole('button', { name: 'フレンド', exact: true }).click();
-    await expect(bob.getByRole('heading', { name: 'ありす', exact: true })).toBeVisible();
+    await expect(bob.getByRole('button', { name: '承認', exact: true })).toHaveCount(0);
+    await bob.goto(`${base}/game/social/`);
+    await expect(bob.getByText('ありす', { exact: true })).toBeVisible();
     const room = { id: '654321', rules: { fruits: ['strawberry'], extendedPlayable: false, spectators: true }, host: 'ありす', hostProfileId: a.localId, hostOnline: true, status: 'lobby', open: true, spectators: true };
     for (const page of [alice, bob]) await page.route('http://localhost:8099/rooms/654321', route => route.fulfill({ json: room }));
     await alice.evaluate(() => localStorage.setItem('pplale-room-seats-v2', JSON.stringify({ '654321': { seat: 0, token: 'test-seat-only', at: Date.now() } })));
@@ -42,14 +42,15 @@ test('profiles, private friend requests, recruitment join/watch and removal work
     await alice.goto(`${base}/game/battle/room/?id=654321`);
     await alice.getByRole('button', { name: 'フレンドに対戦を募集する', exact: true }).click();
     await expect(alice.getByText('フレンドのソーシャル画面に表示中', { exact: true })).toBeVisible();
-    const join = bob.getByRole('link', { name: '募集中 · 参加する ›', exact: true });
+    const join = bob.getByRole('link', { name: 'ありすのルーム: 参加する', exact: true });
     await expect(join).toHaveAttribute('href', '/game/battle/room/?id=654321');
     room.open = false; room.status = 'playing';
     await bob.evaluate(() => document.dispatchEvent(new Event('visibilitychange')));
-    await expect(bob.getByRole('link', { name: '対戦中 · 観戦する ›', exact: true })).toHaveAttribute('href', '/game/room/?id=654321&watch=1');
+    await expect(bob.getByRole('link', { name: 'ありすのルーム: 観戦する', exact: true })).toHaveAttribute('href', '/game/room/?id=654321&watch=1');
+    await bob.screenshot({ path: 'test-results/social-friends.png', fullPage: true });
     await bob.getByRole('button', { name: 'ありすをフレンドから外す', exact: true }).click();
     await bob.getByRole('button', { name: '外す', exact: true }).click();
-    await expect(bob.getByRole('heading', { name: 'ありす', exact: true })).toHaveCount(0);
+    await expect(bob.getByText('ありす', { exact: true })).toHaveCount(0);
     expect(errors).toEqual([]);
   } finally { await contextA.close().catch(() => {}); await contextB.close().catch(() => {}); }
 });

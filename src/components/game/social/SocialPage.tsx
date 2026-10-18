@@ -1,15 +1,27 @@
 'use client';
 
 import { useEffect, useState } from 'react';
+import Image from 'next/image';
 import Link from 'next/link';
 import { useAuth } from '@/lib/auth';
-import { respondFriend, watchSocial } from '@/lib/game/social';
 import type { Friendship, SocialPlayer } from '@/lib/game/social';
+import { fruitNames } from '@pplale/game-core/room';
 import type { RoomInfo } from '@pplale/game-core/room';
 import { readRoomInfo } from '@/lib/game/room/client';
 import { roomHref, ROOM_PATH, watchHref } from '@/lib/game/sessionStore';
 import { RecordedCard } from '../history/RecordedCard';
+import { fruitArt } from '../RulePicker';
+import { FriendTile } from './FriendTile';
+import { NOTIFICATIONS_PATH } from './NotificationsPage';
+import { useMyProfile } from './useMyProfile';
+import { useSocial } from './useSocial';
 import styles from './Social.module.css';
+
+/** Where a friend is: recruiting in a room, in a match that may be watched, getting a room ready, or nowhere we know of. */
+type Place = 'open' | 'playing' | 'lobby' | 'away';
+const placeOrder: Place[] = ['open', 'playing', 'lobby', 'away'];
+const placeLabel: Record<Place, string> = { open: '募集中', playing: '対戦中', lobby: '準備中', away: '募集なし' };
+interface Group { key: string; place: Place; room?: RoomInfo; players: SocialPlayer[] }
 
 export function SocialPage() {
   const { user, loading, signInWithGoogle } = useAuth();
@@ -18,12 +30,11 @@ export function SocialPage() {
   return <Social key={user.uid} uid={user.uid} />;
 }
 function Social({ uid }: { uid: string }) {
-  const [players, setPlayers] = useState<SocialPlayer[]>([]), [tab, setTab] = useState<'friends' | 'received' | 'sent'>('friends');
-  const [error, setError] = useState(''), [loading, setLoading] = useState(true), [busy, setBusy] = useState('');
-  const [rooms, setRooms] = useState<Record<string, RoomInfo>>({}), [profileLink, setProfileLink] = useState('');
+  const me = useMyProfile();
+  const { friends, received, error, loading, busy, respond } = useSocial(uid);
+  const [rooms, setRooms] = useState<Record<string, RoomInfo>>({});
   const [remove, setRemove] = useState<Friendship | null>(null);
-  useEffect(() => watchSocial(uid, value => { setPlayers(value); setLoading(false); }, () => { setError('フレンドを読み込めませんでした'); setLoading(false); }), [uid]);
-  const roomIds = [...new Set(players.flatMap(player => player.roomId ? [player.roomId] : []))].sort().join(',');
+  const roomIds = [...new Set(friends.flatMap(player => player.roomId ? [player.roomId] : []))].sort().join(',');
   useEffect(() => {
     let current = true;
     async function refresh() {
@@ -35,33 +46,55 @@ function Social({ uid }: { uid: string }) {
     document.addEventListener('visibilitychange', refresh);
     return () => { current = false; clearInterval(timer); document.removeEventListener('visibilitychange', refresh); };
   }, [roomIds]);
-  async function respond(friendship: Friendship, accept: boolean) {
-    if (busy) return;
-    setBusy(friendship.id); setError('');
-    try { await respondFriend(friendship, accept); setRemove(null); }
-    catch { setError('変更できませんでした。もう一度お試しください'); }
-    finally { setBusy(''); }
+  // A room shows only while the friend who published it is its connected host.
+  const groups = new Map<string, Group>();
+  for (const player of friends) {
+    const room = player.roomId ? rooms[player.roomId] : undefined, active = room && room.hostProfileId === player.profile.uid && room.hostOnline;
+    const place: Place = !active ? 'away' : room.open ? 'open' : room.spectators && room.status === 'playing' ? 'playing' : 'lobby';
+    const key = active ? room.id : 'away';
+    const group = groups.get(key) ?? { key, place, room: active ? room : undefined, players: [] };
+    group.players.push(player); groups.set(key, group);
   }
-  const received = players.filter(player => player.friendship.status === 'pending' && player.friendship.requestedBy !== uid);
-  const visible = players.filter(player => tab === 'friends' ? player.friendship.status === 'accepted' : player.friendship.status === 'pending' && (tab === 'received' ? player.friendship.requestedBy !== uid : player.friendship.requestedBy === uid));
-  let target = '';
-  try { target = new URL(profileLink).searchParams.get('id') ?? ''; } catch { if (/^[\w-]{1,128}$/.test(profileLink)) target = profileLink; }
+  const ordered = [...groups.values()].sort((a, b) => placeOrder.indexOf(a.place) - placeOrder.indexOf(b.place) || a.key.localeCompare(b.key));
   return <section className={styles.panel} aria-label="ソーシャル">
-    <header className={styles.socialHeading}><h2>ソーシャル</h2><Link href="/game/profile/">マイプロフィール ✎</Link></header>
-    <nav className={styles.tabs} aria-label="フレンドの種類">{([['friends', 'フレンド'], ['received', `届いた申請${received.length ? ` ${received.length}` : ''}`], ['sent', '送った申請']] as const).map(([id, title]) => <button key={id} aria-current={tab === id ? 'page' : undefined} onClick={() => setTab(id)}>{title}</button>)}</nav>
+    <header className={styles.socialHeading}>
+      <h2><span aria-hidden="true">♡</span>フレンドの現在地<em>{friends.length}</em></h2>
+      <span className={styles.headingLinks}>
+        <Link className={styles.bell} href={NOTIFICATIONS_PATH} aria-label={`通知${received.length ? ` ${received.length}件` : ''}`}><span aria-hidden="true">🔔</span>{received.length > 0 && <em className={styles.badge}>{received.length}</em>}</Link>
+        <Link className={styles.me} href="/game/profile/" aria-label="マイプロフィール">
+          <span className={styles.avatar}>{me && <RecordedCard id={me.iconCardId} sizes="40px" />}</span><span>{me?.displayName ?? 'マイプロフィール'}</span><i aria-hidden="true">✎</i>
+        </Link>
+      </span>
+    </header>
     {error && <p className={styles.error} role="alert">{error}</p>}
-    {!visible.length && <div className={styles.empty} role="status"><span aria-hidden="true">{tab === 'friends' ? '♡' : '✉'}</span><p>{loading ? '読み込み中…' : tab === 'friends' ? 'プロフィールのリンクから、フレンドになろう。' : '申請はありません。'}</p></div>}
-    <div className={styles.friends}>{visible.map(({ profile, friendship, roomId }) => {
-      const room = roomId && rooms[roomId], active = room && room.hostProfileId === profile.uid && room.hostOnline;
-      return <article key={friendship.id}>
-        <Link className={styles.friendProfile} href={`/game/profile/?id=${encodeURIComponent(profile.uid)}`}><span className={styles.avatar}><RecordedCard id={profile.iconCardId} sizes="65px" /></span><div><h3>{profile.displayName}</h3><p>{profile.comment}</p></div></Link>
-        {friendship.status === 'accepted' ? <div className={styles.friendActions}>
-          {active && room.open ? <Link className={styles.primary} href={roomHref(ROOM_PATH, room.id)}>募集中 · 参加する ›</Link> : active && room.spectators && room.status === 'playing' ? <Link className={styles.primary} href={watchHref(room.id)}>対戦中 · 観戦する ›</Link> : <span className={styles.presence}>{active ? '準備中' : '募集はありません'}</span>}
-          <button aria-label={`${profile.displayName}をフレンドから外す`} onClick={() => setRemove(friendship)}>…</button>
-        </div> : <div className={styles.friendActions}>{friendship.requestedBy !== uid && <button className={styles.primary} disabled={!!busy} onClick={() => void respond(friendship, true)}>承認</button>}<button disabled={!!busy} onClick={() => void respond(friendship, false)}>{friendship.requestedBy === uid ? '取り消す' : '見送る'}</button></div>}
-        {remove?.id === friendship.id && <div className={styles.remove}><p>フレンドから外しますか？</p><button disabled={!!busy} onClick={() => void respond(friendship, false)}>外す</button><button onClick={() => setRemove(null)}>やめる</button></div>}
-      </article>;
-    })}</div>
-    <div className={styles.addFriend}><label>プロフィールのリンク<input value={profileLink} onChange={event => setProfileLink(event.target.value)} placeholder="受け取ったプロフィールのリンク" /></label>{target && <Link className={styles.primary} href={`/game/profile/?id=${encodeURIComponent(target)}`}>プロフィールを見る ›</Link>}</div>
+    {!friends.length && <div className={styles.empty} role="status"><span aria-hidden="true">♡</span><p>{loading ? '読み込み中…' : 'プロフィールのリンクから、フレンドになろう。'}</p>{!loading && <Link className={styles.primary} href={NOTIFICATIONS_PATH}>＋♡ フレンドを追加</Link>}</div>}
+    {ordered.map(({ key, place, room, players: members }) => {
+      const href = room && (place === 'open' ? roomHref(ROOM_PATH, room.id) : place === 'playing' ? watchHref(room.id) : undefined);
+      const host = members[0].profile;
+      const card = <>
+        <span className={styles.roomArt} aria-hidden="true">{room
+          ? room.rules.fruits.map(fruit => <span key={fruit} style={{ background: fruitArt[fruit].tone }}><Image src={fruitArt[fruit].image} alt="" fill sizes="120px" /></span>)
+          : <span className={styles.sleep}>☾</span>}</span>
+        <span className={styles.roomBadge}>{placeLabel[place]}</span>
+        {href && <span className={styles.roomAction}>{place === 'open' ? '▶ 参加' : '👁 観戦'}</span>}
+        <span className={styles.roomInfo}>
+          {room ? <><b>#{room.id}</b><span className={styles.fruitDots}>{room.rules.fruits.map(fruit => <i key={fruit} title={fruitNames[fruit]} style={{ background: fruitArt[fruit].tone }} />)}</span></> : <b>おやすみ中</b>}
+          <span className={styles.count} aria-label={`フレンド${members.length}人`}>👥 {members.length}</span>
+        </span>
+      </>;
+      return <details key={key} className={styles.group} data-place={place} open={place !== 'away' || ordered.length < 3}>
+        <summary><span className={styles.chevron} aria-hidden="true" />{room ? `${host.displayName}のルーム` : 'ほかのフレンド'}<span className={styles.placeChip}>{placeLabel[place]}</span></summary>
+        <div className={styles.groupBody}>
+          {href ? <Link className={styles.room} href={href} aria-label={`${host.displayName}のルーム: ${place === 'open' ? '参加する' : '観戦する'}`}>{card}</Link> : <div className={styles.room}>{card}</div>}
+          <div className={styles.tiles}>{members.map(({ profile, friendship }) => <FriendTile key={friendship.id} profile={profile} place={place} status={placeLabel[place]}>
+            <button className={styles.more} aria-label={`${profile.displayName}をフレンドから外す`} onClick={() => setRemove(friendship)}>…</button>
+            {remove?.id === friendship.id && <div className={styles.remove} role="dialog" aria-label="フレンドから外す">
+              <span className={styles.removeIcon} aria-hidden="true">💔</span>
+              <button disabled={!!busy} onClick={() => void respond(friendship, false).then(done => { if (done) setRemove(null); })}>外す</button><button onClick={() => setRemove(null)}>やめる</button>
+            </div>}
+          </FriendTile>)}</div>
+        </div>
+      </details>;
+    })}
   </section>;
 }

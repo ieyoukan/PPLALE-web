@@ -9,6 +9,7 @@ import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { useAuth } from '@/lib/auth';
 import { BATTLE_PATH, CARDS_PATH, EDITOR_PATH, HOME_PATH } from '@/lib/game/sessionStore';
+import { NOTIFICATIONS_PATH } from '../social/NotificationsPage';
 import { useMyProfile } from '../social/useMyProfile';
 import { RecordedCard } from '../history/RecordedCard';
 import styles from './GameMenu.module.css';
@@ -18,7 +19,8 @@ const tabs = [
   { href: BATTLE_PATH, label: 'バトル', note: 'フリー・ルームマッチ', tone: styles.green },
   { href: CARDS_PATH, label: 'カード', note: '図鑑・デッキ構築', tone: styles.lilac },
   { href: EDITOR_PATH, label: '盤面エディタ', note: '好きな盤面から', tone: styles.yellow },
-  { href: '/game/social/', label: 'ソーシャル', note: 'フレンドとあそぶ', tone: styles.pink },
+  { href: '/game/social/', label: 'ソーシャル', note: 'フレンドの現在地', tone: styles.pink },
+  { href: NOTIFICATIONS_PATH, label: '通知', note: 'フレンド申請', tone: styles.lilac },
 ];
 
 export default function GameMenu({ children }: { children: ReactNode }) {
