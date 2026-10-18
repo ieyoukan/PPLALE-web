@@ -39,7 +39,7 @@ const config: NextConfig = {
     optimizePackageImports: ['framer-motion'],
   },
   serverExternalPackages: ['@vercel/og', 'sharp'],
-  outputFileTracingIncludes: { '/api/og/**': ['./public/og-cards/**/*.png'] },
+  outputFileTracingIncludes: { '/api/og/**': ['./public/og-cards/**/*.png'], '/api/og/profile/**': ['./public/images/token/**/*.webp'] },
   // 本番環境用の設定
   assetPrefix: '',
   basePath: '',
