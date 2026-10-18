@@ -53,8 +53,9 @@ export function Counter({ label, value, points, bonus = 0, temporaryBonus = 0, p
   </div>;
 }
 
-export function PpPanel({ side, current, maximum, own }: { side: number; current: number; maximum: number; own: boolean }) {
+export function PpPanel({ side, name, current, maximum, own }: { side: number; name: string; current: number; maximum: number; own: boolean }) {
   return <div data-pp={side} className={`${styles.ppPanel} ${own ? styles.ownPp : styles.opponentPp}`} role="group" aria-label={`${own ? '自分' : '相手'}のPP ${current} / ${maximum}`}>
+    <div className={styles.ppPlayerName} title={name}>{name}</div>
     <div className={styles.ppAmount} aria-hidden="true"><span>PP</span><b>{current}</b><em>/{maximum}</em></div>
     {own && maximum > 0 && <div className={styles.ppGems} style={{ '--pp-count': maximum } as CSSProperties} aria-hidden="true">
       {Array.from({ length: maximum }, (_, index) => <i key={index} className={index < current ? styles.availablePp : styles.spentPp} />)}

@@ -470,8 +470,9 @@
 @media (max-height: 600px) { .turnControl { top: 50%; gap: 5px; } .ppPanel { height: 72px; } .ownPp { height: 88px; gap: 5px; } .ppAmount b { font-size: 38px; } .turnControl .endTurnButton { width: 118px; height: 118px; font-size: 24px; } }
 
 /* PP uses the same floral mint label artwork as the turn counters. */
-.ppPanel { height: 70px; background: none; color: #594b40; filter: drop-shadow(0 4px 3px #42363d44); }
-.ownPp { height: 94px; gap: 5px; }
+.ppPanel { height: 94px; gap: 4px; background: none; color: #594b40; filter: drop-shadow(0 4px 3px #42363d44); }
+.ownPp { height: 118px; gap: 5px; }
+.ppPlayerName { box-sizing: border-box; flex-shrink: 0; align-self: center; max-width: calc(100% - 24px); padding: 1px 12px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; border: 1px solid #c6d8b9; border-radius: 999px; background: #fff9ed; color: #594b40; font-size: 16px; line-height: 20px; }
 .ppAmount { box-sizing: border-box; height: 60px; flex-shrink: 0; gap: 10px; padding: 10px 20px 0; background: url('/images/game/counter-label.svg') center / 100% 100% no-repeat; text-shadow: none; font-family: 'BoardHandwriting', 'Yu Kyokasho', 'Hiragino Mincho ProN', serif; }
 .turnControl .ppAmount > span { font: 26px 'BoardHandwriting', 'Yu Kyokasho', serif; color: #594b40; }
 .ppAmount b { font-family: inherit; font-size: 40px; }
@@ -500,7 +501,7 @@
   .inspectActions { max-width: calc(100vw - 16px); padding: 10px 16px; }
   .inspectActions .testControls { margin-top: 8px; padding-top: 8px; }
 }
-@media (max-height: 600px) { .ppPanel { height: 64px; } .ownPp { height: 82px; } .ppAmount b { font-size: 36px; } }
+@media (max-height: 600px) { .ppPanel { height: 88px; } .ownPp { height: 106px; } .ppAmount b { font-size: 36px; } }
 
 /* Every numbered stone keeps equal width and height, including enlarged cards. */
 .selectedCardImage .damageMarble, .selectedCardImage .buffMarble, .selectedCardImage .costMarble, .inspectImage .damageMarble, .inspectImage .buffMarble, .inspectImage .costMarble { --marble-size: 64px; font-size: 30px; }
