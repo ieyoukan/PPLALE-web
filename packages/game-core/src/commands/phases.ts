@@ -13,7 +13,7 @@ export function startTurn(s: GameState, side: Side) {
     const p = s.players[side];
     p.turns++;
     p.turnPpBonus = side !== s.rules.firstPlayer && p.turns === 5 ? 2 : 0;
-    p.pp = Math.max(0, availablePpMaximum(s, side) - p.nextPpDebt);
+    p.pp = Math.max(0, availablePpMaximum(s, side) + p.turnPpBonus - p.nextPpDebt);
     p.nextPpDebt = 0;
     p.field.forEach(uid => { s.cards[uid].exhausted = false; delete s.cards[uid].actions; });
     for (const uid of s.players.flatMap(player => player.field)) expireTimed(s, uid);

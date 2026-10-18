@@ -218,20 +218,20 @@ test('every way a match ends records why (the result screen reads it)', async ()
   assert.equal(winReasonOf(saved), 'stall');
 });
 
-test('後攻5ターン目の+2PPは「最大PP」に数える（あみのの条件）', () => {
-  // The second player's fifth turn: 5 + 2 = 7 最大PP, so あみの's 「既に7以上」 and her skill's condition hold.
-  const fifth = () => {
-    const s = arena({ rules: { firstPlayer: 1 }, me: { playable: 'p_0', hand: ['y_12'], turns: 5, ppBonus: 0, pp: 7 }, foe: { field: ['y_23'] } });
+test('後攻5ターン目の+2PPは「最大PP」に数えない（あみのの条件）', () => {
+  // Current PP is 7, but the maximum remains 5 unless a permanent effect raises it.
+  const fifth = (ppBonus = 0) => {
+    const s = arena({ rules: { firstPlayer: 1 }, me: { playable: 'p_0', hand: ['y_12'], turns: 5, ppBonus, pp: 7 }, foe: { field: ['y_23'] } });
     s.players[0].turnPpBonus = 2;
     return s;
   };
   let s = playFirst(fifth(), 'y_12');
+  assert.equal(s.cards[field(s, 1)[0]].damage, 0);
+  assert.ok(failure(fifth(), { type: 'skill', actor: 0, index: 2 }));
+  // Permanent max-PP bonuses still count towards both conditions.
+  s = playFirst(fifth(2), 'y_12');
   assert.equal(s.cards[field(s, 1)[0]].damage, 2);
-  assert.equal(failure(fifth(), { type: 'skill', actor: 0, index: 2 }), undefined);
-  // Without the +2 (any other turn at 5 最大PP) neither applies.
-  const plain = arena({ me: { playable: 'p_0', hand: ['y_12'], turns: 5, ppBonus: 0, pp: 5 }, foe: { field: ['y_23'] } });
-  assert.equal(playFirst(plain, 'y_12').cards[field(plain, 1)[0]].damage, 0);
-  assert.ok(failure(plain, { type: 'skill', actor: 0, index: 2 }));
+  assert.equal(failure(fifth(2), { type: 'skill', actor: 0, index: 2 }), undefined);
 });
 
 test('トークンは幼女として数える: ちむどんどん！の「コスト1〜10の幼女」に猫まんじゅう（コスト1）が入る', () => {

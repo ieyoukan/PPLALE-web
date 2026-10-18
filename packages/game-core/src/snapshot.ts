@@ -3,7 +3,6 @@ import { z } from 'zod';
 import { deckLabel, exSkillIds, keywords } from './model.ts';
 import type { Catalog, ExSkillId, GameState, Task, TaskOp } from './model.ts';
 import { selectable, unitsInScope } from './effects/targets.ts';
-import { availablePpMaximum } from './core/cards.ts';
 import { opDef, resolveQueue } from './effects/resolve.ts';
 
 const integer = z.number().int();
@@ -150,7 +149,7 @@ function migrateTurnRules(s: Saved, catalog: Catalog) {
         const p = s.players[s.active];
         if (s.phase === 'playing' && s.active !== s.rules.firstPlayer && p.turns === 5) {
             p.turnPpBonus = 2;
-            p.pp = Math.min(availablePpMaximum(state, s.active), p.pp + 2);
+            p.pp += 2;
         }
     }
     if (s.pending?.task.op !== 'draw') return;

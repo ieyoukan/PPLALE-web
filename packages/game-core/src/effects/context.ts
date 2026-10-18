@@ -81,7 +81,7 @@ export interface Effects {
     increasePp(amount: number): void;
     /** Restores MP up to the playable's maximum (nothing for a playable without MP). */
     gainMp(amount: number): void;
-    /** The 最大PP a card text asks about: turn count + permanent extra, and the second player's +2 on its fifth turn. */
+    /** The 最大PP a card text asks about: turn count + permanent extra, excluding extra current PP. */
     maxPp(): number;
     random(size: number): number;
     /** Rolls a six-sided die and records it so the UI can show the roll. */

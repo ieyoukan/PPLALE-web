@@ -110,7 +110,7 @@ export interface Player {
     turns: number;
     pp: number;
     ppBonus: number;
-    /** Extra spendable PP for the second player’s fifth turn only. Not a permanent max-PP buff. */
+    /** Extra current PP granted on the second player's fifth turn. Does not change max PP. */
     turnPpBonus: number;
     nextPpDebt: number;
     /** Sweet-point thresholds (10, 5) whose one-time draw opportunity has already been offered. */

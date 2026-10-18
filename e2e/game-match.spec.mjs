@@ -114,17 +114,32 @@ test('ending with eleven cards requires two hand exclusions before the turn chan
   expect(next.pending).toBeNull();
 });
 
-test('second-player fifth-turn PP is shown as seven usable PP and a temporary +2 marble', async ({ page }) => {
+test('second-player fifth-turn PP is shown as 7 / 5 and a temporary +2 marble', async ({ page }) => {
   const s = arena({ me: { turns: 4, ppBonus: 0 }, foe: { turns: 4, ppBonus: 0 } });
   await loadBoard(page, s);
   await page.getByRole('button', { name: /ターン\s*終了/ }).click();
   await expect(page.getByLabel('このターンの追加PP 2', { exact: true })).toBeVisible();
   await page.locator('[data-deck="1-yojo"]').click();
-  await expect(page.getByRole('group', { name: '自分のPP 7 / 7', exact: true })).toBeVisible();
+  await expect(page.getByRole('group', { name: '自分のPP 7 / 5', exact: true })).toBeVisible();
+  await page.reload();
+  await expect(page.getByRole('group', { name: '自分のPP 7 / 5', exact: true })).toBeVisible();
   await page.getByRole('button', { name: /ターン\s*終了/ }).click();
   await expect(page.getByLabel('このターンの追加PP 2', { exact: true })).toBeHidden();
   // The 7 PP left stays (and is shown) through the opponent's turn; the +2 was for that turn only.
   expect((await savedGame(page)).players[1].pp).toBe(7);
+});
+
+test('second-player fifth-turn recovery stops at 5 after spending the extra PP', async ({ page }) => {
+  const s = arena({ rules: { firstPlayer: 1 }, me: { turns: 5, ppBonus: 0, pp: 7, hand: ['y_141'] } });
+  s.players[0].turnPpBonus = 2;
+  await loadBoard(page, s);
+  await expect(page.getByRole('group', { name: '自分のPP 7 / 5', exact: true })).toBeVisible();
+  await page.locator(`[data-hand-list] [data-hand="${hand(s)[0]}"]`).click();
+  await page.getByRole('button', { name: '場に出す', exact: true }).click();
+  await expect(page.getByRole('group', { name: '自分のPP 5 / 5', exact: true })).toBeVisible();
+  expect((await savedGame(page)).players[0].pp).toBe(5);
+  await page.reload();
+  await expect(page.getByRole('group', { name: '自分のPP 5 / 5', exact: true })).toBeVisible();
 });
 
 test('a threshold draw is mandatory: the only choice is the sweets deck', async ({ page }) => {

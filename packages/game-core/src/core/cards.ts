@@ -115,9 +115,9 @@ export function maxPp(s: GameState, side: Side) {
     const p = s.players[side];
     return Math.max(0, Math.min(MAX_PP, p.turns + p.ppBonus));
 }
-/** Spendable ceiling this turn; the temporary second-player bonus does not trigger max-PP effects. */
+/** Recovery ceiling, also used by the PP display. Extra current PP does not raise the maximum. */
 export function availablePpMaximum(s: GameState, side: Side) {
-    return Math.min(MAX_PP, maxPp(s, side) + s.players[side].turnPpBonus);
+    return maxPp(s, side);
 }
 /**
  * 「PPを回復する」: up to the PP this turn may hold (最大PP), and ダブルダガー adds 2 on the owner's turn.

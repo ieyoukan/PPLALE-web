@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { availablePpMaximum, maxPp, newGame, restoreGame, sandboxRules } from '../dist/index.js';
-import { arena, catalog, choose, draws, failure, hand, run } from './helpers.mjs';
+import { arena, catalog, choose, draws, failure, hand, playFirst, run } from './helpers.mjs';
 
 const end = s => run(s, { type: 'end', actor: s.active });
 
@@ -41,7 +41,7 @@ test('second player gets two usable PP only on its fifth turn, without a permane
   assert.equal(s.players[1].pp, 7);
   assert.equal(s.players[1].turnPpBonus, 2);
   assert.equal(maxPp(s, 1), 5);
-  assert.equal(availablePpMaximum(s, 1), 7);
+  assert.equal(availablePpMaximum(s, 1), 5);
   s = draws(end(s));
   // The PP left stays through the opponent's turn (user ruling).
   assert.equal(s.players[1].pp, 7);
@@ -59,6 +59,60 @@ test('fifth-turn bonus follows the actual second player when side 0 goes second'
   s = draws(end(s));
   assert.equal(s.players[0].pp, 7);
   assert.equal(s.players[0].turnPpBonus, 2);
+  assert.equal(availablePpMaximum(s, 0), 5);
+});
+
+test('fifth-turn PP recovery stops at 5, including double dagger, without removing unspent bonus PP', () => {
+  for (const dagger of [false, true]) for (const pp of [4, 5, 6, 7]) {
+    let s = arena({ rules: { firstPlayer: 1 }, me: { turns: 5, ppBonus: 0, pp, hand: ['s_27', 's_19'] } });
+    s.players[0].turnPpBonus = 2;
+    if (dagger) s.players[0].exSkills = { dagger: { uses: 1 } };
+    s = choose(playFirst(s, 's_27'), hand(s)[1]);
+    assert.equal(s.players[0].pp, Math.max(pp, 5), `PP ${pp}, dagger ${dagger}`);
+    assert.equal(availablePpMaximum(s, 0), 5);
+  }
+});
+
+test('fifth-turn on-enter recovery and full recovery use the unchanged maximum', () => {
+  let s = arena({ rules: { firstPlayer: 1 }, me: { turns: 5, ppBonus: 0, pp: 7, hand: ['y_141'] } });
+  s.players[0].turnPpBonus = 2;
+  s = playFirst(s, 'y_141'); // 7 - 5 + 4 recovery, capped at 5.
+  assert.equal(s.players[0].pp, 5);
+  for (const pp of [1, 7]) {
+    s = arena({ rules: { firstPlayer: 1 }, me: { turns: 5, ppBonus: 0, pp, field: ['y_73'] } });
+    s.players[0].turnPpBonus = 2;
+    s = end(s);
+    assert.equal(s.players[0].pp, Math.max(pp, 5));
+  }
+});
+
+test('fifth-turn grant adds 2 current PP after the permanent maximum and before the borrowing debt', () => {
+  for (const [ppBonus, debt, expected] of [[1, 0, 8], [7, 0, 14], [0, 2, 5]]) {
+    let s = arena({ me: { turns: 4, ppBonus: 0 }, foe: { turns: 4, ppBonus } });
+    s.players[1].nextPpDebt = debt;
+    s = draws(end(s));
+    assert.equal(s.players[1].pp, expected);
+    assert.equal(availablePpMaximum(s, 1), 5 + ppBonus);
+    assert.equal(s.players[1].nextPpDebt, 0);
+  }
+});
+
+test('restoring fifth-turn bonus PP neither raises the maximum nor grants the bonus twice', () => {
+  const s = arena({ rules: { firstPlayer: 1 }, me: { turns: 5, ppBonus: 0, pp: 7 } });
+  s.players[0].turnPpBonus = 2;
+  let restored = restoreGame(JSON.parse(JSON.stringify(s)), catalog);
+  assert.ok(restored);
+  assert.equal(restored.players[0].pp, 7);
+  assert.equal(availablePpMaximum(restored, 0), 5);
+  const legacy = JSON.parse(JSON.stringify(s));
+  delete legacy.turnRules;
+  delete legacy.players[0].turnPpBonus;
+  legacy.players[0].pp = 5;
+  restored = restoreGame(legacy, catalog);
+  assert.equal(restored.players[0].pp, 7);
+  assert.equal(availablePpMaximum(restored, 0), 5);
+  restored = restoreGame(JSON.parse(JSON.stringify(restored)), catalog);
+  assert.equal(restored.players[0].pp, 7);
 });
 
 test('ending with 11 cards waits for two chosen exclusions, not discard triggers, before passing the turn', () => {
