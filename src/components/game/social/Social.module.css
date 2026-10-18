@@ -59,7 +59,7 @@
 
 /* The room: its rules' fruit pictures, what can be done there, and how many friends are in it. */
 .room { position: relative; display: grid; grid-template-rows: 112px auto; overflow: hidden; border: 3px solid #fff; border-radius: 18px; background: #fff; box-shadow: 0 0 0 2px var(--place), 0 6px 14px var(--glow); color: #67463e; transition: transform .18s, box-shadow .18s; }
-a.room:hover { transform: translateY(-3px) rotate(-.6deg); box-shadow: 0 0 0 3px var(--place), 0 10px 20px var(--glow); }
+a.room:hover { transform: translateY(-2px); box-shadow: 0 0 0 3px var(--place), 0 10px 20px var(--glow); }
 .roomArt { position: relative; display: flex; overflow: hidden; background: repeating-linear-gradient(45deg, #fde9f0 0 10px, #fff6f9 10px 20px); }
 .roomArt > span { position: relative; flex: 1; }
 .roomArt img { object-fit: cover; }
@@ -113,7 +113,7 @@ a.room:hover .roomAction { background: var(--place); color: #fff; }
 .group[data-place=sent], .tile[data-place=sent], .room[data-place=sent] { --place: #b39ad8; --glow: #b39ad855; }
 .headingLinks { display: flex; align-items: center; gap: 10px; }
 .bell { position: relative; display: grid; place-items: center; width: 44px; height: 44px; border: 2px solid #f0c3d3; border-radius: 50%; background: #fff; font-size: 20px; transition: transform .15s; }
-.bell:hover { transform: rotate(-12deg); }
+.bell:hover { transform: translateY(-2px); }
 .bell .badge { position: absolute; top: -6px; right: -8px; min-width: 22px; height: 22px; padding: 0 6px; font-size: 12px; animation: bob 1.6s ease-in-out infinite; }
 .empty .primary { gap: 6px; margin-top: 6px; }
 @media (prefers-reduced-motion: reduce) { .bell .badge { animation: none; } }
