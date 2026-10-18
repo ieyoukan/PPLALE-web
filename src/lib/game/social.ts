@@ -1,13 +1,16 @@
 'use client';
 
 import { displayCards } from './catalog';
-export interface PlayerProfile { uid: string; displayName: string; comment: string; iconCardId: string }
+/** `decks`: ids of the player's saved decks (users/{uid}/decks) they show on their profile, at most MAX_PUBLIC_DECKS. */
+export interface PlayerProfile { uid: string; displayName: string; comment: string; iconCardId: string; decks: string[] }
+export const MAX_PUBLIC_DECKS = 3;
+const deckIds = (value: unknown) => Array.isArray(value) ? [...new Set(value.filter((id): id is string => typeof id === 'string' && /^[\w-]{1,128}$/.test(id)))].slice(0, MAX_PUBLIC_DECKS) : [];
 export interface Friendship { id: string; members: [string, string]; requestedBy: string; status: 'pending' | 'accepted' }
 /** `watching`: the room a friend is looking on at, and when they last said so (ms). */
 export interface SocialPlayer { friendship: Friendship; profile: PlayerProfile; roomId?: string; watching?: { roomId: string; at: number } }
 /** How often a spectator repeats that they are still watching, and how old a claim may be before it is ignored. */
 export const WATCHING_BEAT = 60_000, WATCHING_STALE = 3 * 60_000;
-export const defaultProfile = (uid: string, name = 'プレイヤー'): PlayerProfile => ({ uid, displayName: name, comment: 'よろしくお願いします！', iconCardId: 'p_1' });
+export const defaultProfile = (uid: string, name = 'プレイヤー'): PlayerProfile => ({ uid, displayName: name, comment: 'よろしくお願いします！', iconCardId: 'p_1', decks: [] });
 export const friendshipId = (a: string, b: string) => [a, b].sort().join('~');
 async function store() {
   const [sdk, { db, auth }] = await Promise.all([import('firebase/firestore'), import('@/lib/firebase')]);
@@ -15,7 +18,7 @@ async function store() {
   return { sdk, db, auth };
 }
 function profileOf(uid: string, data?: Record<string, unknown>): PlayerProfile {
-  return { uid, displayName: typeof data?.displayName === 'string' ? data.displayName : 'プレイヤー', comment: typeof data?.comment === 'string' ? data.comment : '', iconCardId: typeof data?.iconCardId === 'string' && displayCards[data.iconCardId] ? data.iconCardId : 'p_1' };
+  return { uid, displayName: typeof data?.displayName === 'string' ? data.displayName : 'プレイヤー', comment: typeof data?.comment === 'string' ? data.comment : '', iconCardId: typeof data?.iconCardId === 'string' && displayCards[data.iconCardId] ? data.iconCardId : 'p_1', decks: deckIds(data?.decks) };
 }
 export async function readProfile(uid: string): Promise<PlayerProfile | null> {
   const { sdk, db } = await store(), value = await sdk.getDoc(sdk.doc(db, 'profiles', uid));
@@ -30,9 +33,9 @@ export async function saveProfile(profile: PlayerProfile) {
   const ref = sdk.doc(db, 'profiles', profile.uid);
   await sdk.runTransaction(db, async transaction => {
     const old = await transaction.get(ref);
-    transaction.set(ref, { displayName, comment, iconCardId: profile.iconCardId, updatedAt: sdk.serverTimestamp(), ...(!old.exists() && { createdAt: sdk.serverTimestamp() }) }, { merge: true });
+    transaction.set(ref, { displayName, comment, iconCardId: profile.iconCardId, decks: deckIds(profile.decks), updatedAt: sdk.serverTimestamp(), ...(!old.exists() && { createdAt: sdk.serverTimestamp() }) }, { merge: true });
   });
-  return { ...profile, displayName, comment };
+  return { ...profile, displayName, comment, decks: deckIds(profile.decks) };
 }
 export async function requestFriend(other: string) {
   const { sdk, db, auth } = await store(), uid = auth.currentUser?.uid;
@@ -69,6 +72,32 @@ export async function publishRecruitment(roomId: string | null) {
   else await sdk.deleteDoc(ref);
 }
 
+/** A deck as a profile shows it (from users/{uid}/decks, which anyone may read for sharing). */
+export interface PublicDeck { id: string; name: string; updatedAt: Date | null; yojoDeckIds: string[]; sweetDeckIds: string[]; playableCardId: string | null }
+function deckOf(id: string, data?: Record<string, unknown>): PublicDeck {
+  const cards = (value: unknown) => Array.isArray(value) ? value.filter((card): card is string => typeof card === 'string') : [];
+  const updated = (data?.updatedAt as { toDate?: () => Date } | undefined)?.toDate?.();
+  return { id, name: typeof data?.name === 'string' && data.name ? data.name : '無名のデッキ', updatedAt: updated ?? null, yojoDeckIds: cards(data?.yojoDeckIds), sweetDeckIds: cards(data?.sweetDeckIds), playableCardId: typeof data?.playableCardId === 'string' ? data.playableCardId : null };
+}
+/** The decks a profile shows, in its order; ones since deleted are left out. */
+export async function readPublicDecks(uid: string, ids: string[]): Promise<PublicDeck[]> {
+  const { sdk, db } = await store();
+  const found = await Promise.all(ids.map(id => sdk.getDoc(sdk.doc(db, 'users', uid, 'decks', id)).then(doc => doc.exists() ? deckOf(doc.id, doc.data()) : null, () => null)));
+  return found.filter(deck => deck !== null);
+}
+/** Every saved deck of the signed-in player, newest first, to choose from. */
+export async function readMyDecks(uid: string): Promise<PublicDeck[]> {
+  const { sdk, db } = await store();
+  const snapshot = await sdk.getDocs(sdk.collection(db, 'users', uid, 'decks'));
+  return snapshot.docs.map(doc => deckOf(doc.id, doc.data())).sort((a, b) => (b.updatedAt?.getTime() ?? 0) - (a.updatedAt?.getTime() ?? 0));
+}
+/** Where a friend says they are: the room they recruit for and the one they watch. Readable only by their friends (otherwise empty). */
+export async function readFriendRooms(other: string): Promise<Pick<SocialPlayer, 'roomId' | 'watching'>> {
+  const { sdk, db } = await store();
+  const [recruitment, watching] = await Promise.all(['recruitments', 'watching'].map(kind => sdk.getDoc(sdk.doc(db, kind, other)).then(doc => doc.data(), () => undefined)));
+  const roomId = recruitment?.roomId, watched = watching?.roomId, at = watching?.updatedAt?.toMillis?.();
+  return { ...(typeof roomId === 'string' && /^\d{6}$/.test(roomId) && { roomId }), ...(typeof watched === 'string' && /^\d{6}$/.test(watched) && typeof at === 'number' && { watching: { roomId: watched, at } }) };
+}
 /** Tells friends which room this player is watching (`null`: none). Repeated every WATCHING_BEAT while watching. */
 export async function publishWatching(roomId: string | null) {
   const { sdk, db, auth } = await store(), uid = auth.currentUser?.uid;

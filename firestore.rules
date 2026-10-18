@@ -35,10 +35,11 @@ service cloud.firestore {
       allow delete: if isOwner(userId);
     }
 
-    // Public game profiles contain only a chosen name, card icon and short comment.
+    // Public game profiles contain only a chosen name, card icon, short comment and up to 3 of the player's (already public) decks.
     match /profiles/{userId} {
       function validProfile() {
-        return request.resource.data.keys().hasOnly(['displayName', 'comment', 'iconCardId', 'createdAt', 'updatedAt']) &&
+        return request.resource.data.keys().hasOnly(['displayName', 'comment', 'iconCardId', 'decks', 'createdAt', 'updatedAt']) &&
+          (!('decks' in request.resource.data) || request.resource.data.decks is list && request.resource.data.decks.size() <= 3) &&
           request.resource.data.displayName is string && request.resource.data.displayName.size() > 0 && request.resource.data.displayName.size() <= 12 &&
           request.resource.data.comment is string && request.resource.data.comment.size() <= 80 &&
           request.resource.data.iconCardId is string && request.resource.data.iconCardId.matches('[a-z]+_[0-9]+') &&

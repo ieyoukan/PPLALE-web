@@ -27,7 +27,9 @@ test('social rules: profiles contain only public allowed fields and only their o
   await denied(updateDoc(ref, { comment: 'a'.repeat(81), updatedAt: serverTimestamp() }));
   await denied(updateDoc(ref, { createdAt: serverTimestamp(), updatedAt: serverTimestamp() }));
   await denied(getDocs(collection(a.db, 'profiles')));
-  await updateDoc(ref, { displayName: '変更', comment: 'また遊ぼう！', iconCardId: 'y_1', updatedAt: serverTimestamp() });
+  await denied(updateDoc(ref, { decks: ['a', 'b', 'c', 'd'], updatedAt: serverTimestamp() }));
+  await denied(updateDoc(ref, { decks: 'a', updatedAt: serverTimestamp() }));
+  await updateDoc(ref, { displayName: '変更', comment: 'また遊ぼう！', iconCardId: 'y_1', decks: ['a', 'b', 'c'], updatedAt: serverTimestamp() });
   assert.equal((await getDoc(ref)).data().displayName, '変更');
 });
 

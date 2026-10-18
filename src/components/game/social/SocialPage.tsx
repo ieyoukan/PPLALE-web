@@ -1,31 +1,24 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import Image from 'next/image';
 import Link from 'next/link';
 import { useAuth } from '@/lib/auth';
-import { WATCHING_STALE } from '@/lib/game/social';
 import type { Friendship, SocialPlayer } from '@/lib/game/social';
-import { fruitNames } from '@pplale/game-core/room';
 import type { RoomInfo } from '@pplale/game-core/room';
 import { readRoomInfo } from '@/lib/game/room/client';
-import { roomHref, ROOM_PATH, watchHref } from '@/lib/game/sessionStore';
 import { RecordedCard } from '../history/RecordedCard';
-import { fruitArt } from '../RulePicker';
 import { FriendTile } from './FriendTile';
 import { Icon } from './Icon';
+import { locate, placeLabel, placeOf, placeOrder } from './location';
 import { NOTIFICATIONS_PATH } from './NotificationsPage';
+import { RoomCard } from './RoomCard';
 import { useMyProfile } from './useMyProfile';
 import { useSocial } from './useSocial';
 import styles from './Social.module.css';
 
-/** What a room is doing: recruiting, a match that may be watched, or getting ready. */
-type Place = 'open' | 'playing' | 'lobby';
-const placeOrder: Place[] = ['open', 'playing', 'lobby'];
-const placeLabel: Record<Place, string> = { open: '募集中', playing: '対戦中', lobby: '準備中' };
 /** A friend in a room: its host, or someone watching it. */
 interface Member { player: SocialPlayer; role: 'host' | 'watching' }
-interface Group { room: RoomInfo; place: Place; members: Member[] }
+interface Group { room: RoomInfo; members: Member[] }
 
 export function SocialPage() {
   const { user, loading, signInWithGoogle } = useAuth();
@@ -50,20 +43,14 @@ function Social({ uid }: { uid: string }) {
     document.addEventListener('visibilitychange', refresh);
     return () => { current = false; clearInterval(timer); document.removeEventListener('visibilitychange', refresh); };
   }, [roomIds]);
-  // A room shows while the friend who published it is its connected host; a spectator, while they keep saying so and the match can still be watched.
   const groups = new Map<string, Group>(), elsewhere: SocialPlayer[] = [];
-  const join = (room: RoomInfo, member: Member) => {
-    const place: Place = room.open ? 'open' : room.spectators && room.status === 'playing' ? 'playing' : 'lobby';
-    const group = groups.get(room.id) ?? { room, place, members: [] };
-    group.members.push(member); groups.set(room.id, group);
-  };
   for (const player of friends) {
-    const hosted = player.roomId ? rooms[player.roomId] : undefined, watched = player.watching ? rooms[player.watching.roomId] : undefined;
-    if (hosted && hosted.hostProfileId === player.profile.uid && hosted.hostOnline) join(hosted, { player, role: 'host' });
-    else if (watched && watched.spectators && watched.status === 'playing' && now - player.watching!.at < WATCHING_STALE) join(watched, { player, role: 'watching' });
-    else elsewhere.push(player);
+    const found = locate(player, rooms, now);
+    if (!found) { elsewhere.push(player); continue; }
+    const group = groups.get(found.room.id) ?? { room: found.room, members: [] };
+    group.members.push({ player, role: found.role }); groups.set(found.room.id, group);
   }
-  const ordered = [...groups.values()].sort((a, b) => placeOrder.indexOf(a.place) - placeOrder.indexOf(b.place) || a.room.id.localeCompare(b.room.id));
+  const ordered = [...groups.values()].sort((a, b) => placeOrder.indexOf(placeOf(a.room)) - placeOrder.indexOf(placeOf(b.room)) || a.room.id.localeCompare(b.room.id));
   const tile = ({ profile, friendship }: SocialPlayer, place: string, status: string) => <FriendTile key={friendship.id} profile={profile} place={place} status={status}>
     <button className={styles.more} aria-label={`${profile.displayName}をフレンドから外す`} onClick={() => setRemove(friendship)}><Icon name="more" /></button>
     {remove?.id === friendship.id && <div className={styles.remove} role="dialog" aria-label="フレンドから外す">
@@ -82,18 +69,12 @@ function Social({ uid }: { uid: string }) {
     </header>
     {error && <p className={styles.error} role="alert">{error}</p>}
     {!friends.length && <div className={styles.empty} role="status"><Icon name="heart" /><p>{loading ? '読み込み中…' : 'プロフィールのリンクから、フレンドになろう。'}</p>{!loading && <Link className={styles.primary} href={NOTIFICATIONS_PATH}><Icon name="add" />フレンドを追加</Link>}</div>}
-    {ordered.map(({ room, place, members }) => {
-      const href = place === 'open' ? roomHref(ROOM_PATH, room.id) : place === 'playing' ? watchHref(room.id) : undefined;
-      const card = <>
-        <span className={styles.roomArt} aria-hidden="true">{room.rules.fruits.map(fruit => <span key={fruit} style={{ background: fruitArt[fruit].tone }}><Image src={fruitArt[fruit].image} alt="" fill sizes="120px" /></span>)}</span>
-        <span className={styles.roomBadge}>{placeLabel[place]}</span>
-        {href && <span className={styles.roomAction}><Icon name={place === 'open' ? 'play' : 'eye'} />{place === 'open' ? '参加' : '観戦'}</span>}
-        <span className={styles.roomInfo}><b>#{room.id}</b><span className={styles.fruitDots}>{room.rules.fruits.map(fruit => <i key={fruit} title={fruitNames[fruit]} style={{ background: fruitArt[fruit].tone }} />)}</span></span>
-      </>;
+    {ordered.map(({ room, members }) => {
+      const place = placeOf(room);
       return <details key={room.id} className={styles.group} data-place={place} open>
         <summary><span className={styles.chevron} aria-hidden="true" />{room.host}のルーム<span className={styles.placeChip}>{placeLabel[place]}</span></summary>
         <div className={styles.groupBody}>
-          {href ? <Link className={styles.room} href={href} aria-label={`${room.host}のルーム: ${place === 'open' ? '参加する' : '観戦する'}`}>{card}</Link> : <div className={styles.room}>{card}</div>}
+          <RoomCard room={room} />
           <div className={styles.tiles}>{members.map(({ player, role }) => role === 'host' ? tile(player, place, placeLabel[place]) : tile(player, 'watching', '観戦中'))}</div>
         </div>
       </details>;

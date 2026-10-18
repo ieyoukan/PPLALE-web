@@ -50,11 +50,11 @@
 .chevron { width: 10px; height: 10px; border-right: 3px solid #d58aa7; border-bottom: 3px solid #d58aa7; transform: rotate(-45deg); transition: transform .2s; }
 .group[open] .chevron { transform: rotate(45deg); }
 .placeChip { padding: 2px 10px; border-radius: 99px; font-size: 11px; color: #fff; background: var(--place); }
-.group, .tile { --place: #b9aaa3; --glow: #b9aaa333; }
-.group[data-place=open], .tile[data-place=open] { --place: #ef6f9c; --glow: #ef6f9c55; }
-.group[data-place=playing], .tile[data-place=playing] { --place: #9a6bd1; --glow: #9a6bd155; }
-.group[data-place=lobby], .tile[data-place=lobby] { --place: #eaa83c; --glow: #eaa83c55; }
-.group[data-place=pending], .tile[data-place=pending] { --place: #64b0d6; --glow: #64b0d655; }
+.group, .tile, .room { --place: #b9aaa3; --glow: #b9aaa333; }
+.group[data-place=open], .tile[data-place=open], .room[data-place=open] { --place: #ef6f9c; --glow: #ef6f9c55; }
+.group[data-place=playing], .tile[data-place=playing], .room[data-place=playing] { --place: #9a6bd1; --glow: #9a6bd155; }
+.group[data-place=lobby], .tile[data-place=lobby], .room[data-place=lobby] { --place: #eaa83c; --glow: #eaa83c55; }
+.group[data-place=pending], .tile[data-place=pending], .room[data-place=pending] { --place: #64b0d6; --glow: #64b0d655; }
 .groupBody { display: grid; grid-template-columns: 200px minmax(0, 1fr); gap: 14px; align-items: start; padding: 0 0 16px; }
 
 /* The room: its rules' fruit pictures, what can be done there, and how many friends are in it. */
@@ -110,14 +110,14 @@ a.room:hover .roomAction { background: var(--place); color: #fff; }
 @keyframes pop { from { opacity: 0; transform: scale(.94); } }
 @media (prefers-reduced-motion: reduce) { .beat, .group[data-place=open] .roomBadge, .tile[data-place=open] .avatar, .tile, .remove { animation: none; } }
 @media (max-width: 600px) { .groupBody { grid-template-columns: 1fr; } .room { grid-template-rows: 80px auto; } .roomAction { top: 42px; } .tiles { grid-template-columns: 1fr; } .tile { width: 100%; } }
-.group[data-place=sent], .tile[data-place=sent] { --place: #b39ad8; --glow: #b39ad855; }
+.group[data-place=sent], .tile[data-place=sent], .room[data-place=sent] { --place: #b39ad8; --glow: #b39ad855; }
 .headingLinks { display: flex; align-items: center; gap: 10px; }
 .bell { position: relative; display: grid; place-items: center; width: 44px; height: 44px; border: 2px solid #f0c3d3; border-radius: 50%; background: #fff; font-size: 20px; transition: transform .15s; }
 .bell:hover { transform: rotate(-12deg); }
 .bell .badge { position: absolute; top: -6px; right: -8px; min-width: 22px; height: 22px; padding: 0 6px; font-size: 12px; animation: bob 1.6s ease-in-out infinite; }
 .empty .primary { gap: 6px; margin-top: 6px; }
 @media (prefers-reduced-motion: reduce) { .bell .badge { animation: none; } }
-.group[data-place=watching], .tile[data-place=watching] { --place: #4fb3a9; --glow: #4fb3a955; }
+.group[data-place=watching], .tile[data-place=watching], .room[data-place=watching] { --place: #4fb3a9; --glow: #4fb3a955; }
 /* Friends who are in no room: just their tiles, below the rooms. */
 .elsewhere { margin-top: 18px; padding-top: 18px; border-top: 2px dotted #edcbd7; }
 .watchMark { display: inline-grid; place-items: center; flex: none; color: var(--place); font-size: 13px; }
@@ -125,3 +125,23 @@ a.room:hover .roomAction { background: var(--place); color: #fff; }
 .panel .more svg { display: block; font-size: 16px; }
 .friendChip { display: inline-flex; align-items: center; gap: 6px; min-height: 42px; padding: 9px 16px; border-radius: 14px; background: #fde4ec; color: #c45f86; font-weight: 700; }
 .friendChip svg { fill: currentColor; }
+
+/* Profile: back to the friends (top left), where a friend is now, and the decks they show. */
+.back { display: inline-grid; place-items: center; width: 44px; height: 44px; margin-bottom: 12px; border: 2px solid #f0c3d3; border-radius: 50%; background: #fff; color: #c45f86; font-size: 22px; transition: transform .15s; }
+.back:hover { transform: translateX(-3px); }
+.where { margin-bottom: 22px; }
+.roomLarge { max-width: 420px; grid-template-rows: 170px auto; }
+.roomLarge .roomAction { top: auto; bottom: 58px; right: 12px; padding: 8px 18px; font-size: 16px; }
+.roomLarge .roomInfo { font-size: 14px; }
+.roomHost { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.decks { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 12px; margin-bottom: 22px; }
+.deck, .deckChooser button { position: relative; display: grid; gap: 6px; padding: 6px; border-radius: 14px; background: #fff; box-shadow: 0 0 0 1.5px #ecd3d9, 0 3px 0 #ecd3d9; text-align: left; transition: transform .15s, box-shadow .15s; }
+.deck:hover, .deckChooser button:hover { transform: translateY(-2px); box-shadow: 0 0 0 2px #ef6f9c, 0 5px 0 #ef6f9c55; }
+.deck b, .deckChooser b { overflow: hidden; padding: 0 4px 2px; font-size: 13px; text-overflow: ellipsis; white-space: nowrap; }
+.deckChooser { min-width: 0; margin: 0; padding: 14px; border: 1px solid #e9cad4; border-radius: 16px; background: #fff9f5; }
+.deckChooser legend { display: flex; gap: 8px; align-items: baseline; padding: 0 6px; font-size: 13px; }
+.deckChooser legend small { justify-self: auto; color: #c45f86; font-weight: 700; opacity: 1; }
+.deckChooser > div { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 10px; max-height: 360px; overflow: auto; padding: 4px; }
+.panel .deckChooser button { min-height: 0; border: 0; }
+.panel .deckChooser button[aria-pressed=true] { background: #fce0eb; box-shadow: 0 0 0 3px #ef6f9c, 0 3px 0 #ef6f9c55; }
+.deckMark { position: absolute; top: 10px; right: 10px; display: grid; place-items: center; width: 26px; height: 26px; border-radius: 50%; background: #ef6f9c; color: #fff; font-size: 15px; animation: pop .2s; }

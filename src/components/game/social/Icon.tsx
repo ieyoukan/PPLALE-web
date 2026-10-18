@@ -10,6 +10,7 @@ const paths = {
   eye: 'M2.5 12S6 5.5 12 5.5 21.5 12 21.5 12 18 18.5 12 18.5 2.5 12 2.5 12zM12 9a3 3 0 1 0 0 6 3 3 0 0 0 0-6z',
   mail: 'M4 6.5h16v11H4zM4.5 7l7.5 6 7.5-6',
   send: 'M4 12l16-7-6 15-3-6.5z',
+  back: 'M14.5 5.5L8 12l6.5 6.5',
   add: 'M10 18s-6-3.8-6-8.5A3.5 3.5 0 0 1 10 7a3.5 3.5 0 0 1 6 2M18 13v6M15 16h6',
 } as const;
 export type IconName = keyof typeof paths;
