@@ -16,6 +16,7 @@ import { NameField, usePlayerName } from './RoomEntrance';
 import { BattleCompanion } from './BattleCompanion';
 import { MatchDeckPreview } from './MatchDeckPreview';
 import styles from './Room.module.css';
+import { FreeMatchLounge } from './FreeMatchLounge';
 
 type Search = { token: string; name: string; deck: Deck; at: number };
 
@@ -155,7 +156,7 @@ export function FreeMatch() {
           <p className={styles.note}>見つかると自動で対戦が始まります。</p>
           <button className={styles.secondary} disabled={cancelling} onClick={() => void cancel()}>検索をキャンセル</button>
         </div> : <>
-          <NameField name={name} onChange={setName} />
+          <NameField name={name} onChange={setName} publicName />
           <label className={styles.field}>使うデッキ
             <DeckSelect choices={choices} chosen={chosen} onChange={setSelected} />
           </label>
@@ -168,6 +169,7 @@ export function FreeMatch() {
         <details className={styles.matchRules}>
           <summary>対戦ルールを確認</summary>
           <p>{describeRoomRules(freeMatchRules)}</p>
+          <p>観戦中は両者の未公開の手札を伏せます。終了後はデッキを含むリプレイを公開します。</p>
           <p>接続の切断が1分以上続くと、切断した側の負けになります。</p>
         </details>
         {saved.error && <p role="alert" className={styles.error}>{saved.error}</p>}
@@ -178,5 +180,6 @@ export function FreeMatch() {
       <Link href={BATTLE_PATH} className={styles.secondary}>バトルへ戻る</Link>
       {!search && <Link href={HOME_PATH} className={styles.secondary}>CPU対戦で遊ぶ</Link>}
     </div>
+    <FreeMatchLounge />
   </div>;
 }

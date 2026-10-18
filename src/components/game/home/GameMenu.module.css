@@ -50,3 +50,7 @@
   .foot { order: 2; }
 }
 @media (prefers-reduced-motion: reduce) { .tab { transition: none; } }
+.playerProfile { display: flex; align-items: center; gap: 9px; min-width: 0; }
+.playerAvatar { position: relative; display: inline-block; flex: 0 0 35px; width: 35px; height: 35px; overflow: hidden; border: 1px solid #edc3d1; border-radius: 50%; background: #fff7dc; }
+.playerAvatar img { object-fit: cover; object-position: center 18%; transform: scale(1.6); transform-origin: center 28%; }
+@media(max-width:720px) { .tabs { overflow-x: auto; max-width: 100%; padding: 3px; } .tab { flex: 0 0 auto; min-width: 76px; } .playerAvatar { width: 28px; height: 28px; flex-basis: 28px; } }

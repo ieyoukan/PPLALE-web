@@ -69,3 +69,16 @@ test('a spectator sees both hands, and of the decks and a choice only what is pu
   assert.deepEqual(view.pending.options.map(o => o.id), [inHand]);
   assert.equal(view.rng, 0);
 });
+
+
+test('a public audience hides both unrevealed hands and private choice options', () => {
+  const s = arena({ me: { hand: ['y_1', 'y_2'], field: ['y_3'] }, foe: { hand: ['y_4'], field: ['y_5'] } });
+  const exposed = s.players[0].hand[1]; s.cards[exposed].revealed = true;
+  const privateCard = s.players[0].hand[0];
+  s.pending = { prompt: 'secret hand reaction', task: { op: 'attackResponses', actor: 0, candidates: [privateCard] }, options: [{ id: privateCard, label: 'secret card' }] };
+  const view = viewFor(s, 'audience');
+  for (const player of view.players) for (const uid of player.hand) if (uid !== exposed) assert.equal(view.cards[uid].cardId, HIDDEN_CARD);
+  assert.equal(view.cards[exposed].cardId, 'y_2');
+  assert.deepEqual(view.pending.options, []); assert.equal(view.pending.prompt, '相手が選択しています');
+  assert.equal(view.rng, 0); assert.deepEqual(view.queue, []);
+});

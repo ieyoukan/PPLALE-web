@@ -1,0 +1,32 @@
+name: Test social rules
+on:
+  push:
+    branches: [main, develop]
+    paths:
+      - firestore.rules
+      - firebase.json
+      - tests/social-rules.test.mjs
+      - .github/workflows/social-rules.yml
+  pull_request:
+    paths:
+      - firestore.rules
+      - firebase.json
+      - tests/social-rules.test.mjs
+      - .github/workflows/social-rules.yml
+permissions:
+  contents: read
+jobs:
+  rules:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: jdx/mise-action@v4
+        with:
+          cache: true
+      - uses: actions/setup-java@v6
+        with:
+          distribution: temurin
+          java-version: '25'
+      - run: npm ci
+      - name: Test profiles and friend permissions against demo emulators
+        run: npm exec --yes --package=firebase-tools@15.34.0 -- firebase emulators:exec --only firestore,auth --project demo-pplale-social 'PPLALE_FIREBASE_RULES_TEST=1 node --test tests/social-rules.test.mjs'

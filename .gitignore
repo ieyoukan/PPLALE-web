@@ -54,3 +54,9 @@ styled-system-studio
 
 # Local room history databases
 services/room-server/.data/
+
+# Firebase emulator output
+/.firebase/
+firebase-debug*.log
+firestore-debug.log
+ui-debug.log

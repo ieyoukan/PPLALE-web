@@ -160,3 +160,16 @@
 @keyframes recordedPlay { from { opacity: .35; transform: translateY(12px) scale(.94); } to { opacity: 1; transform: none; } }
 @keyframes recordedAttack { 45% { transform: translateY(-8px) scale(1.04); } }
 @media (prefers-reduced-motion: reduce) { .replayPage .replayCard { animation: none !important; } }
+
+.jump { display: flex; flex-wrap: wrap; justify-content: center; align-items: center; gap: 8px; padding: 8px 0; font-size: 12px; }
+.jump label { display: flex; align-items: center; gap: 8px; }
+.jump input { width: 70px; min-height: 40px; padding: 6px; border: 1px solid #71838b; border-radius: 6px; color: #fff7e7; background: #183743; }
+.jump button { min-height: 40px; padding: 6px 12px; border: 1px solid #71838b; border-radius: 6px; color: #fff7e7; background: #294b5a; cursor: pointer; }
+.logSearch { width: 100%; margin: 16px 0; padding: 12px; border: 1px solid #71838b; border-radius: 10px; background: #132c3a; color: #fff7e7; }
+.seekLogs { display: grid; gap: 6px; }
+.seekLogs button { display: grid; grid-template-columns: 110px 1fr 20px; width: 100%; padding: 12px; gap: 12px; text-align: left; border: 1px solid #71838b55; border-radius: 8px; color: #e7e5d8; background: #183743; cursor: pointer; }
+.seekLogs button[aria-current] { border-color: #efc77a; background: #2b4c58; }
+.seekLogs small { color: #c0c8bc; }
+.assessmentSeek { display: flex; justify-content: space-between; gap: 3px; }
+.assessmentSeek button { min-width: 24px; min-height: 30px; color: #d4dcd6; font-size: 10px; cursor: pointer; }
+@media(max-width: 600px) { .seekLogs button { grid-template-columns: 75px 1fr 10px; gap: 6px; font-size: 12px; } .playbackButtons button { min-height: 44px; } }

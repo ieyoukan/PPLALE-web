@@ -49,6 +49,8 @@ export interface Backend {
     historyAck(id: string): Promise<void>;
     historyCapable(pod: string, ttl: number): Promise<void>;
     historyReady(): Promise<boolean>;
+    audienceCapable(pod: string, ttl: number): Promise<void>;
+    audienceReady(): Promise<boolean>;
     publish(event: RoomEvent): Promise<void>;
     subscribe(listener: (event: RoomEvent) => void): Promise<void>;
     /** A socket of the seat opened. True when the seat had none (the player just came). */
@@ -154,6 +156,11 @@ export async function redisBackend(url: string, prefix = 'pplale:'): Promise<Bac
         },
         async historyAck(id) { await client.xDel(outbox, id); },
         async historyCapable(pod, ttl) { await client.set(`${prefix}history-capable:${pod}`, '1', { PX: Math.ceil(ttl) }); },
+        async audienceCapable(pod, ttl) { await client.set(`${prefix}audience-capable:${pod}`, '1', { PX: Math.ceil(ttl) }); },
+        async audienceReady() {
+            const pods = await keys(podKey('*'));
+            return (await Promise.all(pods.map(key => client.exists(`${prefix}audience-capable:${key.slice(podKey('').length)}`)))).every(Boolean);
+        },
         async historyReady() {
             const pods = await keys(podKey('*'));
             return (await Promise.all(pods.map(key => client.exists(`${prefix}history-capable:${key.slice(podKey('').length)}`)))).every(Boolean);
@@ -205,7 +212,7 @@ export function memoryBackend(): Backend {
     const rooms = new Map<string, { json: string; until: number }>();
     const seats = new Map<string, Map<string, number>>(), pods = new Map<string, { connections: number; until: number }>();
     const listeners: ((event: RoomEvent) => void)[] = [], total = noTotals();
-    const pending = new Map<string, HistoryWrite>(), capable = new Map<string, number>();
+    const pending = new Map<string, HistoryWrite>(), capable = new Map<string, number>(), audience = new Map<string, number>();
     let serial = 0;
     function record(room: Room, previous: Room | null, ttl: number, history?: HistoryCapture) {
         if (!history) return;
@@ -259,6 +266,8 @@ export function memoryBackend(): Backend {
         async historyPending() { return structuredClone([...pending.values()].slice(0, 100)); },
         async historyAck(id) { pending.delete(id); },
         async historyCapable(pod, ttl) { capable.set(pod, Date.now() + ttl); },
+        async audienceCapable(pod, ttl) { audience.set(pod, Date.now() + ttl); },
+        async audienceReady() { return [...pods].every(([id, pod]) => pod.until <= Date.now() || (audience.get(id) ?? 0) > Date.now()); },
         async historyReady() { return [...pods].every(([id, pod]) => pod.until <= Date.now() || (capable.get(id) ?? 0) > Date.now()); },
         async publish(event) {
             const copy = JSON.stringify(event);

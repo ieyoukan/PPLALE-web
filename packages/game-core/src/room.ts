@@ -11,19 +11,25 @@ export type { Fruit, MatchRules } from './rules.ts';
 
 export interface RoomRules extends MatchRules {
     /**
-     * Whether others may watch. A spectator sees both hands, so a room that allows them trusts
+     * Whether others may watch. In a room match a spectator sees both hands, so it trusts
      * its players not to watch their own match; both players are told, and how many are watching.
      */
     spectators?: boolean;
 }
 export const defaultRoomRules: RoomRules = { ...defaultMatchRules, spectators: false };
-/** One queue, using the latest supported environment; spectators cannot expose either hand. */
-export const freeMatchRules: RoomRules = { ...playableNow, spectators: false };
+/** One public queue; live spectators cannot expose either unrevealed hand. */
+export const freeMatchRules: RoomRules = { ...playableNow, spectators: true };
 
 export type FreeMatchStatus =
     | { status: 'waiting' }
     | { status: 'cancelled' }
     | { status: 'matched'; roomId: string; key: SeatKey };
+
+/** Only public names/icons and room ids; never decks, tokens, queue keys or history owners. */
+export interface FreeMatchActivity {
+    waiting: { name: string; playable: string; profileId?: string }[];
+    matches: { id: string; players: [{ name: string; playable: string; profileId?: string }, { name: string; playable: string; profileId?: string }]; startedAt: number; turn: number; watching: number; status: 'playing' | 'finished'; replayId?: string }[];
+}
 
 /** The usable part of anything sent as rules, or null when no fruit is left. */
 export function parseRoomRules(value: unknown): RoomRules | null {
@@ -59,10 +65,13 @@ export interface RoomView {
     version: number;
     /** The seat this view is for. A spectator's is 0: the side shown near. */
     seat: Side;
-    /** Set on a spectator's view: nothing can be done with it, and `game` shows both hands. */
+    /** Set on a spectator's view: nothing can be done with it. Free matches hide both hands. */
     watching?: true;
     /** People watching right now. */
     spectators: number;
+    /** Available after the match is durably saved. */
+    replayId?: string;
+    assessment?: { win: number; method: 'public-position-value-v1' };
     status: RoomStatus;
     /** Counts the matches played in this room; a new number means a new match. */
     match: number;
@@ -76,6 +85,7 @@ export interface RoomView {
 }
 export interface RoomPlayer {
     name: string;
+    profileId?: string;
     ready: boolean;
     /** Connected to the server right now. */
     online: boolean;
@@ -90,6 +100,9 @@ export interface RoomInfo {
     id: string;
     rules: RoomRules;
     host: string;
+    hostProfileId?: string;
+    hostOnline?: boolean;
+    status?: RoomStatus;
     /** A seat is free and no match has started. */
     open: boolean;
     /** The room may be watched. */

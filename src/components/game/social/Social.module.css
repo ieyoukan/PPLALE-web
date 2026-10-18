@@ -1,0 +1,50 @@
+.panel { padding: clamp(16px, 3vw, 28px); border: 1px solid #d2b395; border-radius: 22px; background: linear-gradient(145deg, #fffaf2, #fcecf2); box-shadow: 0 8px 20px #9b617915; color: #67463e; }
+.panel h2 { font-size: 24px; font-weight: 700; }
+.panel button,.panel a { cursor: pointer; }
+.panel button:focus-visible,.panel a:focus-visible { outline: 3px solid #be7a9a; outline-offset: 3px; }
+.panel button { min-height: 40px; padding: 8px 14px; border: 1px solid #d1b4a7; border-radius: 14px; background: #fff9f4; }
+.primary { display: inline-flex; align-items: center; justify-content: center; min-height: 42px; padding: 9px 16px; border: 1px solid #bd829b; border-radius: 14px; background: #efb7ca; color: #67463e; font-weight: 700; }
+.panel button:disabled { opacity: .55; cursor: default; }
+.panel input { width: 100%; min-height: 44px; padding: 10px 14px; border: 1px solid #ceb5a5; border-radius: 12px; background: #fffcf7; color: #67463e; }
+.profileHeading { display: flex; align-items: center; gap: 24px; margin-bottom: 25px; }
+.profileHeading > div { min-width: 0; }
+.profileHeading small { font: 10px Georgia,serif; color: #a66c8d; letter-spacing: .12em; }
+.profileHeading h2 { margin: 4px 0 12px; overflow-wrap: anywhere; }
+.comment { display: inline-block; max-width: 100%; padding: 10px 16px; border: 1px solid #e4c4d2; border-radius: 14px 14px 14px 2px; background: #fffefa; font-size: 14px; overflow-wrap: anywhere; }
+.panel .avatarLarge { position: relative; flex: 0 0 115px; width: 115px; height: 115px; padding: 0; border: 4px solid #e9b4c8; border-radius: 50%; overflow: hidden; background: #fff7db; }
+.avatarLarge img,.avatar img { object-fit: cover; object-position: center 18%; transform: scale(1.6); transform-origin: center 28%; }
+.avatarLarge > span { position: absolute; bottom: 0; inset-inline: 0; padding: 4px; background: #67463ed9; color: #fff6e9; font-size: 11px; }
+.avatar { position: relative; display: block; flex: 0 0 60px; width: 60px; height: 60px; border: 2px solid #ccad91; border-radius: 50%; overflow: hidden; background: #fff2db; }
+.profileForm { display: grid; gap: 16px; }
+.profileForm label { display: grid; gap: 6px; font-size: 13px; }
+.profileForm small { justify-self: end; opacity: .7; }
+.actions { display: flex; flex-wrap: wrap; align-items: center; gap: 12px; margin-top: 20px; font-size: 13px; }
+.success { padding: 12px 0; color: #54815b; font-size: 13px; }
+.error { padding: 12px 0; color: #a1425f; font-size: 13px; }
+.iconPicker { padding: 14px; border: 1px solid #e9cad4; border-radius: 16px; background: #fff9f5; }
+.iconPicker > div { display: grid; grid-template-columns: repeat(auto-fill,minmax(80px,1fr)); gap: 8px; max-height: 360px; overflow: auto; margin-top: 12px; }
+.iconPicker button { display: grid; justify-items: center; gap: 6px; padding: 8px 4px; }
+.iconPicker button[aria-pressed=true] { border-color: #b85d84; background: #fce0eb; }
+.iconPicker small { font-size: 9px; justify-self: center; }
+.socialHeading { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 14px; align-items: center; margin-bottom: 20px; }
+.socialHeading a { font-size: 13px; padding: 8px 12px; border: 1px solid #d6b5c2; border-radius: 15px; background: #fff8fa; }
+.tabs { display: flex; gap: 8px; margin-bottom: 20px; }
+.tabs button { flex: 1; font-size: 13px; }
+.tabs button[aria-current] { background: #efb7ca; border-color: #bd829b; font-weight: 700; }
+.empty { display: grid; place-items: center; gap: 8px; min-height: 180px; padding: 20px; text-align: center; font-size: 13px; color: #a27e7d; }
+.empty > span { font-size: 44px; color: #d8a1b6; }
+.friends { display: grid; gap: 12px; }
+.friends article { max-width: none; width: 100%; display: flex; flex-wrap: wrap; align-items: center; gap: 16px; padding: 14px; border: 1px solid #dec9ad; border-radius: 20px; background: #fffdf6; }
+.friendProfile { display: flex; align-items: center; gap: 12px; flex: 1; min-width: 170px; }
+.friendProfile > div { min-width: 0; }
+.friendProfile h3 { font-size: 16px; font-weight: 700; overflow-wrap: anywhere; }
+.friendProfile p { margin-top: 4px; font-size: 12px; color: #a27e7d; overflow-wrap: anywhere; }
+.friendActions { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; font-size: 12px; margin-left: auto; }
+.friendActions > button:last-child { padding: 6px 10px; }
+.presence { color: #a4988b; font-size: 11px; }
+.remove { display: flex; flex-wrap: wrap; align-items: center; gap: 12px; width: 100%; padding-top: 12px; border-top: 1px solid #ead1d0; font-size: 13px; }
+.addFriend { display: grid; gap: 12px; margin-top: 28px; padding-top: 20px; border-top: 1px dashed #d6b5c2; font-size: 13px; }
+.addFriend label { display: grid; gap: 7px; }
+@media(max-width:600px) { .profileHeading { gap: 15px; } .panel .avatarLarge { width: 86px; height: 86px; flex-basis: 86px; } .profileHeading h2 { font-size: 20px; } .comment { font-size: 12px; padding: 8px; } .tabs { gap: 5px; } .tabs button { padding: 8px 5px; font-size: 11px; } }
+
+.primary:disabled { opacity: .55; cursor: default; }

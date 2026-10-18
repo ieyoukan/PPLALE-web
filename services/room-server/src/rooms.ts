@@ -1,3 +1,5 @@
+import { publicAssessment } from './public-matches.ts';
+import { catalog as roomCatalog } from './catalog.ts';
 // Everything a room can do, on the room as the server keeps it (both decks and the full match).
 // Nothing here knows about sockets or where rooms are kept: a request changes the room or throws RoomError.
 import { createHash, randomBytes, randomInt, randomUUID, timingSafeEqual } from 'node:crypto';
@@ -9,6 +11,8 @@ import type { MatchEnd } from '@pplale/game-core/history';
 import type { LastCommand, RoomCommand, RoomInfo, RoomRules, RoomStatus, RoomView } from '@pplale/game-core/room';
 
 export interface Seat {
+    /** Public profile id, populated only from verified authentication. */
+    profileId?: string;
     /** Verified account and/or hashed device owner; never exposed in a RoomView. */
     historyOwners?: string[];
     /** SHA-256 of the seat's secret; the secret itself is only in that player's browser. */
@@ -97,14 +101,16 @@ export interface Present { online: [boolean, boolean]; watching: number }
 /** What `seat` is told about the room, or (`'spectator'`) what someone watching is. */
 export function seatView(room: Room, seat: Side | 'spectator', { online, watching }: Present): RoomView {
     const { id, mode, version, status, match, rules, last, resigned, seats, state } = room;
-    const players = seats.map((s, index) => s && { name: s.name, ready: s.ready, online: online[index], ...(s.left && { left: true }), ...(index === seat && s.deck && { deck: s.deck.name }) }) as RoomView['players'];
+    const players = seats.map((s, index) => s && { name: s.name, ...(s.profileId && { profileId: s.profileId }), ready: s.ready, online: online[index], ...(s.left && { left: true }), ...(index === seat && s.deck && { deck: s.deck.name }) }) as RoomView['players'];
     return {
         id, ...(mode && { mode }), version, seat: seat === 'spectator' ? 0 : seat, ...(seat === 'spectator' && { watching: true as const }), spectators: watching,
-        status, match, rules, players, game: state && viewFor(state, seat), last, resigned,
+        status, match, rules, players, game: state && viewFor(state, seat === 'spectator' && mode === 'free' && status === 'playing' ? 'audience' : seat), last, resigned,
+        ...(seat === 'spectator' && mode === 'free' && { assessment: publicAssessment(room, roomCatalog) }),
+        ...(status === 'finished' && room.record && (seat !== 'spectator' || mode === 'free') && { replayId: room.record.id }),
     };
 }
 export const roomInfo = (room: Room): RoomInfo =>
-    ({ id: room.id, rules: room.rules, host: room.seats[0].name, open: room.status === 'lobby' && !room.seats[1], spectators: !!room.rules.spectators });
+    ({ id: room.id, status: room.status, rules: room.rules, host: room.seats[0].name, ...(room.seats[0].profileId && { hostProfileId: room.seats[0].profileId }), open: room.status === 'lobby' && !room.seats[1], spectators: !!room.rules.spectators });
 
 /** A new room with its host seated. `body`: `{ rules, name }` as sent. */
 export function createRoom(id: string, body: unknown): { room: Room; token: string } {

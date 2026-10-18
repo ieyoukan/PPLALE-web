@@ -112,11 +112,11 @@ export function MatchDetail({ recording, onClose }: { recording: MatchDetails; o
   const { match, catalog } = recording;
   return <HistoryDialog label="対戦の詳細" onClose={onClose}>
     <header className={styles.heading}><h2>対戦の詳細</h2><button onClick={onClose} aria-label="詳細を閉じる">×</button></header>
-    <p className={styles.opponents}>{match.players.map(player => player.name).join('　vs　')}</p>
+    <p className={styles.opponents}>{match.players.map((player, index) => <span key={index}>{index > 0 && '　vs　'}{player.profileId ? <Link href={`/game/profile/?id=${encodeURIComponent(player.profileId)}`}>{player.name}</Link> : player.name}</span>)}</p>
     <dl className={styles.facts}><div><dt>日時</dt><dd>{matchDate(match.endedAt)}</dd></div><div><dt>決着</dt><dd>{matchReasons[match.reason]}</dd></div>
       <div><dt>ターン</dt><dd>{match.turns}</dd></div><div><dt>対戦時間</dt><dd>{Math.floor((match.endedAt - match.startedAt) / 60_000)}分{Math.floor((match.endedAt - match.startedAt) / 1000) % 60}秒</dd></div>
       <div><dt>お菓子ポイント</dt><dd>{match.points.join(' − ')}</dd></div></dl>
-    <div className={styles.tabs} role="group" aria-label="表示するデッキ">{match.players.map((player, index) => <button key={index} aria-pressed={side === index} onClick={() => setSide(index as 0 | 1)}>{index === match.seat ? '自分' : '相手'}のデッキ</button>)}</div>
+    <div className={styles.tabs} role="group" aria-label="表示するデッキ">{match.players.map((player, index) => <button key={index} aria-pressed={side === index} onClick={() => setSide(index as 0 | 1)}>{match.watching ? player.name : index === match.seat ? '自分' : '相手'}のデッキ</button>)}</div>
     <RecordedDeck deck={match.players[side].deck} catalog={catalog} />
     {match.complete && <Link className={styles.more} href={`/game/replay/?id=${match.id}`}>リプレイを見る ▶</Link>}
   </HistoryDialog>;

@@ -17,9 +17,9 @@ const serialOf = (uid: string) => Number(uid.slice(1)) || 0;
  * The match as `viewer` sees it. Hidden: the cards in both decks and their order (also the
  * viewer's own), the opponent's unrevealed hand, the random seed, queued effect steps, and the
  * hidden cards among the options of a choice the opponent is making.
- * A `spectator` sees both hands, and of the decks as little as the players do.
+ * A `spectator` sees both hands; an `audience` sees neither unrevealed hand. Both hide deck order.
  */
-export function viewFor(state: GameState, viewer: Side | 'spectator'): GameState {
+export function viewFor(state: GameState, viewer: Side | 'spectator' | 'audience'): GameState {
     const s: GameState = JSON.parse(JSON.stringify(state));
     const hidden = new Set<string>();
     for (const side of sides) {
@@ -29,11 +29,12 @@ export function viewFor(state: GameState, viewer: Side | 'spectator'): GameState
             s.players[side][kind].sort((a, b) => serialOf(a) - serialOf(b));
         }
     }
-    if (viewer !== 'spectator') for (const uid of s.players[other(viewer)].hand) if (!s.cards[uid].revealed) hidden.add(uid);
+    if (viewer !== 'spectator') for (const side of sides) if (viewer === 'audience' || side === other(viewer))
+        for (const uid of s.players[side].hand) if (!s.cards[uid].revealed) hidden.add(uid);
     // A unit being played is shown to both players while the answer to it (ぶらんちゃん) is awaited.
     if (s.pending?.task.op === 'playResponse' && s.pending.task.source) hidden.delete(s.pending.task.source);
     if (s.pending) {
-        if (s.pending.task.actor === viewer) {
+        if (typeof viewer === 'number' && s.pending.task.actor === viewer) {
             // A search of the viewer's own deck shows the cards it offers.
             for (const { id } of s.pending.options) if (s.players[viewer].yojo.includes(id) || s.players[viewer].sweet.includes(id)) hidden.delete(id);
         } else s.pending = publicChoice(s.pending, hidden);

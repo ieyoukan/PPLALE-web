@@ -241,7 +241,7 @@ historyTest('history: claiming guest history preserves favorites, excludes a sec
 
 historyTest('history: a slow backup snapshot cannot stall room commands or HTTP health', async t => {
     const { backend, pool, history, onClose } = await fixture(t);
-    const served = await serve({ history, data: { open: () => backend } }); onClose(() => served.close());
+    const served = await serve({ history, data: { open: () => backend }, beatSeconds: 60 }); onClose(() => served.close());
     const room = ready(); await backend.create(room, 3_600_000);
     const backup = await pool.connect();
     try {

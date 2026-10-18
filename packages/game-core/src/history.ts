@@ -3,7 +3,7 @@ import type { Catalog, Deck, GameState, Side } from './model.ts';
 import type { RoomCommand, RoomRules } from './room.ts';
 
 export type MatchEnd = 'normal' | 'resign' | 'disconnect' | 'leave' | 'abandoned';
-export interface RecordedPlayer { name: string; deck: Deck; playableName: string }
+export interface RecordedPlayer { name: string; profileId?: string; deck: Deck; playableName: string }
 export interface MatchSummary {
     id: string;
     mode: 'free' | 'room';
@@ -20,7 +20,7 @@ export interface MatchSummary {
     complete: boolean;
     engineVersion: string;
 }
-export interface HistoryEntry extends MatchSummary { seat: Side; favorite: boolean }
+export interface HistoryEntry extends MatchSummary { seat: Side; favorite: boolean; watching?: true }
 export interface HistoryPage { entries: HistoryEntry[]; cursor: string | null }
 export interface ReplayFrame {
     sequence: number;

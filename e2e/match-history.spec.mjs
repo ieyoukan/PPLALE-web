@@ -140,3 +140,29 @@ for (const kind of ['detail', 'replay', 'pending-detail', 'pending-replay']) tes
   if (isReplay) { await expect(page.getByRole('button', { name: '最後へ', exact: true })).toHaveCount(0); await expect(page.getByText('履歴が見つかりません', { exact: true })).toBeVisible(); }
   else await expect(page.locator('article')).toHaveCount(0);
 });
+
+test('video controls, log selection, exact move jump and scene links', async ({ page, context }) => {
+  await context.grantPermissions(['clipboard-read', 'clipboard-write']);
+  await page.route('**/history/**', route => new URL(route.request().url()).pathname.startsWith('/history/') ? route.fulfill({ json: recording }) : route.continue());
+  await page.goto(`${base}/game/replay/?id=${recording.match.id}&step=5`);
+  const output = page.locator('output');
+  await expect(output).toHaveText(`5 / ${recording.frames.length - 1}手`);
+  await page.getByRole('button', { name: '10手進む', exact: true }).click();
+  await expect(output).toHaveText(`15 / ${recording.frames.length - 1}手`);
+  await page.getByRole('button', { name: '10手戻す', exact: true }).click();
+  await expect(output).toHaveText(`5 / ${recording.frames.length - 1}手`);
+  await page.getByLabel('移動する手数', { exact: true }).fill('23');
+  await page.getByRole('button', { name: '移動', exact: true }).click();
+  await expect(output).toHaveText(`23 / ${recording.frames.length - 1}手`);
+  await page.getByRole('button', { name: 'ログ', exact: true }).click();
+  const logs = page.getByRole('dialog', { name: '対戦ログから移動' });
+  await logs.getByRole('button', { name: /^8手 ·/ }).click();
+  await expect(logs).toHaveCount(0); await expect(output).toHaveText(`8 / ${recording.frames.length - 1}手`);
+  await page.getByRole('button', { name: 'この場面のリンク', exact: true }).click();
+  expect(await page.evaluate(() => navigator.clipboard.readText())).toBe(`${base}/game/replay/?id=${recording.match.id}&step=8`);
+  await page.getByRole('heading', { name: 'リプレイ', exact: true }).click();
+  await page.keyboard.press('ArrowLeft'); await expect(output).toHaveText(`7 / ${recording.frames.length - 1}手`);
+  await page.getByRole('button', { name: '早送りで再生', exact: true }).click();
+  await expect(page.getByRole('combobox', { name: '再生速度' })).toHaveValue('2');
+  await expect(page.getByRole('button', { name: '一時停止', exact: true })).toBeVisible();
+});

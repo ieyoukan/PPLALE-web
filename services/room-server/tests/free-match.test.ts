@@ -31,7 +31,10 @@ test('free match pairs across instances, starts chosen decks and keeps hands pri
     assert.equal(view.players[1]!.name, bob.name);
     assert.ok(view.game!.players[1].yojo.every(uid => view.game!.cards[uid].cardId === HIDDEN_CARD));
     assert.equal(await socket.act({ action: 'rematch' }), 'フリーマッチでは次の対戦相手を探してください');
-    assert.equal(await (await connect(b, first.roomId, null)).closed, 4404);
+    const audience = await connect(b, first.roomId, null);
+    const watched = await audience.until(view => !!view.watching);
+    assert.equal(watched.rules.spectators, true);
+    for (const player of watched.game!.players) assert.ok(player.hand.every(uid => watched.game!.cards[uid].cardId === HIDDEN_CARD || watched.game!.cards[uid].revealed));
     // Retrying a request after a lost response must return the same seat, never a new opponent.
     assert.deepEqual((await a.call('/free-match/start', alice)).data, first);
     assert.deepEqual((await b.call('/free-match/cancel', { token: bob.token })).data, second);

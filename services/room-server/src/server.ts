@@ -1,3 +1,4 @@
+import { freeMatchActivity } from './public-matches.ts';
 // The room server: rooms are made and entered over HTTP, and each seated player keeps a socket
 // open, sends its requests through it and is sent its view of the room whenever anything changes.
 //   POST /rooms            { rules, name }  → the new room and the host's seat
@@ -78,6 +79,9 @@ export function createRoomServer({ config, backend, catalog, history }: {
     const { pod, origins, trustProxy, requestsPerHour, roomsPerHour, lobbyGraceMinutes, abandonMinutes, maxRooms, idleHours, beatSeconds, version } = config;
     const allowed = limiter(requestsPerHour), mayCreate = limiter(roomsPerHour);
     const patience = { lobby: lobbyGraceMinutes * 60_000, match: abandonMinutes * 60_000 };
+    let activityCache: { until: number; value: Awaited<ReturnType<typeof freeMatchActivity>> } | undefined;
+    let activityLoading: Promise<Awaited<ReturnType<typeof freeMatchActivity>>> | undefined;
+    const activityAllowed = limiter(requestsPerHour * 4);
     const started = Date.now();
     const beatInterval = beatSeconds * 1000;
     /** A socket or an instance that stops saying it is here counts as gone after three missed beats. */
@@ -183,6 +187,14 @@ export function createRoomServer({ config, backend, catalog, history }: {
             }
             if (route === 'GET /healthz') return send(response, 200, { ok: true });
             if (route === 'GET /readyz') return await backend.ping() ? send(response, 200, { ok: true }) : send(response, 503, { ok: false });
+            if (route === 'GET /free-match/live') {
+                if (!activityAllowed(address(request))) throw new RoomError(429, '少し待ってからお試しください');
+                if (!activityCache || activityCache.until <= Date.now()) {
+                    activityLoading ??= freeMatchActivity(backend).then(value => { activityCache = { value, until: Date.now() + 3000 }; return value; }).finally(() => { activityLoading = undefined; });
+                    return send(response, 200, await activityLoading);
+                }
+                return send(response, 200, activityCache.value);
+            }
             if (route === 'GET /stats') return send(response, 200, await stats());
             const image = request.method === 'GET' ? /^\/history\/assets\/([\da-f]{64})$/.exec(path) : null;
             if (image && history) {
@@ -218,7 +230,7 @@ export function createRoomServer({ config, backend, catalog, history }: {
                 const owners = history && freeOperation === 'start' ? await historyOwners(request) : undefined;
                 if (history && freeOperation === 'start' && !owners?.length) throw new RoomError(426, '画面を更新してから、もう一度お試しください');
                 const result = await freeMatch(backend, catalog, freeOperation, await readBody(request), {
-                    maxRooms, roomTtl: idleHours * HOUR, mayStart: () => allowed(address(request)),
+                    maxRooms, roomTtl: idleHours * HOUR, allowSpectators: await backend.audienceReady(), mayStart: () => allowed(address(request)),
                     owners: owners && seatOwners(owners),
                 });
                 if (result.created) {
@@ -240,6 +252,7 @@ export function createRoomServer({ config, backend, catalog, history }: {
                 for (let attempt = 0; attempt < 8; attempt++) {
                     const made = createRoom(String(randomInt(10 ** ROOM_ID_LENGTH)).padStart(ROOM_ID_LENGTH, '0'), body);
                     if (owners.length) made.room.seats[0].historyOwners = seatOwners(owners);
+                    made.room.seats[0].profileId = owners.find(owner => owner.startsWith('user:'))?.slice(5);
                     if (!await backend.create(made.room, lifetime(made.room))) continue;
                     overview = undefined;
                     await backend.count('roomsCreated');
@@ -251,7 +264,7 @@ export function createRoomServer({ config, backend, catalog, history }: {
             if (request.method === 'GET' && !tail) {
                 const room = await backend.get(id);
                 if (!room) throw new RoomError(404, GONE);
-                return send(response, 200, roomInfo(room));
+                return send(response, 200, { ...roomInfo(room), hostOnline: (await backend.online(room.id))[0] });
             }
             if (request.method === 'POST' && tail) {
                 const body = await readBody(request);
@@ -260,6 +273,7 @@ export function createRoomServer({ config, backend, catalog, history }: {
                 const { room, result: token } = await update(id, target => {
                     const token = joinRoom(target, body);
                     if (owners.length) target.seats[1]!.historyOwners = seatOwners(owners);
+                    target.seats[1]!.profileId = owners.find(owner => owner.startsWith('user:'))?.slice(5);
                     return token;
                 });
                 await announce(room);
@@ -384,6 +398,7 @@ export function createRoomServer({ config, backend, catalog, history }: {
         beating = true;
         try {
             const entries = Array.from(wss.clients as Set<Attached>).flatMap(socket => socket.entry ? [socket.entry] : []);
+            await backend.audienceCapable(pod, presenceTtl);
             await Promise.all([backend.refresh(entries, presenceTtl), backend.beat(pod, connections(), presenceTtl)]);
             for (const id of Array.from(sockets.keys())) {
                 if (!await backend.get(id)) dismiss(id);

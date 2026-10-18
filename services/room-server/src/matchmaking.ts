@@ -27,7 +27,7 @@ const startSchema = z.object({
 });
 
 export async function freeMatch(backend: Backend, catalog: Catalog, operation: 'start' | 'status' | 'cancel', body: unknown,
-    options: { maxRooms: number; roomTtl: number; mayStart: () => boolean; owners?: string[] }): Promise<{ status: FreeMatchStatus; created?: Room }> {
+    options: { maxRooms: number; roomTtl: number; mayStart: () => boolean; allowSpectators?: boolean; owners?: string[] }): Promise<{ status: FreeMatchStatus; created?: Room }> {
     const input = z.object({ token: tokenSchema }).safeParse(body);
     if (!input.success) throw new RoomError(400, 'リクエストの形式が正しくありません');
     const id = createHash('sha256').update(input.data.token).digest('hex');
@@ -78,11 +78,12 @@ export async function freeMatch(backend: Backend, catalog: Catalog, operation: '
                 const { rooms } = await backend.overview();
                 if (Object.values(rooms).reduce((sum, count) => sum + count, 0) >= options.maxRooms) throw new RoomError(503, 'いまは対戦がいっぱいです。少し待ってからお試しください');
                 const roomId = String(randomInt(10 ** ROOM_ID_LENGTH)).padStart(ROOM_ID_LENGTH, '0');
-                const made = createRoom(roomId, { rules: freeMatchRules, name: opponent[1].name });
+                const made = createRoom(roomId, { rules: { ...freeMatchRules, spectators: options.allowSpectators ?? true }, name: opponent[1].name });
                 joinRoom(made.room, { name: own.name });
                 made.room.mode = 'free';
                 made.room.seats[0].historyOwners = opponent[1].historyOwners;
                 made.room.seats[1]!.historyOwners = own.historyOwners;
+                for (const seat of made.room.seats) if (seat) seat.profileId = seat.historyOwners?.find(owner => owner.startsWith('user:'))?.slice(5);
                 // Each player's search secret also authenticates their seat. Only its hash is
                 // kept in Redis; either player can recover the seat by polling with that secret.
                 made.room.seats[0].tokenHash = opponent[0];

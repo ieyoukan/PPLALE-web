@@ -35,6 +35,56 @@ service cloud.firestore {
       allow delete: if isOwner(userId);
     }
 
+    // Public game profiles contain only a chosen name, card icon and short comment.
+    match /profiles/{userId} {
+      function validProfile() {
+        return request.resource.data.keys().hasOnly(['displayName', 'comment', 'iconCardId', 'createdAt', 'updatedAt']) &&
+          request.resource.data.displayName is string && request.resource.data.displayName.size() > 0 && request.resource.data.displayName.size() <= 12 &&
+          request.resource.data.comment is string && request.resource.data.comment.size() <= 80 &&
+          request.resource.data.iconCardId is string && request.resource.data.iconCardId.matches('[a-z]+_[0-9]+') &&
+          request.resource.data.updatedAt == request.time;
+      }
+      allow get: if true;
+      allow list: if false;
+      allow create: if isOwner(userId) && validProfile() && request.resource.data.createdAt == request.time;
+      allow update: if isOwner(userId) && validProfile() && request.resource.data.createdAt == resource.data.createdAt;
+      allow delete: if isOwner(userId);
+    }
+
+    match /friendships/{friendId} {
+      function member() { return request.auth != null && request.auth.uid in resource.data.members; }
+      allow get: if request.auth != null && (resource == null || member());
+      allow list: if member() && request.query.limit <= 100;
+      allow create: if request.auth != null &&
+        request.resource.data.keys().hasOnly(['members', 'requestedBy', 'status', 'createdAt']) &&
+        request.resource.data.members is list && request.resource.data.members.size() == 2 &&
+        request.resource.data.members[0] is string && request.resource.data.members[1] is string &&
+        request.resource.data.members[0] < request.resource.data.members[1] &&
+        friendId == request.resource.data.members[0] + '~' + request.resource.data.members[1] &&
+        request.auth.uid in request.resource.data.members && request.resource.data.requestedBy == request.auth.uid &&
+        request.resource.data.status == 'pending' && request.resource.data.createdAt == request.time &&
+        exists(/databases/$(database)/documents/profiles/$(request.resource.data.members[0])) &&
+        exists(/databases/$(database)/documents/profiles/$(request.resource.data.members[1]));
+      allow update: if member() && resource.data.requestedBy != request.auth.uid && resource.data.status == 'pending' &&
+        request.resource.data.diff(resource.data).affectedKeys().hasOnly(['status', 'acceptedAt']) &&
+        request.resource.data.status == 'accepted' && request.resource.data.acceptedAt == request.time;
+      allow delete: if member();
+    }
+
+    match /recruitments/{userId} {
+      function friends() {
+        let key = request.auth.uid < userId ? request.auth.uid + '~' + userId : userId + '~' + request.auth.uid;
+        return exists(/databases/$(database)/documents/friendships/$(key)) &&
+          get(/databases/$(database)/documents/friendships/$(key)).data.status == 'accepted';
+      }
+      allow get: if request.auth != null && (isOwner(userId) || friends());
+      allow list: if false;
+      allow create, update: if isOwner(userId) && request.resource.data.keys().hasOnly(['roomId', 'updatedAt']) &&
+        request.resource.data.roomId is string && request.resource.data.roomId.matches('[0-9]{6}') &&
+        request.resource.data.updatedAt == request.time;
+      allow delete: if isOwner(userId);
+    }
+
     // その他のドキュメントへのアクセスは拒否
     match /{document=**} {
       allow read, write: if false;

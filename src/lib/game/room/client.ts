@@ -1,6 +1,7 @@
 // The browser's side of a room: asking the room server (services/room-server) for a room or a
 // seat, the seats kept in this browser, and the socket a seat talks through.
 // Without NEXT_PUBLIC_ROOM_SERVER_URL there are no room matches.
+import type { FreeMatchActivity } from '@pplale/game-core/room';
 import { historyHeaders } from './historyIdentity';
 import type { HistoryPage, MatchDetails, MatchRecording } from '@pplale/game-core/history';
 import type { Deck } from '@pplale/game-core';
@@ -29,6 +30,7 @@ async function call<T>(path: string, body?: unknown): Promise<T> {
   return data;
 }
 
+export const readFreeMatchActivity = () => call<FreeMatchActivity>('/free-match/live');
 export const readMatchHistory = (cursor?: string, favorites = false) => call<HistoryPage>('/history/list', { cursor, favorites });
 export const readMatchDetail = (id: string) => call<MatchDetails>(`/history/${id}/detail`, {});
 export const readRecording = (id: string) => call<MatchRecording>(`/history/${id}`, {});

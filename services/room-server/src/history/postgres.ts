@@ -100,7 +100,7 @@ export class PostgresHistory implements HistoryRepository {
         if (!existing) {
             const meta: MatchSummary = {
                 id: room.record.id, mode: room.mode ?? 'room', startedAt: room.record.startedAt, endedAt: 0,
-                players: room.seats.map(s => ({ name: s!.name, deck: structuredClone(s!.deck!), playableName: catalog[s!.deck!.playable]?.name ?? s!.deck!.playable })) as MatchSummary['players'],
+                players: room.seats.map(s => ({ name: s!.name, ...(s!.profileId && { profileId: s!.profileId }), deck: structuredClone(s!.deck!), playableName: catalog[s!.deck!.playable]?.name ?? s!.deck!.playable })) as MatchSummary['players'],
                 rules: room.rules, winner: null, reason: 'normal', turns: 0, points: [0, 0], firstPlayer: room.state.rules.firstPlayer,
                 frames: 0, complete: completeAllowed && room.state.revision === 0 && room.seats.every(seat => !!seat?.historyOwners?.length), engineVersion: capture.engineVersion,
             };
@@ -183,8 +183,10 @@ export class PostgresHistory implements HistoryRepository {
     }
     async detail(owners: string[], id: string): Promise<MatchDetails | null> {
         const access = await this.access(owners, id), row = (await this.pool.query('SELECT * FROM matches WHERE id=$1 AND ended IS NOT NULL', [id])).rows[0];
-        if (!access || !row) return null;
-        return { format: 1, match: { ...this.checkedMeta(row), seat: Number(access.seat) as Side, favorite: !!access.favorite }, catalog: await this.catalog(this.pool, row.catalog) };
+        if (!row) return null;
+        const meta = this.checkedMeta(row);
+        if (!access && !(meta.mode === 'free' && meta.rules.spectators)) return null;
+        return { format: 1, match: { ...meta, seat: Number(access?.seat ?? 0) as Side, favorite: !!access?.favorite, ...(!access && { watching: true as const }) }, catalog: await this.catalog(this.pool, row.catalog) };
     }
     async recording(owners: string[], id: string): Promise<MatchRecording | null> {
         const detail = await this.detail(owners, id);

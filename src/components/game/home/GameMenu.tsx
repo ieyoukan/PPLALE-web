@@ -9,6 +9,8 @@ import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { useAuth } from '@/lib/auth';
 import { BATTLE_PATH, CARDS_PATH, EDITOR_PATH, HOME_PATH } from '@/lib/game/sessionStore';
+import { useMyProfile } from '../social/useMyProfile';
+import { RecordedCard } from '../history/RecordedCard';
 import styles from './GameMenu.module.css';
 
 const tabs = [
@@ -16,13 +18,15 @@ const tabs = [
   { href: BATTLE_PATH, label: 'バトル', note: 'フリー・ルームマッチ', tone: styles.green },
   { href: CARDS_PATH, label: 'カード', note: '図鑑・デッキ構築', tone: styles.lilac },
   { href: EDITOR_PATH, label: '盤面エディタ', note: '好きな盤面から', tone: styles.yellow },
+  { href: '/game/social/', label: 'ソーシャル', note: 'フレンドとあそぶ', tone: styles.pink },
 ];
 
 export default function GameMenu({ children }: { children: ReactNode }) {
   const pathname = usePathname() ?? HOME_PATH;
   const { user, signInWithGoogle } = useAuth();
+  const profile = useMyProfile();
   // The first tab is the root, so it only matches exactly; the others also cover their sub-pages.
-  const current = tabs.find(tab => tab.href !== HOME_PATH && pathname.startsWith(tab.href)) ?? tabs[0];
+  const current = pathname.startsWith('/game/profile') ? { label: 'プロフィール' } : tabs.find(tab => tab.href !== HOME_PATH && pathname.startsWith(tab.href)) ?? tabs[0];
   return <div className={styles.menu}>
     <aside className={styles.side}>
       <Image className={styles.logo} src="/images/game/logo.webp" alt="お菓子争奪戦争 ぷぷりえーる" width={462} height={227} priority />
@@ -34,7 +38,7 @@ export default function GameMenu({ children }: { children: ReactNode }) {
       <div className={styles.foot}>
         <div className={styles.player}>
           <small>PLAYER</small>
-          <b>{user?.displayName || 'ゲスト'}</b>
+          <Link href="/game/profile/" className={styles.playerProfile}><span className={styles.playerAvatar}><RecordedCard id={profile?.iconCardId ?? 'p_1'} sizes="40px" /></span><b>{profile?.displayName || user?.displayName || 'ゲスト'}</b></Link>
           {!user && <button onClick={() => { signInWithGoogle().catch(() => {}); }}>ログイン</button>}
         </div>
         <Link href="/" className={styles.back}>サイトへ戻る</Link>

@@ -13,11 +13,14 @@ import { RulePicker } from '../RulePicker';
 import { BattleIllustration } from './BattleIllustration';
 import { BattleCompanion } from './BattleCompanion';
 import styles from './Room.module.css';
+import { useMyProfile } from '../social/useMyProfile';
+import { FreeMatchLounge } from './FreeMatchLounge';
 
 const NAME_KEY = 'pplale-room-name-v1';
 /** The name shown to the other player: what was typed last, else the signed-in name. */
 export function usePlayerName() {
   const { user } = useAuth();
+  const profile = useMyProfile();
   const [name, setName] = useState('');
   const [typed, setTyped] = useState(false);
   useEffect(() => {
@@ -25,7 +28,7 @@ export function usePlayerName() {
     try { saved = localStorage.getItem(NAME_KEY) ?? ''; } catch { /* Asked again next time. */ }
     if (saved) { setName(saved); setTyped(true); }
   }, []);
-  const shown = typed ? name : Array.from(user?.displayName ?? '').slice(0, MAX_NAME_LENGTH).join('');
+  const shown = typed ? name : Array.from(profile?.displayName ?? user?.displayName ?? '').slice(0, MAX_NAME_LENGTH).join('');
   const change = (value: string) => {
     setName(value);
     setTyped(true);
@@ -33,8 +36,8 @@ export function usePlayerName() {
   };
   return [shown, change] as const;
 }
-export function NameField({ name, onChange }: { name: string; onChange: (name: string) => void }) {
-  return <label className={styles.field}>なまえ（相手に表示されます）
+export function NameField({ name, onChange, publicName = false }: { name: string; onChange: (name: string) => void; publicName?: boolean }) {
+  return <label className={styles.field}>なまえ（{publicName ? '対戦一覧に表示されます' : '相手に表示されます'}）
     <input type="text" value={name} maxLength={MAX_NAME_LENGTH} placeholder="なまえ" autoComplete="nickname" onChange={event => onChange(event.target.value)} />
   </label>;
 }
@@ -147,5 +150,6 @@ export function RoomEntrance() {
       <button className={styles.primary} disabled={!isRoomId(id)}>{open === 'watch' ? '観戦する' : 'ルームを見る'}</button>
     </form>}
     {error && <p role="alert" className={styles.error}>{error}</p>}
+    <FreeMatchLounge />
   </div>;
 }
