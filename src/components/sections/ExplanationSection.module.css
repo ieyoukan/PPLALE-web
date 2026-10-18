@@ -1,3 +1,9 @@
+.section {
+  background-color: var(--brand-cream);
+  background-image: var(--brand-gingham);
+  background-size: 48px 48px;
+}
+
 .headingWrap {
   display: flex;
   justify-content: center;
@@ -6,12 +12,7 @@
 
 .title {
   margin: 0;
-  padding: 16px 32px;
-  border: 3px solid white;
-  border-radius: 32px 16px 32px 16px;
-  background: #fff9ed;
-  box-shadow: 0 5px 0 #d8a8b1, 0 10px 24px #70435414;
-  color: #782a4c;
+  color: var(--brand-cocoa);
   font-family: var(--font-home-title), sans-serif;
   font-size: clamp(24px, 3.5vw, 38px);
   font-weight: 400;
@@ -21,7 +22,7 @@
 
 .cardTitle {
   margin: 0 0 16px;
-  color: #853251;
+  color: var(--brand-cocoa);
   font-family: var(--font-home-title), sans-serif;
   font-size: clamp(21px, 2.6vw, 28px);
   font-weight: 400;
@@ -30,5 +31,5 @@
 
 @media (max-width: 480px) {
   .headingWrap { margin-bottom: 32px; }
-  .title { padding: 14px 20px; font-size: 24px; }
+  .title { font-size: 24px; }
 }

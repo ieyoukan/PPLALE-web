@@ -6,7 +6,7 @@ import { css } from 'styled-system/css';
 
 export default function HomePage() {
   return (
-    <div className={`${homeFont.className} ${homeTitleFont.variable} ${css({ minH: 'screen', w: 'full', position: 'relative', overflowX: 'hidden' })}`}>
+    <div className={`${homeFont.className} ${homeTitleFont.variable} ${css({ minH: 'screen', w: 'full', color: 'var(--brand-cocoa-deep)', bg: 'var(--brand-cream)', position: 'relative', overflowX: 'hidden' })}`}>
       <HeroSection />
       <ExplanationSection />
       <ToolsSection />

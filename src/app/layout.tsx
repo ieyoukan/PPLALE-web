@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { site } from "@/lib/site";
 import "./reset.css";
 import "./globals.css";
+import "./brand.css";
 import DarkModeProvider from './DarkModeProvider';
 import { SettingsProvider } from './SettingsProvider';
 import { AuthProvider } from '@/lib/auth';
@@ -75,7 +76,7 @@ export default function RootLayout({
   return (
     <html lang="ja" suppressHydrationWarning>
       <head>
-        <meta name="theme-color" content="#d889cbff" />
+        <meta name="theme-color" content="#e8c8c8" />
         <meta name="viewport" content="width=device-width, initial-scale=1.0" />
         
         {/* Favicon設定 */}

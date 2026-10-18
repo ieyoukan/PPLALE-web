@@ -65,12 +65,12 @@ export default function CardPickupSection() {
         aria-hidden="true"
         className={css({ position: 'absolute', inset: '0' })}
         style={{
-          backgroundImage: 'url("/images/check-pattern.png")',
+          backgroundColor: 'var(--brand-cream)',
+          backgroundImage: 'var(--brand-gingham)',
           backgroundRepeat: 'repeat',
-          backgroundSize: '100px 100px',
+          backgroundSize: '48px 48px',
         }}
       >
-        <div className={css({ position: 'absolute', inset: '0', bg: 'black/10' })} />
       </div>
 
       <motion.div
@@ -127,7 +127,7 @@ export default function CardPickupSection() {
               mx: 'auto',
               cursor: 'pointer',
               outline: 'none',
-              _focusVisible: { ring: '4px', ringColor: 'pink.300' },
+              _focusVisible: { ring: '4px', ringColor: 'var(--brand-sage)' },
             })}
             initial={false}
             whileInView={{ opacity: 1, scale: 1, y: 0 }}
@@ -145,7 +145,7 @@ export default function CardPickupSection() {
               right: '-4',
               bottom: '-2',
               w: '4',
-              bg: '#4a2022',
+              bg: 'var(--brand-cocoa-deep)',
             })}
             style={{ clipPath: 'polygon(0 0, 100% 12px, 100% 100%, 0 calc(100% - 12px))' }}
           />
@@ -156,7 +156,7 @@ export default function CardPickupSection() {
               right: '-4',
               bottom: '-4',
               h: '4',
-              bg: '#351719',
+              bg: 'var(--brand-cocoa)',
             })}
             style={{ clipPath: 'polygon(0 0, calc(100% - 16px) 0, 100% 100%, 16px 100%)' }}
           />

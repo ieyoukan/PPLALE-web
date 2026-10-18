@@ -6,7 +6,7 @@ const destinations = [
   { href: '/build', title: 'デッキをつくる', description: '推しのカードで、とっておき。', image: 'home-mint.webp', color: 'mint' },
   { href: '/deck/2pick', title: '2Pickであそぶ', description: '選ぶたび、わくわく。', image: 'home-yellow.webp', color: 'yellow' },
   { href: '/tournament', title: '大会をチェック', description: 'みんなで、お菓子争奪戦！', image: 'home-pink.webp', color: 'pink' },
-  { href: '/deck-view', title: 'デッキを画像に', description: 'お気に入りをシェアしよう。', image: 'home-purple.webp', color: 'purple' },
+  { href: '/deck-view', title: 'デッキを画像に', description: 'お気に入りをシェアしよう。', image: 'home-purple.webp', color: 'peach' },
 ];
 
 export default function ToolsSection() {

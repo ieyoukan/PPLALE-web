@@ -1,0 +1,19 @@
+/* 配色の原典: public/pupu_game.webp。変更前に docs/design-system.md を参照。 */
+:root {
+  --brand-cream: #fff8f0;
+  --brand-paper: #fffdf9;
+  --brand-blush: #f8e8e8;
+  --brand-pink: #e8c8c8;
+  --brand-pink-edge: #c8a8a8;
+  --brand-sage: #c8d888;
+  --brand-sage-wash: #f0f3df;
+  --brand-vanilla: #f5df97;
+  --brand-vanilla-wash: #fcf3d9;
+  --brand-peach: #efb39d;
+  --brand-peach-wash: #fbece3;
+  --brand-cocoa: #785858;
+  --brand-cocoa-deep: #634747;
+  --brand-cocoa-soft: #7b5e58;
+  --brand-shadow: #78585818;
+  --brand-gingham: linear-gradient(90deg, #e8c8c830 50%, transparent 50%), linear-gradient(#e8c8c830 50%, transparent 50%);
+}

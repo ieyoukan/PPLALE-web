@@ -16,50 +16,50 @@ export default function Footer() {
         display: 'flex',
         flexDirection: 'column',
         gap: '1',
-        bg: 'black/80',
+        bg: 'var(--brand-cocoa-deep)',
         textAlign: 'center',
       })}
     >
-      <div className={css({ fontSize: 'xs', color: 'gray.400' })}>© 2025 ぷぷりえーる</div>
+      <div className={css({ fontSize: 'xs', color: 'var(--brand-cream)' })}>© 2025 ぷぷりえーる</div>
       <div className={css({ display: 'flex', gap: '3', fontSize: 'xs' })}>
         <Link
           href="/privacy-policy"
           className={css({
-            color: 'gray.400',
-            _hover: { color: 'gray.300' },
+            color: 'var(--brand-cream)',
+            _hover: { color: 'var(--brand-vanilla)' },
             transitionProperty: 'color, background-color, border-color, text-decoration-color, fill, stroke',
           })}
         >
           プライバシーポリシー
         </Link>
-        <span className={css({ color: 'gray.600' })}>•</span>
+        <span className={css({ color: 'var(--brand-pink)' })}>•</span>
         <Link
           href="/terms"
           className={css({
-            color: 'gray.400',
-            _hover: { color: 'gray.300' },
+            color: 'var(--brand-cream)',
+            _hover: { color: 'var(--brand-vanilla)' },
             transitionProperty: 'color, background-color, border-color, text-decoration-color, fill, stroke',
           })}
         >
           利用規約
         </Link>
-        <span className={css({ color: 'gray.600' })}>•</span>
+        <span className={css({ color: 'var(--brand-pink)' })}>•</span>
         <Link
           href="/credits"
           className={css({
-            color: 'gray.400',
-            _hover: { color: 'gray.300' },
+            color: 'var(--brand-cream)',
+            _hover: { color: 'var(--brand-vanilla)' },
             transitionProperty: 'color, background-color, border-color, text-decoration-color, fill, stroke',
           })}
         >
           クレジット
         </Link>
-        <span className={css({ color: 'gray.600' })}>•</span>
+        <span className={css({ color: 'var(--brand-pink)' })}>•</span>
         <Link
           href="/contact"
           className={css({
-            color: 'gray.400',
-            _hover: { color: 'gray.300' },
+            color: 'var(--brand-cream)',
+            _hover: { color: 'var(--brand-vanilla)' },
             transitionProperty: 'color, background-color, border-color, text-decoration-color, fill, stroke',
           })}
         >

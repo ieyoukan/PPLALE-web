@@ -22,20 +22,7 @@ const explanationCards = [
 
 export default function ExplanationSection() {
   return (
-    <section aria-labelledby="game-introduction-heading" className={css({ position: 'relative', minH: 'screen', w: 'full' })}>
-      {/* 解説セクションの背景 - チェック柄をリピート */}
-      <div
-        className={css({ position: 'absolute', inset: '0' })}
-        style={{
-          backgroundImage: 'url("/images/check-pattern.png")',
-          backgroundRepeat: 'repeat',
-          backgroundSize: '100px 100px'
-        }}
-      >
-        {/* 背景オーバーレイ */}
-        <div className={css({ position: 'absolute', inset: '0', bg: 'white/25' })}></div>
-      </div>
-
+    <section aria-labelledby="game-introduction-heading" className={`${styles.section} ${css({ position: 'relative', minH: 'screen', w: 'full' })}`}>
       <div
         className={css({ position: 'relative', zIndex: '10', w: 'full', display: 'flex', alignItems: 'center', justifyContent: 'center', py: '20', px: '4' })}
       >
@@ -51,13 +38,13 @@ export default function ExplanationSection() {
               <div
                 key={card.title}
                 className={`${css({
-                  bg: '#fff4ce',
-                  color: '#624451',
+                  bg: 'var(--brand-paper)',
+                  color: 'var(--brand-cocoa-deep)',
                   backdropBlur: 'md',
                   rounded: '2xl',
                   p: '6',
                   borderWidth: '1px',
-                  borderColor: 'white/20',
+                  borderColor: 'var(--brand-pink)',
                   transitionProperty: 'color, background-color',
                   transitionDuration: '300ms',
                 })}`}
@@ -75,9 +62,9 @@ export default function ExplanationSection() {
                       <Link href="/about" className={css({
                         display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
                         gap: '3', minH: '12', mt: '6', px: '6', py: '3',
-                        bg: 'pink.100', color: 'pink.800', rounded: 'xl', fontSize: 'lg', fontWeight: 'bold',
-                        _hover: { bg: 'pink.200' },
-                        _focusVisible: { outline: '3px solid', outlineColor: 'pink.500', outlineOffset: '3px' },
+                        bg: 'var(--brand-pink)', color: 'var(--brand-cocoa-deep)', rounded: 'xl', fontSize: 'lg', fontWeight: 'bold',
+                        _hover: { bg: 'var(--brand-blush)' },
+                        _focusVisible: { outline: '3px solid', outlineColor: 'var(--brand-cocoa)', outlineOffset: '3px' },
                       })}>
                         ルール・あそびかた <span aria-hidden="true">→</span>
                       </Link>
