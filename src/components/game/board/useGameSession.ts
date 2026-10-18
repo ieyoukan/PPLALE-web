@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useReducer, useState } from 'react';
 import { applyCommand, buildPosition, checkPosition, cpuLevels, editGame, newGame, parsePosition, positionOf, sandboxRules } from '@pplale/game-core';
-import type { BoardEdit, Command, CpuLevel, GameState, Position, Side } from '@pplale/game-core';
+import type { BoardEdit, Command, CpuLevel, Deck, GameState, MatchRules, Position, Side } from '@pplale/game-core';
 import { demoDeck, gameCatalog } from '@/lib/game/catalog';
 import { createMatch, randomSeed, usableSetup } from '@/lib/game/match';
 import { readSession, saveSession, sideLabel } from '@/lib/game/sessionStore';
@@ -35,6 +35,8 @@ export interface Incoming {
 /** What a match played in a room adds: the server applies the commands and sends back what this seat may see. */
 export interface RemoteSession {
   freeMatch?: boolean;
+  ownDeck?: Deck;
+  matchRules?: MatchRules;
   /** The seat this browser plays; for a spectator the side shown near. */
   seat: Side;
   /** Looking on without a seat: nothing can be done, and both hands are shown. */
@@ -42,6 +44,10 @@ export interface RemoteSession {
   names: [string, string];
   /** A command is on its way, or a change has not been shown yet: nothing new may be sent. */
   waiting: boolean;
+  /** This seat is submitting a command, or its connection is unavailable. */
+  sending?: boolean;
+  /** Increments when a submission fails, to cancel its provisional presentation. */
+  failed?: number;
   next: Incoming | null;
   /** Puts `next` on the table. */
   accept: () => void;

@@ -2,6 +2,7 @@
 
 import type { Side, Zone } from '@pplale/game-core';
 import type { CSSProperties } from 'react';
+import { HAND_CARD_SIZES } from '@/lib/game/cardImages';
 import { GameCard } from './GameCard';
 import styles from './BoardEmulator.module.css';
 
@@ -53,9 +54,12 @@ export function Counter({ label, value, points, bonus = 0, temporaryBonus = 0, p
   </div>;
 }
 
-export function PpPanel({ side, name, current, maximum, own }: { side: number; name: string; current: number; maximum: number; own: boolean }) {
+export function PpPanel({ side, name, order, current, maximum, own }: { side: number; name: string; order?: 'first' | 'second'; current: number; maximum: number; own: boolean }) {
   return <div data-pp={side} className={`${styles.ppPanel} ${own ? styles.ownPp : styles.opponentPp}`} role="group" aria-label={`${own ? '自分' : '相手'}のPP ${current} / ${maximum}`}>
-    <div className={styles.ppPlayerName} title={name}>{name}</div>
+    <div className={styles.ppPlayerName} title={name}>
+      <div className={styles.ppNameText}>{name}</div>
+      {order && <small className={styles.ppOrder} data-order={order}>{order === 'first' ? '先攻' : '後攻'}</small>}
+    </div>
     <div className={styles.ppAmount} aria-hidden="true"><span>PP</span><b>{current}</b><em>/{maximum}</em></div>
     {own && maximum > 0 && <div className={styles.ppGems} style={{ '--pp-count': maximum } as CSSProperties} aria-hidden="true">
       {Array.from({ length: maximum }, (_, index) => <i key={index} className={index < current ? styles.availablePp : styles.spentPp} />)}
@@ -95,7 +99,7 @@ export function FlyingCard({ flight }: { flight: DrawFlight }) {
   return <div className={styles.flyingCard} data-draw-flight style={css} aria-hidden="true">
     <div className={styles.flightSpin}><div className={looks[look]}>
       <span className={styles.flightBack} />
-      {look !== 'down' && <span className={styles.flightFront}><GameCard id={cardId} /></span>}
+      {look !== 'down' && <span className={styles.flightFront}><GameCard id={cardId} sizes={HAND_CARD_SIZES} /></span>}
     </div></div>
   </div>;
 }

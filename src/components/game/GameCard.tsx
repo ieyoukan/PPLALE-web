@@ -3,11 +3,12 @@ import Image from 'next/image';
 import { attackOf, hpOf } from '@pplale/game-core';
 import type { Instance } from '@pplale/game-core';
 import { displayCards, gameCatalog } from '@/lib/game/catalog';
+import { BOARD_CARD_SIZES } from '@/lib/game/cardImages';
 import { keywordNames } from './labels';
 import styles from './BoardEmulator.module.css';
 const signed = (value: number) => `${value >= 0 ? '+' : '−'}${Math.abs(value)}`;
 /** Card face with live markers. Memoized: unchanged cards skip re-rendering during drags and selection. */
-export const GameCard = memo(function GameCard({ id, instance, stats = false, abilities = false, currentCost, sizes = '(max-width: 900px) 90px, 110px' }: {
+export const GameCard = memo(function GameCard({ id, instance, stats = false, abilities = false, currentCost, sizes = BOARD_CARD_SIZES }: {
     id: string;
     instance?: Instance;
     stats?: boolean;

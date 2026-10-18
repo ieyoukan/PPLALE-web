@@ -18,7 +18,9 @@ const MenuPanel = dynamic(() => import('./MenuPanel').then(module => module.Menu
 const SkillPanel = dynamic(() => import('./SkillPanel').then(module => module.SkillPanel));
 const ZonePanel = dynamic(() => import('./ZonePanel').then(module => module.ZonePanel));
 
-const drawers = ['menu', 'logs', 'zone', 'analysis', 'editUnit', 'editHand', 'editPile', 'editPlayer', 'editMenu', 'play'] as const;
+const MatchInfoPanel = dynamic(() => import('./MatchInfoPanel').then(module => module.MatchInfoPanel));
+
+const drawers = ['deck', 'counts', 'menu', 'logs', 'zone', 'analysis', 'editUnit', 'editHand', 'editPile', 'editPlayer', 'editMenu', 'play'] as const;
 type DrawerPanel = Extract<NonNullable<Panel>, { type: (typeof drawers)[number] }>;
 const isDrawer = (panel: Panel): panel is DrawerPanel => !!panel && (drawers as readonly string[]).includes(panel.type);
 
@@ -37,6 +39,7 @@ export function SidePanel() {
     <aside className={`${styles.drawer} ${styles.slideDrawer} ${drawer ? styles.drawerOpen : ''}`} inert={!drawer} aria-label="メニュー">
       {last?.type === 'menu' && <MenuPanel />}
       {last?.type === 'logs' && <LogPanel />}
+      {(last?.type === 'deck' || last?.type === 'counts') && <MatchInfoPanel kind={last.type} />}
       {/* Only searches while open: the search is heavy. */}
       {drawer?.type === 'analysis' && <AnalysisPanel />}
       {/* 盤面エディタ: shown from the live board, so a card removed in the panel closes it. */}

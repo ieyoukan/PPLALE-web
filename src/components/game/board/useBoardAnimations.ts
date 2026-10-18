@@ -14,6 +14,7 @@ import { TURN_NOTICE_DURATION } from '../TurnAnnouncement';
 import type { TurnNotice } from '../TurnAnnouncement';
 import { sideLabel } from './useGameSession';
 import type { Mode } from './useGameSession';
+import { useAnimationTiming } from './useAnimationTiming';
 
 export type Strike = { uid: string; cardId: string; x: number; y: number; dx: number; dy: number; width: number; height: number };
 /** A card, skill or hand reaction, shown large before it resolves. */
@@ -30,8 +31,6 @@ export type { Hit, Pop } from './presenters';
 /** The card the opponent picked for an effect. */
 export type Ping = { uid: string; x: number; y: number; width: number; height: number };
 
-const DRAW_DURATION = 800;
-const STRIKE_HIT = 360;
 /**
  * 偽ラグ: a hand reaction the other player may answer with (リンネ・うぃまる・あみの to an attack, ぶらんちゃん
  * to a play, オレンジのリンネ to the turn's draw) makes the player wait while they decide (the table stays
@@ -40,18 +39,9 @@ const STRIKE_HIT = 360;
  */
 const FAKE_LAG_CHANCE = 0.3;
 export const fakeLag = () => 900 + Math.random() * 1700;
-const STRIKE_DURATION = 720;
-// The opponent's card stays readable for a moment before its effect resolves.
-const ANNOUNCE_HIT = 1900;
-const ANNOUNCE_DURATION = 2400;
-const PING_HIT = 700;
-const PING_DURATION = 1200;
 const HIT_DURATION = 1100;
 const POP_DURATION = 1300;
-const FLIGHT_REST = 200;
 const ROLL_RESULT = 1300;
-const CHOICE_HIT = 1000;
-const CHOICE_DURATION = 1500;
 export const ORDER_NOTICE_DURATION = 3200;
 // The last blow lands, then ゲームセット and the verdict are shown before the result screen.
 const FINALE_WAIT = 700;
@@ -93,6 +83,10 @@ export function useBoardAnimations({ game, shown, view, mode, cpuSides, replayin
   /** Watching a room's match without a seat: both players' names, used where a player would read あなた / 相手. */
   spectating?: [string, string];
 }) {
+  const timing = useAnimationTiming(mode);
+  const { draw: DRAW_DURATION, rest: FLIGHT_REST, strikeHit: STRIKE_HIT, strike: STRIKE_DURATION,
+    announceHit: ANNOUNCE_HIT, announce: ANNOUNCE_DURATION, pingHit: PING_HIT, ping: PING_DURATION,
+    choiceHit: CHOICE_HIT, choice: CHOICE_DURATION } = timing;
   const [flights, setFlights] = useState<DrawFlight[]>([]);
   const [strike, setStrike] = useState<Strike | null>(null);
   const [turnNotice, setTurnNotice] = useState<TurnNotice | null>(null);
@@ -181,7 +175,7 @@ export function useBoardAnimations({ game, shown, view, mode, cpuSides, replayin
       if (next.length) later(announce, Math.max(...next.map(f => f.delay)) + DRAW_DURATION);
       else announce();
     }
-  }, [shown, view, mode, replaying, container, later, spectating]);
+  }, [shown, view, mode, replaying, container, later, spectating, DRAW_DURATION, FLIGHT_REST]);
 
   /**
    * Runs `commit` (applying the command) with its animation: attacks lunge first; cards, skills and
@@ -190,12 +184,14 @@ export function useBoardAnimations({ game, shown, view, mode, cpuSides, replayin
    */
   const run = useCallback((command: Command, commit: () => void, cardId?: string) => {
     const root = container.current;
+    // Capture before submitting: a room's request now travels during this presentation.
+    const captured = captureRects(root);
     // The answer to a hand reaction finishes the command that asked for it (an attack stays an attack).
     const answer = command.type === 'choose' && handReactionOps.includes(game.pending?.task.op ?? '');
     const apply = () => {
       enabled.current = true;
       if (!answer) lastCommand.current = command.type;
-      rectsBefore.current = captureRects(root);
+      rectsBefore.current = captured;
       commit();
     };
     const lags = !replaying && !spectating && mode !== 'hotseat' && mode !== 'watch' && Math.random() < FAKE_LAG_CHANCE && answerable(game, command, view, cpuSides);
@@ -247,7 +243,7 @@ export function useBoardAnimations({ game, shown, view, mode, cpuSides, replayin
     }
     if (lags) lag(0);
     else apply();
-  }, [game, view, cpuSides, container, later, spectating, mode, replaying]);
+  }, [game, view, cpuSides, container, later, spectating, mode, replaying, STRIKE_HIT, STRIKE_DURATION, ANNOUNCE_HIT, ANNOUNCE_DURATION, PING_HIT, PING_DURATION, CHOICE_HIT, CHOICE_DURATION]);
 
   /** Loads, restores and undo jump without animating the difference. */
   const skipNext = useCallback(() => { enabled.current = false; }, []);
@@ -271,7 +267,7 @@ export function useBoardAnimations({ game, shown, view, mode, cpuSides, replayin
   /** A tap moves on: ゲームセット → verdict → result screen. */
   const advanceFinale = useCallback(() => setFinale(current => current === 'set' ? 'verdict' : current === 'verdict' ? null : current), []);
 
-  return { flights, strike, turnNotice, announcement, ping, order, finale, hits, pops, effectRoll, choiceNote, advanceFinale, busy: flights.some(blocksPlay) || !!strike || !!turnNotice || !!announcement || !!ping || !!order || !!effectRoll || !!choiceNote || lagging, run, skipNext, reset };
+  return { timing, flights, strike, turnNotice, announcement, ping, order, finale, hits, pops, effectRoll, choiceNote, advanceFinale, busy: flights.some(blocksPlay) || !!strike || !!turnNotice || !!announcement || !!ping || !!order || !!effectRoll || !!choiceNote || lagging, run, skipNext, reset };
 }
 
 /**

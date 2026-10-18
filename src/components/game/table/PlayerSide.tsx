@@ -1,10 +1,11 @@
 'use client';
 
-import { availablePpMaximum, playableMp } from '@pplale/game-core';
+import { availablePpMaximum, costOf, playableMp } from '@pplale/game-core';
 import type { CSSProperties } from 'react';
 import type { DeckKind, Side } from '@pplale/game-core';
 import { displayCards, gameCatalog } from '@/lib/game/catalog';
 import { useBoardContext } from '../board/BoardContext';
+import { cardCounts } from '../board/matchInfo';
 import { Counter, DeckStack } from '../BoardPieces';
 import type { ZoneKind } from '../BoardPieces';
 import { GameCard } from '../GameCard';
@@ -15,7 +16,7 @@ const FIELD_SLOTS = 7;
 /** One player's half of the table: decks, piles, playable, counters, field and (far side) hand backs. */
 export function PlayerSide({ side }: { side: Side }) {
   const board = useBoardContext();
-  const { game, view, mode, busy, attacker, attackLeader, remote, editing } = board;
+  const { game, view, mode, busy, attacker, attackLeader, remote, editing, setup } = board;
   const player = game.players[side], near = side === view;
   // In a room either seat may be this screen's; elsewhere side 0 is the player.
   const who = (mode === 'room' ? near : side === 0) ? 'あなた' : '相手';
@@ -26,7 +27,11 @@ export function PlayerSide({ side }: { side: Side }) {
   const concealed = player.hand.filter(uid => !game.cards[uid].revealed);
   const revealed = player.hand.filter(uid => game.cards[uid].revealed);
   const mixed = concealed.length > 0 && revealed.length > 0;
+  const readableHand = open || revealed.length > 0;
   const mp = playableMp[player.playable];
+  const counts = cardCounts(player, gameCatalog);
+  const fruits = (remote?.matchRules ?? setup?.matchRules)?.fruits;
+  const showMochida = !fruits || fruits.includes('melon') || counts.mochida > 0;
   return <section className={`${styles.playerSide} ${near ? styles.near : styles.far}`} aria-label={`${who}の盤面`}>
     <Zone side={side} kind="yojo" className={styles.deckYojo} />
     <Zone side={side} kind="sweet" className={styles.deckSweet} />
@@ -53,10 +58,12 @@ export function PlayerSide({ side }: { side: Side }) {
       {player.shield && <span className={styles.shieldIndicator}>パンケーキ保護</span>}
     </div>
     <div className={styles.field}>
-      <span className={styles.fieldLabel}>Field</span>
+      <button className={styles.fieldCounts} onClick={() => board.setPanel({ type: 'counts' })} aria-label={`${who}のカウント：うゆち ${counts.uyuchi}、お菓子 ${counts.sweets}、場を離れたもちだ ${counts.mochida}`}>
+        <span>うゆち <b>{counts.uyuchi}</b></span><span>お菓子 <b>{counts.sweets}</b></span>{showMochida && <span>もちだ <b>{counts.mochida}</b></span>}
+      </button>
       {Array.from({ length: FIELD_SLOTS }, (_, slot) => <FieldSlot key={slot} side={side} slot={slot} />)}
     </div>
-    {!near && <div className={`${styles.opponentHand} ${open ? styles.openHand : ''} ${mixed ? styles.opponentHandWithRevealed : ''}`} role="group" aria-label={`相手の手札 ${player.hand.length}枚`}>
+    {!near && <div className={`${styles.opponentHand} ${open ? styles.openHand : ''} ${readableHand ? styles.readableOpponentHand : ''} ${mixed ? styles.opponentHandWithRevealed : ''}`} role="group" aria-label={`相手の手札 ${player.hand.length}枚`}>
       {[...concealed, ...revealed].map((uid, i) => {
         const card = game.cards[uid], visible = card.revealed || open;
         return <button key={uid} type="button" data-hand={uid} data-revealed={card.revealed || undefined}
@@ -64,8 +71,8 @@ export function PlayerSide({ side }: { side: Side }) {
           disabled={!visible} aria-label={visible ? `相手の${card.revealed ? '公開' : ''}手札 ${displayCards[card.cardId].name}` : '相手の非公開手札'}
           onClick={() => board.setPanel(editing ? { type: 'editHand', uid } : { type: 'inspect', uid })}
           style={{ '--hand-index': i - (player.hand.length - 1) / 2, '--fan-step': `${Math.min(56, 360 / Math.max(1, player.hand.length))}px`, '--reveal-shift': mixed ? card.revealed ? 'calc((104px - var(--fan-step) + 32px) / 2)' : 'calc((var(--fan-step) - 104px - 32px) / 2)' : '0px' } as CSSProperties}>
-          {/* The opponent holds their cards facing them, so they are upside down from here. */}
-          <span className={styles.hiddenFace}>{visible && <GameCard id={card.cardId} />}</span>
+          {/* Face-up hands have their own upright row, with the same live cost markers as our hand. */}
+          <span className={styles.hiddenFace}>{visible && <GameCard id={card.cardId} instance={card} currentCost={costOf(game, uid, gameCatalog, side)} />}</span>
           {card.revealed && <span className={styles.revealed}>公開</span>}
         </button>;
       })}

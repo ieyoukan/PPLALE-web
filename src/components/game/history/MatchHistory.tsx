@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useRef, useState } from 'react';
 import Link from 'next/link';
+import Image from 'next/image';
 import { useRouter } from 'next/navigation';
 import type { HistoryEntry, HistoryPage, MatchDetails } from '@pplale/game-core/history';
 import type { Deck } from '@pplale/game-core';
@@ -15,6 +16,14 @@ import styles from './History.module.css';
 export const matchReasons = { normal: '通常決着', resign: '投了', disconnect: '切断', leave: '退出', abandoned: '中断' };
 export const matchDate = (at: number) => new Intl.DateTimeFormat('ja-JP', { year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit' }).format(at);
 const countCards = (ids: string[]) => Array.from(ids.reduce((map, id) => map.set(id, (map.get(id) ?? 0) + 1), new Map<string, number>()));
+
+function MemoryIcon() {
+  return <svg viewBox="0 0 32 32" fill="none" aria-hidden="true"><rect x="6" y="4" width="22" height="25" rx="5" fill="currentColor" fillOpacity=".12" stroke="currentColor" strokeWidth="2" /><path d="M10 4v25M3 10h6M3 17h6M3 24h6" stroke="currentColor" strokeWidth="2" strokeLinecap="round" /><path d="m19 10 1.7 3.4 3.8.6-2.8 2.6.7 3.8-3.4-1.8-3.4 1.8.7-3.8-2.8-2.6 3.8-.6L19 10Z" fill="currentColor" /></svg>;
+}
+
+function StarIcon() {
+  return <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinejoin="round" aria-hidden="true"><path d="m12 3 2.78 5.63L21 9.54l-4.5 4.39 1.06 6.2L12 17.2l-5.56 2.93 1.06-6.2L3 9.54l6.22-.91L12 3Z" /></svg>;
+}
 
 export function MatchHistory() {
   const { user, loading } = useAuth();
@@ -71,26 +80,34 @@ function IdentityHistory() {
   }
 
   return <section className={styles.history} aria-label="対戦履歴">
-    <header className={styles.heading}><h2>対戦履歴</h2><Link href={BATTLE_PATH} aria-label="対戦履歴を閉じる">×</Link></header>
+    <header className={`${styles.heading} ${styles.memoryHeading}`}>
+      <div className={styles.headingTitle}><span className={styles.memoryIcon}><MemoryIcon /></span><div><small>BATTLE MEMORIES</small><h2>対戦履歴</h2></div></div>
+      <Image className={styles.headingArt} src="/images/game/characters/friends.webp" alt="" width={144} height={121} />
+      <Link href={BATTLE_PATH} aria-label="対戦履歴を閉じる">×</Link>
+    </header>
     <div className={styles.tabs} role="tablist" aria-label="履歴の種類">
-      <button id="history-all" role="tab" aria-selected={!favorites} aria-controls="history-list" onClick={() => setFavorites(false)}>一覧</button>
-      <button id="history-favorites" role="tab" aria-selected={favorites} aria-controls="history-list" onClick={() => setFavorites(true)}>★ お気に入り</button>
+      <button id="history-all" role="tab" aria-selected={!favorites} aria-controls="history-list" onClick={() => setFavorites(false)}><span aria-hidden="true">◷</span> 一覧</button>
+      <button id="history-favorites" role="tab" aria-label="★ お気に入り" aria-selected={favorites} aria-controls="history-list" onClick={() => setFavorites(true)}><StarIcon /> お気に入り</button>
     </div>
     {error && <div className={styles.error} role="alert">{error}<button onClick={() => void refresh()}>再読み込み</button></div>}
     <div id="history-list" role="tabpanel" aria-labelledby={favorites ? 'history-favorites' : 'history-all'} className={styles.list} aria-busy={loading}>
-      {!page.entries.length ? <div className={styles.empty} role="status"><span aria-hidden="true">{loading ? '◌' : favorites ? '☆' : '◷'}</span>
-        <p>{loading ? '履歴を読み込んでいます…' : error ? '接続を確認して、もう一度お試しください。' : favorites ? 'お気に入りにした対戦がここに並びます。' : '対戦が終わると、ここに履歴が残ります。'}</p></div>
+      {!page.entries.length ? <div className={styles.empty} role="status" data-loading={loading || undefined} data-error={!loading && !!error || undefined}><span className={styles.emptyIcon} aria-hidden="true">{loading ? <MemoryIcon /> : favorites ? <StarIcon /> : <MemoryIcon />}</span>
+        <p>{loading ? '履歴を読み込んでいます…' : error ? '接続を確認して、もう一度お試しください。' : favorites ? 'お気に入りの対戦を、ここに。' : 'はじめての思い出は、次の対戦から。'}</p>
+        {!loading && !error && !favorites && <Link className={styles.emptyLink} href={BATTLE_PATH}>対戦にいく <span aria-hidden="true">→</span></Link>}</div>
         : page.entries.map(entry => {
           const foe = entry.players[1 - entry.seat];
           const result = entry.winner === null ? '中断' : entry.winner === entry.seat ? 'WIN' : 'LOSE';
-          return <article key={entry.id} className={styles.entry}>
-            <button className={styles.star} aria-label={`${foe.name}との対戦を${entry.favorite ? 'お気に入りから外す' : 'お気に入りにする'}`} aria-pressed={entry.favorite} disabled={busy !== null} onClick={() => void favorite(entry)}>{entry.favorite ? '★' : '☆'}</button>
+          return <article key={entry.id} className={styles.entry} data-result={result}>
+            <button className={styles.star} aria-label={`${foe.name}との対戦を${entry.favorite ? 'お気に入りから外す' : 'お気に入りにする'}`} aria-pressed={entry.favorite} disabled={busy !== null} onClick={() => void favorite(entry)}>
+              <StarIcon />
+            </button>
             <div className={styles.avatar} aria-hidden="true"><RecordedCard id={foe.deck.playable} sizes="64px" /></div>
             <button className={styles.matchInfo} onClick={() => void openDetail(entry)} disabled={busy !== null} aria-label={`${foe.name}との対戦の詳細`}>
-              <strong>{foe.name}</strong><span>{entry.mode === 'free' ? 'フリーマッチ' : 'ルームマッチ'}<i>·</i>{foe.playableName ?? foe.deck.name}と対戦</span>
+              <span className={styles.matchMode} data-mode={entry.mode}>{entry.mode === 'free' ? 'フリーマッチ' : 'ルームマッチ'}</span>
+              <strong>{foe.name}</strong><span>{foe.playableName ?? foe.deck.name}</span>
               <time dateTime={new Date(entry.endedAt).toISOString()}>{matchDate(entry.endedAt)}</time>
             </button>
-            <b className={styles.verdict} data-result={result}>{result}</b>
+            <b className={styles.verdict} data-result={result}><span aria-hidden="true">{result === 'WIN' ? '♛' : result === 'LOSE' ? '✧' : '―'}</span>{result}</b>
             <div className={styles.entryActions}>
               <button onClick={() => router.push(`/game/replay/?id=${entry.id}`)} disabled={!entry.complete}>リプレイ <span aria-hidden="true">▶</span></button>
               <button onClick={() => void openDetail(entry)} disabled={busy !== null}>詳細・デッキ</button>
@@ -101,7 +118,7 @@ function IdentityHistory() {
     {page.cursor && <button className={styles.more} disabled={loading} onClick={() => void refresh(page.cursor!)}>{loading ? '読み込み中…' : 'もっと見る'}</button>}
     <footer className={styles.footer}>
       {!authLoading && !user && <button onClick={() => void signInWithGoogle().catch(() => setError('ログインできませんでした'))}>ログインして、この端末の履歴を引き継ぐ</button>}
-      <Link href={BATTLE_PATH}>閉じる</Link>
+      <Link href={BATTLE_PATH}><span aria-hidden="true">‹</span> バトルへ戻る</Link>
     </footer>
     {detail && <MatchDetail recording={detail} onClose={() => setDetail(null)} />}
   </section>;
@@ -112,7 +129,11 @@ export function MatchDetail({ recording, onClose }: { recording: MatchDetails; o
   const { match, catalog } = recording;
   return <HistoryDialog label="対戦の詳細" onClose={onClose}>
     <header className={styles.heading}><h2>対戦の詳細</h2><button onClick={onClose} aria-label="詳細を閉じる">×</button></header>
-    <p className={styles.opponents}>{match.players.map((player, index) => <span key={index}>{index > 0 && '　vs　'}{player.profileId ? <Link href={`/game/profile/?id=${encodeURIComponent(player.profileId)}`}>{player.name}</Link> : player.name}</span>)}</p>
+    <div className={styles.opponents}>{match.players.map((player, index) => <div key={index} className={styles.detailPlayer} data-winner={match.winner === index || undefined}>
+      <span className={styles.avatar} aria-hidden="true"><RecordedCard id={player.deck.playable} catalog={catalog} sizes="72px" /></span>
+      <span>{player.profileId ? <Link href={`/game/profile/?id=${encodeURIComponent(player.profileId)}`}>{player.name}</Link> : player.name}</span>
+      {match.winner === index && <b className={styles.winnerLabel}>WIN</b>}
+    </div>)}<span className={styles.versus} aria-hidden="true">vs</span></div>
     <dl className={styles.facts}><div><dt>日時</dt><dd>{matchDate(match.endedAt)}</dd></div><div><dt>決着</dt><dd>{matchReasons[match.reason]}</dd></div>
       <div><dt>ターン</dt><dd>{match.turns}</dd></div><div><dt>対戦時間</dt><dd>{Math.floor((match.endedAt - match.startedAt) / 60_000)}分{Math.floor((match.endedAt - match.startedAt) / 1000) % 60}秒</dd></div>
       <div><dt>お菓子ポイント</dt><dd>{match.points.join(' − ')}</dd></div></dl>

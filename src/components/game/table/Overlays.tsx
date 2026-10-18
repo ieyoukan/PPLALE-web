@@ -3,6 +3,7 @@
 import { costOf } from '@pplale/game-core';
 import type { CSSProperties } from 'react';
 import { gameCatalog } from '@/lib/game/catalog';
+import { HAND_CARD_SIZES } from '@/lib/game/cardImages';
 import { sideName, useBoardContext } from '../board/BoardContext';
 import { FlyingCard } from '../BoardPieces';
 import { GameCard } from '../GameCard';
@@ -20,7 +21,7 @@ export function HeldCard() {
   const held = drag.held;
   if (!held) return null;
   return <div data-held-card className={styles.heldCard} style={{ left: held.x, top: held.y }}>
-    <GameCard id={game.cards[held.uid].cardId} instance={game.cards[held.uid]} currentCost={me.hand.includes(held.uid) ? costOf(game, held.uid, gameCatalog, view) : undefined} />
+    <GameCard id={game.cards[held.uid].cardId} instance={game.cards[held.uid]} sizes={HAND_CARD_SIZES} currentCost={me.hand.includes(held.uid) ? costOf(game, held.uid, gameCatalog, view) : undefined} />
   </div>;
 }
 

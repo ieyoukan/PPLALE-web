@@ -3,6 +3,7 @@
 // Layout of the game screen. Rules live in @pplale/game-core, interaction state in board/useBoard,
 // each visible region in table/ and the drawers in panels/.
 import { useRef } from 'react';
+import type { CSSProperties } from 'react';
 import Image from 'next/image';
 import dynamic from 'next/dynamic';
 import { useRouter } from 'next/navigation';
@@ -43,14 +44,16 @@ export default function BoardEmulator() {
 export function BoardTable({ session }: { session: BoardSession }) {
   const container = useRef<HTMLDivElement>(null);
   const board = useBoard(container, session);
-  const { game, me, view, mode, paused, attacker, drag, mulligan, ready, panel, error, replaying, remote, editing, setPanel, setPaused, setAttacker, stopReplay } = board;
+  const { game, me, view, mode, paused, attacker, drag, mulligan, ready, panel, error, replaying, remote, editing, animations, setup, setPanel, setPaused, setAttacker, stopReplay } = board;
   // The saved match is still loading (or missing, and the preparation page is opening).
   if (!ready) return <div className={styles.emulator} aria-busy="true" />;
   // An open drawer is closed from the corner button. An enlarged card and the skills are not: they
   // have 閉じる beside them, where the buttons of a chosen hand card are.
   const drawerOpen = !!panel && panel.type !== 'inspect' && panel.type !== 'skills';
+  const { timing } = animations;
   return <BoardContext.Provider value={board}>
     <div className={styles.emulator} ref={container}
+      style={{ '--draw-duration': `${timing.draw}ms`, '--strike-duration': `${timing.strike}ms`, '--announcement-duration': `${timing.announce}ms`, '--ping-duration': `${timing.ping}ms` } as CSSProperties}
       onKeyDown={event => { if (event.key === 'Escape') board.clearSelection(); }}
       onPointerMove={drag.move} onPointerUp={drag.release} onPointerCancel={drag.cancel}>
       <header className={styles.toolbar}>
@@ -59,6 +62,9 @@ export function BoardTable({ session }: { session: BoardSession }) {
           onClick={() => setPanel(drawerOpen ? null : { type: editing ? 'editMenu' : 'menu' })} aria-label={drawerOpen ? 'メニューを閉じる' : 'メニュー'}>
           <span aria-hidden="true">{drawerOpen ? '×' : '☰'}</span>
         </button>
+        <button className={styles.infoButton} aria-label="対戦ログ" aria-expanded={panel?.type === 'logs'} onClick={() => setPanel(panel?.type === 'logs' ? null : { type: 'logs' })}>☷<small>ログ</small></button>
+        <button className={styles.infoButton} aria-label="カードのカウント" aria-expanded={panel?.type === 'counts'} onClick={() => setPanel(panel?.type === 'counts' ? null : { type: 'counts' })}>✦<small>カウント</small></button>
+        {(remote ? !!remote.ownDeck && !remote.watching : !!setup) && <button className={styles.infoButton} aria-label="自分のデッキ" aria-expanded={panel?.type === 'deck'} onClick={() => setPanel(panel?.type === 'deck' ? null : { type: 'deck' })}>▤<small>自分のデッキ</small></button>}
         <EditButton />
         {(mode === 'cpu' || mode === 'watch' || replaying) && paused && <button className={styles.menuButton} onClick={() => setPaused(false)} aria-label={replaying ? '再生する' : 'CPU再開'}>▶</button>}
       </header>

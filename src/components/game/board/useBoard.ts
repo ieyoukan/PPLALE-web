@@ -1,6 +1,6 @@
 'use client';
 
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import { attackTargets, canPlay, costOf, handReactionOps, other, pendingView } from '@pplale/game-core';
 import type { BoardEdit, Command, DeckKind, EditZone, GameState, Side } from '@pplale/game-core';
 import type { ZoneKind } from '../BoardPieces';
@@ -20,7 +20,7 @@ import type { BoardSession } from './useGameSession';
 import { useOpeningDice } from './useOpeningDice';
 
 export type Panel =
-  | { type: 'menu' } | { type: 'logs' } | { type: 'analysis' }
+  | { type: 'menu' } | { type: 'deck' } | { type: 'counts' } | { type: 'logs' } | { type: 'analysis' }
   | { type: 'inspect'; uid: string } | { type: 'skills'; side: Side } | { type: 'zone'; side: Side; kind: 'nap' | 'exile' }
   // 盤面エディタ (edit mode)
   | { type: 'editUnit'; uid: string } | { type: 'editHand'; uid: string } | { type: 'editPile'; side: Side; kind: ZoneKind }
@@ -75,21 +75,36 @@ export function useBoard(container: RefObject<HTMLDivElement | null>, session: B
   const game = deciding ? before : actual;
   const animations = useBoardAnimations({ game: actual, shown: game, view, mode, cpuSides, replaying, container, spectating: watching ? names : undefined });
   const { run: animate, skipNext: skipAnimation, flights, strike, turnNotice, announcement, ping, order, effectRoll, choiceNote, busy: animating } = animations;
+  // The request travels while the presentation runs. Only the presentation gates accepting its view.
+  const [presentingOwn, setPresentingOwn] = useState(false);
+  const [intent, setIntent] = useState<Command | null>(null);
+  const roomInputLocked = useRef(false);
 
   /** Sends a command (with its animation). Clears the local selection of the acting side. */
   const act = useCallback((command: Command) => {
+    if (remote && (remote.watching || remote.sending || roomInputLocked.current || remote.waiting && actual.phase === 'playing')) return;
+    if (remote) roomInputLocked.current = true;
     if (command.actor === view) {
       setSelected(null);
       setAttacker(null);
       setExchanges([]);
     }
-    animate(command, () => send(command));
-  }, [view, animate, send]);
+    if (remote) {
+      setIntent(command);
+      setPresentingOwn(true);
+      animate(command, () => setPresentingOwn(false));
+      send(command);
+    } else animate(command, () => send(command));
+  }, [view, animate, send, remote, actual.phase]);
 
   const dice = useOpeningDice({ game: actual, act, paused: loading, cpuSides, cpuRolls: ready && !loading && !paused && !animating, remote: !!remote });
   const { busy: rollingDice } = dice;
-  const moving = animating || rollingDice || !!remote?.waiting;
+  const moving = animating || rollingDice || !!remote?.waiting || presentingOwn;
   const busy = moving || deciding;
+  // Opening draws are independent: the other side's flights must not retain our submission lock.
+  useLayoutEffect(() => {
+    if (!presentingOwn && !remote?.waiting) roomInputLocked.current = false;
+  }, [presentingOwn, remote?.waiting]);
   const modelUsed = useCpuPlayer({
     enabled: ready && !replaying && cpuSides.length > 0 && !loading && !paused, sides: cpuSides, levels, game: actual, act, flights,
     busy: { any: moving, blocking: rollingDice || !!strike || !!turnNotice || !!announcement || !!ping || !!order || !!effectRoll || !!choiceNote },
@@ -99,7 +114,7 @@ export function useBoard(container: RefObject<HTMLDivElement | null>, session: B
   const [showAssessment, setShowAssessment] = useAssessmentSetting();
   const assessable = !editing && (mode === 'cpu' || mode === 'watch');
   const { initial, commands } = session;
-  const assessment = useAssessment({ enabled: assessable && showAssessment && ready, initial, commands, viewer: 0 });
+  const assessment = useAssessment({ enabled: assessable && showAssessment && ready, initial, current: actual, commands, viewer: 0 });
   const { record, markReported } = session;
   useEffect(() => {
     if (mode !== 'cpu' || levels[1] !== 'master' || typeof game.winner !== 'number') return;
@@ -137,6 +152,9 @@ export function useBoard(container: RefObject<HTMLDivElement | null>, session: B
       handling.current = key;
       resetAnimations();
       resetDice();
+      setPresentingOwn(false);
+      setIntent(null);
+      roomInputLocked.current = false;
       setSelected(null);
       setAttacker(null);
       setExchanges([]);
@@ -149,15 +167,28 @@ export function useBoard(container: RefObject<HTMLDivElement | null>, session: B
       return showDie(command.actor, after.dice?.rolls[command.actor] ?? 1, accept);
     }
     if (!command || !watching && command.actor === seat) {
+      if (presentingOwn) return;
       handling.current = key;
       return accept();
     }
-    if (animating || rollingDice) return;
+    const parallelDraw = command.type === 'openingDraw' && (actual.phase === 'opening' || actual.phase === 'mulligan');
+    if (rollingDice || animating && !parallelDraw) return;
     handling.current = key;
     // A hand reaction reveals its card in the resulting public zone, even if the previous hand was hidden.
     const shownCardId = cardId ?? (command.type === 'choose' ? after.cards[command.option]?.cardId : undefined);
     animate(command, accept, shownCardId);
-  }, [next, accept, seat, watching, animating, rollingDice, animate, resetAnimations, resetDice, showDie]);
+  }, [next, accept, seat, watching, animating, rollingDice, animate, resetAnimations, resetDice, showDie, presentingOwn, actual.phase]);
+
+  const failed = remote?.failed;
+  useEffect(() => {
+    if (!failed) return;
+    // Reset cancels queued presentation callbacks too; let an unaccepted server view run again.
+    handling.current = null;
+    resetAnimations();
+    setPresentingOwn(false);
+    setIntent(null);
+    roomInputLocked.current = false;
+  }, [failed, resetAnimations]);
 
   // Watching starts from CPU 2's seat, so CPU 1 is on top and CPU 2 at the bottom (on the table and the versus screen).
   useEffect(() => { if (mode === 'watch') setView(1); }, [mode]);
@@ -196,6 +227,7 @@ export function useBoard(container: RefObject<HTMLDivElement | null>, session: B
   };
 
   function deckReady(side: Side, kind: DeckKind) {
+    if (remote?.sending) return false;
     // Opening draws, and the redraws after giving cards back in the mulligan (once those have landed in the deck).
     const redraw = game.phase === 'mulligan' && !game.mulligan.confirmed[side] && !flights.some(f => f.toZone === 'yojo' || f.toZone === 'sweet');
     if (game.phase === 'opening' || redraw) return canControl(side) && !loading && !rollingDice && game.openingRemaining[side] > 0 && !flights.some(f => game.players[side].hand.includes(f.uid));
@@ -331,6 +363,7 @@ export function useBoard(container: RefObject<HTMLDivElement | null>, session: B
     error: error || saveError, canUndo,
     selected, attacker, pending, ours, playEnabled,
     animations, dice, drag, mulligan,
+    intent: remote && (presentingOwn || remote.waiting) ? intent : null,
     canControl, canStrike, canAttackNow, affordable, isOption, flying, deckReady,
     act, choose, play, adjust, clickDeck, clickSlot, clickHand, attackLeader,
     setPanel, setSelected, setAttacker, setView, setPaused, leave, undo, clearSelection, toggleFullscreen, rematch, startReplay, stopReplay,

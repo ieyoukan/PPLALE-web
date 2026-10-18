@@ -3,6 +3,7 @@
 import { canPlay, costOf, isRevealable } from '@pplale/game-core';
 import type { CSSProperties } from 'react';
 import { displayCards, gameCatalog } from '@/lib/game/catalog';
+import { HAND_CARD_SIZES } from '@/lib/game/cardImages';
 import { useBoardContext } from '../board/BoardContext';
 import { GameCard } from '../GameCard';
 import styles from '../BoardEmulator.module.css';
@@ -10,7 +11,7 @@ import styles from '../BoardEmulator.module.css';
 /** Revealed cards and reversible reveal selections share the area beside the hand. */
 export function HandDock() {
   const board = useBoardContext();
-  const { game, view, me, selected, drag, mulligan, remote, editing, pending, ours, busy } = board;
+  const { game, view, me, selected, drag, mulligan, remote, editing, pending, ours, busy, intent } = board;
   // The mulligan screen shows the hand itself, except while its replacements are drawn from the table.
   // (A spectator has no mulligan screen, so the hand stays on the table.)
   if (!me.hand.length && !editing || game.phase === 'mulligan' && !mulligan.remaining && !remote?.watching) return null;
@@ -31,12 +32,13 @@ export function HandDock() {
         board.isOption(uid) && styles.targetable, (board.flying(uid) || drag.held?.uid === uid) && styles.dealing,
         grouped && styles.revealedHandCard, mixed && index === concealed.length && styles.revealedHandStart,
       ].filter(Boolean).join(' ');
-      return <button key={uid} data-hand={uid} data-revealed={card.revealed || undefined} data-reveal-pending={preview || undefined} className={classes}
+      const submitting = intent && 'uid' in intent && intent.uid === uid;
+      return <button key={uid} data-hand={uid} data-submitting={submitting || undefined} aria-busy={submitting || undefined} data-revealed={card.revealed || undefined} data-reveal-pending={preview || undefined} className={classes}
         disabled={revealing && (!board.isOption(uid) || busy)} aria-pressed={revealing && board.isOption(uid) ? preview : undefined}
         style={{ '--angle': `${Math.max(-angleLimit, Math.min(angleLimit, offset * 4))}deg`, '--lift': `${Math.min(35, Math.abs(offset) * 7)}px`, '--overlap': `${Math.min(100, Math.max(40, (me.hand.length - 4) * 13))}px`, zIndex: index } as CSSProperties}
         aria-label={`手札 ${displayCards[card.cardId].name}${preview ? '（公開予定）' : card.revealed ? '（公開）' : ''}`} onPointerDown={event => drag.pickUp(event, uid, 'hand')}
         onClick={() => { if (!drag.clickSuppressed()) board.clickHand(uid); }}>
-        <GameCard id={card.cardId} instance={card} currentCost={costOf(game, uid, gameCatalog, view)} sizes="(max-width: 900px) 130px, 160px" />
+        <GameCard id={card.cardId} instance={card} currentCost={costOf(game, uid, gameCatalog, view)} sizes={HAND_CARD_SIZES} />
         {grouped && <span className={styles.revealed}>{preview ? '公開予定' : '公開'}</span>}
       </button>;
     })}
