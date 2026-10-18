@@ -66,6 +66,8 @@ test('lobby: decks are checked against the room, and the match starts when both 
     assert.equal(await b.act({ action: 'ready', deck: { ...deck, yojo: [...deck.yojo.slice(1), 'y_40'] } }), 'このルームではぶどうのカードを使えません');
     assert.equal(await a.act({ action: 'ready', deck }), undefined);
     assert.equal(a.latest().players[0].deck, deck.name);
+    assert.deepEqual(a.latest().ownDeck, deck);
+    assert.equal((await b.until(view => view.players[0].ready)).ownDeck, undefined);
     // The other side learns that the deck is chosen, not which.
     assert.deepEqual((await b.until(view => view.players[0].ready)).players[0], { name: 'ほすと', ready: true, online: true });
     assert.equal(await a.act({ action: 'unready' }), undefined);
@@ -149,6 +151,7 @@ test('spectators: only where the room allows them; they see both hands, are coun
     const watcher = await connect(b, id, null);
     const view = await watcher.until(latest => latest.spectators === 1);
     assert.equal(view.watching, true);
+    assert.equal(view.ownDeck, undefined);
     assert.deepEqual(view.players.map(player => player!.name), ['ほすと', 'げすと']);
     assert.equal(view.players[0].deck, undefined);
     for (const side of [0, 1] as const) {

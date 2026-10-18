@@ -29,6 +29,8 @@ import type { Present, Room } from './rooms.ts';
 import { historyOwners, seatOwners } from './history/identity.ts';
 import type { HistoryRepository } from './history/repository.ts';
 import { freeMatch } from './matchmaking.ts';
+import { commandTiming, roomLatency } from './latency.ts';
+import type { CommandTiming } from './latency.ts';
 
 /** A request or a socket message is a few kilobytes (a deck at most); anything much larger is not one. */
 const MAX_BODY = 16 * 1024;
@@ -83,6 +85,14 @@ export function createRoomServer({ config, backend, catalog, history }: {
     let activityLoading: Promise<Awaited<ReturnType<typeof freeMatchActivity>>> | undefined;
     const activityAllowed = limiter(requestsPerHour * 4);
     const started = Date.now();
+    const latency = roomLatency();
+    const counting = new Set<Promise<void>>();
+    // Statistics are best effort: failure must never reject an already committed game command.
+    const countLater = (name: Parameters<Backend['count']>[0]) => {
+        const task = backend.count(name).catch(error => console.error('room statistics', error instanceof Error ? error.message : 'unavailable'));
+        counting.add(task);
+        void task.finally(() => counting.delete(task));
+    };
     const beatInterval = beatSeconds * 1000;
     /** A socket or an instance that stops saying it is here counts as gone after three missed beats. */
     const presenceTtl = beatInterval * 3;
@@ -101,20 +111,24 @@ export function createRoomServer({ config, backend, catalog, history }: {
     const tell = (socket: WebSocket, message: ServerMessage) => { if (socket.readyState === socket.OPEN) socket.send(JSON.stringify(message)); };
 
     /** Changes the room: `change` edits it (or throws RoomError). Tried again when another request got in first. */
-    async function update<T>(id: string, change: (room: Room) => T): Promise<{ room: Room; result: T }> {
+    async function update<T>(id: string, change: (room: Room) => T, timing?: CommandTiming): Promise<{ room: Room; result: T }> {
         for (let attempt = 0; attempt < 6; attempt++) {
+            let at = performance.now();
             const room = await backend.get(id);
+            if (timing) timing.read += performance.now() - at;
             if (!room) throw new RoomError(404, GONE);
+            at = performance.now();
             const expected = room.version, result = change(room);
             room.version++;
-            if (await backend.replace(room, expected, lifetime(room))) return { room, result };
+            if (timing) timing.apply += performance.now() - at;
+            at = performance.now();
+            const replaced = await backend.replace(room, expected, lifetime(room));
+            if (timing) timing.store += performance.now() - at;
+            if (replaced) return { room, result };
         }
         throw new RoomError(503, '混み合っています。もう一度お試しください');
     }
-    const present = async (id: string): Promise<Present> => {
-        const [online, watching] = await Promise.all([backend.online(id), backend.watching(id)]);
-        return { online, watching };
-    };
+    const present = (id: string): Promise<Present> => backend.presence(id);
     const key = ({ online, watching }: Present) => `${online.join()}:${watching}`;
     /** Ends the sockets here of a seat (or of the whole room, with its spectators) that has no room any more. */
     function dismiss(id: string, seat?: Side) {
@@ -139,10 +153,16 @@ export function createRoomServer({ config, backend, catalog, history }: {
         }
     }
     /** After a change: the sockets here get their views, and the other instances are told to send theirs. */
-    async function announce(room: Room, vacated?: Side) {
+    async function announce(room: Room, vacated?: Side, timing?: CommandTiming) {
+        let at = performance.now();
         const now = await present(room.id);
+        if (timing) timing.presence += performance.now() - at;
+        at = performance.now();
         deliver({ room, ...now });
+        if (timing) timing.deliver += performance.now() - at;
+        at = performance.now();
         await backend.publish({ from: pod, room, ...now, ...(vacated !== undefined && { dismiss: vacated }) });
+        if (timing) timing.publish += performance.now() - at;
     }
     const ready = backend.subscribe(event => {
         if (event.from === pod) return;
@@ -156,7 +176,7 @@ export function createRoomServer({ config, backend, catalog, history }: {
         return overview.value;
     };
     async function stats(): Promise<RoomServerStats> {
-        return { version, uptime: Math.round((Date.now() - started) / 1000), backend: backend.kind, ...await counts() };
+        return { version, uptime: Math.round((Date.now() - started) / 1000), backend: backend.kind, ...await counts(), latency: latency.snapshot() };
     }
 
     const send = (response: ServerResponse, status: number, body?: unknown, headers: Record<string, string> = {}) => {
@@ -343,20 +363,24 @@ export function createRoomServer({ config, backend, catalog, history }: {
             await backend.enter(socket.entry, presenceTtl);
             await presenceChanged(id);
         }
-        async function action(n: number, body: unknown) {
+        async function action(n: number, body: unknown, received: number) {
             const { seat } = socket.entry!;
             if (seat === 2) return tell(socket, { type: 'result', n, error: '観戦中は操作できません' });
+            const timing = commandTiming();
+            timing.queue = performance.now() - received;
             try {
                 const { room, result: outcome } = await update(id, target => {
                     if (!target.seats[seat]) throw new RoomError(404, GONE);
                     return act(target, seat, body, catalog);
-                });
-                if (outcome.started) await backend.count('matchesStarted');
-                if (outcome.finished) await backend.count('matchesFinished');
-                if (outcome.command) await backend.count('commands');
+                }, timing);
                 // The view goes out before the result, so whoever waits for the result already has it.
-                await announce(room, outcome.vacated ? seat : undefined);
+                await announce(room, outcome.vacated ? seat : undefined, timing);
                 tell(socket, { type: 'result', n });
+                timing.total = performance.now() - received;
+                if (outcome.command) latency.record(timing);
+                if (outcome.started) countLater('matchesStarted');
+                if (outcome.finished) countLater('matchesFinished');
+                if (outcome.command) countLater('commands');
                 if (outcome.vacated) dismiss(id, seat);
             } catch (error) {
                 if (!(error instanceof RoomError)) console.error('action failed', error);
@@ -364,11 +388,12 @@ export function createRoomServer({ config, backend, catalog, history }: {
             }
         }
         socket.on('message', data => {
+            const received = performance.now();
             let message: ClientMessage;
             try { message = JSON.parse(String(data)) as ClientMessage; } catch { return socket.close(4400); }
             if (message?.type === 'hello' && !socket.entry) return next(() => message.watch ? watch() : hello(message.token));
             if (message?.type !== 'action' || typeof message.n !== 'number') return socket.close(4400);
-            next(async () => { if (socket.entry) await action(message.n, message.action); });
+            next(async () => { if (socket.entry) await action(message.n, message.action, received); });
         });
         socket.on('close', () => {
             clearTimeout(impatient);
@@ -455,7 +480,7 @@ export function createRoomServer({ config, backend, catalog, history }: {
             const entries = held.flatMap(socket => socket.entry ? [socket.entry] : []);
             // Their closing has nothing left to do.
             for (const socket of held) socket.entry = undefined;
-            await Promise.allSettled([...entries.map(entry => backend.leave(entry)), backend.forget(pod)]);
+            await Promise.allSettled([...entries.map(entry => backend.leave(entry)), backend.forget(pod), ...counting]);
             for (const socket of held) socket.close(1012);
             wss.close();
         },

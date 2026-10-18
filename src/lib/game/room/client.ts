@@ -1,8 +1,8 @@
 // The browser's side of a room: asking the room server (services/room-server) for a room or a
 // seat, the seats kept in this browser, and the socket a seat talks through.
 // Without NEXT_PUBLIC_ROOM_SERVER_URL there are no room matches.
-import type { FreeMatchActivity } from '@pplale/game-core/room';
 import { historyHeaders } from './historyIdentity';
+import type { FreeMatchActivity } from '@pplale/game-core/room';
 import type { HistoryPage, MatchDetails, MatchRecording } from '@pplale/game-core/history';
 import type { Deck } from '@pplale/game-core';
 import type { ClientMessage, FreeMatchStatus, RoomAction, RoomInfo, RoomRules, RoomServerStats, RoomView, SeatKey, Seated, ServerMessage } from '@pplale/game-core/room';
@@ -86,6 +86,7 @@ export function dropSeat(id: string) {
 
 // ── The socket of a seat ──
 const RETRY_DELAYS = [500, 1000, 2000, 4000];
+const ACTION_TIMEOUT = 12_000;
 
 export interface RoomConnection {
   /** Sends a request of the seat. Resolves once the server did it (its view has arrived by then); rejects with RoomRequestError. */
@@ -101,9 +102,12 @@ export interface RoomConnection {
 export function connectRoom(id: string, token: string | null, handlers: { onView: (view: RoomView) => void; onLink: (up: boolean) => void; onGone: (message: string) => void }): RoomConnection {
   let socket: WebSocket | null = null, stopped = false, attempt = 0, n = 0;
   let timer: ReturnType<typeof setTimeout> | undefined;
-  const waiting = new Map<number, { resolve: () => void; reject: (error: RoomRequestError) => void }>();
+  const waiting = new Map<number, { resolve: () => void; reject: (error: RoomRequestError) => void; timer: ReturnType<typeof setTimeout>; started: number; command: boolean }>();
   const failWaiting = () => {
-    for (const { reject } of Array.from(waiting.values())) reject(new RoomRequestError(0, '接続が切れました。もう一度操作してください'));
+    for (const { reject, timer } of Array.from(waiting.values())) {
+      clearTimeout(timer);
+      reject(new RoomRequestError(0, '接続が切れました。盤面の再接続をお待ちください'));
+    }
     waiting.clear();
   };
   function open() {
@@ -120,6 +124,14 @@ export function connectRoom(id: string, token: string | null, handlers: { onView
       } else if (message.type === 'result') {
         const asked = waiting.get(message.n);
         waiting.delete(message.n);
+        if (asked) {
+          clearTimeout(asked.timer);
+          if (asked.command) {
+            const name = 'pplale:room-command-roundtrip';
+            if (performance.getEntriesByName(name).length >= 128) performance.clearMeasures(name);
+            performance.measure(name, { start: asked.started, end: performance.now() });
+          }
+        }
         if (message.error) asked?.reject(new RoomRequestError(400, message.error));
         else asked?.resolve();
       } else {
@@ -142,7 +154,15 @@ export function connectRoom(id: string, token: string | null, handlers: { onView
       return new Promise((resolve, reject) => {
         if (!socket || socket.readyState !== WebSocket.OPEN) return reject(new RoomRequestError(0, UNREACHABLE));
         const number = ++n;
-        waiting.set(number, { resolve, reject });
+        const timer = setTimeout(() => {
+          // The command may already be committed. Reconnect for its authoritative view; never resend.
+          const pending = waiting.get(number);
+          if (!pending) return;
+          waiting.delete(number);
+          pending.reject(new RoomRequestError(0, '応答を確認できませんでした。盤面に再接続しています'));
+          socket?.close();
+        }, ACTION_TIMEOUT);
+        waiting.set(number, { resolve, reject, timer, started: performance.now(), command: action.action === 'command' });
         socket.send(JSON.stringify({ type: 'action', n: number, action } satisfies ClientMessage));
       });
     },

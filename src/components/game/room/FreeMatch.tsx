@@ -17,6 +17,7 @@ import { BattleCompanion } from './BattleCompanion';
 import { MatchDeckPreview } from './MatchDeckPreview';
 import styles from './Room.module.css';
 import { FreeMatchLounge } from './FreeMatchLounge';
+import { useRoomPreparation } from './useRoomPreparation';
 
 type Search = { token: string; name: string; deck: Deck; at: number };
 
@@ -29,6 +30,7 @@ export function FreeMatch() {
   const chosen = usableChoice(choices, selected);
   const previewDeck = chosen && chosen.source !== 'random' ? chosen.deck(0) : null;
   const [search, setSearch] = useState<Search | null>(null);
+  useRoomPreparation(search?.deck ?? previewDeck);
   const [cancelling, setCancelling] = useState(false);
   const [elapsed, setElapsed] = useState(0);
   const [error, setError] = useState('');

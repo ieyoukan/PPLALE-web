@@ -17,6 +17,7 @@ import { RecruitmentButton } from '../social/RecruitmentButton';
 import { RoomShare } from './RoomShare';
 import { useRoom } from './useRoom';
 import type { Room } from './useRoom';
+import { useRoomPreparation } from './useRoomPreparation';
 import styles from './Room.module.css';
 
 export function RoomLobby() {
@@ -65,6 +66,7 @@ function Waiting({ room, view }: { room: Room; view: RoomView }) {
   // The decks of every source, checked against this room's rules; the server checks the one sent again.
   const { choices, saved } = useDeckChoices(view.rules, 'このルーム');
   const chosen = usableChoice(choices, selected);
+  useRoomPreparation(chosen && chosen.source !== 'random' ? chosen.deck(0) : null);
 
   const ask = (work: Promise<void>) => {
     setBusy(true);

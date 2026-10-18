@@ -78,6 +78,8 @@ export interface RoomView {
     rules: RoomRules;
     /** Index = seat. The second is null until someone joins. */
     players: [RoomPlayer, RoomPlayer | null];
+    /** Original deck list, only sent to its owner; never includes shuffle order. */
+    ownDeck?: Deck;
     game: GameState | null;
     last: LastCommand | null;
     /** The seat that gave up the current match. */
@@ -159,6 +161,14 @@ export interface RoomServerStats {
     connections: number;
     /** Since the data began (they outlast the instances). */
     total: { roomsCreated: number; matchesStarted: number; matchesFinished: number; commands: number };
+    /** Last 256 successful commands on this pod; not a network round-trip measurement. */
+    latency?: RoomLatency;
+}
+
+export interface RoomLatency {
+    count: number;
+    samples: number;
+    milliseconds: Record<'queue' | 'read' | 'apply' | 'store' | 'presence' | 'deliver' | 'publish' | 'total', { p50: number; p95: number; max: number }>;
 }
 
 export const ROOM_ID_LENGTH = 6;

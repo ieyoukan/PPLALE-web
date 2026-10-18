@@ -58,6 +58,8 @@ export interface Backend {
     /** A socket of the seat closed. True when the seat has none left (the player is gone). */
     leave(entry: Member): Promise<boolean>;
     online(id: string): Promise<[boolean, boolean]>;
+    /** All three presence sets in one backend round trip. */
+    presence(id: string): Promise<{ online: [boolean, boolean]; watching: number }>;
     /** Open sockets of spectators. */
     watching(id: string): Promise<number>;
     /** Says that these sockets are still open; one that is not refreshed lapses after `ttl`. */
@@ -103,6 +105,14 @@ end
 redis.call('HSET', KEYS[1], 'v', ARGV[2], 'json', ARGV[3])
 redis.call('PEXPIRE', KEYS[1], 600000)
 return 1`;
+
+const PRESENCE = `
+local counts = {}
+for i, key in ipairs(KEYS) do
+  redis.call('ZREMRANGEBYSCORE', key, '-inf', ARGV[1])
+  counts[i] = redis.call('ZCARD', key)
+end
+return counts`;
 
 export async function redisBackend(url: string, prefix = 'pplale:'): Promise<Backend> {
     const client = createClient({ url });
@@ -184,6 +194,10 @@ export async function redisBackend(url: string, prefix = 'pplale:'): Promise<Bac
         async online(id) {
             const [a, b] = await Promise.all([present(id, 0), present(id, 1)]);
             return [a > 0, b > 0];
+        },
+        async presence(id) {
+            const counts = await client.eval(PRESENCE, { keys: [0, 1, 2].map(seat => seatKey(id, seat as Spot)), arguments: [String(Date.now())] }) as number[];
+            return { online: [counts[0] > 0, counts[1] > 0], watching: counts[2] };
         },
         watching: id => present(id, 2),
         async refresh(entries, ttl) { await Promise.all(entries.map(entry => mark(entry, ttl))); },
@@ -285,6 +299,7 @@ export function memoryBackend(): Backend {
             return found.size === 0;
         },
         async online(id) { return [members(id, 0).size > 0, members(id, 1).size > 0]; },
+        async presence(id) { return { online: [members(id, 0).size > 0, members(id, 1).size > 0], watching: members(id, 2).size }; },
         async watching(id) { return members(id, 2).size; },
         async refresh(entries, ttl) { for (const { id, seat, member } of entries) members(id, seat).set(member, Date.now() + ttl); },
         async count(name) { total[name]++; },

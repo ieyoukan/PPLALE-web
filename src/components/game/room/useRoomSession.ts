@@ -1,6 +1,6 @@
 'use client';
 
-import { useCallback, useEffect, useMemo, useReducer, useState } from 'react';
+import { useCallback, useEffect, useMemo, useReducer, useRef, useState } from 'react';
 import type { Command, GameState, Side } from '@pplale/game-core';
 import type { BoardSession, Incoming } from '../board/useGameSession';
 import { withoutEditor } from '../board/useGameSession';
@@ -22,11 +22,13 @@ function reducer({ shown, queue }: Table, action: Played | 'accept'): Table {
  * A room's match as the board plays it. Nothing is decided here: a command goes to the server, and
  * the view it (or the other side's command) leads to waits in a queue until the board has shown it.
  */
-export function useRoomSession({ room, initial, seat, onLeave, onFindNext }: { room: Pick<Room, 'send' | 'subscribe'>; initial: Played; seat: Side; onLeave: () => void; onFindNext?: () => void }): BoardSession {
+export function useRoomSession({ room, initial, seat, onLeave, onFindNext }: { room: Pick<Room, 'send' | 'subscribe' | 'linked'>; initial: Played; seat: Side; onLeave: () => void; onFindNext?: () => void }): BoardSession {
   const watching = !!initial.watching;
-  const { send: request, subscribe } = room;
+  const { send: request, subscribe, linked } = room;
   const [{ shown, queue }, dispatch] = useReducer(reducer, { shown: initial, queue: [] });
   const [sending, setSending] = useState(false);
+  const inFlight = useRef(false);
+  const [failed, setFailed] = useState(0);
   const [error, setError] = useState('');
   useEffect(() => subscribe(view => { if (played(view)) dispatch(view); }), [subscribe]);
 
@@ -38,12 +40,16 @@ export function useRoomSession({ room, initial, seat, onLeave, onFindNext }: { r
 
   const { revision } = shown.game;
   const send = useCallback((command: Command) => {
-    if (watching) return;
+    if (watching || !linked || inFlight.current) return;
+    inFlight.current = true;
     setSending(true);
     request({ action: 'command', command: command as RoomCommand, revision })
-      .then(() => setError(''), (failure: unknown) => setError(failure instanceof Error ? failure.message : '操作を送れませんでした'))
-      .finally(() => setSending(false));
-  }, [request, revision, watching]);
+      .then(() => setError(''), (failure: unknown) => {
+        setError(failure instanceof Error ? failure.message : '操作を送れませんでした');
+        setFailed(value => value + 1);
+      })
+      .finally(() => { inFlight.current = false; setSending(false); });
+  }, [request, revision, watching, linked]);
   const ask = useCallback((action: 'resign' | 'rematch') => {
     request({ action }).catch((failure: unknown) => setError(failure instanceof Error ? failure.message : '操作を送れませんでした'));
   }, [request]);
@@ -51,8 +57,8 @@ export function useRoomSession({ room, initial, seat, onLeave, onFindNext }: { r
   const rematch = useCallback(() => initial.mode === 'free' ? (onFindNext ?? onLeave)() : ask('rematch'), [ask, initial.mode, onFindNext, onLeave]);
 
   const names = useMemo<[string, string]>(() => [shown.players[0].name, shown.players[1]?.name ?? '相手'], [shown.players]);
-  const remote = useMemo(() => ({ seat, watching, freeMatch: initial.mode === 'free', names, waiting: sending || queue.length > 0, next, accept, resign, resigned: shown.resigned, leave: onLeave }),
-    [seat, watching, initial.mode, names, sending, queue.length, next, accept, resign, shown.resigned, onLeave]);
+  const remote = useMemo(() => ({ seat, watching, ownDeck: shown.ownDeck, matchRules: shown.rules, freeMatch: initial.mode === 'free', names, sending: !linked || sending, waiting: !linked || sending || queue.length > 0, failed, next, accept, resign, resigned: shown.resigned, leave: onLeave }),
+    [seat, watching, shown.ownDeck, shown.rules, initial.mode, names, linked, sending, queue.length, failed, next, accept, resign, shown.resigned, onLeave]);
   return {
     game: shown.game, error, history: [], commands: [], mode: 'room', levels: ['normal', 'normal'], ready: true, saveError: '',
     send, undo: nothing, canUndo: false, remote,
