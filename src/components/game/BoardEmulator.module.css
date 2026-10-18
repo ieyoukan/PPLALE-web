@@ -234,9 +234,6 @@
 .flightBack { background: url('/images/back-card.webp') center / 100% 100%; }
 .flightFront { transform: rotateY(180deg); background: #ffeac8; }
 .drawHint { position: fixed; z-index: 75; left: 50%; top: 46%; transform: translate(-50%, -50%); padding: 8px 22px; border: 1px solid #fffdeb88; border-radius: 999px; background: #000000b3; color: #fffdeb; font: clamp(16px, 2vw, 24px) 'BoardHandwriting', 'Yu Kyokasho', cursive; white-space: nowrap; pointer-events: none; box-shadow: 0 6px 16px #2a1b3066; }
-.replayBadge { position: fixed; z-index: 135; top: 16px; left: 16px; display: flex; align-items: center; gap: 10px; padding: 6px 8px 6px 16px; border: 1px solid #fffdeb88; border-radius: 999px; background: #000000b3; color: #fffdeb; font-size: 16px; box-shadow: 0 6px 16px #2a1b3066; }
-.replayBadge button { padding: 6px 14px; border-radius: 999px; background: #fffdeb; color: #6b4a3a; font-size: 15px; }
-@media (max-height: 500px) { .replayBadge { top: 6px; left: 8px; font-size: 14px; } }
 .hitNumber { position: fixed; z-index: 160; display: grid; place-items: center; width: clamp(96px, 12vw, 170px); aspect-ratio: 1; transform: translate(-50%, -50%); font: 700 clamp(60px, 8vw, 116px) / 1 Georgia, 'Times New Roman', serif; color: #d9232e; -webkit-text-stroke: 4px #fff; paint-order: stroke fill; pointer-events: none; animation: hitNumber 1s ease-out both; }
 /* A flash of light bursts behind the number as it pops in. */
 .hitNumber::before { content: ''; position: absolute; inset: -18%; z-index: -1; border-radius: 50%; background: radial-gradient(circle, #fff 0 22%, #ffd9f4 40%, #c58cf0cc 58%, #8b5fd400 72%); animation: hitFlash 1s ease-out both; }

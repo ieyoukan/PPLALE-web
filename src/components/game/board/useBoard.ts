@@ -179,6 +179,20 @@ export function useBoard(container: RefObject<HTMLDivElement | null>, session: B
     animate(command, accept, shownCardId);
   }, [next, accept, seat, watching, replaying, paused, animating, rollingDice, animate, resetAnimations, resetDice, showDie, presentingOwn, actual.phase]);
 
+  // A replay moved to another position: what was being presented is dropped and the new position shown as it is.
+  const timeline = session.timeline;
+  const seekReplay = useCallback((at: number) => {
+    if (!timeline || at === timeline.at) return;
+    handling.current = null;
+    resetAnimations();
+    resetDice();
+    skipAnimation();
+    setSelected(null);
+    setAttacker(null);
+    setExchanges([]);
+    timeline.seek(at);
+  }, [timeline, resetAnimations, resetDice, skipAnimation]);
+
   const failed = remote?.failed;
   useEffect(() => {
     if (!failed) return;
@@ -358,7 +372,7 @@ export function useBoard(container: RefObject<HTMLDivElement | null>, session: B
   return {
     game, mode, levels, view, me, panel, ready, busy, paused, names, remote,
     assessment, assessable, showAssessment, setShowAssessment,
-    setup, canRematch, canReplay, replaying, position, editBoard: openEditor, editStartingBoard,
+    setup, canRematch, canReplay, replaying, timeline, seekReplay, position, editBoard: openEditor, editStartingBoard,
     editing, edit: editBoard, picking, setPicking, session,
     error: error || saveError, canUndo,
     selected, attacker, pending, ours, playEnabled,

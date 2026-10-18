@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import type { Command } from '@pplale/game-core';
 import type { MatchRecording } from '@pplale/game-core/history';
-import type { BoardSession, Incoming } from '../board/useGameSession';
+import type { BoardSession, Incoming, ReplayTimeline } from '../board/useGameSession';
 import { withoutEditor } from '../board/useGameSession';
 
 // Same pace as the replay of a match in this browser: quick through the opening, time to follow each turn.
@@ -50,6 +50,14 @@ export function useRecordedSession({ recording, initialStep, onLeave }: { record
     setIndex(frames.length - 1);
   }, [frames.length]);
 
+  // Seeking shows that frame at once; the board cancels what it was presenting (useBoard `seekReplay`).
+  const states = useMemo(() => frames.map(frame => frame.state), [frames]);
+  const seek = useCallback((at: number) => {
+    setDue(null);
+    setIndex(Math.max(0, Math.min(frames.length - 1, Math.floor(at))));
+  }, [frames.length]);
+  const recorded = useMemo(() => frames.flatMap((frame, at) => frame.state.phase === 'playing' && frame.presentation.assessment ? [{ index: at, win: frame.presentation.assessment.win }] : []), [frames]);
+  const timeline = useMemo<ReplayTimeline | null>(() => playing ? { at: index, states, viewer: match.seat, seek, recorded } : null, [playing, index, states, match.seat, seek, recorded]);
   const names = useMemo<[string, string]>(() => [match.players[0].name, match.players[1].name], [match.players]);
   const remote = useMemo(() => ({
     seat: match.seat, watching: true, recorded: true, matchRules: match.rules, names,
@@ -61,6 +69,6 @@ export function useRecordedSession({ recording, initialStep, onLeave }: { record
     setup: null, rematch: nothing, canRematch: false,
     record: null, markReported: nothing, initial: null, position: null, ...withoutEditor,
     replaying: playing, startReplay: restart, stopReplay: stop,
-    canReplay: !playing && frames.length > 1, replayNext: null,
+    canReplay: !playing && frames.length > 1, replayNext: null, timeline,
   };
 }

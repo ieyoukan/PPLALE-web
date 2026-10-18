@@ -65,6 +65,6 @@ export function useRoomSession({ room, initial, seat, onLeave, onFindNext }: { r
     // Back to choosing decks together; the room page opens the board again when both are ready.
     setup: null, rematch, canRematch: !watching,
     record: null, markReported: nothing, initial: null, position: null, ...withoutEditor,
-    replaying: false, startReplay: nothing, stopReplay: nothing, canReplay: false, replayNext: null,
+    replaying: false, startReplay: nothing, stopReplay: nothing, canReplay: false, replayNext: null, timeline: null,
   };
 }

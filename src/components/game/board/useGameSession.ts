@@ -1,6 +1,6 @@
 'use client';
 
-import { useCallback, useEffect, useReducer, useState } from 'react';
+import { useCallback, useEffect, useMemo, useReducer, useState } from 'react';
 import { applyCommand, buildPosition, checkPosition, cpuLevels, editGame, newGame, parsePosition, positionOf, sandboxRules } from '@pplale/game-core';
 import type { BoardEdit, Command, CpuLevel, Deck, GameState, MatchRules, Position, Side } from '@pplale/game-core';
 import { demoDeck, gameCatalog } from '@/lib/game/catalog';
@@ -57,6 +57,16 @@ export interface RemoteSession {
   /** The seat that gave up this match. */
   resigned: Side | null;
   leave: () => void;
+}
+
+/**
+ * A replay as a video: every position it passes (`states[0]` the first), where it is now, and moving
+ * there at once. `viewer`: whose knowledge the course of the match (形勢) is judged with.
+ */
+export interface ReplayTimeline {
+  at: number; states: GameState[]; viewer: Side; seek: (at: number) => void;
+  /** Side 0's chance at each position, saved with the recording by the model of its time: shown as it is, never judged again. */
+  recorded?: { index: number; win: number }[];
 }
 
 /** The 盤面エディタ's part of a session: the board is changed by hand, then played from there. */
@@ -182,6 +192,22 @@ export function useGameSession({ onMissing }: { onMissing: () => void }) {
     dispatch({ type: 'load', game: replay.game, commands: replay.commands });
     setReplay(null);
   }, [replay]);
+  // Every position of the match being replayed, worked out once, so that the replay can jump to any of them.
+  const replayStates = useMemo(() => {
+    if (!replay || !initial) return null;
+    const states = [initial];
+    for (const command of replay.commands) {
+      const result = applyCommand(states.at(-1)!, command, gameCatalog, true);
+      if (result.error) break;
+      states.push(result.state);
+    }
+    return states;
+  }, [replay, initial]);
+  const seekReplay = useCallback((at: number) => {
+    if (!replay || !replayStates) return;
+    const index = Math.max(0, Math.min(replayStates.length - 1, Math.floor(at)));
+    dispatch({ type: 'load', game: replayStates[index], commands: replay.commands.slice(0, index) });
+  }, [replay, replayStates]);
   /** The same decks, rules, mode and levels with a new shuffle; a match from the editor starts from its board again. */
   const rematch = useCallback(() => {
     if (position) {
@@ -256,6 +282,7 @@ export function useGameSession({ onMissing }: { onMissing: () => void }) {
     canReplay: !!initial && !replay && session.game.winner !== null && session.commands.length > 0,
     /** While replaying: the recorded command to apply next, or null at the end. */
     replayNext: replay && initial ? replay.commands[session.game.revision - initial.revision] ?? null : null,
+    timeline: replayStates && initial ? { at: session.game.revision - initial.revision, states: replayStates, viewer: 0, seek: seekReplay } as ReplayTimeline : null,
   };
 }
 /** What the board plays on: the match in this browser, or one in a room (`remote`). */

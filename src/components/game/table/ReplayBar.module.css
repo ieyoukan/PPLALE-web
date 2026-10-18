@@ -1,0 +1,42 @@
+/* The replay player: pops up from the bottom edge (with a little bounce) and goes down while playing untouched. */
+.player { position: fixed; z-index: 136; left: 50%; bottom: max(10px, env(safe-area-inset-bottom)); width: min(760px, calc(100vw - 20px)); padding: 10px 14px 8px; border: 1px solid #fffdeb55; border-radius: 22px; background: linear-gradient(180deg, #3a2834e8, #241821f2); color: #fffdeb; box-shadow: 0 10px 28px #1a0f1899; transform: translate(-50%, calc(100% + 24px)); transition: transform .45s cubic-bezier(.34, 1.56, .64, 1); touch-action: none; }
+.player[data-shown] { transform: translate(-50%, 0); }
+/* While the player is down: a small tab to bring it back. */
+.handle { position: fixed; z-index: 135; left: 50%; bottom: 0; display: grid; place-items: center; width: 84px; height: 22px; padding: 0; border-radius: 14px 14px 0 0; background: #2a1d27d9; transform: translate(-50%, 0); transition: transform .25s; }
+.handle span { width: 32px; height: 4px; border-radius: 4px; background: #fffdebaa; }
+.handle[data-shown] { transform: translate(-50%, 100%); }
+
+/* The timeline: the near side's chance of winning over the whole match; the part already played is bright. */
+.track { position: relative; height: 54px; margin: 2px 4px 6px; border-radius: 12px; background: #ffffff10; cursor: pointer; outline: none; }
+.track:focus-visible { box-shadow: 0 0 0 2px #f7b6cf; }
+.course { position: absolute; inset: 0; width: 100%; height: 100%; overflow: visible; }
+.turn { stroke: #fffdeb22; stroke-width: 1; }
+.even { stroke: #fffdeb55; stroke-width: 1; stroke-dasharray: 3 4; }
+.area { fill: #f7b6cf22; }
+.areaPlayed { fill: #f7b6cf77; }
+.curve { fill: none; stroke: #ffd3e3; stroke-width: 2; stroke-linejoin: round; }
+.plain { position: absolute; left: 0; right: 0; top: 50%; height: 6px; border-radius: 6px; background: #fffdeb33; transform: translateY(-50%); }
+.plain span { display: block; height: 100%; border-radius: inherit; background: #f7b6cf; }
+.head { position: absolute; top: -4px; bottom: -4px; width: 4px; border-radius: 4px; background: #fffdeb; box-shadow: 0 0 8px #fffdeb; transform: translateX(-50%); pointer-events: none; transition: left .2s ease-out; }
+/* Where the match swung: a mark to jump to just before it. */
+.swing { position: absolute; top: -12px; display: grid; place-items: center; min-width: 30px; height: 20px; padding: 0 6px; border-radius: 10px; background: #e0607e; color: #fff; font-size: 11px; font-weight: 700; box-shadow: 0 2px 0 #0004; transform: translateX(-50%); transition: transform .15s; }
+.swing[data-up] { background: #4fae7c; }
+.swing:hover, .swing:focus-visible { transform: translateX(-50%) translateY(-2px); }
+.swing::after { content: ''; position: absolute; left: 50%; bottom: -5px; border: 5px solid transparent; border-bottom: 0; border-top-color: inherit; transform: translateX(-50%); border-top-color: #e0607e; }
+.swing[data-up]::after { border-top-color: #4fae7c; }
+
+.controls { display: grid; grid-template-columns: 1fr auto 1fr; align-items: center; }
+.main { display: flex; align-items: center; gap: 14px; }
+.side { display: flex; align-items: center; }
+.side:last-child { justify-content: flex-end; }
+.controls button { display: grid; place-items: center; width: 40px; height: 40px; padding: 0; border-radius: 50%; color: #fffdeb; font-size: 20px; transition: background .15s, transform .15s; }
+.controls button:hover:not(:disabled) { background: #fffdeb1f; }
+.controls button:active:not(:disabled) { transform: scale(.92); }
+.controls button:disabled { opacity: .35; }
+.controls .play { width: 52px; height: 52px; background: #fffdeb; color: #4a3040; font-size: 24px; box-shadow: 0 3px 0 #0005; }
+.controls .play:hover:not(:disabled) { background: #fff; }
+.count { font-variant-numeric: tabular-nums; font-size: 15px; font-weight: 700; }
+.count small { font-weight: 400; opacity: .7; }
+.controls .stop { width: 34px; height: 34px; font-size: 16px; background: #fffdeb1a; }
+@media (max-height: 500px) { .player { padding: 6px 10px 4px; } .track { height: 38px; } .controls .play { width: 42px; height: 42px; } }
+@media (prefers-reduced-motion: reduce) { .player, .handle, .head { transition: none; } }

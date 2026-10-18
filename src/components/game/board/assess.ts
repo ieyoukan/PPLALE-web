@@ -24,10 +24,29 @@ export interface AssessedPoint {
   graded?: true;
 }
 export type AssessRequest = { id: number; initial: GameState; current: GameState; commands: Command[]; viewer: Side; saved?: AssessmentCache };
+/** The positions of a replay judged as they are (no commands replayed); `known` are points already judged. */
+export type PositionsRequest = { id: number; positions: GameState[]; viewer: Side; known?: AssessedPoint[] };
 export type AssessResponse = { id: number; point: AssessedPoint } | { id: number; points: AssessedPoint[] } | { id: number; done: true };
 
 const evaluate = createValueEvaluator(valueModel);
 const SEEDS = [1, 2, 3];
+
+/**
+ * Judges every playing position of a replay, coarsely spread over the match first (every 16th, 8th, …)
+ * so the whole curve appears early and then fills in.
+ */
+export function* assessPositions({ positions, viewer }: Omit<PositionsRequest, 'id' | 'known'>, known: Map<number, AssessedPoint>): Generator<AssessedPoint> {
+  for (const stride of [16, 8, 4, 2, 1]) {
+    for (let index = 0; index < positions.length; index += stride) {
+      const state = positions[index];
+      if (known.has(index) || state.phase !== 'playing') continue;
+      const win = SEEDS.reduce((sum, seed) => sum + winProbability(state, gameCatalog, evaluate, valueModel.scale, { viewer, seed }), 0) / SEEDS.length;
+      const point: AssessedPoint = { index, win, turn: turnOf(state) };
+      known.set(index, point);
+      yield point;
+    }
+  }
+}
 
 /** A command in a few words, named from the position it was played in. */
 export function describe(state: GameState, command: Command): string {

@@ -38,8 +38,19 @@ for (const width of [1280, 375, 320]) test(`history and replay on the table at $
   await page.keyboard.press('Escape'); await expect(detail).toHaveCount(0);
   // The recording plays on the ordinary table, like the replay after a CPU match.
   await page.getByRole('button', { name: 'リプレイ', exact: true }).first().click();
-  await expect(page.getByText('リプレイ中', { exact: true })).toBeVisible();
-  await page.getByRole('button', { name: 'やめる', exact: true }).click();
+  const player = page.getByRole('region', { name: 'リプレイの再生', exact: true });
+  await expect(player).toBeVisible();
+  // Like a video: pause, jump a turn, and tap a place on the timeline to go there at once.
+  await player.getByRole('button', { name: '一時停止', exact: true }).click();
+  await expect(player.getByRole('button', { name: '再生する', exact: true })).toBeVisible();
+  const position = player.getByRole('slider', { name: '再生位置' }), at = async () => Number(await position.getAttribute('aria-valuenow'));
+  const before = await at();
+  await player.getByRole('button', { name: '次のターンへ', exact: true }).click();
+  await expect.poll(at).toBeGreaterThan(before);
+  const last = Number(await position.getAttribute('aria-valuemax')), box = await position.boundingBox();
+  await page.mouse.click(box.x + box.width * 0.5, box.y + box.height * 0.75);
+  await expect.poll(async () => Math.abs(await at() - Math.round(last * 0.5))).toBeLessThanOrEqual(1);
+  await player.getByRole('button', { name: 'リプレイをやめる', exact: true }).click();
   const result = page.getByRole('dialog', { name: '対戦結果' }); await expect(result).toBeVisible();
   await expect(result.getByRole('button', { name: '対戦履歴へ戻る', exact: true })).toBeVisible();
   expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(width);
@@ -92,7 +103,7 @@ for (const kind of ['detail', 'replay', 'pending-detail', 'pending-replay']) tes
   });
   const isReplay = kind.endsWith('replay');
   await page.goto(`${base}${isReplay ? `/game/replay/?id=${recording.match.id}` : '/game/battle/history/'}`);
-  if (isReplay && !kind.startsWith('pending-')) await expect(page.getByText('リプレイ中', { exact: true })).toBeVisible();
+  if (isReplay && !kind.startsWith('pending-')) await expect(page.getByRole('region', { name: 'リプレイの再生', exact: true })).toBeVisible();
   if (!isReplay) {
     await expect(page.locator('article')).toHaveCount(1);
     await page.getByRole('button', { name: '詳細・デッキ', exact: true }).click();
@@ -101,7 +112,7 @@ for (const kind of ['detail', 'replay', 'pending-detail', 'pending-replay']) tes
   if (kind.startsWith('pending-')) await expect.poll(() => !!finishPending).toBe(true);
   await changeIdentity(storage, null);
   if (!isReplay) { await expect(page.locator('article')).toHaveCount(0); await expect(page.getByRole('dialog')).toHaveCount(0); }
-  else { await expect.poll(() => requests.some(request => request.path === `/history/${recording.match.id}` && !request.auth)).toBe(true); await expect(page.getByText('リプレイ中', { exact: true })).toHaveCount(0); }
+  else { await expect.poll(() => requests.some(request => request.path === `/history/${recording.match.id}` && !request.auth)).toBe(true); await expect(page.getByRole('region', { name: 'リプレイの再生', exact: true })).toHaveCount(0); }
   finishPending?.();
   if (isReplay) {
     // Anonymous access must fail instead of showing the previous account's record.
@@ -116,7 +127,7 @@ for (const kind of ['detail', 'replay', 'pending-detail', 'pending-replay']) tes
   await changeIdentity(storage, 'bob');
   await expect.poll(() => requests.some(request => request.auth === 'Bearer fixture-bob')).toBe(true);
   await expect(page.getByRole('dialog')).toHaveCount(0);
-  if (isReplay) { await expect(page.getByText('リプレイ中', { exact: true })).toHaveCount(0); await expect(page.getByText('履歴が見つかりません', { exact: true })).toBeVisible(); }
+  if (isReplay) { await expect(page.getByRole('region', { name: 'リプレイの再生', exact: true })).toHaveCount(0); await expect(page.getByText('履歴が見つかりません', { exact: true })).toBeVisible(); }
   else await expect(page.locator('article')).toHaveCount(0);
 });
 
@@ -124,11 +135,11 @@ test('a scene link starts the replay there, and it can be played again from the 
   const errors = []; page.on('pageerror', error => errors.push(error.message));
   await page.route('**/history/**', route => new URL(route.request().url()).pathname.startsWith('/history/') ? route.fulfill({ json: recording }) : route.continue());
   await page.goto(`${base}/game/replay/?id=${recording.match.id}&step=20`);
-  await expect(page.getByText('リプレイ中', { exact: true })).toBeVisible();
+  await expect(page.getByRole('region', { name: 'リプレイの再生', exact: true })).toBeVisible();
   await expect(page.getByRole('group', { name: /^自分のPP/ })).toBeVisible();
-  await page.getByRole('button', { name: 'やめる', exact: true }).click();
+  await page.getByRole('button', { name: 'リプレイをやめる', exact: true }).click();
   const result = page.getByRole('dialog', { name: '対戦結果' }); await expect(result).toBeVisible();
   await result.getByRole('button', { name: 'リプレイ', exact: true }).click();
-  await expect(page.getByText('リプレイ中', { exact: true })).toBeVisible(); await expect(result).toHaveCount(0);
+  await expect(page.getByRole('region', { name: 'リプレイの再生', exact: true })).toBeVisible(); await expect(result).toHaveCount(0);
   expect(errors).toEqual([]);
 });

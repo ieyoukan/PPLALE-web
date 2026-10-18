@@ -15,6 +15,7 @@ import { SidePanel } from './panels/SidePanel';
 import { ChoiceTray } from './table/ChoiceTray';
 import { DiceStage } from './table/DiceStage';
 import { HandDock, SelectedCard } from './table/HandDock';
+import { ReplayBar } from './table/ReplayBar';
 import { AnimationLayer, HeldCard } from './table/Overlays';
 import { Finale } from './table/Finale';
 import { ResultScreen } from './table/ResultScreen';
@@ -44,7 +45,7 @@ export default function BoardEmulator() {
 export function BoardTable({ session }: { session: BoardSession }) {
   const container = useRef<HTMLDivElement>(null);
   const board = useBoard(container, session);
-  const { game, me, view, mode, paused, attacker, drag, mulligan, ready, panel, error, replaying, remote, editing, animations, setup, setPanel, setPaused, setAttacker, stopReplay } = board;
+  const { game, me, view, mode, paused, attacker, drag, mulligan, ready, panel, error, replaying, remote, editing, animations, setup, setPanel, setPaused, setAttacker } = board;
   // The saved match is still loading (or missing, and the preparation page is opening).
   if (!ready) return <div className={styles.emulator} aria-busy="true" />;
   // An open drawer is closed from the corner button. An enlarged card and the skills are not: they
@@ -66,10 +67,10 @@ export function BoardTable({ session }: { session: BoardSession }) {
         <button className={styles.infoButton} aria-label="カードのカウント" aria-expanded={panel?.type === 'counts'} onClick={() => setPanel(panel?.type === 'counts' ? null : { type: 'counts' })}>✦<small>カウント</small></button>
         {(remote ? !!remote.ownDeck && !remote.watching : !!setup) && <button className={styles.infoButton} aria-label="自分のデッキ" aria-expanded={panel?.type === 'deck'} onClick={() => setPanel(panel?.type === 'deck' ? null : { type: 'deck' })}>▤<small>自分のデッキ</small></button>}
         <EditButton />
-        {(mode === 'cpu' || mode === 'watch' || replaying) && paused && <button className={styles.menuButton} onClick={() => setPaused(false)} aria-label={replaying ? '再生する' : 'CPU再開'}>▶</button>}
+        {(mode === 'cpu' || mode === 'watch') && !replaying && paused && <button className={styles.menuButton} onClick={() => setPaused(false)} aria-label="CPU再開">▶</button>}
       </header>
       <EditBar />
-      {replaying && <div className={styles.replayBadge}><span>リプレイ中</span><button onClick={stopReplay}>やめる</button></div>}
+      {replaying && <ReplayBar />}
       <div className={`${styles.tableViewport} ${styles.withTurnControl}`}>
         <div className={styles.table} data-table>
           <div className={styles.mat}><div className={styles.logoLayer} aria-hidden="true">
