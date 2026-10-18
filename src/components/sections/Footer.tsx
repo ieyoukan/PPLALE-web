@@ -20,7 +20,7 @@ export default function Footer() {
         textAlign: 'center',
       })}
     >
-      <div className={css({ fontSize: 'xs', color: 'gray.400' })}>© 2025 ぷぷりえーる デッキ構築</div>
+      <div className={css({ fontSize: 'xs', color: 'gray.400' })}>© 2025 ぷぷりえーる</div>
       <div className={css({ display: 'flex', gap: '3', fontSize: 'xs' })}>
         <Link
           href="/privacy-policy"

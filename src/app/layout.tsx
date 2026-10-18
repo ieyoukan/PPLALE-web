@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { site } from "@/lib/site";
 import "./reset.css";
 import "./globals.css";
 import DarkModeProvider from './DarkModeProvider';
@@ -10,10 +11,11 @@ import { SpeedInsights } from "@vercel/speed-insights/next"
 const isVercel = process.env.VERCEL === '1';
 
 export const metadata: Metadata = {
-  metadataBase: new URL('https://pplale.vercel.app'),
-  title: "ぷぷりえーる デッキ構築",
-  description: "VRChatにあるカードゲーム「ぷぷりえーる」のデッキ構築などができるwebアプリ。通常構築や2pick構築が可能で、カードの組み合わせを自由に試せます。",
-  keywords: "ぷぷりえーる, VRChat, カードゲーム, デッキ構築, 2pick, カード組み合わせ",
+  metadataBase: new URL(site.url),
+  title: site.title,
+  description: site.description,
+  applicationName: site.name,
+  keywords: [site.name, site.fullName, "PPLALE", "VRChat", "カードゲーム", "ルール", "CPU対戦", "デッキ構築", "2Pick"],
   authors: [{ name: "ようかん" }],
   creator: "ぷぷりえ",
   publisher: "ぷぷりえ",
@@ -31,16 +33,16 @@ export const metadata: Metadata = {
     telephone: false,
   },
   openGraph: {
-    title: "ぷぷりえーる デッキ構築",
-    description: "VRChatにあるカードゲーム「ぷぷりえーる」のデッキ構築などができるwebアプリ",
-    url: "https://pplale.vercel.app",
-    siteName: "ぷぷりえーる デッキ構築",
+    title: site.title,
+    description: site.description,
+    url: site.url,
+    siteName: site.name,
     images: [
       {
         url: "/ogp.png",
         width: 1200,
         height: 630,
-        alt: "ぷぷりえーる デッキ構築",
+        alt: site.fullName,
       },
     ],
     locale: "ja_JP",
@@ -48,8 +50,8 @@ export const metadata: Metadata = {
   },
   twitter: {
     card: "summary_large_image",
-    title: "ぷぷりえーる デッキ構築",
-    description: "VRChatにあるカードゲーム「ぷぷりえーる」のデッキ構築などができるwebアプリ",
+    title: site.title,
+    description: site.description,
     images: ["/ogp.png"],
   },
   robots: {
@@ -96,25 +98,6 @@ export default function RootLayout({
           }}
         />
         
-        <script
-          type="application/ld+json"
-          dangerouslySetInnerHTML={{
-            __html: JSON.stringify({
-              "@context": "https://schema.org",
-              "@type": "WebApplication",
-              "name": "ぷぷりえーる デッキ構築",
-              "description": "VRChatにあるカードゲーム「ぷぷりえーる」のデッキ構築などができるwebアプリ",
-              "url": "https://pplale.vercel.app",
-              "applicationCategory": "Game",
-              "operatingSystem": "Web",
-              "offers": {
-                "@type": "Offer",
-                "price": "0",
-                "priceCurrency": "JPY"
-              }
-            })
-          }}
-        />
       </head>
       <body
         className="antialiased"

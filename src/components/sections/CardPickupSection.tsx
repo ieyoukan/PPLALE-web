@@ -30,13 +30,13 @@ function createPickup(): CardInfo[] {
 }
 
 export default function CardPickupSection() {
-  const [pickupCards, setPickupCards] = useState<CardInfo[]>(createPickup);
+  const [pickupCards, setPickupCards] = useState<CardInfo[]>([]);
   const [isOpened, setIsOpened] = useState(false);
   const [drawRound, setDrawRound] = useState(0);
   const reduceMotion = useReducedMotion();
 
   const handleDraw = () => {
-    if (isOpened) setPickupCards(createPickup());
+    setPickupCards(createPickup());
     setDrawRound(round => round + 1);
     setIsOpened(true);
   };
@@ -129,7 +129,7 @@ export default function CardPickupSection() {
               outline: 'none',
               _focusVisible: { ring: '4px', ringColor: 'pink.300' },
             })}
-            initial={{ opacity: 0, scale: 0.8, y: 30 }}
+            initial={false}
             whileInView={{ opacity: 1, scale: 1, y: 0 }}
             viewport={{ once: true, amount: 0.5 }}
             whileHover={reduceMotion ? undefined : { y: -8, x: -4}}

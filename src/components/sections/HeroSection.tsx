@@ -75,15 +75,24 @@ export default function HeroSection() {
         display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
         gap: '6', pt: '20', pb: '12', px: '4', md: { gap: '8' },
       })}>
-        <motion.div
+        <motion.h1
           className={css({ w: '80vw', maxW: '400px' })}
-          initial={{ opacity: 0, y: -60 }}
+          initial={false}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.8, ease: 'easeInOut' }}
         >
-          <Image src="/pupu_game.webp" alt="ぷぷりえーる" width={500} height={281}
+          <Image src="/pupu_game.webp" alt="お菓子争奪戦争ぷぷりえーる" width={500} height={281}
             className={css({ w: 'full', h: 'auto' })} sizes="(max-width: 500px) 80vw, 400px" preload />
-        </motion.div>
+        </motion.h1>
+
+        <p className={css({
+          maxW: 'lg', px: '5', py: '3', rounded: '2xl', bg: 'white/90',
+          color: 'pink.900', textAlign: 'center', fontSize: 'sm', lineHeight: 'relaxed',
+          boxShadow: 'sm', md: { fontSize: 'base' },
+        })}>
+          VRChatから生まれた、幼女とお菓子のカードゲーム。<br />
+          ルールを知って、推しといっしょに遊ぼう！
+        </p>
 
         <motion.nav
           aria-label="メニュー"
@@ -91,7 +100,7 @@ export default function HeroSection() {
             display: 'grid', gridTemplateColumns: 'repeat(3, minmax(0, 1fr))',
             w: 'full', maxW: '640px', gap: '2.5', md: { gap: '6' },
           })}
-          variants={containerVariants} initial="hidden" animate="visible"
+          variants={containerVariants} initial={false} animate="visible"
         >
           {cardButtons.map((btn) => (
             <motion.div
