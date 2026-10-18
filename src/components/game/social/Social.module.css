@@ -49,10 +49,10 @@
 .group[open] .chevron { transform: rotate(45deg); }
 .placeChip { padding: 2px 10px; border-radius: 99px; font-size: 11px; color: #fff; background: var(--place); }
 .group, .tile { --place: #b9aaa3; --glow: #b9aaa333; }
-[data-place=open] { --place: #ef6f9c; --glow: #ef6f9c55; }
-[data-place=playing] { --place: #9a6bd1; --glow: #9a6bd155; }
-[data-place=lobby] { --place: #eaa83c; --glow: #eaa83c55; }
-[data-place=pending] { --place: #64b0d6; --glow: #64b0d655; }
+.group[data-place=open], .tile[data-place=open] { --place: #ef6f9c; --glow: #ef6f9c55; }
+.group[data-place=playing], .tile[data-place=playing] { --place: #9a6bd1; --glow: #9a6bd155; }
+.group[data-place=lobby], .tile[data-place=lobby] { --place: #eaa83c; --glow: #eaa83c55; }
+.group[data-place=pending], .tile[data-place=pending] { --place: #64b0d6; --glow: #64b0d655; }
 .groupBody { display: grid; grid-template-columns: 200px minmax(0, 1fr); gap: 14px; align-items: start; padding: 0 0 16px; }
 
 /* The room: its rules' fruit pictures, what can be done there, and how many friends are in it. */
@@ -63,7 +63,7 @@ a.room:hover { transform: translateY(-3px) rotate(-.6deg); box-shadow: 0 0 0 3px
 .roomArt img { object-fit: cover; }
 .sleep { display: grid; place-items: center; font-size: 52px; color: #d9c4d0; }
 .roomBadge { position: absolute; top: 8px; left: 8px; padding: 3px 10px; border-radius: 10px 10px 10px 2px; background: var(--place); color: #fff; font-size: 12px; font-weight: 700; box-shadow: 0 2px 0 #0002; }
-[data-place=open] .roomBadge { animation: bob 1.6s ease-in-out infinite; }
+.group[data-place=open] .roomBadge { animation: bob 1.6s ease-in-out infinite; }
 .roomAction { position: absolute; top: 72px; right: 8px; padding: 5px 12px; border-radius: 99px; background: #fff; color: var(--place); font-size: 13px; font-weight: 800; box-shadow: 0 0 0 2px var(--place); }
 a.room:hover .roomAction { background: var(--place); color: #fff; }
 .roomInfo { display: flex; align-items: center; gap: 8px; padding: 8px 10px; font-size: 13px; }
@@ -80,7 +80,7 @@ a.room:hover .roomAction { background: var(--place); color: #fff; }
 .tileArt img { object-fit: cover; object-position: center 20%; }
 .tileLink { position: relative; display: flex; align-items: center; gap: 10px; flex: 1; min-width: 0; padding: 8px 10px; }
 .tile .avatar { flex-basis: 52px; width: 52px; height: 52px; border: 3px solid #fff; box-shadow: 0 0 0 2.5px var(--place); }
-[data-place=open] .tile .avatar { animation: ring 1.8s ease-out infinite; }
+.tile[data-place=open] .avatar { animation: ring 1.8s ease-out infinite; }
 .tileText { display: grid; min-width: 0; text-shadow: 0 0 6px #fff, 0 0 2px #fff; }
 .tileText b { overflow: hidden; font-size: 15px; text-overflow: ellipsis; white-space: nowrap; }
 .tileText small { display: flex; align-items: center; gap: 5px; overflow: hidden; font-size: 11px; color: #8f6f6a; white-space: nowrap; }
@@ -105,9 +105,9 @@ a.room:hover .roomAction { background: var(--place); color: #fff; }
 @keyframes bob { 50% { transform: translateY(-3px); } }
 @keyframes ring { 0% { box-shadow: 0 0 0 2.5px var(--place), 0 0 0 2.5px var(--glow); } 100% { box-shadow: 0 0 0 2.5px var(--place), 0 0 0 10px transparent; } }
 @keyframes pop { from { opacity: 0; transform: scale(.94); } }
-@media (prefers-reduced-motion: reduce) { .socialHeading h2 > span, [data-place=open] .roomBadge, [data-place=open] .tile .avatar, .tile, .remove { animation: none; } }
+@media (prefers-reduced-motion: reduce) { .socialHeading h2 > span, .group[data-place=open] .roomBadge, .tile[data-place=open] .avatar, .tile, .remove { animation: none; } }
 @media (max-width: 600px) { .groupBody { grid-template-columns: 1fr; } .room { grid-template-rows: 80px auto; } .roomAction { top: 42px; } .tiles { grid-template-columns: 1fr; } }
-[data-place=sent] { --place: #b39ad8; --glow: #b39ad855; }
+.group[data-place=sent], .tile[data-place=sent] { --place: #b39ad8; --glow: #b39ad855; }
 .headingLinks { display: flex; align-items: center; gap: 10px; }
 .bell { position: relative; display: grid; place-items: center; width: 44px; height: 44px; border: 2px solid #f0c3d3; border-radius: 50%; background: #fff; font-size: 20px; transition: transform .15s; }
 .bell:hover { transform: rotate(-12deg); }
