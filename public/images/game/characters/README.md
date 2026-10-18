@@ -17,3 +17,17 @@
 | guide-03.webp | cedbf4ae9bf0b1f5.png |
 | guide-06.webp | Iriai.png |
 | guide-07.webp | rikusu.png |
+
+## ホームページの入口
+
+提供されたマグカップ用イラストを、透過を保って最大480×640pxのWebPに変換。全身を切らずに表示する。
+
+| 配置用ファイル | 提供された元ファイル |
+| --- | --- |
+| home-mint.webp | mugcup_.png |
+| home-yellow.webp | mugcup_rikusu.png |
+| home-pink.webp | mugcupgato_.png |
+| home-purple.webp | mugcupsyuo_.png |
+| home-rabbit.webp | mugcuptyori_.png |
+
+対戦バナーにはデッキ構築ヘッダーでも使っているローカル画像 `/images/baner.webp` を再利用する。

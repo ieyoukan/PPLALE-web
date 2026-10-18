@@ -1,14 +1,8 @@
 import React from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
-import { Darumadrop_One } from 'next/font/google';
+import { homeFont } from './homeFont';
 import { css } from 'styled-system/css';
-
-const darumadrop = Darumadrop_One({
-  weight: '400',
-  subsets: ['latin'],
-  display: 'swap',
-});
 
 // 解説カード情報
 const explanationCards = [
@@ -48,7 +42,7 @@ export default function ExplanationSection() {
         <div className={css({ w: 'full', maxW: '6xl' })}>
           <h2
             id="game-introduction-heading"
-            className={`${darumadrop.className} ${css({ fontSize: '4xl', md: { fontSize: '5xl' }, textAlign: 'center', mb: '20', color: 'white' })}`}
+            className={`${homeFont.className} ${css({ fontSize: '4xl', md: { fontSize: '5xl' }, textAlign: 'center', mb: '20', color: 'white' })}`}
             style={{
               background: 'linear-gradient(to top,rgba(255, 255, 255, 1),rgba(255, 234, 243, 1))',
               WebkitBackgroundClip: 'text',
@@ -77,7 +71,7 @@ export default function ExplanationSection() {
                 })}`}
               >
                 <div className={css({ display: 'flex', flexDirection: 'column', h: 'full' })}>
-                  <h3 className={`${darumadrop.className} ${css({ fontSize: '2xl', md: { fontSize: '3xl' }, mb: '4', color: 'pink.400' })}`}>
+                  <h3 className={`${homeFont.className} ${css({ fontSize: '2xl', md: { fontSize: '3xl' }, mb: '4', color: 'pink.400' })}`}>
                     {card.title}
                   </h3>
 

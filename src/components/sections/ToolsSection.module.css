@@ -1,0 +1,94 @@
+.section {
+  position: relative;
+  padding: 48px 20px 72px;
+  color: #704354;
+  background: radial-gradient(circle, #edcddc 1px, transparent 1.5px) 0 0 / 20px 20px, #fff6f6;
+}
+
+.inner { max-width: 1008px; margin: 0 auto; }
+.heading { display: flex; align-items: center; justify-content: center; gap: 36px; margin: 0 auto 24px; }
+.eyebrow { display: block; margin-bottom: 8px; color: #b65c82; font-size: 11px; font-weight: 700; letter-spacing: .2em; }
+.heading h2 { margin: 0; color: #a5406c; font-size: clamp(26px, 3.4vw, 38px); font-weight: 700; line-height: 1.4; letter-spacing: .04em; }
+.mobileBreak { display: none; }
+.mascot { width: 120px; height: 172px; object-fit: contain; transform: rotate(8deg); filter: drop-shadow(0 7px 0 #e5bccc55); }
+
+.battle {
+  display: block;
+  overflow: hidden;
+  border: 5px solid white;
+  border-radius: 24px;
+  background: white;
+  box-shadow: 0 5px 0 #edccdc, 0 14px 32px #9f456914;
+  color: inherit;
+  text-decoration: none;
+  transition: transform .25s ease, box-shadow .25s ease;
+}
+.battleArt { position: relative; aspect-ratio: 1920 / 743; overflow: hidden; border-radius: 18px 18px 0 0; }
+.battleImage { object-fit: cover; transition: transform .4s ease; }
+.battleCaption { display: flex; align-items: center; justify-content: space-between; gap: 16px; padding: 20px 24px; }
+.battleCaption h3 { margin: 0; color: #a5406c; font-size: clamp(20px, 2.6vw, 28px); font-weight: 700; line-height: 1.4; }
+.battleCaption p { margin: 6px 0 0; color: #806575; font-size: 13px; line-height: 1.7; }
+.playButton { display: inline-flex; align-items: center; gap: 24px; flex-shrink: 0; padding: 12px 24px; border-radius: 32px; background: #b94778; box-shadow: 0 3px 0 #91355e; color: white; font-size: 16px; font-weight: 700; }
+
+.grid { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 16px; margin-top: 28px; }
+.card {
+  --wash: #e3f6ee;
+  --accent: #368271;
+  --edge: #b8dfd2;
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  border: 3px solid white;
+  border-radius: 24px;
+  background: linear-gradient(165deg, #ffffff 5%, var(--wash) 75%);
+  box-shadow: 0 5px 0 var(--edge), 0 12px 24px #9f45690d;
+  color: inherit;
+  text-decoration: none;
+  transition: transform .25s ease, box-shadow .25s ease;
+}
+.yellow { --wash: #fff2ce; --accent: #926315; --edge: #ebd695; }
+.pink { --wash: #ffe3ec; --accent: #b64276; --edge: #edb9cd; }
+.purple { --wash: #eee7fa; --accent: #765c9d; --edge: #d3c3e9; }
+.characterStage { position: relative; height: 215px; margin: 16px 12px 0; }
+.halo { position: absolute; inset: 22% 5% 4%; border: 2px dashed var(--edge); border-radius: 50%; transform: rotate(-14deg); }
+.sparkle { position: absolute; top: 15%; right: 6%; color: var(--accent); opacity: .55; font-size: 22px; }
+.character { object-fit: contain; object-position: center bottom; filter: drop-shadow(0 4px 0 #ffffff); transform-origin: center bottom; transition: transform .3s ease; }
+.cardCaption { position: relative; padding: 20px 12px 48px; text-align: center; }
+.cardCaption h3 { margin: 0; color: var(--accent); font-size: 18px; font-weight: 700; line-height: 1.5; }
+.cardCaption p { margin: 7px 0 0; color: #786775; font-size: 11px; line-height: 1.6; }
+.arrow { position: absolute; right: 12px; bottom: 12px; display: grid; place-items: center; width: 26px; height: 26px; border-radius: 50%; background: white; color: var(--accent); font-size: 16px; }
+
+.battle:focus-visible, .card:focus-visible { outline: 3px solid #ad4778; outline-offset: 6px; }
+@media (hover: hover) {
+  .battle:hover, .card:hover { transform: translateY(-5px); }
+  .battle:hover .battleImage { transform: scale(1.025); }
+  .card:hover .character { transform: translateY(-6px) rotate(-3deg); }
+}
+@media (max-width: 760px) {
+  .grid { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 18px 12px; }
+  .characterStage { height: 195px; }
+}
+@media (max-width: 480px) {
+  .section { padding: 32px 16px 48px; }
+  .heading { gap: 16px; justify-content: space-between; padding: 0 12px; }
+  .heading h2 { font-size: 27px; }
+  .mobileBreak { display: block; }
+  .mascot { width: 90px; height: 140px; }
+  .battle { border-width: 4px; border-radius: 20px; }
+  .battleArt { border-radius: 14px 14px 0 0; }
+  .battleCaption { padding: 14px 10px; gap: 8px; }
+  .battleCaption h3 { font-size: 19px; }
+  .battleCaption p { font-size: 10px; }
+  .playButton { padding: 10px 14px; gap: 10px; font-size: 12px; }
+  .grid { margin-top: 24px; }
+  .card { border-radius: 20px; }
+  .characterStage { height: 158px; margin: 12px 8px 0; }
+  .cardCaption { padding: 16px 6px 46px; }
+  .cardCaption h3 { font-size: 15px; }
+  .cardCaption p { font-size: 10px; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .battle, .battleImage, .card, .character { transition: none; }
+  .battle:hover, .card:hover, .card:hover .character, .battle:hover .battleImage { transform: none; }
+}

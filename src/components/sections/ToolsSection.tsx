@@ -1,46 +1,55 @@
 import Image from 'next/image';
 import Link from 'next/link';
-import { Darumadrop_One } from 'next/font/google';
-import { css } from 'styled-system/css';
-
-const darumadrop = Darumadrop_One({ weight: '400', subsets: ['latin'], display: 'swap' });
+import styles from './ToolsSection.module.css';
 
 const destinations = [
-  { href: '/game', title: 'ブラウザで対戦', description: 'CPUと練習したり、ルームで友達と遊んだり。', image: '/images/fruits/いちご.webp' },
-  { href: '/build', title: 'デッキをつくる', description: 'カードを探して、推しのデッキを保存・シェア。', image: '/images/back-card.webp' },
-  { href: '/deck/2pick', title: '2Pickであそぶ', description: '2つの候補からカードを選んで、デッキをつくろう。', image: '/images/back-card.webp' },
-  { href: '/tournament', title: '大会をチェック', description: '大会情報や参加方法はこちら。', image: '/images/fruits/いちご.webp' },
-  { href: '/deck-view', title: 'デッキのがぞうをつくる', description: 'カードを1枚の画像にまとめて、保存・シェア。', image: '/images/back-card.webp' },
+  { href: '/build', title: 'デッキをつくる', description: '推しのカードで、とっておき。', image: 'home-mint.webp', color: 'mint' },
+  { href: '/deck/2pick', title: '2Pickであそぶ', description: '選ぶたび、わくわく。', image: 'home-yellow.webp', color: 'yellow' },
+  { href: '/tournament', title: '大会をチェック', description: 'みんなで、お菓子争奪戦！', image: 'home-pink.webp', color: 'pink' },
+  { href: '/deck-view', title: 'デッキを画像に', description: 'お気に入りをシェアしよう。', image: 'home-purple.webp', color: 'purple' },
 ];
 
 export default function ToolsSection() {
   return (
-    <section aria-labelledby="tools-heading" className={css({ bg: 'pink.50', px: '4', py: '16', md: { py: '20' } })}>
-      <div className={css({ maxW: '5xl', mx: 'auto' })}>
-        <h2 id="tools-heading" className={`${darumadrop.className} ${css({
-          fontSize: '4xl', textAlign: 'center', color: 'pink.700', mb: '8', md: { fontSize: '5xl' },
-        })}`}>もっと、ぷぷりえーる</h2>
-        <div className={css({ display: 'grid', gap: '4', md: { gridTemplateColumns: 'repeat(2, minmax(0, 1fr))' } })}>
+    <section aria-labelledby="tools-heading" className={styles.section}>
+      <div className={styles.inner}>
+        <div className={styles.heading}>
+          <div>
+            <span className={styles.eyebrow} aria-hidden="true">LET’S PLAY!</span>
+            <h2 id="tools-heading">もっと、<br className={styles.mobileBreak} />ぷぷりえーる</h2>
+          </div>
+          <Image src="/images/game/characters/home-rabbit.webp" alt="" width={444} height={640}
+            sizes="(max-width: 600px) 90px, 120px" className={styles.mascot} />
+        </div>
+
+        <Link href="/game" className={styles.battle}>
+          <div className={styles.battleArt}>
+            <Image src="/images/baner.webp" alt="カードを手に向かい合う、ぷぷりえーるの2人のキャラクター" fill
+              sizes="(max-width: 1048px) calc(100vw - 40px), 1008px" className={styles.battleImage} />
+          </div>
+          <div className={styles.battleCaption}>
+            <div>
+              <h3>ブラウザで対戦</h3>
+              <p>ひとりで練習も、友達との対戦も。</p>
+            </div>
+            <span className={styles.playButton} aria-hidden="true">あそぶ <span>→</span></span>
+          </div>
+        </Link>
+
+        <div className={styles.grid}>
           {destinations.map(destination => (
-            <Link key={destination.href} href={destination.href} className={css({
-              display: 'flex', alignItems: 'center', gap: '4', p: '5', minH: '32',
-              bg: 'white', color: 'gray.800', rounded: '2xl', borderWidth: '2px', borderColor: 'pink.200',
-              boxShadow: '0 8px 24px rgba(157, 70, 108, 0.1)',
-              transition: 'transform 0.2s ease, border-color 0.2s ease',
-              _hover: { transform: 'translateY(-4px)', borderColor: 'pink.400' },
-              _focusVisible: { outline: '3px solid', outlineColor: 'pink.500', outlineOffset: '4px' },
-            })}>
-              <Image src={destination.image} alt="" width={55} height={80}
-                className={css({ flexShrink: '0', rounded: 'md', objectFit: 'contain' })} />
-              <div className={css({ flex: '1', minW: '0' })}>
-                <h3 className={`${darumadrop.className} ${css({ fontSize: '2xl', color: 'pink.700' })}`}>
-                  {destination.title}
-                </h3>
-                <p className={css({ mt: '2', fontSize: 'sm', lineHeight: 'relaxed' })}>
-                  {destination.description}
-                </p>
+            <Link key={destination.href} href={destination.href} className={`${styles.card} ${styles[destination.color]}`}>
+              <div className={styles.characterStage}>
+                <span className={styles.halo} aria-hidden="true" />
+                <span className={styles.sparkle} aria-hidden="true">✦</span>
+                <Image src={`/images/game/characters/${destination.image}`} alt="" fill
+                  sizes="(max-width: 600px) 40vw, 220px" className={styles.character} />
               </div>
-              <span aria-hidden="true" className={css({ color: 'pink.600', fontSize: '2xl', flexShrink: '0' })}>→</span>
+              <div className={styles.cardCaption}>
+                <h3>{destination.title}</h3>
+                <p>{destination.description}</p>
+                <span className={styles.arrow} aria-hidden="true">→</span>
+              </div>
             </Link>
           ))}
         </div>

@@ -50,3 +50,34 @@ test('sitemap includes the home and public play entry with canonical trailing sl
   }
   expect(xml).not.toContain('<lastmod>');
 });
+
+for (const width of [320, 390, 1280]) {
+  test(`illustrated home links fit and load at ${width}px`, async ({ page }, info) => {
+    await page.setViewportSize({ width, height: 900 });
+    await page.goto('/');
+    const section = page.getByRole('region', { name: /もっと、/ });
+    await section.scrollIntoViewIfNeeded();
+    await expect(section.getByRole('link')).toHaveCount(5);
+    const images = section.locator('img');
+    await expect(images).toHaveCount(6);
+    for (const img of await images.all()) {
+      await expect.poll(() => img.evaluate(el => el.complete && el.naturalWidth > 0)).toBe(true);
+    }
+    await expect(section.getByRole('link', { name: /ブラウザで対戦/ }).locator('img')).toHaveAttribute('src', /baner.webp/);
+    const font = await section.locator('h3').first().evaluate(el => getComputedStyle(el).fontFamily);
+    expect(font).toMatch(/Zen[ _]Maru[ _]Gothic/);
+    const loaded = await page.evaluate(async family => {
+      const faces = await document.fonts.load(`700 20px ${family}`, '対戦大会画像構築');
+      return faces.length > 0 && faces.every(face => face.status === 'loaded');
+    }, font);
+    expect(loaded).toBe(true);
+    expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(true);
+    for (const link of await section.getByRole('link').all()) {
+      const bounds = await link.boundingBox();
+      expect(bounds.x).toBeGreaterThanOrEqual(0);
+      expect(bounds.x + bounds.width).toBeLessThanOrEqual(width);
+    }
+    await expect(page.getByText('ルールを知って、推しといっしょに遊ぼう！')).toHaveCount(0);
+    await section.screenshot({ path: info.outputPath('illustrated-links.png') });
+  });
+}

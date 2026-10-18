@@ -4,14 +4,8 @@ import React from 'react';
 import { motion } from 'framer-motion';
 import Link from 'next/link';
 import Image from 'next/image';
-import { Darumadrop_One } from 'next/font/google';
+import { homeFont } from './homeFont';
 import { css } from 'styled-system/css';
-
-const darumadrop = Darumadrop_One({
-  weight: '400',
-  subsets: ['latin'],
-  display: 'swap',
-});
 
 const cardButtons = [
   { title: 'ぷぷりえーるとは', lines: ['ぷぷりえーる', 'とは'], href: '/about', img: '/images/back-card.webp' },
@@ -108,7 +102,7 @@ export default function HeroSection() {
               })}>
                 <Image src={btn.img} alt="" fill sizes="(max-width: 640px) 32vw, 260px"
                   style={{ objectFit: 'cover', borderRadius: '0.75rem' }} preload />
-                <span aria-hidden="true" className={`${darumadrop.className} ${css({
+                <span aria-hidden="true" className={`${homeFont.className} ${css({
                   position: 'absolute', inset: '0', zIndex: '10',
                   display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
                   bg: 'black/30', rounded: 'xl', fontWeight: 'bold',
