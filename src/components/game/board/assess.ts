@@ -1,10 +1,11 @@
 // The course of a match (形勢): each position's chance of winning and a grade for each move,
-// computed one position at a time in a worker (assess.worker.ts) or, without one, on the main thread.
+// computed one position at a time in a worker (assess.worker.ts).
 import { applyCommand, turnOf } from '@pplale/game-core';
 import { createValueEvaluator, gradeOf, moveLoss, valueModel, winProbability } from '@pplale/game-core/ai';
 import type { Command, GameState, Side } from '@pplale/game-core';
 import type { MoveGrade } from '@pplale/game-core/ai';
 import { gameCatalog } from '@/lib/game/catalog';
+import type { AssessmentCache } from './assessmentCache';
 
 /** The position after `index` commands of the match. */
 export interface AssessedPoint {
@@ -19,9 +20,11 @@ export interface AssessedPoint {
   label?: string;
   grade?: MoveGrade;
   loss?: number;
+  /** The optional, slower move analysis has finished (including moves with no grade). */
+  graded?: true;
 }
-export type AssessRequest = { id: number; initial: GameState; commands: Command[]; viewer: Side };
-export type AssessResponse = { id: number; point: AssessedPoint } | { id: number; done: true };
+export type AssessRequest = { id: number; initial: GameState; current: GameState; commands: Command[]; viewer: Side; saved?: AssessmentCache };
+export type AssessResponse = { id: number; point: AssessedPoint } | { id: number; points: AssessedPoint[] } | { id: number; done: true };
 
 const evaluate = createValueEvaluator(valueModel);
 const SEEDS = [1, 2, 3];
@@ -44,7 +47,17 @@ export function describe(state: GameState, command: Command): string {
  * Walks the match and yields every playing position not assessed yet. A position is judged with
  * `viewer`'s knowledge only: the opponent's hand and the deck order stay guessed.
  */
-export function* assessMatch({ initial, commands, viewer }: Omit<AssessRequest, 'id'>, known: Map<number, AssessedPoint>): Generator<AssessedPoint> {
+export function* assessMatch({ initial, current, commands, viewer }: Omit<AssessRequest, 'id'>, known: Map<number, AssessedPoint>): Generator<AssessedPoint> {
+  const judge = (state: GameState, index: number): AssessedPoint => {
+    const win = SEEDS.reduce((sum, seed) => sum + winProbability(state, gameCatalog, evaluate, valueModel.scale, { viewer, seed }), 0) / SEEDS.length;
+    return { index, win, turn: turnOf(state) };
+  };
+  // A resumed match may have hundreds of older positions. Show the current one before backfilling.
+  if (current.phase === 'playing') {
+    const latest = known.get(commands.length) ?? judge(current, commands.length);
+    known.set(latest.index, latest);
+    yield latest;
+  }
   let state = initial, previous: { state: GameState } | null = null;
   for (let index = 0; index <= commands.length; index++) {
     if (index > 0) {
@@ -56,16 +69,24 @@ export function* assessMatch({ initial, commands, viewer }: Omit<AssessRequest, 
     let point = known.get(index);
     if (!point) {
       // The guessed hidden cards move a single judgement by a few points: average several guesses.
-      const win = SEEDS.reduce((sum, seed) => sum + winProbability(state, gameCatalog, evaluate, valueModel.scale, { viewer, seed }), 0) / SEEDS.length;
-      point = { index, win, turn: turnOf(state) };
-      const command = commands[index - 1];
-      if (previous && command) {
-        // Judged from the position it was played in, against the best plan there (viewer's knowledge only).
-        const loss = moveLoss(previous.state, command, gameCatalog, evaluate, valueModel.scale, { viewer, seeds: SEEDS });
-        Object.assign(point, { command, playedIn: turnOf(previous.state), label: describe(previous.state, command), ...(loss !== null && { loss, grade: gradeOf(loss) }) });
-      }
+      point = judge(state, index);
       known.set(index, point);
       yield point;
+    }
+    const command = commands[index - 1];
+    if (previous && command) {
+      if (!point.command) {
+        point = { ...point, command, playedIn: turnOf(previous.state), label: describe(previous.state, command) };
+        known.set(index, point);
+        yield point;
+      }
+      // Grades are only displayed on the result screen. Keep their search out of live updates.
+      if (current.winner !== null && !point.graded) {
+        const loss = moveLoss(previous.state, command, gameCatalog, evaluate, valueModel.scale, { viewer, seeds: SEEDS });
+        point = { ...point, graded: true, ...(loss !== null && { loss, grade: gradeOf(loss) }) };
+        known.set(index, point);
+        yield point;
+      }
     }
     previous = { state };
   }
