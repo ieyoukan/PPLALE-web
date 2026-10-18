@@ -17,7 +17,7 @@ export function countCards(ids: readonly string[]) {
   return [...counts].map(([id, count]) => ({ id, count }));
 }
 
-/** Turn headers are emitted by commands/phases; leading entries may predate the retained log. */
+/** Turn headers are emitted by commands/phases; leading entries may predate the retained log. Oldest first. */
 export function logTurns(lines: readonly string[], names: readonly string[]) {
   const groups: { title: string; side?: number; lines: { text: string; index: number }[] }[] = [];
   lines.forEach((text, index) => {
@@ -28,5 +28,5 @@ export function logTurns(lines: readonly string[], names: readonly string[]) {
       groups.at(-1)!.lines.push({ text, index });
     }
   });
-  return groups.reverse();
+  return groups;
 }

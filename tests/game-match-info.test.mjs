@@ -31,10 +31,10 @@ test('deck grouping counts copies without sorting or modifying the submitted lis
   assert.deepEqual(cards, ['b', 'a', 'b']);
 });
 
-test('log groups show newest turn first and keep effects in their original order', () => {
+test('log groups run oldest first and keep effects in their original order', () => {
   const groups = logTurns(['準備', 'Aの1ターン目', 'プレイ', 'ダメージ', 'Bの1ターン目', 'ドロー'], ['A', 'B']);
-  assert.deepEqual(groups.map(g => g.title), ['Bの1ターン目', 'Aの1ターン目', '準備・これまでの履歴']);
+  assert.deepEqual(groups.map(g => g.title), ['準備・これまでの履歴', 'Aの1ターン目', 'Bの1ターン目']);
   assert.deepEqual(groups[1].lines.map(l => l.text), ['プレイ', 'ダメージ']);
-  assert.equal(groups[0].side, 1);
+  assert.equal(groups[2].side, 1);
   assert.deepEqual(logTurns([], ['A', 'B']), []);
 });

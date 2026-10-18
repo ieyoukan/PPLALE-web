@@ -626,31 +626,17 @@
 /* Nine playables: the six normal ones in the first row, the 拡張プレイアブル (ExP) below. */
 .editPlayables button[data-extended]::after { content: 'ExP'; position: absolute; right: 2px; top: 2px; z-index: 2; padding: 0 5px; border-radius: 8px; background: #fff7e5; color: #7a5967; font: 700 12px Arial, sans-serif; }
 
-/* Concealed hands hang in from the top edge; face-up cards use the separate row below. */
+/* The opponent's hand hangs in from the top edge like the player's own from the bottom: only a strip
+   of each card shows, ending above the far side's numbers, which stay where they are. The strip follows
+   the table's size (the counters are placed in cqw too). A revealed card comes down a little further.
+   Where every hand is face up (watching, edit mode) the cards come down to be read; there the counters
+   are drawn above them so the numbers are never covered. Taps still reach the cards between the buttons. */
 .opponentHand { top: calc(3.8cqw - 156px); }
 .openHand { top: -36px; }
 .hiddenCard.revealedOpponentCard { transform: translateX(calc(var(--hand-index) * var(--fan-step) + var(--reveal-shift))) translateY(12px) rotateX(-12deg); }
 .far .turnCounter, .far .pointsCounter { z-index: 19; pointer-events: none; }
 .far .counterValue > span:first-child { border-radius: 999px; background: #fffbede6; }
 @media (max-height: 600px) { .opponentHand { top: calc(3.8cqw - 156px); } .openHand { top: -80px; } }
-
-/* Visible opposing hands get a separate row above the mat, clear of both counters. */
-.table:has(.readableOpponentHand) { --opponent-hand-space: 156px; margin-top: var(--opponent-hand-space); height: calc(100dvh - var(--opponent-hand-space)); min-height: 390px; }
-.readableOpponentHand { box-sizing: border-box; display: flex; gap: 10px; left: 0; top: calc(-1 * var(--opponent-hand-space)); width: min(100%, calc(100vw - clamp(176px, 14vw, 224px) - 24px)); height: var(--opponent-hand-space); padding: 16px 16px 8px; overflow-x: auto; overflow-y: hidden; perspective: none; pointer-events: auto; background: #35281e80; border-bottom: 1px solid #ead8b966; }
-.readableOpponentHand .hiddenCard, .readableOpponentHand .hiddenCard.revealedOpponentCard { position: relative; flex: 0 0 88px; width: 88px; height: 132px; top: auto; left: auto; transform: none; }
-.readableOpponentHand .hiddenCard:first-child { margin-left: auto; }
-.readableOpponentHand .hiddenCard:last-child { margin-right: auto; }
-.readableOpponentHand .addFarHand { position: relative; flex: 0 0 56px; align-self: center; left: auto; top: auto; margin-right: auto; }
-.readableOpponentHand .hiddenCard:not([data-revealed]) + .revealedOpponentCard { margin-left: 16px; }
-.readableOpponentHand .hiddenFace, .readableOpponentHand .attackMarble, .readableOpponentHand .hpMarble { transform: none; }
-.readableOpponentHand .damageMarble { transform: rotate(-9deg); }
-.readableOpponentHand .costMarble { --marble-size: 36px; font-size: 20px; }
-.readableOpponentHand .costMarble > span { font-size: 16px; }
-.readableOpponentHand .revealed { font-size: 12px; }
-@media (max-height: 600px) {
-  .table:has(.readableOpponentHand) { --opponent-hand-space: 126px; }
-  .readableOpponentHand .hiddenCard, .readableOpponentHand .hiddenCard.revealedOpponentCard { flex-basis: 68px; width: 68px; height: 102px; }
-}
 
 /* Immediate acknowledgement of a submitted hand card; no game result is predicted. */
 .handCard[data-submitting]::after { content: ''; position: absolute; inset: -4px; border: 3px solid #fff4ad; border-radius: 9px; box-shadow: 0 0 18px #ffbad9; pointer-events: none; animation: submittingCard .55s ease-in-out infinite alternate; }

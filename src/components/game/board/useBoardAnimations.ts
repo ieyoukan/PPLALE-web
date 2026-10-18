@@ -83,7 +83,7 @@ export function useBoardAnimations({ game, shown, view, mode, cpuSides, replayin
   /** Watching a room's match without a seat: both players' names, used where a player would read あなた / 相手. */
   spectating?: [string, string];
 }) {
-  const timing = useAnimationTiming(mode);
+  const timing = useAnimationTiming();
   const { draw: DRAW_DURATION, rest: FLIGHT_REST, strikeHit: STRIKE_HIT, strike: STRIKE_DURATION,
     announceHit: ANNOUNCE_HIT, announce: ANNOUNCE_DURATION, pingHit: PING_HIT, ping: PING_DURATION,
     choiceHit: CHOICE_HIT, choice: CHOICE_DURATION } = timing;
