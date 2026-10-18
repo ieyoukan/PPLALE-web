@@ -123,3 +123,5 @@ a.room:hover .roomAction { background: var(--place); color: #fff; }
 .watchMark { display: inline-grid; place-items: center; flex: none; color: var(--place); font-size: 13px; }
 .panel .answer button svg { font-size: 18px; }
 .panel .more svg { display: block; font-size: 16px; }
+.friendChip { display: inline-flex; align-items: center; gap: 6px; min-height: 42px; padding: 9px 16px; border-radius: 14px; background: #fde4ec; color: #c45f86; font-weight: 700; }
+.friendChip svg { fill: currentColor; }

@@ -43,6 +43,13 @@ export async function requestFriend(other: string) {
     transaction.set(ref, { members, requestedBy: uid, status: 'pending', createdAt: sdk.serverTimestamp() });
   });
 }
+/** This player's friendship with `other`, if any (`null` also when not signed in). */
+export async function readFriendship(other: string): Promise<Friendship | null> {
+  const { sdk, db, auth } = await store(), uid = auth.currentUser?.uid;
+  if (!uid || uid === other) return null;
+  const value = await sdk.getDoc(sdk.doc(db, 'friendships', friendshipId(uid, other)));
+  return value.exists() ? { id: value.id, ...value.data() } as Friendship : null;
+}
 export async function respondFriend(friendship: Friendship, accept: boolean) {
   const { sdk, db } = await store(), ref = sdk.doc(db, 'friendships', friendship.id);
   if (accept) await sdk.updateDoc(ref, { status: 'accepted', acceptedAt: sdk.serverTimestamp() });

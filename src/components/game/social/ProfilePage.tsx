@@ -5,10 +5,11 @@ import Link from 'next/link';
 import { useSearchParams } from 'next/navigation';
 import { useAuth } from '@/lib/auth';
 import { displayCards } from '@/lib/game/catalog';
-import { defaultProfile, readProfile, requestFriend, saveProfile } from '@/lib/game/social';
-import type { PlayerProfile } from '@/lib/game/social';
+import { defaultProfile, readFriendship, readProfile, requestFriend, saveProfile } from '@/lib/game/social';
+import type { Friendship, PlayerProfile } from '@/lib/game/social';
 import { RecordedCard } from '../history/RecordedCard';
 import { Icon } from './Icon';
+import { NOTIFICATIONS_PATH } from './NotificationsPage';
 import styles from './Social.module.css';
 
 export function ProfilePage() {
@@ -23,13 +24,20 @@ function Profile({ uid, mine, initialName }: { uid: string; mine: boolean; initi
   const [profile, setProfile] = useState<PlayerProfile | null>(null);
   const [loading, setLoading] = useState(true), [busy, setBusy] = useState(false);
   const [error, setError] = useState(''), [message, setMessage] = useState('');
-  const [friendSent, setFriendSent] = useState(false);
+  const [friendSent, setFriendSent] = useState(false), [friendship, setFriendship] = useState<Friendship | null>(null);
   const [query, setQuery] = useState(''), [choosing, setChoosing] = useState(false);
   useEffect(() => {
     let current = true;
     void readProfile(uid).then(value => { if (current) { setProfile(value ?? (mine ? defaultProfile(uid, Array.from(initialName).slice(0, 12).join('')) : null)); setLoading(false); } }, () => { if (current) { setError('プロフィールを読み込めませんでした'); setLoading(false); } });
     return () => { current = false; };
   }, [uid, mine, initialName]);
+  // Someone who is already a friend (or asked, or was asked) is not offered a request.
+  useEffect(() => {
+    if (mine || !user) return;
+    let current = true;
+    void readFriendship(uid).then(value => { if (current) setFriendship(value); }, () => {});
+    return () => { current = false; };
+  }, [uid, mine, user]);
   if (loading) return <p role="status">プロフィールを読み込み中…</p>;
   if (!profile) return <section className={styles.panel}><h2>プロフィール</h2><p role="status">{error || 'プロフィールはまだ作成されていません。'}</p><Link href="/game/social/">ソーシャルへ戻る</Link></section>;
   async function save() {
@@ -58,7 +66,9 @@ function Profile({ uid, mine, initialName }: { uid: string; mine: boolean; initi
       <button className={styles.primary} disabled={busy || !profile.displayName.trim()}>{busy ? '保存中…' : 'プロフィールを保存'}</button>
     </form>}
     <div className={styles.actions}>
-      {!mine && user && <button className={styles.primary} disabled={busy || friendSent} onClick={() => void friend()}>＋ フレンド申請</button>}
+      {!mine && user && (friendship?.status === 'accepted' ? <span className={styles.friendChip}><Icon name="heart" />フレンド</span>
+        : friendship && friendship.requestedBy !== user.uid ? <Link className={styles.primary} href={NOTIFICATIONS_PATH}>届いた申請を見る ›</Link>
+        : <button className={styles.primary} disabled={busy || friendSent || !!friendship} onClick={() => void friend()}>{friendship ? '申請中' : '＋ フレンド申請'}</button>)}
       <button onClick={() => void share()}>リンクをコピー</button><Link href="/game/social/">ソーシャル ›</Link>
     </div>
     {message && <p className={styles.success} role="status">{message}</p>}{error && <p className={styles.error} role="alert">{error}</p>}
