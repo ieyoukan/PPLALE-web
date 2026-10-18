@@ -34,7 +34,7 @@ export default function GameMenu({ children }: { children: ReactNode }) {
       <Image className={styles.logo} src="/images/game/logo.webp" alt="お菓子争奪戦争 ぷぷりえーる" width={462} height={227} priority />
       <nav className={styles.tabs} aria-label="ゲームメニュー">{tabs.map(tab =>
         <Link key={tab.href} href={tab.href} className={`${styles.tab} ${tab.tone}`} aria-current={tab === current ? 'page' : undefined}>
-          <b>{tab.label}</b><small>{tab.note}</small>
+          <b data-ui-title>{tab.label}</b><small>{tab.note}</small>
         </Link>)}
       </nav>
       <div className={styles.foot}>

@@ -47,13 +47,13 @@ export function BoardTable({ session }: { session: BoardSession }) {
   const board = useBoard(container, session);
   const { game, me, view, mode, paused, attacker, drag, mulligan, ready, panel, error, replaying, remote, editing, animations, setup, setPanel, setPaused, setAttacker } = board;
   // The saved match is still loading (or missing, and the preparation page is opening).
-  if (!ready) return <div className={styles.emulator} aria-busy="true" />;
+  if (!ready) return <div data-readable className={styles.emulator} aria-busy="true" />;
   // An open drawer is closed from the corner button. An enlarged card and the skills are not: they
   // have 閉じる beside them, where the buttons of a chosen hand card are.
   const drawerOpen = !!panel && panel.type !== 'inspect' && panel.type !== 'skills';
   const { timing } = animations;
   return <BoardContext.Provider value={board}>
-    <div className={styles.emulator} ref={container}
+    <div data-readable className={styles.emulator} ref={container}
       style={{ '--draw-duration': `${timing.draw}ms`, '--strike-duration': `${timing.strike}ms`, '--announcement-duration': `${timing.announce}ms`, '--ping-duration': `${timing.ping}ms` } as CSSProperties}
       onKeyDown={event => { if (event.key === 'Escape') board.clearSelection(); }}
       onPointerMove={drag.move} onPointerUp={drag.release} onPointerCancel={drag.cancel}>

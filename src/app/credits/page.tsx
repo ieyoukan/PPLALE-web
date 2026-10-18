@@ -3,15 +3,9 @@
 import '@/app/panda.css';
 
 import React from 'react';
-import { Darumadrop_One } from 'next/font/google';
+import { siteTitleFont } from '@/app/fonts';
 import Link from 'next/link';
 import { css } from 'styled-system/css';
-
-const darumadrop = Darumadrop_One({
-  weight: '400',
-  subsets: ['latin'],
-  display: 'swap',
-});
 
 const avatar = [
   {
@@ -115,7 +109,7 @@ export default function Credits() {
   return (
     <main className={css({ minH: 'screen', bgGradient: 'to-b', gradientFrom: 'pink.100', gradientTo: 'white' })}>
       <div className={`container ${css({ px: '4', py: '16' })}`}>
-        <h1 className={`${darumadrop.className} ${css({ fontSize: { base: '4xl', md: '5xl' }, textAlign: 'center', mb: '16', color: 'pink.600' })}`}>
+        <h1 className={`${siteTitleFont.className} ${css({ fontSize: { base: '4xl', md: '5xl' }, textAlign: 'center', mb: '16', color: 'pink.600' })}`}>
           クレジット
         </h1>
 
@@ -131,7 +125,7 @@ export default function Credits() {
           </div>
 
           <section className={css({ mb: '8' })}>
-            <h2 className={`${darumadrop.className} ${css({ fontSize: '2xl', mb: '4', color: 'pink.500' })}`}>使用素材</h2>
+            <h2 className={`${siteTitleFont.className} ${css({ fontSize: '2xl', mb: '4', color: 'pink.500' })}`}>使用素材</h2>
             <div className={css({ display: 'flex', flexDirection: 'column', gap: '4' })}>
               <div className={css({ borderBottomWidth: '1px', pb: '4' })}>
                 <h3 className={css({ fontWeight: 'bold', fontSize: 'lg', mb: '2' })}>アバター</h3>

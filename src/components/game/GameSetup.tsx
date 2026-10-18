@@ -66,7 +66,7 @@ export function GameSetup({ modes, onStart }: {
     }
     return <div className={styles.setupContent}>
     <div className={styles.setupModes}>
-      {modes.map(id => <button key={id} aria-pressed={mode === id} onClick={() => setMode(id)}>{modeNames[id]}</button>)}
+      {modes.map(id => <button key={id} data-ui-title aria-pressed={mode === id} onClick={() => setMode(id)}>{modeNames[id]}</button>)}
     </div>
     {/* One row per CPU side: the opponent against you, both sides when watching. */}
     {(mode === 'watch' ? [0, 1] as Side[] : mode === 'cpu' ? [1] as Side[] : []).map(side => <div key={side} className={styles.setupModes} role="group" aria-label={mode === 'watch' ? `${sideLabel(mode, side)}の強さ` : 'CPUの強さ'}>
@@ -88,7 +88,7 @@ export function GameSetup({ modes, onStart }: {
     <UnusableDecks choices={choices} className={styles.ruleSettings} />
     {saved.error && <p role="alert" className={styles.error}>{saved.error}</p>}
     {error && <p role="alert" className={styles.error}>{error}</p>}
-    <button className={styles.startButton} disabled={chosen.some(choice => !choice)} onClick={() => start()}>対戦をはじめる <span>→</span></button>
+    <button data-ui-title className={styles.startButton} disabled={chosen.some(choice => !choice)} onClick={() => start()}>対戦をはじめる <span>→</span></button>
     {asking && <>
       <button className={styles.consentBackdrop} aria-label="閉じる" onClick={() => setAsking(false)} />
       <section className={styles.consent} role="dialog" aria-modal="true" aria-labelledby="learning-consent">
@@ -99,7 +99,7 @@ export function GameSetup({ modes, onStart }: {
           <li>お互いが打った手と、勝ち負け</li>
         </ul>
         <p>名前・アカウント・デッキの名前は送りません。記録からだれの対戦かはわかりません。ログインも不要です。くわしくは<Link href="/privacy-policy" target="_blank">プライバシーポリシー</Link>をご覧ください。</p>
-        <button className={styles.startButton} onClick={() => { agree(true); start(true); }}>同意して対戦をはじめる <span>→</span></button>
+        <button data-ui-title className={styles.startButton} onClick={() => { agree(true); start(true); }}>同意して対戦をはじめる <span>→</span></button>
         <button className={styles.secondaryButton} onClick={() => setAsking(false)}>同意しない（ほかの強さを選ぶ）</button>
       </section>
     </>}

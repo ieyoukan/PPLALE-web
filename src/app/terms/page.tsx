@@ -3,28 +3,22 @@
 import '@/app/panda.css';
 
 import React from 'react';
-import { Darumadrop_One } from 'next/font/google';
+import { siteTitleFont } from '@/app/fonts';
 import Link from 'next/link';
 import { css } from 'styled-system/css';
-
-const darumadrop = Darumadrop_One({
-  weight: '400',
-  subsets: ['latin'],
-  display: 'swap',
-});
 
 export default function Terms() {
   return (
     <main className={css({ minH: 'screen', bgGradient: 'to-b', gradientFrom: 'pink.100', gradientTo: 'white' })}>
       <div className={`container ${css({ px: '4', py: '16' })}`}>
-        <h1 className={`${darumadrop.className} ${css({ fontSize: { base: '4xl', md: '5xl' }, textAlign: 'center', mb: '16', color: 'pink.600' })}`}>
+        <h1 className={`${siteTitleFont.className} ${css({ fontSize: { base: '4xl', md: '5xl' }, textAlign: 'center', mb: '16', color: 'pink.600' })}`}>
           利用規約
         </h1>
 
         <div className={css({ maxW: '3xl', mx: 'auto', bg: 'white', rounded: 'xl', boxShadow: 'lg', p: '8' })}>
           <section className={css({ display: 'flex', flexDirection: 'column', gap: '8' })}>
             <div>
-              <h2 className={`${darumadrop.className} ${css({ fontSize: '2xl', mb: '4', color: 'pink.500' })}`}>1. サービスの利用</h2>
+              <h2 className={`${siteTitleFont.className} ${css({ fontSize: '2xl', mb: '4', color: 'pink.500' })}`}>1. サービスの利用</h2>
               <p className={css({ color: 'gray.700', mb: '4' })}>
                 当サービスは、VRChatのカードゲーム「ぷぷりえーる」のデッキ構築を支援するためのツールです。
                 本サービスを利用することで、以下の規約に同意したものとみなされます。
@@ -32,7 +26,7 @@ export default function Terms() {
             </div>
 
             <div>
-              <h2 className={`${darumadrop.className} ${css({ fontSize: '2xl', mb: '4', color: 'pink.500' })}`}>2. 免責事項</h2>
+              <h2 className={`${siteTitleFont.className} ${css({ fontSize: '2xl', mb: '4', color: 'pink.500' })}`}>2. 免責事項</h2>
               <p className={css({ color: 'gray.700', mb: '4' })}>
                 当サービスに関して、以下の事項について免責とさせていただきます：
               </p>
@@ -45,7 +39,7 @@ export default function Terms() {
             </div>
 
             <div>
-              <h2 className={`${darumadrop.className} ${css({ fontSize: '2xl', mb: '4', color: 'pink.500' })}`}>3. 禁止事項</h2>
+              <h2 className={`${siteTitleFont.className} ${css({ fontSize: '2xl', mb: '4', color: 'pink.500' })}`}>3. 禁止事項</h2>
               <p className={css({ color: 'gray.700', mb: '4' })}>
                 以下の行為を禁止します：
               </p>
@@ -59,7 +53,7 @@ export default function Terms() {
             </div>
 
             <div>
-              <h2 className={`${darumadrop.className} ${css({ fontSize: '2xl', mb: '4', color: 'pink.500' })}`}>4. 知的財産権</h2>
+              <h2 className={`${siteTitleFont.className} ${css({ fontSize: '2xl', mb: '4', color: 'pink.500' })}`}>4. 知的財産権</h2>
               <p className={css({ color: 'gray.700', mb: '4' })}>
                 当サービスで使用されている画像(アバター、衣装も含む)やコンテンツの著作権は、それぞれの権利者に帰属します。
                 ユーザーは、権利者の許可なく、これらのコンテンツを複製、改変、再配布することはできません。
@@ -73,7 +67,7 @@ export default function Terms() {
             </div>
 
             <div>
-              <h2 className={`${darumadrop.className} ${css({ fontSize: '2xl', mb: '4', color: 'pink.500' })}`}>5. 利用規約の変更</h2>
+              <h2 className={`${siteTitleFont.className} ${css({ fontSize: '2xl', mb: '4', color: 'pink.500' })}`}>5. 利用規約の変更</h2>
               <p className={css({ color: 'gray.700' })}>
                 当サービスは、必要に応じて本利用規約を変更することがあります。
                 変更があった場合は、本ページでお知らせします。
@@ -81,7 +75,7 @@ export default function Terms() {
             </div>
 
             <div>
-              <h2 className={`${darumadrop.className} ${css({ fontSize: '2xl', mb: '4', color: 'pink.500' })}`}>6. 準拠法</h2>
+              <h2 className={`${siteTitleFont.className} ${css({ fontSize: '2xl', mb: '4', color: 'pink.500' })}`}>6. 準拠法</h2>
               <p className={css({ color: 'gray.700' })}>
                 本利用規約の解釈にあたっては、日本法を準拠法とします。
               </p>

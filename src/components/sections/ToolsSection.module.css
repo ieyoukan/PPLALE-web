@@ -8,7 +8,7 @@
 .inner { max-width: 1008px; margin: 0 auto; }
 .heading { display: flex; align-items: center; justify-content: center; gap: 36px; margin: 0 auto 24px; }
 .eyebrow { display: block; margin-bottom: 8px; color: var(--brand-cocoa-soft); font-size: 11px; font-weight: 700; letter-spacing: .2em; }
-.heading h2 { font-family: var(--font-home-title), sans-serif; margin: 0; color: var(--brand-cocoa); font-size: clamp(26px, 3.4vw, 38px); font-weight: 400; line-height: 1.4; letter-spacing: .04em; }
+.heading h2 { font-family: var(--font-site-title), sans-serif; margin: 0; color: var(--brand-cocoa); font-size: clamp(26px, 3.4vw, 38px); font-weight: 400; line-height: 1.4; letter-spacing: .04em; }
 .mobileBreak { display: none; }
 .mascot { width: 120px; height: 172px; object-fit: contain; transform: rotate(8deg); filter: drop-shadow(0 7px 0 var(--brand-shadow)); }
 
@@ -26,7 +26,7 @@
 .battleArt { position: relative; aspect-ratio: 1920 / 743; overflow: hidden; border-radius: 18px 18px 0 0; }
 .battleImage { object-fit: cover; transition: transform .4s ease; }
 .battleCaption { display: flex; align-items: center; justify-content: space-between; gap: 16px; padding: 20px 24px; }
-.battleCaption h3 { font-family: var(--font-home-title), sans-serif; margin: 0; color: var(--brand-cocoa); font-size: clamp(20px, 2.6vw, 28px); font-weight: 400; line-height: 1.4; }
+.battleCaption h3 { font-family: var(--font-site-title), sans-serif; margin: 0; color: var(--brand-cocoa); font-size: clamp(20px, 2.6vw, 28px); font-weight: 400; line-height: 1.4; }
 .battleCaption p { margin: 6px 0 0; color: var(--brand-cocoa-soft); font-size: 13px; line-height: 1.7; }
 .playButton { display: inline-flex; align-items: center; gap: 24px; flex-shrink: 0; padding: 12px 24px; border-radius: 32px; background: var(--brand-pink); box-shadow: 0 3px 0 var(--brand-pink-edge); color: var(--brand-cocoa-deep); font-size: 16px; font-weight: 700; }
 
@@ -55,7 +55,7 @@
 .sparkle { position: absolute; top: 15%; right: 6%; color: var(--accent); opacity: .55; font-size: 22px; }
 .character { object-fit: contain; object-position: center bottom; filter: drop-shadow(0 4px 0 var(--brand-paper)); transform-origin: center bottom; transition: transform .3s ease; }
 .cardCaption { position: relative; padding: 20px 12px 48px; text-align: center; }
-.cardCaption h3 { font-family: var(--font-home-title), sans-serif; margin: 0; color: var(--accent); font-size: 18px; font-weight: 400; line-height: 1.5; }
+.cardCaption h3 { font-family: var(--font-site-title), sans-serif; margin: 0; color: var(--accent); font-size: 18px; font-weight: 400; line-height: 1.5; }
 .cardCaption p { margin: 7px 0 0; color: var(--brand-cocoa-soft); font-size: 11px; line-height: 1.6; }
 .arrow { position: absolute; right: 12px; bottom: 12px; display: grid; place-items: center; width: 26px; height: 26px; border-radius: 50%; background: var(--brand-paper); color: var(--accent); font-size: 16px; }
 

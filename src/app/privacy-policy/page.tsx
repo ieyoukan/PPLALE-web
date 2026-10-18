@@ -3,28 +3,22 @@
 import '@/app/panda.css';
 
 import React from 'react';
-import { Darumadrop_One } from 'next/font/google';
+import { siteTitleFont } from '@/app/fonts';
 import Link from 'next/link';
 import { css } from 'styled-system/css';
-
-const darumadrop = Darumadrop_One({
-  weight: '400',
-  subsets: ['latin'],
-  display: 'swap',
-});
 
 export default function PrivacyPolicy() {
   return (
     <main className={css({ minH: 'screen', bgGradient: 'to-b', gradientFrom: 'pink.100', gradientTo: 'white' })}>
       <div className={`container ${css({ px: '4', py: '16' })}`}>
-        <h1 className={`${darumadrop.className} ${css({ fontSize: { base: '4xl', md: '5xl' }, textAlign: 'center', mb: '16', color: 'pink.600' })}`}>
+        <h1 className={`${siteTitleFont.className} ${css({ fontSize: { base: '4xl', md: '5xl' }, textAlign: 'center', mb: '16', color: 'pink.600' })}`}>
           プライバシーポリシー
         </h1>
 
         <div className={css({ maxW: '3xl', mx: 'auto', bg: 'white', rounded: 'xl', boxShadow: 'lg', p: '8' })}>
           <section className={css({ display: 'flex', flexDirection: 'column', gap: '8' })}>
             <div>
-              <h2 className={`${darumadrop.className} ${css({ fontSize: '2xl', mb: '4', color: 'pink.500' })}`}>1. 収集する情報</h2>
+              <h2 className={`${siteTitleFont.className} ${css({ fontSize: '2xl', mb: '4', color: 'pink.500' })}`}>1. 収集する情報</h2>
               <p className={css({ color: 'gray.700', mb: '4' })}>
                 当サービスでは、以下の情報を収集する場合があります：
               </p>
@@ -61,7 +55,7 @@ export default function PrivacyPolicy() {
             </div>
 
             <div>
-              <h2 className={`${darumadrop.className} ${css({ fontSize: '2xl', mb: '4', color: 'pink.500' })}`}>2. 情報の利用目的</h2>
+              <h2 className={`${siteTitleFont.className} ${css({ fontSize: '2xl', mb: '4', color: 'pink.500' })}`}>2. 情報の利用目的</h2>
               <p className={css({ color: 'gray.700', mb: '4' })}>
                 収集した情報は以下の目的で利用されます：
               </p>
@@ -74,7 +68,7 @@ export default function PrivacyPolicy() {
             </div>
 
             <div>
-              <h2 className={`${darumadrop.className} ${css({ fontSize: '2xl', mb: '4', color: 'pink.500' })}`}>3. 情報の管理</h2>
+              <h2 className={`${siteTitleFont.className} ${css({ fontSize: '2xl', mb: '4', color: 'pink.500' })}`}>3. 情報の管理</h2>
               <p className={css({ color: 'gray.700', mb: '4' })}>
                 当サービスでは、収集した情報を適切に管理し、以下の取り組みを行っています：
               </p>
@@ -84,7 +78,7 @@ export default function PrivacyPolicy() {
             </div>
 
             <div>
-              <h2 className={`${darumadrop.className} ${css({ fontSize: '2xl', mb: '4', color: 'pink.500' })}`}>4. 情報の共有</h2>
+              <h2 className={`${siteTitleFont.className} ${css({ fontSize: '2xl', mb: '4', color: 'pink.500' })}`}>4. 情報の共有</h2>
               <p className={css({ color: 'gray.700', mb: '4' })}>
                 当サービスでは、収集した情報を以下の場合を除き、第三者に提供することはありません：
               </p>
@@ -95,7 +89,7 @@ export default function PrivacyPolicy() {
             </div>
 
             <div>
-              <h2 className={`${darumadrop.className} ${css({ fontSize: '2xl', mb: '4', color: 'pink.500' })}`}>5. ユーザーの権利</h2>
+              <h2 className={`${siteTitleFont.className} ${css({ fontSize: '2xl', mb: '4', color: 'pink.500' })}`}>5. ユーザーの権利</h2>
               <p className={css({ color: 'gray.700', mb: '4' })}>
                 ユーザーは以下の権利を有します：
               </p>
@@ -106,7 +100,7 @@ export default function PrivacyPolicy() {
             </div>
 
             <div>
-              <h2 className={`${darumadrop.className} ${css({ fontSize: '2xl', mb: '4', color: 'pink.500' })}`}>6. プライバシーポリシーの変更</h2>
+              <h2 className={`${siteTitleFont.className} ${css({ fontSize: '2xl', mb: '4', color: 'pink.500' })}`}>6. プライバシーポリシーの変更</h2>
               <p className={css({ color: 'gray.700' })}>
                 当サービスは、必要に応じて本プライバシーポリシーを変更することがあります。
                 変更があった場合は、本ページでお知らせします。

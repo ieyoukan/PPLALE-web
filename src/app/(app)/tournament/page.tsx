@@ -3,17 +3,11 @@
 import React from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
-import { Darumadrop_One } from 'next/font/google';
+import { siteTitleFont } from '@/app/fonts';
 import { css } from 'styled-system/css';
 import { button } from 'styled-system/recipes';
 import { useI18n } from '@/i18n/LocaleProvider';
 import type { FruitType } from '@/types/card';
-
-const darumadrop = Darumadrop_One({
-  weight: '400',
-  subsets: ['latin'],
-  display: 'swap',
-});
 
 const officialTournaments = [
   { jaTitle: 'つぼみ杯', enTitle: 'Tsubomi Cup', jaDescription: '初心者向けの大会です。いちごカードのみを使用します。上級者は出禁もしくはハンデになりますので初めてでも勝ちやすい大会です！', enDescription: 'A beginner-friendly tournament using only Strawberry cards. Experienced players may be restricted or given a handicap.', fruits: ['strawberry'] as FruitType[], color: css({ bg: 'yellow.100', rounded: '2xl', p: '8' }) },
@@ -32,7 +26,7 @@ export default function TournamentPage() {
     <main className={css({ minH: '100vh', w: 'full', pt: '10', pb: '12', px: '4' })}>
       <div className="container">
         <div className={css({ textAlign: 'center', mb: '12' })}>
-          <h1 className={`${darumadrop.className} ${css({ fontSize: '4xl', md: { fontSize: '5xl' }, mb: '4' })}`}>
+          <h1 className={`${siteTitleFont.className} ${css({ fontSize: '4xl', md: { fontSize: '5xl' }, mb: '4' })}`}>
             {locale === 'ja' ? '大会について' : 'Tournaments'}
           </h1>
           <p className={css({ fontSize: 'lg', color: 'gray.700' })}>
@@ -41,7 +35,7 @@ export default function TournamentPage() {
         </div>
 
         <section className={`main-background ${css({ mb: '16', p: '8', rounded: '2xl', borderWidth: '2px', borderColor: 'blue.300' })}`}>
-          <h2 className={`${darumadrop.className} ${css({ fontSize: '2xl', mb: '6', textAlign: 'center', color: 'gray.800' })}`}>
+          <h2 className={`${siteTitleFont.className} ${css({ fontSize: '2xl', mb: '6', textAlign: 'center', color: 'gray.800' })}`}>
             {locale === 'ja' ? '大会に参加したい方へ' : 'Want to join a tournament?'}
           </h2>
           <p className={css({ textAlign: 'center', color: 'gray.700', mb: '6', fontSize: 'base', lineHeight: 'relaxed' })}>
@@ -69,12 +63,12 @@ export default function TournamentPage() {
         </section>
 
         <section className={css({ mb: '16' })}>
-          <h2 className={`${darumadrop.className} ${css({ fontSize: '3xl', mb: '8', color: 'gray.800' })}`}>{locale === 'ja' ? '公式大会' : 'Official tournaments'}</h2>
+          <h2 className={`${siteTitleFont.className} ${css({ fontSize: '3xl', mb: '8', color: 'gray.800' })}`}>{locale === 'ja' ? '公式大会' : 'Official tournaments'}</h2>
           <div className={css({ display: 'flex', flexDirection: 'column', gap: '6' })}>
             {officialTournaments.map((tournament) => (
               <div key={tournament.enTitle} className={tournament.color}>
                 <div className={css({ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', mb: '4' })}>
-                  <h3 className={`${darumadrop.className} ${css({ fontSize: '2xl', color: 'gray.800' })}`}>{locale === 'ja' ? tournament.jaTitle : tournament.enTitle}</h3>
+                  <h3 className={`${siteTitleFont.className} ${css({ fontSize: '2xl', color: 'gray.800' })}`}>{locale === 'ja' ? tournament.jaTitle : tournament.enTitle}</h3>
                   <span className={css({ display: 'inline-block', px: '3', py: '1', bg: 'white', rounded: 'full', fontSize: 'xs', fontWeight: 'bold', color: 'gray.700' })}>{tournament.fruits.map(fruitLabel).join(' · ')}</span>
                 </div>
                 <p className={css({ color: 'gray.700', lineHeight: 'relaxed', fontSize: 'base' })}>{locale === 'ja' ? tournament.jaDescription : tournament.enDescription}</p>
@@ -84,12 +78,12 @@ export default function TournamentPage() {
         </section>
 
         <section className={css({ mb: '16' })}>
-          <h2 className={`${darumadrop.className} ${css({ fontSize: '3xl', mb: '8', color: 'gray.800' })}`}>{locale === 'ja' ? '個人主催' : 'Community tournaments'}</h2>
+          <h2 className={`${siteTitleFont.className} ${css({ fontSize: '3xl', mb: '8', color: 'gray.800' })}`}>{locale === 'ja' ? '個人主催' : 'Community tournaments'}</h2>
           <div className={css({ display: 'flex', flexDirection: 'column', gap: '6' })}>
             {personalTournaments.map((tournament) => (
               <div key={tournament.enTitle} className={tournament.color}>
                 <div className={css({ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', mb: '4' })}>
-                  <h3 className={`${darumadrop.className} ${css({ fontSize: '2xl', color: 'gray.800' })}`}>{locale === 'ja' ? tournament.jaTitle : tournament.enTitle}</h3>
+                  <h3 className={`${siteTitleFont.className} ${css({ fontSize: '2xl', color: 'gray.800' })}`}>{locale === 'ja' ? tournament.jaTitle : tournament.enTitle}</h3>
                   <span className={css({ display: 'inline-block', px: '3', py: '1', bg: 'white', rounded: 'full', fontSize: 'xs', fontWeight: 'bold', color: 'gray.700' })}>{tournament.fruits.map(fruitLabel).join(' · ')}</span>
                 </div>
                 <p className={css({ color: 'gray.700', lineHeight: 'relaxed', fontSize: 'base', mb: '4' })}>{locale === 'ja' ? tournament.jaDescription : tournament.enDescription}</p>
@@ -102,14 +96,14 @@ export default function TournamentPage() {
         </section>
 
         <section>
-          <h2 className={`${darumadrop.className} ${css({ fontSize: '3xl', mb: '8', color: 'gray.800' })}`}>{locale === 'ja' ? 'その他' : 'More tools'}</h2>
+          <h2 className={`${siteTitleFont.className} ${css({ fontSize: '3xl', mb: '8', color: 'gray.800' })}`}>{locale === 'ja' ? 'その他' : 'More tools'}</h2>
           <div className={css({ display: 'grid', gridTemplateColumns: 'repeat(1, minmax(0, 1fr))', md: { gridTemplateColumns: 'repeat(2, minmax(0, 1fr))' }, gap: '6' })}>
             <Link href="/build">
               <div className={`main-background ${css({
                 p: '6', rounded: 'xl', cursor: 'pointer',
                 transitionProperty: 'color, background-color',
               })}`}>
-                <h3 className={`${darumadrop.className} ${css({ fontSize: 'xl', mb: '2' })}`}>{locale === 'ja' ? 'デッキをつくる' : 'Build a deck'}</h3>
+                <h3 className={`${siteTitleFont.className} ${css({ fontSize: 'xl', mb: '2' })}`}>{locale === 'ja' ? 'デッキをつくる' : 'Build a deck'}</h3>
                 <p className={css({ color: 'gray.700', fontSize: 'sm' })}>{locale === 'ja' ? 'web上でもデッキを組むことができます' : 'Build and edit your deck in the browser.'}</p>
               </div>
             </Link>
@@ -118,7 +112,7 @@ export default function TournamentPage() {
                 p: '6', rounded: 'xl', cursor: 'pointer',
                 transitionProperty: 'color, background-color',
               })}`}>
-                <h3 className={`${darumadrop.className} ${css({ fontSize: 'xl', mb: '2' })}`}>{locale === 'ja' ? 'デッキのがぞうをつくる' : 'Create a deck image'}</h3>
+                <h3 className={`${siteTitleFont.className} ${css({ fontSize: 'xl', mb: '2' })}`}>{locale === 'ja' ? 'デッキのがぞうをつくる' : 'Create a deck image'}</h3>
                 <p className={css({ color: 'gray.700', fontSize: 'sm' })}>{locale === 'ja' ? 'デッキコードから画像を生成できます' : 'Generate an image from deck codes.'}</p>
               </div>
             </Link>

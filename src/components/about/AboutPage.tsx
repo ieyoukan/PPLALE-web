@@ -6,10 +6,8 @@ import React, { useCallback, useEffect, useState } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
 import { AnimatePresence, motion, useReducedMotion } from 'framer-motion';
-import { Darumadrop_One } from 'next/font/google';
+import { siteTitleFont } from '@/app/fonts';
 import { css } from 'styled-system/css';
-
-const darumadrop = Darumadrop_One({ weight: '400', subsets: ['latin'], display: 'swap' });
 
 interface Slide {
   src: string;
@@ -177,7 +175,7 @@ export default function AboutPage() {
           })}>‹</Link>
           <div className={css({ display: 'flex', gap: '2', overflowX: 'auto', scrollbarWidth: 'none', py: '1' })}>
             {groups.map(group => (
-              <a key={group.id} href={`#${group.id}`} className={`${darumadrop.className} ${css({
+              <a key={group.id} href={`#${group.id}`} className={`${siteTitleFont.className} ${css({
                 flexShrink: '0', display: 'flex', alignItems: 'center', gap: '1.5', px: '3.5', h: '10',
                 rounded: 'full', bg: 'white', borderWidth: '2px', borderColor: 'pink.200', color: 'pink.600',
                 fontSize: 'lg', whiteSpace: 'nowrap', transition: 'all 0.15s ease',
@@ -192,7 +190,7 @@ export default function AboutPage() {
 
       <div className={css({ maxW: '6xl', mx: 'auto', px: '4', pt: '8', pb: '24' })}>
         <motion.h1
-          className={`${darumadrop.className} ${css({ fontSize: '4xl', md: { fontSize: '5xl' }, textAlign: 'center', color: 'white', mb: '6' })}`}
+          className={`${siteTitleFont.className} ${css({ fontSize: '4xl', md: { fontSize: '5xl' }, textAlign: 'center', color: 'white', mb: '6' })}`}
           initial={{ opacity: 0, y: -30 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.6 }}
           style={{ WebkitTextStroke: '3px #f9a8d4', paintOrder: 'stroke fill' }}
         >
@@ -201,7 +199,7 @@ export default function AboutPage() {
 
         {groups.map(group => (
           <section key={group.id} id={group.id} aria-label={group.title} className={css({ scrollMarginTop: '20', mt: '10' })}>
-            <h2 className={`${darumadrop.className} ${css({
+            <h2 className={`${siteTitleFont.className} ${css({
               display: 'inline-flex', alignItems: 'center', gap: '2', mb: '4', px: '5', py: '1.5',
               rounded: 'full', bg: 'yellow.200/90', color: 'pink.500', fontSize: '2xl', boxShadow: 'md',
             })}`}>

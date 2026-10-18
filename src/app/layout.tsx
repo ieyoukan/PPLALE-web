@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { site } from "@/lib/site";
+import { siteBodyFont, siteTitleFont } from "./fonts";
 import "./reset.css";
 import "./globals.css";
 import "./brand.css";
@@ -74,7 +75,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="ja" suppressHydrationWarning>
+    <html lang="ja" className={`${siteBodyFont.variable} ${siteTitleFont.variable}`} suppressHydrationWarning>
       <head>
         <meta name="theme-color" content="#e8c8c8" />
         <meta name="viewport" content="width=device-width, initial-scale=1.0" />
@@ -101,7 +102,8 @@ export default function RootLayout({
         
       </head>
       <body
-        className="antialiased"
+        className={`${siteBodyFont.className} antialiased`}
+        data-site-ui
         suppressHydrationWarning
       >
         <AuthProvider>

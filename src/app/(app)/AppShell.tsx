@@ -33,9 +33,9 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
         <div className={css({ position: 'relative', zIndex: '1', maxW: 'breakpoint-2xl', mx: 'auto', px: '4', h: 'full', display: 'flex', alignItems: 'center', justifyContent: 'space-between' })}>
           <div className={css({ display: 'flex', alignItems: 'center', gap: '4', minW: '0' })}>
             {is2Pick ? (
-              <p className={css({ fontSize: '2xl', fontWeight: 'bold' })}>{t('2Pick構築')}</p>
+              <p data-ui-title className={css({ fontSize: '2xl', fontWeight: 'bold' })}>{t('2Pick構築')}</p>
             ) : (
-              <Link className={css({ fontSize: 'xl', fontWeight: 'bold', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' })} href="/">
+              <Link data-ui-title className={css({ fontSize: 'xl', fontWeight: 'bold', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' })} href="/">
                 {t('ぷぷりえーる デッキ構築')}
               </Link>
             )}
