@@ -6,7 +6,7 @@ import { doc, setDoc } from 'firebase/firestore';
 import { db, auth } from '@/lib/firebase';
 import { validateDeckData } from '@/lib/schema';
 import { useAuth } from '@/lib/auth';
-import { GoogleAuthProvider, signInWithPopup } from 'firebase/auth';
+import { browserPopupRedirectResolver, GoogleAuthProvider, signInWithPopup } from 'firebase/auth';
 import { useI18n } from '@/i18n/LocaleProvider';
 
 const yojoLimit = 20;
@@ -274,7 +274,7 @@ export function useDeckPageState({
 
     const provider = new GoogleAuthProvider();
     try {
-      const result = await signInWithPopup(auth, provider);
+      const result = await signInWithPopup(auth, provider, browserPopupRedirectResolver);
       if (result.user) {
         const deckRef = doc(db, 'users', result.user.uid, 'decks', deckId);
         const docData = {

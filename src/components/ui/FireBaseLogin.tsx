@@ -7,7 +7,7 @@
 'use client';
 
 import React, { useState, useEffect, useRef } from 'react';
-import {signInWithPopup, GoogleAuthProvider, signOut, User } from 'firebase/auth';
+import {browserPopupRedirectResolver, signInWithPopup, GoogleAuthProvider, signOut, User } from 'firebase/auth';
 import Image from 'next/image';
 import { auth } from '@/lib/firebase';
 import { css } from 'styled-system/css';
@@ -60,7 +60,7 @@ const FireBaseLogin: React.FC<FireBaseLoginProps> = () => {
    */
   const login_with_google = async () => {
     try {
-      await signInWithPopup(auth, provider);
+      await signInWithPopup(auth, provider, browserPopupRedirectResolver);
     } catch (error) {
       console.error('ログインエラー:', error);
     }

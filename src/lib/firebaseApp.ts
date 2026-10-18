@@ -1,4 +1,4 @@
-import { connectAuthEmulator, getAuth } from 'firebase/auth';
+import { browserLocalPersistence, browserSessionPersistence, connectAuthEmulator, getAuth, indexedDBLocalPersistence, initializeAuth, type Auth } from 'firebase/auth';
 import { initializeApp, getApps, getApp } from 'firebase/app';
 
 const firebaseConfig = {
@@ -15,8 +15,18 @@ const firebaseConfig = {
 export const app = getApps().length ? getApp() : initializeApp(firebaseConfig);
 
 // Explicit local integration environment; production never enables these endpoints.
+/**
+ * getAuth() also installs the popup resolver, which loads firebaseapp.com's auth iframe (~93 KiB) on every page load.
+ * Auth starts without it; sign-in passes browserPopupRedirectResolver only when the popup opens.
+ */
+export function clientAuth(): Auth {
+  if (typeof window === 'undefined') return getAuth(app);
+  const globals = globalThis as typeof globalThis & { pplaleAuth?: Auth };
+  return globals.pplaleAuth ??= initializeAuth(app, { persistence: [indexedDBLocalPersistence, browserLocalPersistence, browserSessionPersistence] });
+}
+
 if (process.env.NEXT_PUBLIC_FIREBASE_EMULATORS === 'true') {
-  const auth = getAuth(app);
+  const auth = clientAuth();
   const globals = globalThis as typeof globalThis & { pplaleEmulatedAuth?: WeakSet<object> };
   globals.pplaleEmulatedAuth ??= new WeakSet();
   if (!globals.pplaleEmulatedAuth.has(auth)) { connectAuthEmulator(auth, 'http://127.0.0.1:19099', { disableWarnings: true }); globals.pplaleEmulatedAuth.add(auth); }

@@ -1,10 +1,10 @@
 import { connectFirestoreEmulator, getFirestore } from 'firebase/firestore';
-import { getAuth } from 'firebase/auth';
-import { app } from './firebaseApp';
+import { app, clientAuth } from './firebaseApp';
 
 export { app } from './firebaseApp';
+// Auth first: Firestore would otherwise create a default auth instance without persistence.
+export const auth = clientAuth();
 export const db = getFirestore(app);
-export const auth = getAuth(app);
 
 if (process.env.NEXT_PUBLIC_FIREBASE_EMULATORS === 'true') {
   const globals = globalThis as typeof globalThis & { pplaleEmulatedFirestore?: WeakSet<object> };

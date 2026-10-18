@@ -76,9 +76,6 @@ export default function RootLayout({
         <meta name="theme-color" content="#d889cbff" />
         <meta name="viewport" content="width=device-width, initial-scale=1.0" />
         
-        {/* パフォーマンス最適化 */}
-        <link rel="preconnect" href="https://apis.google.com" />
-        
         {/* Favicon設定 */}
         <link rel="icon" href="/favicon.ico" sizes="any" />
         <link rel="icon" type="image/png" sizes="180x180" href="/apple-touch-icon.png" />

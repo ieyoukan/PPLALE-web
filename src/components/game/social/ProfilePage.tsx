@@ -20,9 +20,10 @@ import styles from './Social.module.css';
 export function ProfilePage() {
   const { user, loading, signInWithGoogle } = useAuth();
   const requested = useSearchParams().get('id'), uid = requested ?? user?.uid;
-  if (loading) return <p role="status">読み込み中…</p>;
+  // A shared profile link (?id=) renders without waiting for the visitor's login check.
+  if (!uid && loading) return <p role="status">読み込み中…</p>;
   if (!uid) return <section className={styles.panel}><h2>プロフィール</h2><p>ログインして、カードのアイコンとひとことを設定しよう。</p><button className={styles.primary} onClick={() => void signInWithGoogle()}>ログイン</button></section>;
-  return <Profile key={`${uid}:${user?.uid ?? 'guest'}`} uid={uid} mine={uid === user?.uid} initialName={user?.displayName ?? 'プレイヤー'} />;
+  return <Profile key={`${uid}:${uid === user?.uid}`} uid={uid} mine={uid === user?.uid} initialName={user?.displayName ?? 'プレイヤー'} />;
 }
 function Profile({ uid, mine, initialName }: { uid: string; mine: boolean; initialName: string }) {
   const { user } = useAuth();
@@ -62,7 +63,7 @@ function Profile({ uid, mine, initialName }: { uid: string; mine: boolean; initi
   return <section className={styles.panel} aria-label="プロフィール">
     <Link className={styles.back} href="/game/social/" aria-label="ソーシャルへ戻る"><Icon name="back" /></Link>
     <header className={styles.profileHeading}>
-      <button className={styles.avatarLarge} disabled={!mine} onClick={() => setChoosing(value => !value)} aria-label="カードのアイコンを選ぶ"><RecordedCard id={profile.iconCardId} sizes="120px" />{mine && <span>変更 <Icon name="pen" /></span>}</button>
+      <button className={styles.avatarLarge} disabled={!mine} onClick={() => setChoosing(value => !value)} aria-label="カードのアイコンを選ぶ"><RecordedCard id={profile.iconCardId} sizes="120px" eager />{mine && <span>変更 <Icon name="pen" /></span>}</button>
       <div><small>PLAYER PROFILE</small><h2>{profile.displayName}</h2><p className={styles.comment}>{profile.comment || 'よろしくお願いします！'}</p></div>
     </header>
     {!mine && friendship?.status === 'accepted' && <FriendRoom uid={uid} profile={profile} />}

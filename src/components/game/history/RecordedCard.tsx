@@ -4,10 +4,10 @@ import { displayCards } from '@/lib/game/catalog';
 import styles from './History.module.css';
 
 /** The archived catalog owns names and text; existing immutable card images are referenced by URL. */
-export function RecordedCard({ id, catalog, sizes = '120px' }: { id: string; catalog?: Catalog; sizes?: string }) {
+export function RecordedCard({ id, catalog, sizes = '120px', eager }: { id: string; catalog?: Catalog; sizes?: string; eager?: boolean }) {
   const card = catalog?.[id] as (Catalog[string] & { imageUrl?: string; imageHash?: string }) | undefined;
   const base = process.env.NEXT_PUBLIC_ROOM_SERVER_URL?.replace(/\/+$/, '');
   const image = card?.imageHash && base ? `${base}/history/assets/${card.imageHash}` : card?.imageUrl ?? displayCards[id]?.imageUrl;
-  return image ? <Image src={image} alt={card?.name ?? displayCards[id]?.name ?? id} fill sizes={sizes} unoptimized={!!card?.imageHash} draggable={false} />
+  return image ? <Image src={image} alt={card?.name ?? displayCards[id]?.name ?? id} fill sizes={sizes} unoptimized={!!card?.imageHash} draggable={false} loading={eager ? 'eager' : undefined} fetchPriority={eager ? 'high' : undefined} />
     : <span className={styles.missingCard}>{card?.name ?? id}</span>;
 }

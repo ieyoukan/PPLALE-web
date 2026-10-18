@@ -19,7 +19,7 @@ import { useAuth } from '@/lib/auth';
 import { doc, setDoc, getDoc } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 import { useRouter, useSearchParams } from 'next/navigation';
-import { GoogleAuthProvider, signInWithPopup } from 'firebase/auth';
+import { browserPopupRedirectResolver, GoogleAuthProvider, signInWithPopup } from 'firebase/auth';
 import { auth } from '@/lib/firebase';
 
 // 分割したコンポーネントをインポート
@@ -244,7 +244,7 @@ function TwoPickContent() {
     if (!user) {
       const provider = new GoogleAuthProvider();
       try {
-        const result = await signInWithPopup(auth, provider);
+        const result = await signInWithPopup(auth, provider, browserPopupRedirectResolver);
         if (result.user) {
           // ログイン成功後、デッキを保存
           const deckId = Date.now().toString();

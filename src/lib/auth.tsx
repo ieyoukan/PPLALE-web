@@ -5,7 +5,7 @@ import type { User } from 'firebase/auth';
 
 /** Auth needs only the app and auth SDK; Firestore loads when a saved deck is requested. */
 function loadAuth() {
-  return Promise.all([import('firebase/auth'), import('./firebaseApp')]).then(([sdk, { app }]) => ({ sdk, auth: sdk.getAuth(app) }));
+  return Promise.all([import('firebase/auth'), import('./firebaseApp')]).then(([sdk, { clientAuth }]) => ({ sdk, auth: clientAuth() }));
 }
 
 interface AuthContextType {
@@ -29,7 +29,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const signInWithGoogle = async () => {
     try {
       const { sdk, auth } = await loadAuth();
-      await sdk.signInWithPopup(auth, new sdk.GoogleAuthProvider());
+      await sdk.signInWithPopup(auth, new sdk.GoogleAuthProvider(), sdk.browserPopupRedirectResolver);
     } catch (error) {
       console.error('Googleログインに失敗しました:', error);
       throw error;
