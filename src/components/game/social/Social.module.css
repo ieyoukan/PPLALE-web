@@ -74,8 +74,9 @@ a.room:hover .roomAction { background: var(--place); color: #fff; }
 .count { margin-left: auto; color: #8f6f6a; }
 
 /* A friend: icon, name and ひとこと on a ribbon showing their card. */
-.tiles { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 10px; }
-.tile { position: relative; display: flex; align-items: center; min-height: 72px; overflow: hidden; border-radius: 16px; background: linear-gradient(100deg, #fffdf8 45%, #fff0f5); box-shadow: 0 0 0 1.5px #ecd3d9, 0 3px 0 #ecd3d9; transition: transform .15s, box-shadow .15s; animation: pop .35s backwards; }
+/* Every friend is the same width, whatever the length of their name or ひとこと. */
+.tiles { display: grid; grid-template-columns: repeat(auto-fill, 240px); gap: 10px; }
+.tile { position: relative; display: flex; width: 240px; min-width: 0; align-items: center; min-height: 72px; overflow: hidden; border-radius: 16px; background: linear-gradient(100deg, #fffdf8 45%, #fff0f5); box-shadow: 0 0 0 1.5px #ecd3d9, 0 3px 0 #ecd3d9; transition: transform .15s, box-shadow .15s; animation: pop .35s backwards; }
 .tile:hover { transform: translateY(-2px); box-shadow: 0 0 0 2px var(--place), 0 5px 0 var(--glow); }
 .tileArt { position: absolute; inset: 0 0 0 42%; opacity: .5; -webkit-mask-image: linear-gradient(90deg, transparent, #000 70%); mask-image: linear-gradient(90deg, transparent, #000 70%); pointer-events: none; }
 .tileArt img { object-fit: cover; object-position: center 20%; }
@@ -84,7 +85,8 @@ a.room:hover .roomAction { background: var(--place); color: #fff; }
 .tile[data-place=open] .avatar { animation: ring 1.8s ease-out infinite; }
 .tileText { display: grid; min-width: 0; text-shadow: 0 0 6px #fff, 0 0 2px #fff; }
 .tileText b { overflow: hidden; font-size: 15px; text-overflow: ellipsis; white-space: nowrap; }
-.tileText small { display: flex; align-items: center; gap: 5px; overflow: hidden; font-size: 11px; color: #8f6f6a; white-space: nowrap; }
+.tileText small { display: flex; align-items: center; gap: 5px; min-width: 0; font-size: 11px; color: #8f6f6a; }
+.tileText small > span:last-child { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .dot { flex: 0 0 8px; height: 8px; border-radius: 50%; background: var(--place); }
 .panel .more { position: absolute; top: 4px; right: 4px; min-height: 0; padding: 0 8px; border: 0; background: #fffc; font-size: 14px; line-height: 22px; opacity: 0; transition: opacity .15s; }
 .tile:hover .more, .more:focus-visible { opacity: 1; }
@@ -107,7 +109,7 @@ a.room:hover .roomAction { background: var(--place); color: #fff; }
 @keyframes ring { 0% { box-shadow: 0 0 0 2.5px var(--place), 0 0 0 2.5px var(--glow); } 100% { box-shadow: 0 0 0 2.5px var(--place), 0 0 0 10px transparent; } }
 @keyframes pop { from { opacity: 0; transform: scale(.94); } }
 @media (prefers-reduced-motion: reduce) { .beat, .group[data-place=open] .roomBadge, .tile[data-place=open] .avatar, .tile, .remove { animation: none; } }
-@media (max-width: 600px) { .groupBody { grid-template-columns: 1fr; } .room { grid-template-rows: 80px auto; } .roomAction { top: 42px; } .tiles { grid-template-columns: 1fr; } }
+@media (max-width: 600px) { .groupBody { grid-template-columns: 1fr; } .room { grid-template-rows: 80px auto; } .roomAction { top: 42px; } .tiles { grid-template-columns: 1fr; } .tile { width: 100%; } }
 .group[data-place=sent], .tile[data-place=sent] { --place: #b39ad8; --glow: #b39ad855; }
 .headingLinks { display: flex; align-items: center; gap: 10px; }
 .bell { position: relative; display: grid; place-items: center; width: 44px; height: 44px; border: 2px solid #f0c3d3; border-radius: 50%; background: #fff; font-size: 20px; transition: transform .15s; }
