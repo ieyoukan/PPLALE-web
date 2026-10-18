@@ -22,3 +22,7 @@
 .blunderTag, .dubiousTag { display: inline-block; margin-right: 8px; padding: 0 8px; border-radius: 999px; font-size: .85em; color: #3b2530; }
 .blunderTag { background: #ff9b9b; }
 .dubiousTag { background: #ffd28a; }
+.highlight { fill: #a8edc6; stroke: #fffdeb; stroke-width: 1.5; }
+.highlights { padding: 8px; border-radius: 12px; background: linear-gradient(120deg, #9fd3a822, #a8edc608); border: 1px solid #a8edc633; }
+.highlightTag { display: inline-block; margin-right: 8px; padding: 0 8px; border-radius: 999px; font-size: .85em; color: #254838; background: #a8edc6; }
+.note { font-size: 11px; opacity: .65; }
