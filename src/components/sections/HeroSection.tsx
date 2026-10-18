@@ -85,15 +85,6 @@ export default function HeroSection() {
             className={css({ w: 'full', h: 'auto' })} sizes="(max-width: 500px) 80vw, 400px" preload />
         </motion.h1>
 
-        <p className={css({
-          maxW: 'lg', px: '5', py: '3', rounded: '2xl', bg: 'white/90',
-          color: 'pink.900', textAlign: 'center', fontSize: 'sm', lineHeight: 'relaxed',
-          boxShadow: 'sm', md: { fontSize: 'base' },
-        })}>
-          VRChatから生まれた、幼女とお菓子のカードゲーム。<br />
-          ルールを知って、推しといっしょに遊ぼう！
-        </p>
-
         <motion.nav
           aria-label="メニュー"
           className={css({
