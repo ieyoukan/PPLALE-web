@@ -65,9 +65,9 @@ for (const width of [320, 390, 1280]) {
     }
     await expect(section.getByRole('link', { name: /ブラウザで対戦/ }).locator('img')).toHaveAttribute('src', /baner.webp/);
     const font = await section.locator('h3').first().evaluate(el => getComputedStyle(el).fontFamily);
-    expect(font).toMatch(/Zen[ _]Maru[ _]Gothic/);
+    expect(font).toMatch(/Mochiy[ _]Pop[ _]One/);
     const loaded = await page.evaluate(async family => {
-      const faces = await document.fonts.load(`700 20px ${family}`, '対戦大会画像構築');
+      const faces = await document.fonts.load(`400 20px ${family}`, '対戦大会画像構築');
       return faces.length > 0 && faces.every(face => face.status === 'loaded');
     }, font);
     expect(loaded).toBe(true);
@@ -78,6 +78,27 @@ for (const width of [320, 390, 1280]) {
       expect(bounds.x + bounds.width).toBeLessThanOrEqual(width);
     }
     await expect(page.getByText('ルールを知って、推しといっしょに遊ぼう！')).toHaveCount(0);
+    const contrast = await page.evaluate(() => {
+      function luminance(value) {
+        const channels = value.match(/[\d.]+/g).slice(0, 3).map(Number).map(v => {
+          const c = v / 255;
+          return c <= .04045 ? c / 12.92 : ((c + .055) / 1.055) ** 2.4;
+        });
+        return channels[0] * .2126 + channels[1] * .7152 + channels[2] * .0722;
+      }
+      return [...document.querySelectorAll('#game-introduction-heading, #tools-heading')].map(el => {
+        const text = getComputedStyle(el);
+        let background = el;
+        while (getComputedStyle(background).backgroundColor === 'rgba(0, 0, 0, 0)') background = background.parentElement;
+        const values = [luminance(text.color), luminance(getComputedStyle(background).backgroundColor)].sort((a, b) => a - b);
+        return { text: el.textContent, ratio: (values[1] + .05) / (values[0] + .05), fill: text.webkitTextFillColor };
+      });
+    });
+    for (const heading of contrast) {
+      expect(heading.ratio, heading.text).toBeGreaterThanOrEqual(4.5);
+      expect(heading.fill).not.toBe('transparent');
+    }
     await section.screenshot({ path: info.outputPath('illustrated-links.png') });
+    await page.getByRole('region', { name: 'ゲームについて', exact: true }).screenshot({ path: info.outputPath('game-introduction.png') });
   });
 }

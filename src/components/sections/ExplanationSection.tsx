@@ -1,7 +1,7 @@
 import React from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
-import { homeFont } from './homeFont';
+import styles from './ExplanationSection.module.css';
 import { css } from 'styled-system/css';
 
 // 解説カード情報
@@ -33,34 +33,26 @@ export default function ExplanationSection() {
         }}
       >
         {/* 背景オーバーレイ */}
-        <div className={css({ position: 'absolute', inset: '0', bg: 'black/10' })}></div>
+        <div className={css({ position: 'absolute', inset: '0', bg: 'white/25' })}></div>
       </div>
 
       <div
         className={css({ position: 'relative', zIndex: '10', w: 'full', display: 'flex', alignItems: 'center', justifyContent: 'center', py: '20', px: '4' })}
       >
         <div className={css({ w: 'full', maxW: '6xl' })}>
-          <h2
-            id="game-introduction-heading"
-            className={`${homeFont.className} ${css({ fontSize: '4xl', md: { fontSize: '5xl' }, textAlign: 'center', mb: '20', color: 'white' })}`}
-            style={{
-              background: 'linear-gradient(to top,rgba(255, 255, 255, 1),rgba(255, 234, 243, 1))',
-              WebkitBackgroundClip: 'text',
-              WebkitTextFillColor: 'transparent',
-              backgroundClip: 'text',
-              color: 'transparent',
-              WebkitTextStroke: '3px pink'
-            }}
-          >
-            ゲームについて
-          </h2>
+          <div className={styles.headingWrap}>
+            <h2 id="game-introduction-heading" className={styles.title}>
+              ゲームについて
+            </h2>
+          </div>
 
           <div className={css({ display: 'grid', gridTemplateColumns: 'repeat(1, minmax(0, 1fr))', gap: '10', mb: '10', mt: '10', md: { gridTemplateColumns: 'repeat(2, minmax(0, 1fr))', gap: '16' } })}>
             {explanationCards.map((card) => (
               <div
                 key={card.title}
                 className={`${css({
-                  bg: 'yellow.200/90',
+                  bg: '#fff4ce',
+                  color: '#624451',
                   backdropBlur: 'md',
                   rounded: '2xl',
                   p: '6',
@@ -71,7 +63,7 @@ export default function ExplanationSection() {
                 })}`}
               >
                 <div className={css({ display: 'flex', flexDirection: 'column', h: 'full' })}>
-                  <h3 className={`${homeFont.className} ${css({ fontSize: '2xl', md: { fontSize: '3xl' }, mb: '4', color: 'pink.400' })}`}>
+                  <h3 className={styles.cardTitle}>
                     {card.title}
                   </h3>
 

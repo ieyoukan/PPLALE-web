@@ -8,7 +8,7 @@
 .inner { max-width: 1008px; margin: 0 auto; }
 .heading { display: flex; align-items: center; justify-content: center; gap: 36px; margin: 0 auto 24px; }
 .eyebrow { display: block; margin-bottom: 8px; color: #b65c82; font-size: 11px; font-weight: 700; letter-spacing: .2em; }
-.heading h2 { margin: 0; color: #a5406c; font-size: clamp(26px, 3.4vw, 38px); font-weight: 700; line-height: 1.4; letter-spacing: .04em; }
+.heading h2 { font-family: var(--font-home-title), sans-serif; margin: 0; color: #853251; font-size: clamp(26px, 3.4vw, 38px); font-weight: 400; line-height: 1.4; letter-spacing: .04em; }
 .mobileBreak { display: none; }
 .mascot { width: 120px; height: 172px; object-fit: contain; transform: rotate(8deg); filter: drop-shadow(0 7px 0 #e5bccc55); }
 
@@ -26,14 +26,14 @@
 .battleArt { position: relative; aspect-ratio: 1920 / 743; overflow: hidden; border-radius: 18px 18px 0 0; }
 .battleImage { object-fit: cover; transition: transform .4s ease; }
 .battleCaption { display: flex; align-items: center; justify-content: space-between; gap: 16px; padding: 20px 24px; }
-.battleCaption h3 { margin: 0; color: #a5406c; font-size: clamp(20px, 2.6vw, 28px); font-weight: 700; line-height: 1.4; }
+.battleCaption h3 { font-family: var(--font-home-title), sans-serif; margin: 0; color: #853251; font-size: clamp(20px, 2.6vw, 28px); font-weight: 400; line-height: 1.4; }
 .battleCaption p { margin: 6px 0 0; color: #806575; font-size: 13px; line-height: 1.7; }
 .playButton { display: inline-flex; align-items: center; gap: 24px; flex-shrink: 0; padding: 12px 24px; border-radius: 32px; background: #b94778; box-shadow: 0 3px 0 #91355e; color: white; font-size: 16px; font-weight: 700; }
 
 .grid { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 16px; margin-top: 28px; }
 .card {
   --wash: #e3f6ee;
-  --accent: #368271;
+  --accent: #276958;
   --edge: #b8dfd2;
   position: relative;
   display: flex;
@@ -48,14 +48,14 @@
   transition: transform .25s ease, box-shadow .25s ease;
 }
 .yellow { --wash: #fff2ce; --accent: #926315; --edge: #ebd695; }
-.pink { --wash: #ffe3ec; --accent: #b64276; --edge: #edb9cd; }
-.purple { --wash: #eee7fa; --accent: #765c9d; --edge: #d3c3e9; }
+.pink { --wash: #ffe3ec; --accent: #99305e; --edge: #edb9cd; }
+.purple { --wash: #eee7fa; --accent: #674688; --edge: #d3c3e9; }
 .characterStage { position: relative; height: 215px; margin: 16px 12px 0; }
 .halo { position: absolute; inset: 22% 5% 4%; border: 2px dashed var(--edge); border-radius: 50%; transform: rotate(-14deg); }
 .sparkle { position: absolute; top: 15%; right: 6%; color: var(--accent); opacity: .55; font-size: 22px; }
 .character { object-fit: contain; object-position: center bottom; filter: drop-shadow(0 4px 0 #ffffff); transform-origin: center bottom; transition: transform .3s ease; }
 .cardCaption { position: relative; padding: 20px 12px 48px; text-align: center; }
-.cardCaption h3 { margin: 0; color: var(--accent); font-size: 18px; font-weight: 700; line-height: 1.5; }
+.cardCaption h3 { font-family: var(--font-home-title), sans-serif; margin: 0; color: var(--accent); font-size: 18px; font-weight: 400; line-height: 1.5; }
 .cardCaption p { margin: 7px 0 0; color: #786775; font-size: 11px; line-height: 1.6; }
 .arrow { position: absolute; right: 12px; bottom: 12px; display: grid; place-items: center; width: 26px; height: 26px; border-radius: 50%; background: white; color: var(--accent); font-size: 16px; }
 

@@ -4,7 +4,7 @@ import React from 'react';
 import { motion } from 'framer-motion';
 import Link from 'next/link';
 import Image from 'next/image';
-import { homeFont } from './homeFont';
+import { homeTitleFont } from './homeFont';
 import { css } from 'styled-system/css';
 
 const cardButtons = [
@@ -102,10 +102,10 @@ export default function HeroSection() {
               })}>
                 <Image src={btn.img} alt="" fill sizes="(max-width: 640px) 32vw, 260px"
                   style={{ objectFit: 'cover', borderRadius: '0.75rem' }} preload />
-                <span aria-hidden="true" className={`${homeFont.className} ${css({
+                <span aria-hidden="true" className={`${homeTitleFont.className} ${css({
                   position: 'absolute', inset: '0', zIndex: '10',
                   display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
-                  bg: 'black/30', rounded: 'xl', fontWeight: 'bold',
+                  bg: 'black/30', rounded: 'xl', fontWeight: 'normal',
                   fontSize: 'clamp(15px, 4.2vw, 30px)', color: 'white', px: '1', textAlign: 'center',
                   lineHeight: '1.4', textShadow: '0 2px 6px rgba(0, 0, 0, 0.6)',
                 })}`}>
