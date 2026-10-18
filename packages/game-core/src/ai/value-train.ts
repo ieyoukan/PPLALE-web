@@ -5,7 +5,8 @@ import type { Catalog, Deck, GameState } from '../model.ts';
 import { defaultWeights } from './evaluate.ts';
 import { winProbability } from './assess.ts';
 import { createHard } from './levels/hard.ts';
-import { playMatch } from './selfplay.ts';
+import { playMatch, randomStrawberryDeck } from './selfplay.ts';
+import { fruits, fruitsUpTo, playableNow, randomDeck } from '../rules.ts';
 import type { CpuStrategy } from './types.ts';
 import { valueFeatures, valueLayout, valueLogit } from './value.ts';
 import type { Evaluator, ValueModel } from './value.ts';
@@ -45,8 +46,22 @@ export function turnStarts(): (state: GameState) => boolean {
 }
 
 /**
+ * Two random decks of one environment (いちご, ＋ぶどう, ＋めろん or ＋おれんじ, chosen by the seed in
+ * turn), half the time with 拡張プレイアブル where the engine has them. Models are compared on these,
+ * so one is only handed out if it holds up with every deck people can build. Self-play stays on
+ * いちご decks: a model learned from these decks lost to the current one (45.5% over 400 matches,
+ * in each environment too).
+ */
+export function environmentDecks(catalog: Catalog, seed: number): [Deck, Deck] {
+    const environments = fruits.filter(fruit => playableNow.fruits.includes(fruit));
+    const rules = { fruits: fruitsUpTo(environments[seed % environments.length]), extendedPlayable: playableNow.extendedPlayable && (seed >>> 2) % 2 === 1 };
+    const deck = (n: number) => randomDeck(rules, catalog, Math.imul(seed, 2654435761) + n) ?? randomStrawberryDeck(seed + n);
+    return [deck(1), deck(2)];
+}
+
+/**
  * Sampled turn starts of one つよい self-play match and whether side 0 won; null without a winner.
- * Without `decks` both sides get a random deck.
+ * Without `decks` both sides get a random いちご deck.
  */
 export function selfPlayPositions(catalog: Catalog, seed: number, share: number, decks?: [Deck, Deck]): { rows: Float32Array[]; won: 0 | 1 } | null {
     const hard = createHard(defaultWeights);

@@ -1,6 +1,6 @@
 import { parentPort } from 'node:worker_threads';
 import { createMaster, createValueEvaluator, playMatch, valueModel } from '@pplale/game-core/ai';
-import { selfPlayPositions, valueData } from '@pplale/game-core/train';
+import { selfPlayPositions, environmentDecks, valueData } from '@pplale/game-core/train';
 import { catalog } from './catalog.ts';
 import type { Task } from './pool.ts';
 
@@ -16,9 +16,10 @@ parentPort!.on('message', (task: Task) => {
     const base = createMaster({ evaluate: createValueEvaluator(valueModel) });
     let wins = 0;
     for (const seed of task.seeds) {
-        // The same decks and shuffle in both seats, so luck cancels.
-        if (playMatch(catalog, { levels: [candidate, base], seed }).winner === 0) wins++;
-        if (playMatch(catalog, { levels: [base, candidate], seed }).winner === 1) wins++;
+        // The same decks and shuffle in both seats, so luck cancels; decks of every environment.
+        const decks = environmentDecks(catalog, seed);
+        if (playMatch(catalog, { levels: [candidate, base], seed, decks }).winner === 0) wins++;
+        if (playMatch(catalog, { levels: [base, candidate], seed, decks }).winner === 1) wins++;
     }
     parentPort!.postMessage({ wins, matches: task.seeds.length * 2 });
 });

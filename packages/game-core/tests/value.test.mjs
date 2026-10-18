@@ -46,3 +46,15 @@ test('value: the turn search accepts a learned evaluator and still returns a leg
   const result = searchTurn(decision, moves[0], { evaluate: createValueEvaluator(model()), maxNodes: 300 });
   assert.ok(moves.includes(result.move));
 });
+
+test('environment decks: every environment in turn, each a legal deck of its rules', async () => {
+  const { environmentDecks } = await import('../dist/ai/value-train.js');
+  const { deckRuleErrors, fruitsUpTo } = await import('../dist/rules.js');
+  const seen = new Set();
+  for (let seed = 0; seed < 16; seed++) {
+    const decks = environmentDecks(catalog, seed), newest = ['strawberry', 'grape', 'melon', 'orange'][seed % 4];
+    for (const deck of decks) assert.deepEqual(deckRuleErrors(deck, { fruits: fruitsUpTo(newest), extendedPlayable: true }, catalog), []);
+    seen.add([...decks[0].yojo, ...decks[0].sweet, ...decks[1].yojo, ...decks[1].sweet].map(id => catalog[id].fruit).sort().filter((f, i, a) => a.indexOf(f) === i).join('+'));
+  }
+  assert.ok(seen.size >= 4, [...seen].join(' / '));
+});
