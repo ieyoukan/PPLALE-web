@@ -47,9 +47,11 @@ function joinParts(files, labelled) {
 }
 
 if (!isMainThread) {
-  const evaluate = createValueEvaluator(valueModel);
+  // Only labelling needs the stored model (it may not fit features that are being changed).
+  let evaluate;
   parentPort.on('message', ({ seeds, share, label }) => {
     if (label) {
+      evaluate ??= createValueEvaluator(valueModel);
       const games = seeds.flatMap(seed => { const g = labeledSelfPlay(catalog, seed, share, evaluate, valueModel.scale); return g ? [{ id: seed, ...g }] : []; });
       const { x, y, match } = valueData(games);
       const search = new Float32Array(games.flatMap(g => g.search)), oracle = new Float32Array(games.flatMap(g => g.oracle));
