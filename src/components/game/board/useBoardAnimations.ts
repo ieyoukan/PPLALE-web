@@ -15,6 +15,7 @@ import type { TurnNotice } from '../TurnAnnouncement';
 import { sideLabel } from './useGameSession';
 import type { Mode } from './useGameSession';
 import { useAnimationTiming } from './useAnimationTiming';
+import { stageRect } from '../stage/stageSpace';
 
 export type Strike = { uid: string; cardId: string; x: number; y: number; dx: number; dy: number; width: number; height: number };
 /** A card, skill or hand reaction, shown large before it resolves. */
@@ -47,10 +48,8 @@ export const ORDER_NOTICE_DURATION = 3200;
 const FINALE_WAIT = 700;
 const FINALE_SET = 1700;
 const FINALE_VERDICT = 2400;
-const rectOf = (element: Element): Rect => {
-  const { x, y, width, height } = element.getBoundingClientRect();
-  return { x, y, width, height };
-};
+// Effects are placed on the game stage, so every box is measured in stage pixels.
+const rectOf = (element: Element): Rect => stageRect(element);
 /** Cards on their way into a hand, deck or the field must land before anyone acts; ones going to a pile are only decoration. */
 const blocksPlay = (flight: DrawFlight) => flight.toZone !== 'nap' && flight.toZone !== 'exile';
 const spotKey = (spot: Spot) => 'unit' in spot ? `unit:${spot.unit}` : 'hand' in spot ? `hand:${spot.hand}` : 'pile' in spot ? `pile:${spot.pile.join('-')}` : 'leader' in spot ? `leader:${spot.leader}` : `pp:${spot.pp}`;

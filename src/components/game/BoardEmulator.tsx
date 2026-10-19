@@ -31,6 +31,7 @@ import { HOME_PATH } from '@/lib/game/sessionStore';
 import type { DeckKind } from '@pplale/game-core';
 import styles from './BoardEmulator.module.css';
 import { useGameNotifications } from './notifications/GameNotifications';
+import { GameStage } from './stage/GameStage';
 
 const MulliganBoard = dynamic(() => import('./MulliganBoard').then(module => module.MulliganBoard));
 
@@ -43,10 +44,10 @@ export default function BoardEmulator() {
   const startKey = session.ready && !session.position && !session.replaying && session.mode !== 'watch'
     && session.game.phase === 'dice' && session.record ? String(session.record.seed) : null;
   useEffect(() => { if (startKey) notify('started', `local:${startKey}`); }, [startKey, notify]);
-  return <BoardTable session={session} />;
+  return <GameStage><BoardTable session={session} /></GameStage>;
 }
 
-/** The game screen for any match: `session` says where it lives and who plays it. */
+/** The game screen for any match (inside a GameStage): `session` says where it lives and who plays it. */
 export function BoardTable({ session }: { session: BoardSession }) {
   const container = useRef<HTMLDivElement>(null);
   const board = useBoard(container, session);

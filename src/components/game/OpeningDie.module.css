@@ -1,4 +1,4 @@
-.surface { position: relative; display: block; width: min(320px, 80vw); height: 340px; padding: 0; border: 0; background: transparent; cursor: pointer; touch-action: manipulation; -webkit-tap-highlight-color: transparent; }
+.surface { position: relative; display: block; width: min(320px, 80cqw); height: 340px; padding: 0; border: 0; background: transparent; cursor: pointer; touch-action: manipulation; -webkit-tap-highlight-color: transparent; }
 .surface:disabled { cursor: default; opacity: 1; }
 .surface:focus-visible { outline: 3px solid #ffe4b5; outline-offset: 4px; border-radius: 24px; }
 .scene { position: absolute; inset: 0; display: block; pointer-events: none; opacity: 0; transition: opacity .12s ease-out, filter .15s ease-out; }
@@ -8,7 +8,7 @@
   .ready:hover .scene { filter: brightness(1.12); }
 }
 .ready:active .scene, .ready:active .fallback { filter: brightness(.92); }
-@media (max-height: 600px) { .surface { width: 260px; height: 260px; } }
+@container stage (max-height: 600px) { .surface { width: 260px; height: 260px; } }
 
 .sceneReady { opacity: 1; }
 @media (prefers-reduced-motion: reduce) {

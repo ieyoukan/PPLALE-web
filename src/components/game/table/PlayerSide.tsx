@@ -6,6 +6,7 @@ import type { DeckKind, Side } from '@pplale/game-core';
 import { displayCards, gameCatalog } from '@/lib/game/catalog';
 import { useBoardContext } from '../board/BoardContext';
 import { cardCounts } from '../board/matchInfo';
+import { useLongPress } from '../board/useLongPress';
 import { Counter, DeckStack } from '../BoardPieces';
 import type { ZoneKind } from '../BoardPieces';
 import { GameCard } from '../GameCard';
@@ -96,6 +97,7 @@ function FieldSlot({ side, slot }: { side: Side; slot: number }) {
   const board = useBoardContext();
   const { game, view, attacker, selected, playEnabled, drag, animations, editing } = board;
   const near = side === view;
+  const longPress = useLongPress();
   const uid = game.players[side].field.find(id => game.cards[id].slot === slot), card = uid ? game.cards[uid] : null;
   const targeting = !!uid && (board.isOption(uid) || !!attacker && side !== view && board.canStrike(attacker, uid));
   const placing = !!selected && near && !uid && playEnabled && gameCatalog[game.cards[selected].cardId].type === 'yojo';
@@ -104,10 +106,13 @@ function FieldSlot({ side, slot }: { side: Side; slot: number }) {
     card?.exhausted && styles.exhausted, uid && (drag.held?.uid === uid || animations.strike?.uid === uid) && styles.dealing,
     card?.keywords.includes('taunt') && styles.tauntCard, editing && !card && styles.editSlot,
   ].filter(Boolean).join(' ');
+  // Touch and hold enlarges a unit, like the right click.
+  const hold = longPress(() => { if (uid) { drag.cancel(); board.setPanel({ type: 'inspect', uid }); } });
   return <button data-slot={slot} data-side={side} data-unit={uid} disabled={!!attacker && side !== view && !targeting} className={classes}
     aria-label={`${side === 0 ? 'あなた' : '相手'}の場 ${slot + 1} ${card ? displayCards[card.cardId].name : '空き'}`}
+    {...hold}
     onClick={() => { if (!drag.clickSuppressed()) board.clickSlot(side, uid, slot); }}
-    onPointerDown={event => { if (uid && near) drag.pickUp(event, uid, 'field'); }}
+    onPointerDown={event => { if (uid) hold.onPointerDown(event); if (uid && near) drag.pickUp(event, uid, 'field'); }}
     onContextMenu={event => { event.preventDefault(); if (uid) board.setPanel({ type: 'inspect', uid }); }}>
     {card && <>
       <GameCard id={card.cardId} instance={card} abilities />

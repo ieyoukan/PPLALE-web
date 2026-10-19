@@ -10,7 +10,7 @@
 .clock[data-urgent] meter::-moz-meter-bar { background: var(--brand-cocoa); }
 .clock[data-paused] { border-style: dashed; }
 .clock small { font-size: 12px; line-height: 1.2; }
-@media (max-height: 600px) {
+@container stage (max-height: 600px) {
   .clock { display: flex; align-items: center; padding: 4px 7px; gap: 6px; }
   .time { flex-shrink: 0; font-size: 20px; }
   .time svg { width: 16px; height: 16px; }

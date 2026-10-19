@@ -7,6 +7,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import type { PointerEvent as ReactPointerEvent } from 'react';
 import { useBoardContext } from '../board/BoardContext';
 import { useReplayAssessment } from '../board/useReplayAssessment';
+import { stageRect, toStage } from '../stage/stageSpace';
 import styles from './ReplayBar.module.css';
 
 /** How long the player stays up while playing after the last touch. */
@@ -70,9 +71,10 @@ export function ReplayBar() {
 
   const track = useRef<HTMLDivElement>(null), dragging = useRef(false);
   const seekAt = (event: ReactPointerEvent) => {
-    const box = track.current?.getBoundingClientRect();
+    const box = track.current && stageRect(track.current);
     if (!box || !timeline) return;
-    seekReplay(Math.round(Math.max(0, Math.min(1, (event.clientX - box.left) / box.width)) * last));
+    const at = toStage(event.clientX, event.clientY);
+    seekReplay(Math.round(Math.max(0, Math.min(1, (at.x - box.x) / box.width)) * last));
   };
   const turnStep = (direction: -1 | 1) => {
     const target = direction < 0 ? turns.filter(index => index < at).at(-1) ?? 0 : turns.find(index => index > at);

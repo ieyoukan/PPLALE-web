@@ -5,31 +5,31 @@
 
 /* ── 先攻・後攻 ── */
 /* Over the blurred table, laid out like it: the other side on top, the viewer at the bottom. */
-.versus { position: fixed; inset: 0; z-index: 180; display: grid; grid-template-rows: minmax(0, 1fr) auto minmax(0, 1fr); align-items: center; padding: clamp(8px, 3vh, 28px) clamp(12px, 4vw, 48px); overflow: hidden; background: #000000a6; backdrop-filter: blur(9px); color: #fffdeb; pointer-events: none; font-family: 'Yu Mincho', 'Hiragino Mincho ProN', 'Noto Serif JP', serif; animation: versusShow 3.2s ease both; }
-.versusSide { display: flex; align-items: center; justify-content: center; gap: clamp(14px, 4vw, 56px); min-height: 0; height: 100%; }
+.versus { position: fixed; inset: 0; z-index: 180; display: grid; grid-template-rows: minmax(0, 1fr) auto minmax(0, 1fr); align-items: center; padding: clamp(8px, 3cqh, 28px) clamp(12px, 4cqw, 48px); overflow: hidden; background: #000000a6; backdrop-filter: blur(9px); color: #fffdeb; pointer-events: none; font-family: 'Yu Mincho', 'Hiragino Mincho ProN', 'Noto Serif JP', serif; animation: versusShow 3.2s ease both; }
+.versusSide { display: flex; align-items: center; justify-content: center; gap: clamp(14px, 4cqw, 56px); min-height: 0; height: 100%; }
 .versusTop { animation: versusFromTop .55s cubic-bezier(.16, 1, .3, 1) both; }
 .versusBottom { animation: versusFromBottom .55s cubic-bezier(.16, 1, .3, 1) both; }
 /* The whole playable card, not a crop. */
-.versusCard { position: relative; flex: none; height: min(100%, 36vh, 60vw); aspect-ratio: 533 / 800; filter: drop-shadow(0 12px 18px #000c); }
+.versusCard { position: relative; flex: none; height: min(100%, 36cqh, 60cqw); aspect-ratio: 533 / 800; filter: drop-shadow(0 12px 18px #000c); }
 .versusTop .versusCard { transform: rotate(3deg); }
 .versusBottom .versusCard { transform: rotate(-3deg); }
-.versusInfo { display: grid; justify-items: center; gap: clamp(6px, 1.4vh, 14px); min-width: 0; }
+.versusInfo { display: grid; justify-items: center; gap: clamp(6px, 1.4cqh, 14px); min-width: 0; }
 .playerText { display: grid; justify-items: center; gap: 2px; min-width: 0; }
-.playerText small { font: clamp(11px, 1.3vw, 16px) Georgia, 'Times New Roman', serif; letter-spacing: .12em; color: #e7c3e2; }
-.playerText b { max-width: 44vw; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: clamp(16px, 2.4vw, 30px); text-shadow: 0 2px 6px #000; }
+.playerText small { font: clamp(11px, 1.3cqw, 16px) Georgia, 'Times New Roman', serif; letter-spacing: .12em; color: #e7c3e2; }
+.playerText b { max-width: 44cqw; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: clamp(16px, 2.4cqw, 30px); text-shadow: 0 2px 6px #000; }
 
-.orderPlate { height: min(21vh, 28vw); aspect-ratio: 1.45 / 1; display: grid; place-items: center; border: 3px solid #fffdeb; border-radius: 14px; outline: 2px dotted #a88667; outline-offset: -10px; background: radial-gradient(circle at 50% 40%, #fffdeb 20%, var(--plate-glow)); box-shadow: 0 0 0 3px #a88667, 0 12px 24px #000a; animation: plateIn .6s .35s cubic-bezier(.2, 1.2, .3, 1) both; }
+.orderPlate { height: min(21cqh, 28cqw); aspect-ratio: 1.45 / 1; display: grid; place-items: center; border: 3px solid #fffdeb; border-radius: 14px; outline: 2px dotted #a88667; outline-offset: -10px; background: radial-gradient(circle at 50% 40%, #fffdeb 20%, var(--plate-glow)); box-shadow: 0 0 0 3px #a88667, 0 12px 24px #000a; animation: plateIn .6s .35s cubic-bezier(.2, 1.2, .3, 1) both; }
 .plateFirst { --plate-glow: #f4b0bb; }
 .plateSecond { --plate-glow: #b3d788; }
-.orderPlate strong { display: flex; align-items: center; font-size: min(12vh, 16vw); font-weight: 900; line-height: 1; color: #6b4a3a; filter: drop-shadow(0 3px 0 #fffdeb); }
+.orderPlate strong { display: flex; align-items: center; font-size: min(12cqh, 16cqw); font-weight: 900; line-height: 1; color: #6b4a3a; filter: drop-shadow(0 3px 0 #fffdeb); }
 .orderPlate strong span { display: inline-block; }
 .orderPlate strong span:first-child { transform: translate(.06em, -.12em); }
 .orderPlate strong span:last-child { font-size: .74em; transform: translate(-.08em, .26em); }
 
-.versusMiddle { position: relative; display: grid; place-items: center; padding: clamp(2px, 1vh, 10px) 0; }
-.versusBeam { position: absolute; top: 50%; left: -10vw; right: -10vw; height: 3px; transform: translateY(-50%); background: linear-gradient(90deg, #fffdeb00, #fffdeb 20%, #fffdeb 80%, #fffdeb00); box-shadow: 0 0 14px 4px #ffef93, 0 0 44px 12px #f4b0bb; animation: versusBeam .6s .2s ease-out both; }
-.versusMark { position: relative; font: italic 700 min(11vh, 15vw) / 1 Georgia, 'Times New Roman', serif; letter-spacing: -.04em; color: #fffdeb; text-shadow: 0 0 18px #000, 0 4px 10px #000; animation: versusMark .5s .45s cubic-bezier(.2, 1.3, .3, 1) both; }
-.versusCaption { position: absolute; right: 0; top: 50%; max-width: 38%; margin: 0; padding-top: 10px; text-align: right; font-size: clamp(13px, 1.8vw, 22px); text-shadow: 0 2px 8px #000; }
+.versusMiddle { position: relative; display: grid; place-items: center; padding: clamp(2px, 1cqh, 10px) 0; }
+.versusBeam { position: absolute; top: 50%; left: -10cqw; right: -10cqw; height: 3px; transform: translateY(-50%); background: linear-gradient(90deg, #fffdeb00, #fffdeb 20%, #fffdeb 80%, #fffdeb00); box-shadow: 0 0 14px 4px #ffef93, 0 0 44px 12px #f4b0bb; animation: versusBeam .6s .2s ease-out both; }
+.versusMark { position: relative; font: italic 700 min(11cqh, 15cqw) / 1 Georgia, 'Times New Roman', serif; letter-spacing: -.04em; color: #fffdeb; text-shadow: 0 0 18px #000, 0 4px 10px #000; animation: versusMark .5s .45s cubic-bezier(.2, 1.3, .3, 1) both; }
+.versusCaption { position: absolute; right: 0; top: 50%; max-width: 38%; margin: 0; padding-top: 10px; text-align: right; font-size: clamp(13px, 1.8cqw, 22px); text-shadow: 0 2px 8px #000; }
 
 @keyframes versusShow { 0% { opacity: 0; } 5%, 90% { opacity: 1; } 100% { opacity: 0; } }
 @keyframes versusFromTop { from { opacity: 0; transform: translateY(-40%); } }
@@ -39,26 +39,26 @@
 @keyframes plateIn { from { opacity: 0; transform: perspective(900px) rotateY(85deg) scale(.7); } }
 
 /* ── 先攻 / 後攻を選択 ── */
-.orderChoice { display: grid; justify-items: center; gap: clamp(14px, 4vh, 40px); color: #fffdeb; font-family: 'Yu Mincho', 'Hiragino Mincho ProN', 'Noto Serif JP', serif; }
-.orderChoice h2 { margin: 0; font-size: clamp(22px, 4vw, 44px); font-weight: 700; letter-spacing: .08em; text-shadow: 0 3px 8px #000; }
-.orderOptions { display: flex; gap: clamp(16px, 5vw, 64px); }
+.orderChoice { display: grid; justify-items: center; gap: clamp(14px, 4cqh, 40px); color: #fffdeb; font-family: 'Yu Mincho', 'Hiragino Mincho ProN', 'Noto Serif JP', serif; }
+.orderChoice h2 { margin: 0; font-size: clamp(22px, 4cqw, 44px); font-weight: 700; letter-spacing: .08em; text-shadow: 0 3px 8px #000; }
+.orderOptions { display: flex; gap: clamp(16px, 5cqw, 64px); }
 /* Plates as cards: they lift under the pointer and the chosen one stays raised and lit. */
-.orderOption { height: min(34vh, 36vw); aspect-ratio: 1 / 1.1; padding: 0; cursor: pointer; opacity: .82; animation: none; transition: transform .2s ease, box-shadow .2s ease, opacity .2s ease, filter .2s ease; }
-.orderOption strong { font-size: min(15vh, 16vw); }
+.orderOption { height: min(34cqh, 36cqw); aspect-ratio: 1 / 1.1; padding: 0; cursor: pointer; opacity: .82; animation: none; transition: transform .2s ease, box-shadow .2s ease, opacity .2s ease, filter .2s ease; }
+.orderOption strong { font-size: min(15cqh, 16cqw); }
 .orderOption:hover, .orderOption:focus-visible { opacity: 1; transform: translateY(-10px) scale(1.04); }
 .orderPicked, .orderPicked:hover { opacity: 1; transform: translateY(-14px) scale(1.07); box-shadow: 0 0 0 3px #a88667, 0 0 0 7px #ffef93, 0 0 34px 10px #ffef93, 0 20px 36px #000a; }
 .orderOptions:has(.orderPicked) .orderOption:not(.orderPicked) { opacity: .5; filter: saturate(.6); }
-.orderDecide { min-width: clamp(160px, 22vw, 260px); min-height: 56px; padding: 10px 28px; border: 3px solid #fffdeb; border-radius: 14px; background: #f4b0bb; color: #6b4a3a; font-family: inherit; font-size: clamp(18px, 2.4vw, 26px); font-weight: 700; box-shadow: 0 5px 0 #a88667, 0 10px 20px #0008; cursor: pointer; transition: filter .2s, transform .2s, opacity .2s; }
+.orderDecide { min-width: clamp(160px, 22cqw, 260px); min-height: 56px; padding: 10px 28px; border: 3px solid #fffdeb; border-radius: 14px; background: #f4b0bb; color: #6b4a3a; font-family: inherit; font-size: clamp(18px, 2.4cqw, 26px); font-weight: 700; box-shadow: 0 5px 0 #a88667, 0 10px 20px #0008; cursor: pointer; transition: filter .2s, transform .2s, opacity .2s; }
 .orderDecide:enabled:hover { filter: brightness(1.1); transform: translateY(-2px); }
 .orderDecide:disabled { opacity: .45; filter: saturate(.4); cursor: default; }
-@media (max-height: 520px) { .orderOption { height: min(40vh, 30vw); } .orderDecide { min-height: 46px; } }
+@container stage (max-height: 520px) { .orderOption { height: min(40cqh, 30cqw); } .orderDecide { min-height: 46px; } }
 
 /* ── ゲームセット / verdict ── */
 .finale { position: fixed; inset: 0; z-index: 175; display: grid; place-items: center; padding: 0; border: 0; background: #000000a6; color: #fffdeb; cursor: pointer; font-family: 'Yu Mincho', 'Hiragino Mincho ProN', 'Noto Serif JP', serif; animation: finaleVeil .3s ease-out both; }
-.gameSet, .verdict { display: block; max-width: 96vw; font-weight: 900; line-height: 1.2; white-space: nowrap; }
-.gameSet { font-size: clamp(38px, 9vw, 130px); letter-spacing: .12em; text-shadow: 0 0 18px #f4b0bb, 0 0 46px #f4b0bb, 0 4px 10px #000; animation: gameSet .6s cubic-bezier(.16, 1, .3, 1) both; }
+.gameSet, .verdict { display: block; max-width: 96cqw; font-weight: 900; line-height: 1.2; white-space: nowrap; }
+.gameSet { font-size: clamp(38px, 9cqw, 130px); letter-spacing: .12em; text-shadow: 0 0 18px #f4b0bb, 0 0 46px #f4b0bb, 0 4px 10px #000; animation: gameSet .6s cubic-bezier(.16, 1, .3, 1) both; }
 .gameSet::after { content: ''; display: block; height: 3px; margin: .12em auto 0; background: linear-gradient(90deg, transparent, #f4b0bb 25%, #fffdeb 50%, #f4b0bb 75%, transparent); box-shadow: 0 0 16px #f4b0bb; animation: finaleLine .7s .1s ease-out both; }
-.verdict { font-size: clamp(40px, 11vw, 160px); animation: verdict .6s cubic-bezier(.2, 1.3, .3, 1) both; }
+.verdict { font-size: clamp(40px, 11cqw, 160px); animation: verdict .6s cubic-bezier(.2, 1.3, .3, 1) both; }
 .win { color: #ffef93; text-shadow: 0 0 22px #ffed73aa, 0 6px 14px #000; }
 .lose { color: #e7c3e2; text-shadow: 0 6px 14px #000; }
 .neutral { color: #fffdeb; text-shadow: 0 6px 14px #000; }
@@ -68,7 +68,7 @@
 @keyframes verdict { from { opacity: 0; transform: translateY(30px) scale(.6); } }
 
 /* ── Result ── */
-.result { position: fixed; inset: 0; z-index: 170; display: grid; grid-template: auto minmax(0, 1fr) / minmax(0, 40fr) minmax(0, 60fr); gap: clamp(8px, 2vh, 20px) clamp(14px, 4vw, 56px); padding: clamp(10px, 3vh, 32px) clamp(14px, 5vw, 72px); overflow: auto; color: #fffdeb; backdrop-filter: blur(8px); animation: finaleVeil .45s ease-out both; }
+.result { position: fixed; inset: 0; z-index: 170; display: grid; grid-template: auto minmax(0, 1fr) / minmax(0, 40fr) minmax(0, 60fr); gap: clamp(8px, 2cqh, 20px) clamp(14px, 4cqw, 56px); padding: clamp(10px, 3cqh, 32px) clamp(14px, 5cqw, 72px); overflow: auto; color: #fffdeb; backdrop-filter: blur(8px); animation: finaleVeil .45s ease-out both; }
 /* Mostly black and see-through; the outcome only tints the top. */
 .resultWin { background: radial-gradient(120% 70% at 50% 0%, #ffef9347, #0000 70%), #000000b8; }
 .resultLose { background: radial-gradient(120% 70% at 50% 0%, #e7c3e238, #0000 70%), #000000c7; }
@@ -77,27 +77,27 @@
 .result button:focus-visible, .result a:focus-visible { outline: 2px solid #fffdeb; outline-offset: 3px; }
 
 .resultHeading { grid-column: 1 / -1; text-align: center; }
-.resultHeading h2 { margin: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font: 900 clamp(30px, 7vw, 88px) / 1.25 'Yu Mincho', 'Hiragino Mincho ProN', 'Noto Serif JP', serif; letter-spacing: .04em; }
+.resultHeading h2 { margin: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font: 900 clamp(30px, 7cqw, 88px) / 1.25 'Yu Mincho', 'Hiragino Mincho ProN', 'Noto Serif JP', serif; letter-spacing: .04em; }
 
-.resultSide { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: clamp(8px, 1.6vh, 16px); min-height: 0; }
-.resultArt { position: relative; flex: 0 1 auto; height: min(56vh, 520px); max-width: 100%; aspect-ratio: 533 / 800; transform: rotate(-3deg); filter: drop-shadow(0 18px 26px #000c); animation: resultArt .6s .1s cubic-bezier(.16, 1, .3, 1) both; }
-.resultName { max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: clamp(16px, 2vw, 24px); }
-.resultBody { display: flex; flex-direction: column; justify-content: center; gap: clamp(10px, 2.4vh, 26px); min-width: 0; }
+.resultSide { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: clamp(8px, 1.6cqh, 16px); min-height: 0; }
+.resultArt { position: relative; flex: 0 1 auto; height: min(56cqh, 520px); max-width: 100%; aspect-ratio: 533 / 800; transform: rotate(-3deg); filter: drop-shadow(0 18px 26px #000c); animation: resultArt .6s .1s cubic-bezier(.16, 1, .3, 1) both; }
+.resultName { max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: clamp(16px, 2cqw, 24px); }
+.resultBody { display: flex; flex-direction: column; justify-content: center; gap: clamp(10px, 2.4cqh, 26px); min-width: 0; }
 
-.summary { margin: 0; padding: clamp(8px, 1.6vh, 16px) 4px; border-block: 1px solid #fffdeb55; font-size: clamp(14px, 1.7vw, 20px); }
+.summary { margin: 0; padding: clamp(8px, 1.6cqh, 16px) 4px; border-block: 1px solid #fffdeb55; font-size: clamp(14px, 1.7cqw, 20px); }
 .summary > div { display: flex; justify-content: space-between; gap: 18px; padding: 4px 0; }
 .summary dt { flex: none; opacity: .8; }
 .summary dd { margin: 0; text-align: right; }
 
-.deckRow { display: grid; grid-template-columns: auto auto; align-items: center; justify-content: start; gap: 8px 14px; min-width: 0; font-size: clamp(14px, 1.7vw, 20px); }
+.deckRow { display: grid; grid-template-columns: auto auto; align-items: center; justify-content: start; gap: 8px 14px; min-width: 0; font-size: clamp(14px, 1.7cqw, 20px); }
 .deckRow strong { grid-column: 1 / -1; padding: 8px 14px; border: 1px solid #fffdeb55; border-radius: 12px; background: #0006; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-weight: 400; }
 .actions { display: flex; flex-wrap: wrap; justify-content: flex-end; gap: 12px; }
 
-.boardRow { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 14px; font-size: clamp(14px, 1.7vw, 20px); }
+.boardRow { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 14px; font-size: clamp(14px, 1.7cqw, 20px); }
 .boardRow span { flex: 1 1 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.boardCode { display: grid; gap: 6px; font-size: clamp(13px, 1.5vw, 17px); }
+.boardCode { display: grid; gap: 6px; font-size: clamp(13px, 1.5cqw, 17px); }
 .boardCode textarea { padding: 8px 10px; border: 1px solid #fffdeb55; border-radius: 12px; background: #0006; color: inherit; font: inherit; font-size: 13px; resize: none; }
-.plateButton { display: inline-flex; align-items: center; justify-content: center; min-height: 48px; padding: 8px clamp(16px, 2.6vw, 34px); border: 3px solid #fffdeb; border-radius: 14px; background: #b3d788; color: #6b4a3a; font-size: clamp(15px, 1.8vw, 21px); font-weight: 700; text-decoration: none; box-shadow: 0 4px 0 #a88667, 0 8px 16px #0008; transition: filter .2s, transform .2s; }
+.plateButton { display: inline-flex; align-items: center; justify-content: center; min-height: 48px; padding: 8px clamp(16px, 2.6cqw, 34px); border: 3px solid #fffdeb; border-radius: 14px; background: #b3d788; color: #6b4a3a; font-size: clamp(15px, 1.8cqw, 21px); font-weight: 700; text-decoration: none; box-shadow: 0 4px 0 #a88667, 0 8px 16px #0008; transition: filter .2s, transform .2s; }
 .plateButton:hover { filter: brightness(1.06); transform: translateY(-2px); }
 .primaryPlate { min-width: min(100%, 240px); background: #f4b0bb; }
 @keyframes resultArt { from { opacity: 0; transform: translateX(-60px) rotate(-8deg); } }
@@ -114,17 +114,17 @@
 .deckCount { position: absolute; right: 2px; bottom: 2px; padding: 2px 8px; border-radius: 999px; background: #a88667; color: #fffdeb; font-size: 15px; font-weight: 700; }
 
 /* Short screens (a phone on its side): everything stays on one screen. */
-@media (max-height: 520px) {
-  .resultHeading h2 { font-size: clamp(32px, 11vh, 56px); }
-  .resultArt { height: min(46vh, 300px); }
+@container stage (max-height: 520px) {
+  .resultHeading h2 { font-size: clamp(32px, 11cqh, 56px); }
+  .resultArt { height: min(46cqh, 300px); }
   .plateButton { min-height: 42px; }
   .summary > div { padding: 1px 0; }
 }
 /* Narrow screens: one column, the character small on top. */
-@media (max-width: 640px) {
+@container stage (max-width: 640px) {
   .result { grid-template: auto auto auto / minmax(0, 1fr); align-content: start; }
   .resultSide { flex-flow: row wrap; }
-  .resultArt { height: min(30vh, 260px); }
+  .resultArt { height: min(30cqh, 260px); }
   .actions { justify-content: center; }
 }
 @media (prefers-reduced-motion: reduce) {

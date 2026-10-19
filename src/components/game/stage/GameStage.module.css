@@ -1,0 +1,16 @@
+/* The whole screen behind the stage: the same wood as the table, also under notches and home bars. */
+.screen {
+  position: fixed; inset: 0; overflow: hidden; background: #503528;
+  /* No pinch zoom, pull-to-refresh, text selection or long-press menu on the table; drawers still scroll. */
+  touch-action: none; overscroll-behavior: none;
+  user-select: none; -webkit-user-select: none; -webkit-touch-callout: none;
+}
+.screen input, .screen textarea { user-select: text; -webkit-user-select: text; }
+/* The part of the screen the stage may use (viewport-fit=cover lets the wood reach the edges). */
+.safe {
+  position: absolute; pointer-events: none;
+  inset: env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left);
+}
+/* Fixed-size stage, scaled (and on a portrait screen turned) by GameStage. Viewport units of the match
+   screens are written as cqw / cqh of this container, and their screen-size rules as @container stage. */
+.stage { position: absolute; left: 0; top: 0; overflow: hidden; transform-origin: 0 0; container: stage / size; }

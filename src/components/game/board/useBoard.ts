@@ -18,6 +18,7 @@ import { useCpuPlayer } from './useCpuPlayer';
 import { cpuSidesOf, sideLabel } from './useGameSession';
 import type { BoardSession } from './useGameSession';
 import { useOpeningDice } from './useOpeningDice';
+import { enterLandscape } from '../stage/stageSpace';
 
 export type Panel =
   | { type: 'menu' } | { type: 'deck' } | { type: 'counts' } | { type: 'logs' } | { type: 'analysis' }
@@ -360,7 +361,7 @@ export function useBoard(container: RefObject<HTMLDivElement | null>, session: B
   }
   function toggleFullscreen() {
     if (document.fullscreenElement) void document.exitFullscreen();
-    else void container.current?.requestFullscreen().catch(() => {});
+    else void enterLandscape();
   }
   function clearSelection() {
     setPanel(null);

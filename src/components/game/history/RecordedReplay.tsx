@@ -8,6 +8,7 @@ import { readRecording } from '@/lib/game/room/client';
 import { useAuth } from '@/lib/auth';
 import { BoardTable } from '../BoardEmulator';
 import { useRecordedSession } from './useRecordedSession';
+import { GameStage } from '../stage/GameStage';
 import styles from './History.module.css';
 
 /** Playback consumes authoritative frames only: no AI, rules execution or match requests. It runs on the ordinary table. */
@@ -42,5 +43,5 @@ function Player({ recording, initialStep }: { recording: MatchRecording; initial
   const back = recording.match.watching ? '/game/battle/free/' : '/game/battle/history/';
   const onLeave = useCallback(() => router.push(back), [router, back]);
   const session = useRecordedSession({ recording, initialStep, onLeave });
-  return <BoardTable session={session} />;
+  return <GameStage><BoardTable session={session} /></GameStage>;
 }

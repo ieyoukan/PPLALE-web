@@ -21,7 +21,7 @@ async function gap(page, left, right) {
   return b.x - a.x - a.width;
 }
 
-for (const viewport of [{ width: 1280, height: 860 }, { width: 844, height: 390 }, { width: 390, height: 844 }]) {
+for (const viewport of [{ width: 1280, height: 860 }, { width: 844, height: 390 }, { width: 667, height: 375 }]) {
   test.describe(`${viewport.width}×${viewport.height} reveal confirmation`, () => {
     test.use({ viewport });
     test('hand cards move to the public area and can return before confirmation without a modal', async ({ page }) => {

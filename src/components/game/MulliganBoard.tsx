@@ -4,6 +4,7 @@ import { useLayoutEffect, useRef, useState } from 'react';
 import type { PointerEvent } from 'react';
 import type { DeckKind } from '@pplale/game-core';
 import { GameCard } from './GameCard';
+import { stageRect, toStage } from './stage/stageSpace';
 import styles from './MulliganBoard.module.css';
 
 type Card = { uid: string; id: string; name: string; deck: DeckKind };
@@ -46,34 +47,36 @@ export function MulliganBoard({ cards, selected, enabled, confirmed, onToggle, o
     return { x, y, width };
   }
   function zoneAt(x: number, y: number): Zone | null {
-    const rect = stage.current?.getBoundingClientRect();
-    if (!rect || x < rect.left || x > rect.right || y < rect.top || y > rect.bottom) return null;
-    if (y - rect.top < rect.height * 0.45) return 'swap';
-    return y - rect.top >= rect.height * 0.51 ? 'keep' : null;
+    const rect = stage.current && stageRect(stage.current);
+    if (!rect || x < rect.x || x > rect.x + rect.width || y < rect.y || y > rect.y + rect.height) return null;
+    if (y - rect.y < rect.height * 0.45) return 'swap';
+    return y - rect.y >= rect.height * 0.51 ? 'keep' : null;
   }
   const movable = enabled;
   function pickUp(event: PointerEvent<HTMLButtonElement>, card: Card) {
     if (!movable || event.button !== 0) return;
-    const rect = event.currentTarget.getBoundingClientRect();
-    gesture.current = { uid: card.uid, x: event.clientX, y: event.clientY, offsetX: event.clientX - rect.left, offsetY: event.clientY - rect.top, width: rect.width, moved: false };
+    const rect = stageRect(event.currentTarget), at = toStage(event.clientX, event.clientY);
+    gesture.current = { uid: card.uid, x: at.x, y: at.y, offsetX: at.x - rect.x, offsetY: at.y - rect.y, width: rect.width, moved: false };
     suppressClick.current = false;
     event.currentTarget.setPointerCapture(event.pointerId);
   }
   function move(event: PointerEvent<HTMLDivElement>) {
     const g = gesture.current;
-    if (!g || !movable || !g.moved && Math.hypot(event.clientX - g.x, event.clientY - g.y) < 8) return;
-    const rect = stage.current?.getBoundingClientRect();
+    const at = toStage(event.clientX, event.clientY);
+    if (!g || !movable || !g.moved && Math.hypot(at.x - g.x, at.y - g.y) < 8) return;
+    const rect = stage.current && stageRect(stage.current);
     if (!rect) return;
     g.moved = true;
-    setDrag({ ...g, x: event.clientX - rect.left, y: event.clientY - rect.top });
-    setHover(zoneAt(event.clientX, event.clientY));
+    setDrag({ ...g, x: at.x - rect.x, y: at.y - rect.y });
+    setHover(zoneAt(at.x, at.y));
   }
   function release(event: PointerEvent<HTMLDivElement>) {
     const g = gesture.current;
     gesture.current = null; setDrag(null); setHover(null);
     if (!g?.moved) return;
     suppressClick.current = true;
-    const zone = zoneAt(event.clientX, event.clientY);
+    const at = toStage(event.clientX, event.clientY);
+    const zone = zoneAt(at.x, at.y);
     if (zone && movable) onToggle(g.uid, zone === 'swap');
   }
   return <section className={styles.overlay} aria-label="初期手札の交換">

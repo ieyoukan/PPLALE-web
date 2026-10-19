@@ -158,7 +158,7 @@
 .server dl div { display: flex; justify-content: space-between; gap: 12px; }
 .server dt { color: #9a8676; }
 /* Over the board: this side or the other lost its connection. */
-.badge { position: fixed; top: 10px; left: 50%; z-index: 60; transform: translateX(-50%); max-width: calc(100vw - 140px); padding: 8px 18px; border-radius: 999px; background: #3b2a22e6; color: #fffdeb; font-size: 15px; text-align: center; pointer-events: none; }
+.badge { position: fixed; top: 10px; left: 50%; z-index: 60; transform: translateX(-50%); max-width: calc(100cqw - 140px); padding: 8px 18px; border-radius: 999px; background: #3b2a22e6; color: #fffdeb; font-size: 15px; text-align: center; pointer-events: none; }
 .badgeDown { background: #a4483be6; }
 /* Nothing is wrong: only who is looking on. */
 /* Under the menu button, clear of the far hand. */
@@ -180,9 +180,9 @@
 .historyLink { justify-self: end; padding: 8px 16px; border: 2px solid #dfcbb6; border-radius: 999px; background: #fffaf0; color: #80604c; font-size: 14px; text-decoration: none; box-shadow: 0 3px 0 #cfbba544; }
 .historyLink:hover { background: #fbe7ed; }
 
-.spectatorTools { position: fixed; left: 50%; bottom: 16px; transform: translateX(-50%); z-index: 35; display: flex; flex-wrap: wrap; justify-content: center; align-items: center; gap: 10px; max-width: calc(100vw - 24px); padding: 10px 16px; border: 1px solid #d3bd86; border-radius: 18px; background: #142c37ee; color: #fff5de; box-shadow: 0 5px 24px #0005; font-size: 12px; }
+.spectatorTools { position: fixed; left: 50%; bottom: 16px; transform: translateX(-50%); z-index: 35; display: flex; flex-wrap: wrap; justify-content: center; align-items: center; gap: 10px; max-width: calc(100cqw - 24px); padding: 10px 16px; border: 1px solid #d3bd86; border-radius: 18px; background: #142c37ee; color: #fff5de; box-shadow: 0 5px 24px #0005; font-size: 12px; }
 .spectatorTools a { padding: 8px 12px; border-radius: 12px; background: #f4bcc8; color: #65433e; font-weight: 700; white-space: nowrap; }
 .liveAssessment { display: grid; gap: 4px; min-width: 170px; }
 .liveAssessment > span { display: flex; justify-content: space-between; gap: 10px; }
 .liveAssessment meter { width: 100%; height: 9px; accent-color: #b3d788; }
-@media(max-width: 600px) { .spectatorTools { bottom: 8px; width: max-content; } }
+@container stage (max-width: 600px) { .spectatorTools { bottom: 8px; width: max-content; } }

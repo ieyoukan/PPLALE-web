@@ -2,6 +2,7 @@
 
 import { useCallback, useRef, useState } from 'react';
 import type { PointerEvent as ReactPointerEvent, RefObject } from 'react';
+import { toStage } from '../stage/stageSpace';
 
 export type DragSource = 'hand' | 'field';
 type Gesture = { uid: string; kind: DragSource; x: number; y: number; moved: boolean; canDrag: boolean; scrolled?: boolean };
@@ -10,7 +11,8 @@ const DRAG_THRESHOLD = 10;
 
 /**
  * Pointer dragging of hand and field cards. The held card follows the pointer by writing its
- * position straight to the DOM (`[data-held-card]`), so moving does not re-render the board.
+ * position straight to the DOM (`[data-held-card]`), so moving does not re-render the board. Positions
+ * are in stage pixels (the table may be scaled and turned, see stageSpace).
  */
 export function useCardDrag({ container, canPick, onDragStart, onDrop }: {
   container: RefObject<HTMLDivElement | null>;
@@ -26,31 +28,34 @@ export function useCardDrag({ container, canPick, onDragStart, onDrop }: {
   const pickUp = useCallback((event: ReactPointerEvent<HTMLElement>, uid: string, kind: DragSource) => {
     const allowed = canPick(uid, kind);
     if (!allowed) return;
-    gesture.current = { uid, kind, x: event.clientX, y: event.clientY, moved: false, canDrag: allowed.canDrag };
+    const at = toStage(event.clientX, event.clientY);
+    gesture.current = { uid, kind, x: at.x, y: at.y, moved: false, canDrag: allowed.canDrag };
     event.currentTarget.setPointerCapture(event.pointerId);
   }, [canPick]);
 
   const move = useCallback((event: ReactPointerEvent<HTMLElement>) => {
     const g = gesture.current;
-    if (!g || !g.moved && Math.hypot(event.clientX - g.x, event.clientY - g.y) < DRAG_THRESHOLD) return;
+    if (!g) return;
+    const at = toStage(event.clientX, event.clientY);
+    if (!g.moved && Math.hypot(at.x - g.x, at.y - g.y) < DRAG_THRESHOLD) return;
     // A horizontal touch swipe on the hand scrolls it instead of picking the card up.
-    if (event.pointerType === 'touch' && g.kind === 'hand' && !g.moved && Math.abs(event.clientX - g.x) > Math.abs(event.clientY - g.y) * 1.2) {
+    if (event.pointerType === 'touch' && g.kind === 'hand' && !g.moved && Math.abs(at.x - g.x) > Math.abs(at.y - g.y) * 1.2) {
       const list = container.current?.querySelector('[data-hand-list]');
-      if (list) list.scrollLeft -= event.clientX - g.x;
-      Object.assign(g, { x: event.clientX, y: event.clientY, scrolled: true });
+      if (list) list.scrollLeft -= at.x - g.x;
+      Object.assign(g, { x: at.x, y: at.y, scrolled: true });
       return;
     }
     if (!g.canDrag) return;
     if (!g.moved) {
       g.moved = true;
-      setHeld({ uid: g.uid, x: event.clientX, y: event.clientY });
+      setHeld({ uid: g.uid, x: at.x, y: at.y });
       onDragStart(g.uid, g.kind);
       return;
     }
     const element = container.current?.querySelector<HTMLElement>('[data-held-card]');
     if (element) {
-      element.style.left = `${event.clientX}px`;
-      element.style.top = `${event.clientY}px`;
+      element.style.left = `${at.x}px`;
+      element.style.top = `${at.y}px`;
     }
   }, [container, onDragStart]);
 

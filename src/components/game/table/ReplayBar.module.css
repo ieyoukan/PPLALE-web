@@ -1,5 +1,5 @@
 /* The replay player: pops up from the bottom edge (with a little bounce) and goes down while playing untouched. */
-.player { position: fixed; z-index: 136; left: 50%; bottom: max(10px, env(safe-area-inset-bottom)); width: min(760px, calc(100vw - 20px)); padding: 10px 14px 8px; border: 1px solid #fffdeb55; border-radius: 22px; background: linear-gradient(180deg, #3a2834e8, #241821f2); color: #fffdeb; box-shadow: 0 10px 28px #1a0f1899; transform: translate(-50%, calc(100% + 24px)); transition: transform .45s cubic-bezier(.34, 1.56, .64, 1); touch-action: none; }
+.player { position: fixed; z-index: 136; left: 50%; bottom: max(10px, env(safe-area-inset-bottom)); width: min(760px, calc(100cqw - 20px)); padding: 10px 14px 8px; border: 1px solid #fffdeb55; border-radius: 22px; background: linear-gradient(180deg, #3a2834e8, #241821f2); color: #fffdeb; box-shadow: 0 10px 28px #1a0f1899; transform: translate(-50%, calc(100% + 24px)); transition: transform .45s cubic-bezier(.34, 1.56, .64, 1); touch-action: none; }
 .player[data-shown] { transform: translate(-50%, 0); }
 /* While the player is down: a small tab to bring it back. */
 .handle { position: fixed; z-index: 135; left: 50%; bottom: 0; display: grid; place-items: center; width: 84px; height: 22px; padding: 0; border-radius: 14px 14px 0 0; background: #2a1d27d9; transform: translate(-50%, 0); transition: transform .25s; }
@@ -38,5 +38,5 @@
 .count { font-variant-numeric: tabular-nums; font-size: 15px; font-weight: 700; }
 .count small { font-weight: 400; opacity: .7; }
 .controls .stop { width: 34px; height: 34px; font-size: 16px; background: #fffdeb1a; }
-@media (max-height: 500px) { .player { padding: 6px 10px 4px; } .track { height: 38px; } .controls .play { width: 42px; height: 42px; } }
+@container stage (max-height: 500px) { .player { padding: 6px 10px 4px; } .track { height: 38px; } .controls .play { width: 42px; height: 42px; } }
 @media (prefers-reduced-motion: reduce) { .player, .handle, .head { transition: none; } }

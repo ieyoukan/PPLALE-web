@@ -78,7 +78,6 @@ export default function RootLayout({
     <html lang="ja" className={`${siteBodyFont.variable} ${siteTitleFont.variable}`} suppressHydrationWarning>
       <head>
         <meta name="theme-color" content="#e8c8c8" />
-        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
         
         {/* Favicon設定 */}
         <link rel="icon" href="/favicon.ico" sizes="any" />
