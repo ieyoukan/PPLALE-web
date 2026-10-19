@@ -151,7 +151,7 @@ export function EditPlayerPanel({ side }: { side: Side }) {
         else delete exSkills[id];
         change({ exSkills });
       }} />
-      {p.exSkills?.[id] && <Stepper label={`${exSkillInfo[id].name}の残り回数`} value={p.exSkills[id]!.uses} onChange={uses => change({ exSkills: { ...p.exSkills, [id]: { ...p.exSkills![id], uses: Math.max(0, uses) } } })} />}
+      {p.exSkills?.[id] && !['alice', 'dagger', 'smoke'].includes(id) && <Stepper label={`${exSkillInfo[id].name}の残り回数`} value={p.exSkills[id]!.uses} onChange={uses => change({ exSkills: { ...p.exSkills, [id]: { ...p.exSkills![id], uses: Math.max(0, uses) } } })} />}
     </div>)}
     <h3>カードのカウント</h3>
     <Stepper label="アイスカウント" value={p.ice ?? 0} onChange={ice => change({ ice })} />

@@ -72,3 +72,24 @@ for (const width of [1280, 390]) {
     });
   });
 }
+
+test('editor hides unlimited Ex counters and keeps limited counters editable', async ({ page }) => {
+  await page.goto('/game/editor/');
+  await page.getByRole('button', { name: /新しい盤面を作る/ }).click();
+  await page.getByRole('button', { name: 'あなたの設定', exact: true }).click();
+  for (const name of ['魅惑の水煙', '不思議の国のアリス', 'ダブルダガー']) {
+    const toggle = page.getByRole('button', { name, exact: true });
+    await toggle.click();
+    await expect(toggle).toHaveAttribute('aria-pressed', 'true');
+    await expect(page.getByRole('group', { name: `${name}の残り回数`, exact: true })).toHaveCount(0);
+  }
+  await page.getByRole('button', { name: 'ここあの献身', exact: true }).click();
+  const healing = page.getByRole('group', { name: 'ここあの献身の残り回数', exact: true });
+  await expect(healing).toContainText('3');
+  await healing.getByRole('button', { name: 'ここあの献身の残り回数を1減らす', exact: true }).click();
+  await expect(healing).toContainText('2');
+  await page.reload();
+  await page.getByRole('button', { name: 'あなたの設定', exact: true }).click();
+  await expect(page.getByRole('button', { name: '魅惑の水煙', exact: true })).toHaveAttribute('aria-pressed', 'true');
+  await expect(page.getByRole('group', { name: '魅惑の水煙の残り回数', exact: true })).toHaveCount(0);
+});
