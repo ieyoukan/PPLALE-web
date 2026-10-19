@@ -676,3 +676,5 @@
 .fieldSlot[data-pressing] .cardImage { animation: pressSwell .45s ease-in both; }
 @keyframes pressSwell { from { transform: scale(1); } to { transform: scale(1.12); filter: brightness(1.08) drop-shadow(0 8px 10px #41233975); } }
 @media (prefers-reduced-motion: reduce) { .fieldSlot[data-pressing] .cardImage { animation: none; } }
+.fullscreenIcon { width: 24px; height: 24px; fill: none; stroke: currentColor; stroke-width: 2.4; stroke-linecap: round; stroke-linejoin: round; }
+.fullscreenButton { position: absolute; z-index: 135; right: 16px; bottom: 14px; }

@@ -8,7 +8,7 @@ import { NotificationSoundToggle } from '../notifications/GameNotifications';
 
 /** In-match actions only. Choosing the mode, levels and decks belongs to the preparation page. */
 export function MenuPanel() {
-  const { game, mode, paused, view, busy, canUndo, replaying, remote, assessable, showAssessment, setShowAssessment, setPanel, setPaused, setView, undo, toggleFullscreen, leave, stopReplay, position, editBoard, rematch } = useBoardContext();
+  const { game, mode, paused, view, busy, canUndo, replaying, remote, assessable, showAssessment, setShowAssessment, setPanel, setPaused, setView, undo, leave, stopReplay, position, editBoard, rematch } = useBoardContext();
   const local = !remote && !replaying, playing = game.phase === 'playing';
   // Giving up ends the match for both players, so it is asked twice.
   const [resigning, setResigning] = useState(false);
@@ -28,7 +28,6 @@ export function MenuPanel() {
       {local && playing && <button disabled={busy} onClick={editBoard}>この盤面を編集する</button>}
       {local && position && <button disabled={busy} onClick={close(rematch)}>最初の盤面に戻す</button>}
       {assessable && <button onClick={close(() => setShowAssessment(!showAssessment))}>{showAssessment ? '形勢を隠す' : '形勢を表示する'}</button>}
-      <button onClick={close(toggleFullscreen)}>全画面</button>
       {replaying
         ? <button className={styles.menuLeave} onClick={stopReplay}>リプレイをやめる</button>
         : remote && !remote.watching && game.winner === null

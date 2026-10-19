@@ -26,6 +26,7 @@ import { PlayerSide } from './table/PlayerSide';
 import { TurnControl } from './table/TurnControl';
 import { AssessmentBar } from './table/Assessment';
 import { CardPicker, EditBar, EditButton } from './table/EditMode';
+import { FullscreenButton } from './table/FullscreenButton';
 import { displayCards, gameCatalog } from '@/lib/game/catalog';
 import { HOME_PATH } from '@/lib/game/sessionStore';
 import type { DeckKind } from '@pplale/game-core';
@@ -75,6 +76,8 @@ export function BoardTable({ session }: { session: BoardSession }) {
         <EditButton />
         {(mode === 'cpu' || mode === 'watch') && !replaying && paused && <button className={styles.menuButton} onClick={() => setPaused(false)} aria-label="CPU再開">▶</button>}
       </header>
+      {/* Below the own PP, where nothing else on the rail sits, so the toolbar keeps its width. */}
+      <FullscreenButton />
       <EditBar />
       {replaying && <ReplayBar />}
       <div className={`${styles.tableViewport} ${styles.withTurnControl}`}>
