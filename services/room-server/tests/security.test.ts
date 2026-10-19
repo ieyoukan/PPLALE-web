@@ -4,6 +4,7 @@ import { PassThrough } from 'node:stream';
 import type { IncomingMessage } from 'node:http';
 import { clientAddress, limiter, burstLimit, readJson } from '../../shared/http.mts';
 import { connect, seatedRoom, serve } from './helpers.ts';
+import { createRoom, joinRoom, roomInfo, seatView } from '../src/rooms.ts';
 
 function request(headers = {}) {
     const stream = new PassThrough() as unknown as IncomingMessage;
@@ -11,6 +12,21 @@ function request(headers = {}) {
     Object.defineProperty(stream, 'socket', { value: { remoteAddress: '127.0.0.1' } });
     return stream;
 }
+
+test('privacy: room responses never include account fields, seat secrets or history owner keys', () => {
+    const { room, token } = createRoom('123456', { name: '公開名', rules: { fruits: ['strawberry'], spectators: true } });
+    joinRoom(room, { name: '相手の公開名' });
+    Object.assign(room.seats[0], {
+        profileId: 'public-profile-id', historyOwners: ['user:private-history-owner', 'device:private-device-key'],
+        email: 'private-account@example.invalid', displayName: 'private-google-name', photoURL: 'https://example.invalid/private-photo',
+    });
+    const presence = { online: [true, true] as [boolean, boolean], watching: 1 };
+    const output = JSON.stringify([roomInfo(room), seatView(room, 0, presence), seatView(room, 1, presence), seatView(room, 'spectator', presence)]);
+    assert.ok(output.includes('公開名'));
+    assert.ok(output.includes('public-profile-id'));
+    for (const hidden of [token, room.seats[0].tokenHash, 'historyOwners', 'private-history-owner', 'private-device-key', 'private-account', 'private-google-name', 'private-photo', 'email', 'photoURL'])
+        assert.equal(output.includes(hidden), false, hidden);
+});
 
 test('security: spoofed forwarding chains do not change the trusted client address', () => {
     assert.equal(clientAddress(request({ 'cf-connecting-ip': '203.0.113.9', 'x-forwarded-for': 'fake, 203.0.113.9' }), true), '203.0.113.9');

@@ -13,31 +13,35 @@ import { RulePicker } from '../RulePicker';
 import { BattleIllustration } from './BattleIllustration';
 import { BattleCompanion } from './BattleCompanion';
 import styles from './Room.module.css';
-import { useMyProfile } from '../social/useMyProfile';
+import { useMyProfileState } from '../social/useMyProfile';
 
-const NAME_KEY = 'pplale-room-name-v1';
-/** The name shown to the other player: what was typed last, else the signed-in name. */
+const NAME_KEY = 'pplale-guest-name-v2';
+/** Public profile or an explicitly typed alias. Legacy names and account names are never imported. */
 export function usePlayerName() {
-  const { user } = useAuth();
-  const profile = useMyProfile();
-  const [name, setName] = useState('');
-  const [typed, setTyped] = useState(false);
+  const { user, loading } = useAuth();
+  const { profile, loading: profileLoading } = useMyProfileState();
+  const owner = user?.uid ?? 'guest';
+  const [guestName, setGuestName] = useState('');
+  const [draft, setDraft] = useState<{ owner: string; name: string } | null>(null);
   useEffect(() => {
     let saved = '';
     try { saved = localStorage.getItem(NAME_KEY) ?? ''; } catch { /* Asked again next time. */ }
-    if (saved) { setName(saved); setTyped(true); }
+    if (saved) setGuestName(saved);
   }, []);
-  const shown = typed ? name : Array.from(profile?.displayName ?? user?.displayName ?? '').slice(0, MAX_NAME_LENGTH).join('');
+  const ready = !loading && !profileLoading;
+  const shown = draft?.owner === owner ? draft.name : user ? profile?.displayName ?? 'プレイヤー' : guestName;
   const change = (value: string) => {
-    setName(value);
-    setTyped(true);
-    try { localStorage.setItem(NAME_KEY, value); } catch { /* Kept for this visit only. */ }
+    setDraft({ owner, name: value });
+    if (!user && !loading) {
+      setGuestName(value);
+      try { localStorage.setItem(NAME_KEY, value); } catch { /* Kept for this visit only. */ }
+    }
   };
-  return [shown, change] as const;
+  return [Array.from(shown).slice(0, MAX_NAME_LENGTH).join(''), change, ready] as const;
 }
-export function NameField({ name, onChange, publicName = false }: { name: string; onChange: (name: string) => void; publicName?: boolean }) {
+export function NameField({ name, onChange, publicName = false, disabled = false }: { name: string; onChange: (name: string) => void; publicName?: boolean; disabled?: boolean }) {
   return <label className={styles.field}>なまえ（{publicName ? '対戦一覧に表示されます' : '相手に表示されます'}）
-    <input type="text" value={name} maxLength={MAX_NAME_LENGTH} placeholder="なまえ" autoComplete="nickname" onChange={event => onChange(event.target.value)} />
+    <input type="text" value={name} disabled={disabled} maxLength={MAX_NAME_LENGTH} placeholder="なまえ" autoComplete="nickname" onChange={event => onChange(event.target.value)} />
   </label>;
 }
 
@@ -70,7 +74,7 @@ function DoorArt({ kind }: { kind: 'watch' | 'enter' | 'create' | 'free' }) {
 export function RoomEntrance() {
   const router = useRouter();
   const [open, setOpen] = useState<'create' | 'enter' | 'watch' | null>(null);
-  const [name, setName] = usePlayerName();
+  const [name, setName, nameReady] = usePlayerName();
   const [rules, setRules] = useState<RoomRules>(defaultRoomRules);
   const [id, setId] = useState('');
   const [busy, setBusy] = useState(false);
@@ -148,8 +152,8 @@ export function RoomEntrance() {
         </div>
         <p className={styles.note}>観戦している人には、2人の手札が両方とも見えます。ルームIDを知っている人はだれでも観戦できます。</p>
       </fieldset>
-      <NameField name={name} onChange={setName} />
-      <button className={styles.primary} disabled={busy || stats === null} onClick={create}>{busy ? '作成中…' : 'このルールでルームを作る'}</button>
+      <NameField name={name} onChange={setName} disabled={!nameReady} />
+      <button className={styles.primary} disabled={busy || stats === null || !nameReady} onClick={create}>{busy ? '作成中…' : 'このルールでルームを作る'}</button>
     </section>}
     {(open === 'enter' || open === 'watch') && <form className={styles.panel} aria-label={open === 'watch' ? '観戦する' : 'ルームへ入る'}
       onSubmit={event => { event.preventDefault(); if (isRoomId(id)) router.push(open === 'watch' ? watchHref(id) : roomHref(ROOM_PATH, id)); }}>

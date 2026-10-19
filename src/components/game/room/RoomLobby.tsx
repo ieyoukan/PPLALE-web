@@ -25,7 +25,7 @@ export function RoomLobby() {
   const router = useRouter();
   const room = useRoom(id);
   const { stage, info, view, error } = room;
-  const [name, setName] = usePlayerName();
+  const [name, setName, nameReady] = usePlayerName();
   const [joining, setJoining] = useState(false);
   // A match is on (or just over): its board is another page.
   const onBoard = !!id && stage === 'seated' && (view?.status === 'playing' || view?.status === 'finished');
@@ -42,8 +42,8 @@ export function RoomLobby() {
     <h2>{info.host}さんのルーム</h2>
     <p className={styles.rules}>{describeRoomRules(info.rules)}</p>
     {info.open ? <>
-      <NameField name={name} onChange={setName} />
-      <button className={styles.primary} disabled={joining} onClick={() => { setJoining(true); void room.join(name).finally(() => setJoining(false)); }}>{joining ? '参加中…' : 'このルームに入る'}</button>
+      <NameField name={name} onChange={setName} disabled={!nameReady} />
+      <button className={styles.primary} disabled={joining || !nameReady} onClick={() => { setJoining(true); void room.join(name).finally(() => setJoining(false)); }}>{joining ? '参加中…' : 'このルームに入る'}</button>
     </> : <p>このルームは満員です（対戦中、または2人そろっています）。</p>}
     {error && <p role="alert" className={styles.error}>{error}</p>}
     <div className={styles.row}>{info.spectators && <Link href={watchHref(info.id)} className={styles.secondary}>観戦する</Link>}{back}</div>

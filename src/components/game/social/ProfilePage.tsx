@@ -23,9 +23,9 @@ export function ProfilePage() {
   // A shared profile link (?id=) renders without waiting for the visitor's login check.
   if (!uid && loading) return <p role="status">読み込み中…</p>;
   if (!uid) return <section className={styles.panel}><h2>プロフィール</h2><p>ログインして、カードのアイコンとひとことを設定しよう。</p><button className={styles.primary} onClick={() => void signInWithGoogle()}>ログイン</button></section>;
-  return <Profile key={`${uid}:${uid === user?.uid}`} uid={uid} mine={uid === user?.uid} initialName={user?.displayName ?? 'プレイヤー'} />;
+  return <Profile key={`${uid}:${uid === user?.uid}`} uid={uid} mine={uid === user?.uid} />;
 }
-function Profile({ uid, mine, initialName }: { uid: string; mine: boolean; initialName: string }) {
+function Profile({ uid, mine }: { uid: string; mine: boolean }) {
   const { user } = useAuth();
   const [profile, setProfile] = useState<PlayerProfile | null>(null);
   const [loading, setLoading] = useState(true), [busy, setBusy] = useState(false);
@@ -34,9 +34,9 @@ function Profile({ uid, mine, initialName }: { uid: string; mine: boolean; initi
   const [query, setQuery] = useState(''), [choosing, setChoosing] = useState(false);
   useEffect(() => {
     let current = true;
-    void readProfile(uid).then(value => { if (current) { setProfile(value ?? (mine ? defaultProfile(uid, Array.from(initialName).slice(0, 12).join('')) : null)); setLoading(false); } }, () => { if (current) { setError('プロフィールを読み込めませんでした'); setLoading(false); } });
+    void readProfile(uid).then(value => { if (current) { setProfile(value ?? (mine ? defaultProfile(uid) : null)); setLoading(false); } }, () => { if (current) { setError('プロフィールを読み込めませんでした'); setLoading(false); } });
     return () => { current = false; };
-  }, [uid, mine, initialName]);
+  }, [uid, mine]);
   // Someone who is already a friend (or asked, or was asked) is not offered a request.
   useEffect(() => {
     if (mine || !user) return;

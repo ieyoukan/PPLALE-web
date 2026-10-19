@@ -7,7 +7,7 @@ import type { ZoneKind } from '../BoardPieces';
 import type { RefObject } from 'react';
 import { useRouter } from 'next/navigation';
 import { gameCatalog } from '@/lib/game/catalog';
-import { useAuth } from '@/lib/auth';
+import { useMyProfile } from '../social/useMyProfile';
 import { learningConsent, reportMatch } from '@/lib/game/cpuServer';
 import { HOME_PATH } from '@/lib/game/sessionStore';
 import { useBoardAnimations } from './useBoardAnimations';
@@ -46,9 +46,9 @@ export function useBoard(container: RefObject<HTMLDivElement | null>, session: B
   /** Set in a room: the seat this browser plays, and the changes arriving from the server. */
   const { remote } = session;
   const { game: actual, mode, levels, ready, error, saveError, canUndo, send, undo: undoCommand, replaying, replayNext, setup, canRematch, canReplay, position, editing, edit: editSession } = session;
-  const { user } = useAuth();
-  /** Names for the versus and result screens: the signed-in user's name for the human seat. */
-  const localNames = useMemo<[string, string]>(() => [mode !== 'watch' && user?.displayName || sideLabel(mode, 0), sideLabel(mode, 1)], [mode, user]);
+  const profile = useMyProfile(!remote && mode !== 'watch');
+  /** Public profile only. Loading/missing profiles must never fall back to a Google account name. */
+  const localNames = useMemo<[string, string]>(() => [mode !== 'watch' && profile?.displayName || sideLabel(mode, 0), sideLabel(mode, 1)], [mode, profile]);
   const names = remote?.names ?? localNames;
   const home: Side = remote?.seat ?? (mode === 'watch' ? 1 : 0);
   const [view, setView] = useState<Side>(home);

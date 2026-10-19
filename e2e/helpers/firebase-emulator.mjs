@@ -15,7 +15,7 @@ export async function signInFixture(page, base, identity) {
     });
     await new Promise((resolve, reject) => {
       const tx = db.transaction('firebaseLocalStorage', 'readwrite');
-      tx.objectStore('firebaseLocalStorage').put({ fbase_key: `firebase:authUser:${apiKey}:[DEFAULT]`, value: { uid: identity.localId, emailVerified: false, isAnonymous: true, providerData: [], apiKey, appName: '[DEFAULT]', stsTokenManager: { accessToken: identity.idToken, refreshToken: identity.refreshToken, expirationTime: Date.now() + 3_600_000 } } });
+      tx.objectStore('firebaseLocalStorage').put({ fbase_key: `firebase:authUser:${apiKey}:[DEFAULT]`, value: { uid: identity.localId, displayName: identity.displayName ?? null, email: identity.email ?? null, photoURL: identity.photoURL ?? null, emailVerified: false, isAnonymous: true, providerData: [], apiKey, appName: '[DEFAULT]', stsTokenManager: { accessToken: identity.idToken, refreshToken: identity.refreshToken, expirationTime: Date.now() + 3_600_000 } } });
       tx.oncomplete = resolve; tx.onerror = () => reject(tx.error);
     }); db.close();
   }, { identity, apiKey });

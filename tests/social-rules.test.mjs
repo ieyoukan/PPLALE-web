@@ -24,6 +24,8 @@ test('social rules: profiles contain only public allowed fields and only their o
   assert.equal((await getDoc(doc(guest.db, 'profiles', a.uid))).data().comment, 'よろしくお願いします！');
   await denied(updateDoc(doc(b.db, 'profiles', a.uid), { comment: 'hijack', updatedAt: serverTimestamp() }));
   await denied(updateDoc(ref, { email: 'must not be public', updatedAt: serverTimestamp() }));
+  await denied(updateDoc(ref, { photoURL: 'https://example.invalid/private-photo', updatedAt: serverTimestamp() }));
+  await denied(updateDoc(ref, { providerData: [], updatedAt: serverTimestamp() }));
   await denied(updateDoc(ref, { comment: 'a'.repeat(81), updatedAt: serverTimestamp() }));
   await denied(updateDoc(ref, { createdAt: serverTimestamp(), updatedAt: serverTimestamp() }));
   await denied(getDocs(collection(a.db, 'profiles')));
@@ -31,6 +33,19 @@ test('social rules: profiles contain only public allowed fields and only their o
   await denied(updateDoc(ref, { decks: 'a', updatedAt: serverTimestamp() }));
   await updateDoc(ref, { displayName: '変更', comment: 'また遊ぼう！', iconCardId: 'y_1', decks: ['a', 'b', 'c'], updatedAt: serverTimestamp() });
   assert.equal((await getDoc(ref)).data().displayName, '変更');
+});
+
+test('deck sharing allows direct links, but only the owner can enumerate saved decks', { skip: !enabled }, async t => {
+  const a = await client(t), b = await client(t), guest = await client(t, false);
+  const id = 'shared-deck';
+  await setDoc(doc(a.db, 'users', a.uid, 'decks', id), { name: '共有デッキ', yojoDeckIds: [], sweetDeckIds: [], playableCardId: 'p_1' });
+  assert.equal((await getDocs(collection(a.db, 'users', a.uid, 'decks'))).size, 1);
+  for (const reader of [b, guest]) {
+    assert.equal((await getDoc(doc(reader.db, 'users', a.uid, 'decks', id))).data().name, '共有デッキ');
+    await denied(getDocs(collection(reader.db, 'users', a.uid, 'decks')));
+    await denied(getDoc(doc(reader.db, 'users', a.uid)));
+  }
+  await denied(updateDoc(doc(a.db, 'users', a.uid, 'decks', id), { email: 'private-account@example.invalid' }));
 });
 
 test('social rules: only the recipient can accept; friend lists, recruitments and watching are private and revoked on removal', { skip: !enabled }, async t => {

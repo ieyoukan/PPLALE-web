@@ -41,7 +41,7 @@ export default function GameMenu({ children }: { children: ReactNode }) {
       <div className={styles.foot}>
         <div className={styles.player}>
           <small>PLAYER</small>
-          <Link href="/game/profile/" className={styles.playerProfile}><span className={styles.playerAvatar}><RecordedCard id={profile?.iconCardId ?? 'p_1'} sizes="40px" /></span><b>{profile?.displayName || user?.displayName || 'ゲスト'}</b></Link>
+          <Link href="/game/profile/" className={styles.playerProfile}><span className={styles.playerAvatar}><RecordedCard id={profile?.iconCardId ?? 'p_1'} sizes="40px" /></span><b>{profile?.displayName || (user ? 'プレイヤー' : 'ゲスト')}</b></Link>
           {!user && <button onClick={() => { signInWithGoogle().catch(() => {}); }}>ログイン</button>}
         </div>
         <div className={styles.footerActions}><NotificationSoundToggle compact /><Link href="/" className={styles.back}>サイトへ戻る</Link></div>

@@ -25,7 +25,7 @@ export function FreeMatch() {
   const { replace } = useRouter();
   const { notify } = useGameNotifications();
   const { user, signInWithGoogle } = useAuth();
-  const [name, setName] = usePlayerName();
+  const [name, setName, nameReady] = usePlayerName();
   const { choices, saved } = useDeckChoices(freeMatchRules, 'フリーマッチ');
   const [selected, setSelected] = useState('');
   const chosen = usableChoice(choices, selected);
@@ -54,7 +54,7 @@ export function FreeMatch() {
   }, []);
 
   function start() {
-    if (!chosen || search) return;
+    if (!nameReady || !chosen || search) return;
     const token = Array.from(crypto.getRandomValues(new Uint8Array(32)), byte => byte.toString(16).padStart(2, '0')).join('');
     stopping.current = false;
     matched.current = false;
@@ -161,13 +161,13 @@ export function FreeMatch() {
           <p className={styles.note}>見つかると自動で対戦が始まります。</p>
           <button className={styles.secondary} disabled={cancelling} onClick={() => void cancel()}>検索をキャンセル</button>
         </div> : <>
-          <NameField name={name} onChange={setName} publicName />
+          <NameField name={name} onChange={setName} publicName disabled={!nameReady} />
           <label className={styles.field}>使うデッキ
             <DeckSelect choices={choices} chosen={chosen} onChange={setSelected} />
           </label>
           {chosen && <MatchDeckPreview name={chosen.name} deck={previewDeck} />}
           <UnusableDecks choices={choices} className={styles.note} />
-          <button className={`${styles.primary} ${styles.matchStart}`} disabled={!chosen || !roomServerUrl} onClick={start}>このデッキで対戦相手を探す <span aria-hidden="true">›</span></button>
+          <button className={`${styles.primary} ${styles.matchStart}`} disabled={!chosen || !roomServerUrl || !nameReady} onClick={start}>このデッキで対戦相手を探す <span aria-hidden="true">›</span></button>
           {!user ? <button className={styles.matchLogin} onClick={() => { signInWithGoogle().catch(() => setError('ログインできませんでした')); }}>ログインして保存済みデッキを使う</button>
             : <p className={styles.note}>{saved.loading ? 'デッキを読み込み中…' : `${saved.decks.length}件の保存済みデッキ`} · <Link href="/build">デッキを編集する</Link></p>}
         </>}

@@ -8,7 +8,7 @@
 
 import React, { useState, useEffect, useRef } from 'react';
 import {browserPopupRedirectResolver, signInWithPopup, GoogleAuthProvider, signOut, User } from 'firebase/auth';
-import Image from 'next/image';
+import { useMyProfile } from '@/components/game/social/useMyProfile';
 import { auth } from '@/lib/firebase';
 import { css } from 'styled-system/css';
 import { useI18n } from '@/i18n/LocaleProvider';
@@ -28,6 +28,8 @@ interface FireBaseLoginProps {
 const FireBaseLogin: React.FC<FireBaseLoginProps> = () => {
   const { t } = useI18n();
   const [user, set_user] = useState<User | null>(null);
+  const profile = useMyProfile();
+  const publicName = profile?.uid === user?.uid ? profile?.displayName ?? 'プレイヤー' : 'プレイヤー';
   const [menu_open, set_menu_open] = useState<boolean>(false);
   const menuRef = useRef<HTMLDivElement>(null);
 
@@ -141,6 +143,7 @@ const FireBaseLogin: React.FC<FireBaseLoginProps> = () => {
   return (
     <div className={css({ position: 'relative' })} ref={menuRef}>
       <button
+        aria-label={publicName}
         onClick={toggle_menu}
         className={css({
           display: 'flex',
@@ -151,19 +154,9 @@ const FireBaseLogin: React.FC<FireBaseLoginProps> = () => {
           _focus: { outline: 'none' },
         })}
       >
-        {user.photoURL ? (
-          <Image
-            src={user.photoURL}
-            alt={user.displayName ?? t('ユーザー')}
-            width={40}
-            height={40}
-            className={css({ rounded: 'full' })}
-          />
-        ) : (
-          <div className={css({ w: '10', h: '10', bg: 'gray.300', rounded: 'full', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'white' })}>
-            {user.displayName?.[0] || user.email?.[0] || '?'}
-          </div>
-        )}
+        <div className={css({ w: '10', h: '10', bg: 'var(--brand-blush)', rounded: 'full', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--brand-cocoa-deep)' })}>
+          {Array.from(publicName)[0]}
+        </div>
       </button>
 
       {menu_open && (
@@ -194,7 +187,7 @@ const FireBaseLogin: React.FC<FireBaseLoginProps> = () => {
               _dark: { borderColor: 'gray.700', color: 'gray.200' },
             })}
           >
-            {user.displayName || user.email}
+            {publicName}
           </div>
           <button
             onClick={logout}

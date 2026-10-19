@@ -9,8 +9,9 @@ service cloud.firestore {
 
     // デッキのドキュメントに対するルール
     match /users/{userId}/decks/{deckId} {
-      // 読み取り: 誰でも可（デッキ共有・OGP生成のため意図的に公開）
-      allow read: if true;
+      // 共有リンクでの単体取得は公開。保存済み一覧の列挙は所有者だけ。
+      allow get: if true;
+      allow list: if isOwner(userId);
 
       // 作成: 所有者のみ・許可されたフィールドのみ書き込み可能
       // 注: build/2pick/ログイン後保存で送るキーが異なるため hasAll ではなく
