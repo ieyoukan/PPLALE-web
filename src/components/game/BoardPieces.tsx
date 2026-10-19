@@ -5,15 +5,21 @@ import type { CSSProperties } from 'react';
 import { HAND_CARD_SIZES } from '@/lib/game/cardImages';
 import { GameCard } from './GameCard';
 import styles from './BoardEmulator.module.css';
+import cue from './DrawCue.module.css';
 
 export type ZoneKind = 'yojo' | 'sweet' | 'nap' | 'exile';
-export function DeckStack({ side, kind, ids, thresholds = [], enabled, drawing = false, onClick }: {
+export function DeckStack({ side, kind, ids, thresholds = [], enabled, drawing = false, thresholdDraw = false, onClick }: {
   side: Side; kind: ZoneKind; ids: string[]; thresholds?: number[];
-  enabled: boolean; drawing?: boolean; onClick: () => void;
+  enabled: boolean; drawing?: boolean; thresholdDraw?: boolean; onClick: () => void;
 }) {
   const label = { yojo: '幼女デッキ', sweet: 'お菓子デッキ', nap: 'お昼寝場所', exile: '除外カード' }[kind];
-  return <button type="button" data-deck={`${side}-${kind}`} data-label={{ yojo: '幼女', sweet: 'お菓子', nap: 'お昼寝', exile: '除外' }[kind]} className={`${styles.deckZone} ${drawing ? styles.drawReady : ''}`}
-    onClick={onClick} disabled={!enabled} aria-label={`${side === 0 ? 'あなた' : '相手'}の${label} ${ids.length}枚`}>
+  const helpId = `threshold-draw-${side}`;
+  return <button type="button" data-deck={`${side}-${kind}`} data-threshold-draw={thresholdDraw || undefined} data-label={{ yojo: '幼女', sweet: 'お菓子', nap: 'お昼寝', exile: '除外' }[kind]} className={`${styles.deckZone} ${drawing ? styles.drawReady : ''} ${thresholdDraw ? cue.required : ''}`}
+    onClick={onClick} disabled={!enabled} aria-label={`${side === 0 ? 'あなた' : '相手'}の${label} ${ids.length}枚`} aria-describedby={thresholdDraw ? helpId : undefined}>
+    {thresholdDraw && <span className={cue.guide} data-draw-cue>
+      <span className={cue.label} id={helpId}>お菓子を1枚引く</span>
+      <svg viewBox="0 0 160 90" aria-hidden="true"><path d="M8 29H85V8L151 45 85 82V61H8Z" /></svg>
+    </span>}
     <span className={styles.zoneLabel}>{label}</span>
     <span className={styles.stack} data-stack>
       <span className={styles.cardTarget} />

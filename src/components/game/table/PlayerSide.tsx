@@ -87,8 +87,10 @@ function Zone({ side, kind, className }: { side: Side; kind: ZoneKind; className
   const player = board.game.players[side];
   const deck = kind === 'yojo' || kind === 'sweet';
   const drawing = deck && board.deckReady(side, kind as DeckKind);
+  const thresholdDraw = drawing && !board.editing && !board.replaying && kind === 'sweet'
+    && board.game.pending?.task.text === 'threshold';
   return <div className={className}>
-    <DeckStack side={side} kind={kind} ids={player[kind]} thresholds={player.milestones} enabled={deck ? drawing || board.editing : true} drawing={drawing}
+    <DeckStack side={side} kind={kind} ids={player[kind]} thresholds={player.milestones} enabled={deck ? drawing || board.editing : true} drawing={drawing} thresholdDraw={thresholdDraw}
       onClick={() => board.editing ? board.setPanel({ type: 'editPile', side, kind }) : deck ? board.clickDeck(side, kind as DeckKind) : board.setPanel({ type: 'zone', side, kind: kind as 'nap' | 'exile' })} />
   </div>;
 }
