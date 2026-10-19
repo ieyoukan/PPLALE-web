@@ -1,12 +1,15 @@
 // A private local match over real WebSockets. REDIS_URL optionally selects an isolated Redis prefix.
 // BENCH_COUNT_DELAY_MS simulates slow statistics storage; never connects players to a live room.
 import { writeFile } from 'node:fs/promises';
+import { setTimeout as pause } from 'node:timers/promises';
 import { actingSides, legalMoves } from '@pplale/game-core';
 import type { Backend } from '../src/backend.ts';
 import { catalog } from '../src/catalog.ts';
 import { serve, shared, startedMatch } from '../tests/helpers.ts';
 
 const countDelay = Number(process.env.BENCH_COUNT_DELAY_MS ?? 0);
+// Stay inside the normal message budget; exclude this pacing from the measured round trip.
+const interval = Number(process.env.BENCH_INTERVAL_MS ?? 120);
 const source = await shared().open();
 let collecting = false;
 let stages: Record<string, number> = {};
@@ -40,6 +43,7 @@ try {
                 ?? moves.find(m => m.command.type === 'play') ?? moves[0];
             if (!picked) throw new Error('No legal command');
             await sockets[side].until(view => view.game?.revision === state.revision);
+            await pause(interval);
             stages = {};
             collecting = true;
             const start = performance.now();
@@ -57,7 +61,7 @@ try {
     };
     const report = {
         measuredAt: new Date().toISOString(), node: process.version, backend: source.kind,
-        conditions: { network: 'local loopback WebSocket; not production latency', simulatedStatisticsDelayMs: countDelay, statistics: 'timed backend calls may overlap; stage times must not be added', samples: samples.length },
+        conditions: { network: 'local loopback WebSocket; not production latency', simulatedStatisticsDelayMs: countDelay, intervalMs: interval, statistics: 'timed backend calls may overlap; stage times must not be added', samples: samples.length },
         roundTripMs: summarize(samples.map(s => s.roundTripMs)),
         byCommand: Object.fromEntries([...new Set(samples.map(s => s.command))].map(command => [command, summarize(samples.filter(s => s.command === command).map(s => s.roundTripMs))])),
         backendMs: Object.fromEntries([...new Set(samples.flatMap(s => Object.keys(s.stages)))].map(stage => [stage, summarize(samples.map(s => s.stages[stage] ?? 0))])),

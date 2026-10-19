@@ -68,7 +68,7 @@ export function openStore(directory: string) {
         },
         /** Matches and CPU wins per model version: how the CPU really does against people. */
         results() {
-            const byModel: Record<string, { matches: number; cpuWins: number }> = {};
+            const byModel: Record<string, { matches: number; cpuWins: number }> = Object.create(null);
             for (const { model, winner } of known.values()) {
                 const entry = byModel[model] ??= { matches: 0, cpuWins: 0 };
                 entry.matches++;

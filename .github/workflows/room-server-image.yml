@@ -15,6 +15,7 @@ on:
     # プレイヤーが一瞬つなぎ直すので、関係のない変更 (CPU の思考や学習、文書、テスト) では作らない。
     paths:
       - services/room-server/src/**
+      - services/shared/**
       - services/room-server/scripts/verify-history.ts
       - services/room-server/package.json
       - services/room-server/Dockerfile

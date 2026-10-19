@@ -1,3 +1,4 @@
+import { burstLimit, clientAddress, HttpError, limiter, readJson } from '../../shared/http.mts';
 import { freeMatchActivity } from './public-matches.ts';
 // The room server: rooms are made and entered over HTTP, and each seated player keeps a socket
 // open, sends its requests through it and is sent its view of the room whenever anything changes.
@@ -47,32 +48,6 @@ const OVERVIEW_AGE = 5_000;
 const MAX_SPECTATORS = 30;
 const GONE = 'ルームが見つかりません';
 
-/** Counts requests per client address within the current hour. Addresses are never stored. */
-function limiter(perHour: number) {
-    let started = Date.now(), counts = new Map<string, number>();
-    return (address: string) => {
-        if (Date.now() - started > HOUR) { started = Date.now(); counts = new Map(); }
-        const count = (counts.get(address) ?? 0) + 1;
-        counts.set(address, count);
-        return count <= perHour;
-    };
-}
-
-function readBody(request: IncomingMessage): Promise<unknown> {
-    return new Promise(resolve => {
-        const chunks: Buffer[] = [];
-        let size = 0;
-        request.on('data', (chunk: Buffer) => {
-            size += chunk.length;
-            if (size <= MAX_BODY) chunks.push(chunk);
-        });
-        request.on('end', () => {
-            try { resolve(size > MAX_BODY ? null : JSON.parse(Buffer.concat(chunks).toString('utf8') || 'null')); } catch { resolve(null); }
-        });
-        request.on('error', () => resolve(null));
-    });
-}
-
 type Attached = WebSocket & { alive?: boolean; entry?: Member };
 
 export function createRoomServer({ config, backend, catalog, history }: {
@@ -108,7 +83,12 @@ export function createRoomServer({ config, backend, catalog, history }: {
         return pair;
     };
     const connections = () => Array.from(sockets.values()).reduce((sum, pair) => sum + pair[0].size + pair[1].size + pair[2].size, 0);
-    const tell = (socket: WebSocket, message: ServerMessage) => { if (socket.readyState === socket.OPEN) socket.send(JSON.stringify(message)); };
+    const tell = (socket: WebSocket, message: ServerMessage) => {
+        if (socket.readyState !== socket.OPEN) return;
+        // A reader that stops receiving must not accumulate an unlimited send queue.
+        if (socket.bufferedAmount > 256 * 1024) return socket.terminate();
+        socket.send(JSON.stringify(message));
+    };
 
     /** Changes the room: `change` edits it (or throws RoomError). Tried again when another request got in first. */
     async function update<T>(id: string, change: (room: Room) => T, timing?: CommandTiming): Promise<{ room: Room; result: T }> {
@@ -185,10 +165,7 @@ export function createRoomServer({ config, backend, catalog, history }: {
         response.writeHead(status, { ...(text && { 'content-type': 'application/json; charset=utf-8' }), ...(compressed && { 'content-encoding': 'gzip' }), 'cache-control': 'no-store', ...headers });
         response.end(compressed ? gzipSync(text) : text);
     };
-    const address = (request: IncomingMessage) => {
-        const forwarded = trustProxy ? String(request.headers['x-forwarded-for'] ?? '').split(',')[0].trim() : '';
-        return forwarded || request.socket.remoteAddress || 'unknown';
-    };
+    const address = (request: IncomingMessage) => clientAddress(request, trustProxy);
     const originAllowed = (origin: string | undefined) => origins.includes('*') || !!origin && origins.includes(origin);
     const seated = async (room: Room, seat: Side, token: string): Promise<Seated> => ({ seat, token, view: seatView(room, seat, await present(room.id)) });
 
@@ -199,9 +176,9 @@ export function createRoomServer({ config, backend, catalog, history }: {
             response.setHeader('access-control-allow-origin', origin);
             response.setHeader('vary', 'origin');
         }
-        const path = new URL(request.url ?? '/', 'http://localhost').pathname.replace(/\/+$/, '') || '/';
-        const route = `${request.method} ${path}`, [, id, tail] = /^\/rooms\/([^/]+)(\/join)?$/.exec(path) ?? [];
         try {
+            const path = new URL(request.url ?? '/', 'http://localhost').pathname.replace(/\/+$/, '') || '/';
+            const route = `${request.method} ${path}`, [, id, tail] = /^\/rooms\/([^/]+)(\/join)?$/.exec(path) ?? [];
             if (request.method === 'OPTIONS') {
                 return send(response, 204, undefined, { 'access-control-allow-methods': 'GET, POST', 'access-control-allow-headers': 'content-type,authorization,x-history-key', 'access-control-max-age': '86400' });
             }
@@ -228,7 +205,7 @@ export function createRoomServer({ config, backend, catalog, history }: {
                 if (!allowed(address(request))) throw new RoomError(429, '少し待ってからお試しください');
                 const owners = await historyOwners(request);
                 if (!owners.length) throw new RoomError(401, 'この端末の履歴を確認できません');
-                const body = await readBody(request) as Record<string, unknown> | null;
+                const body = await readJson(request, MAX_BODY) as Record<string, unknown> | null;
                 if (path === '/history/list') {
                     if (owners.some(owner => owner.startsWith('user:'))) await history.linkGuest(owners);
                     if (body?.cursor !== undefined && (typeof body.cursor !== 'string' || body.cursor.length > 300)) throw new RoomError(400, 'ページが正しくありません');
@@ -249,7 +226,7 @@ export function createRoomServer({ config, backend, catalog, history }: {
             if (freeOperation) {
                 const owners = history && freeOperation === 'start' ? await historyOwners(request) : undefined;
                 if (history && freeOperation === 'start' && !owners?.length) throw new RoomError(426, '画面を更新してから、もう一度お試しください');
-                const result = await freeMatch(backend, catalog, freeOperation, await readBody(request), {
+                const result = await freeMatch(backend, catalog, freeOperation, await readJson(request, MAX_BODY), {
                     maxRooms, roomTtl: idleHours * HOUR, allowSpectators: await backend.audienceReady(), mayStart: () => allowed(address(request)),
                     owners: owners && seatOwners(owners),
                 });
@@ -266,7 +243,7 @@ export function createRoomServer({ config, backend, catalog, history }: {
                 if (!mayCreate(address(request))) throw new RoomError(429, 'ルームを作りすぎています。しばらく待ってからお試しください');
                 const { rooms } = await counts();
                 if (rooms.lobby + rooms.playing + rooms.finished + rooms.closed >= maxRooms) throw new RoomError(503, 'いまはルームがいっぱいです。しばらく待ってからお試しください');
-                const body = await readBody(request);
+                const body = await readJson(request, MAX_BODY);
                 const owners = history ? await historyOwners(request) : [];
                 if (history && !owners.length) throw new RoomError(426, '画面を更新してから、もう一度お試しください');
                 for (let attempt = 0; attempt < 8; attempt++) {
@@ -287,7 +264,7 @@ export function createRoomServer({ config, backend, catalog, history }: {
                 return send(response, 200, { ...roomInfo(room), hostOnline: (await backend.online(room.id))[0] });
             }
             if (request.method === 'POST' && tail) {
-                const body = await readBody(request);
+                const body = await readJson(request, MAX_BODY);
                 const owners = history ? await historyOwners(request) : [];
                 if (history && !owners.length) throw new RoomError(426, '画面を更新してから、もう一度お試しください');
                 const { room, result: token } = await update(id, target => {
@@ -301,17 +278,31 @@ export function createRoomServer({ config, backend, catalog, history }: {
             }
             return send(response, 404, { error: 'not found' });
         } catch (error) {
+            if (error instanceof HttpError) {
+                if (error.close) response.once('finish', () => request.destroy());
+                return send(response, error.status, { error: error.message }, error.close ? { connection: 'close' } : {});
+            }
             if (error instanceof RoomError) return send(response, error.status, { error: error.message });
             console.error('request failed', error);
             return send(response, 500, { error: 'サーバーで問題が起きました。少し待ってからお試しください' });
         }
     });
 
+    server.maxConnections = 2048;
+    server.requestTimeout = 15_000;
+    server.headersTimeout = 10_000;
+    const socketAttempts = limiter(120, 60_000);
+    const perAddress = new Map<string, number>();
+    let pendingActions = 0;
     const wss = new WebSocketServer({ noServer: true, maxPayload: MAX_BODY });
     server.on('upgrade', (request, socket, head) => {
-        const [, id] = /^\/rooms\/(\d+)\/socket\/?$/.exec(new URL(request.url ?? '/', 'http://localhost').pathname) ?? [];
-        if (!id || !originAllowed(request.headers.origin)) return socket.destroy();
-        wss.handleUpgrade(request, socket, head, connection => attach(connection, id));
+        try {
+            const [, id] = /^\/rooms\/(\d+)\/socket\/?$/.exec(new URL(request.url ?? '/', 'http://localhost').pathname) ?? [];
+            if (!id || !isRoomId(id) || !originAllowed(request.headers.origin)) return socket.destroy();
+            const ip = address(request);
+            if (wss.clients.size >= 2048 || (perAddress.get(ip) ?? 0) >= 128 || !socketAttempts(ip)) return socket.destroy();
+            wss.handleUpgrade(request, socket, head, connection => attach(connection, id, ip));
+        } catch { socket.destroy(); }
     });
     /** The other side learns that a player came or went (the room gets a new version for it). */
     async function presenceChanged(id: string) {
@@ -322,13 +313,22 @@ export function createRoomServer({ config, backend, catalog, history }: {
             if (!(error instanceof RoomError)) throw error;
         }
     }
-    function attach(socket: Attached, id: string) {
+    function attach(socket: Attached, id: string, ip: string) {
+        perAddress.set(ip, (perAddress.get(ip) ?? 0) + 1);
+        const messageAllowed = burstLimit(30, 10);
+        let queued = 0, helloStarted = false;
         socket.alive = true;
         socket.on('pong', () => { socket.alive = true; });
         const impatient = setTimeout(() => socket.close(4408), HELLO_TIMEOUT);
         // One thing at a time per socket, in the order it happened (also its closing).
         let work = Promise.resolve();
-        const next = (task: () => Promise<void>) => { work = work.then(task).catch(error => { console.error('socket failed', error); socket.close(1011); }); };
+        const next = (task: () => Promise<void>, cleanup = false) => {
+            if (!cleanup && (queued >= 8 || pendingActions >= 128)) { socket.close(4408); return; }
+            queued++; pendingActions++;
+            work = work.then(async () => { if (cleanup || socket.readyState === socket.OPEN) await task(); })
+                .catch(error => { console.error('socket failed', error); socket.close(1011); })
+                .finally(() => { queued--; pendingActions--; });
+        };
 
         async function hello(token: unknown) {
             clearTimeout(impatient);
@@ -338,6 +338,7 @@ export function createRoomServer({ config, backend, catalog, history }: {
                 return socket.close(4404);
             }
             if (socket.readyState !== socket.OPEN) return;
+            if (socketsOf(id)[seat].size >= 4) return socket.close(4408);
             socket.entry = { id, seat, member: `${pod}:${++serial}` };
             socketsOf(id)[seat].add(socket);
             // A second tab of the same seat changes nothing for the other side.
@@ -388,14 +389,20 @@ export function createRoomServer({ config, backend, catalog, history }: {
             }
         }
         socket.on('message', data => {
+            if (!messageAllowed()) return socket.close(4408);
             const received = performance.now();
             let message: ClientMessage;
             try { message = JSON.parse(String(data)) as ClientMessage; } catch { return socket.close(4400); }
-            if (message?.type === 'hello' && !socket.entry) return next(() => message.watch ? watch() : hello(message.token));
-            if (message?.type !== 'action' || typeof message.n !== 'number') return socket.close(4400);
+            if (message?.type === 'hello' && !helloStarted) {
+                helloStarted = true;
+                return next(() => message.watch ? watch() : hello(message.token));
+            }
+            if (message?.type !== 'action' || !Number.isSafeInteger(message.n) || message.n < 0) return socket.close(4400);
             next(async () => { if (socket.entry) await action(message.n, message.action, received); });
         });
         socket.on('close', () => {
+            const remaining = (perAddress.get(ip) ?? 1) - 1;
+            if (remaining) perAddress.set(ip, remaining); else perAddress.delete(ip);
             clearTimeout(impatient);
             next(async () => {
                 const { entry } = socket;
@@ -407,7 +414,7 @@ export function createRoomServer({ config, backend, catalog, history }: {
                 // While shutting down the players are moving to another instance, not leaving.
                 // A seat's last socket closing means the player went; every spectator counts.
                 if ((await backend.leave(entry) || entry.seat === 2) && !stopping) await presenceChanged(id);
-            });
+            }, true);
         });
         socket.on('error', () => socket.terminate());
     }

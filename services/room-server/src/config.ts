@@ -14,7 +14,7 @@ export interface Config {
     pod: string;
     /** Web origins that may call the server from a browser; `*` allows any. */
     origins: string[];
-    /** Take the client address from X-Forwarded-For (behind an ingress or a tunnel). */
+    /** Trust CF-Connecting-IP from Cloudflare. Only enable behind the trusted tunnel. */
     trustProxy: boolean;
     /** Rooms made, joined or looked up per client address and hour (counted by each instance). */
     requestsPerHour: number;

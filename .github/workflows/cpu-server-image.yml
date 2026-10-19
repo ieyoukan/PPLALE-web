@@ -13,6 +13,7 @@ on:
     branches: [main]
     paths:
       - services/cpu-server/**
+      - services/shared/**
       - packages/game-core/src/**
       - packages/game-core/package.json
       - src/data/yojo.json

@@ -14,6 +14,7 @@ RUN npm ci --omit=dev --ignore-scripts --workspace=@pplale/cpu-server --workspac
 
 COPY packages/game-core/src packages/game-core/src
 COPY services/cpu-server/src services/cpu-server/src
+COPY services/shared services/shared
 COPY src/data/yojo.json src/data/sweet.json src/data/playable.json src/data/tokenYojo.json src/data/token.json src/data/
 
 # Matches, models and self-play data live here: mount a volume.

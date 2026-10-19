@@ -18,3 +18,5 @@
 !public/images/token
 
 !services/room-server/scripts/verify-history.ts
+
+!services/shared

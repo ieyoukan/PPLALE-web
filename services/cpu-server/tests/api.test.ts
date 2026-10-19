@@ -56,7 +56,7 @@ test('api: rejects what is not a finished match', async () => {
 
 test('api: limits reports per client address', async () => {
     const { post, close } = await serve({ reportsPerHour: 2 });
-    const from = (address: string) => post({}, { 'x-forwarded-for': address });
+    const from = (address: string) => post({}, { 'cf-connecting-ip': address });
     assert.equal((await from('203.0.113.1')).status, 400);
     assert.equal((await from('203.0.113.1')).status, 400);
     assert.equal((await from('203.0.113.1')).status, 429);
@@ -73,4 +73,19 @@ test('api: answers browsers only from allowed origins', async () => {
     assert.equal(preflight.status, 204);
     assert.match(preflight.headers.get('access-control-allow-headers') ?? '', /content-type/);
     await close();
+});
+
+
+test('api: forged XFF does not bypass report limits', async t => {
+    const { post, close } = await serve({ reportsPerHour: 1 }); t.after(close);
+    const headers = { 'cf-connecting-ip': '203.0.113.9', 'x-forwarded-for': '203.0.113.1' };
+    assert.equal((await post({}, headers)).status, 400);
+    assert.equal((await post({}, { ...headers, 'x-forwarded-for': '203.0.113.2' })).status, 429);
+});
+
+test('api: unexpected storage errors return 500 and keep serving the model', async t => {
+    const { store, url, close } = await serve(); t.after(close);
+    store.training = () => { throw new Error('storage unavailable'); };
+    assert.equal((await fetch(`${url}/stats`)).status, 500);
+    assert.equal((await fetch(`${url}/model`)).status, 200);
 });

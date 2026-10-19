@@ -36,7 +36,7 @@ allowedOrigins:
 
 # 1つの送信元から1時間に受け取る対戦記録の数。送信元のアドレスは保存しない。
 reportsPerHour: 30
-# Ingress / Tunnel の後ろで X-Forwarded-For から送信元を読む。
+# Cloudflare Tunnel から届く CF-Connecting-IP のみを信頼する。直接公開する場合は false。
 trustProxy: true
 
 training:
@@ -96,3 +96,11 @@ tolerations: []
 affinity: {}
 
 extraEnv: []
+
+# 軽量なPod単位の通信制限。Cloudflare公開時は入口も実際のトンネルPodだけに限定する。
+# 外部Redisなどを使う構成では必要な宛先をextraEgressへ追加する。
+networkPolicy:
+  enabled: true
+  tunnelNamespace: cloudflare-tunnel-ingress-controller
+  extraIngress: []
+  extraEgress: []

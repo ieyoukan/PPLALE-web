@@ -280,29 +280,29 @@ test('unattended: a host gone before the match closes the room, a guest gone los
 
 test('making rooms is limited per address', async () => {
     const served = await serve({ roomsPerHour: 2 });
-    const make = () => served.call('/rooms', { rules }, { 'x-forwarded-for': '203.0.113.9' });
+    const make = () => served.call('/rooms', { rules }, { 'cf-connecting-ip': '203.0.113.9' });
     assert.equal((await make()).status, 200);
     assert.equal((await make()).status, 200);
     assert.equal((await make()).status, 429);
-    assert.equal((await served.call('/rooms', { rules }, { 'x-forwarded-for': '203.0.113.10' })).status, 200);
+    assert.equal((await served.call('/rooms', { rules }, { 'cf-connecting-ip': '203.0.113.10' })).status, 200);
     await served.close();
 });
 
 test('upkeep: idle rooms lapse, and one address cannot ask without end', async () => {
     const served = await serve({ requestsPerHour: 3, idleHours: 0.4 / 3600 });
-    const { data } = await served.call<Seated>('/rooms', { rules }, { 'x-forwarded-for': '203.0.113.1' });
+    const { data } = await served.call<Seated>('/rooms', { rules }, { 'cf-connecting-ip': '203.0.113.1' });
     const socket = await connect(served, data.view.id, data.token);
     await socket.until(view => view.players[0].online);
     // Nobody does anything: the room lapses and its socket is told.
     assert.equal(await socket.closed, 4404);
 
-    const from = (address: string) => served.call(`/rooms/${data.view.id}`, undefined, { 'x-forwarded-for': address });
+    const from = (address: string) => served.call(`/rooms/${data.view.id}`, undefined, { 'cf-connecting-ip': address });
     assert.equal((await from('203.0.113.1')).status, 404);
     assert.equal((await from('203.0.113.1')).status, 404);
     assert.equal((await from('203.0.113.1')).status, 429);
     assert.equal((await from('203.0.113.2')).status, 404);
     // Looking at the server's state is never limited.
-    assert.equal((await served.call('/stats', undefined, { 'x-forwarded-for': '203.0.113.1' })).status, 200);
+    assert.equal((await served.call('/stats', undefined, { 'cf-connecting-ip': '203.0.113.1' })).status, 200);
     assert.equal((await served.call('/healthz')).status, 200);
     assert.equal((await served.call('/readyz')).status, 200);
     await served.close();

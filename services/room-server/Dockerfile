@@ -14,6 +14,7 @@ RUN npm ci --omit=dev --ignore-scripts --workspace=@pplale/room-server --workspa
 
 COPY packages/game-core/src packages/game-core/src
 COPY services/room-server/src services/room-server/src
+COPY services/shared services/shared
 COPY services/room-server/scripts/verify-history.ts services/room-server/scripts/verify-history.ts
 COPY src/data/yojo.json src/data/sweet.json src/data/playable.json src/data/tokenYojo.json src/data/token.json src/data/
 

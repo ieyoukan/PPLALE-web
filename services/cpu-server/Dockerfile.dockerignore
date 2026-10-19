@@ -11,3 +11,5 @@
 !src/data/playable.json
 !src/data/tokenYojo.json
 !src/data/token.json
+
+!services/shared
