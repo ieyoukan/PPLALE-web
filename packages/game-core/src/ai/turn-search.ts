@@ -10,6 +10,7 @@ import type { Move } from './moves.ts';
 import { drawValue, evaluatePlan, orderPlan } from './planning.ts';
 import type { CpuDecision } from './types.ts';
 import type { Evaluator } from './value.ts';
+import type { Policy } from './policy.ts';
 
 export interface TurnSearchOptions {
     /** Beam expansions, split fairly between actions/worlds; finishing rollouts have separate caps. */
@@ -27,6 +28,12 @@ export interface TurnSearchOptions {
      * e.g. a learned value (ai/value.ts). Moves inside a turn are still ordered by `evaluatePlan`.
      */
     evaluate?: Evaluator;
+    /** The value of single moves (ai/policy.ts): which moves are read first. */
+    policy?: Policy;
+    /** How much the move value counts when ordering moves inside a turn, in log-odds of winning. */
+    policyOrder?: number;
+    /** How much it counts when the first move is finally chosen. 0 leaves the choice to the search. */
+    policyRoot?: number;
 }
 
 interface Line {
@@ -48,6 +55,8 @@ interface Planner {
     /** A finished turn or match. */
     leaf(state: GameState, side: Side): number;
     order(state: GameState, side: Side): number;
+    /** Bonus per move for ordering, from the move value; empty without a policy. */
+    prior(state: GameState, moves: Move[]): number[];
 }
 export interface TurnSearchResult {
     move: Move;
@@ -70,7 +79,10 @@ function positionKey(s: GameState): string {
 }
 
 /** Simulated states are immutable. These caches live for one decision, never across real turns. */
-function planner(catalog: Catalog, evaluate?: Evaluator): Planner {
+/** Planning units per log-odds of winning: the scale of the learned value (ValueModel.scale). */
+const LOGIT = 68;
+
+function planner(catalog: Catalog, evaluate?: Evaluator, policy?: Policy, policyOrder = 0.5): Planner {
     const keys = new WeakMap<GameState, string>();
     const cached = (score: Evaluator) => {
         const values = new WeakMap<GameState, number>();
@@ -92,6 +104,11 @@ function planner(catalog: Catalog, evaluate?: Evaluator): Planner {
             return key;
         },
         order: (state, side) => orderPlan(state, side, catalog, value(state, side)),
+        prior(state, moves) {
+            if (!policy || policyOrder <= 0 || moves.length < 2) return [];
+            const logits = policy(state, moves), top = Math.max(...logits);
+            return logits.map(logit => (logit - top) * policyOrder * LOGIT);
+        },
     };
 }
 
@@ -179,10 +196,11 @@ function turnLines(start: GameState, actor: Side, p: Planner, limits: Limits, in
             const chooser = s.pending?.task.actor ?? actor;
             let moves = (depth === 0 && initial ? initial : legalMoves(s, chooser, catalog)).filter(move => !pointless(s, move, catalog));
             if (chooser !== actor && moves.length) moves = [preferredChoice(s, p, moves)];
-            for (const move of moves) {
+            const prior = p.prior(s, moves);
+            for (const [i, move] of moves.entries()) {
                 const child: Line = {
                     state: move.next, commands: [...line.commands, move.command],
-                    score: p.order(move.next, actor),
+                    score: p.order(move.next, actor) + (prior[i] ?? 0),
                 };
                 if (move.next.winner !== null || move.next.active !== actor || move.next.turn !== start.turn)
                     save({ ...child, score: p.leaf(move.next, actor) });
@@ -222,7 +240,7 @@ export function searchTurn(d: CpuDecision, fallback: Move, options: TurnSearchOp
     const { state, side, catalog, moves } = d;
     if (state.phase !== 'playing' || state.active !== side || state.winner !== null)
         return { move: fallback, line: [fallback.command], score: evaluatePlan(state, side, catalog), nodes: 0, worlds: 0 };
-    const p = planner(catalog, options.evaluate);
+    const p = planner(catalog, options.evaluate, options.policy, options.policyOrder);
     const maxNodes = bounded(options.maxNodes, 2400, 100, 20000);
     const width = bounded(options.beamWidth, 4, 1, 32), depth = bounded(options.maxDepth, 14, 2, 32);
     const worldCount = bounded(options.worlds, 3, 1, 8), candidateCount = bounded(options.candidates, 4, 1, 12);
@@ -238,6 +256,13 @@ export function searchTurn(d: CpuDecision, fallback: Move, options: TurnSearchOp
         if (candidates.size >= candidateCount) break;
     }
     candidates.set(commandKey(fallback.command), fallback);
+    // The moves' own value: the most promising move is always read, and it may tip the final choice.
+    const rootLogits = options.policy && moves.length > 1 ? options.policy(state, moves) : null;
+    const rootValue = new Map(rootLogits ? moves.map((move, i) => [commandKey(move.command), rootLogits[i]]) : []);
+    if (rootLogits) {
+        const top = moves[rootLogits.indexOf(Math.max(...rootLogits))];
+        candidates.set(commandKey(top.command), top);
+    }
     const end = moves.find(move => move.command.type === 'end');
     if (end) candidates.set(commandKey(end.command), end);
     const sampledWorlds = Math.min(worldCount, Math.max(1, Math.floor((maxNodes - nodes) / (candidates.size * 4))));
@@ -273,7 +298,7 @@ export function searchTurn(d: CpuDecision, fallback: Move, options: TurnSearchOp
         }
         const mean = scores.reduce((total, score) => total + score, 0) / scores.length;
         // Prefer a plan that survives several replies over one that only works with a lucky deal.
-        const score = mean - (mean - Math.min(...scores)) * 0.25;
+        const score = mean - (mean - Math.min(...scores)) * 0.25 + (options.policyRoot ?? 0) * LOGIT * (rootValue.get(commandKey(move.command)) ?? 0);
         if (score > best.score) best = { move, line: firstLine, score, nodes: 0, worlds: worlds.length };
     }
     return { ...best, nodes };

@@ -58,3 +58,20 @@ test('environment decks: every environment in turn, each a legal deck of its rul
   }
   assert.ok(seen.size >= 4, [...seen].join(' / '));
 });
+
+test('policy: scores every move from a position, and the search can read moves in that order', async () => {
+  const { createPolicy, policyCards, policyLayout } = await import('../dist/ai/policy.js');
+  const { searchTurn } = await import('../dist/ai/index.js');
+  const { legalMoves } = await import('../dist/index.js');
+  const cards = policyCards(catalog), { inputs } = policyLayout(cards), hidden = 3;
+  let r = 7;
+  const values = count => Array.from({ length: count }, () => { r = (Math.imul(r, 1664525) + 1013904223) >>> 0; return r / 4294967296 - 0.5; });
+  const policy = createPolicy({ cards, inputs, hidden, first: values(inputs * hidden), bias: values(hidden), out: values(hidden), linear: values(inputs), outBias: 0 }, catalog);
+  assert.ok(policy);
+  assert.equal(createPolicy({ cards, inputs: inputs + 1, hidden, first: [], bias: [], out: [], linear: [], outBias: 0 }, catalog), null);
+  const s = board(), moves = legalMoves(s, 0, catalog), logits = policy(s, moves);
+  assert.equal(logits.length, moves.length);
+  assert.ok(logits.every(Number.isFinite));
+  const result = searchTurn({ state: s, side: 0, catalog, moves, random: () => 0 }, moves[0], { policy, policyOrder: 1, policyRoot: 0.5, maxNodes: 300 });
+  assert.ok(moves.includes(result.move));
+});
