@@ -29,6 +29,7 @@
     "cpu:deck": "npm run deck --workspace=@pplale/game-core --",
     "cpu:value": "npm run value --workspace=@pplale/game-core --",
     "cpu:policy": "npm run policy --workspace=@pplale/game-core --",
+    "cpu:compare": "npm run compare --workspace=@pplale/game-core --",
     "cards:import-en": "node scripts/import-english-cards.mjs",
     "cards:optimize": "node scripts/optimize-images.mjs",
     "cards:og-images": "node scripts/generate-og-images.mjs",
