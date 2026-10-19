@@ -1,0 +1,4 @@
+.toggle { display: inline-flex; align-items: center; justify-content: center; gap: 6px; padding: 7px 12px; min-height: 36px; border: 1px solid var(--brand-pink-edge); border-radius: 999px; background: var(--brand-paper); color: var(--brand-cocoa-deep); font-size: 12px; white-space: nowrap; cursor: pointer; }
+.toggle:focus-visible { outline: 2px solid var(--brand-cocoa); outline-offset: 3px; }
+.toggle[aria-pressed=false] { background: var(--brand-blush); }
+.compact { width: 36px; flex-shrink: 0; padding: 7px; }

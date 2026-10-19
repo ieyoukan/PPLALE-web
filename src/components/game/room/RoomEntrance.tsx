@@ -14,7 +14,6 @@ import { BattleIllustration } from './BattleIllustration';
 import { BattleCompanion } from './BattleCompanion';
 import styles from './Room.module.css';
 import { useMyProfile } from '../social/useMyProfile';
-import { FreeMatchLounge } from './FreeMatchLounge';
 
 const NAME_KEY = 'pplale-room-name-v1';
 /** The name shown to the other player: what was typed last, else the signed-in name. */
@@ -150,6 +149,5 @@ export function RoomEntrance() {
       <button className={styles.primary} disabled={!isRoomId(id)}>{open === 'watch' ? '観戦する' : 'ルームを見る'}</button>
     </form>}
     {error && <p role="alert" className={styles.error}>{error}</p>}
-    <FreeMatchLounge />
   </div>;
 }

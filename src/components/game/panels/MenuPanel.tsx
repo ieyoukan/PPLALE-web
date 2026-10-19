@@ -4,6 +4,7 @@ import { useState } from 'react';
 import { other } from '@pplale/game-core';
 import { useBoardContext } from '../board/BoardContext';
 import styles from '../BoardEmulator.module.css';
+import { NotificationSoundToggle } from '../notifications/GameNotifications';
 
 /** In-match actions only. Choosing the mode, levels and decks belongs to the preparation page. */
 export function MenuPanel() {
@@ -15,6 +16,7 @@ export function MenuPanel() {
   return <>
     <h2>{replaying ? 'リプレイ' : 'メニュー'}</h2>
     <div className={styles.menuList}>
+      <NotificationSoundToggle />
       <button onClick={() => setPanel({ type: 'logs' })}>履歴</button>
       {replaying
         ? <button onClick={close(() => setPaused(!paused))}>{paused ? '再生する' : '一時停止'}</button>

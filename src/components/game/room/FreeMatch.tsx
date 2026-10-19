@@ -16,13 +16,14 @@ import { NameField, usePlayerName } from './RoomEntrance';
 import { BattleCompanion } from './BattleCompanion';
 import { MatchDeckPreview } from './MatchDeckPreview';
 import styles from './Room.module.css';
-import { FreeMatchLounge } from './FreeMatchLounge';
+import { useGameNotifications } from '../notifications/GameNotifications';
 import { useRoomPreparation } from './useRoomPreparation';
 
 type Search = { token: string; name: string; deck: Deck; at: number };
 
 export function FreeMatch() {
   const { replace } = useRouter();
+  const { notify } = useGameNotifications();
   const { user, signInWithGoogle } = useAuth();
   const [name, setName] = usePlayerName();
   const { choices, saved } = useDeckChoices(freeMatchRules, 'フリーマッチ');
@@ -70,6 +71,7 @@ export function FreeMatch() {
     let timer: ReturnType<typeof setTimeout> | undefined;
     function receive(result: FreeMatchStatus) {
       if (result.status === 'matched') {
+        notify('matched', `${result.roomId}:1`);
         matched.current = true;
         keepSeat(result.roomId, result.key);
         replace(roomHref(ROOM_PLAY_PATH, result.roomId));
@@ -117,7 +119,7 @@ export function FreeMatch() {
       clearTimeout(timer);
       clearInterval(clock);
     };
-  }, [search, replace]);
+  }, [search, replace, notify]);
 
   async function cancel() {
     if (!search || cancelling) return;
@@ -128,6 +130,7 @@ export function FreeMatch() {
       const result = await cancelFreeMatch(search.token);
       // Pairing and cancellation are ordered by the server. An already paired game wins the race.
       if (result.status === 'matched') {
+        notify('matched', `${result.roomId}:1`);
         matched.current = true;
         keepSeat(result.roomId, result.key);
         replace(roomHref(ROOM_PLAY_PATH, result.roomId));
@@ -182,6 +185,5 @@ export function FreeMatch() {
       <Link href={BATTLE_PATH} className={styles.secondary}>バトルへ戻る</Link>
       {!search && <Link href={HOME_PATH} className={styles.secondary}>CPU対戦で遊ぶ</Link>}
     </div>
-    <FreeMatchLounge />
   </div>;
 }

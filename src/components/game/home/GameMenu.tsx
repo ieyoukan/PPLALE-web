@@ -13,6 +13,7 @@ import { NOTIFICATIONS_PATH } from '../social/NotificationsPage';
 import { useMyProfile } from '../social/useMyProfile';
 import { RecordedCard } from '../history/RecordedCard';
 import styles from './GameMenu.module.css';
+import { NotificationSoundToggle } from '../notifications/GameNotifications';
 
 const tabs = [
   { href: HOME_PATH, label: 'CPU対決', note: 'ひとりであそぶ', tone: styles.pink },
@@ -43,7 +44,7 @@ export default function GameMenu({ children }: { children: ReactNode }) {
           <Link href="/game/profile/" className={styles.playerProfile}><span className={styles.playerAvatar}><RecordedCard id={profile?.iconCardId ?? 'p_1'} sizes="40px" /></span><b>{profile?.displayName || user?.displayName || 'ゲスト'}</b></Link>
           {!user && <button onClick={() => { signInWithGoogle().catch(() => {}); }}>ログイン</button>}
         </div>
-        <Link href="/" className={styles.back}>サイトへ戻る</Link>
+        <div className={styles.footerActions}><NotificationSoundToggle compact /><Link href="/" className={styles.back}>サイトへ戻る</Link></div>
       </div>
     </aside>
     {/* The root layout already provides <main>. */}

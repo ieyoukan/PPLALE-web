@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { RoomRequestError, connectRoom, dropSeat, joinRoom, keepSeat, readRoomInfo, seatFor } from '@/lib/game/room/client';
+import { useGameNotifications } from '../notifications/GameNotifications';
 import type { RoomConnection } from '@/lib/game/room/client';
 import { isRoomId } from '@pplale/game-core/room';
 import type { RoomAction, RoomInfo, RoomView, SeatKey } from '@pplale/game-core/room';
@@ -15,6 +16,7 @@ export type RoomStage = 'loading' | 'visitor' | 'seated' | 'gone';
  * With `watch` it looks on without a seat instead (where the room allows it).
  */
 export function useRoom(id: string | null, watch = false) {
+  const { notify } = useGameNotifications();
   const [stage, setStage] = useState<RoomStage>('loading');
   const [info, setInfo] = useState<RoomInfo | null>(null);
   const [view, setView] = useState<RoomView | null>(null);
@@ -28,10 +30,14 @@ export function useRoom(id: string | null, watch = false) {
   const take = useCallback((next: RoomView) => {
     if (next.version <= version.current) return;
     version.current = next.version;
+    if (!watch) {
+      if (next.status === 'lobby' && next.players[next.seat === 0 ? 1 : 0]) notify('matched', `${next.id}:${next.match + 1}`);
+      if (next.status === 'playing') notify('started', `${next.id}:${next.match}`);
+    }
     setView(next);
     setStage('seated');
     listeners.current.forEach(listener => listener(next));
-  }, []);
+  }, [notify, watch]);
 
   // The seat this browser has, or what a visitor may know.
   useEffect(() => {

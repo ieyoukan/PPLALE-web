@@ -2,7 +2,7 @@
 
 // Layout of the game screen. Rules live in @pplale/game-core, interaction state in board/useBoard,
 // each visible region in table/ and the drawers in panels/.
-import { useRef } from 'react';
+import { useEffect, useRef } from 'react';
 import type { CSSProperties } from 'react';
 import Image from 'next/image';
 import dynamic from 'next/dynamic';
@@ -30,6 +30,7 @@ import { displayCards, gameCatalog } from '@/lib/game/catalog';
 import { HOME_PATH } from '@/lib/game/sessionStore';
 import type { DeckKind } from '@pplale/game-core';
 import styles from './BoardEmulator.module.css';
+import { useGameNotifications } from './notifications/GameNotifications';
 
 const MulliganBoard = dynamic(() => import('./MulliganBoard').then(module => module.MulliganBoard));
 
@@ -38,6 +39,10 @@ export default function BoardEmulator() {
   const router = useRouter();
   // No saved match (opened directly, or storage cleared): prepare one first.
   const session = useGameSession({ onMissing: () => router.replace(HOME_PATH) });
+  const { notify } = useGameNotifications();
+  const startKey = session.ready && !session.position && !session.replaying && session.mode !== 'watch'
+    && session.game.phase === 'dice' && session.record ? String(session.record.seed) : null;
+  useEffect(() => { if (startKey) notify('started', `local:${startKey}`); }, [startKey, notify]);
   return <BoardTable session={session} />;
 }
 
