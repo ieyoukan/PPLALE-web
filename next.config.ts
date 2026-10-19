@@ -70,6 +70,11 @@ const config: NextConfig = {
           },
         ],
       },
+      {
+        // The service worker must be checked for updates on every load.
+        source: '/sw.js',
+        headers: [{ key: 'Cache-Control', value: 'no-cache, no-store, must-revalidate' }],
+      },
     ];
   },
   turbopack: {

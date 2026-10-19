@@ -50,6 +50,16 @@ const FINALE_SET = 1700;
 const FINALE_VERDICT = 2400;
 // Effects are placed on the game stage, so every box is measured in stage pixels.
 const rectOf = (element: Element): Rect => stageRect(element);
+/**
+ * A unit's attack landing is felt as well as seen: a short buzz, longer for more damage (phones that can
+ * vibrate; iPhone browsers cannot). Effects that deal damage stay silent.
+ */
+function buzz(hits: Hit[]) {
+  const blows = hits.filter(hit => hit.kind === 'attack');
+  if (!blows.length || typeof navigator === 'undefined' || !('vibrate' in navigator)) return;
+  const amount = Math.max(...blows.map(hit => hit.amount));
+  navigator.vibrate(amount >= 4 ? [70, 50, 90] : 30 + amount * 15);
+}
 /** Cards on their way into a hand, deck or the field must land before anyone acts; ones going to a pile are only decoration. */
 const blocksPlay = (flight: DrawFlight) => flight.toZone !== 'nap' && flight.toZone !== 'exile';
 const spotKey = (spot: Spot) => 'unit' in spot ? `unit:${spot.unit}` : 'hand' in spot ? `hand:${spot.hand}` : 'pile' in spot ? `pile:${spot.pile.join('-')}` : 'leader' in spot ? `leader:${spot.leader}` : `pp:${spot.pp}`;
@@ -136,6 +146,7 @@ export function useBoardAnimations({ game, shown, view, mode, cpuSides, replayin
       later(() => setEffectRoll(current => current?.id === roll.id ? null : current), DICE_THROW_DURATION + ROLL_RESULT);
     }
     if (seen.hits.length) {
+      if (!replaying) buzz(seen.hits);
       setHits(current => [...current, ...seen.hits]);
       later(() => setHits(current => current.filter(hit => !seen.hits.includes(hit))), HIT_DURATION);
     }

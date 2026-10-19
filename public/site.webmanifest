@@ -1,20 +1,18 @@
 {
+  "id": "/game/",
   "name": "お菓子争奪戦争ぷぷりえーる",
   "short_name": "ぷぷりえーる",
-  "icons": [
-    {
-      "src": "/favicon.ico",
-      "sizes": "64x64 32x32 24x24 16x16",
-      "type": "image/x-icon"
-    },
-    {
-      "src": "/apple-touch-icon.png",
-      "sizes": "180x180",
-      "type": "image/png"
-    }
-  ],
-  "start_url": "/",
+  "description": "ぷぷりえーるのカードゲームで遊ぶ。CPU対戦・ルームマッチ・デッキ構築。",
+  "lang": "ja",
+  "start_url": "/game/",
+  "scope": "/",
   "display": "standalone",
   "theme_color": "#e8c8c8",
-  "background_color": "#fff8f0"
-} 
+  "background_color": "#fff8f0",
+  "icons": [
+    { "src": "/icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
+    { "src": "/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },
+    { "src": "/icon-maskable-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" },
+    { "src": "/favicon.ico", "sizes": "64x64 32x32 24x24 16x16", "type": "image/x-icon" }
+  ]
+}

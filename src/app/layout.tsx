@@ -8,6 +8,7 @@ import DarkModeProvider from './DarkModeProvider';
 import { SettingsProvider } from './SettingsProvider';
 import { AuthProvider } from '@/lib/auth';
 import { SpeedInsights } from "@vercel/speed-insights/next"
+import { PwaSetup } from '@/components/pwa/PwaSetup';
 
 // Vercel環境かどうかを判定
 const isVercel = process.env.VERCEL === '1';
@@ -112,6 +113,7 @@ export default function RootLayout({
                 {children}
               </main>
               {isVercel && <SpeedInsights />}
+              <PwaSetup />
             </SettingsProvider>
           </DarkModeProvider>
         </AuthProvider>
