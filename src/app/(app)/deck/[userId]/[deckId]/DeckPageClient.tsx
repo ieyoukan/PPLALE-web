@@ -1,6 +1,8 @@
 'use client';
 
 import React, { useState } from 'react';
+import Link from 'next/link';
+import { usePublicName } from '@/components/game/social/usePublicName';
 import { CardInfo } from '@/types/card';
 import { getCardCatalog } from '@/data/catalog';
 import ExportPopup from '@/components/popup/ExportPopup';
@@ -27,6 +29,8 @@ interface DeckPageClientProps {
 }
 
 export default function DeckPageClient(props: DeckPageClientProps) {
+  const authorId = props.serverUserId === 'local' ? undefined : props.serverUserId;
+  const authorName = usePublicName(authorId);
   const { isTwoCardLimit } = useSettings();
   const { locale, t } = useI18n();
   const { allYojoCards, allSweetCards, allPlayableCards } = getCardCatalog(locale);
@@ -130,6 +134,8 @@ export default function DeckPageClient(props: DeckPageClientProps) {
           </div>
         )}
       </div>
+
+      {authorId && <p style={{ color: 'var(--brand-cocoa)', marginBottom: '1rem' }}>{locale === 'ja' ? '作成者：' : 'By '}<Link href={`/game/profile/?id=${encodeURIComponent(authorId)}`}>{authorName}</Link></p>}
 
       <div className={css({
         display: 'grid',

@@ -1,5 +1,6 @@
 import { burstLimit, clientAddress, HttpError, limiter, readJson } from '../../shared/http.mts';
 import { freeMatchActivity } from './public-matches.ts';
+import { profileNames } from './profile-names.ts';
 // The room server: rooms are made and entered over HTTP, and each seated player keeps a socket
 // open, sends its requests through it and is sent its view of the room whenever anything changes.
 //   POST /rooms            { rules, name }  → the new room and the host's seat
@@ -54,6 +55,7 @@ export function createRoomServer({ config, backend, catalog, history }: {
     config: Pick<Config, 'pod' | 'origins' | 'trustProxy' | 'requestsPerHour' | 'roomsPerHour' | 'lobbyGraceMinutes' | 'abandonMinutes' | 'maxRooms' | 'idleHours' | 'beatSeconds' | 'version'>; backend: Backend; catalog: Catalog; history?: HistoryRepository;
 }): Server & { stats(): Promise<RoomServerStats>; beat(): Promise<void>; shutdown(): Promise<void> } {
     const { pod, origins, trustProxy, requestsPerHour, roomsPerHour, lobbyGraceMinutes, abandonMinutes, maxRooms, idleHours, beatSeconds, version } = config;
+    const names = profileNames();
     const allowed = limiter(requestsPerHour), mayCreate = limiter(roomsPerHour);
     const patience = { lobby: lobbyGraceMinutes * 60_000, match: abandonMinutes * 60_000 };
     let activityCache: { until: number; value: Awaited<ReturnType<typeof freeMatchActivity>> } | undefined;
@@ -125,7 +127,7 @@ export function createRoomServer({ config, backend, catalog, history }: {
         if (socket.readyState !== socket.OPEN) return;
         // A reader that stops receiving must not accumulate an unlimited send queue.
         if (socket.bufferedAmount > 256 * 1024) return socket.terminate();
-        socket.send(JSON.stringify(message));
+        socket.send(JSON.stringify(message.type === 'view' ? { ...message, view: names.view(message.view) } : message));
     };
 
     /** Changes the room: `change` edits it (or throws RoomError). Tried again when another request got in first. */
@@ -198,8 +200,8 @@ export function createRoomServer({ config, backend, catalog, history }: {
         return { version, uptime: Math.round((Date.now() - started) / 1000), backend: backend.kind, ...await counts(), latency: latency.snapshot() };
     }
 
-    const send = (response: ServerResponse, status: number, body?: unknown, headers: Record<string, string> = {}) => {
-        const text = body === undefined ? '' : JSON.stringify(body);
+    const send = async (response: ServerResponse, status: number, body?: unknown, headers: Record<string, string> = {}) => {
+        const text = body === undefined ? '' : JSON.stringify(await names.response(body));
         const compressed = text.length > 4096 && /\bgzip\b/.test(String(response.req.headers['accept-encoding'] ?? ''));
         response.writeHead(status, { ...(text && { 'content-type': 'application/json; charset=utf-8' }), ...(compressed && { 'content-encoding': 'gzip' }), 'cache-control': 'no-store', ...headers });
         response.end(compressed ? gzipSync(text) : text);
@@ -263,9 +265,15 @@ export function createRoomServer({ config, backend, catalog, history }: {
             }
             const freeOperation = request.method === 'POST' ? /^\/free-match\/(start|status|cancel)$/.exec(path)?.[1] as 'start' | 'status' | 'cancel' | undefined : undefined;
             if (freeOperation) {
-                const owners = history && freeOperation === 'start' ? await historyOwners(request) : undefined;
+                const owners = freeOperation === 'start' ? await historyOwners(request) : undefined;
                 if (history && freeOperation === 'start' && !owners?.length) throw new RoomError(426, '画面を更新してから、もう一度お試しください');
-                const result = await freeMatch(backend, catalog, freeOperation, await readJson(request, MAX_BODY), {
+                let body = await readJson(request, MAX_BODY);
+                const profileId = owners?.find(owner => owner.startsWith('user:'))?.slice(5);
+                if (profileId) {
+                    await names.load(profileId, true);
+                    if (body && typeof body === 'object') body = { ...body, name: names.name({ name: '', profileId }) };
+                }
+                const result = await freeMatch(backend, catalog, freeOperation, body, {
                     maxRooms, roomTtl: idleHours * HOUR, allowSpectators: await backend.audienceReady(), mayStart: () => allowed(address(request)),
                     owners: owners && seatOwners(owners),
                 });
@@ -282,8 +290,13 @@ export function createRoomServer({ config, backend, catalog, history }: {
                 if (!mayCreate(address(request))) throw new RoomError(429, 'ルームを作りすぎています。しばらく待ってからお試しください');
                 const { rooms } = await counts();
                 if (rooms.lobby + rooms.playing + rooms.finished + rooms.closed >= maxRooms) throw new RoomError(503, 'いまはルームがいっぱいです。しばらく待ってからお試しください');
-                const body = await readJson(request, MAX_BODY);
-                const owners = history ? await historyOwners(request) : [];
+                let body = await readJson(request, MAX_BODY);
+                const owners = await historyOwners(request);
+                const profileId = owners.find(owner => owner.startsWith('user:'))?.slice(5);
+                if (profileId) {
+                    await names.load(profileId, true);
+                    if (body && typeof body === 'object') body = { ...body, name: names.name({ name: '', profileId }) };
+                }
                 if (history && !owners.length) throw new RoomError(426, '画面を更新してから、もう一度お試しください');
                 for (let attempt = 0; attempt < 8; attempt++) {
                     const made = createRoom(String(randomInt(10 ** ROOM_ID_LENGTH)).padStart(ROOM_ID_LENGTH, '0'), body);
@@ -303,8 +316,13 @@ export function createRoomServer({ config, backend, catalog, history }: {
                 return send(response, 200, { ...roomInfo(room), hostOnline: (await backend.online(room.id))[0] });
             }
             if (request.method === 'POST' && tail) {
-                const body = await readJson(request, MAX_BODY);
-                const owners = history ? await historyOwners(request) : [];
+                let body = await readJson(request, MAX_BODY);
+                const owners = await historyOwners(request);
+                const profileId = owners.find(owner => owner.startsWith('user:'))?.slice(5);
+                if (profileId) {
+                    await names.load(profileId, true);
+                    if (body && typeof body === 'object') body = { ...body, name: names.name({ name: '', profileId }) };
+                }
                 if (history && !owners.length) throw new RoomError(426, '画面を更新してから、もう一度お試しください');
                 const { room, result: token } = await update(id, target => {
                     const token = joinRoom(target, body);

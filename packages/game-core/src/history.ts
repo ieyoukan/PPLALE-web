@@ -45,4 +45,6 @@ export interface MatchDetails {
     match: HistoryEntry;
     catalog: Catalog;
 }
-export interface MatchRecording extends MatchDetails { frames: ReplayFrame[]; catalogs: Record<string, Catalog> }
+// The server checks archived hashes before resolving current public names for delivery.
+// With publicNamesResolved, hashes describe the original archive, not the display projection.
+export interface MatchRecording extends MatchDetails { publicNamesResolved?: true; frames: ReplayFrame[]; catalogs: Record<string, Catalog> }

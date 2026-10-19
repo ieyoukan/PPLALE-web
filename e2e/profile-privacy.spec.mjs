@@ -44,7 +44,7 @@ for (const viewport of [{ width: 1280, height: 860 }, { width: 390, height: 844 
       expect(Object.keys(sent).sort()).toEqual(['name', 'rules']);
       expect(JSON.stringify(sent)).not.toContain(privateName);
       expect(JSON.stringify(sent)).not.toContain(privateEmail);
-      await page.getByPlaceholder('なまえ').fill('今回だけの別名');
+      await expect(page.getByPlaceholder('なまえ')).toHaveAttribute('readonly', '');
       await page.goto(`${base}/game/battle/free/`);
       await expect(page.getByPlaceholder('なまえ')).toHaveValue(nickname);
       let search;
@@ -78,7 +78,7 @@ for (const viewport of [{ width: 1280, height: 860 }, { width: 390, height: 844 
   });
 }
 
-test('switching accounts never imports a previously saved room name or another account’s alias', async ({ page }) => {
+test('switching accounts keeps match names scoped to each public profile', async ({ page }) => {
   const a = { ...await emulatorIdentity(), displayName: privateName }, b = { ...await emulatorIdentity(), displayName: '本名テストB' };
   await signInFixture(page, base, a);
   await page.goto(`${base}/game/profile/`);
@@ -87,10 +87,47 @@ test('switching accounts never imports a previously saved room name or another a
   await expect(page.getByRole('status')).toContainText('保存しました');
   await page.goto(`${base}/game/battle/free/`);
   await expect(page.getByPlaceholder('なまえ')).toHaveValue('アカウントAの公開名');
-  await page.getByPlaceholder('なまえ').fill('Aの対戦専用名');
+  await expect(page.getByPlaceholder('なまえ')).toHaveAttribute('readonly', '');
   await signInFixture(page, base, b);
   await page.goto(`${base}/game/battle/free/`);
   await expect(page.getByPlaceholder('なまえ')).toHaveValue('プレイヤー');
   await expect(page.locator('body')).not.toContainText('本名テストB');
   await expect(page.locator('body')).not.toContainText('アカウントAの公開名');
+});
+
+test('shared decks show the current profile name to visitors and update when the profile is renamed', async ({ page, browser }) => {
+  const identity = { ...await emulatorIdentity(), displayName: privateName };
+  await signInFixture(page, base, identity);
+  await page.goto(`${base}/game/profile/`);
+  await page.getByLabel('なまえ', { exact: true }).fill('デッキ作者の公開名');
+  await page.getByRole('button', { name: 'プロフィールを保存', exact: true }).click();
+  await expect(page.getByRole('status')).toContainText('保存しました');
+  const url = `http://127.0.0.1:18082/v1/projects/demo-pplale-social/databases/(default)/documents/users/${identity.localId}/decks/shared-profile-test`;
+  const saved = await fetch(url, { method: 'PATCH', headers: { authorization: `Bearer ${identity.idToken}`, 'content-type': 'application/json' }, body: JSON.stringify({ fields: { name: { stringValue: 'プロフィール名の確認デッキ' }, yojoDeckIds: { arrayValue: { values: [] } }, sweetDeckIds: { arrayValue: { values: [] } }, playableCardId: { stringValue: 'p_1' } } }) });
+  expect(saved.status).toBe(200);
+  const visitor = await browser.newContext();
+  try {
+    const shared = await visitor.newPage();
+    await shared.goto(`${base}/deck/${identity.localId}/shared-profile-test/`);
+    const author = shared.getByRole('link', { name: 'デッキ作者の公開名', exact: true });
+    await expect(author).toBeVisible();
+    await expect(author).toHaveAttribute('href', `/game/profile/?id=${identity.localId}`);
+    await expect(shared.locator('body')).not.toContainText(privateName);
+    await page.getByLabel('なまえ', { exact: true }).fill('変更した公開名');
+    await page.getByRole('button', { name: 'プロフィールを保存', exact: true }).click();
+    await expect(page.getByRole('status')).toContainText('保存しました');
+    await expect(shared.getByRole('link', { name: '変更した公開名', exact: true })).toBeVisible();
+    await expect(shared.getByRole('link', { name: 'デッキ作者の公開名', exact: true })).toHaveCount(0);
+    await shared.reload();
+    await expect(shared.locator('meta[name="description"]')).toHaveAttribute('content', /変更した公開名/);
+  } finally { await visitor.close(); }
+});
+
+test('guests can still choose a match name independently of signed-in profiles', async ({ page }) => {
+  await page.goto(`${base}/game/battle/free/`);
+  const name = page.getByPlaceholder('なまえ');
+  await expect(name).toBeEditable();
+  await name.fill('ゲストのなまえ');
+  await page.reload();
+  await expect(page.getByPlaceholder('なまえ')).toHaveValue('ゲストのなまえ');
 });

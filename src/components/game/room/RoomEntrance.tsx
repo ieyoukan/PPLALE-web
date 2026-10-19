@@ -16,22 +16,19 @@ import styles from './Room.module.css';
 import { useMyProfileState } from '../social/useMyProfile';
 
 const NAME_KEY = 'pplale-guest-name-v2';
-/** Public profile or an explicitly typed alias. Legacy names and account names are never imported. */
+/** Signed-in names belong to the public profile; only guests choose a name here. */
 export function usePlayerName() {
   const { user, loading } = useAuth();
   const { profile, loading: profileLoading } = useMyProfileState();
-  const owner = user?.uid ?? 'guest';
   const [guestName, setGuestName] = useState('');
-  const [draft, setDraft] = useState<{ owner: string; name: string } | null>(null);
   useEffect(() => {
     let saved = '';
     try { saved = localStorage.getItem(NAME_KEY) ?? ''; } catch { /* Asked again next time. */ }
     if (saved) setGuestName(saved);
   }, []);
   const ready = !loading && !profileLoading;
-  const shown = draft?.owner === owner ? draft.name : user ? profile?.displayName ?? 'プレイヤー' : guestName;
+  const shown = user ? profile?.displayName ?? 'プレイヤー' : guestName;
   const change = (value: string) => {
-    setDraft({ owner, name: value });
     if (!user && !loading) {
       setGuestName(value);
       try { localStorage.setItem(NAME_KEY, value); } catch { /* Kept for this visit only. */ }
@@ -40,8 +37,10 @@ export function usePlayerName() {
   return [Array.from(shown).slice(0, MAX_NAME_LENGTH).join(''), change, ready] as const;
 }
 export function NameField({ name, onChange, publicName = false, disabled = false }: { name: string; onChange: (name: string) => void; publicName?: boolean; disabled?: boolean }) {
+  const { user } = useAuth();
   return <label className={styles.field}>なまえ（{publicName ? '対戦一覧に表示されます' : '相手に表示されます'}）
-    <input type="text" value={name} disabled={disabled} maxLength={MAX_NAME_LENGTH} placeholder="なまえ" autoComplete="nickname" onChange={event => onChange(event.target.value)} />
+    <input type="text" value={name} readOnly={!!user} disabled={disabled} maxLength={MAX_NAME_LENGTH} placeholder="なまえ" autoComplete="nickname" onChange={event => onChange(event.target.value)} />
+    {user && <Link href="/game/profile/">プロフィールで名前を変更 ›</Link>}
   </label>;
 }
 

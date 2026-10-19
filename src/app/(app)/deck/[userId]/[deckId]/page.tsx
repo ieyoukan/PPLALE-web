@@ -7,6 +7,7 @@ import { getRequestLocale } from '@/i18n/server';
 import type { AppLocale } from '@/i18n/config';
 import DeckPageClient from './DeckPageClient';
 import { Metadata } from 'next';
+import { readOgProfile } from '@/lib/ogProfileImage';
 import { createOgSignature, createOgSignaturePayload } from '@/lib/ogSignature';
 
 const readDeck = cache((userId: string, deckId: string) => getDoc(doc(db, 'users', userId, 'decks', deckId)));
@@ -130,7 +131,7 @@ export async function generateMetadata(
 
   if (userId !== 'local') {
     try {
-      const deckDoc = await readDeck(userId, deckId);
+      const [deckDoc, profile] = await Promise.all([readDeck(userId, deckId), readOgProfile(userId).catch(() => null)]);
       if (deckDoc.exists()) {
         const deckData = deckDoc.data();
         if (deckData?.name) {
@@ -139,6 +140,8 @@ export async function generateMetadata(
             ? `${deckData.name} のデッキ構成です。幼女カード、お菓子カード、プレイアブルカードを確認できます。`
             : `View the little girl, sweets, and playable character cards in ${deckData.name}.`;
         }
+        const authorName = profile?.displayName ?? 'プレイヤー';
+        description = locale === 'ja' ? `作成者：${authorName}。${description}` : `By ${authorName}. ${description}`;
         // A stable 15-minute signature window permits CDN reuse. Deck edits get a new URL.
         const ts = Math.floor(Date.now() / 900000) * 900;
         const version = `2-${deckData.updatedAt?.toMillis?.() ?? 0}`;
