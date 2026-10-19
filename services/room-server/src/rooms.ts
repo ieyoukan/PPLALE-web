@@ -8,7 +8,8 @@ import { applyCommand, decideMatch, newGame, other, sandboxRules, viewFor } from
 import type { Catalog, Deck, GameState, Side } from '@pplale/game-core';
 import { MAX_NAME_LENGTH, parseRoomRules, roomDeckErrors } from '@pplale/game-core/room';
 import type { MatchEnd } from '@pplale/game-core/history';
-import type { LastCommand, RoomCommand, RoomInfo, RoomRules, RoomStatus, RoomView } from '@pplale/game-core/room';
+import type { LastCommand, RoomCommand, RoomInfo, RoomRules, RoomStatus, RoomTurnClock, RoomView } from '@pplale/game-core/room';
+import { syncTurnClock, turnTimeoutCommand } from './turn-clock.ts';
 
 export interface Seat {
     /** Public profile id, populated only from verified authentication. */
@@ -24,6 +25,7 @@ export interface Seat {
     left?: boolean;
 }
 export interface Room {
+    turnClock?: RoomTurnClock;
     record?: { id: string; startedAt: number; reason?: MatchEnd };
     id: string;
     mode?: 'free';
@@ -100,14 +102,15 @@ export interface Present { online: [boolean, boolean]; watching: number }
 
 /** What `seat` is told about the room, or (`'spectator'`) what someone watching is. */
 export function seatView(room: Room, seat: Side | 'spectator', { online, watching }: Present): RoomView {
-    const { id, mode, version, status, match, rules, last, resigned, seats, state } = room;
+    const { id, mode, version, status, match, rules, last, resigned, seats, state, record, turnClock } = room;
     const players = seats.map((s, index) => s && { name: s.name, ...(s.profileId && { profileId: s.profileId }), ready: s.ready, online: online[index], ...(s.left && { left: true }), ...(index === seat && s.deck && { deck: s.deck.name }) }) as RoomView['players'];
     return {
         id, ...(mode && { mode }), version, seat: seat === 'spectator' ? 0 : seat, ...(seat === 'spectator' && { watching: true as const }), spectators: watching,
         ...(seat !== 'spectator' && seats[seat]?.deck && { ownDeck: seats[seat]!.deck! }),
         status, match, rules, players, game: state && viewFor(state, seat === 'spectator' && mode === 'free' && status === 'playing' ? 'audience' : seat), last, resigned,
         ...(seat === 'spectator' && mode === 'free' && { assessment: publicAssessment(room, roomCatalog) }),
-        ...(status === 'finished' && room.record && (seat !== 'spectator' || mode === 'free') && { replayId: room.record.id }),
+        ...(status === 'finished' && record && (seat !== 'spectator' || mode === 'free') && { replayId: record.id }),
+        ...(turnClock && { turnClock, serverNow: Date.now() }),
     };
 }
 export const roomInfo = (room: Room): RoomInfo =>
@@ -215,7 +218,7 @@ export interface Outcome {
 }
 
 /** One request of `seat` (as sent). Changes the room or throws RoomError and leaves it as it was. */
-export function act(room: Room, seat: Side, body: unknown, catalog: Catalog): Outcome {
+export function act(room: Room, seat: Side, body: unknown, catalog: Catalog, now = Date.now()): Outcome {
     const parsed = action.safeParse(body);
     if (!parsed.success) throw new RoomError(400, 'リクエストの形式が正しくありません');
     const request = parsed.data, own = room.seats[seat]!;
@@ -239,20 +242,12 @@ export function act(room: Room, seat: Side, body: unknown, catalog: Catalog): Ou
             break;
         case 'command': {
             if (room.status !== 'playing' || !room.state) throw new RoomError(409, '対戦中ではありません');
+            if (turnTimeoutCommand(room, now)) throw new RoomError(409, '制限時間になりました。ターンを終了しています');
             const state = room.state, sent = { ...request.command, actor: seat } as RoomCommand;
             // During the turns only one side acts, so a command made on an older view is a mistake.
             // The opening draws and the mulligan are done by both sides at once.
             if (state.phase === 'playing' && request.revision !== state.revision) throw new RoomError(409, '盤面が更新されました。もう一度操作してください');
-            const cardId = sent.type === 'play' || sent.type === 'reveal' ? state.cards[sent.uid]?.cardId : undefined;
-            const result = applyCommand(state, sent, catalog);
-            if (result.error) throw new RoomError(422, result.error);
-            room.state = result.state;
-            room.last = { command: sent, ...(cardId && { cardId }) };
-            outcome.command = true;
-            if (result.state.winner !== null) {
-                room.status = 'finished';
-                outcome.finished = true;
-            }
+            Object.assign(outcome, applyMatchCommand(room, sent, catalog));
             break;
         }
         case 'resign':
@@ -287,5 +282,30 @@ export function act(room: Room, seat: Side, body: unknown, catalog: Catalog): Ou
     if (request.action !== 'leave') own.left = false;
     // What the previous command showed belongs to the previous version only.
     if (!outcome.command) room.last = null;
+    syncTurnClock(room, now);
+    return outcome;
+}
+
+function applyMatchCommand(room: Room, sent: RoomCommand, catalog: Catalog, notice?: string): Outcome {
+    const state = room.state!;
+    const cardId = sent.type === 'play' || sent.type === 'reveal' ? state.cards[sent.uid]?.cardId : undefined;
+    const input = notice ? { ...state, log: [...state.log, notice].slice(-100) } : state;
+    const result = applyCommand(input, sent, catalog);
+    if (result.error) throw new RoomError(422, result.error);
+    room.state = result.state;
+    room.last = { command: sent, ...(cardId && { cardId }) };
+    if (result.state.winner !== null) room.status = 'finished';
+    return { command: true, ...(room.status === 'finished' && { finished: true }) };
+}
+
+/** Compare-and-set this alongside the room, exactly like a player's command. */
+export function expireTurn(room: Room, catalog: Catalog, now = Date.now()): Outcome | null {
+    const command = turnTimeoutCommand(room, now);
+    if (!command) return null;
+    const first = !room.turnClock!.expired;
+    const notice = first ? `${room.state!.players[command.actor].name}の制限時間になりました。選択を自動で完了してターンを終了します` : undefined;
+    const outcome = applyMatchCommand(room, command, catalog, notice);
+    room.turnClock!.expired = true;
+    syncTurnClock(room, now);
     return outcome;
 }

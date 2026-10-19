@@ -25,7 +25,7 @@ import { ROOM_ID_LENGTH, isRoomId } from '@pplale/game-core/room';
 import type { ClientMessage, RoomServerStats, Seated, ServerMessage } from '@pplale/game-core/room';
 import type { Backend, Member, Overview, RoomEvent } from './backend.ts';
 import type { Config } from './config.ts';
-import { RoomError, act, createRoom, joinRoom, roomInfo, seatOf, seatView, tidy } from './rooms.ts';
+import { RoomError, act, createRoom, expireTurn, joinRoom, roomInfo, seatOf, seatView, tidy } from './rooms.ts';
 import type { Present, Room } from './rooms.ts';
 import { historyOwners, seatOwners } from './history/identity.ts';
 import type { HistoryRepository } from './history/repository.ts';
@@ -76,6 +76,44 @@ export function createRoomServer({ config, backend, catalog, history }: {
     const sockets = new Map<string, [Set<Attached>, Set<Attached>, Set<Attached>]>();
     /** Who was online in each of those rooms when its views were last sent. */
     const told = new Map<string, string>();
+    // One wake-up per timed room, not a per-second broadcast or Redis write.
+    const turnTimers = new Map<string, { version: number; deadline: number; timer: ReturnType<typeof setTimeout> }>();
+    function scheduleTurn(room: Room, retryAfter = 0) {
+        const deadline = room.status === 'playing' ? room.turnClock?.deadline : null;
+        const previous = turnTimers.get(room.id);
+        if (previous && previous.version > room.version) return;
+        if (previous && previous.deadline === deadline && !retryAfter) { previous.version = room.version; return; }
+        if (previous) clearTimeout(previous.timer);
+        turnTimers.delete(room.id);
+        if (stopping || deadline == null) return;
+        const timer = setTimeout(() => {
+            turnTimers.delete(room.id);
+            void expireRoomTurn(room.id);
+        }, Math.max(retryAfter, deadline - Date.now(), 0));
+        timer.unref();
+        turnTimers.set(room.id, { version: room.version, deadline, timer });
+    }
+    async function expireRoomTurn(id: string) {
+        try {
+            for (let attempt = 0; attempt < 6 && !stopping; attempt++) {
+                const room = await backend.get(id);
+                if (!room) return;
+                const expected = room.version, outcome = expireTurn(room, catalog);
+                if (!outcome) { scheduleTurn(room); return; }
+                room.version++;
+                if (!await backend.replace(room, expected, lifetime(room))) continue;
+                await announce(room);
+                countLater('commands');
+                if (outcome.finished) countLater('matchesFinished');
+                return;
+            }
+        } catch (error) {
+            console.error('turn clock failed', error instanceof Error ? error.message : 'unavailable');
+        }
+        // A temporary backend failure must not lose the deadline or spin on an overdue clock.
+        const room = await backend.get(id).catch(() => null);
+        if (room) scheduleTurn(room, 1000);
+    }
     let serial = 0;
     const socketsOf = (id: string) => {
         let pair = sockets.get(id);
@@ -123,6 +161,7 @@ export function createRoomServer({ config, backend, catalog, history }: {
     }
     /** Sends each seat's view (and the spectators' view) to the sockets held here. */
     function deliver({ room, online, watching }: Pick<RoomEvent, 'room' | 'online' | 'watching'>) {
+        scheduleTurn(room);
         const pair = sockets.get(room.id);
         if (!pair) return;
         told.set(room.id, key({ online, watching }));
@@ -450,6 +489,7 @@ export function createRoomServer({ config, backend, catalog, history }: {
         for (const id of await backend.ids()) {
             const room = await backend.get(id);
             if (!room) continue;
+            scheduleTurn(room);
             const online = await backend.online(id);
             // Most rooms are as they were: they are not written again (it would keep them from expiring).
             if (tidy(structuredClone(room), online, now, patience) === null) continue;
@@ -471,7 +511,7 @@ export function createRoomServer({ config, backend, catalog, history }: {
             socket.ping();
         }
     }, PING_INTERVAL);
-    server.on('close', () => { clearInterval(beats); clearInterval(pinging); });
+    server.on('close', () => { clearInterval(beats); clearInterval(pinging); for (const { timer } of turnTimers.values()) clearTimeout(timer); turnTimers.clear(); });
     server.on('listening', () => { void ready.then(beat); });
 
     return Object.assign(server, {
@@ -483,6 +523,8 @@ export function createRoomServer({ config, backend, catalog, history }: {
         async shutdown() {
             stopping = true;
             clearInterval(beats);
+            for (const { timer } of turnTimers.values()) clearTimeout(timer);
+            turnTimers.clear();
             const held = Array.from(wss.clients as Set<Attached>);
             const entries = held.flatMap(socket => socket.entry ? [socket.entry] : []);
             // Their closing has nothing left to do.

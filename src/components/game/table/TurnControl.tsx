@@ -4,6 +4,7 @@ import { availablePpMaximum, other } from '@pplale/game-core';
 import type { Side } from '@pplale/game-core';
 import { useBoardContext } from '../board/BoardContext';
 import { PpPanel } from '../BoardPieces';
+import { TurnClock } from './TurnClock';
 import styles from '../BoardEmulator.module.css';
 
 /** Both PP gauges and the end-turn button. */
@@ -20,6 +21,7 @@ export function TurnControl() {
       : <button className={`${styles.endTurnButton} ${mine ? '' : styles.enemyTurn}`} disabled={!playEnabled} onClick={() => act({ type: 'end', actor: game.active })}>
         {remote?.watching && !remote.recorded ? <>観戦中</> : mine ? <>ターン<br />終了</> : <>相手の<br />ターン</>}
       </button>}
+    {remote?.turnClock && remote.turnClock.turn === game.turn && game.winner === null && <TurnClock clock={remote.turnClock} />}
     <PpPanel side={view} name={names[view]} order={orderFor(view)} current={me.pp} maximum={availablePpMaximum(game, view)} own />
   </div>;
 }

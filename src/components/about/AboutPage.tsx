@@ -38,8 +38,8 @@ const groups: Group[] = [
       landscape('rule-5', 'ルール説明⑤ その他のルール'),
       landscape('rule-6', 'ルール説明⑥ 特殊効果'),
       landscape('rule-6-2', 'ルール説明⑥ 特殊効果 続'),
+      { src: '/images/about/keywords-basic.webp', title: 'キーワード早見表 基本の特殊効果', width: 800, height: 1200 },
       { src: '/images/about/keywords.webp', title: 'キーワード早見表', width: 800, height: 1200 },
-      landscape('dice', '6面ダイスだけでランダム効果の裁定を行うやり方'),
     ],
   },
   {
@@ -50,7 +50,6 @@ const groups: Group[] = [
     id: 'faq-budou', title: 'FAQ', icon: '🍇',
     slides: [1, 2, 3, 4, 5, 6].map(n => landscape(`faq-budou-${n}`, `FAQ${n} ぶどうタイプ`)),
   },
-  { id: 'credit', title: 'クレジット', icon: '✨', slides: [landscape('credit', 'クレジット')] },
 ];
 
 const allSlides = groups.flatMap(group => group.slides);

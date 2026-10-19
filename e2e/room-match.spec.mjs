@@ -51,9 +51,14 @@ test('two players meet in a room, play the opening and one gives up', async ({ b
   await expect(host.getByRole('checkbox', { name: /おれんじ/ })).toBeEnabled();
   await expect(host.getByRole('checkbox', { name: /めろん/ })).toBeEnabled();
   await expect(host.getByRole('checkbox', { name: /拡張プレイアブル/ })).not.toBeChecked();
+  const limit = host.getByRole('combobox', { name: '1ターンの制限時間' });
+  await expect(limit).toHaveValue('0');
+  await expect(limit.getByRole('option')).toHaveText(['無制限（OFF）', '2分', '3分', '5分']);
+  await limit.selectOption('120');
   await host.getByPlaceholder('なまえ').fill('ほすと');
   await host.getByRole('button', { name: 'このルールでルームを作る' }).click();
   await host.waitForURL(/battle\/room\/\?id=\d{6}/);
+  await expect(host.getByText(/1ターン：2分/)).toBeVisible();
   const id = new URL(host.url()).searchParams.get('id');
   const post = await host.getByRole('link', { name: 'Xで募集' }).getAttribute('href');
   expect(post).toContain('https://x.com/intent/post?');
@@ -65,18 +70,21 @@ test('two players meet in a room, play the opening and one gives up', async ({ b
   await guest.getByPlaceholder('000000').fill(id);
   await guest.getByRole('button', { name: 'ルームを見る' }).click();
   await expect(guest.getByRole('heading', { name: 'ほすとさんのルーム' })).toBeVisible();
+  await expect(guest.getByText(/1ターン：2分/)).toBeVisible();
   await guest.getByPlaceholder('なまえ').fill('げすと');
   await guest.getByRole('button', { name: 'このルームに入る' }).click();
   await guest.getByRole('button', { name: 'このデッキで準備OK' }).click();
   await expect(host.getByText('げすと', { exact: true })).toBeVisible();
   await host.getByRole('button', { name: 'このデッキで準備OK' }).click();
   await Promise.all([host, guest].map(page => page.waitForURL(/\/game\/room\/\?id=/)));
+  await expect(host.getByRole('timer', { name: 'ターン残り時間' })).toHaveCount(0);
 
   const [first, second] = await decideOrder(host, guest);
 
   // Both draw their opening hands at the same time, then keep them.
   await Promise.all([draw(first, 3), draw(second, 4)]);
   await Promise.all([first, second].map(page => page.getByRole('button', { name: '交換せずに決定' }).click({ timeout: 15000 })));
+  for (const page of [first, second]) await expect(page.getByRole('timer', { name: 'ターン残り時間' })).toBeVisible({ timeout: 15000 });
 
   // Each side sees its own hand and only the backs of the other's.
   await expect(first.locator('[data-hand-list] [data-hand]')).toHaveCount(3, { timeout: 20000 });
@@ -87,6 +95,7 @@ test('two players meet in a room, play the opening and one gives up', async ({ b
 
   // A reload returns to the same seat.
   await second.reload();
+  await expect(second.getByRole('timer', { name: 'ターン残り時間' })).toBeVisible({ timeout: 20000 });
   await expect(second.locator('[data-hand-list] [data-hand]')).toHaveCount(4, { timeout: 20000 });
 
   // Giving up ends the match for both; "once more" takes both back to choosing decks.

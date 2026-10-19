@@ -1,0 +1,19 @@
+.clock { display: grid; justify-items: center; gap: 5px; width: 118px; max-width: 100%; padding: 7px 10px; border: 2px solid var(--brand-pink-edge); border-radius: 14px; background: var(--brand-paper); color: var(--brand-cocoa-deep); font-variant-numeric: tabular-nums; }
+.time { display: flex; align-items: center; justify-content: center; gap: 7px; font-size: 24px; font-weight: 700; line-height: 1.1; }
+.time svg { width: 19px; height: 19px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; }
+.clock meter { display: block; width: 100%; height: 6px; border: 0; border-radius: 4px; overflow: hidden; background: var(--brand-blush); }
+.clock meter::-webkit-meter-bar { border: 0; background: var(--brand-blush); }
+.clock meter::-webkit-meter-optimum-value { background: var(--brand-sage); }
+.clock meter::-moz-meter-bar { background: var(--brand-sage); }
+.clock[data-urgent] { background: var(--brand-vanilla); }
+.clock[data-urgent] meter::-webkit-meter-optimum-value { background: var(--brand-cocoa); }
+.clock[data-urgent] meter::-moz-meter-bar { background: var(--brand-cocoa); }
+.clock[data-paused] { border-style: dashed; }
+.clock small { font-size: 12px; line-height: 1.2; }
+@media (max-height: 600px) {
+  .clock { display: flex; align-items: center; padding: 4px 7px; gap: 6px; }
+  .time { flex-shrink: 0; font-size: 20px; }
+  .time svg { width: 16px; height: 16px; }
+  .clock meter { flex: 1; min-width: 0; }
+  .clock small { display: none; }
+}

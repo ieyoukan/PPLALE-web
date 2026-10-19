@@ -10,6 +10,8 @@ export { describeMatchRules, fruitNames, fruits, playableNow } from './rules.ts'
 export type { Fruit, MatchRules } from './rules.ts';
 
 export interface RoomRules extends MatchRules {
+    /** Per turn, in seconds. Omitted means unlimited; opening preparation is not timed. */
+    turnSeconds?: 120 | 180 | 300;
     /**
      * Whether others may watch. In a room match a spectator sees both hands, so it trusts
      * its players not to watch their own match; both players are told, and how many are watching.
@@ -34,14 +36,26 @@ export interface FreeMatchActivity {
 /** The usable part of anything sent as rules, or null when no fruit is left. */
 export function parseRoomRules(value: unknown): RoomRules | null {
     const rules = parseMatchRules(value);
-    return rules && { ...rules, spectators: (value as RoomRules).spectators === true };
+    const seconds = (value as RoomRules | null)?.turnSeconds;
+    return rules && { ...rules, spectators: (value as RoomRules).spectators === true,
+        ...((seconds === 120 || seconds === 180 || seconds === 300) && { turnSeconds: seconds }) };
 }
 
 /** Why the deck cannot be used in a room with these rules (empty when it can). */
 export const roomDeckErrors = (deck: Deck, rules: RoomRules, catalog: Catalog): string[] => deckRuleErrors(deck, rules, catalog, 'このルーム');
 
 /** One line for the lobby and for sharing, e.g. 「フルーツ：いちご ／ 拡張プレイアブル：なし ／ 観戦：なし」. */
-export const describeRoomRules = (rules: RoomRules) => `${describeMatchRules(rules)} ／ 観戦：${rules.spectators ? 'あり' : 'なし'}`;
+export const describeRoomRules = (rules: RoomRules) => `${describeMatchRules(rules)} ／ 観戦：${rules.spectators ? 'あり' : 'なし'} ／ 1ターン：${rules.turnSeconds ? `${rules.turnSeconds / 60}分` : '無制限'}`;
+
+/** The server's clock. During the opponent's choices the deadline is null and remainingMs is frozen. */
+export interface RoomTurnClock {
+    turn: number;
+    side: Side;
+    remainingMs: number;
+    deadline: number | null;
+    /** Used to write the time-expiry notice only once per turn. */
+    expired?: true;
+}
 
 // ── What a seat is told ──
 /** lobby: choosing decks. playing / finished: a match. closed: the host left before a match. */
@@ -59,6 +73,9 @@ export interface LastCommand {
 
 /** A room as one seat (or a spectator) sees it. `game` hides what they may not know (`viewFor`). */
 export interface RoomView {
+    turnClock?: RoomTurnClock;
+    /** Sampled when this view is sent, so countdowns do not depend on the browser's wall clock. */
+    serverNow?: number;
     id: string;
     mode?: 'free';
     /** Grows with every change of the room; an older view never replaces a newer one. */

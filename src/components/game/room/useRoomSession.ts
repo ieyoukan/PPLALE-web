@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useReducer, useRef, useState } from 'react';
 import type { Command, GameState, Side } from '@pplale/game-core';
-import type { BoardSession, Incoming } from '../board/useGameSession';
+import type { BoardSession, Incoming, RemoteSession } from '../board/useGameSession';
 import { withoutEditor } from '../board/useGameSession';
 import type { RoomCommand, RoomView } from '@pplale/game-core/room';
 import type { Room } from './useRoom';
@@ -10,6 +10,8 @@ import type { Room } from './useRoom';
 type Played = RoomView & { game: GameState };
 const played = (view: RoomView): view is Played => !!view.game;
 const nothing = () => {};
+const clockOf = (view: Played): RemoteSession['turnClock'] =>
+  view.turnClock && view.rules.turnSeconds ? { ...view.turnClock, serverNow: view.serverNow ?? Date.now(), receivedAt: performance.now(), limitMs: view.rules.turnSeconds * 1000 } : undefined;
 
 /** The view on the table, and the ones that arrived after it (oldest first). */
 type Table = { shown: Played; queue: Played[] };
@@ -30,7 +32,10 @@ export function useRoomSession({ room, initial, seat, onLeave, onFindNext }: { r
   const inFlight = useRef(false);
   const [failed, setFailed] = useState(0);
   const [error, setError] = useState('');
-  useEffect(() => subscribe(view => { if (played(view)) dispatch(view); }), [subscribe]);
+  const [turnClock, setTurnClock] = useState(() => clockOf(initial));
+  useEffect(() => subscribe(view => {
+    if (played(view)) { dispatch(view); setTurnClock(clockOf(view)); }
+  }), [subscribe]);
 
   const head = queue[0];
   const next = useMemo<Incoming | null>(() => head ? {
@@ -57,8 +62,8 @@ export function useRoomSession({ room, initial, seat, onLeave, onFindNext }: { r
   const rematch = useCallback(() => initial.mode === 'free' ? (onFindNext ?? onLeave)() : ask('rematch'), [ask, initial.mode, onFindNext, onLeave]);
 
   const names = useMemo<[string, string]>(() => [shown.players[0].name, shown.players[1]?.name ?? '相手'], [shown.players]);
-  const remote = useMemo(() => ({ seat, watching, ownDeck: shown.ownDeck, matchRules: shown.rules, freeMatch: initial.mode === 'free', names, sending: !linked || sending, waiting: !linked || sending || queue.length > 0, failed, next, accept, resign, resigned: shown.resigned, leave: onLeave }),
-    [seat, watching, shown.ownDeck, shown.rules, initial.mode, names, linked, sending, queue.length, failed, next, accept, resign, shown.resigned, onLeave]);
+  const remote = useMemo(() => ({ seat, watching, turnClock, ownDeck: shown.ownDeck, matchRules: shown.rules, freeMatch: initial.mode === 'free', names, sending: !linked || sending, waiting: !linked || sending || queue.length > 0, failed, next, accept, resign, resigned: shown.resigned, leave: onLeave }),
+    [seat, watching, turnClock, shown.ownDeck, shown.rules, initial.mode, names, linked, sending, queue.length, failed, next, accept, resign, shown.resigned, onLeave]);
   return {
     game: shown.game, error, history: [], commands: [], mode: 'room', levels: ['normal', 'normal'], ready: true, saveError: '',
     send, undo: nothing, canUndo: false, remote,

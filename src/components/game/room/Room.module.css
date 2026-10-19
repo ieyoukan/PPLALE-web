@@ -118,6 +118,9 @@
 .field input[type=text], .field select { width: 100%; min-height: 50px; padding: 10px 14px; border: 2px solid #d8cbbd; border-radius: 14px; background: #fffdf7; color: inherit; font-size: 18px; font-weight: 400; }
 .field select { color-scheme: light; }
 .field option { background: #fffdf7; color: #6b4a3a; }
+.turnLimit { display: grid; gap: 8px; color: var(--brand-cocoa-deep); font-weight: 700; }
+.turnLimit select { width: 100%; min-height: 48px; padding: 10px 14px; border: 2px solid var(--brand-pink-edge); border-radius: 14px; background: var(--brand-paper); color: inherit; font: inherit; color-scheme: light; }
+.turnLimit small { font-size: 13px; font-weight: 400; line-height: 1.7; }
 .idInput { max-width: 12em; font: 700 30px/1 ui-monospace, Menlo, monospace !important; letter-spacing: .28em; text-align: center; }
 
 .checks { display: grid; gap: 10px; padding: 14px; border: 2px solid #eadfce; border-radius: 16px; }

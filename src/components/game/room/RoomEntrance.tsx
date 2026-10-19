@@ -126,6 +126,18 @@ export function RoomEntrance() {
       <h2>ルームのルール</h2>
       {/* Which cards the decks may use: the same tiles as before a CPU match. Watching is the room's own. */}
       <RulePicker rules={rules} onChange={next => setRules(current => ({ ...current, ...next }))} />
+      <label className={styles.turnLimit}>1ターンの制限時間
+        <select value={rules.turnSeconds ?? 0} onChange={event => {
+          const seconds = Number(event.target.value);
+          setRules(current => ({ ...current, turnSeconds: seconds === 120 || seconds === 180 || seconds === 300 ? seconds : undefined }));
+        }}>
+          <option value={0}>無制限（OFF）</option>
+          <option value={120}>2分</option>
+          <option value={180}>3分</option>
+          <option value={300}>5分</option>
+        </select>
+        <small>相手の選択待ち中は停止。時間切れになると選択を自動で完了し、ターンを終了します。</small>
+      </label>
       <fieldset className={styles.checks}>
         <legend>観戦</legend>
         <div className={styles.checkRow}>
