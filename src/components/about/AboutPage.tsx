@@ -2,12 +2,12 @@
 
 import '@/app/panda.css';
 
-import React, { useCallback, useEffect, useState } from 'react';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
 import { AnimatePresence, motion, useReducedMotion } from 'framer-motion';
-import { siteTitleFont } from '@/app/fonts';
-import { css } from 'styled-system/css';
+import type { RulesHeading } from './RulesDoc';
+import styles from './AboutPage.module.css';
 
 interface Slide {
   src: string;
@@ -22,6 +22,8 @@ interface Group {
   icon: string;
   slides: Slide[];
 }
+
+type Mode = 'book' | 'text';
 
 const landscape = (src: string, title: string): Slide => ({ src: `/images/about/${src}.webp`, title, width: 1191, height: 842 });
 
@@ -52,12 +54,8 @@ const groups: Group[] = [
 ];
 
 const allSlides = groups.flatMap(group => group.slides);
-
-function GroupIcon({ icon }: { icon: string }) {
-  return icon.startsWith('/')
-    ? <Image src={icon} alt="" width={28} height={28} className={css({ w: '7', h: '7', objectFit: 'contain' })} />
-    : <span aria-hidden="true" className={css({ fontSize: 'xl', lineHeight: '1' })}>{icon}</span>;
-}
+const groupOf = (slide: Slide) => groups.find(group => group.slides.includes(slide))!;
+const clampPage = (page: number) => Math.min(allSlides.length - 1, Math.max(0, page));
 
 function Lightbox({ index, onClose, onMove }: { index: number; onClose: () => void; onMove: (step: number) => void }) {
   const slide = allSlides[index];
@@ -84,44 +82,23 @@ function Lightbox({ index, onClose, onMove }: { index: number; onClose: () => vo
     };
   }, [move, onClose]);
 
-  const arrowClass = css({
-    position: 'absolute', top: '50%', translate: '0 -50%', zIndex: '2',
-    w: '12', h: '12', rounded: 'full', bg: 'white/90', color: 'pink.600',
-    fontSize: '2xl', fontWeight: 'bold', boxShadow: 'lg', cursor: 'pointer',
-    display: { base: 'none', md: 'flex' }, alignItems: 'center', justifyContent: 'center',
-    transition: 'transform 0.15s ease',
-    _hover: { transform: 'scale(1.1)' },
-    _disabled: { opacity: '0.3', cursor: 'default', transform: 'none' },
-  });
-
   return (
     <motion.div
-      role="dialog" aria-modal="true" aria-label={slide.title}
-      className={css({
-        position: 'fixed', inset: '0', zIndex: '50', bg: 'rgba(40, 16, 34, 0.88)',
-        display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
-        px: { base: '2', md: '20' }, py: '14',
-      })}
+      role="dialog" aria-modal="true" aria-label={slide.title} className={styles.lightbox}
       initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
       onClick={onClose}
     >
-      <button type="button" aria-label="とじる" onClick={onClose} className={css({
-        position: 'absolute', top: '3', right: '3', w: '11', h: '11', rounded: 'full',
-        bg: 'white/90', color: 'pink.600', fontSize: '2xl', fontWeight: 'bold', cursor: 'pointer',
-        display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: 'lg',
-      })}>×</button>
-
-      <button type="button" aria-label="まえへ" disabled={index === 0} className={`${arrowClass} ${css({ left: '4' })}`}
+      <button type="button" aria-label="とじる" className={styles.close} onClick={onClose}>×</button>
+      <button type="button" aria-label="まえへ" disabled={index === 0} className={`${styles.arrow} ${styles.arrowLeft}`}
         onClick={event => { event.stopPropagation(); move(-1); }}>‹</button>
-      <button type="button" aria-label="つぎへ" disabled={index === allSlides.length - 1} className={`${arrowClass} ${css({ right: '4' })}`}
+      <button type="button" aria-label="つぎへ" disabled={index === allSlides.length - 1} className={`${styles.arrow} ${styles.arrowRight}`}
         onClick={event => { event.stopPropagation(); move(1); }}>›</button>
 
-      <div className={css({ position: 'relative', w: 'full', flex: '1', minH: '0' })}>
+      <div className={styles.lightboxStage}>
         <AnimatePresence initial={false} custom={direction} mode="popLayout">
           <motion.div
             key={slide.src}
-            custom={direction}
-            className={css({ position: 'absolute', inset: '0', touchAction: 'pan-y' })}
+            className={styles.lightboxSlide}
             initial={reduceMotion ? { opacity: 0 } : { opacity: 0, x: direction * 120, scale: 0.96 }}
             animate={{ opacity: 1, x: 0, scale: 1 }}
             exit={reduceMotion ? { opacity: 0 } : { opacity: 0, x: direction * -120, scale: 0.96 }}
@@ -133,109 +110,157 @@ function Lightbox({ index, onClose, onMove }: { index: number; onClose: () => vo
             }}
             onClick={event => event.stopPropagation()}
           >
-            <Image src={slide.src} alt={slide.title} fill unoptimized draggable={false}
-              style={{ objectFit: 'contain' }} />
+            <Image src={slide.src} alt={slide.title} fill unoptimized draggable={false} style={{ objectFit: 'contain' }} />
           </motion.div>
         </AnimatePresence>
-      </div>
-
-      <div aria-hidden="true" className={css({ display: 'flex', gap: '1.5', mt: '4', flexWrap: 'wrap', justifyContent: 'center' })}>
-        {allSlides.map((s, i) => (
-          <motion.span key={s.src} animate={{ width: i === index ? 20 : 8, opacity: i === index ? 1 : 0.45 }}
-            className={css({ h: '2', rounded: 'full', bg: 'pink.200' })} />
-        ))}
       </div>
     </motion.div>
   );
 }
 
-export default function AboutPage() {
+function Book({ onZoom, paused }: { onZoom: (page: number) => void; paused: boolean }) {
+  const [{ index, direction }, setPage] = useState({ index: 0, direction: 1 });
+  const reduceMotion = useReducedMotion();
+  const thumbsRef = useRef<HTMLDivElement>(null);
+  const slide = allSlides[index];
+  const activeGroup = groupOf(slide);
+
+  const turnTo = (next: number) => setPage(current => {
+    const index = clampPage(next);
+    return index === current.index ? current : { index, direction: index > current.index ? 1 : -1 };
+  });
+  const turn = (step: number) => setPage(current => {
+    const index = clampPage(current.index + step);
+    return index === current.index ? current : { index, direction: step };
+  });
+
+  useEffect(() => {
+    const strip = thumbsRef.current;
+    const thumb = strip?.children[index] as HTMLElement | undefined;
+    if (strip && thumb) strip.scrollTo({ left: thumb.offsetLeft - strip.clientWidth / 2 + thumb.clientWidth / 2, behavior: reduceMotion ? 'auto' : 'smooth' });
+  }, [index, reduceMotion]);
+
+  return (
+    <>
+      <nav aria-label="しょう" className={styles.chips}>
+        {groups.map(group => (
+          <button type="button" key={group.id} data-ui-title aria-label={`${group.icon} ${group.title}を開く`}
+            aria-pressed={activeGroup.id === group.id} className={styles.chip}
+            onClick={() => turnTo(allSlides.indexOf(group.slides[0]))}>
+            <span aria-hidden="true">{group.icon}</span>{group.title}
+          </button>
+        ))}
+      </nav>
+
+      <section className={styles.reader} aria-label="ぷぷりえーるの本" tabIndex={0}
+        onKeyDown={event => {
+          if (paused) return;
+          if (event.key === 'ArrowRight') { event.preventDefault(); turn(1); }
+          if (event.key === 'ArrowLeft') { event.preventDefault(); turn(-1); }
+          if (event.key === 'Home') { event.preventDefault(); turnTo(0); }
+          if (event.key === 'End') { event.preventDefault(); turnTo(allSlides.length - 1); }
+        }}>
+        <div className={styles.book}>
+          <div className={styles.paper}>
+            <AnimatePresence initial={false} custom={direction} mode="wait">
+              <motion.div key={slide.src} custom={direction} className={styles.page}
+                variants={{
+                  enter: (direction: number) => reduceMotion ? { opacity: 0 } : { opacity: 0, rotateY: direction > 0 ? 75 : -75 },
+                  visible: { opacity: 1, rotateY: 0 },
+                  leave: (direction: number) => reduceMotion ? { opacity: 0 } : { opacity: 0, rotateY: direction > 0 ? -75 : 75 },
+                }}
+                initial="enter" animate="visible" exit="leave"
+                transition={{ duration: reduceMotion ? 0 : 0.22, ease: 'easeInOut' }}
+                style={{ transformOrigin: direction > 0 ? 'left center' : 'right center' }}
+                drag="x" dragConstraints={{ left: 0, right: 0 }} dragElastic={0.15}
+                onDragEnd={(_, info) => {
+                  if (info.offset.x < -45) turn(1);
+                  if (info.offset.x > 45) turn(-1);
+                }}>
+                <Image src={slide.src} alt={slide.title} fill unoptimized draggable={false} style={{ objectFit: 'contain' }} />
+              </motion.div>
+            </AnimatePresence>
+            <button type="button" className={styles.zoom} aria-label="このページを大きく見る" onClick={() => onZoom(index)}>⤢</button>
+          </div>
+        </div>
+
+        <div className={styles.controls}>
+          <button type="button" aria-label="前のページ" disabled={index === 0} onClick={() => turn(-1)}>‹</button>
+          <span role="status" aria-live="polite" aria-atomic="true" className={styles.pageNumber}>
+            <span className={styles.pageTitle}>{slide.title}</span>
+            <span>{index + 1}<small> / {allSlides.length}</small></span>
+          </span>
+          <button type="button" aria-label="次のページ" disabled={index === allSlides.length - 1} onClick={() => turn(1)}>›</button>
+        </div>
+
+        <div ref={thumbsRef} className={styles.thumbs} aria-label="ページいちらん" role="group">
+          {allSlides.map((thumb, i) => (
+            <button type="button" key={thumb.src} aria-label={`${i + 1}ページ ${thumb.title}`} aria-current={i === index ? 'page' : undefined}
+              className={styles.thumb} onClick={() => turnTo(i)}>
+              <Image src={thumb.src} alt="" width={96} height={68} unoptimized loading="lazy" />
+            </button>
+          ))}
+        </div>
+      </section>
+    </>
+  );
+}
+
+function RulesText({ rulesDoc, headings }: { rulesDoc: React.ReactNode; headings: RulesHeading[] }) {
+  return (
+    <>
+      <nav aria-label="もくじ" className={`${styles.chips} ${styles.stickyChips}`}>
+        {headings.map(heading => (
+          <button type="button" key={heading.id} data-ui-title className={styles.chip}
+            onClick={() => document.getElementById(heading.id)?.scrollIntoView({ behavior: 'smooth' })}>
+            {heading.title.replace(/^[\d.]+\s*/, '')}
+          </button>
+        ))}
+      </nav>
+      <article aria-label="ルール・裁定集" className={styles.sheet}>{rulesDoc}</article>
+    </>
+  );
+}
+
+export default function AboutPage({ rulesDoc, rulesHeadings }: { rulesDoc: React.ReactNode; rulesHeadings: RulesHeading[] }) {
+  const [mode, setMode] = useState<Mode>('book');
   const [openIndex, setOpenIndex] = useState<number | null>(null);
   const close = useCallback(() => setOpenIndex(null), []);
   const moveBy = useCallback((step: number) => {
-    setOpenIndex(current => current === null ? null : Math.min(allSlides.length - 1, Math.max(0, current + step)));
+    setOpenIndex(current => current === null ? null : clampPage(current + step));
   }, []);
 
-  return (
-    <main className={css({ position: 'relative', minH: 'screen', w: 'full' })}>
-      <div aria-hidden="true" className={css({ position: 'fixed', inset: '0', zIndex: '-1' })}
-        style={{ backgroundImage: 'url("/images/check-pattern.png")', backgroundRepeat: 'repeat', backgroundSize: '100px 100px' }}>
-        <div className={css({ position: 'absolute', inset: '0', bg: 'black/10' })} />
-      </div>
+  useEffect(() => {
+    if (window.location.hash === '#text') setMode('text');
+  }, []);
 
-      <nav aria-label="もくじ" className={css({
-        position: 'sticky', top: '0', zIndex: '20', bg: 'white/85', backdropBlur: 'md',
-        borderBottomWidth: '2px', borderColor: 'pink.200', boxShadow: 'sm',
-      })}>
-        <div className={css({ maxW: '6xl', mx: 'auto', px: '3', py: '2', display: 'flex', alignItems: 'center', gap: '2' })}>
-          <Link href="/" aria-label="トップへもどる" className={css({
-            flexShrink: '0', w: '10', h: '10', rounded: 'full', bg: 'pink.100', color: 'pink.600',
-            display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 'xl', fontWeight: 'bold',
-            transition: 'transform 0.15s ease', _hover: { transform: 'scale(1.1)' },
-          })}>‹</Link>
-          <div className={css({ display: 'flex', gap: '2', overflowX: 'auto', scrollbarWidth: 'none', py: '1' })}>
-            {groups.map(group => (
-              <a key={group.id} href={`#${group.id}`} className={`${siteTitleFont.className} ${css({
-                flexShrink: '0', display: 'flex', alignItems: 'center', gap: '1.5', px: '3.5', h: '10',
-                rounded: 'full', bg: 'white', borderWidth: '2px', borderColor: 'pink.200', color: 'pink.600',
-                fontSize: 'lg', whiteSpace: 'nowrap', transition: 'all 0.15s ease',
-                _hover: { bg: 'pink.50', borderColor: 'pink.400', transform: 'translateY(-2px)' },
-              })}`}>
-                <GroupIcon icon={group.icon} />{group.title}
-              </a>
+  const changeMode = (next: Mode) => {
+    setMode(next);
+    window.history.replaceState(null, '', next === 'text' ? '#text' : window.location.pathname);
+    window.scrollTo({ top: 0 });
+  };
+
+  return (
+    <main className={styles.main}>
+      <header className={styles.bar}>
+        <div className={styles.barInner}>
+          <Link href="/" aria-label="トップへもどる" className={styles.back}>‹</Link>
+          <div role="tablist" aria-label="よみかた" className={styles.modes}>
+            {([['book', '📖', '本でよむ'], ['text', '📝', 'もじでよむ']] as const).map(([value, icon, label]) => (
+              <button type="button" role="tab" key={value} aria-selected={mode === value} className={styles.mode}
+                onClick={() => changeMode(value)}>
+                <span aria-hidden="true">{icon}</span>{label}
+              </button>
             ))}
           </div>
         </div>
-      </nav>
+      </header>
 
-      <div className={css({ maxW: '6xl', mx: 'auto', px: '4', pt: '8', pb: '24' })}>
-        <motion.h1
-          className={`${siteTitleFont.className} ${css({ fontSize: '4xl', md: { fontSize: '5xl' }, textAlign: 'center', color: 'white', mb: '6' })}`}
-          initial={{ opacity: 0, y: -30 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.6 }}
-          style={{ WebkitTextStroke: '3px #f9a8d4', paintOrder: 'stroke fill' }}
-        >
+      <div className={styles.content}>
+        <motion.h1 className={styles.title} initial={{ opacity: 0, y: -24 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5 }}>
           ぷぷりえーるとは
         </motion.h1>
-
-        {groups.map(group => (
-          <section key={group.id} id={group.id} aria-label={group.title} className={css({ scrollMarginTop: '20', mt: '10' })}>
-            <h2 className={`${siteTitleFont.className} ${css({
-              display: 'inline-flex', alignItems: 'center', gap: '2', mb: '4', px: '5', py: '1.5',
-              rounded: 'full', bg: 'yellow.200/90', color: 'pink.500', fontSize: '2xl', boxShadow: 'md',
-            })}`}>
-              <GroupIcon icon={group.icon} />{group.title}
-            </h2>
-            <div className={css({
-              display: 'grid', gap: '4',
-              gridTemplateColumns: group.slides.length === 1 ? '1fr' : { base: '1fr', sm: 'repeat(2, minmax(0, 1fr))', lg: 'repeat(3, minmax(0, 1fr))' },
-              maxW: group.slides.length === 1 ? '3xl' : 'none',
-            })}>
-              {group.slides.map(slide => (
-                <motion.button
-                  key={slide.src}
-                  type="button"
-                  aria-label={`${slide.title}を大きく見る`}
-                  onClick={() => setOpenIndex(allSlides.indexOf(slide))}
-                  className={css({
-                    position: 'relative', display: 'block', w: 'full', bg: 'white', p: '1.5',
-                    rounded: '2xl', overflow: 'hidden', cursor: 'zoom-in',
-                    boxShadow: '0 8px 20px rgba(157, 70, 108, 0.18)',
-                    gridRow: slide.height > slide.width ? { sm: 'span 2' } : undefined,
-                    _focusVisible: { outline: '3px solid', outlineColor: 'pink.500', outlineOffset: '3px' },
-                  })}
-                  initial={{ opacity: 0, y: 40 }}
-                  whileInView={{ opacity: 1, y: 0 }}
-                  viewport={{ once: true, margin: '-60px' }}
-                  whileHover={{ y: -6 }}
-                  whileTap={{ scale: 0.97 }}
-                >
-                  <Image src={slide.src} alt={slide.title} width={slide.width} height={slide.height} unoptimized
-                    className={css({ w: 'full', h: slide.height > slide.width ? 'full' : 'auto', objectFit: 'contain', rounded: 'xl' })} />
-                </motion.button>
-              ))}
-            </div>
-          </section>
-        ))}
+        {mode === 'book' ? <Book onZoom={setOpenIndex} paused={openIndex !== null} /> : <RulesText rulesDoc={rulesDoc} headings={rulesHeadings} />}
       </div>
 
       <AnimatePresence>

@@ -1,0 +1,48 @@
+.doc {
+  color: var(--brand-cocoa-deep);
+  font-size: 15px;
+  line-height: 1.85;
+  overflow-wrap: anywhere;
+}
+.doc h2 {
+  margin: 40px 0 14px;
+  padding-bottom: 6px;
+  border-bottom: 3px dotted var(--brand-pink-edge);
+  color: var(--brand-cocoa);
+  font-size: 22px;
+  line-height: 1.4;
+  scroll-margin-top: 140px;
+}
+.doc h2:first-child { margin-top: 0; }
+.doc h3 { margin: 26px 0 10px; color: var(--brand-cocoa); font-size: 18px; }
+.doc p, .doc ul, .doc ol { margin: 10px 0; }
+.doc ul, .doc ol { padding-left: 1.5em; }
+.doc ul { list-style: disc; }
+.doc ol { list-style: decimal; }
+.doc li { margin: 4px 0; }
+.doc li::marker { color: var(--brand-cocoa-soft); }
+.doc strong { color: var(--brand-cocoa); background: linear-gradient(transparent 62%, var(--brand-vanilla) 62%); }
+.tableWrap {
+  margin: 12px 0 18px;
+  overflow-x: auto;
+  border: 2px solid var(--brand-pink);
+  border-radius: 14px;
+  background: var(--brand-paper);
+}
+.tableWrap table { width: 100%; min-width: 520px; border-collapse: collapse; font-size: 14px; line-height: 1.7; }
+.tableWrap th {
+  position: sticky;
+  top: 0;
+  padding: 8px 12px;
+  background: var(--brand-blush);
+  color: var(--brand-cocoa);
+  text-align: left;
+  white-space: nowrap;
+}
+.tableWrap td { padding: 8px 12px; border-top: 1px solid var(--brand-pink); vertical-align: top; }
+.tableWrap tr:nth-child(even) td { background: var(--brand-cream); }
+.tableWrap td:first-child { color: var(--brand-cocoa); font-weight: 700; }
+@media (max-width: 640px) {
+  .doc { font-size: 14px; }
+  .doc h2 { font-size: 19px; }
+}

@@ -39,7 +39,7 @@ const config: NextConfig = {
     optimizePackageImports: ['framer-motion'],
   },
   serverExternalPackages: ['@vercel/og', 'sharp'],
-  outputFileTracingIncludes: { '/api/og/**': ['./public/og-cards/**/*.png'], '/api/og/profile/**': ['./public/images/token/**/*.webp', './public/og-cards/profile-bg.jpg'] },
+  outputFileTracingIncludes: { '/about': ['./docs/game-rules.md'], '/api/og/**': ['./public/og-cards/**/*.png'], '/api/og/profile/**': ['./public/images/token/**/*.webp', './public/og-cards/profile-bg.jpg'] },
   // 本番環境用の設定
   assetPrefix: '',
   basePath: '',

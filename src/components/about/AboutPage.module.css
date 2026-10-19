@@ -1,0 +1,164 @@
+/* 色は src/app/brand.css の --brand-* を使う（docs/design-system.md）。 */
+.main {
+  min-height: 100vh;
+  background-color: var(--brand-cream);
+  background-image: var(--brand-gingham);
+  background-size: 100px 100px;
+  color: var(--brand-cocoa-deep);
+}
+
+/* 上部のバー */
+.bar {
+  position: sticky;
+  top: 0;
+  z-index: 20;
+  background: color-mix(in srgb, var(--brand-paper) 90%, transparent);
+  backdrop-filter: blur(8px);
+  border-bottom: 2px solid var(--brand-pink);
+  box-shadow: 0 2px 10px var(--brand-shadow);
+}
+.barInner { display: flex; align-items: center; gap: 10px; max-width: 1100px; margin: 0 auto; padding: 8px 12px; }
+.back, .mode, .chip, .zoom, .controls button, .close, .arrow {
+  border: 2px solid var(--brand-pink-edge);
+  background: var(--brand-paper);
+  color: var(--brand-cocoa-deep);
+  box-shadow: 0 3px 0 var(--brand-pink-edge);
+  cursor: pointer;
+  transition: transform .15s, background .15s, box-shadow .15s;
+}
+.back { display: grid; place-items: center; flex-shrink: 0; width: 42px; height: 42px; border-radius: 50%; font-size: 26px; font-weight: 700; line-height: 1; }
+.modes { display: flex; gap: 8px; margin-left: auto; }
+.mode { display: flex; align-items: center; gap: 6px; height: 42px; padding: 0 16px; border-radius: 999px; font-size: 15px; white-space: nowrap; }
+.mode[aria-selected='true'] { background: var(--brand-pink); transform: translateY(2px); box-shadow: 0 1px 0 var(--brand-pink-edge); }
+.back:hover, .mode:not([aria-selected='true']):hover, .chip:not([aria-pressed='true']):hover,
+.zoom:hover, .controls button:not(:disabled):hover, .close:hover, .arrow:not(:disabled):hover {
+  background: var(--brand-blush);
+  transform: translateY(-2px);
+}
+
+.content { max-width: 1100px; margin: 0 auto; padding: 28px 16px 96px; }
+.title {
+  margin: 0 0 18px;
+  color: var(--brand-cocoa);
+  font-size: clamp(26px, 4vw, 40px);
+  font-weight: 400;
+  line-height: 1.4;
+  text-align: center;
+}
+
+/* 章・見出しへのジャンプ */
+.chips { display: flex; gap: 8px; margin: 0 -16px 18px; padding: 4px 16px 6px; overflow-x: auto; scrollbar-width: none; }
+.chips::-webkit-scrollbar { display: none; }
+.chip { display: flex; align-items: center; gap: 6px; flex-shrink: 0; height: 40px; padding: 0 14px; border-radius: 999px; font-size: 15px; white-space: nowrap; }
+.chip[aria-pressed='true'] { background: var(--brand-vanilla); transform: translateY(2px); box-shadow: 0 1px 0 var(--brand-pink-edge); }
+.stickyChips { position: sticky; top: 60px; z-index: 10; padding-top: 8px; padding-bottom: 8px; background: linear-gradient(var(--brand-cream) 70%, transparent); }
+@media (min-width: 1132px) { .chips:not(.stickyChips) { justify-content: center; flex-wrap: wrap; } }
+
+/* 本 */
+.reader { outline-offset: 8px; }
+.book {
+  position: relative;
+  padding: 10px 10px 16px 22px;
+  border-radius: 8px 20px 20px 8px;
+  background: linear-gradient(90deg, #5a3f3f, var(--brand-cocoa) 12px, #8c6a66 20px, var(--brand-cocoa));
+  box-shadow: 0 18px 40px #4a2f2f40, 0 3px 0 var(--brand-cocoa-deep);
+}
+.book::after {
+  content: '';
+  position: absolute;
+  right: 12px;
+  left: 24px;
+  bottom: 7px;
+  height: 8px;
+  border-radius: 0 0 10px 0;
+  background: repeating-linear-gradient(var(--brand-paper) 0 2px, var(--brand-pink) 2px 3px);
+}
+.paper { position: relative; aspect-ratio: 1191 / 842; perspective: 1800px; background: var(--brand-paper); border-radius: 3px 12px 12px 3px; }
+.page { position: absolute; inset: 0; background: var(--brand-paper); border-radius: inherit; overflow: hidden; touch-action: pan-y; backface-visibility: hidden; }
+.page::after { content: ''; position: absolute; inset: 0; pointer-events: none; background: linear-gradient(90deg, #73503e26, transparent 3%, transparent 97%, #73503e0d); }
+.zoom {
+  position: absolute;
+  right: 10px;
+  bottom: 10px;
+  z-index: 2;
+  display: grid;
+  place-items: center;
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  font-size: 24px;
+}
+
+.controls { display: flex; justify-content: center; align-items: center; gap: 20px; margin: 22px auto 14px; }
+.controls button { display: grid; place-items: center; flex-shrink: 0; width: 52px; height: 52px; border-radius: 50%; font-size: 36px; line-height: 1; }
+.controls button:disabled { opacity: .35; cursor: default; box-shadow: none; }
+.pageNumber { display: flex; flex-direction: column; align-items: center; gap: 4px; min-width: 100px; color: var(--brand-cocoa); font-weight: 700; font-variant-numeric: tabular-nums; }
+.pageNumber small { color: var(--brand-cocoa-soft); font-size: 14px; }
+.pageTitle { max-width: 460px; text-align: center; font-size: 13px; }
+
+.thumbs { display: flex; gap: 8px; padding: 6px 4px 10px; overflow-x: auto; scrollbar-width: thin; scrollbar-color: var(--brand-pink-edge) transparent; }
+.thumb {
+  flex-shrink: 0;
+  width: 96px;
+  height: 68px;
+  padding: 0;
+  border: 3px solid transparent;
+  border-radius: 10px;
+  overflow: hidden;
+  background: var(--brand-paper);
+  box-shadow: 0 3px 8px var(--brand-shadow);
+  opacity: .7;
+  cursor: pointer;
+  transition: transform .15s, opacity .15s, border-color .15s;
+}
+.thumb img { width: 100%; height: 100%; object-fit: cover; object-position: top; }
+.thumb:hover { opacity: 1; transform: translateY(-3px); }
+.thumb[aria-current='page'] { border-color: var(--brand-cocoa); opacity: 1; transform: translateY(-3px); }
+
+/* もじでよむ */
+.sheet {
+  max-width: 880px;
+  margin: 0 auto;
+  padding: 32px clamp(16px, 4vw, 44px);
+  border: 2px solid var(--brand-pink);
+  border-radius: 24px;
+  background: var(--brand-paper);
+  box-shadow: 0 12px 30px var(--brand-shadow);
+}
+
+/* 拡大表示 */
+.lightbox {
+  position: fixed;
+  inset: 0;
+  z-index: 50;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 56px 8px;
+  background: #3a2626e0;
+}
+.lightboxStage { position: relative; width: 100%; height: 100%; }
+.lightboxSlide { position: absolute; inset: 0; touch-action: pan-y; }
+.close { position: absolute; top: 10px; right: 10px; z-index: 2; display: grid; place-items: center; width: 44px; height: 44px; border-radius: 50%; font-size: 26px; font-weight: 700; }
+.arrow { position: absolute; top: 50%; z-index: 2; display: none; place-items: center; width: 48px; height: 48px; margin-top: -24px; border-radius: 50%; font-size: 30px; font-weight: 700; }
+.arrow:disabled { opacity: .3; cursor: default; }
+.arrowLeft { left: 16px; }
+.arrowRight { right: 16px; }
+
+.reader:focus-visible, .main button:focus-visible, .main a:focus-visible { outline: 3px solid var(--brand-cocoa); outline-offset: 4px; }
+
+@media (min-width: 768px) {
+  .lightbox { padding: 56px 80px; }
+  .arrow { display: grid; }
+}
+@media (max-width: 640px) {
+  .mode { padding: 0 12px; font-size: 14px; }
+  .book { padding: 6px 6px 12px 12px; border-radius: 5px 12px 12px 5px; }
+  .book::after { left: 14px; right: 8px; bottom: 5px; }
+  .controls { gap: 12px; }
+  .pageTitle { max-width: 190px; }
+  .thumb { width: 72px; height: 51px; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .main *, .main *::after { transition: none; }
+}
