@@ -26,7 +26,8 @@ export function turnTimeoutCommand(room: Room, now: number): RoomCommand | null 
         if (state.pending.task.actor !== state.active) return null;
         const options = state.pending.options;
         // Decline optional effects and finish optional reveals rather than spend extra resources.
-        const option = options.find(o => ['skip', 'no', 'done'].includes(o.id)) ?? options[0];
+        const option = state.pending.task.op === 'die' ? options.find(o => /^[1-6]$/.test(o.id))
+            : options.find(o => ['skip', 'no', 'done'].includes(o.id)) ?? options[0];
         return option ? { type: 'choose', actor: state.active, option: option.id } : null;
     }
     return { type: 'end', actor: state.active };

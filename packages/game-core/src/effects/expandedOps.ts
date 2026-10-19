@@ -11,6 +11,7 @@ import { commitPlay, playAnswers } from '../commands/play.ts';
 import type { Task } from '../model.ts';
 import { skillsFor } from '../playables/skills.ts';
 import { activateSkill, reactionSkills } from '../playables/usage.ts';
+import { diceChoice } from './diceChoice.ts';
 
 export const expandedOps: OpTable = {
     endEffects: {
@@ -53,12 +54,14 @@ export const expandedOps: OpTable = {
     die: {
         run(fx, t) {
             const credit = fx.me.exSkills?.dice;
-            if (!t.target && credit && credit.uses > 0) {
-                fx.ask('クマはサイコロを振らない：出目を指定しますか？', [{ id: 'roll', label: '使わずに振る' }, ...Array.from({ length: 6 }, (_, i) => ({ id: String(i + 1), label: `出目を${i + 1}にする（残り${credit.uses}回）` }))], t);
+            const automatic = !!credit && credit.uses > 0;
+            if (automatic && (!t.target || !/^[1-6]$/.test(t.target))) {
+                const choice = diceChoice(credit.uses);
+                fx.ask(choice.prompt, choice.options, t);
                 return;
             }
-            const value = t.target && t.target !== 'roll' ? Number(t.target) : rollDie(fx.s);
-            if (t.target && t.target !== 'roll' && credit) credit.uses--;
+            const value = automatic ? Number(t.target) : rollDie(fx.s);
+            if (automatic) credit.uses--;
             fx.s.effectRoll = { revision: fx.s.revision + 1, side: t.actor, value, cardId: t.source ? fx.s.cards[t.source].cardId : undefined };
             if (t.resume) fx.next({ ...t.resume, value });
         },

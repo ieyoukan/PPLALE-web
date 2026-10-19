@@ -3,6 +3,7 @@
 // everything that side cannot see blanked out.
 import { other, sides } from './model.ts';
 import type { Choice, GameState, Instance, Side, Task } from './model.ts';
+import { refreshDiceChoice } from './effects/diceChoice.ts';
 
 /** `cardId` of a card the viewer cannot see. It is in no catalog; only its place and uid are known. */
 export const HIDDEN_CARD = 'hidden';
@@ -21,6 +22,7 @@ const serialOf = (uid: string) => Number(uid.slice(1)) || 0;
  */
 export function viewFor(state: GameState, viewer: Side | 'spectator' | 'audience'): GameState {
     const s: GameState = JSON.parse(JSON.stringify(state));
+    refreshDiceChoice(s);
     const hidden = new Set<string>();
     for (const side of sides) {
         for (const kind of ['yojo', 'sweet'] as const) {

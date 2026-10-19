@@ -6,6 +6,7 @@ import { openingCommands } from './opening.ts';
 import { advancePhase } from './phases.ts';
 import { sandboxCommands } from './sandbox.ts';
 import { turnCommands } from './turn.ts';
+import { refreshDiceChoice } from '../effects/diceChoice.ts';
 import type { Handler, Handlers } from './types.ts';
 
 const handlers: Handlers<Command['type']> = { ...openingCommands, ...turnCommands, ...sandboxCommands };
@@ -18,6 +19,7 @@ export function applyCommand(previous: GameState, command: Command, catalog: Cat
     const s = cloneState(previous);
     try {
         if (s.winner !== null) throw new RuleError('この対戦は終了しています');
+        refreshDiceChoice(s);
         if (command.type in sandboxCommands && !allowAdjust) throw new RuleError('テスト操作は両側操作モードで利用できます');
         (handlers[command.type] as Handler<typeof command.type>)(s, command, catalog);
         resolveQueue(s, catalog);

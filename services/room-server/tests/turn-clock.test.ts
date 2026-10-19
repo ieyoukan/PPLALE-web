@@ -145,6 +145,16 @@ test('a zero-time turn can still pause for the opponent, then automatically fini
     assert.equal(room.rules.turnSeconds, 120);
 });
 
+test('timeout cannot decline the automatic die skill, including a legacy waiting choice', () => {
+    const { room } = fixture();
+    room.state!.players[0].exSkills = { dice: { uses: 1 } };
+    room.state!.pending = { task: { op: 'die', actor: 0 }, prompt: '', options: [{ id: 'roll', label: '使わずに振る' }, { id: '6', label: '6' }] };
+    assert.deepEqual(turnTimeoutCommand(room, 121_000), { type: 'choose', actor: 0, option: '6' });
+    assert.ok(expireTurn(room, catalog, 121_000));
+    assert.equal(room.state!.players[0].exSkills!.dice!.uses, 0);
+    assert.equal(room.state!.effectRoll!.value, 6);
+});
+
 test('two instances automatically commit a deadline once and send the same clock to both browsers', { timeout: 10_000 }, async t => {
     const data = shared(), a = await serve({ data, beatSeconds: 60 }), b = await serve({ data, beatSeconds: 60 });
     t.after(async () => { await b.close(); await a.close(); });

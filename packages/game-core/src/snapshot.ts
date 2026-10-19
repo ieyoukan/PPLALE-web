@@ -4,6 +4,7 @@ import { deckLabel, exSkillIds, keywords } from './model.ts';
 import type { Catalog, ExSkillId, GameState, Task, TaskOp } from './model.ts';
 import { selectable, unitsInScope } from './effects/targets.ts';
 import { opDef, resolveQueue } from './effects/resolve.ts';
+import { refreshDiceChoice } from './effects/diceChoice.ts';
 
 const integer = z.number().int();
 const positive = integer.nonnegative();
@@ -52,6 +53,7 @@ export function restoreGame(value: unknown, catalog: Catalog): GameState | null 
     const validTask = (t: SavedQueued): boolean => !!opDef(t.op as TaskOp) && (!t.resume || validTask(t.resume));
     if ([...s.queue, ...(s.pending ? [s.pending.task] : [])].some(t => !validTask(t))) return null;
     migrateTurnRules(s, catalog);
+    refreshDiceChoice(s as GameState);
     return s as GameState;
 }
 
