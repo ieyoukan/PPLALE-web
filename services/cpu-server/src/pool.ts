@@ -4,8 +4,8 @@ import type { ValueModel } from '@pplale/game-core';
 
 export type Task =
     | { kind: 'selfplay'; seeds: number[]; share: number }
-    /** `candidate` against the built-in model on each seed, once in each seat. */
-    | { kind: 'gate'; seeds: number[]; candidate: ValueModel };
+    /** `candidate` against `champion` (the model handed out now) on each seed, once in each seat. */
+    | { kind: 'gate'; seeds: number[]; candidate: ValueModel; champion: ValueModel };
 export type Answer<T extends Task> = T extends { kind: 'selfplay' }
     ? { x: Float32Array; y: Uint8Array; match: Uint32Array }
     : { wins: number; matches: number };

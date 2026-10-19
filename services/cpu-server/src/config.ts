@@ -26,15 +26,13 @@ export interface Config {
         selfPlayGames: number;
         /** A recorded position counts as this many self-play positions. */
         humanWeight: number;
-        /** The candidate plays the built-in model this many seeds, both seats each. */
-        gatePairs: number;
-        /** Win rate against the built-in model a candidate needs to be published. */
-        gateMinRate: number;
         /**
-         * The comparison stops as soon as the candidate is this many wins ahead of (or behind) that
-         * rate: clear results need far fewer matches. 0 always plays every match.
+         * Win rate against the model handed out now that counts as stronger: a new model is handed
+         * out only when the matches show it (sequential test, see compareVerdict in game-core).
          */
-        gateEarlyLead: number;
+        gateBetter: number;
+        /** Matches after which an undecided comparison counts as not stronger. */
+        gateMaxMatches: number;
     };
     /** The image's version: self-play data is collected again when it changes. */
     version: string;
@@ -54,9 +52,8 @@ export function loadConfig(): Config {
             threads: number('TRAIN_THREADS', Math.max(1, os.availableParallelism() - 1), 1),
             selfPlayGames: number('SELFPLAY_GAMES', 40000, 10),
             humanWeight: number('HUMAN_WEIGHT', 3),
-            gatePairs: number('GATE_PAIRS', 150, 1),
-            gateMinRate: number('GATE_MIN_RATE', 0.5),
-            gateEarlyLead: number('GATE_EARLY_LEAD', 6),
+            gateBetter: Math.min(0.9, Math.max(0.51, number('GATE_BETTER', 0.55))),
+            gateMaxMatches: number('GATE_MAX_MATCHES', 600, 2),
         },
         version: process.env.APP_VERSION ?? 'dev',
     };

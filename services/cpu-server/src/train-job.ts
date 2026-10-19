@@ -5,6 +5,7 @@ import { existsSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import path from 'node:path';
 import { pathToFileURL } from 'node:url';
 import { trainValue, valueData, VALUE_ROW } from '@pplale/game-core/train';
+import { compareVerdict, defaultCompareRule } from '@pplale/game-core/ai';
 import type { ValueData } from '@pplale/game-core/train';
 import { catalog } from './catalog.ts';
 import { loadConfig } from './config.ts';
@@ -21,16 +22,6 @@ const RECORD_ID = 3_000_000_000;
 const SHARE = 0.5, CHUNK = 100;
 
 export interface Gate { wins: number; matches: number }
-/**
- * Whether the candidate may be published, or null while the comparison is still open. Decided
- * early once it is `earlyLead` wins ahead of (or behind) the required rate, otherwise by the rate
- * after all `total` matches.
- */
-export function gateVerdict({ wins, matches }: Gate, { minRate, earlyLead, total }: { minRate: number; earlyLead: number; total: number }): boolean | null {
-    const ahead = wins - matches * minRate;
-    if (earlyLead > 0 && Math.abs(ahead) >= earlyLead) return ahead > 0;
-    return matches >= total ? ahead >= 0 : null;
-}
 
 const bytes = (array: Uint32Array | Uint8Array | Float32Array) => Buffer.from(array.buffer, array.byteOffset, array.byteLength);
 
@@ -79,15 +70,15 @@ export async function train(store: Store, config: Config, log: (line: string) =>
     const result = trainValue(data);
     log(`trained: validation loss ${result.fit.loss.toFixed(4)} (hand-written value ${result.baseline.loss.toFixed(4)})`);
 
-    const seeds = Array.from({ length: training.gatePairs }, (_, i) => GATE_SEED + i);
-    const rule = { minRate: training.gateMinRate, earlyLead: training.gateEarlyLead, total: seeds.length * 2 };
+    // The candidate has to be clearly stronger than the model handed out now (compare.ts), not just even.
+    const champion = store.currentModel(), rule = { ...defaultCompareRule, better: training.gateBetter, max: training.gateMaxMatches };
+    const seeds = Array.from({ length: Math.ceil(rule.max / 2) }, (_, i) => GATE_SEED + i);
     const tally = (answers: Gate[]) => answers.reduce((sum, answer) => ({ wins: sum.wins + answer.wins, matches: sum.matches + answer.matches }), { wins: 0, matches: 0 });
-    const gate = tally(await runTasks(seeds.map(seed => ({ kind: 'gate' as const, seeds: [seed], candidate: result.model })), training.threads,
-        answers => gateVerdict(tally(answers), rule) !== null));
-    // Stopped early or not, the same rule decides.
-    const published = gateVerdict(gate, { ...rule, total: gate.matches }) === true;
-    const version = published ? store.publish(result.model).version : store.currentModel().version;
-    log(`against the built-in model: ${gate.wins}/${gate.matches} (${(gate.wins / gate.matches * 100).toFixed(1)}%) → ${published ? `published as ${version}` : 'not published'}`);
+    const gate = tally(await runTasks(seeds.map(seed => ({ kind: 'gate' as const, seeds: [seed], candidate: result.model, champion: champion.model })), training.threads,
+        answers => compareVerdict(tally(answers), rule) !== null));
+    const published = compareVerdict(gate, { ...rule, max: gate.matches }) === true;
+    const version = published ? store.publish(result.model).version : champion.version;
+    log(`against ${champion.version}: ${gate.wins}/${gate.matches} (${(gate.wins / Math.max(1, gate.matches) * 100).toFixed(1)}%) → ${published ? `published as ${version}` : 'not published'}`);
 
     const run: TrainingRun = { at: new Date().toISOString(), reports: records.length, positions: [recorded.y.length, self.y.length], loss: result.fit.loss, gate, version, published };
     const history = store.training();

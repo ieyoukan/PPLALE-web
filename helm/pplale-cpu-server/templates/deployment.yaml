@@ -56,12 +56,10 @@ spec:
               value: {{ .Values.training.selfPlayGames | quote }}
             - name: HUMAN_WEIGHT
               value: {{ .Values.training.humanWeight | quote }}
-            - name: GATE_PAIRS
-              value: {{ .Values.training.gatePairs | quote }}
-            - name: GATE_MIN_RATE
-              value: {{ .Values.training.gateMinRate | quote }}
-            - name: GATE_EARLY_LEAD
-              value: {{ .Values.training.gateEarlyLead | quote }}
+            - name: GATE_BETTER
+              value: {{ .Values.training.gateBetter | quote }}
+            - name: GATE_MAX_MATCHES
+              value: {{ .Values.training.gateMaxMatches | quote }}
             {{- with .Values.extraEnv }}
             {{- toYaml . | nindent 12 }}
             {{- end }}

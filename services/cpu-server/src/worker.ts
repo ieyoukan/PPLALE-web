@@ -1,5 +1,5 @@
 import { parentPort } from 'node:worker_threads';
-import { createMaster, createValueEvaluator, playMatch, valueModel } from '@pplale/game-core/ai';
+import { createMaster, createValueEvaluator, playMatch } from '@pplale/game-core/ai';
 import { selfPlayPositions, environmentDecks, valueData } from '@pplale/game-core/train';
 import { catalog } from './catalog.ts';
 import type { Task } from './pool.ts';
@@ -13,13 +13,16 @@ parentPort!.on('message', (task: Task) => {
         return parentPort!.postMessage({ x, y, match }, [x.buffer as ArrayBuffer, y.buffer as ArrayBuffer, match.buffer as ArrayBuffer]);
     }
     const candidate = createMaster({ evaluate: createValueEvaluator(task.candidate) });
-    const base = createMaster({ evaluate: createValueEvaluator(valueModel) });
-    let wins = 0;
+    const champion = createMaster({ evaluate: createValueEvaluator(task.champion) });
+    let wins = 0, matches = 0;
     for (const seed of task.seeds) {
         // The same decks and shuffle in both seats, so luck cancels; decks of every environment.
+        // A match without a winner counts for neither.
         const decks = environmentDecks(catalog, seed);
-        if (playMatch(catalog, { levels: [candidate, base], seed, decks }).winner === 0) wins++;
-        if (playMatch(catalog, { levels: [base, candidate], seed, decks }).winner === 1) wins++;
+        for (const [levels, seat] of [[[candidate, champion], 0], [[champion, candidate], 1]] as const) {
+            const { winner } = playMatch(catalog, { levels: [...levels], seed, decks });
+            if (winner === 0 || winner === 1) { matches++; if (winner === seat) wins++; }
+        }
     }
-    parentPort!.postMessage({ wins, matches: task.seeds.length * 2 });
+    parentPort!.postMessage({ wins, matches });
 });

@@ -52,6 +52,8 @@ export { playMatch, randomStrawberryDeck } from './selfplay.ts';
 export { createHard } from './levels/hard.ts';
 export { createMaster } from './levels/master.ts';
 export { searchTurn } from './turn-search.ts';
+export { compareVerdict, defaultCompareRule } from './compare.ts';
+export type { CompareRule } from './compare.ts';
 export { BLUNDER, DUBIOUS, gradeOf, moveLoss, winProbability } from './assess.ts';
 export type { MoveGrade, WinOptions } from './assess.ts';
 export { createValueEvaluator, parseValueModel, valueFeatures, valueLayout, valueLogit } from './value.ts';
