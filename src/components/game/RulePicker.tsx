@@ -28,7 +28,7 @@ function Tile({ name, note, image, tone, on, soon, onChange }: {
 }) {
   const body = <>
     <span className={styles.art} style={{ '--tone': tone } as CSSProperties}>
-      <Image src={image} alt="" width={320} height={180} sizes="(max-width: 720px) 46vw, 240px" />
+      <Image src={image} alt="" width={320} height={180} sizes="(max-width: 720px) 46vw, 240px" loading="eager" />
       {on && <span className={styles.mark}><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 13l4 4L19 7" /></svg></span>}
       {soon && <span className={styles.soon}>準備中</span>}
     </span>

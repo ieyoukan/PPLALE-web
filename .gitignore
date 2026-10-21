@@ -28,6 +28,9 @@ node_modules
 # Fonts are subset from pinned, checksum-verified originals before dev/build.
 /public/fonts/generated/
 /src/app/generated/site-fonts.css
+/public/game-assets/
+/src/lib/game/generated/card-assets.json
+/src/lib/game/generated/menu-assets.json
 
 # production
 /build

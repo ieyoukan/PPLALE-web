@@ -48,6 +48,7 @@ export const roomHref = (path: typeof ROOM_PATH | typeof ROOM_PLAY_PATH, id: str
 /** The board of a room's match for someone watching it. */
 export const watchHref = (id: string) => `${ROOM_PLAY_PATH}?id=${id}&watch=1`;
 export const CARDS_PATH = '/game/cards/';
+export const NOTIFICATIONS_PATH = '/game/notifications/';
 /** 盤面エディタ: place cards freely, then play from there. */
 export const EDITOR_PATH = '/game/editor/';
 export const CARD_GALLERY_PATH = '/game/cards/zukan/';

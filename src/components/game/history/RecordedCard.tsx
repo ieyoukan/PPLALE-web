@@ -1,7 +1,7 @@
 import Image from 'next/image';
 import type { Catalog } from '@pplale/game-core';
 import { displayCards } from '@/lib/game/catalog';
-import styles from './History.module.css';
+import styles from './RecordedCard.module.css';
 
 /** The archived catalog owns names and text; existing immutable card images are referenced by URL. */
 export function RecordedCard({ id, catalog, sizes = '120px', eager }: { id: string; catalog?: Catalog; sizes?: string; eager?: boolean }) {

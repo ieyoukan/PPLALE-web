@@ -18,6 +18,7 @@ import { MatchDeckPreview } from './MatchDeckPreview';
 import styles from './Room.module.css';
 import { useGameNotifications } from '../notifications/GameNotifications';
 import { useRoomPreparation } from './useRoomPreparation';
+import { PreparationProgress } from '../MatchPreparation';
 
 type Search = { token: string; name: string; deck: Deck; at: number };
 
@@ -31,7 +32,7 @@ export function FreeMatch() {
   const chosen = usableChoice(choices, selected);
   const previewDeck = chosen && chosen.source !== 'random' ? chosen.deck(0) : null;
   const [search, setSearch] = useState<Search | null>(null);
-  useRoomPreparation(search?.deck ?? previewDeck);
+  const preparation = useRoomPreparation(search?.deck ?? previewDeck, freeMatchRules);
   const [cancelling, setCancelling] = useState(false);
   const [elapsed, setElapsed] = useState(0);
   const [error, setError] = useState('');
@@ -53,8 +54,9 @@ export function FreeMatch() {
     };
   }, []);
 
-  function start() {
-    if (!nameReady || !chosen || search) return;
+  async function start() {
+    if (!nameReady || !chosen || search || preparation.busy) return;
+    try { await preparation.prepare(); } catch (failure) { setError(failure instanceof Error ? failure.message : '対戦を準備できませんでした'); return; }
     const token = Array.from(crypto.getRandomValues(new Uint8Array(32)), byte => byte.toString(16).padStart(2, '0')).join('');
     stopping.current = false;
     matched.current = false;
@@ -167,7 +169,8 @@ export function FreeMatch() {
           </label>
           {chosen && <MatchDeckPreview name={chosen.name} deck={previewDeck} />}
           <UnusableDecks choices={choices} className={styles.note} />
-          <button className={`${styles.primary} ${styles.matchStart}`} disabled={!chosen || !roomServerUrl || !nameReady} onClick={start}>このデッキで対戦相手を探す <span aria-hidden="true">›</span></button>
+          <button className={`${styles.primary} ${styles.matchStart}`} disabled={preparation.busy || !chosen || !roomServerUrl || !nameReady} onClick={() => void start()}>{preparation.busy ? '対戦を準備中…' : 'このデッキで対戦相手を探す'} <span aria-hidden="true">›</span></button>
+          <PreparationProgress progress={preparation.progress} />
           {!user ? <button className={styles.matchLogin} onClick={() => { signInWithGoogle().catch(() => setError('ログインできませんでした')); }}>ログインして保存済みデッキを使う</button>
             : <p className={styles.note}>{saved.loading ? 'デッキを読み込み中…' : `${saved.decks.length}件の保存済みデッキ`} · <Link href="/build">デッキを編集する</Link></p>}
         </>}

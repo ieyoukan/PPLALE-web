@@ -1,5 +1,13 @@
 /* Same fallback metrics as next/font/google; preserve layout while fonts load. */
 @font-face {
+  font-family: 'BoardHandwriting';
+  src: url('/fonts/board-handwriting.ttf') format('truetype');
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+}
+
+@font-face {
   font-family: 'Zen Maru Gothic Fallback';
   src: local('Arial');
   ascent-override: 117%;

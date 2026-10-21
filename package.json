@@ -31,7 +31,7 @@
     "cards:optimize": "node scripts/optimize-images.mjs",
     "cards:og-images": "node scripts/generate-og-images.mjs",
     "cards:thumbnails": "node scripts/generate-deck-thumbnails.mjs",
-    "cards:generate": "pnpm run cards:og-images && pnpm run cards:thumbnails",
+    "cards:generate": "pnpm run cards:og-images && pnpm run cards:thumbnails && pnpm run game:assets",
     "pretest:deck-images": "pnpm run cards:generate",
     "test:deck-images": "node --test tests/ogDeckImage.test.mjs",
     "cards:check": "node scripts/check-cards.mjs",
@@ -39,7 +39,10 @@
     "test:e2e:ui": "playwright test --ui",
     "fonts:generate": "node scripts/generate-site-fonts.mjs",
     "pretest:fonts": "pnpm run fonts:generate",
-    "test:fonts": "node --test tests/site-fonts.test.mjs"
+    "test:fonts": "node --test tests/site-fonts.test.mjs",
+    "game:assets": "node scripts/generate-game-assets.mjs",
+    "pretest:game-assets": "pnpm run game:assets",
+    "test:game-assets": "node --test tests/game-assets.test.mjs"
   },
   "dependencies": {
     "@pplale/game-core": "workspace:*",

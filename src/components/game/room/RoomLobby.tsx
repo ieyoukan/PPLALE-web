@@ -19,6 +19,7 @@ import { useRoom } from './useRoom';
 import type { Room } from './useRoom';
 import { useRoomPreparation } from './useRoomPreparation';
 import styles from './Room.module.css';
+import { PreparationProgress } from '../MatchPreparation';
 
 export function RoomLobby() {
   const id = useSearchParams().get('id');
@@ -66,7 +67,7 @@ function Waiting({ room, view }: { room: Room; view: RoomView }) {
   // The decks of every source, checked against this room's rules; the server checks the one sent again.
   const { choices, saved } = useDeckChoices(view.rules, 'このルーム');
   const chosen = usableChoice(choices, selected);
-  useRoomPreparation(chosen && chosen.source !== 'random' ? chosen.deck(0) : null);
+  const preparation = useRoomPreparation(chosen && chosen.source !== 'random' ? chosen.deck(0) : null, view.rules);
 
   const ask = (work: Promise<void>) => {
     setBusy(true);
@@ -100,7 +101,8 @@ function Waiting({ room, view }: { room: Room; view: RoomView }) {
           : <p className={styles.note}>{saved.loading ? 'デッキを読み込み中…' : `${saved.decks.length}件の保存済みデッキ`} · <Link href="/build">デッキを編集する</Link></p>}
         <UnusableDecks choices={choices} className={styles.note} />
         {/* A deck made on demand (おまかせ) is made when it is sent: choosing again makes another. */}
-        <button className={styles.primary} disabled={busy || !chosen} onClick={() => { if (chosen) ask(room.send({ action: 'ready', deck: chosen.deck(randomSeed()) })); }}>このデッキで準備OK</button>
+        <button className={styles.primary} disabled={busy || !chosen} onClick={() => { if (chosen) { const deck = chosen.deck(randomSeed()); ask(preparation.prepare().then(() => room.send({ action: 'ready', deck }))); } }}>{preparation.busy ? '対戦を準備中…' : 'このデッキで準備OK'}</button>
+        <PreparationProgress progress={preparation.progress} />
       </>}
       {saved.error && <p role="alert" className={styles.error}>{saved.error}</p>}
       {error && <p role="alert" className={styles.error}>{error}</p>}

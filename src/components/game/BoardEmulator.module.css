@@ -1,4 +1,3 @@
-@font-face { font-family: 'BoardHandwriting'; src: url('/fonts/board-handwriting.ttf') format('truetype'); font-style: normal; font-weight: 400; font-display: swap; }
 .emulator {
   min-height: 100cqh; color: #423730; background: #503528;
   font-family: Arial, 'Hiragino Kaku Gothic ProN', sans-serif;

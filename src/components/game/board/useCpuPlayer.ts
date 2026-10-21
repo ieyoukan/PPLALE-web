@@ -9,6 +9,7 @@ import type { DrawFlight } from '../BoardPieces';
 import { fakeLag } from './useBoardAnimations';
 import type { CpuRequest, CpuResponse } from './cpu.worker';
 import type { Levels } from './useGameSession';
+import { takeGameWorker } from './preparedWorkers';
 
 const CPU_DELAY = 650;
 
@@ -28,7 +29,7 @@ function useCpuWorker(enabled: boolean) {
     if (!enabled) return;
     const pending = waiting.current;
     try {
-      const instance = new Worker(new URL('./cpu.worker.ts', import.meta.url), { type: 'module' });
+      const instance = takeGameWorker('cpu');
       instance.addEventListener('message', (event: MessageEvent<CpuResponse>) => {
         pending.get(event.data.id)?.reply(event.data);
         pending.delete(event.data.id);

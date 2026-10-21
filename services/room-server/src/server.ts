@@ -351,7 +351,17 @@ export function createRoomServer({ config, backend, catalog, history }: {
     const socketAttempts = limiter(120, 60_000);
     const perAddress = new Map<string, number>();
     let pendingActions = 0;
-    const wss = new WebSocketServer({ noServer: true, maxPayload: MAX_BODY });
+    const wss = new WebSocketServer({
+        noServer: true, maxPayload: MAX_BODY,
+        // Large redacted views dominate a mobile connection. Keep small results uncompressed
+        // and bound zlib work/memory; each message has its own compression context.
+        perMessageDeflate: {
+            threshold: 2048, concurrencyLimit: 4,
+            serverNoContextTakeover: true, clientNoContextTakeover: true,
+            serverMaxWindowBits: 12,
+            zlibDeflateOptions: { level: 3, memLevel: 5 },
+        },
+    });
     server.on('upgrade', (request, socket, head) => {
         try {
             const [, id] = /^\/rooms\/(\d+)\/socket\/?$/.exec(new URL(request.url ?? '/', 'http://localhost').pathname) ?? [];

@@ -1,8 +1,9 @@
 import assert from 'node:assert/strict';
 import { readFile } from 'node:fs/promises';
 import { test } from 'node:test';
+import { gzipSync } from 'node:zlib';
 import { create } from 'fontkit';
-import { homeCodePoints, unicodeRanges } from '../scripts/generate-site-fonts.mjs';
+import { gameMenuCodePoints, homeCodePoints, unicodeRanges } from '../scripts/generate-site-fonts.mjs';
 
 const root = new URL('../', import.meta.url);
 const manifest = JSON.parse(await readFile(new URL('.cache/site-fonts/manifest.json', root), 'utf8'));
@@ -15,13 +16,17 @@ for (const font of manifest) {
   test(`${font.family} ${font.weight}: preserve all characters and glyphs across disjoint subsets`, async () => {
     const source = create(await readFile(new URL(`.cache/site-fonts/${font.file}`, root)));
     const homePoints = await homeCodePoints();
+    const menuPoints = await gameMenuCodePoints();
     const advertised = new Set();
     const core = font.parts.find(part => part.id === 'home');
     assert.deepEqual(core.points, source.characterSet.filter(point => homePoints.has(point)));
     assert.ok(core.bytes < 70_000, 'home font must remain small');
     for (const part of font.parts) {
       const subset = create(await readFile(new URL(`public/fonts/generated/${part.filename}`, root)));
-      assert.deepEqual(subset.characterSet.filter(point => point !== 0xFFFF), part.points.filter(point => point !== 0xFFFF));
+      // HarfBuzz can retain mirrored/layout glyphs (e.g. ‹ for ›). Their cmap
+      // entries are valid, but CSS must only advertise this part's disjoint range.
+      assert.ok(part.points.every(point => subset.characterSet.includes(point)), 'retain every advertised glyph');
+      assert.ok(subset.characterSet.every(point => point === 0xFFFF || source.characterSet.includes(point)), 'extra layout glyphs must also come from the original');
       assert.equal(subset.unitsPerEm, source.unitsPerEm);
       assert.equal(subset.ascent, source.ascent);
       assert.equal(subset.descent, source.descent);
@@ -33,9 +38,10 @@ for (const font of manifest) {
       const ranges = part.range.split(',').map(range => range.slice(2).split('-').map(value => Number.parseInt(value, 16)));
       const covers = point => ranges.some(([start, end = start]) => point >= start && point <= end);
       assert.ok(part.points.every(covers), 'CSS must expose every subset character');
-      if (part.id !== 'home') {
+      if (part.id !== 'home' && part.id !== 'game-menu') {
         assert.ok([...homePoints].every(point => !covers(point)), 'home characters must never trigger additional subsets');
-        assert.ok(part.points.length <= 256);
+        assert.ok([...menuPoints].every(point => !covers(point)), 'setup labels must never trigger rare-kanji subsets');
+        assert.ok(part.points.length <= 64);
       }
       // Check outlines for every home character and samples from every optional block.
       const samples = part.id === 'home' ? part.points : [part.points[0], part.points[Math.floor(part.points.length / 2)], part.points.at(-1)];
@@ -48,7 +54,9 @@ for (const font of manifest) {
 
 test('generated font CSS stays external, small, and uses immutable asset names', async () => {
   const css = await readFile(new URL('src/app/generated/site-fonts.css', root), 'utf8');
-  assert.ok(Buffer.byteLength(css) < 60_000);
+  // More small fallback faces prevent a rare kanji from downloading a large font.
+  assert.ok(Buffer.byteLength(css) < 120_000);
+  assert.ok(gzipSync(css).length < 16_000);
   for (const font of manifest) {
     for (const part of font.parts) {
       assert.match(part.filename, /-[\da-f]{16}\.woff2$/);

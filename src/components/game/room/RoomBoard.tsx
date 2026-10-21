@@ -16,6 +16,8 @@ import type { Room } from './useRoom';
 import { useRoomSession } from './useRoomSession';
 import styles from '../BoardEmulator.module.css';
 import link from './Room.module.css';
+import { MatchAssetGate } from '../MatchPreparation';
+import { roomMatchCardIds } from '@/lib/game/matchAssets';
 
 type Played = RoomView & { game: GameState };
 
@@ -35,7 +37,7 @@ export default function RoomBoard() {
   // What the table cannot show by itself: a connection that dropped, and who is looking on.
   const away = view.players.flatMap((player, seat) => player && !player.online && (watch || seat !== view.seat) ? [watch ? player.name : '相手'] : []);
   const trouble = !linked ? 'ルームサーバーに再接続しています…' : away.length && view.status === 'playing' ? `${away.join('・')}の接続が切れています（戻るのを待っています）` : null;
-  return <>
+  return <MatchAssetGate ids={roomMatchCardIds(view.rules)}>
     {watch && <aside className={link.spectatorTools} aria-label="観戦メニュー">
       <Link href={`${BATTLE_PATH}free/`}>観戦を終了</Link>
       {view.assessment && <div className={link.liveAssessment} aria-label="観戦中の形勢（公開盤面の目安）"><span><b>{view.players[0].name} {Math.round(view.assessment.win * 100)}%</b><span>{Math.round((1 - view.assessment.win) * 100)}%</span></span><meter min={0} max={1} value={view.assessment.win} aria-label="公開盤面の形勢" /></div>}
@@ -46,7 +48,7 @@ export default function RoomBoard() {
     <Table key={view.match} room={room} initial={view as Played} seat={view.seat} />
     {trouble ? <p className={linked ? link.badge : `${link.badge} ${link.badgeDown}`} role="status">{trouble}</p>
       : (watch || view.spectators > 0) && <p className={`${link.badge} ${link.badgeQuiet}`} role="status">{watch ? '観戦中' : '観戦'} {view.spectators}人</p>}
-  </>;
+  </MatchAssetGate>;
 }
 
 function Table({ room, initial, seat }: { room: Room; initial: Played; seat: Side }) {

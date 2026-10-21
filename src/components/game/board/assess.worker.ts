@@ -8,6 +8,7 @@ import type { AssessmentCache } from './assessmentCache';
 export type { AssessRequest, AssessResponse, PositionsRequest } from './assess';
 
 const scope = self as unknown as Worker;
+scope.postMessage({ type: 'pplale-ready' });
 // Positions already judged, kept while the match (its first state) stays the same.
 let cache: AssessmentCache | null = null, current = 0;
 /** Runs `steps` one point per task while `id` is the newest request. */

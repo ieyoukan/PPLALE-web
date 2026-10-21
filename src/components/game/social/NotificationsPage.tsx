@@ -8,7 +8,7 @@ import { Icon } from './Icon';
 import { useSocial } from './useSocial';
 import styles from './Social.module.css';
 
-export const NOTIFICATIONS_PATH = '/game/notifications/';
+export { NOTIFICATIONS_PATH } from '@/lib/game/sessionStore';
 
 export function NotificationsPage() {
   const { user, loading, signInWithGoogle } = useAuth();

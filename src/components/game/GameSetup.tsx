@@ -1,5 +1,5 @@
 'use client';
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import Link from 'next/link';
 import { cpuLevels, cpuProfiles, defaultMatchRules, sandboxRules } from '@pplale/game-core';
 import type { CpuLevel, GameState, MatchRules, Side } from '@pplale/game-core';
@@ -11,7 +11,7 @@ import type { Levels, MatchSetup, Mode } from '@/lib/game/sessionStore';
 import { useAuth } from '@/lib/auth';
 import { DeckSelect, UnusableDecks, useDeckChoices } from './DeckSelect';
 import { RulePicker } from './RulePicker';
-import styles from './BoardEmulator.module.css';
+import styles from './GameSetupControls.module.css';
 import layout from './GameSetup.module.css';
 const modeNames: Record<Mode, string> = { cpu: 'CPUと対戦', watch: 'CPU同士を観戦', hotseat: '両側を操作', room: 'ルームマッチ' };
 /**
@@ -20,10 +20,12 @@ const modeNames: Record<Mode, string> = { cpu: 'CPUと対戦', watch: 'CPU同士
  */
 export function GameSetup({ modes, onStart }: {
     modes: Mode[];
-    onStart: (match: { game: GameState; seed: number; setup: MatchSetup; mode: Mode; levels: Levels }) => void;
+    onStart: (match: { game: GameState; seed: number; setup: MatchSetup; mode: Mode; levels: Levels }) => void | Promise<void>;
 }) {
     const { user, signInWithGoogle } = useAuth();
     const [error, setError] = useState('');
+    const [starting, setStarting] = useState(false);
+    const startingRef = useRef(false);
     // Both decks follow the same rules. Each side keeps its pick while the rules allow it; else it gets the first deck that fits.
     const [rules, setRules] = useState<MatchRules>(defaultMatchRules);
     const { choices, saved } = useDeckChoices(rules, 'この対戦');
@@ -47,7 +49,8 @@ export function GameSetup({ modes, onStart }: {
         setAgreed(value);
         setAsking(false);
     };
-    function start(consented = agreed) {
+    async function start(consented = agreed) {
+        if (startingRef.current) return;
         if (collects && !consented) {
             setAsking(true);
             return;
@@ -55,15 +58,19 @@ export function GameSetup({ modes, onStart }: {
         const [a, b] = chosen;
         if (!a || !b)
             return;
+        startingRef.current = true;
+        setStarting(true);
+        setError('');
         try {
             // A deck made on demand (おまかせ) is made here, one per side; the rematch plays the same two again.
             const setup: MatchSetup = { decks: [a.deck(randomSeed()), b.deck(randomSeed())], rules: { ...sandboxRules }, matchRules: rules };
             const seed = randomSeed();
-            onStart({ game: createMatch(setup, mode, seed), seed, setup, mode, levels });
+            await onStart({ game: createMatch(setup, mode, seed), seed, setup, mode, levels });
         }
         catch (error) {
             setError(error instanceof Error ? error.message : '開始できません');
         }
+        finally { startingRef.current = false; setStarting(false); }
     }
     return <div className={layout.content} data-mode={mode} data-learning={collects && agreed || undefined}>
     <div className={`${styles.setupModes} ${layout.modes}`} data-landscape-action>
@@ -89,7 +96,7 @@ export function GameSetup({ modes, onStart }: {
     <UnusableDecks choices={choices} className={styles.ruleSettings} />
     {saved.error && <p role="alert" className={styles.error}>{saved.error}</p>}
     {error && <p role="alert" className={styles.error}>{error}</p>}
-    <button data-ui-title data-landscape-action className={`${styles.startButton} ${layout.start}`} disabled={chosen.some(choice => !choice)} onClick={() => start()}>対戦をはじめる <span>→</span></button>
+    <button data-ui-title data-landscape-action className={`${styles.startButton} ${layout.start}`} disabled={starting || chosen.some(choice => !choice)} aria-busy={starting} onClick={() => void start()}>{starting ? '対戦を準備中…' : '対戦をはじめる'} <span>→</span></button>
     {asking && <>
       <button className={styles.consentBackdrop} aria-label="閉じる" onClick={() => setAsking(false)} />
       <section className={styles.consent} role="dialog" aria-modal="true" aria-labelledby="learning-consent">

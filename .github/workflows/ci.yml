@@ -30,6 +30,9 @@ jobs:
       - name: Generate and verify site fonts
         run: pnpm run test:fonts
 
+      - name: Generate and verify game assets
+        run: pnpm run test:game-assets
+
       - name: Check game opening and draw flow
         run: pnpm run test:game
 

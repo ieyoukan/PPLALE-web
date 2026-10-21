@@ -1,0 +1,6 @@
+.progress { display: grid; gap: 10px; padding: 16px; color: var(--brand-cocoa-deep); background: var(--brand-paper); border-radius: 12px; font: 500 16px var(--font-site-body), sans-serif; }
+.progress progress { width: 100%; height: 12px; accent-color: var(--brand-sage); }
+.gate { display: grid; align-content: center; width: 100%; height: 100%; min-height: 0; padding: 24px; color: var(--brand-cocoa-deep); background: var(--brand-cream); }
+.overlay { position: fixed; z-index: 250; left: 50%; top: 50%; transform: translate(-50%, -50%); width: min(420px, 90%); box-shadow: 0 8px 24px #63474733; }
+.gate > * { width: min(100%, 420px); margin-inline: auto; }
+.gate button { padding: 12px; border-radius: 12px; background: var(--brand-pink); color: var(--brand-cocoa-deep); cursor: pointer; }

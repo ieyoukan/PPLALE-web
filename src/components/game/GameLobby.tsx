@@ -7,10 +7,11 @@ import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import type { GameState } from '@pplale/game-core';
-import { PLAY_PATH, describeSavedMatch, saveSession } from '@/lib/game/sessionStore';
+import { PLAY_PATH, cpuSidesOf, describeSavedMatch, saveSession } from '@/lib/game/sessionStore';
 import type { Levels, MatchSetup, Mode } from '@/lib/game/sessionStore';
 import { GameSetup } from './GameSetup';
 import styles from './GameLobby.module.css';
+import { PreparationProgress, useMatchPreparation } from './MatchPreparation';
 
 const modes: Mode[] = ['cpu', 'watch'];
 
@@ -18,10 +19,13 @@ export default function GameLobby() {
   const router = useRouter();
   const [saved, setSaved] = useState<string | null>(null);
   const [error, setError] = useState('');
+  const preparation = useMatchPreparation();
   // localStorage is only available in the browser, after the first render.
   useEffect(() => { setSaved(describeSavedMatch()); }, []);
 
-  function start({ game, seed, setup, mode, levels }: { game: GameState; seed: number; setup: MatchSetup; mode: Mode; levels: Levels }) {
+  async function start({ game, seed, setup, mode, levels }: { game: GameState; seed: number; setup: MatchSetup; mode: Mode; levels: Levels }) {
+    const { localMatchCardIds } = await import('@/lib/game/matchAssets');
+    await preparation.prepare(localMatchCardIds(setup.decks, setup.matchRules), true, cpuSidesOf(mode).some(side => levels[side] === 'master'));
     try {
       // The first state and the setup are kept for the replay and the rematch on the result screen.
       saveSession({ game, mode, levels, setup, initial: game, commands: [], seed });
@@ -30,10 +34,11 @@ export default function GameLobby() {
   }
 
   return <div className={styles.lobby}>
-    {saved && <Link href={PLAY_PATH} className={styles.resume}>
+    {saved && <Link href={PLAY_PATH} prefetch={false} className={styles.resume}>
       <span>前回の対戦を続ける</span><small>{saved}</small>
     </Link>}
     <GameSetup modes={modes} onStart={start} />
+    <PreparationProgress progress={preparation.progress} overlay />
     {error && <p role="alert" className={styles.error}>{error}</p>}
   </div>;
 }

@@ -5,6 +5,7 @@ import type { Command, GameState, Side } from '@pplale/game-core';
 import type { AssessedPoint, AssessRequest, AssessResponse } from './assess';
 import { readAssessment, saveAssessment, syncAssessment } from './assessmentCache';
 import type { AssessmentCache } from './assessmentCache';
+import { takeGameWorker } from './preparedWorkers';
 
 const SETTING_KEY = 'pplale-show-assessment';
 
@@ -36,7 +37,7 @@ export function useAssessment({ enabled, initial, current, commands, viewer }: {
     cache.current = syncAssessment(readAssessment(), initial!, viewer, []);
     setPoints(cache.current.points);
     try {
-      const instance = new Worker(new URL('./assess.worker.ts', import.meta.url), { type: 'module' });
+      const instance = takeGameWorker('assess');
       instance.addEventListener('message', (event: MessageEvent<AssessResponse>) => {
         if (event.data.id !== request.current || 'done' in event.data) return;
         const incoming = 'point' in event.data ? [event.data.point] : event.data.points;

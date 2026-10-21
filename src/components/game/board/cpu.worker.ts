@@ -6,3 +6,4 @@ export type { CpuRequest, CpuResponse } from './cpuThink';
 
 const scope = self as unknown as Worker;
 scope.addEventListener('message', (event: MessageEvent<CpuRequest>) => scope.postMessage(think(event.data)));
+scope.postMessage({ type: 'pplale-ready' });

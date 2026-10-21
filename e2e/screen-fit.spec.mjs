@@ -81,7 +81,8 @@ for (const viewport of phones) {
       await page.screenshot({ path: info.outputPath('home-watch.png') });
       const box = await start.boundingBox();
       await page.mouse.click(box.x + box.width / 2, box.y + box.height / 2);
-      await expect(page).toHaveURL(/\/game\/play\//);
+      // Match assets are prepared before navigation, including the full expanded pool.
+      await expect(page).toHaveURL(/\/game\/play\//, { timeout: 30000 });
     });
   });
 }

@@ -81,9 +81,11 @@ test('attack is sent while its animation clock is frozen, once only, and the res
   const after = room.reply();
   const counter = page.locator('[data-leader="1"]');
   await expect(counter.getByRole('button', { name: `お菓子ポイント ${initial.players[1].points}`, exact: true })).toBeVisible();
-  await page.clock.runFor(170);
+  // Follow the same CSS timing as the board; room animations share the CPU pace.
+  const strike = await page.locator('[data-readable]').evaluate(element => parseFloat(element.style.getPropertyValue('--strike-duration')));
+  await page.clock.runFor(strike / 2);
   await expect(counter.getByRole('button', { name: `お菓子ポイント ${after.players[1].points}`, exact: true })).toBeVisible();
-  await page.clock.runFor(200);
+  await page.clock.runFor(strike / 2);
   await expect(page.getByRole('button', { name: /ターン\s*終了/ })).toBeEnabled();
 });
 
@@ -150,10 +152,11 @@ test('opening draws remain independent while the opponent has a card in flight',
   await expect.poll(() => room.requests.length).toBe(1);
   room.reply();
   await expect(page.locator('[data-hand-list] [data-hand]')).toHaveCount(1);
-  await page.clock.runFor(160);
+  const draw = await page.locator('[data-readable]').evaluate(element => parseFloat(element.style.getPropertyValue('--draw-duration')));
+  await page.clock.runFor(draw * .75);
   room.opponent({ type: 'openingDraw', actor: 1, deck: 'yojo' });
   await expect(page.getByRole('group', { name: '相手の手札 1枚', exact: true })).toBeAttached();
-  await page.clock.runFor(220);
+  await page.clock.runFor(draw * .75);
   await expect(page.locator('[data-draw-flight]')).toHaveCount(1);
   await expect(deck).toBeEnabled();
   await click(deck);

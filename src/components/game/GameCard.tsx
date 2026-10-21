@@ -4,6 +4,7 @@ import { attackOf, hpOf } from '@pplale/game-core';
 import type { Instance } from '@pplale/game-core';
 import { displayCards, gameCatalog } from '@/lib/game/catalog';
 import { BOARD_CARD_SIZES } from '@/lib/game/cardImages';
+import { gameCardSource } from '@/lib/game/matchAssets';
 import { keywordNames } from './labels';
 import styles from './BoardEmulator.module.css';
 const signed = (value: number) => `${value >= 0 ? '+' : '−'}${Math.abs(value)}`;
@@ -19,8 +20,9 @@ export const GameCard = memo(function GameCard({ id, instance, stats = false, ab
     const card = displayCards[id];
     if (!card)
         return null;
+    const image = gameCardSource(id);
     return <>
-    <Image src={card.imageUrl} alt={card.name} fill sizes={sizes} className={styles.cardImage} draggable={false}/>
+    <Image src={image ?? card.imageUrl} unoptimized={!!image} alt={card.name} fill sizes={sizes} className={styles.cardImage} draggable={false}/>
     {instance && stats && <span className={styles.stats}><b>{attackOf(instance, gameCatalog)}</b><b>{hpOf(instance, gameCatalog)}</b></span>}
     {!!instance?.damage && <span className={styles.damageMarble} role="img" aria-label={`${instance.damage}ダメージ`}>−{instance.damage}</span>}
     {instance && !!(instance.attackBonus || instance.hpBonus) && <>
