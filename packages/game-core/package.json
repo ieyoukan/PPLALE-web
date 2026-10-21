@@ -45,7 +45,7 @@
     "compare": "npm run build && node scripts/compare.mjs"
   },
   "dependencies": {
-    "zod": "^4.6.5"
+    "zod": "^4.6.7"
   },
   "devDependencies": {
     "typescript": "^5"
