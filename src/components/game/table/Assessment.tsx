@@ -26,7 +26,7 @@ export function AssessmentBar() {
 }
 
 /** The whole match as a curve of `side`'s chance, with that side's notable moves. */
-export function AssessmentGraph({ side }: { side: Side }) {
+export function AssessmentGraph({ side, compact = false }: { side: Side; compact?: boolean }) {
   const { assessment, names } = useBoardContext();
   if (assessment.length < 2) return null;
   const width = 600, height = 160, first = assessment[0].index, last = assessment.at(-1)!.index;
@@ -39,7 +39,7 @@ export function AssessmentGraph({ side }: { side: Side }) {
   const turns = assessment.filter((p, i) => i === 0 || p.turn.number !== assessment[i - 1].turn.number || p.turn.order !== assessment[i - 1].turn.order);
   const mistakes = assessment.filter(p => p.grade && p.command?.actor === side).sort((a, b) => (b.loss ?? 0) - (a.loss ?? 0)).slice(0, 3);
   const highlights = assessmentHighlights(assessment, side);
-  return <section className={styles.graph} aria-label={`${names[side]}の形勢の推移`}>
+  return <section className={`${styles.graph} ${compact ? styles.compact : ''}`} aria-label={`${names[side]}の形勢の推移`}>
     <h3>形勢の推移 <small>{names[side]}の勝ちやすさ</small></h3>
     <svg viewBox={`0 0 ${width} ${height}`} preserveAspectRatio="none" role="img" aria-label={`最後は${percent(assessment.at(-1)!.win, side)}%`}>
       <rect x="0" y="0" width={width} height={height / 2} className={styles.ahead} />
@@ -49,11 +49,11 @@ export function AssessmentGraph({ side }: { side: Side }) {
       {highlights.map(({ point: p }) => <path key={p.index} d={`M${x(p.index)},${y(p.win) - 8}l7,8 -7,8 -7,-8Z`} className={styles.highlight} vectorEffect="non-scaling-stroke"><title>{p.label}：形勢が好転</title></path>)}
       {mistakes.map(p => <circle key={p.index} cx={x(p.index)} cy={y(p.win)} r="6" className={p.grade === 'blunder' ? styles.blunder : styles.dubious} vectorEffect="non-scaling-stroke" />)}
     </svg>
-    {highlights.length > 0 && <ul className={`${styles.mistakes} ${styles.highlights}`} aria-label="形勢が好転した手">{highlights.map(({ point: p, gain }) => <li key={p.index}>
+    {!compact && highlights.length > 0 && <ul className={`${styles.mistakes} ${styles.highlights}`} aria-label="形勢が好転した手">{highlights.map(({ point: p, gain }) => <li key={p.index}>
       <span className={styles.highlightTag}><span aria-hidden="true">✦ </span>好転</span>
       {turnName(p.playedIn ?? p.turn)}　{p.label}　<small>＋{Math.round(gain * 100)}pt</small>
     </li>)}<li className={styles.note}>直前の形勢との差（ドロー・ダイスの結果を含む）</li></ul>}
-    {mistakes.length > 0 && <ul className={styles.mistakes}>{mistakes.map(p => <li key={p.index}>
+    {!compact && mistakes.length > 0 && <ul className={styles.mistakes}>{mistakes.map(p => <li key={p.index}>
       <span className={p.grade === 'blunder' ? styles.blunderTag : styles.dubiousTag}>{p.grade === 'blunder' ? '悪手' : '疑問手'}</span>
       {turnName(p.playedIn ?? p.turn)}　{p.label}　<small>−{Math.round((p.loss ?? 0) * 100)}%</small>
     </li>)}</ul>}

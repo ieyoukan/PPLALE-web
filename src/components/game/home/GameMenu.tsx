@@ -30,7 +30,7 @@ export default function GameMenu({ children }: { children: ReactNode }) {
   const profile = useMyProfile();
   // The first tab is the root, so it only matches exactly; the others also cover their sub-pages.
   const current = pathname.startsWith('/game/profile') ? { label: 'プロフィール' } : tabs.find(tab => tab.href !== HOME_PATH && pathname.startsWith(tab.href)) ?? tabs[0];
-  return <div className={styles.menu}>
+  return <div className={`${styles.menu} ${pathname === HOME_PATH ? styles.home : ''}`}>
     <aside className={styles.side}>
       <Image className={styles.logo} src="/images/game/logo.webp" alt="お菓子争奪戦争 ぷぷりえーる" width={462} height={227} priority />
       <nav className={styles.tabs} aria-label="ゲームメニュー">{tabs.map(tab =>
@@ -44,7 +44,7 @@ export default function GameMenu({ children }: { children: ReactNode }) {
           <Link href="/game/profile/" className={styles.playerProfile}><span className={styles.playerAvatar}><RecordedCard id={profile?.iconCardId ?? 'p_1'} sizes="40px" /></span><b>{profile?.displayName || (user ? 'プレイヤー' : 'ゲスト')}</b></Link>
           {!user && <button onClick={() => { signInWithGoogle().catch(() => {}); }}>ログイン</button>}
         </div>
-        <div className={styles.footerActions}><NotificationSoundToggle compact /><Link href="/" className={styles.back}>サイトへ戻る</Link></div>
+        <div className={styles.footerActions}><NotificationSoundToggle compact /><Link href="/" className={styles.back} aria-label="サイトへ戻る"><span className={styles.backLong}>サイトへ戻る</span><span className={styles.backShort}>サイト</span></Link></div>
       </div>
     </aside>
     {/* The root layout already provides <main>. */}

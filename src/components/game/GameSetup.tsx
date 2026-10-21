@@ -1,7 +1,7 @@
 'use client';
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import Link from 'next/link';
-import { cpuLevels, cpuProfiles, defaultMatchRules, sandboxRules } from '@pplale/game-core';
+import { cpuLevels, cpuProfiles, defaultMatchRules, fruitNames, sandboxRules } from '@pplale/game-core';
 import type { CpuLevel, GameState, MatchRules, Side } from '@pplale/game-core';
 import { cpuServerUrl, learningConsent } from '@/lib/game/cpuServer';
 import { usableChoice } from '@/lib/game/deckSources';
@@ -12,6 +12,7 @@ import { useAuth } from '@/lib/auth';
 import { DeckSelect, UnusableDecks, useDeckChoices } from './DeckSelect';
 import { RulePicker } from './RulePicker';
 import styles from './BoardEmulator.module.css';
+import layout from './GameSetup.module.css';
 const modeNames: Record<Mode, string> = { cpu: 'CPUと対戦', watch: 'CPU同士を観戦', hotseat: '両側を操作', room: 'ルームマッチ' };
 /**
  * Mode (among `modes`), CPU levels, the rules (which cards the decks may use) and both decks for a
@@ -23,6 +24,7 @@ export function GameSetup({ modes, onStart }: {
 }) {
     const { user, signInWithGoogle } = useAuth();
     const [error, setError] = useState('');
+    const [rulesOpen, setRulesOpen] = useState(false);
     // Both decks follow the same rules. Each side keeps its pick while the rules allow it; else it gets the first deck that fits.
     const [rules, setRules] = useState<MatchRules>(defaultMatchRules);
     const { choices, saved } = useDeckChoices(rules, 'この対戦');
@@ -64,31 +66,41 @@ export function GameSetup({ modes, onStart }: {
             setError(error instanceof Error ? error.message : '開始できません');
         }
     }
-    return <div className={styles.setupContent}>
-    <div className={styles.setupModes}>
+    return <div className={layout.content} data-mode={mode} data-learning={collects && agreed || undefined}>
+    <div className={`${styles.setupModes} ${layout.modes}`}>
       {modes.map(id => <button key={id} data-ui-title aria-pressed={mode === id} onClick={() => setMode(id)}>{modeNames[id]}</button>)}
     </div>
     {/* One row per CPU side: the opponent against you, both sides when watching. */}
-    {(mode === 'watch' ? [0, 1] as Side[] : mode === 'cpu' ? [1] as Side[] : []).map(side => <div key={side} className={styles.setupModes} role="group" aria-label={mode === 'watch' ? `${sideLabel(mode, side)}の強さ` : 'CPUの強さ'}>
+    {(mode === 'watch' ? [0, 1] as Side[] : mode === 'cpu' ? [1] as Side[] : []).map(side => <div key={side} className={`${styles.setupModes} ${layout.modes} ${layout.levelButtons}`} role="group" aria-label={mode === 'watch' ? `${sideLabel(mode, side)}の強さ` : 'CPUの強さ'}>
       {mode === 'watch' && <span className={styles.setupModeLabel}>{sideLabel(mode, side)}</span>}
       {cpuLevels.map(id => <button key={id} aria-pressed={levels[side] === id} title={cpuProfiles[id].description} onClick={() => setLevel(side, id)}>{cpuProfiles[id].name}</button>)}
     </div>)}
-    {collects && agreed && <p className={styles.help}>さいきょうとの対戦の記録は、CPUの学習のために匿名で送られます。 <button className={styles.textButton} onClick={() => agree(false)}>送るのをやめる</button></p>}
+    {(mode === 'watch' || mode === 'cpu') && <div className={layout.watchLevels}>{(mode === 'watch' ? [0, 1] as const : [1] as const).map(side => <label key={side}>
+      <span>{mode === 'cpu' ? 'CPU' : sideLabel(mode, side)}<span className={layout.levelSuffix}>の強さ</span></span>
+      <select aria-label={`${mode === 'cpu' ? 'CPU' : sideLabel(mode, side)}の強さ`} value={levels[side]} onChange={event => setLevel(side, event.target.value as CpuLevel)}>
+        {cpuLevels.map(id => <option key={id} value={id}>{cpuProfiles[id].name}</option>)}
+      </select>
+    </label>)}</div>}
+    {collects && agreed && <p className={`${styles.help} ${layout.help} ${layout.learning}`}><span>CPU学習用の匿名記録を送信中</span><button className={styles.textButton} onClick={() => agree(false)}>送るのをやめる</button></p>}
     {/* Which cards both decks may use; the selectors below only let a deck that fits be chosen. */}
-    <section className={styles.setupRules} aria-label="対戦のルール">
+    <section className={`${styles.setupRules} ${layout.rulesInline}`} aria-label="対戦のルール">
       <h2>ルール<small>おたがいのデッキに使えるカード</small></h2>
       <RulePicker rules={rules} onChange={next => { setRules(next); setError(''); }} />
     </section>
+    <button className={layout.rulesTrigger} aria-haspopup="dialog" onClick={() => setRulesOpen(true)}>
+      <b>ルール</b><span>{rules.fruits.map(fruit => fruitNames[fruit]).join('・')} ／ {rules.extendedPlayable ? '通常・ExP' : '通常'}</span><span aria-hidden="true">›</span>
+    </button>
+    {rulesOpen && <RulesDialog rules={rules} onChange={next => { setRules(next); setError(''); }} onClose={() => setRulesOpen(false)} />}
     {/* Laid out like the table: the far side's deck on top, the near side's at the bottom. */}
-    <div className={styles.deckTable}>{(mode === 'watch' ? [0, 1] : [1, 0]).map((side, row) => <label key={side} className={row === 0 ? styles.deckFar : styles.deckNear}>
+    <div className={`${styles.deckTable} ${layout.decks}`}>{(mode === 'watch' ? [0, 1] : [1, 0]).map((side, row) => <label key={side} className={row === 0 ? styles.deckFar : styles.deckNear}>
       <span>{mode === 'watch' ? `${sideLabel(mode, side as Side)}のデッキ` : side === 0 ? 'あなたのデッキ' : '相手のデッキ'}<small>{row === 0 ? '奥' : '手前'}</small></span>
       <DeckSelect choices={choices} chosen={chosen[side]} onChange={id => setSelected(previous => previous.map((value, index) => index === side ? id : value))} />
     </label>)}<i aria-hidden="true">VS</i></div>
-    {!user ? <button className={styles.secondaryButton} onClick={() => { signInWithGoogle().catch(() => setError('ログインできませんでした')); }}>Googleでログインして保存済みデッキを使う</button> : <p className={styles.help}>{saved.loading ? 'デッキを読み込み中…' : `${saved.decks.length}件の保存済みデッキ`} · <Link href="/build">デッキを編集する</Link></p>}
+    {!user ? <button className={`${styles.secondaryButton} ${layout.login}`} onClick={() => { signInWithGoogle().catch(() => setError('ログインできませんでした')); }}>Googleでログインして保存済みデッキを使う</button> : <p className={`${styles.help} ${layout.help}`}>{saved.loading ? 'デッキを読み込み中…' : `${saved.decks.length}件の保存済みデッキ`} · <Link href="/build">デッキを編集する</Link></p>}
     <UnusableDecks choices={choices} className={styles.ruleSettings} />
     {saved.error && <p role="alert" className={styles.error}>{saved.error}</p>}
     {error && <p role="alert" className={styles.error}>{error}</p>}
-    <button data-ui-title className={styles.startButton} disabled={chosen.some(choice => !choice)} onClick={() => start()}>対戦をはじめる <span>→</span></button>
+    <button data-ui-title className={`${styles.startButton} ${layout.start}`} disabled={chosen.some(choice => !choice)} onClick={() => start()}>対戦をはじめる <span>→</span></button>
     {asking && <>
       <button className={styles.consentBackdrop} aria-label="閉じる" onClick={() => setAsking(false)} />
       <section className={styles.consent} role="dialog" aria-modal="true" aria-labelledby="learning-consent">
@@ -104,4 +116,19 @@ export function GameSetup({ modes, onStart }: {
       </section>
     </>}
   </div>;
+}
+
+/** The full rule picker is one tap away without making the phone's home page taller. */
+function RulesDialog({ rules, onChange, onClose }: { rules: MatchRules; onChange: (rules: MatchRules) => void; onClose: () => void }) {
+  const dialog = useRef<HTMLDialogElement>(null);
+  useEffect(() => {
+    const element = dialog.current;
+    element?.showModal();
+    return () => element?.close();
+  }, []);
+  return <dialog ref={dialog} className={layout.rulesDialog} aria-label="対戦のルール" onClose={event => { if (!event.currentTarget.open) onClose(); }}>
+    <header><h2>対戦のルール</h2><button onClick={onClose} aria-label="ルールを閉じる">×</button></header>
+    <RulePicker rules={rules} onChange={onChange} compact />
+    <button className={layout.done} onClick={onClose}>このルールであそぶ</button>
+  </dialog>;
 }

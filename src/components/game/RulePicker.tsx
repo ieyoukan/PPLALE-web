@@ -45,7 +45,7 @@ function Tile({ name, note, image, tone, on, soon, onChange }: {
  * `onChange` gets the two fields of `MatchRules`; rules with more (a room's) keep the rest.
  * What `playableNow` does not allow is shown but cannot be chosen.
  */
-export function RulePicker({ rules, onChange }: { rules: MatchRules; onChange: (rules: MatchRules) => void }) {
+export function RulePicker({ rules, onChange, compact = false }: { rules: MatchRules; onChange: (rules: MatchRules) => void; compact?: boolean }) {
   const { extendedPlayable } = rules;
   // On: this fruit's environment. Off: the environment just before it (いちご itself always stays).
   const toggleFruit = (fruit: Fruit, on: boolean) => {
@@ -54,7 +54,7 @@ export function RulePicker({ rules, onChange }: { rules: MatchRules; onChange: (
     onChange({ fruits: fruitsUpTo(on ? fruit : fruits[index - 1]), extendedPlayable });
   };
   const waiting = fruits.some(fruit => !playableNow.fruits.includes(fruit)) || !playableNow.extendedPlayable;
-  return <div className={styles.picker}>
+  return <div className={`${styles.picker} ${compact ? styles.compact : ''}`}>
     <div className={styles.groups}>
       <fieldset className={styles.group}>
         <legend>使えるフルーツ<small>いちごから順に追加</small></legend>

@@ -1,6 +1,7 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
+import type { ReactNode } from 'react';
 import { cpuProfiles, encodePosition, matchTurns, other } from '@pplale/game-core';
 import type { Deck, Side } from '@pplale/game-core';
 import { displayCards } from '@/lib/game/catalog';
@@ -24,6 +25,7 @@ export function ResultScreen() {
 function Result({ outcome: { winner, kind } }: { outcome: Outcome }) {
   const { game, view, mode, levels, names, setup, remote, position, canRematch, canReplay, rematch, startReplay, leave, editStartingBoard } = useBoardContext();
   const [deckOpen, setDeckOpen] = useState(false);
+  const [analysisOpen, setAnalysisOpen] = useState(false);
   /** The share code of the board this match started from, once asked for (also shown, in case copying is refused). */
   const [code, setCode] = useState('');
   const [copied, setCopied] = useState(false);
@@ -57,7 +59,7 @@ function Result({ outcome: { winner, kind } }: { outcome: Outcome }) {
     </div>
     <div className={styles.resultBody}>
       <dl className={styles.summary}>{rows.map(([label, value]) => <div key={label}><dt>{label}</dt><dd>{value}</dd></div>)}</dl>
-      <AssessmentGraph side={featured} />
+      <ResultAnalysis side={featured} onOpen={() => setAnalysisOpen(true)} />
       {deck && <div className={styles.deckRow}>
         <span>使用デッキ</span>
         <button className={styles.plateButton} onClick={() => setDeckOpen(true)}>確認</button>
@@ -73,15 +75,44 @@ function Result({ outcome: { winner, kind } }: { outcome: Outcome }) {
         <span role="status">{copied ? '始めの盤面のコードをコピーしました' : 'コピーできませんでした。下から選んでコピーしてください'}</span>
         <textarea readOnly value={code} rows={2} onFocus={event => event.target.select()} />
       </label>}
-      <div className={styles.actions}>
+    </div>
+    <div className={styles.actions} role="group" aria-label="対戦後の操作">
         {canReplay && <button className={styles.plateButton} onClick={startReplay}>リプレイ</button>}
         {/* The game's own home (preparation, cards, battles), not the site's top page. */}
         <button className={styles.plateButton} onClick={leave}>{remote?.recorded ? '対戦履歴へ戻る' : remote?.watching ? '観戦をやめる' : remote?.freeMatch ? 'バトルへ戻る' : remote ? 'ルームを出る' : 'ホーム'}</button>
         {canRematch && <button className={`${styles.plateButton} ${styles.primaryPlate}`} onClick={rematch}>{remote?.freeMatch ? '次の相手を探す' : remote ? 'もう一度（デッキ選択へ）' : position ? '同じ盤面でもう一度' : '再戦する'}</button>}
-      </div>
     </div>
+    {analysisOpen && <ResultSheet title="形勢の詳細" onClose={() => setAnalysisOpen(false)}><AssessmentGraph side={featured} /></ResultSheet>}
     {deck && deckOpen && <DeckSheet deck={deck} onClose={() => setDeckOpen(false)} />}
   </section>;
+}
+
+function ResultAnalysis({ side, onOpen }: { side: Side; onOpen: () => void }) {
+  const { assessment } = useBoardContext();
+  if (assessment.length < 2) return null;
+  return <div className={styles.analysis}>
+    <AssessmentGraph side={side} compact />
+    <button className={styles.plateButton} onClick={onOpen}>形勢の詳細</button>
+  </div>;
+}
+
+/** Keep secondary detail lists out of the result's main actions. */
+function ResultSheet({ title, onClose, children }: { title: string; onClose: () => void; children: ReactNode }) {
+  const sheet = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    const previous = document.activeElement as HTMLElement | null;
+    sheet.current?.querySelector<HTMLButtonElement>('button')?.focus();
+    return () => previous?.focus();
+  }, []);
+  return <div className={styles.deckModal} role="dialog" aria-modal="true" aria-label={title} onClick={onClose} onKeyDown={event => {
+    if (event.key === 'Escape') { event.stopPropagation(); onClose(); }
+    if (event.key === 'Tab') { event.preventDefault(); sheet.current?.querySelector<HTMLButtonElement>('button')?.focus(); }
+  }}>
+    <div ref={sheet} className={styles.deckSheet} onClick={event => event.stopPropagation()}>
+      <header><h3>{title}</h3><button onClick={onClose} aria-label={`${title}を閉じる`}>×</button></header>
+      {children}
+    </div>
+  </div>;
 }
 
 const counted = (ids: string[]) => Array.from(ids.reduce((counts, id) => counts.set(id, (counts.get(id) ?? 0) + 1), new Map<string, number>()));

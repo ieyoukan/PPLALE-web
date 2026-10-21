@@ -42,3 +42,14 @@
   .versions { width: auto; }
 }
 @media (prefers-reduced-motion: reduce) { .art { transition: none; } }
+
+/* A compact picker in the phone home dialog keeps every rule and the confirm action visible. */
+.compact .groups { gap: 12px; }
+.compact .tiles { gap: 10px; }
+.compact .name { font-size: 14px; }
+.compact .group legend { font-size: 14px; }
+.compact .group legend small { font-size: 11px; }
+@container (max-width: 680px) {
+  .compact .fruits { --columns: 4; }
+  .compact .versions { width: 100%; }
+}

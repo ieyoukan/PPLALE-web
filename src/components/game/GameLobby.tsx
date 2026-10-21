@@ -29,11 +29,11 @@ export default function GameLobby() {
     } catch { setError('このブラウザに対戦を保存できないため、開始できません'); }
   }
 
-  return <>
+  return <div className={styles.lobby}>
     {saved && <Link href={PLAY_PATH} className={styles.resume}>
       <span>前回の対戦を続ける</span><small>{saved}</small>
     </Link>}
     <GameSetup modes={modes} onStart={start} />
     {error && <p role="alert" className={styles.error}>{error}</p>}
-  </>;
+  </div>;
 }

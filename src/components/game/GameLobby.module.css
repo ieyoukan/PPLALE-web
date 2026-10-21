@@ -1,3 +1,16 @@
 .resume { display: flex; flex-direction: column; gap: 4px; margin: 0 0 4px; padding: 16px 20px; border: 2px solid #e7c3e2; border-radius: 18px; background: #f7ecf5; color: #6b4a3a; font-size: 20px; font-weight: 700; }
 .resume small { font-size: 15px; font-weight: 400; }
 .error { margin-top: 12px; padding: 10px; border-radius: 10px; background: #fbe5dc; color: #ac655b; font-size: 16px; }
+
+.lobby { min-width: 0; }
+@media (max-width: 720px), (max-height: 520px) {
+  .lobby { display: flex; flex: 1; flex-direction: column; min-height: 0; gap: 6px; }
+  .resume { flex: none; margin: 0; padding: 3px 10px; line-height: 1.4; border-radius: 10px; border-color: var(--brand-pink-edge); background: var(--brand-blush); color: var(--brand-cocoa-deep); font-size: 14px; }
+  .resume small { display: none; }
+}
+@media (max-height: 520px) and (orientation: landscape) {
+  .resume { position: absolute; top: 5px; right: 8px; max-width: 35%; padding: 3px 6px; font-size: 11px; white-space: nowrap; }
+}
+@media (max-width: 720px) and (max-height: 540px) and (orientation: portrait) {
+  .resume { position: absolute; top: 5px; right: 8px; max-width: 55%; padding: 3px 6px; font-size: 11px; white-space: nowrap; }
+}

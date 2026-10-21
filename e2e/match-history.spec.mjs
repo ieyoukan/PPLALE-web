@@ -48,7 +48,8 @@ for (const width of [1280, 375, 320]) test(`history and replay on the table at $
   await player.getByRole('button', { name: '次のターンへ', exact: true }).click();
   await expect.poll(at).toBeGreaterThan(before);
   const last = Number(await position.getAttribute('aria-valuemax')), box = await position.boundingBox();
-  await page.mouse.click(box.x + box.width * 0.5, box.y + box.height * 0.75);
+  const rotated = await page.locator('[data-game-stage]').getAttribute('data-rotated');
+  await page.mouse.click(box.x + box.width * (rotated ? 0.75 : 0.5), box.y + box.height * (rotated ? 0.5 : 0.75));
   await expect.poll(async () => Math.abs(await at() - Math.round(last * 0.5))).toBeLessThanOrEqual(1);
   await player.getByRole('button', { name: 'リプレイをやめる', exact: true }).click();
   const result = page.getByRole('dialog', { name: '対戦結果' }); await expect(result).toBeVisible();
