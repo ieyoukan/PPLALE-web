@@ -15,4 +15,27 @@
 }
 /* Fixed-size stage, scaled (and on a portrait screen turned) by GameStage. Viewport units of the match
    screens are written as cqw / cqh of this container, and their screen-size rules as @container stage. */
-.stage { position: absolute; left: 0; top: 0; overflow: hidden; transform-origin: 0 0; container: stage / size; }
+.stage { position: absolute; left: 0; top: 0; width: 1280px; visibility: hidden; overflow: hidden; transform-origin: 0 0; container: stage / size; }
+
+/* Match fitStage before hydration, so the menu can paint without waiting for JS.
+   Older browsers retain the measured JS layout. Keep the same aspect bounds,
+   rounded virtual width, safe area and quarter turn as stageSpace.ts. */
+@supports (transform: scale(calc(1px / 1px))) and (width: round(nearest, 1px, 1px)) {
+  .stage {
+    --available-width: calc(100dvw - env(safe-area-inset-left) - env(safe-area-inset-right));
+    --available-height: calc(100dvh - env(safe-area-inset-top) - env(safe-area-inset-bottom));
+    --across: var(--available-width);
+    --down: var(--available-height);
+    --fit-width: round(nearest, clamp(var(--stage-min-width), calc(var(--stage-height) * (var(--across) / max(1px, var(--down)))), var(--stage-max-width)), 1px);
+    --fit-scale: min(calc(var(--across) / var(--fit-width)), calc(var(--down) / var(--stage-height)));
+    width: var(--fit-width); visibility: visible;
+    transform: translate(calc(env(safe-area-inset-left) + (var(--available-width) - var(--fit-width) * var(--fit-scale)) / 2), calc(env(safe-area-inset-top) + (var(--available-height) - var(--stage-height) * var(--fit-scale)) / 2)) scale(var(--fit-scale));
+  }
+  @media (orientation: portrait) {
+    .stage {
+      --across: var(--available-height);
+      --down: var(--available-width);
+      transform: translate(calc(env(safe-area-inset-left) + (var(--available-width) - var(--stage-height) * var(--fit-scale)) / 2), calc(env(safe-area-inset-top) + (var(--available-height) + var(--fit-width) * var(--fit-scale)) / 2)) rotate(-90deg) scale(var(--fit-scale));
+    }
+  }
+}

@@ -3,7 +3,7 @@
 import { useEffect, useLayoutEffect, useRef, useState } from 'react';
 import type { CSSProperties, ReactNode } from 'react';
 import { usePathname } from 'next/navigation';
-import { STAGE_HEIGHT, enterLandscape, fitStage, setStageTransform } from './stageSpace';
+import { MAX_ASPECT, MIN_ASPECT, STAGE_HEIGHT, enterLandscape, fitStage, setStageTransform } from './stageSpace';
 import type { StageTransform } from './stageSpace';
 import styles from './GameStage.module.css';
 
@@ -47,9 +47,12 @@ export function GameStage({ children }: { children: ReactNode }) {
 
   const transform = fit?.transform;
   const style = {
-    width: fit?.width ?? Math.round(STAGE_HEIGHT * 16 / 9), height: STAGE_HEIGHT,
+    '--stage-height': `${STAGE_HEIGHT}px`,
+    '--stage-min-width': `${Math.round(STAGE_HEIGHT * MIN_ASPECT)}px`,
+    '--stage-max-width': `${Math.round(STAGE_HEIGHT * MAX_ASPECT)}px`,
+    width: fit?.width, height: STAGE_HEIGHT,
     transform: transform ? `translate(${transform.x}px, ${transform.y}px)${transform.rotated ? ' rotate(-90deg)' : ''} scale(${transform.scale})` : undefined,
-    visibility: fit ? undefined : 'hidden',
+    visibility: fit ? 'visible' : undefined,
   } as CSSProperties;
   return <div className={`${styles.screen} ${menu ? styles.menu : ''}`}>
     <div ref={safe} className={styles.safe} aria-hidden="true" />
