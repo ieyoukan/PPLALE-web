@@ -19,6 +19,12 @@
 /.next/
 /out/
 
+# Card derivatives are generated before development/build/test.
+/public/og-cards/yojo/
+/public/og-cards/sweet/
+/public/og-cards/playable/
+/public/deck-thumbnails/
+
 # production
 /build
 

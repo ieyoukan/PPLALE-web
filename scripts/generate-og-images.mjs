@@ -2,11 +2,10 @@
 /**
  * OGP画像生成用の PNG サムネイルを作成するスクリプト
  *
- * - resvg（@vercel/og が内部で使用するSVGレンダラー）は WebP のデコードに対応していないため、
- *   カード画像（public/images/{yojo,sweet,playable}/*.webp）を OGP専用の PNG として
- *   public/og-cards/ 配下にミラーリングして生成する。
- * - src/app/api/og/[userId]/[deckId]/route.tsx はこの PNG を参照する。
- * - 変換元より新しい PNG が既に存在する場合はスキップする（差分のみ再生成）。
+ * - カード画像（public/images/{yojo,sweet,playable}/*.webp）を OGP専用の PNG として
+ *   public/og-cards/ 配下に生成する。派生画像はGit管理せず、開発・ビルド前に作る。
+ * - デッキ・プロフィールOGPはこのPNGを参照する。
+ * - 元画像と生成スクリプトの両方より新しいPNGはスキップする。
  *
  * 使い方: npm run cards:og-images
  */
@@ -20,6 +19,7 @@ const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const SRC_DIRS = ['yojo', 'sweet', 'playable'];
 // OGP上での最大表示幅(176px)にレティナ余裕を持たせたサイズ。転送量を抑えて生成を高速化する。
 const MAX_WIDTH = 240;
+const generator = await stat(fileURLToPath(import.meta.url));
 
 let converted = 0;
 let skipped = 0;
@@ -38,14 +38,15 @@ for (const dir of SRC_DIRS) {
 
     const srcStat = await stat(srcAbs);
     const outStat = await stat(outAbs).catch(() => null);
-    if (outStat && outStat.mtimeMs >= srcStat.mtimeMs) {
+    if (outStat && outStat.mtimeMs >= Math.max(srcStat.mtimeMs, generator.mtimeMs)) {
       skipped++;
       continue;
     }
 
     await sharp(srcAbs)
       .resize({ width: MAX_WIDTH, withoutEnlargement: true })
-      .png()
+      // Offline compression: preserve all pixels and spend CPU here instead of on requests.
+      .png({ compressionLevel: 9, palette: false, adaptiveFiltering: true })
       .toFile(outAbs);
     converted++;
   }

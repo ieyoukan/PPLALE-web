@@ -67,6 +67,12 @@ npm run cards:check
 - `.png` の参照が残ったままだと `cards:check` がエラーになる（変換し忘れ防止）
 - 元のPNGは不要になったら削除してよい（git履歴に残っている）
 
+OGP用カードPNG（`public/og-cards/{yojo,sweet,playable}/`）と一覧用WebP（`public/deck-thumbnails/`）はGit管理しない。
+`npm run build`・`npm run dev`・`npm run test:deck-images` の前に自動生成する。
+手動では `npm run cards:generate` を使う。元画像または生成スクリプトの更新時だけ作り直し、OGP用PNGは可逆圧縮する。
+`caption.png` と `profile-bg.jpg` は引き続き同梱する。
+クリーンな環境でもテスト用ヘルパーの型を解決できるよう、本番ビルドとルームサーバーテストの前にgame-coreも自動でビルドする。
+
 ## 環境変数について 
 firebaseを使うためには必要です。
 

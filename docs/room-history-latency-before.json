@@ -1,0 +1,41 @@
+{
+  "measuredAt": "2026-10-20T18:11:56.419Z",
+  "node": "v22.23.2",
+  "backend": "redis",
+  "conditions": {
+    "synchronousCommit": "on",
+    "synchronousStandbyNames": "",
+    "seeds": "42 + match index",
+    "scope": "Durable backend read, legal move selection, apply, store; excludes WebSocket, browser and animation",
+    "background": "An asynchronous standby was initialized around the final after run; these timings are local observations, not a production improvement guarantee."
+  },
+  "samples": 160,
+  "commands": {
+    "roll": 4,
+    "initiative": 2,
+    "openingDraw": 14,
+    "keep": 4,
+    "choose": 57,
+    "play": 25,
+    "skill": 20,
+    "end": 21,
+    "attack": 13
+  },
+  "milliseconds": {
+    "read": {
+      "p50": 2.65,
+      "p95": 4.5,
+      "max": 20.44
+    },
+    "store": {
+      "p50": 25,
+      "p95": 36.84,
+      "max": 64.74
+    },
+    "total": {
+      "p50": 28.36,
+      "p95": 42.55,
+      "max": 71.19
+    }
+  }
+}

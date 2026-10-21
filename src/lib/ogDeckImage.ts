@@ -64,7 +64,7 @@ async function render(yojo: string[], sweet: string[], playable: string | null):
       ...(playable ? [cardImage(playable, 176, 264).then(input => ({ input, left: 548, top: 366 }))] : []),
       hashtag().then(input => ({ input, left: 720, top: 558 })),
     ]);
-    return await sharp(await template()).composite(layers).png({ compressionLevel: 1 }).toBuffer();
+    return await sharp(await template()).composite(layers).png({ compressionLevel: 6 }).toBuffer();
   } finally {
     const next = waiting.shift();
     if (next) next();

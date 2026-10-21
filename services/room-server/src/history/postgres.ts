@@ -41,40 +41,45 @@ export class PostgresHistory implements HistoryRepository {
     private async transaction<T>(run: (client: PoolClient) => Promise<T>): Promise<T> {
         const client = await this.pool.connect();
         try {
-            await client.query('BEGIN');
-            await client.query(`SET LOCAL synchronous_commit = '${this.sync}'`);
             // Also serializes ingestion/claim operations from overlapping history service versions.
-            await client.query('SELECT pg_advisory_xact_lock(727530120)');
+            // Send setup together: SQL still runs in order, without three network round trips.
+            await client.query(`BEGIN; SET LOCAL synchronous_commit = '${this.sync}'; SELECT pg_advisory_xact_lock(727530120)`);
             const result = await run(client);
             // A retry after a lost COMMIT response must also wait for replication, even if
             // ingest is idempotently skipped. A fresh WAL record fences all preceding writes.
-            await client.query('INSERT INTO durability_fence VALUES(1,0) ON CONFLICT(id) DO UPDATE SET nonce=1-durability_fence.nonce');
             // Cancelling synchronous COMMIT can acknowledge only the primary copy. Let it
             // wait for the standby; RPC timeout leaves the Redis outbox available for retry.
-            await client.query('SET LOCAL statement_timeout = 0');
+            await client.query('INSERT INTO durability_fence VALUES(1,0) ON CONFLICT(id) DO UPDATE SET nonce=1-durability_fence.nonce; SET LOCAL statement_timeout = 0');
             await client.query('COMMIT');
             return result;
         } catch (error) { await client.query('ROLLBACK').catch(() => {}); throw error; }
         finally { client.release(); }
     }
-    private async catalog(client: PoolClient | Pool, id: string) {
+    private async catalogBytes(client: PoolClient | Pool, id: string): Promise<Buffer> {
         const row = (await client.query('SELECT data FROM catalogs WHERE id=$1', [id])).rows[0];
         if (!row || sha(row.data) !== id) throw new Error('Catalog integrity check failed');
-        return unpack<Catalog>(row.data);
+        return row.data;
+    }
+    private async catalog(client: PoolClient | Pool, id: string) {
+        return unpack<Catalog>(await this.catalogBytes(client, id));
     }
     private checkedMeta(row: QueryResultRow): MatchSummary {
         if (sha(row.catalog + '\n' + row.meta + '\n' + row.hash) !== row.meta_hash) throw new Error('Match metadata integrity check failed');
         return JSON.parse(row.meta) as MatchSummary;
     }
-    private async append(client: PoolClient, room: Room, state: GameState, event: ReplayFrame['event'], capture?: SnapshotCapture | null, completeAllowed = true) {
-        const row = (await client.query('SELECT * FROM matches WHERE id=$1', [room.record!.id])).rows[0];
+    private async latest(client: PoolClient, id: string) {
+        return (await client.query(`SELECT m.*, f.data AS previous_frame FROM matches m
+            LEFT JOIN frames f ON f.match=m.id AND f.seq=m.count-1 WHERE m.id=$1`, [id])).rows[0];
+    }
+    private async append(client: PoolClient, room: Room, state: GameState, event: ReplayFrame['event'], capture?: SnapshotCapture | null, completeAllowed = true, current?: QueryResultRow) {
+        const row = current ?? await this.latest(client, room.record!.id);
         if (!row || row.ended !== null) return;
         const sequence = Number(row.count), previousHash = String(row.hash);
-        const last = sequence ? (await client.query('SELECT data FROM frames WHERE match=$1 AND seq=$2', [room.record!.id, sequence - 1])).rows[0] : undefined;
-        const prior = last ? unpack<ReplayFrame>(last.data) : undefined;
+        const prior = row.previous_frame ? unpack<ReplayFrame>(row.previous_frame) : undefined;
         capture ??= prior && { catalogId: prior.catalogId, engineVersion: prior.engineVersion, presentation: prior.presentation };
         if (!capture) throw new Error('Missing accepting engine snapshot');
-        await this.catalog(client, capture.catalogId);
+        // Appending only needs integrity validation; do not inflate/parse the full catalog per move.
+        await this.catalogBytes(client, capture.catalogId);
         const data = pack({ sequence, at: Date.now(), state, ...capture, command: event === 'command' || event === 'normal' ? room.last?.command ?? null : null, event });
         const hash = sha(Buffer.concat([Buffer.from(previousHash + '\n'), data]));
         await client.query('INSERT INTO frames VALUES($1,$2,$3,$4,$5)', [room.record!.id, sequence, data, hash, previousHash]);
@@ -95,23 +100,24 @@ export class PostgresHistory implements HistoryRepository {
         if (!room.record || !room.state) return;
         if (previous?.record?.id === room.record.id && JSON.stringify(previous.state) === JSON.stringify(room.state)) return;
         if (!capture) throw new Error('Missing snapshot capture');
-        const catalog = await this.catalog(client, capture.catalogId);
-        const existing = (await client.query('SELECT id FROM matches WHERE id=$1', [room.record.id])).rows[0];
+        const existing = await this.latest(client, room.record.id);
+        let current = existing;
         if (!existing) {
+            const catalog = await this.catalog(client, capture.catalogId);
             const meta: MatchSummary = {
                 id: room.record.id, mode: room.mode ?? 'room', startedAt: room.record.startedAt, endedAt: 0,
                 players: room.seats.map(s => ({ name: s!.name, ...(s!.profileId && { profileId: s!.profileId }), deck: structuredClone(s!.deck!), playableName: catalog[s!.deck!.playable]?.name ?? s!.deck!.playable })) as MatchSummary['players'],
                 rules: room.rules, winner: null, reason: 'normal', turns: 0, points: [0, 0], firstPlayer: room.state.rules.firstPlayer,
                 frames: 0, complete: completeAllowed && room.state.revision === 0 && room.seats.every(seat => !!seat?.historyOwners?.length), engineVersion: capture.engineVersion,
             };
-            await client.query("INSERT INTO matches VALUES($1,$2,NULL,$3,$4,0,'',$5)", [meta.id, meta.startedAt, JSON.stringify(meta), capture.catalogId, sha(capture.catalogId + '\n' + JSON.stringify(meta) + '\n')]);
+            current = (await client.query("INSERT INTO matches VALUES($1,$2,NULL,$3,$4,0,'',$5) RETURNING *", [meta.id, meta.startedAt, JSON.stringify(meta), capture.catalogId, sha(capture.catalogId + '\n' + JSON.stringify(meta) + '\n')])).rows[0];
             for (const seat of [0, 1] as const) for (let owner of room.seats[seat]?.historyOwners ?? []) {
                 const claim = (await client.query('SELECT account FROM claims WHERE device=$1 AND before_ms >= $2 ORDER BY before_ms LIMIT 1', [owner, meta.startedAt])).rows[0];
                 if (claim) owner = claim.account;
                 await client.query('INSERT INTO members(match,owner,seat) VALUES($1,$2,$3) ON CONFLICT DO NOTHING', [meta.id, owner, seat]);
             }
         }
-        await this.append(client, room, room.state, room.status === 'finished' ? room.record.reason ?? 'normal' : existing ? 'command' : 'start', capture, completeAllowed);
+        await this.append(client, room, room.state, room.status === 'finished' ? room.record.reason ?? 'normal' : existing ? 'command' : 'start', capture, completeAllowed, current);
     }
     async ingest(write: HistoryWrite) {
         if (!/^\d+-\d+$/.test(write.id)) throw new Error('Invalid history event');

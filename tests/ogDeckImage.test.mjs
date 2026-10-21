@@ -15,6 +15,18 @@ const { getOgDeckImage } = createRequire(import.meta.url)(output);
 after(() => rm(directory, { recursive: true, force: true }));
 const catalog = await Promise.all(['yojo', 'sweet', 'playable'].map(async type => JSON.parse(await readFile(`src/data/${type}.json`, 'utf8'))[type]));
 
+test('OGP card compression preserves every pixel of the resized source without palette quantization', async () => {
+  for (const card of catalog.flat()) {
+    const input = `public${card.imageUrl}`;
+    const output = input.replace('/images/', '/og-cards/').replace(/\.webp$/i, '.png');
+    const reference = await sharp(input).resize({ width: 240, withoutEnlargement: true }).png({ palette: false }).toBuffer();
+    const expected = await sharp(reference).ensureAlpha().raw().toBuffer();
+    const actual = await sharp(output).ensureAlpha().raw().toBuffer();
+    assert.ok(actual.equals(expected), `${card.id}: compression changed card pixels`);
+    assert.equal((await sharp(output).metadata()).isPalette, false, card.id);
+  }
+});
+
 test('all catalog assets generate valid 1200×630 PNGs without network access', async () => {
   const originalFetch = globalThis.fetch;
   globalThis.fetch = () => { throw Error('OGP must not fetch network assets'); };

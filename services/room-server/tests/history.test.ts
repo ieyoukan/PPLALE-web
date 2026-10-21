@@ -220,6 +220,21 @@ historyTest('history: corruption of a frame, metadata or archived image fails cl
     await assert.rejects(history.list(['device:host']), /integrity/);
 });
 
+historyTest('history: command appends still check catalog integrity and retry an unacknowledged write', async t => {
+    const { backend, redis, history, pool } = await fixture(t);
+    const room = ready(); await backend.create(room, 3_600_000);
+    const id = (await pool.query('SELECT catalog FROM matches WHERE id=$1', [room.record!.id])).rows[0].catalog;
+    const original = (await pool.query('SELECT data FROM catalogs WHERE id=$1', [id])).rows[0].data;
+    await pool.query('UPDATE catalogs SET data=$1 WHERE id=$2', [Buffer.from('corrupt'), id]);
+    act(room, 0, { action: 'command', command: { type: 'roll', actor: 0 }, revision: 0 }, catalog);
+    await assert.rejects(store(backend, room), /Catalog integrity/);
+    assert.equal((await history.get(room.id))!.state!.revision, 0);
+    assert.equal((await redis.historyPending()).length, 1);
+    await pool.query('UPDATE catalogs SET data=$1 WHERE id=$2', [original, id]);
+    assert.equal((await backend.get(room.id))!.state!.revision, 1);
+    assert.equal((await redis.historyPending()).length, 0);
+});
+
 historyTest('history: claiming guest history preserves favorites, excludes a second account and allows new guest matches after logout', async t => {
     const { backend, history } = await fixture(t);
     const room = ready(); room.seats[0].historyOwners = ['device:host']; await backend.create(room, 3_600_000);
