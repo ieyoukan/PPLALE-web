@@ -6,7 +6,7 @@ import type { Catalog, GameState, Side } from '../model.ts';
 export const WIN = 1_000_000;
 
 /**
- * Weights of `evaluate`. The values are trained by self-play (`npm run cpu:train`); a strategy can
+ * Weights of `evaluate`. The values are trained by self-play (`pnpm run cpu:train`); a strategy can
  * pass its own to play a different style.
  */
 export interface Weights {

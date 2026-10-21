@@ -1,5 +1,5 @@
 // Trains the evaluation weights of つよい / さいきょう by self-play, in Node only (no browser).
-//   npm run cpu:train -- [generations=30] [candidates=8] [pairs=100]
+//   pnpm run cpu:train -- [generations=30] [candidates=8] [pairs=100]
 // Each generation mutates the best weights, plays every candidate against the best (the same decks
 // and seed twice with seats swapped, so luck cancels), re-checks the winner on fresh matches and
 // keeps it only if it still clearly wins. The result is written to scripts/weights.json (not

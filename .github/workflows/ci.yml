@@ -25,22 +25,22 @@ jobs:
           cache: true
 
       - name: Install dependencies
-        run: npm ci
+        run: pnpm install --frozen-lockfile
 
       - name: Generate and verify site fonts
-        run: npm run test:fonts
+        run: pnpm run test:fonts
 
       - name: Check game opening and draw flow
-        run: npm run test:game
+        run: pnpm run test:game
 
       - name: Test the CPU server
-        run: npm run test:cpu-server
+        run: pnpm run test:cpu-server
 
       - name: Test the room server
-        run: npm run test:room-server
+        run: pnpm run test:room-server
 
       - name: Test the room server on Redis
-        run: npm run test:room-server
+        run: pnpm run test:room-server
         env:
           REDIS_URL: redis://localhost:6379
 
@@ -48,7 +48,7 @@ jobs:
         run: mise run check
 
       - name: Generate and verify deck images
-        run: npm run test:deck-images
+        run: pnpm run test:deck-images
 
       - name: Check for vulnerabilities
-        run: npm audit --audit-level=moderate || true
+        run: pnpm audit --audit-level=moderate || true

@@ -41,9 +41,9 @@ jobs:
         with:
           cache: true
       - name: Install dependencies
-        run: npm ci
+        run: pnpm install --frozen-lockfile
       - name: Test the CPU server
-        run: npm run test:cpu-server
+        run: pnpm run test:cpu-server
 
   tag:
     needs: test

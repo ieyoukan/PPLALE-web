@@ -1,0 +1,16 @@
+node_modules
+**/node_modules
+.next
+out
+.git
+.husky/_
+test-results
+playwright-report
+.cache
+public/og-cards
+public/deck-thumbnails
+public/fonts/generated
+src/app/generated
+.env*
+!.env.production
+firestore-debug.log

@@ -1,4 +1,4 @@
-// CPU levels against each other: `npm run cpu:arena -- [games per pair] [levels...]`
+// CPU levels against each other: `pnpm run cpu:arena -- [games per pair] [levels...]`
 // Seats are swapped every other game so the first-player advantage cancels out.
 import { cpuLevels, playMatch } from '../dist/index.js';
 import { catalog } from './catalog.mjs';

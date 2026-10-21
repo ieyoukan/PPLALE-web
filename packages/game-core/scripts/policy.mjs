@@ -1,5 +1,5 @@
 // The value of single moves (src/ai/policy.ts), learned from self-play outcomes. Node only.
-//   npm run cpu:policy -- [games=20000] [share of decisions=0.2] [hidden=48] [epochs=4]
+//   pnpm run cpu:policy -- [games=20000] [share of decisions=0.2] [hidden=48] [epochs=4]
 // つよい plays itself with a random move now and then (as for the position value); for a share of
 // the decisions the move played is stored with whether its player won. Positions of one match stay
 // together in the training or the validation part. Writes scripts/policy-model.json (not committed).

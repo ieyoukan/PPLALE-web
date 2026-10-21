@@ -1,7 +1,7 @@
 // Is a CPU variant stronger than さいきょう as it is? Plays them against each other with the same
 // sequential test the CPU server uses before handing out a model (compareVerdict), and appends the
 // result to experiments.jsonl so every attempt stays on record.
-//   npm run cpu:compare -- <name> [--model file.json] [--policy file.json] [--search '{"maxNodes":4800}']
+//   pnpm run cpu:compare -- <name> [--model file.json] [--policy file.json] [--search '{"maxNodes":4800}']
 //                                 [--against file.json] [--decks all|strawberry|records.jsonl] [--max 600]
 // --model: the position value to use (default: the built-in one). --policy: a move value
 // (ai/policy.ts). --search: TurnSearchOptions. --against: the value model of the other side
@@ -37,7 +37,7 @@ if (!isMainThread) {
   });
 } else {
   const [name, ...rest] = process.argv.slice(2);
-  if (!name || name.startsWith('--')) throw new Error('usage: npm run cpu:compare -- <name> [--model f] [--policy f] [--search json] [--against f] [--decks all|strawberry|records.jsonl] [--max n]');
+  if (!name || name.startsWith('--')) throw new Error('usage: pnpm run cpu:compare -- <name> [--model f] [--policy f] [--search json] [--against f] [--decks all|strawberry|records.jsonl] [--max n]');
   const option = key => { const i = rest.indexOf(`--${key}`); return i >= 0 ? rest[i + 1] : undefined; };
   const job = { model: option('model'), policy: option('policy'), search: JSON.parse(option('search') ?? '{}'), against: option('against'), decks: option('decks') ?? 'all' };
   const rule = { ...defaultCompareRule, max: Number(option('max') ?? defaultCompareRule.max) };

@@ -10,8 +10,8 @@ export function RecruitmentButton({ roomId, hostProfileId }: { roomId: string; h
 }
 function Recruitment({ roomId }: { roomId: string }) {
   const [loading, setLoading] = useState(true);
-  useEffect(() => { let current = true; void readRecruitment().then(value => { if (current) setPublished(value === roomId); }, () => {}).finally(() => { if (current) setLoading(false); }); return () => { current = false; }; }, [roomId]);
   const [published, setPublished] = useState(false), [busy, setBusy] = useState(false), [error, setError] = useState('');
+  useEffect(() => { let current = true; void readRecruitment().then(value => { if (current) setPublished(value === roomId); }, () => {}).finally(() => { if (current) setLoading(false); }); return () => { current = false; }; }, [roomId]);
   async function change() {
     setBusy(true); setError('');
     try { await publishRecruitment(published ? null : roomId); setPublished(value => !value); }

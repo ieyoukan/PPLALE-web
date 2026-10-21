@@ -2,7 +2,7 @@
 
 ## 現在の構成
 
-既存の Next.js サイトに `/game/` を追加し、対戦ルールを npm workspace の `@pplale/game-core` に分離する。リポジトリは共有し、Firebase・Vercel を利用する構成。実際のプロジェクト設定や本番稼働状況は今回の確認対象に含めない。実装との照合とテストの結果は [検証記録](verification.md)。
+既存の Next.js サイトに `/game/` を追加し、対戦ルールを pnpm workspace の `@pplale/game-core` に分離する。リポジトリは共有し、Firebase・Vercel を利用する構成。実際のプロジェクト設定や本番稼働状況は今回の確認対象に含めない。実装との照合とテストの結果は [検証記録](verification.md)。
 
 ```text
 src/data/*.json ── catalog.ts ──> game-core
@@ -42,8 +42,9 @@ UI はドロー前後の手札と山札の差分から移動演出を描く。�
 ## Vercel への配置
 
 - Root Directory はリポジトリのルート。既存 Next.js プロジェクトのまま運用する。
-- `npm ci` で root と3つの workspace（game-core・CPU サーバー・ルームサーバー）の依存関係をインストールする。root の `workspaces` と依存関係、共有 `package-lock.json` に登録済み。
-- Build Command は既存の `npm run build`。`transpilePackages` により game-core の TypeScript を Next.js がコンパイルする。core の `dist` を事前生成・コミットする必要はない。
+- `pnpm install --frozen-lockfile` で root と3つの workspace（game-core・CPU サーバー・ルームサーバー）の依存関係をインストールする。root の `pnpm-workspace.yaml` と依存関係、共有 `pnpm-lock.yaml` に登録済み。
+- Build Command は既存の `pnpm run build`。`transpilePackages` により game-core の TypeScript を Next.js がコンパイルする。core の `dist` を事前生成・コミットする必要はない。
+- ローカルと CI は Node.js 26.12.1、Vercel は Node.js 24.x でビルドする。`engines.node` を `24.x || 26.x` にして、Vercel が未対応の 26 を選ばず、利用可能な 24.x に解決されるようにしている。
 - Firebase の環境変数と AuthProvider は既存のものを使用する。同一ドメインなら同じログイン状態で保存済みデッキを選べる。
 - Vercel に常駐プロセス、WebSocket サーバー、対戦用 API は追加していない。CPU / 同一端末対戦はブラウザで動く。
 - `NEXT_PUBLIC_ROOM_SERVER_URL` を設定すると、バトルのタブのルームマッチがそのルームサーバーにつながる。未設定ならルームマッチは使えない。詳細は [services/room-server](../services/room-server/README.md)。

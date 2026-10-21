@@ -51,7 +51,7 @@ try {
     console.log(JSON.stringify(runs.at(-1)));
     await context.close();
   }
-  const report = { measuredAt: new Date().toISOString(), sourceCommit: execFileSync('git', ['rev-parse', 'HEAD'], { encoding: 'utf8' }).trim(), includesUncommittedChanges: true, next: require('next/package.json').version, axe: require('axe-core/package.json').version, chromium: browser.version(), conditions: { build: 'npm run build (Turbopack)', origin, deviceScaleFactor: 1, freshContextPerRun: true, login: false, savedData: false, networkThrottling: 'none', cpuThrottling: 'none', gzip: 'Node gzipSync on unique same-origin JS responses and concatenated inline CSS', caution: 'Local measurements; no historical baseline or production deployment comparison' }, runs };
+  const report = { measuredAt: new Date().toISOString(), sourceCommit: execFileSync('git', ['rev-parse', 'HEAD'], { encoding: 'utf8' }).trim(), includesUncommittedChanges: true, next: require('next/package.json').version, axe: require('axe-core/package.json').version, chromium: browser.version(), conditions: { build: 'pnpm run build (Turbopack)', origin, deviceScaleFactor: 1, freshContextPerRun: true, login: false, savedData: false, networkThrottling: 'none', cpuThrottling: 'none', gzip: 'Node gzipSync on unique same-origin JS responses and concatenated inline CSS', caution: 'Local measurements; no historical baseline or production deployment comparison' }, runs };
   await writeFile(output, JSON.stringify(report, null, 2) + '\n');
   if (runs.some(run => run.a11y.violations.length)) process.exitCode = 1;
 } finally { await browser.close(); }

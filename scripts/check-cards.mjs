@@ -5,7 +5,7 @@
  * - src/data/*.json の imageUrl が実在するファイルを指しているか（エラー）
  * - public/images/{yojo,sweet,playable} に未参照のファイルが無いか（警告）
  *
- * 使い方: npm run cards:check
+ * 使い方: pnpm run cards:check
  * 終了コード: 参照切れがあると 1
  */
 
@@ -50,7 +50,7 @@ for (const { rel, key, dir } of dataFiles) {
     if (url.toLowerCase().endsWith('.png')) {
       console.error(
         `[ERROR] ${rel}: imageUrl が .png のままです (id=${card.id})。` +
-          `npm run cards:optimize を実行して .webp に変換してください: ${url}`
+          `pnpm run cards:optimize を実行して .webp に変換してください: ${url}`
       );
       errors++;
     }

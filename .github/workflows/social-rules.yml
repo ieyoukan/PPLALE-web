@@ -27,6 +27,6 @@ jobs:
         with:
           distribution: temurin
           java-version: '25'
-      - run: npm ci
+      - run: pnpm install --frozen-lockfile
       - name: Test profiles and friend permissions against demo emulators
-        run: npm exec --yes --package=firebase-tools@15.34.0 -- firebase emulators:exec --only firestore,auth --project demo-pplale-social 'PPLALE_FIREBASE_RULES_TEST=1 node --test tests/social-rules.test.mjs'
+        run: pnpm dlx firebase-tools@15.34.0 emulators:exec --only firestore,auth --project demo-pplale-social 'PPLALE_FIREBASE_RULES_TEST=1 node --test tests/social-rules.test.mjs'

@@ -7,7 +7,7 @@
  * - 変換後、JSON の imageUrl を .webp 参照に書き換える
  * - 変換元の PNG は削除しない（削除は git 操作として確認しながら行う）
  *
- * 使い方: npm run cards:optimize
+ * 使い方: pnpm run cards:optimize
  */
 
 import { readFile, writeFile, stat } from 'node:fs/promises';

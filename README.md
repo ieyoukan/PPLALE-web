@@ -30,12 +30,13 @@ Next.js / game-core の分離方針、Vercelへの配置、未確定ルールは
 
 ```bash
 mise install
-npm ci
-npm run dev
+pnpm install --frozen-lockfile
+pnpm run dev
 ```
 
 miseをシェルへ有効化し、このディレクトリで指定のNode.jsが選ばれている状態で実行する。
-`mise run install` と `mise run dev` も、それぞれ同じnpmコマンドを呼び出す補助タスクとして利用できる。
+パッケージマネージャーは pnpm を使う（`pnpm-lock.yaml` が正）。pnpm workspaces が `packages/game-core` をリポジトリ内でリンクするため、game-core を npm に公開する必要はない。
+`mise run install` と `mise run dev` も、それぞれ同じpnpmコマンドを呼び出す補助タスクとして利用できる。
 型チェック・Lint・カードデータ検査をまとめて実行する場合は `mise run check` を使う。
 
 ## 開発経緯
@@ -56,20 +57,20 @@ VRChatでユーザーと話し、要望を聞きながら実装を繰り返し�
 
 1. PNG画像を `public/images/yojo|sweet|playable/` に置く
 2. `src/data/*.json` にカードを追加する（`imageUrl` は **`.png` のままでOK**）
-3. `npm run cards:optimize` を実行 → WebP変換 + JSONの `imageUrl` を `.webp` に自動更新
-4. `npm run cards:check` で整合性チェック（CIでも自動実行される）
+3. `pnpm run cards:optimize` を実行 → WebP変換 + JSONの `imageUrl` を `.webp` に自動更新
+4. `pnpm run cards:check` で整合性チェック（CIでも自動実行される）
 
 ```bash
-npm run cards:optimize
-npm run cards:check
+pnpm run cards:optimize
+pnpm run cards:check
 ```
 
 - `.png` の参照が残ったままだと `cards:check` がエラーになる（変換し忘れ防止）
 - 元のPNGは不要になったら削除してよい（git履歴に残っている）
 
 OGP用カードPNG（`public/og-cards/{yojo,sweet,playable}/`）と一覧用WebP（`public/deck-thumbnails/`）はGit管理しない。
-`npm run build`・`npm run dev`・`npm run test:deck-images` の前に自動生成する。
-手動では `npm run cards:generate` を使う。元画像または生成スクリプトの更新時だけ作り直し、OGP用PNGは可逆圧縮する。
+`pnpm run build`・`pnpm run dev`・`pnpm run test:deck-images` の前に自動生成する。
+手動では `pnpm run cards:generate` を使う。元画像または生成スクリプトの更新時だけ作り直し、OGP用PNGは可逆圧縮する。
 `caption.png` と `profile-bg.jpg` は引き続き同梱する。
 クリーンな環境でもテスト用ヘルパーの型を解決できるよう、本番ビルドとルームサーバーテストの前にgame-coreも自動でビルドする。
 

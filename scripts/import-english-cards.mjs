@@ -9,7 +9,7 @@
  * 既存デッキとの互換性を保つため、カード ID とゲーム内判定用の type / fruit /
  * sweetType / version は日本語版データを正として引き継ぐ。
  *
- * 使い方: npm run cards:import-en
+ * 使い方: pnpm run cards:import-en
  */
 
 import { mkdtemp, mkdir, readFile, readdir, rm, writeFile } from 'node:fs/promises';

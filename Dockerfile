@@ -1,10 +1,14 @@
-FROM node:22.23.2-alpine AS builder
+FROM node:26.12.1-alpine AS builder
 
 WORKDIR /app
 
 # 依存関係のインストール
-COPY package*.json ./
-RUN npm ci
+RUN npm install -g pnpm@10.33.2
+COPY package.json pnpm-lock.yaml pnpm-workspace.yaml ./
+COPY packages/game-core/package.json packages/game-core/
+COPY services/cpu-server/package.json services/cpu-server/
+COPY services/room-server/package.json services/room-server/
+RUN pnpm install --frozen-lockfile
 
 # ソースコードのコピー
 COPY . .
@@ -13,10 +17,10 @@ COPY . .
 COPY .env.production .env
 
 # ビルド
-RUN npm run build
+RUN pnpm run build
 
 # 本番環境用のイメージ
-FROM node:22.23.2-alpine AS runner
+FROM node:26.12.1-alpine AS runner
 
 WORKDIR /app
 

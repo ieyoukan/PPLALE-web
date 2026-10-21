@@ -1,7 +1,8 @@
 # Only what the Dockerfile copies is sent to the builder.
 *
 !package.json
-!package-lock.json
+!pnpm-lock.yaml
+!pnpm-workspace.yaml
 !packages/game-core/package.json
 !packages/game-core/src
 !services/cpu-server/package.json

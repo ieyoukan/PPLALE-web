@@ -1,0 +1,12 @@
+packages:
+  - packages/game-core
+  - services/cpu-server
+  - services/room-server
+
+onlyBuiltDependencies:
+  - '@firebase/util'
+  - esbuild
+  - fsevents
+  - protobufjs
+  - sharp
+  - unrs-resolver

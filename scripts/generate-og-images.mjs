@@ -7,7 +7,7 @@
  * - デッキ・プロフィールOGPはこのPNGを参照する。
  * - 元画像と生成スクリプトの両方より新しいPNGはスキップする。
  *
- * 使い方: npm run cards:og-images
+ * 使い方: pnpm run cards:og-images
  */
 
 import { readdir, mkdir, stat } from 'node:fs/promises';

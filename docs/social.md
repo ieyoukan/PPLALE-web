@@ -47,7 +47,7 @@ Firestoreルールは `firebase.json` から `firebase deploy --only firestore:r
 ## ローカル検証
 
 ```
-npm exec --yes --package=firebase-tools@15.34.0 -- firebase emulators:start --only firestore,auth --project demo-pplale-social
+pnpm dlx firebase-tools@15.34.0 emulators:start --only firestore,auth --project demo-pplale-social
 PPLALE_FIREBASE_RULES_TEST=1 node --test tests/social-rules.test.mjs
 ```
 

@@ -78,7 +78,7 @@ export const easy: CpuStrategy = {
 - `state` は `determinize` 済み。相手の非公開の手札・山札の順番・乱数の種は推測で置き換えてあり、CPU は不正に情報を読めない。`next` もその推測した世界での結果。
 - 盤面の良し悪しは `evaluate(state, side, catalog, weights)`。重みを変えれば打ち方の個性を作れる。
 - `cpuCommand(state, catalog, { level, side })` が手番の判定、推測、実際の状態での再確認をまとめて行う。新しい強さは `ai/index.ts` の `cpuStrategies` に登録すると、対戦準備画面に自動で並ぶ。
-- 強さの順序は `tests/cpu.test.mjs` と `npm run cpu:arena -- [試合数] [レベル…]` で確かめる。席は1試合ごとに入れ替える。
+- 強さの順序は `tests/cpu.test.mjs` と `pnpm run cpu:arena -- [試合数] [レベル…]` で確かめる。席は1試合ごとに入れ替える。
 
 | 対戦（席を入れ替えた組） | 試合数 | 勝率（95%区間） | 1手の平均思考時間 |
 | --- | --- | --- | --- |
@@ -104,8 +104,8 @@ export const easy: CpuStrategy = {
 ブラウザを使わず Node だけで動く。1試合は約15ms、8コアで並列に回す。
 
 ```
-npm run cpu:train -- [世代数=30] [候補数=8] [1候補あたりの組数=100]
-npm run cpu:arena -- [試合数] [レベル…]
+pnpm run cpu:train -- [世代数=30] [候補数=8] [1候補あたりの組数=100]
+pnpm run cpu:arena -- [試合数] [レベル…]
 ```
 
 - 育てる対象は `evaluate` の重み（`Weights`）。「つよい」「さいきょう」が共通で使う。
@@ -119,9 +119,9 @@ npm run cpu:arena -- [試合数] [レベル…]
 「さいきょう」は、ターンが終わった局面を小さなネットワーク（入力75・中間32）の勝率予測で比べる。ターン内の手順の並べ替えは手書きの `evaluatePlan` のまま。
 
 ```
-npm run cpu:value -- collect [試合数=40000] [残すターンの割合=0.5]
-npm run cpu:value -- train [中間の数=32] [周回=4]
-npm run cpu:value -- adopt
+pnpm run cpu:value -- collect [試合数=40000] [残すターンの割合=0.5]
+pnpm run cpu:value -- train [中間の数=32] [周回=4]
+pnpm run cpu:value -- adopt
 ```
 
 - `collect`: 「つよい」同士の対戦（4手に1回はランダムな手）から、ターン開始時の局面と勝敗を集める。`train`: 学習して `scripts/value-model.json` に出す。`adopt`: それを `src/ai/value-model.ts` に写す（これが「さいきょう」に使われる）。
@@ -129,8 +129,8 @@ npm run cpu:value -- adopt
 - 勝敗の予測精度は強さの目安にならない。カード名を入力に入れると予測は当たるようになる（どのデッキが強いかを覚える）が、対戦では弱くなった。ターン内の局面にも使うと「つよい」に20%しか勝てなかった。
 - ランダムな手を増やすと強くなった（悪い手のあとの結果が、どの手が大事かを教える）。入力や集め方を変えたら必ず対戦で確かめる。
 - 試して効かなかったもの（すべて今のさいきょうとの200試合で誤差の範囲）: 正解を勝敗ではなく「さいきょうの探索の判断」にする（`label` と `train … search|oracle|mix-*`。相手の手札が見える判断でも同じ）、人との対戦記録を混ぜる（`label-records` と `train …+records`。33試合ぶん）、相手の返しを広く読む・相手の確実な勝ち筋を正確に調べる（思考時間が1.3〜3倍になるだけ）。探索を4倍にしても強くならない。いまの壁は評価や読みの深さより、探索が読む候補を4本に絞るときに、すぐには得に見えない手（次のターンの準備、温存）を落とすことにあると見ている。
-- **改良を試すとき**: `npm run cpu:compare -- <名前> [--model f.json] [--policy f.json] [--search '{…}'] [--decks all|strawberry|records.jsonl]` で、今のさいきょうと対戦させる。CPUサーバーが新しいモデルを配る前と同じ逐次検定（`compareVerdict`、勝率55%を「強い」とし、互角なら3〜4%しか通らない）で判定し、結果を `experiments.jsonl` に追記する。これまでの試みもそこに記録してある。人のデッキで比べるには、サーバーの記録を `kubectl --context k3s-1 -n pplale-cpu-server exec deploy/pplale-cpu-server -- sh -c 'cat /data/reports/*.jsonl' > records.jsonl` で取り出して `--decks records.jsonl` に渡す。
-- 手ごとの価値（`ai/policy.ts`、DouZero の考え方）: 局面・その手で変わったこと・手の中身（どのカード・どの対象）から、その手を打った側が勝つかを学ぶ。`npm run cpu:policy` で自己対戦3万試合（約59万手）から学習すると、1手から勝敗を71.6%当てる。`searchTurn` の `policy` / `policyOrder` / `policyRoot` で、読む順番と最後の選択に使える。今のさいきょうとの200試合では、並べ替えだけで51.5%、選択の後押しを足すと46.0%・51.5%で、どれも誤差の範囲（思考時間は約1.3倍）なので、さいきょうには使っていない。
+- **改良を試すとき**: `pnpm run cpu:compare -- <名前> [--model f.json] [--policy f.json] [--search '{…}'] [--decks all|strawberry|records.jsonl]` で、今のさいきょうと対戦させる。CPUサーバーが新しいモデルを配る前と同じ逐次検定（`compareVerdict`、勝率55%を「強い」とし、互角なら3〜4%しか通らない）で判定し、結果を `experiments.jsonl` に追記する。これまでの試みもそこに記録してある。人のデッキで比べるには、サーバーの記録を `kubectl --context k3s-1 -n pplale-cpu-server exec deploy/pplale-cpu-server -- sh -c 'cat /data/reports/*.jsonl' > records.jsonl` で取り出して `--decks records.jsonl` に渡す。
+- 手ごとの価値（`ai/policy.ts`、DouZero の考え方）: 局面・その手で変わったこと・手の中身（どのカード・どの対象）から、その手を打った側が勝つかを学ぶ。`pnpm run cpu:policy` で自己対戦3万試合（約59万手）から学習すると、1手から勝敗を71.6%当てる。`searchTurn` の `policy` / `policyOrder` / `policyRoot` で、読む順番と最後の選択に使える。今のさいきょうとの200試合では、並べ替えだけで51.5%、選択の後押しを足すと46.0%・51.5%で、どれも誤差の範囲（思考時間は約1.3倍）なので、さいきょうには使っていない。
 - 集める・学習する計算は `ai/value-train.ts` にあり、このスクリプトと CPU サーバー（[services/cpu-server](../../services/cpu-server/README.md)）が共有する。サーバーは人との対戦記録を混ぜて学習し続け、モデルをゲームに配る。
 
 ## API
@@ -139,6 +139,6 @@ npm run cpu:value -- adopt
 
 `newGame` は手札を配らず `dice` 状態を作る。`roll` の大きい目の側が `initiative` で先攻・後攻を選ぶ。`openingRemaining` で各側の残り枚数を管理し、`openingDraw` で好きな山札から1枚引く。双方は相手のドローを待たずに並行して引ける。先攻3枚・後攻4枚の初期ドロー完了で `mulligan` に移る。元の初期カードごとに1回の交換を `mulligan` Command、手札確定を `keep` Command で行い、双方の確定後に `playing` に移る。その後、ターンや効果のドローも `pending` と `choose` で1枚ずつ実行する。
 
-Next.js は npm workspace と `transpilePackages` で `src/index.ts` を利用する。独立した JavaScript が必要な場合はルートから `npm run build --workspace=@pplale/game-core` で `dist` に生成する。TS の相対パスはビルド時に `.js` に書き換える。テストは `npm run test:game`。
+Next.js は npm workspace と `transpilePackages` で `src/index.ts` を利用する。独立した JavaScript が必要な場合はルートから `pnpm run build --workspace=@pplale/game-core` で `dist` に生成する。TS の相対パスはビルド時に `.js` に書き換える。テストは `pnpm run test:game`。
 
 ルールとFAQは [game-rules.md](../../docs/game-rules.md)、実装状況は [card-effect-rules.md](../../docs/card-effect-rules.md)、配置と境界は [game-design.md](../../docs/game-design.md)、操作説明は [board-emulator.md](../../docs/board-emulator.md) を参照。

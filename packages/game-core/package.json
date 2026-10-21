@@ -36,13 +36,13 @@
   },
   "scripts": {
     "build": "tsc -p tsconfig.json",
-    "test": "npm run build && node --test tests/*.test.mjs",
-    "arena": "npm run build && node scripts/arena.mjs",
-    "train": "npm run build && node scripts/train.mjs",
-    "deck": "npm run build && node scripts/deck-search.mjs",
-    "value": "npm run build && node scripts/value.mjs",
-    "policy": "npm run build && node scripts/policy.mjs",
-    "compare": "npm run build && node scripts/compare.mjs"
+    "test": "pnpm run build && node --test tests/*.test.mjs",
+    "arena": "pnpm run build && node scripts/arena.mjs",
+    "train": "pnpm run build && node scripts/train.mjs",
+    "deck": "pnpm run build && node scripts/deck-search.mjs",
+    "value": "pnpm run build && node scripts/value.mjs",
+    "policy": "pnpm run build && node scripts/policy.mjs",
+    "compare": "pnpm run build && node scripts/compare.mjs"
   },
   "dependencies": {
     "zod": "^4.6.5"

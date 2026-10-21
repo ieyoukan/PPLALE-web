@@ -68,11 +68,11 @@ jobs:
         with:
           cache: true
       - name: Install dependencies
-        run: npm ci
+        run: pnpm install --frozen-lockfile
       - name: Test the room server
-        run: npm run test:room-server
+        run: pnpm run test:room-server
       - name: Test the room server on Redis
-        run: npm run test:room-server
+        run: pnpm run test:room-server
         env:
           REDIS_URL: redis://localhost:6379
 
