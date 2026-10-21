@@ -1,0 +1,23 @@
+/* Same fallback metrics as next/font/google; preserve layout while fonts load. */
+@font-face {
+  font-family: 'Zen Maru Gothic Fallback';
+  src: local('Arial');
+  ascent-override: 117%;
+  descent-override: 29.05%;
+  line-gap-override: 0%;
+  size-adjust: 99.15%;
+}
+
+@font-face {
+  font-family: 'Mochiy Pop One Fallback';
+  src: local('Arial');
+  ascent-override: 91.04%;
+  descent-override: 22.6%;
+  line-gap-override: 0%;
+  size-adjust: 127.41%;
+}
+
+.site-body-variable { --font-site-body: 'Zen Maru Gothic', 'Zen Maru Gothic Fallback'; }
+.site-title-variable { --font-site-title: 'Mochiy Pop One', 'Mochiy Pop One Fallback'; }
+.site-body-font { font-family: 'Zen Maru Gothic', 'Zen Maru Gothic Fallback'; font-style: normal; }
+.site-title-font { font-family: 'Mochiy Pop One', 'Mochiy Pop One Fallback'; font-style: normal; font-weight: 400; }

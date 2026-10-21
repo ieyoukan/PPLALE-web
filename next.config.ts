@@ -35,7 +35,6 @@ const config: NextConfig = {
     contentSecurityPolicy: "default-src 'self'; script-src 'none'; sandbox;",
   },
   experimental: {
-    inlineCss: true,
     optimizePackageImports: ['framer-motion'],
   },
   serverExternalPackages: ['@vercel/og', 'sharp'],
@@ -69,6 +68,10 @@ const config: NextConfig = {
             value: 'DENY',
           },
         ],
+      },
+      {
+        source: '/fonts/generated/:path*',
+        headers: [{ key: 'Cache-Control', value: 'public, max-age=31536000, immutable' }],
       },
       {
         // The service worker must be checked for updates on every load.
