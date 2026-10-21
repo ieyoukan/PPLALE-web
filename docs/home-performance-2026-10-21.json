@@ -1,0 +1,62 @@
+{
+  "baselineCommit": "56260b90e14e82279809922a45723e72f5c98c1b",
+  "note": "Before is production, after is a local production build. Network and host load differ; timing/score values are not a controlled improvement comparison. The user report used Chromium 153 and custom throttling; these runs used Chromium 151 and the desktop preset.",
+  "before": {
+    "url": "https://pplale.vercel.app/",
+    "fetchTime": "2026-10-21T05:52:20.708Z",
+    "lighthouseVersion": "13.5.0",
+    "userAgent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/151.0.0.0 Safari/537.36",
+    "throttling": {
+      "rttMs": 40,
+      "throughputKbps": 10240,
+      "requestLatencyMs": 0,
+      "downloadThroughputKbps": 0,
+      "uploadThroughputKbps": 0,
+      "cpuSlowdownMultiplier": 1
+    },
+    "categories": {
+      "performance": 96
+    },
+    "scriptFiles": 22,
+    "scriptDecodedBytes": 1227975,
+    "estimatedUnusedScriptBytes": 127131,
+    "metrics": {
+      "first-contentful-paint": 620.208,
+      "largest-contentful-paint": 1320.208,
+      "total-blocking-time": 0,
+      "cumulative-layout-shift": 0
+    },
+    "lcpDiscoveryScore": 0
+  },
+  "after": {
+    "url": "http://localhost:3210/",
+    "fetchTime": "2026-10-21T05:59:49.821Z",
+    "lighthouseVersion": "13.5.0",
+    "userAgent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/151.0.0.0 Safari/537.36",
+    "throttling": {
+      "rttMs": 40,
+      "throughputKbps": 10240,
+      "requestLatencyMs": 0,
+      "downloadThroughputKbps": 0,
+      "uploadThroughputKbps": 0,
+      "cpuSlowdownMultiplier": 1
+    },
+    "categories": {
+      "performance": 95,
+      "accessibility": 100,
+      "best-practices": 100,
+      "seo": 100,
+      "agentic-browsing": 100
+    },
+    "scriptFiles": 8,
+    "scriptDecodedBytes": 506869,
+    "estimatedUnusedScriptBytes": 52565,
+    "metrics": {
+      "first-contentful-paint": 990.0894999999999,
+      "largest-contentful-paint": 1342.23875,
+      "total-blocking-time": 0,
+      "cumulative-layout-shift": 0
+    },
+    "lcpDiscoveryScore": 1
+  }
+}

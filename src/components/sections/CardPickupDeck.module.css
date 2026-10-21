@@ -1,0 +1,13 @@
+.deck > [data-pickup-glow] { animation: glow 1.25s ease-in-out infinite alternate; }
+.deck > button { transition: transform 300ms cubic-bezier(.2,.8,.2,1); }
+@keyframes glow { from { opacity: .25; } to { opacity: .85; } }
+
+@media (hover: hover) {
+  .deck > button:hover { transform: translate(-4px, -8px); }
+}
+.deck > button:active { transform: scale(.97); }
+@media (prefers-reduced-motion: reduce) {
+  .deck > [data-pickup-glow] { animation: none; }
+  .deck > button { transition: none; }
+  .deck > button:hover, .deck > button:active { transform: none; }
+}

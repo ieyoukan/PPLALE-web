@@ -59,7 +59,7 @@ export default function ExplanationSection() {
                       {card.description}
                     </p>
                     {card.rules && (
-                      <Link href="/about" className={css({
+                      <Link href="/about" prefetch={false} className={css({
                         display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
                         gap: '3', minH: '12', mt: '6', px: '6', py: '3',
                         bg: 'var(--brand-pink)', color: 'var(--brand-cocoa-deep)', rounded: 'xl', fontSize: 'lg', fontWeight: 'bold',

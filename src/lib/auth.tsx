@@ -1,6 +1,6 @@
 'use client';
 
-import React, { createContext, useContext, useEffect, useState } from 'react';
+import React, { createContext, useCallback, useContext, useEffect, useState } from 'react';
 import type { User } from 'firebase/auth';
 
 /** Auth needs only the app and auth SDK; Firestore loads when a saved deck is requested. */
@@ -15,16 +15,19 @@ interface AuthContextType {
   signOut: () => Promise<void>;
 }
 
-const AuthContext = createContext<AuthContextType>({
+const AuthContext = createContext<AuthContextType & { start: () => void }>({
   user: null,
   loading: true,
   signInWithGoogle: async () => {},
   signOut: async () => {},
+  start: () => {},
 });
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
+  const [started, setStarted] = useState(false);
+  const start = useCallback(() => setStarted(true), []);
 
   const signInWithGoogle = async () => {
     try {
@@ -47,6 +50,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   };
 
   useEffect(() => {
+    // Public pages do not need the SDK. Once a consumer starts auth, keep observing it
+    // across navigation so account changes in another tab continue to clear private data.
+    if (!started) return;
     let cancelled = false;
     let unsubscribe: (() => void) | undefined;
     void loadAuth().then(({ sdk, auth }) => {
@@ -56,15 +62,18 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       if (!cancelled) { console.error('ログイン状態を確認できませんでした:', error); setLoading(false); }
     });
     return () => { cancelled = true; unsubscribe?.(); };
-  }, []);
+  }, [started]);
 
   return (
-    <AuthContext.Provider value={{ user, loading, signInWithGoogle, signOut: handleSignOut }}>
+    <AuthContext.Provider value={{ user, loading, signInWithGoogle, signOut: handleSignOut, start }}>
       {children}
     </AuthContext.Provider>
   );
 }
 
-export function useAuth() {
-  return useContext(AuthContext);
+export function useAuth(): AuthContextType {
+  const context = useContext(AuthContext);
+  const { start } = context;
+  useEffect(() => { start(); }, [start]);
+  return context;
 }

@@ -1,0 +1,8 @@
+.card { transition: transform 200ms ease; }
+.card:hover { transform: translateY(-12px); }
+.card:active { transform: translateY(-12px) scale(.95); }
+
+@media (prefers-reduced-motion: reduce) {
+  .card { transition: none; }
+  .card:hover, .card:active { transform: none; }
+}

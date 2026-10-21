@@ -22,7 +22,7 @@ export default function ToolsSection() {
             sizes="(max-width: 600px) 90px, 120px" className={styles.mascot} />
         </div>
 
-        <Link href="/game" className={styles.battle}>
+        <Link href="/game" prefetch={false} className={styles.battle}>
           <div className={styles.battleArt}>
             <Image src="/images/baner.webp" alt="カードを手に向かい合う、ぷぷりえーるの2人のキャラクター" fill
               sizes="(max-width: 1048px) calc(100vw - 40px), 1008px" className={styles.battleImage} />
@@ -38,7 +38,7 @@ export default function ToolsSection() {
 
         <div className={styles.grid}>
           {destinations.map(destination => (
-            <Link key={destination.href} href={destination.href} className={`${styles.card} ${styles[destination.color]}`}>
+            <Link key={destination.href} href={destination.href} prefetch={false} className={`${styles.card} ${styles[destination.color]}`}>
               <div className={styles.characterStage}>
                 <span className={styles.halo} aria-hidden="true" />
                 <span className={styles.sparkle} aria-hidden="true">✦</span>
