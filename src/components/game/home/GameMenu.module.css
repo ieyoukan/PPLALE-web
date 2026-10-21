@@ -120,3 +120,11 @@
   .home .pane h1 { padding: 4px 8px; text-align: left; font-size: 18px; }
   .home .body { padding: 6px 8px; }
 }
+@media (max-width: 720px) and (max-height: 540px) and (orientation: portrait) {
+  .home .tab b { line-height: 1.25; }
+  .home .pane h1 { line-height: 1.25; }
+}
+@media (max-height: 380px) and (orientation: landscape) {
+  .home .pane h1 { line-height: 1.25; }
+  .home .body { padding-block: 6px; }
+}

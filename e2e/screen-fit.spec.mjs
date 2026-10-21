@@ -57,23 +57,23 @@ for (const viewport of phones) {
       const nav = page.getByRole('navigation', { name: 'ゲームメニュー' });
       for (const link of await nav.getByRole('link').all()) await expect(link).toBeInViewport({ ratio: .999 });
       await fitsPage(page);
-      await page.getByRole('button', { name: /^ルール/ }).click();
-      const rules = page.getByRole('dialog', { name: '対戦のルール', exact: true });
+      const rules = page.getByRole('region', { name: '対戦のルール', exact: true });
       await expect(rules).toBeVisible();
+      await expect(page.getByRole('dialog', { name: '対戦のルール', exact: true })).toHaveCount(0);
+      for (const checkbox of await rules.getByRole('checkbox').all()) await expect(checkbox).toBeInViewport({ ratio: .999 });
       await rules.getByRole('checkbox', { name: 'おれんじ' }).check();
       await rules.getByRole('checkbox', { name: /拡張プレイアブル/ }).check();
-      await rules.getByRole('button', { name: 'このルールであそぶ' }).click();
-      await expect(rules).toHaveCount(0);
-      await expect(page.getByRole('button', { name: /^ルール/ })).toContainText('ぶどう');
+      await expect(rules.getByRole('checkbox', { name: 'ぶどう' })).toBeChecked();
       await fitsPage(page);
       await page.evaluate(game => localStorage.setItem('pplale-game-session-v2', JSON.stringify({ game, mode: 'cpu', levels: ['normal', 'normal'] })), arena());
       await page.reload();
       await page.getByRole('button', { name: 'CPU同士を観戦', exact: true }).click();
-      await page.getByRole('button', { name: /^ルール/ }).click();
       await rules.getByRole('checkbox', { name: 'おれんじ' }).check();
       await rules.getByRole('checkbox', { name: /拡張プレイアブル/ }).check();
-      await page.keyboard.press('Escape');
-      await expect(rules).toHaveCount(0);
+      for (const groupName of ['CPU 1の強さ', 'CPU 2の強さ']) {
+        const group = page.getByRole('group', { name: groupName, exact: true });
+        for (const button of await group.getByRole('button').all()) await expect(button).toBeInViewport({ ratio: .999 });
+      }
       await expect(start).toBeInViewport({ ratio: .999 });
       for (const select of await page.locator('select').all()) await expect(select).toBeInViewport({ ratio: .999 });
       await fitsPage(page);
