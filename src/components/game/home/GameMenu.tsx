@@ -3,6 +3,7 @@
 // The frame around everything outside the board: a column of tabs (CPU対決 / バトル / カード / 盤面エディタ) with the
 // logo and the player on the left, and the chosen tab's page on the right. There is no separate
 // home screen; the first tab is where the game opens.
+import { useLayoutEffect, useRef } from 'react';
 import type { ReactNode } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
@@ -26,6 +27,11 @@ const tabs = [
 
 export default function GameMenu({ children }: { children: ReactNode }) {
   const pathname = usePathname() ?? HOME_PATH;
+  const body = useRef<HTMLDivElement>(null);
+  useLayoutEffect(() => {
+    // The stage stays fixed while each menu page scrolls inside its own pane.
+    if (body.current) { body.current.scrollTop = 0; body.current.scrollLeft = 0; }
+  }, [pathname]);
   const { user, signInWithGoogle } = useAuth();
   const profile = useMyProfile();
   // The first tab is the root, so it only matches exactly; the others also cover their sub-pages.
@@ -33,7 +39,7 @@ export default function GameMenu({ children }: { children: ReactNode }) {
   return <div className={`${styles.menu} ${pathname === HOME_PATH ? styles.home : ''}`}>
     <aside className={styles.side}>
       <Image className={styles.logo} src="/images/game/logo.webp" alt="お菓子争奪戦争 ぷぷりえーる" width={462} height={227} priority />
-      <nav className={styles.tabs} aria-label="ゲームメニュー">{tabs.map(tab =>
+      <nav className={styles.tabs} aria-label="ゲームメニュー" data-landscape-action>{tabs.map(tab =>
         <Link key={tab.href} href={tab.href} className={`${styles.tab} ${tab.tone}`} aria-current={tab === current ? 'page' : undefined}>
           <b data-ui-title>{tab.label}</b><small>{tab.note}</small>
         </Link>)}
@@ -50,7 +56,7 @@ export default function GameMenu({ children }: { children: ReactNode }) {
     {/* The root layout already provides <main>. */}
     <section className={styles.pane}>
       <h1>{current.label}</h1>
-      <div className={styles.body}>{children}</div>
+      <div ref={body} className={styles.body}>{children}</div>
     </section>
   </div>;
 }

@@ -52,6 +52,7 @@ for (const viewport of phones) {
     test('all navigation and setup actions fit, including a resumed match and CPU spectating', async ({ page }, info) => {
       await page.addInitScript(() => localStorage.setItem('pplale-install-dismissed-v1', String(Date.now())));
       await page.goto('/game/');
+      await expect(page.locator('[data-game-stage]')).toBeVisible({ timeout: 15000 });
       const start = page.getByRole('button', { name: '対戦をはじめる', exact: false });
       await expect(start).toBeInViewport({ ratio: .999 });
       const nav = page.getByRole('navigation', { name: 'ゲームメニュー' });
@@ -91,6 +92,7 @@ for (const viewport of screens) {
     test('analysis, deck and editor details never push the replay/home/rematch actions off screen', async ({ page }, info) => {
       const fixture = finishedSession();
       await page.goto('/game/');
+      await expect(page.locator('[data-game-stage]')).toBeVisible({ timeout: 15000 });
       await page.evaluate(fixture => {
         const { points, ...session } = fixture;
         localStorage.setItem('pplale-game-session-v2', JSON.stringify(session));
@@ -139,6 +141,7 @@ for (const viewport of [{ width: 320, height: 480 }, { width: 667, height: 320 }
         localStorage.setItem('pplale-cpu-learning-consent-v1', 'agreed');
       });
       await page.goto('/game/');
+      await expect(page.locator('[data-game-stage]')).toBeVisible({ timeout: 15000 });
       const strength = page.getByRole('combobox', { name: 'CPUの強さ', exact: true });
       if (await strength.isVisible()) await strength.selectOption('master');
       else await page.getByRole('button', { name: 'さいきょう', exact: true }).click();
@@ -150,6 +153,86 @@ for (const viewport of [{ width: 320, height: 480 }, { width: 667, height: 320 }
       await stop.click();
       await expect(stop).toHaveCount(0);
       expect(await page.evaluate(() => localStorage.getItem('pplale-cpu-learning-consent-v1'))).toBeNull();
+    });
+  });
+}
+
+test.describe('shared landscape game frame', () => {
+  test.use({ viewport: { width: 390, height: 844 } });
+  test('menus, card details and waiting screens share one landscape stage across rotations', async ({ page }, info) => {
+    await page.addInitScript(() => localStorage.setItem('pplale-install-dismissed-v1', String(Date.now())));
+    await page.goto('/game/');
+    await expect(page.locator('[data-game-stage]')).toBeVisible({ timeout: 15000 });
+    const stage = page.locator('[data-game-stage]');
+    await expect(stage).toHaveCount(1);
+    await expect(stage).toHaveAttribute('data-rotated', 'true');
+    const layout = () => stage.evaluate(element => ({ width: element.clientWidth, height: element.clientHeight }));
+    expect((await layout()).width).toBeGreaterThan((await layout()).height);
+    const nav = page.getByRole('navigation', { name: 'ゲームメニュー' });
+    for (const label of ['バトル', 'カード', '盤面エディタ', 'ソーシャル', '通知', 'CPU対決']) {
+      await nav.getByRole('link', { name: new RegExp(label) }).click();
+      await expect(page.getByRole('heading', { level: 1, name: label, exact: true })).toBeInViewport({ ratio: .999, timeout: 15000 });
+      await expect(stage).toHaveCount(1);
+      await expect(stage).toHaveAttribute('data-rotated', 'true');
+      await fitsPage(page);
+    }
+    await page.locator('a[href="/game/profile/"]').click();
+    await expect(page.getByRole('heading', { level: 1, name: 'プロフィール', exact: true })).toBeVisible();
+    await nav.getByRole('link', { name: /カード/ }).click();
+    await page.getByRole('link', { name: /^図鑑/ }).click();
+    await page.locator('li button').first().click();
+    const viewer = page.getByRole('dialog');
+    await expect(viewer).toBeInViewport({ ratio: .999 });
+    await expect(viewer.getByRole('button', { name: '閉じる', exact: true })).toBeInViewport({ ratio: .999 });
+    await page.screenshot({ path: info.outputPath('landscape-card-details.png') });
+    await viewer.getByRole('button', { name: '閉じる', exact: true }).click();
+    await page.setViewportSize({ width: 844, height: 390 });
+    await expect(stage).not.toHaveAttribute('data-rotated');
+    await fitsPage(page);
+    await page.setViewportSize({ width: 390, height: 844 });
+    await expect(stage).toHaveAttribute('data-rotated', 'true');
+    const pane = await page.getByRole('heading', { level: 1, name: 'カード', exact: true }).locator('..').locator(':scope > div').elementHandle();
+    await pane.evaluate(element => { element.scrollTop = 500; });
+    expect(await pane.evaluate(element => element.scrollTop)).toBeGreaterThan(0);
+    await nav.getByRole('link', { name: /CPU対決/ }).click();
+    await expect(page.getByRole('button', { name: '対戦をはじめる', exact: false })).toBeInViewport({ ratio: .999 });
+    expect(await pane.evaluate(element => element.scrollTop)).toBe(0);
+    await page.goto('/game/replay/');
+    await expect(page.getByRole('status')).toContainText('リプレイが見つかりません');
+    await expect(stage).toHaveCount(1);
+    await expect(stage).toHaveAttribute('data-rotated', 'true');
+    await fitsPage(page);
+  });
+});
+
+for (const allowed of [true, false]) {
+  test.describe(`native landscape ${allowed ? 'available' : 'refused'}`, () => {
+    test.use({ viewport: { width: 844, height: 390 }, hasTouch: true });
+    test('a menu tap requests landscape and keeps the stage usable if refused', async ({ page }) => {
+      await page.addInitScript(allowed => {
+        localStorage.setItem('pplale-install-dismissed-v1', String(Date.now()));
+        window.landscapeCalls = [];
+        Object.defineProperty(document, 'fullscreenEnabled', { get: () => true });
+        Element.prototype.requestFullscreen = async () => {
+          window.landscapeCalls.push('fullscreen');
+          if (!allowed) throw new Error('Unavailable');
+        };
+        screen.orientation.lock = async orientation => {
+          window.landscapeCalls.push(orientation);
+          if (!allowed) throw new Error('Unavailable');
+        };
+      }, allowed);
+      await page.goto('/game/');
+      await expect(page.locator('[data-game-stage]')).toBeVisible({ timeout: 15000 });
+      // These native browser actions must retain their user gesture.
+      await page.getByRole('button', { name: 'ログイン', exact: true }).dispatchEvent('pointerup');
+      await page.getByRole('combobox').first().dispatchEvent('pointerup');
+      expect(await page.evaluate(() => window.landscapeCalls)).toEqual([]);
+      await page.getByRole('button', { name: 'CPU同士を観戦', exact: true }).tap();
+      await expect.poll(() => page.evaluate(() => window.landscapeCalls)).toEqual(['fullscreen', 'landscape']);
+      await expect(page.locator('[data-game-stage]')).toHaveCount(1);
+      await expect(page.getByRole('button', { name: '対戦をはじめる', exact: false })).toBeInViewport({ ratio: .999 });
+      await fitsPage(page);
     });
   });
 }

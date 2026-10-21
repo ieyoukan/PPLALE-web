@@ -1,18 +1,18 @@
 /* Room pages inside the game menu's cream sheet: making / entering a room and waiting in it. */
-.stack { display: grid; gap: clamp(14px, 2vw, 22px); }
+.stack { display: grid; gap: clamp(14px, 2cqw, 22px); }
 /* Full portrait on the left, battle actions and any connection warning on the right. */
-.entrance { display: grid; grid-template-columns: minmax(200px, 1fr) minmax(0, 1.8fr); gap: clamp(14px, 2.4vw, 28px); align-items: center; }
+.entrance { display: grid; grid-template-columns: minmax(200px, 1fr) minmax(0, 1.8fr); gap: clamp(14px, 2.4cqw, 28px); align-items: center; }
 .battleActions { display: grid; gap: 16px; min-width: 0; }
 .battleActions > .secondary { justify-self: start; font-size: 14px; }
 .battleActions > .server { font-size: 13px; line-height: 1.7; }
-.doors { display: grid; gap: clamp(10px, 1.6vw, 16px); }
+.doors { display: grid; gap: clamp(10px, 1.6cqw, 16px); }
 /* Each door: its picture on the left, its name beside it; together they fill the screen's height. */
-.door { --tone: #e7c3e2; display: grid; grid-template-columns: clamp(92px, 30%, 230px) minmax(0, 1fr); align-items: stretch; height: clamp(104px, calc((100dvh - 250px) / 4), 170px); padding: 0; overflow: hidden; border: 3px solid #a88667; border-radius: 18px; background: #fff; color: #6b4a3a; font: inherit; text-decoration: none; cursor: pointer; box-shadow: 0 6px 0 #a8866755, 0 0 0 4px #fffdeb inset; transition: transform .2s, box-shadow .2s, filter .2s; }
+.door { --tone: #e7c3e2; display: grid; grid-template-columns: clamp(92px, 30%, 230px) minmax(0, 1fr); align-items: stretch; height: clamp(104px, calc((100cqh - 250px) / 4), 170px); padding: 0; overflow: hidden; border: 3px solid #a88667; border-radius: 18px; background: #fff; color: #6b4a3a; font: inherit; text-decoration: none; cursor: pointer; box-shadow: 0 6px 0 #a8866755, 0 0 0 4px #fffdeb inset; transition: transform .2s, box-shadow .2s, filter .2s; }
 .free { --tone: #b3d788; }
 .matchHeading { display: grid; gap: 8px; color: #6b4a3a; }
-.matchHeading h2 { font-size: clamp(24px, 3vw, 30px); font-weight: 700; letter-spacing: .08em; }
+.matchHeading h2 { font-size: clamp(24px, 3cqw, 30px); font-weight: 700; letter-spacing: .08em; }
 .matchHeading p { color: #8e7662; font-size: 15px; line-height: 1.7; }
-.matchGrid { display: grid; grid-template-columns: minmax(0, .9fr) minmax(0, 1.1fr); align-items: start; gap: clamp(16px, 2.4vw, 26px); min-width: 0; }
+.matchGrid { display: grid; grid-template-columns: minmax(0, .9fr) minmax(0, 1.1fr); align-items: start; gap: clamp(16px, 2.4cqw, 26px); min-width: 0; }
 .matchGrid > .companion { position: sticky; top: 24px; }
 .panel.matchPanel { min-width: 0; align-content: start; border-color: #dfcbb6; box-shadow: 0 5px 0 #cfbba555, inset 0 0 0 4px #fffaf0; }
 .matchPanel .field { font-size: 14px; }
@@ -34,7 +34,7 @@
 @keyframes searchBreathe { 50% { opacity: .45; translate: 0 -4px; } }
 
 /* Keep the supplied full-body art intact, with space for the tallest poses. */
-.companion { position: relative; width: 100%; min-width: 0; height: clamp(420px, 67dvh, 620px); background: radial-gradient(ellipse at 50% 55%, #f9e4e0 0, #fff0dd88 42%, transparent 70%); user-select: none; }
+.companion { position: relative; width: 100%; min-width: 0; height: clamp(420px, 67cqh, 620px); background: radial-gradient(ellipse at 50% 55%, #f9e4e0 0, #fff0dd88 42%, transparent 70%); user-select: none; }
 .companion::before { content: ''; position: absolute; bottom: 2%; left: 18%; width: 64%; height: 18px; border-radius: 50%; background: #c3a0831a; filter: blur(4px); }
 .companionTap { position: absolute; inset: 0; padding: 0; border: 0; border-radius: 28px; background: transparent; cursor: pointer; -webkit-tap-highlight-color: transparent; touch-action: manipulation; }
 .companionTap:disabled { cursor: default; }
@@ -57,10 +57,10 @@
 .matchDeckInfo > span { color: #92735e; font-size: 12px; }
 .matchDeckInfo small { display: flex; flex-wrap: wrap; align-items: center; gap: 5px; color: #a58a71; font-size: 10px; }
 .matchDeckInfo i { width: 3px; height: 3px; border-radius: 50%; background: #c9b399; }
-@media (max-width: 1000px) {
+@container stage (max-width: 1000px) {
   .matchGrid { grid-template-columns: minmax(200px, .8fr) minmax(0, 1.2fr); }
 }
-@media (max-width: 520px) {
+@container stage (max-width: 520px) {
   .matchHeading h2 { font-size: 24px; }
   .matchHeading p { font-size: 13px; }
   .matchDeckArt { flex-basis: 94px; height: 92px; }
@@ -79,23 +79,23 @@
 .doorArt img { padding: 8px 10px 4px; object-fit: contain; filter: drop-shadow(0 4px 0 #6b4a3a22); transition: transform .2s; }
 .door:hover .doorArt img { transform: translateY(-2px) rotate(-3deg); }
 /* The name beside it, behind a rule. */
-.doorPlate { display: grid; align-content: center; gap: 6px; margin: 12px 0; padding: 0 clamp(14px, 2.4vw, 30px); border-left: 2px solid #a8866766; text-align: left; }
-.doorPlate b { font-size: clamp(22px, 3vw, 36px); letter-spacing: .14em; white-space: nowrap; }
-.doorPlate small { font-size: clamp(13px, 1.5vw, 16px); color: #9a8676; }
+.doorPlate { display: grid; align-content: center; gap: 6px; margin: 12px 0; padding: 0 clamp(14px, 2.4cqw, 30px); border-left: 2px solid #a8866766; text-align: left; }
+.doorPlate b { font-size: clamp(22px, 3cqw, 36px); letter-spacing: .14em; white-space: nowrap; }
+.doorPlate small { font-size: clamp(13px, 1.5cqw, 16px); color: #9a8676; }
 .door:hover { transform: translateY(-3px); box-shadow: 0 9px 0 #a8866755, 0 0 0 4px #fffdeb inset; }
 .door[aria-expanded=true] { transform: translateY(-3px); border-color: #e0607a; box-shadow: 0 9px 0 #e0607a55, 0 0 0 4px #fffdeb inset, 0 0 0 4px #f4b0bb88; }
 /* With one chosen, the others step back. */
 .doors[data-open] .door[aria-expanded=false] { filter: saturate(.55) brightness(.97); }
 /* Portrait phones: a complete standing guide above the actions. */
-@media (max-width: 720px) {
+@container stage (max-width: 720px) {
   .entrance, .matchGrid { grid-template-columns: minmax(0, 1fr); }
   .companion, .matchGrid > .companion { position: relative; top: auto; justify-self: center; max-width: 280px; height: 340px; }
-  .door { height: clamp(96px, calc((100dvh - 470px) / 4), 150px); }
+  .door { height: clamp(96px, calc((100cqh - 470px) / 4), 150px); }
 }
 /* Landscape phones: keep the guide beside the actions. */
-@media (max-height: 520px) {
+@container stage (max-height: 520px) {
   .entrance { grid-template-columns: minmax(170px, 1fr) minmax(0, 2.2fr); }
-  .door { height: clamp(64px, calc((100dvh - 160px) / 4), 100px); border-radius: 14px; }
+  .door { height: clamp(64px, calc((100cqh - 160px) / 4), 100px); border-radius: 14px; }
   .doorPlate { margin: 6px 0; gap: 2px; }
   .doorPlate b { font-size: 20px; }
   .entrance > .companion { height: 300px; }
@@ -105,11 +105,11 @@
   .searchSignal i, .companionCharacter[data-reacting], .companionCharacter img { animation: none; }
 }
 /* The chosen door's form scrolls to just under the page's edge. */
-.formAnchor { scroll-margin-top: 12px; margin-bottom: calc(-1 * clamp(14px, 2vw, 22px)); }
+.formAnchor { scroll-margin-top: 12px; margin-bottom: calc(-1 * clamp(14px, 2cqw, 22px)); }
 /* A narrow phone: the name alone, a little smaller. */
-@media (max-width: 420px) { .doorPlate b { font-size: 20px; letter-spacing: .06em; } .doorPlate small { font-size: 12px; } }
-.panel { display: grid; gap: 14px; padding: clamp(16px, 2.4vw, 26px); border: 3px solid #b3d788; border-radius: 20px; background: #fff; color: #6b4a3a; box-shadow: 0 5px 0 #a8866755; }
-.panel h2 { font-size: clamp(20px, 2.6vw, 26px); font-weight: 700; letter-spacing: .08em; }
+@container stage (max-width: 420px) { .doorPlate b { font-size: 20px; letter-spacing: .06em; } .doorPlate small { font-size: 12px; } }
+.panel { display: grid; gap: 14px; padding: clamp(16px, 2.4cqw, 26px); border: 3px solid #b3d788; border-radius: 20px; background: #fff; color: #6b4a3a; box-shadow: 0 5px 0 #a8866755; }
+.panel h2 { font-size: clamp(20px, 2.6cqw, 26px); font-weight: 700; letter-spacing: .08em; }
 .panel p { font-size: 16px; line-height: 1.7; }
 .note { color: #9a8676; font-size: 14px !important; }
 .error { padding: 10px 14px; border-radius: 12px; background: #fbe5dc; color: #a4483b; font-size: 16px; }
@@ -143,7 +143,7 @@
 /* The room id is what gets read out or typed: large and spaced. */
 .roomId { display: flex; flex-wrap: wrap; align-items: center; gap: 14px; }
 .roomId small { font-size: 14px; font-weight: 700; letter-spacing: .14em; color: #9a8676; }
-.roomId output { font: 700 clamp(34px, 6vw, 54px)/1 ui-monospace, Menlo, monospace; letter-spacing: .2em; color: #6b4a3a; }
+.roomId output { font: 700 clamp(34px, 6cqw, 54px)/1 ui-monospace, Menlo, monospace; letter-spacing: .2em; color: #6b4a3a; }
 .rules { padding: 10px 14px; border-radius: 12px; background: #f7f2ea; font-size: 16px; }
 
 /* The room server's state: a dot, one line, and details that open on a tap. */
@@ -164,7 +164,7 @@
 /* Under the menu button, clear of the far hand. */
 .badgeQuiet { top: 84px; left: auto; right: 12px; transform: none; max-width: 120px; background: #3b2a2299; font-size: 13px; padding: 5px 12px; }
 /* A room page outside the game menu (a spectator between matches). */
-.standalone { min-height: 100dvh; display: grid; place-items: center; padding: 20px; background: #2a1f24; }
+.standalone { min-height: 100cqh; display: grid; place-items: center; padding: 20px; background: #2a1f24; }
 .standalone .panel { width: min(100%, 560px); }
 
 .seats { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; }
@@ -174,7 +174,7 @@
 .seat span { font-size: 15px; }
 .seatReady { border-color: #7da552; background: #eef6e2; }
 .seatEmpty { border-style: dashed; color: #9a8676; }
-@media (max-width: 520px) { .seats { grid-template-columns: minmax(0, 1fr); } }
+@container stage (max-width: 520px) { .seats { grid-template-columns: minmax(0, 1fr); } }
 @media (prefers-reduced-motion: reduce) { .primary, .secondary { transition: none; } }
 
 .historyLink { justify-self: end; padding: 8px 16px; border: 2px solid #dfcbb6; border-radius: 999px; background: #fffaf0; color: #80604c; font-size: 14px; text-decoration: none; box-shadow: 0 3px 0 #cfbba544; }

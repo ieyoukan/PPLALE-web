@@ -2,17 +2,20 @@
 
 import { useEffect, useLayoutEffect, useRef, useState } from 'react';
 import type { CSSProperties, ReactNode } from 'react';
+import { usePathname } from 'next/navigation';
 import { STAGE_HEIGHT, enterLandscape, fitStage, setStageTransform } from './stageSpace';
 import type { StageTransform } from './stageSpace';
 import styles from './GameStage.module.css';
 
 /**
- * The fixed-size stage every match screen is laid out on (see stageSpace). It is scaled to fit the
- * part of the screen clear of notches, and turned on a portrait screen. On a touch screen held upright,
- * the first tap also asks for full screen in landscape (Android); where that is refused the turned
+ * The landscape stage shared by every game route, including menus and loading screens.
+ * It is scaled to fit the area clear of notches and turned on a portrait screen. On a touch screen,
+ * a game navigation/start tap also asks for full screen in landscape (Android); where refused the turned
  * stage is what the player sees.
  */
 export function GameStage({ children }: { children: ReactNode }) {
+  const pathname = usePathname();
+  const menu = !/^\/game\/(play|room|replay)(\/|$)/.test(pathname ?? '');
   const safe = useRef<HTMLDivElement>(null);
   const [fit, setFit] = useState<{ width: number; transform: StageTransform } | null>(null);
 
@@ -32,12 +35,15 @@ export function GameStage({ children }: { children: ReactNode }) {
   }, []);
 
   useEffect(() => {
-    const upright = () => window.matchMedia('(pointer: coarse)').matches && window.innerHeight > window.innerWidth;
     // pointerup, not pointerdown: a touch only counts as a user gesture once it ends.
-    const ask = () => { if (upright()) void enterLandscape(); };
+    const ask = (event: PointerEvent) => {
+      // Login popups, native selects, install/share and clipboard actions need their own user gesture.
+      if (menu && !(event.target instanceof Element && event.target.closest('[data-landscape-action]'))) return;
+      if (window.matchMedia('(pointer: coarse)').matches) void enterLandscape();
+    };
     window.addEventListener('pointerup', ask, true);
     return () => window.removeEventListener('pointerup', ask, true);
-  }, []);
+  }, [menu]);
 
   const transform = fit?.transform;
   const style = {
@@ -45,7 +51,7 @@ export function GameStage({ children }: { children: ReactNode }) {
     transform: transform ? `translate(${transform.x}px, ${transform.y}px)${transform.rotated ? ' rotate(-90deg)' : ''} scale(${transform.scale})` : undefined,
     visibility: fit ? undefined : 'hidden',
   } as CSSProperties;
-  return <div className={styles.screen}>
+  return <div className={`${styles.screen} ${menu ? styles.menu : ''}`}>
     <div ref={safe} className={styles.safe} aria-hidden="true" />
     <div className={styles.stage} style={style} data-game-stage data-rotated={transform?.rotated || undefined}>{children}</div>
   </div>;

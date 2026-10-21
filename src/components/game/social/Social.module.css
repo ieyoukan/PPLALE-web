@@ -1,4 +1,4 @@
-.panel { padding: clamp(16px, 3vw, 28px); border: 1px solid #d2b395; border-radius: 22px; background: linear-gradient(145deg, #fffaf2, #fcecf2); box-shadow: 0 8px 20px #9b617915; color: #67463e; }
+.panel { padding: clamp(16px, 3cqw, 28px); border: 1px solid #d2b395; border-radius: 22px; background: linear-gradient(145deg, #fffaf2, #fcecf2); box-shadow: 0 8px 20px #9b617915; color: #67463e; }
 .panel h2 { font-size: 24px; font-weight: 700; }
 .panel button,.panel a { cursor: pointer; }
 .panel button:focus-visible,.panel a:focus-visible { outline: 3px solid #be7a9a; outline-offset: 3px; }
@@ -28,7 +28,7 @@
 .iconPicker small { font-size: 9px; justify-self: center; }
 .empty { display: grid; place-items: center; gap: 8px; min-height: 180px; padding: 20px; text-align: center; font-size: 13px; color: #a27e7d; }
 .empty > svg { font-size: 44px; color: #d8a1b6; }
-@media(max-width:600px) { .profileHeading { gap: 15px; } .panel .avatarLarge { width: 86px; height: 86px; flex-basis: 86px; } .profileHeading h2 { font-size: 20px; } .comment { font-size: 12px; padding: 8px; } }
+@container stage (max-width:600px) { .profileHeading { gap: 15px; } .panel .avatarLarge { width: 86px; height: 86px; flex-basis: 86px; } .profileHeading h2 { font-size: 20px; } .comment { font-size: 12px; padding: 8px; } }
 
 .primary:disabled { opacity: .55; cursor: default; }
 
@@ -109,7 +109,7 @@ a.room:hover .roomAction { background: var(--place); color: #fff; }
 @keyframes ring { 0% { box-shadow: 0 0 0 2.5px var(--place), 0 0 0 2.5px var(--glow); } 100% { box-shadow: 0 0 0 2.5px var(--place), 0 0 0 10px transparent; } }
 @keyframes pop { from { opacity: 0; transform: scale(.94); } }
 @media (prefers-reduced-motion: reduce) { .beat, .group[data-place=open] .roomBadge, .tile[data-place=open] .avatar, .tile, .remove { animation: none; } }
-@media (max-width: 600px) { .groupBody { grid-template-columns: 1fr; } .room { grid-template-rows: 80px auto; } .roomAction { top: 42px; } .tiles { grid-template-columns: 1fr; } .tile { width: 100%; } }
+@container stage (max-width: 600px) { .groupBody { grid-template-columns: 1fr; } .room { grid-template-rows: 80px auto; } .roomAction { top: 42px; } .tiles { grid-template-columns: 1fr; } .tile { width: 100%; } }
 .group[data-place=sent], .tile[data-place=sent], .room[data-place=sent] { --place: #b39ad8; --glow: #b39ad855; }
 .headingLinks { display: flex; align-items: center; gap: 10px; }
 .bell { position: relative; display: grid; place-items: center; width: 44px; height: 44px; border: 2px solid #f0c3d3; border-radius: 50%; background: #fff; font-size: 20px; transition: transform .15s; }

@@ -3,7 +3,7 @@
   position: fixed; z-index: 90; left: 50%; bottom: calc(14px + env(safe-area-inset-bottom));
   transform: translateX(-50%);
   display: flex; flex-wrap: wrap; align-items: center; gap: 10px 12px;
-  box-sizing: border-box; width: min(440px, calc(100vw - 20px)); padding: 12px 44px 12px 12px;
+  box-sizing: border-box; width: min(440px, calc(100cqw - 20px)); padding: 12px 44px 12px 12px;
   border: 2px solid var(--brand-pink); border-radius: 22px;
   background: var(--brand-paper); color: var(--brand-cocoa-deep);
   box-shadow: 0 5px 0 var(--brand-pink-edge), 0 12px 26px #78585840;
@@ -40,3 +40,6 @@
 @keyframes bob { 0%, 100% { transform: translateY(0) rotate(0); } 50% { transform: translateY(-4px) rotate(-4deg); } }
 @keyframes beckon { 50% { transform: translateY(6px); } }
 @media (prefers-reduced-motion: reduce) { .card, .icon, .pointer { animation: none; } }
+
+/* The game stage may be rotated relative to Safari’s toolbar. */
+@media (orientation: portrait) { .pointer { display: none; } }

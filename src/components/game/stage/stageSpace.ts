@@ -47,15 +47,22 @@ export function fitStage(box: { left: number; top: number; width: number; height
 }
 
 type LockableOrientation = ScreenOrientation & { lock?: (orientation: 'landscape') => Promise<void> };
+let enteringLandscape = false;
 
 /**
  * Full screen and, where the browser allows it (Android), the screen held in landscape. Needs a user
  * gesture. Browsers without it (iPhone) keep the turned stage instead.
  */
 export async function enterLandscape() {
-  if (!document.fullscreenEnabled) return;
+  if (enteringLandscape || document.fullscreenElement && screen.orientation?.type.startsWith('landscape')) return;
+  enteringLandscape = true;
   try {
-    if (!document.fullscreenElement) await document.documentElement.requestFullscreen({ navigationUI: 'hide' });
-    await (screen.orientation as LockableOrientation | undefined)?.lock?.('landscape');
-  } catch { /* Refused (no gesture, or not supported): the turned stage still works. */ }
+    try {
+      if (document.fullscreenEnabled && !document.fullscreenElement)
+        await document.documentElement.requestFullscreen({ navigationUI: 'hide' });
+    } catch { /* A standalone app may allow orientation lock without browser fullscreen. */ }
+    try {
+      await (screen.orientation as LockableOrientation | undefined)?.lock?.('landscape');
+    } catch { /* Refused or unsupported: the turned stage still works. */ }
+  } finally { enteringLandscape = false; }
 }

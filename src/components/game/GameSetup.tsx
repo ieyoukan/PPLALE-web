@@ -66,11 +66,11 @@ export function GameSetup({ modes, onStart }: {
         }
     }
     return <div className={layout.content} data-mode={mode} data-learning={collects && agreed || undefined}>
-    <div className={`${styles.setupModes} ${layout.modes}`}>
+    <div className={`${styles.setupModes} ${layout.modes}`} data-landscape-action>
       {modes.map(id => <button key={id} data-ui-title aria-pressed={mode === id} onClick={() => setMode(id)}>{modeNames[id]}</button>)}
     </div>
     {/* One row per CPU side: the opponent against you, both sides when watching. */}
-    {(mode === 'watch' ? [0, 1] as Side[] : mode === 'cpu' ? [1] as Side[] : []).map(side => <div key={side} className={`${styles.setupModes} ${layout.modes} ${layout.levelButtons}`} role="group" aria-label={mode === 'watch' ? `${sideLabel(mode, side)}の強さ` : 'CPUの強さ'}>
+    {(mode === 'watch' ? [0, 1] as Side[] : mode === 'cpu' ? [1] as Side[] : []).map(side => <div key={side} className={`${styles.setupModes} ${layout.modes} ${layout.levelButtons}`} data-landscape-action role="group" aria-label={mode === 'watch' ? `${sideLabel(mode, side)}の強さ` : 'CPUの強さ'}>
       {mode === 'watch' && <span className={styles.setupModeLabel}>{sideLabel(mode, side)}</span>}
       {cpuLevels.map(id => <button key={id} aria-pressed={levels[side] === id} title={cpuProfiles[id].description} onClick={() => setLevel(side, id)}>{cpuProfiles[id].name}</button>)}
     </div>)}
@@ -89,7 +89,7 @@ export function GameSetup({ modes, onStart }: {
     <UnusableDecks choices={choices} className={styles.ruleSettings} />
     {saved.error && <p role="alert" className={styles.error}>{saved.error}</p>}
     {error && <p role="alert" className={styles.error}>{error}</p>}
-    <button data-ui-title className={`${styles.startButton} ${layout.start}`} disabled={chosen.some(choice => !choice)} onClick={() => start()}>対戦をはじめる <span>→</span></button>
+    <button data-ui-title data-landscape-action className={`${styles.startButton} ${layout.start}`} disabled={chosen.some(choice => !choice)} onClick={() => start()}>対戦をはじめる <span>→</span></button>
     {asking && <>
       <button className={styles.consentBackdrop} aria-label="閉じる" onClick={() => setAsking(false)} />
       <section className={styles.consent} role="dialog" aria-modal="true" aria-labelledby="learning-consent">
