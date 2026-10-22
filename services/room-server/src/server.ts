@@ -23,7 +23,7 @@ import { WebSocketServer } from 'ws';
 import type { WebSocket } from 'ws';
 import type { Catalog, Side } from '@pplale/game-core';
 import { ROOM_ID_LENGTH, isRoomId } from '@pplale/game-core/room';
-import type { ClientMessage, RoomServerStats, Seated, ServerMessage } from '@pplale/game-core/room';
+import type { ClientMessage, RoomAction, RoomServerStats, Seated, ServerMessage } from '@pplale/game-core/room';
 import type { Backend, Member, Overview, RoomEvent } from './backend.ts';
 import type { Config } from './config.ts';
 import { RoomError, act, createRoom, expireTurn, joinRoom, roomInfo, seatOf, seatView, tidy } from './rooms.ts';
@@ -32,6 +32,9 @@ import { historyOwners, seatOwners } from './history/identity.ts';
 import type { HistoryRepository } from './history/repository.ts';
 import { freeMatch } from './matchmaking.ts';
 import { commandTiming, roomLatency } from './latency.ts';
+import { playPerformance } from './play-performance.ts';
+import { isPlayKind, parsePlayReport, parseServerTiming } from '@pplale/game-core/performance';
+import type { PlayKind, ServerTiming } from '@pplale/game-core/performance';
 import type { CommandTiming } from './latency.ts';
 
 /** A request or a socket message is a few kilobytes (a deck at most); anything much larger is not one. */
@@ -63,6 +66,7 @@ export function createRoomServer({ config, backend, catalog, history }: {
     const activityAllowed = limiter(requestsPerHour * 4);
     const started = Date.now();
     const latency = roomLatency();
+    const performanceMetrics = playPerformance(backend);
     const counting = new Set<Promise<void>>();
     // Statistics are best effort: failure must never reject an already committed game command.
     const countLater = (name: Parameters<Backend['count']>[0]) => {
@@ -205,7 +209,7 @@ export function createRoomServer({ config, backend, catalog, history }: {
         return overview.value;
     };
     async function stats(): Promise<RoomServerStats> {
-        return { version, uptime: Math.round((Date.now() - started) / 1000), backend: backend.kind, ...await counts(), latency: latency.snapshot() };
+        return { version, uptime: Math.round((Date.now() - started) / 1000), backend: backend.kind, ...await counts(), latency: latency.snapshot(), performance: await performanceMetrics.snapshot() };
     }
 
     const send = async (response: ServerResponse, status: number, body?: unknown, headers: Record<string, string> = {}) => {
@@ -392,6 +396,8 @@ export function createRoomServer({ config, backend, catalog, history }: {
         perAddress.set(ip, (perAddress.get(ip) ?? 0) + 1);
         const messageAllowed = burstLimit(30, 10);
         let queued = 0, helloStarted = false;
+        const reportable = new Map<number, { kind: PlayKind; timing: ServerTiming; at: number }>();
+        const metricAllowed = burstLimit(2, 10);
         socket.alive = true;
         socket.on('pong', () => { socket.alive = true; });
         const impatient = setTimeout(() => socket.close(4408), HELLO_TIMEOUT);
@@ -451,8 +457,14 @@ export function createRoomServer({ config, backend, catalog, history }: {
                 }, timing);
                 // The view goes out before the result, so whoever waits for the result already has it.
                 await announce(room, outcome.vacated ? seat : undefined, timing);
-                tell(socket, { type: 'result', n });
                 timing.total = performance.now() - received;
+                const command = body as RoomAction;
+                const measured = outcome.command && command.action === 'command' && isPlayKind(command.command.type) ? parseServerTiming(timing) : undefined;
+                if (measured && command.action === 'command' && isPlayKind(command.command.type)) {
+                    reportable.set(n, { kind: command.command.type, timing: measured, at: Date.now() });
+                    if (reportable.size > 64) reportable.delete(reportable.keys().next().value!);
+                }
+                tell(socket, { type: 'result', n, ...(measured && { timing: measured, revision: room.state?.revision }) });
                 if (outcome.command) latency.record(timing);
                 if (outcome.started) countLater('matchesStarted');
                 if (outcome.finished) countLater('matchesFinished');
@@ -471,6 +483,18 @@ export function createRoomServer({ config, backend, catalog, history }: {
             if (message?.type === 'hello' && !helloStarted) {
                 helloStarted = true;
                 return next(() => message.watch ? watch() : hello(message.token));
+            }
+            if (message?.type === 'performance') {
+                if (!socket.entry || socket.entry.seat === 2 || !metricAllowed() || !Array.isArray(message.reports) || message.reports.length > 8) return;
+                for (const item of message.reports) {
+                    const report = parsePlayReport(item), issued = report && reportable.get(report.n);
+                    if (!report || !issued || Date.now() - issued.at > 120_000) continue;
+                    reportable.delete(report.n);
+                    const { background, inputToSend, roundTrip, sendToView, viewToPaint, inputToPaint } = report;
+                    const durations = { background, inputToSend, roundTrip, sendToView, viewToPaint, inputToPaint };
+                    performanceMetrics.record({ ...durations, kind: issued.kind, server: issued.timing, at: Math.floor(Date.now() / 60000) * 60000, outcome: 'ok' });
+                }
+                return;
             }
             if (message?.type !== 'action' || !Number.isSafeInteger(message.n) || message.n < 0) return socket.close(4400);
             next(async () => { if (socket.entry) await action(message.n, message.action, received); });
@@ -557,6 +581,7 @@ export function createRoomServer({ config, backend, catalog, history }: {
          * (1012: the service restarts), and the browsers connect again, to another instance.
          */
         async shutdown() {
+            performanceMetrics.close();
             stopping = true;
             clearInterval(beats);
             for (const { timer } of turnTimers.values()) clearTimeout(timer);

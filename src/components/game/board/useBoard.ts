@@ -84,6 +84,7 @@ export function useBoard(container: RefObject<HTMLDivElement | null>, session: B
   /** Sends a command (with its animation). Clears the local selection of the acting side. */
   const act = useCallback((command: Command) => {
     if (remote && (remote.watching || remote.sending || roomInputLocked.current || remote.waiting && actual.phase === 'playing')) return;
+    const inputAt = performance.now();
     if (remote) roomInputLocked.current = true;
     if (command.actor === view) {
       setSelected(null);
@@ -94,9 +95,17 @@ export function useBoard(container: RefObject<HTMLDivElement | null>, session: B
       setIntent(command);
       setPresentingOwn(true);
       animate(command, () => setPresentingOwn(false));
-      send(command);
+      send(command,inputAt);
     } else animate(command, () => send(command));
   }, [view, animate, send, remote, actual.phase]);
+
+  const presented = remote?.presented;
+  useLayoutEffect(() => {
+    if (!presented || watching) return;
+    let second = 0;
+    const first = requestAnimationFrame(() => { second = requestAnimationFrame(() => presented(game.revision)); });
+    return () => { cancelAnimationFrame(first); cancelAnimationFrame(second); };
+  },[presented,game.revision,watching]);
 
   const dice = useOpeningDice({ game: actual, act, paused: loading, cpuSides, cpuRolls: ready && !loading && !paused && !animating, remote: !!remote });
   const { busy: rollingDice } = dice;

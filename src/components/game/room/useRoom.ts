@@ -91,8 +91,9 @@ export function useRoom(id: string | null, watch = false) {
     } catch (failure) { setError(failure instanceof Error ? failure.message : '参加できませんでした'); }
   }, [id, take]);
   /** Sends a request of this seat; its view has arrived when this resolves. Rejects with RoomRequestError. */
-  const send = useCallback((action: RoomAction) =>
-    connection.current?.send(action) ?? Promise.reject(new RoomRequestError(401, 'このルームの参加者ではありません')), []);
+  const send = useCallback((action: RoomAction, inputAt?: number) =>
+    connection.current?.send(action,inputAt) ?? Promise.reject(new RoomRequestError(401, 'このルームの参加者ではありません')), []);
+  const presented = useCallback((revision:number) => connection.current?.presented(revision), []);
   /** Every view after this call, in order. Returns how to stop. */
   const subscribe = useCallback((listener: (view: RoomView) => void) => {
     listeners.current.add(listener);
@@ -106,6 +107,6 @@ export function useRoom(id: string | null, watch = false) {
     if (!watch) dropSeat(id);
   }, [id, watch]);
 
-  return { stage, info, view, seat: key?.seat ?? null, linked, error, join, send, subscribe, leave };
+  return { stage, info, view, seat: key?.seat ?? null, linked, error, join, send, subscribe, leave, presented };
 }
 export type Room = ReturnType<typeof useRoom>;

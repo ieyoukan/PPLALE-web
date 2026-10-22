@@ -24,7 +24,7 @@ function reducer({ shown, queue }: Table, action: Played | 'accept'): Table {
  * A room's match as the board plays it. Nothing is decided here: a command goes to the server, and
  * the view it (or the other side's command) leads to waits in a queue until the board has shown it.
  */
-export function useRoomSession({ room, initial, seat, onLeave, onFindNext }: { room: Pick<Room, 'send' | 'subscribe' | 'linked'>; initial: Played; seat: Side; onLeave: () => void; onFindNext?: () => void }): BoardSession {
+export function useRoomSession({ room, initial, seat, onLeave, onFindNext }: { room: Pick<Room, 'send' | 'subscribe' | 'linked' | 'presented'>; initial: Played; seat: Side; onLeave: () => void; onFindNext?: () => void }): BoardSession {
   const watching = !!initial.watching;
   const { send: request, subscribe, linked } = room;
   const [{ shown, queue }, dispatch] = useReducer(reducer, { shown: initial, queue: [] });
@@ -44,11 +44,11 @@ export function useRoomSession({ room, initial, seat, onLeave, onFindNext }: { r
   const accept = useCallback(() => dispatch('accept'), []);
 
   const { revision } = shown.game;
-  const send = useCallback((command: Command) => {
+  const send = useCallback((command: Command, inputAt?:number) => {
     if (watching || !linked || inFlight.current) return;
     inFlight.current = true;
     setSending(true);
-    request({ action: 'command', command: command as RoomCommand, revision })
+    request({ action: 'command', command: command as RoomCommand, revision },inputAt)
       .then(() => setError(''), (failure: unknown) => {
         setError(failure instanceof Error ? failure.message : '操作を送れませんでした');
         setFailed(value => value + 1);
@@ -62,8 +62,9 @@ export function useRoomSession({ room, initial, seat, onLeave, onFindNext }: { r
   const rematch = useCallback(() => initial.mode === 'free' ? (onFindNext ?? onLeave)() : ask('rematch'), [ask, initial.mode, onFindNext, onLeave]);
 
   const names = useMemo<[string, string]>(() => [shown.players[0].name, shown.players[1]?.name ?? '相手'], [shown.players]);
-  const remote = useMemo(() => ({ seat, watching, turnClock, ownDeck: shown.ownDeck, matchRules: shown.rules, freeMatch: initial.mode === 'free', names, sending: !linked || sending, waiting: !linked || sending || queue.length > 0, failed, next, accept, resign, resigned: shown.resigned, leave: onLeave }),
-    [seat, watching, turnClock, shown.ownDeck, shown.rules, initial.mode, names, linked, sending, queue.length, failed, next, accept, resign, shown.resigned, onLeave]);
+  const { presented } = room;
+  const remote = useMemo(() => ({ seat, watching, turnClock, ownDeck: shown.ownDeck, matchRules: shown.rules, freeMatch: initial.mode === 'free', names, sending: !linked || sending, waiting: !linked || sending || queue.length > 0, failed, next, accept, resign, resigned: shown.resigned, leave: onLeave, presented }),
+    [seat, watching, turnClock, shown.ownDeck, shown.rules, initial.mode, names, linked, sending, queue.length, failed, next, accept, resign, shown.resigned, onLeave, presented]);
   return {
     game: shown.game, error, history: [], commands: [], mode: 'room', levels: ['normal', 'normal'], ready: true, saveError: '',
     send, undo: nothing, canUndo: false, remote,

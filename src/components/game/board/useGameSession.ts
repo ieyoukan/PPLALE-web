@@ -35,6 +35,8 @@ export interface Incoming {
 }
 /** What a match played in a room adds: the server applies the commands and sends back what this seat may see. */
 export interface RemoteSession {
+  /** Next paint opportunity of the actually shown board, after its privacy/presentation gate. */
+  presented?: (revision:number) => void;
   turnClock?: RoomTurnClock & { serverNow: number; receivedAt: number; limitMs: number };
   freeMatch?: boolean;
   ownDeck?: Deck;
@@ -179,7 +181,7 @@ export function useGameSession({ onMissing }: { onMissing: () => void }) {
   }, [ready, replay, session.game, session.commands, mode, levels, origin, editing]);
 
   // Same-device play allows the sandbox test commands; a replay may contain them.
-  const send = useCallback((command: Command) => dispatch({ type: 'command', command, sandbox: mode === 'hotseat' || !!replay }), [mode, replay]);
+  const send = useCallback<(command: Command, inputAt?: number) => void>(command => dispatch({ type: 'command', command, sandbox: mode === 'hotseat' || !!replay }), [mode, replay]);
   const undo = useCallback(() => dispatch({ type: 'undo' }), []);
   const edit = useCallback((change: BoardEdit) => dispatch({ type: 'edit', edit: change }), []);
 

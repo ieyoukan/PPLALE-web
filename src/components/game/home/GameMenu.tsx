@@ -35,7 +35,7 @@ export default function GameMenu({ children }: { children: ReactNode }) {
   const { user, signInWithGoogle } = useAuth();
   const profile = useMyProfile();
   // The first tab is the root, so it only matches exactly; the others also cover their sub-pages.
-  const current = pathname.startsWith('/game/profile') ? { label: 'プロフィール' } : tabs.find(tab => tab.href !== HOME_PATH && pathname.startsWith(tab.href)) ?? tabs[0];
+  const current = pathname.startsWith('/game/performance') ? { label: '通信計測' } : pathname.startsWith('/game/profile') ? { label: 'プロフィール' } : tabs.find(tab => tab.href !== HOME_PATH && pathname.startsWith(tab.href)) ?? tabs[0];
   return <>
     <link rel="preload" as="image" type="image/avif" href={menuBackground.avif} fetchPriority="high" />
     <div className={`${styles.menu} ${pathname === HOME_PATH ? styles.home : ''}`} style={{ '--menu-background': `image-set(url("${menuBackground.avif}") type("image/avif"), url("${menuBackground.webp}") type("image/webp"))` } as CSSProperties}>

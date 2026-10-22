@@ -29,6 +29,10 @@
       "types": "./src/snapshot.ts",
       "default": "./src/snapshot.ts"
     },
+    "./performance": {
+      "types": "./src/performance.ts",
+      "default": "./src/performance.ts"
+    },
     "./history": {
       "types": "./src/history.ts",
       "default": "./src/history.ts"

@@ -7,7 +7,7 @@ test.skip(!base, 'set PPLALE_ROOM_TEST_URL to an app built with a room-server UR
 test.setTimeout(60_000);
 
 async function board(page, initial, random = .99) {
-  const requests = [];
+  const requests = [], reports = [];
   let socket, current = initial, version = 1;
   const view = command => ({
     id: '123456', version: version++, match: 1, seat: 0, spectators: 0, status: 'playing',
@@ -24,14 +24,15 @@ async function board(page, initial, random = .99) {
       const message = JSON.parse(raw);
       if (message.type === 'hello') ws.send(JSON.stringify({ type: 'view', view: view() }));
       else if (message.type === 'action') requests.push(message);
+      else if (message.type === 'performance') reports.push(...message.reports);
     });
   });
   await page.goto(`${base}/game/room/?id=123456`);
   await expect(page.locator('[data-table]')).toBeVisible();
   await page.evaluate(random => { Math.random = () => random; }, random);
   return {
-    requests,
-    reply(error) {
+    requests, reports,
+    reply(error, measured = false) {
       const request = requests.at(-1);
       if (!request) throw new Error('No request');
       if (!error) {
@@ -40,7 +41,7 @@ async function board(page, initial, random = .99) {
         current = result.state;
         socket.send(JSON.stringify({ type: 'view', view: view(request.action.command) }));
       }
-      socket.send(JSON.stringify({ type: 'result', n: request.n, ...(error && { error }) }));
+      socket.send(JSON.stringify({ type: 'result', n: request.n, ...(error && { error }), ...(measured && {revision:current.revision,timing:{queue:1,read:2,apply:3,store:4,presence:5,deliver:6,publish:7,total:28}}) }));
       return current;
     },
     commitWithoutReply() {
@@ -65,6 +66,35 @@ const click = async locator => {
   await locator.evaluate(element => element.click());
   await locator.page().clock.runFor(20);
 };
+
+test('a play automatically records network, server and shown-board timings and batches a private report',async({page})=>{
+  const errors=[];page.on('pageerror',error=>errors.push(error.message));
+  const initial=arena({me:{field:['y_0']}}),uid=field(initial)[0];
+  const room=await board(page,initial);
+  await page.locator(`[data-unit="${uid}"]`).click();
+  await page.locator('[data-leader="1"] button').first().click();
+  await expect.poll(()=>room.requests.length).toBe(1);
+  await page.waitForTimeout(100);const after=room.reply(undefined,true);
+  await expect.poll(async()=>({count:await page.evaluate(()=>performance.getEntriesByName('pplale:room-command-roundtrip').length),errors})).toEqual({count:1,errors:[]});
+  await expect(page.locator('[data-leader="1"]').getByRole('button',{name:`お菓子ポイント ${after.players[1].points}`,exact:true})).toBeVisible();
+  await expect.poll(()=>page.evaluate(()=>JSON.parse(localStorage.getItem('pplale-room-performance-v1')||'[]').length)).toBe(1);
+  const samples=await page.evaluate(()=>JSON.parse(localStorage.getItem('pplale-room-performance-v1')||'[]'));
+  expect(samples).toHaveLength(1);expect(samples[0].kind).toBe('attack');expect(samples[0].outcome).toBe('ok');
+  expect(samples[0].server.store).toBe(4);expect(samples[0].roundTrip).toBeGreaterThanOrEqual(100);
+  expect(samples[0].inputToPaint).toBeGreaterThan(samples[0].roundTrip);
+  expect(samples[0].viewToPaint).toBeGreaterThan(30);
+  expect(room.reports).toHaveLength(0);
+  await expect.poll(()=>room.reports.length,{timeout:15000}).toBe(1);
+  expect(Object.keys(room.reports[0]).sort()).toEqual(['n','background','inputToSend','roundTrip','sendToView','viewToPaint','inputToPaint'].sort());
+  expect(JSON.stringify(samples)).not.toMatch(/あなた|相手|test-token|123456|cardId|"uid"/);
+  await page.goto(`${base}/game/performance/`);
+  await expect(page.getByRole('heading',{name:'通信計測',exact:true})).toBeVisible();
+  await expect(page.getByRole('status')).toContainText('記録 1 件');
+  await expect(page.getByRole('heading',{name:'サーバー処理の内訳'})).toBeVisible();
+  const download=page.waitForEvent('download');await page.getByRole('button',{name:'JSONを書き出す'}).click();expect((await download).suggestedFilename()).toBe('pplale-play-performance.json');
+  await page.getByRole('button',{name:'この端末の記録を消す'}).click();await expect(page.getByRole('status')).toContainText('記録 0 件');
+  await page.screenshot({path:'/tmp/pplale-play-performance-desktop.png',fullPage:true});
+});
 
 test('attack is sent while its animation clock is frozen, once only, and the result waits for the hit', async ({ page }) => {
   const initial = arena({ me: { field: ['y_0'] } });

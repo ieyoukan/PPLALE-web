@@ -16,6 +16,7 @@ import type { Side } from '@pplale/game-core';
 import type { RoomServerStats, RoomStatus } from '@pplale/game-core/room';
 import type { Room } from './rooms.ts';
 import type { FreeMatchQueue } from './matchmaking.ts';
+import type { PlaySample } from '@pplale/game-core/performance';
 
 /** A room changed. Every instance sends the views to the sockets it holds. */
 export interface RoomEvent {
@@ -34,6 +35,8 @@ export interface Member { id: string; seat: Spot; member: string }
 export interface Overview { rooms: Record<RoomStatus, number>; total: Totals; pods: number; connections: number }
 
 export interface Backend {
+    appendPerformance(samples: PlaySample[]): Promise<void>;
+    readPerformance(): Promise<PlaySample[]>;
     readonly kind: RoomServerStats['backend'];
     /** False when the id is taken. `ttl` (ms): how long the room lasts without another change. */
     create(room: Room, ttl: number, history?: HistoryCapture): Promise<boolean>;
@@ -141,6 +144,13 @@ export async function redisBackend(url: string, prefix = 'pplale:'): Promise<Bac
     }
     return {
         kind: 'redis',
+        async appendPerformance(samples) {
+            if (!samples.length) return;
+            await client.multi().lPush(`${prefix}performance:v1`, samples.map(sample => JSON.stringify(sample))).lTrim(`${prefix}performance:v1`, 0, 2047).expire(`${prefix}performance:v1`, 86400).exec();
+        },
+        async readPerformance() {
+            return (await client.lRange(`${prefix}performance:v1`, 0, 2047)).reverse().flatMap(json => { try { return [JSON.parse(json) as PlaySample]; } catch { return []; } });
+        },
         create: (room, ttl, history) => store(room, '', ttl, history),
         async get(id) {
             const json = await client.hGet(roomKey(id), 'json');
@@ -239,6 +249,7 @@ export function memoryBackend(): Backend {
         if (kept && kept.until <= Date.now()) rooms.delete(id);
         return rooms.get(id);
     };
+    const performanceSamples: PlaySample[] = [];
     const members = (id: string, seat: Spot) => {
         const key = `${id}:${seat}`, now = Date.now();
         let found = seats.get(key);
@@ -248,6 +259,8 @@ export function memoryBackend(): Backend {
     };
     return {
         kind: 'memory',
+        async appendPerformance(samples) { performanceSamples.push(...structuredClone(samples)); if (performanceSamples.length > 2048) performanceSamples.splice(0, performanceSamples.length - 2048); },
+        async readPerformance() { return structuredClone(performanceSamples.filter(sample => sample.at >= Date.now() - 86400000)); },
         async create(room, ttl, history) {
             if (live(room.id)) return false;
             record(room, null, ttl, history);

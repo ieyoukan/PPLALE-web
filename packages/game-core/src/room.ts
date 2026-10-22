@@ -4,6 +4,7 @@
 import type { Catalog, Command, Deck, GameState, Side } from './model.ts';
 import { defaultMatchRules, deckRuleErrors, describeMatchRules, parseMatchRules, playableNow } from './rules.ts';
 import type { MatchRules } from './rules.ts';
+import type { PlayPerformance, PlayReport, ServerTiming } from './performance.ts';
 
 // ── The rules of a room: which cards its decks may use (rules.ts), and whether others may watch ──
 export { describeMatchRules, fruitNames, fruits, playableNow } from './rules.ts';
@@ -152,14 +153,15 @@ export type RoomAction =
  */
 export type ClientMessage =
     | { type: 'hello'; token?: string; watch?: true }
-    | { type: 'action'; n: number; action: RoomAction };
+    | { type: 'action'; n: number; action: RoomAction }
+    | { type: 'performance'; reports: PlayReport[] };
 /**
  * `view`: the seat's view, now and after every change. `result`: what became of action `n`
  * (`error` when it was refused; its view was already sent). `gone`: no such room or seat (any more).
  */
 export type ServerMessage =
     | { type: 'view'; view: RoomView }
-    | { type: 'result'; n: number; error?: string }
+    | { type: 'result'; n: number; error?: string; revision?: number; timing?: ServerTiming }
     | { type: 'gone'; error: string };
 
 /** How the room server is doing (`GET /stats`): shown on the バトル tab and useful when something is off. */
@@ -180,6 +182,7 @@ export interface RoomServerStats {
     total: { roomsCreated: number; matchesStarted: number; matchesFinished: number; commands: number };
     /** Last 256 successful commands on this pod; not a network round-trip measurement. */
     latency?: RoomLatency;
+    performance?: PlayPerformance;
 }
 
 export interface RoomLatency {

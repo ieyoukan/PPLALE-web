@@ -2,6 +2,10 @@
 // seat, the seats kept in this browser, and the socket a seat talks through.
 // Without NEXT_PUBLIC_ROOM_SERVER_URL there are no room matches.
 import { historyHeaders } from './historyIdentity';
+import { playTiming } from './playTiming';
+import { recordPlaySample } from './performanceLog';
+import { isPlayKind } from '@pplale/game-core/performance';
+import type { PlayReport } from '@pplale/game-core/performance';
 import type { FreeMatchActivity } from '@pplale/game-core/room';
 import type { HistoryPage, MatchDetails, MatchRecording } from '@pplale/game-core/history';
 import type { Deck } from '@pplale/game-core';
@@ -90,7 +94,8 @@ const ACTION_TIMEOUT = 12_000;
 
 export interface RoomConnection {
   /** Sends a request of the seat. Resolves once the server did it (its view has arrived by then); rejects with RoomRequestError. */
-  send(action: RoomAction): Promise<void>;
+  send(action: RoomAction, inputAt?: number): Promise<void>;
+  presented(revision: number): void;
   close(): void;
 }
 
@@ -101,9 +106,24 @@ export interface RoomConnection {
  */
 export function connectRoom(id: string, token: string | null, handlers: { onView: (view: RoomView) => void; onLink: (up: boolean) => void; onGone: (message: string) => void }): RoomConnection {
   let socket: WebSocket | null = null, stopped = false, attempt = 0, n = 0;
+  let match: number | undefined;
   let timer: ReturnType<typeof setTimeout> | undefined;
+  let reports: PlayReport[] = [], reportTimer: ReturnType<typeof setTimeout> | undefined;
+  const flushReports = () => {
+    clearTimeout(reportTimer); reportTimer = undefined;
+    const batch = reports.splice(0,8);
+    if (batch.length && socket?.readyState === WebSocket.OPEN) {
+      try { socket.send(JSON.stringify({type:'performance',reports:batch} satisfies ClientMessage)); } catch { /* Best effort. */ }
+    }
+    if (reports.length) reportTimer = setTimeout(flushReports,10_000);
+  };
+  const timing = playTiming(recordPlaySample, report => {
+    reports.push(report); if (reports.length > 16) reports.shift();
+    if (!reportTimer) reportTimer = setTimeout(flushReports,10_000);
+  });
   const waiting = new Map<number, { resolve: () => void; reject: (error: RoomRequestError) => void; timer: ReturnType<typeof setTimeout>; started: number; command: boolean }>();
   const failWaiting = () => {
+    timing.disconnect(); reports = []; clearTimeout(reportTimer); reportTimer = undefined;
     for (const { reject, timer } of Array.from(waiting.values())) {
       clearTimeout(timer);
       reject(new RoomRequestError(0, '接続が切れました。盤面の再接続をお待ちください'));
@@ -118,6 +138,9 @@ export function connectRoom(id: string, token: string | null, handlers: { onView
       if (stopped || socket !== next) return;
       const message = JSON.parse(String(event.data)) as ServerMessage;
       if (message.type === 'view') {
+        if (match !== undefined && match !== message.view.match) timing.disconnect();
+        match = message.view.match;
+        if (message.view.game) timing.received(message.view.game.revision);
         attempt = 0;
         handlers.onLink(true);
         handlers.onView(message.view);
@@ -125,6 +148,7 @@ export function connectRoom(id: string, token: string | null, handlers: { onView
         const asked = waiting.get(message.n);
         waiting.delete(message.n);
         if (asked) {
+          timing.acknowledged(message.n,message);
           clearTimeout(asked.timer);
           if (asked.command) {
             const name = 'pplale:room-command-roundtrip';
@@ -150,7 +174,8 @@ export function connectRoom(id: string, token: string | null, handlers: { onView
   }
   open();
   return {
-    send(action) {
+    presented: revision => timing.presented(revision),
+    send(action,inputAt) {
       return new Promise((resolve, reject) => {
         if (!socket || socket.readyState !== WebSocket.OPEN) return reject(new RoomRequestError(0, UNREACHABLE));
         const number = ++n;
@@ -159,14 +184,18 @@ export function connectRoom(id: string, token: string | null, handlers: { onView
           const pending = waiting.get(number);
           if (!pending) return;
           waiting.delete(number);
+          timing.failed(number,'timeout');
           pending.reject(new RoomRequestError(0, '応答を確認できませんでした。盤面に再接続しています'));
           socket?.close();
         }, ACTION_TIMEOUT);
         waiting.set(number, { resolve, reject, timer, started: performance.now(), command: action.action === 'command' });
-        socket.send(JSON.stringify({ type: 'action', n: number, action } satisfies ClientMessage));
+        if (action.action === 'command' && isPlayKind(action.command.type)) timing.begin(number,action.command.type,action.revision+1,inputAt);
+        try { socket.send(JSON.stringify({ type: 'action', n: number, action } satisfies ClientMessage)); }
+        catch { clearTimeout(timer); waiting.delete(number); timing.failed(number,'disconnected'); reject(new RoomRequestError(0,UNREACHABLE)); }
       });
     },
     close() {
+      flushReports(); timing.close(); clearTimeout(reportTimer);
       stopped = true;
       if (timer) clearTimeout(timer);
       failWaiting();

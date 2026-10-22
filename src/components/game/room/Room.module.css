@@ -177,6 +177,7 @@
 @container stage (max-width: 520px) { .seats { grid-template-columns: minmax(0, 1fr); } }
 @media (prefers-reduced-motion: reduce) { .primary, .secondary { transition: none; } }
 
+.historyLinks { display:flex; justify-content:flex-end; flex-wrap:wrap; gap:10px; }
 .historyLink { justify-self: end; padding: 8px 16px; border: 2px solid #dfcbb6; border-radius: 999px; background: #fffaf0; color: #80604c; font-size: 14px; text-decoration: none; box-shadow: 0 3px 0 #cfbba544; }
 .historyLink:hover { background: #fbe7ed; }
 
