@@ -39,6 +39,9 @@ jobs:
       - name: Test the CPU server
         run: pnpm run test:cpu-server
 
+      - name: Test browser play timing and private journal
+        run: pnpm run test:play-performance
+
       - name: Test the room server
         run: pnpm run test:room-server
 
