@@ -18,6 +18,7 @@
     "lint:fix": "eslint . --fix",
     "typecheck": "tsc --noEmit",
     "test:game": "pnpm --filter @pplale/game-core run test",
+    "test:play-performance": "node --test tests/play-performance.test.mjs",
     "test:cpu-server": "pnpm --filter @pplale/cpu-server run test",
     "pretest:room-server": "pnpm --filter @pplale/game-core run build",
     "test:room-server": "pnpm --filter @pplale/room-server run test",
