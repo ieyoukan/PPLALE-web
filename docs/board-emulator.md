@@ -23,7 +23,7 @@
 - 「一手戻す」「最初から」で何度でも挑戦できる。一手戻す操作は、自分の直前の選択と、それに続く相手の自動反応をまとめて戻す。
 - クリア後は問題一覧へ戻るか、次の問題へ進める。クリア記録はブラウザ内に保存し、通常対戦・盤面エディタの保存データは上書きしない。挑戦途中の操作は保存せず、ページを再読み込みすると問題の最初から始まる。
 
-盤面画像の再生成は、`pnpm run dev` を起動した状態で `pnpm run puzzles:images`。別ポートの場合は `pnpm run puzzles:images --url http://localhost:3100` とする。Playwrightが各共有コードから実盤面を開き、メニュー・操作ボタンだけを隠して1280×720のWebPを生成する。独立したブラウザを使うため、利用中の対戦データには触れない。`public/puzzle-previews/` と `src/data/lethalPuzzlePreviews.json` を一緒にコミットする。通常のビルド時には撮影せず、生成済み画像を配信する。`node --test tests/puzzle-previews.test.mjs` で問題コードと画像の対応・ハッシュ・寸法を確認できる。
+盤面画像の再生成は、`pnpm run dev` を起動した状態で `pnpm run puzzles:images`。別ポートの場合は `pnpm run puzzles:images --url http://localhost:3100` とする。Playwrightが各共有コードから実盤面を開き、メニュー・操作ボタンだけを隠して1280×720のWebPを生成する。独立したブラウザを使うため、利用中の対戦データには触れない。`public/puzzle-previews/` と `src/data/lethalPuzzlePreviews.json` を一緒にコミットする。通常のビルド時には撮影せず、生成済み画像を配信する。画像の内容ハッシュをファイル名に含め、`Cache-Control: public, max-age=31536000, immutable` でブラウザ・CDNへ長期キャッシュする。変更時は新しいURLへ切り替えるため、古い画像のキャッシュと混同しない。Vercel固有の画像生成・ストレージAPIは使わない。`node --test tests/puzzle-previews.test.mjs` で問題コードと画像の対応・ハッシュ・寸法を確認できる。
 
 ## はじめる
 
