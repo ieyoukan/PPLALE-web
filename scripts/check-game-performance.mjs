@@ -9,7 +9,7 @@ const axe = readFileSync(require.resolve('axe-core/axe.min.js'), 'utf8');
 const target = process.argv[2];
 if (!target) throw new Error('Usage: node scripts/check-game-performance.mjs <production URL> <output JSON>');
 const origin = new URL(target).origin;
-const output = process.argv[3] ?? 'docs/performance-2026-10-16.json';
+const output = process.argv[3] ?? 'docs/performance/performance-2026-10-16.json';
 const browser = await chromium.launch();
 const runs = [];
 try {

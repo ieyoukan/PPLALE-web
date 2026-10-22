@@ -51,8 +51,8 @@ Vercelのモノレポ設定は [公式ガイド](https://vercel.com/docs/monorep
 
 - `npm run build`：通常のTurbopack本番ビルド成功。一時コピーでの最初の試行は、外部を指すnode_modulesのシンボリックリンクをTurbopackが拒否したため、リポジトリ内で再実行した。
 - `npm run typecheck`：成功。変更箇所のESLintは問題なし。`npm run lint` はエラー0件・警告11件。
-- [再現用スクリプト](../scripts/check-game-performance.mjs)：`node scripts/check-game-performance.mjs http://localhost:3104 docs/performance-2026-10-16.json`。`next start -p 3104` で本番サーバーを起動してから実行する。
-- [実測JSON](performance-2026-10-16.json)：1280×860・375×812、deviceScaleFactor=1、各3回、毎回新しい未ログインのブラウザコンテキスト。JS約378.6KiB・埋め込みCSS約22.8KiB（gzip換算）、外部CSSリクエスト0件、canonicalは `/game/` を参照。
+- [再現用スクリプト](../scripts/check-game-performance.mjs)：`node scripts/check-game-performance.mjs http://localhost:3104 docs/performance/performance-2026-10-16.json`。`next start -p 3104` で本番サーバーを起動してから実行する。
+- [実測JSON](performance/performance-2026-10-16.json)：1280×860・375×812、deviceScaleFactor=1、各3回、毎回新しい未ログインのブラウザコンテキスト。JS約378.6KiB・埋め込みCSS約22.8KiB（gzip換算）、外部CSSリクエスト0件、canonicalは `/game/` を参照。
 - axeのWCAG 2 A/AA違反は修正後の全6回で0件。グラデーション等でコントラストを自動判定できない要素は `incomplete` に位置と理由を残した。判定保留からも補助文字とタブの表示を見直したが、完全な手動アクセシビリティ監査ではない。
 
 保存済みデッキ一覧のE2Eは [テスト用データ](../e2e/fixtures/savedDeckHarness.mjs) を使う。Firebase実アカウント・本番データでの確認は含まない。Firebaseは従来利用できているとのユーザー確認により、今回の追加検証対象から外した。ローカル本番ビルドの性能測定は、過去の変更前や公開環境との比較ではない。

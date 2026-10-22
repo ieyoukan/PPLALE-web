@@ -17,6 +17,8 @@ VRChatのイベント「[ロリっ子喫茶ぷぷりえ](https://pple.vr2.info/)
 
 # 開発について
 
+ドキュメントの入口は [docsの目次](docs/README.md)。CPUの評価式・重み・探索・学習は [CPU仕様](docs/cpu.md) を参照。
+
 能力説明とイチゴ・ぶどうのFAQは [ルール・裁定集](docs/game-rules.md) を参照。
 カード効果の機械向け処理と、提供ルールへの対応状況は [カード効果の実装状況](docs/card-effect-rules.md) を参照。
 Next.js / game-core の分離方針、Vercelへの配置、未確定ルールは [対戦ゲームの設計](docs/game-design.md) を参照。

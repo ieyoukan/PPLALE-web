@@ -91,7 +91,7 @@ curl https://pplale-room.youkan.uk/stats
 - `connections`：全 Pod の開いている WebSocket の数（≒いま画面を開いているプレイヤー）。`pods`：動いている Pod の数。どちらも Pod が15秒ごとに申告した値。
 - `total`：Redis のデータが始まってからの累計（Pod が入れ替わっても続く）。
 - `version` と `uptime`（秒）は、答えた Pod のもの。`backend` が `memory` なら Redis なしで動いている。
-- `latency`：そのPodの直近256成功コマンドの段階別時間（ms、p50/p95/最大）。`read` / `store` は履歴保存の待ちも含む。ネットワーク往復時間ではない。詳しい範囲・比較結果・再測定手順は [応答改善の計測記録](../../docs/game-interaction-performance-results.md)。
+- `latency`：そのPodの直近256成功コマンドの段階別時間（ms、p50/p95/最大）。`read` / `store` は履歴保存の待ちも含む。ネットワーク往復時間ではない。詳しい範囲・比較結果・再測定手順は [応答改善の計測記録](../../docs/performance/game-interaction-performance-results.md)。
 - 名前・デッキ・ルームIDなど、個々のルームの中身は出さない。数は最大5秒前のもの。
 
 Redis を直接見るとき（名前空間 `pplale-room-server`）:

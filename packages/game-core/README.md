@@ -19,7 +19,7 @@ Next.js / React / Firebase に依存しない、ぷぷりえーるのローカ�
 | `commands/` | Command ごとの処理（`opening.ts` 開始前 / `turn.ts` ターン中 / `sandbox.ts` テスト操作）と `applyCommand` |
 | `setup.ts` | デッキ検証と `newGame` |
 | `view.ts` | UI 向けの読み取り専用ヘルパー（`pendingView` で選択肢の表示場所、`attackTargets`） |
-| `ai/` | CPU。`moves.ts` 合法手、`hidden.ts` 見えない情報の推測、`evaluate.ts` 盤面評価、`lethal.ts` このターンの勝ち筋の完全探索、`turn-search.ts` 自分のターンと相手の返しの探索、`value.ts` 学習した局面の価値、`selfplay.ts` CPU同士の対戦、`levels/` 強さごとの戦略 |
+| `ai/` | CPU。`moves.ts` 合法手、`hidden.ts` 見えない情報の推測、`evaluate.ts` 盤面評価、`lethal.ts` 予算付きの勝ち筋探索、`turn-search.ts` 自分のターンと相手の返しの探索、`value.ts` 学習した局面の価値、`selfplay.ts` CPU同士の対戦、`levels/` 強さごとの戦略 |
 | `core/state.ts` | `cloneState`。探索で大量に呼ぶ状態コピー（structuredClone の約10倍速い） |
 | `snapshot.ts` | 保存された状態の検証・復元と旧形式の移行 |
 | `position.ts` | 盤面エディタの盤面（`Position`）。`buildPosition` で対戦中の状態にし、`positionOf` で対戦中の盤面を書き出す。`encodePosition` / `decodePosition` は共有コード（`PPL1.…`） |
@@ -63,75 +63,11 @@ y_8: {
 
 相手が盤面のカード以外を選んだとき（「1PP追加」など）は、選んだ内容が自動で表示される。カードの説明画面やカード専用の大きな演出が欲しい場合だけ、UI 側に追加する。
 
-## CPU の書き方
+## CPU
 
-CPU の強さ（`ai/levels/*.ts`）は「合法手の一覧から1つ選ぶ」ことだけを書く。
+判断の流れ、難易度ごとの評価式と正確な重み、探索予算、学習モデルの全入力、学習・比較コマンド、過去の実験記録は [CPUの判断・評価式・学習](../../docs/cpu.md) に集約する。
 
-```ts
-export const easy: CpuStrategy = {
-    level: 'easy', name: 'よわい', description: '…',
-    choose: ({ moves, random }) => moves[random(moves.length)],
-};
-```
-
-- `moves` は `legalMoves` の結果。各 `Move` は `command` と、それを実行した後の状態 `next` を持つ。合法かどうかはエンジン自身に適用して判定するので、ルールとずれない。
-- `state` は `determinize` 済み。相手の非公開の手札・山札の順番・乱数の種は推測で置き換えてあり、CPU は不正に情報を読めない。`next` もその推測した世界での結果。
-- 盤面の良し悪しは `evaluate(state, side, catalog, weights)`。重みを変えれば打ち方の個性を作れる。
-- `cpuCommand(state, catalog, { level, side })` が手番の判定、推測、実際の状態での再確認をまとめて行う。新しい強さは `ai/index.ts` の `cpuStrategies` に登録すると、対戦準備画面に自動で並ぶ。
-- 強さの順序は `tests/cpu.test.mjs` と `pnpm run cpu:arena -- [試合数] [レベル…]` で確かめる。席は1試合ごとに入れ替える。
-
-| 対戦（席を入れ替えた組） | 試合数 | 勝率（95%区間） | 1手の平均思考時間 |
-| --- | --- | --- | --- |
-| ふつう vs よわい | 2000 | 90.5%（89.2–91.7） | 0.1ms |
-| つよい vs ふつう | 1000 | 81.8%（79.5–84.1） | 2ms |
-| つよい vs 勝ち筋の探索なしのつよい | 1000 | 57.9%（56.3–59.5） | |
-| さいきょう vs つよい | 120 | 83.3%（76.9–89.8） | 109ms |
-
-20試合では勝率が±20%ぶれる。レベルを比べるときは数百試合を使う。つよい同士では先攻の勝率が約65%あり、同格に近い相手への勝率には運による上限がある。
-
-### このターンの勝ち筋の完全探索（`findLethal`）
-
-`findLethal(state, side, catalog, { maxNodes })` は、自分のターン内の手順をすべて試し、このターンで勝てる手順を返す。
-
-- `win`: 返した手順は、見えないカードやダイスがどうであっても勝つ。ドローやランダム効果を通る手順は、乱数と山札順を変えた複数の世界すべてで勝つ場合だけ採用する。
-- `none`: すべての手順を調べ、確実に勝てる手順はない。
-- `unknown`: 局面数の上限（`maxNodes`）に達した。
-- 手順の順番だけが違う同じ局面は1回しか調べない。相手の選択が途中で必要になる手順は、その先を計画できないので打ち切る。
-- 「つよい」は局面数20で実行し、見つかればその手順を打つ（`maxNodes` を400にしても勝率は変わらない）。「さいきょう」は毎回4000で実行し、勝ち筋がなければ自分のターンと相手の返しを探索する（`searchTurn`）。画面では Web Worker 上で動くので、探索中も操作は止まらない。
-
-### CPUの育成（自己対戦）
-
-ブラウザを使わず Node だけで動く。1試合は約15ms、8コアで並列に回す。
-
-```
-pnpm run cpu:train -- [世代数=30] [候補数=8] [1候補あたりの組数=100]
-pnpm run cpu:arena -- [試合数] [レベル…]
-```
-
-- 育てる対象は `evaluate` の重み（`Weights`）。「つよい」「さいきょう」が共通で使う。
-- 1世代ごとに、現在の最良の重みを少し変えた候補を作り、最良と対戦させる。同じデッキ・乱数で席を入れ替えて2戦するので運の差は打ち消される。勝ち越した候補は未使用の試合（1000試合以上）で再確認し、はっきり勝ち越した場合だけ採用する。
-- 結果は `scripts/weights.json` に出る（コミットしない）。最終検証（開始時の重みと2000試合）の勝率が運のぶれ（約±1.1%）を明確に超えたときだけ、`ai/evaluate.ts` の `defaultWeights` に写す。
-- 現在の `defaultWeights` は1回目の育成結果（手で決めた初期値に対して 53.4%）。評価項目を増やした2回目は 51.6% でぶれの範囲だったため採用していない。この評価の形では頭打ちに近い。
-- さらに伸ばすには、評価項目の追加か、1手先より深い探索が必要。`createHard(weights)` で重み違いのCPUを作れ、`playMatch` の `levels` には登録済みレベル名のほか任意の戦略を渡せる。`onStep(state, command, side)` で各手の局面と選んだ手を記録できる。
-
-### 学習した局面の価値（`ai/value.ts`）
-
-「さいきょう」は、ターンが終わった局面を小さなネットワーク（入力75・中間32）の勝率予測で比べる。ターン内の手順の並べ替えは手書きの `evaluatePlan` のまま。
-
-```
-pnpm run cpu:value -- collect [試合数=40000] [残すターンの割合=0.5]
-pnpm run cpu:value -- train [中間の数=32] [周回=4]
-pnpm run cpu:value -- adopt
-```
-
-- `collect`: 「つよい」同士の対戦（4手に1回はランダムな手）から、ターン開始時の局面と勝敗を集める。`train`: 学習して `scripts/value-model.json` に出す。`adopt`: それを `src/ai/value-model.ts` に写す（これが「さいきょう」に使われる）。
-- 採用の基準: `createMaster({ evaluate: createValueEvaluator(model) })` が、選ぶのに使っていない数百試合で今の「さいきょう」にはっきり勝ち越すこと。現在のモデルは手書きの評価だけの「さいきょう」に 63.0%（400試合、59.1–66.9）。思考時間は変わらない。
-- 勝敗の予測精度は強さの目安にならない。カード名を入力に入れると予測は当たるようになる（どのデッキが強いかを覚える）が、対戦では弱くなった。ターン内の局面にも使うと「つよい」に20%しか勝てなかった。
-- ランダムな手を増やすと強くなった（悪い手のあとの結果が、どの手が大事かを教える）。入力や集め方を変えたら必ず対戦で確かめる。
-- 試して効かなかったもの（すべて今のさいきょうとの200試合で誤差の範囲）: 正解を勝敗ではなく「さいきょうの探索の判断」にする（`label` と `train … search|oracle|mix-*`。相手の手札が見える判断でも同じ）、人との対戦記録を混ぜる（`label-records` と `train …+records`。33試合ぶん）、相手の返しを広く読む・相手の確実な勝ち筋を正確に調べる（思考時間が1.3〜3倍になるだけ）。探索を4倍にしても強くならない。いまの壁は評価や読みの深さより、探索が読む候補を4本に絞るときに、すぐには得に見えない手（次のターンの準備、温存）を落とすことにあると見ている。
-- **改良を試すとき**: `pnpm run cpu:compare -- <名前> [--model f.json] [--policy f.json] [--search '{…}'] [--decks all|strawberry|records.jsonl]` で、今のさいきょうと対戦させる。CPUサーバーが新しいモデルを配る前と同じ逐次検定（`compareVerdict`、勝率55%を「強い」とし、互角なら3〜4%しか通らない）で判定し、結果を `experiments.jsonl` に追記する。これまでの試みもそこに記録してある。人のデッキで比べるには、サーバーの記録を `kubectl --context k3s-1 -n pplale-cpu-server exec deploy/pplale-cpu-server -- sh -c 'cat /data/reports/*.jsonl' > records.jsonl` で取り出して `--decks records.jsonl` に渡す。
-- 手ごとの価値（`ai/policy.ts`、DouZero の考え方）: 局面・その手で変わったこと・手の中身（どのカード・どの対象）から、その手を打った側が勝つかを学ぶ。`pnpm run cpu:policy` で自己対戦3万試合（約59万手）から学習すると、1手から勝敗を71.6%当てる。`searchTurn` の `policy` / `policyOrder` / `policyRoot` で、読む順番と最後の選択に使える。今のさいきょうとの200試合では、並べ替えだけで51.5%、選択の後押しを足すと46.0%・51.5%で、どれも誤差の範囲（思考時間は約1.3倍）なので、さいきょうには使っていない。
-- 集める・学習する計算は `ai/value-train.ts` にあり、このスクリプトと CPU サーバー（[services/cpu-server](../../services/cpu-server/README.md)）が共有する。サーバーは人との対戦記録を混ぜて学習し続け、モデルをゲームに配る。
+新しい戦略は `ai/levels/*.ts` に「合法手から1つ選ぶ」`CpuStrategy` を実装し、`ai/index.ts` の `cpuStrategies` に登録する。`cpuCommand` が手番判定・非公開情報の置き換え・実状態での合法性の再確認を担当する。
 
 ## API
 
