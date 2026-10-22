@@ -99,7 +99,16 @@ export async function startedMatch(served: Served, other: Served = served, spect
     const room = await seatedRoom(served, other, spectators), { sockets } = room;
     for (const socket of sockets) await socket.act({ action: 'ready', deck });
     await Promise.all(sockets.map(socket => socket.until(view => view.status === 'playing')));
-    const command = (seat: 0 | 1, sent: Extract<RoomAction, { action: 'command' }>['command']) => sockets[seat].act({ action: 'command', command: sent, revision: sockets[seat].latest().game!.revision });
+    const command = async (seat: 0 | 1, sent: Extract<RoomAction, { action: 'command' }>['command']) => {
+        const error = await sockets[seat].act({ action: 'command', command: sent, revision: sockets[seat].latest().game!.revision });
+        // An acknowledgement synchronizes its own socket, not the other browser.
+        // Wait for both before the fixture chooses its next move from either seat.
+        if (!error) {
+            const revision = sockets[seat].latest().game!.revision;
+            await Promise.all(sockets.map(socket => socket.until(view => !!view.game && view.game.revision >= revision)));
+        }
+        return error;
+    };
     while (sockets[0].latest().game!.phase === 'dice') {
         await command(0, { type: 'roll', actor: 0 });
         await command(1, { type: 'roll', actor: 1 });

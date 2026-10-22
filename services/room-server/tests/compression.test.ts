@@ -36,3 +36,20 @@ test('compressed and legacy sockets receive the same redacted game with much les
         await served.close();
     }
 });
+
+test('duplicate or late publications do not resend an older view to a player', async () => {
+    const served = await serve({ beatSeconds: 3600 });
+    try {
+        const match = await startedMatch(served);
+        const room = (await served.backend.get(match.id))!;
+        await Promise.all(match.sockets.map(client => client.until(view => view.version >= room.version)));
+        const counts = match.sockets.map(client => client.views.length);
+        for (const version of [room.version, room.version - 1]) {
+            await served.backend.publish({ from: 'late-test-pod', room: { ...room, version }, online: [true, true], watching: 0 });
+        }
+        await new Promise(resolve => setTimeout(resolve, 50));
+        assert.deepEqual(match.sockets.map(client => client.views.length), counts);
+        assert.equal(await match.command(0, { type: 'openingDraw', actor: 0, deck: 'yojo' }), undefined);
+        assert.ok(match.sockets.every(client => client.latest().version > room.version));
+    } finally { await served.close(); }
+});

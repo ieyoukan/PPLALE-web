@@ -257,18 +257,25 @@ historyTest('history: claiming guest history preserves favorites, excludes a sec
 historyTest('history: a slow backup snapshot cannot stall room commands or HTTP health', async t => {
     const { backend, pool, history, onClose } = await fixture(t);
     const served = await serve({ history, data: { open: () => backend }, beatSeconds: 60 }); onClose(() => served.close());
-    const room = ready(); await backend.create(room, 3_600_000);
+    // Use the real command path: a direct fixture CAS can race startup upkeep.
+    const { room, token } = createRoom('123456', { rules: { fruits: ['strawberry'], extendedPlayable: false } });
+    joinRoom(room, {});
+    act(room, 0, { action: 'ready', deck }, catalog);
+    act(room, 1, { action: 'ready', deck }, catalog);
+    await backend.create(room, 3_600_000);
+    const client = await connect(served, room.id, token);
+    await client.until(view => view.players[0].online);
     const backup = await pool.connect();
     try {
         await backup.query('BEGIN ISOLATION LEVEL REPEATABLE READ READ ONLY');
         await backup.query('SELECT * FROM matches');
         const slow = backup.query('SELECT pg_sleep(1.5)');
         const before = Date.now();
-        act(room, 0, { action: 'resign' }, catalog); await store(backend, room);
+        assert.equal(await client.act({ action: 'resign' }), undefined);
         assert.equal((await served.call('/healthz')).status, 200);
         assert.ok(Date.now() - before < 1000, 'room action waited for backup');
-        await slow; await backup.query('ROLLBACK');
-    } finally { backup.release(); }
+        await slow;
+    } finally { await backup.query('ROLLBACK'); backup.release(); }
 });
 
 historyTest('history: reconnect repairs a Redis AOF rollback using the acknowledged PostgreSQL room', async t => {

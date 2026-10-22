@@ -123,8 +123,16 @@ export function createRoomServer({ config, backend, catalog, history }: {
         return pair;
     };
     const connections = () => Array.from(sockets.values()).reduce((sum, pair) => sum + pair[0].size + pair[1].size + pair[2].size, 0);
+    const sentViews = new WeakMap<WebSocket, number>();
     const tell = (socket: WebSocket, message: ServerMessage) => {
         if (socket.readyState !== socket.OPEN) return;
+        // Concurrent presence/publication can finish out of order. The browser
+        // already ignores old versions; avoid compressing and sending them too.
+        if (message.type === 'view') {
+            const previous = sentViews.get(socket);
+            if (previous !== undefined && message.view.version <= previous) return;
+            sentViews.set(socket, message.view.version);
+        }
         // A reader that stops receiving must not accumulate an unlimited send queue.
         if (socket.bufferedAmount > 256 * 1024) return socket.terminate();
         socket.send(JSON.stringify(message.type === 'view' ? { ...message, view: names.view(message.view) } : message));
