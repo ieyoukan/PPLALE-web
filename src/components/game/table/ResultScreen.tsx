@@ -48,7 +48,7 @@ function Result({ outcome: { winner, kind } }: { outcome: Outcome }) {
     ['先攻', names[game.rules.firstPlayer]],
     ...(mode === 'cpu' ? [['CPUの強さ', cpuProfiles[levels[1]].name] as [string, string]] : []),
   ];
-  return <section className={`${styles.result} ${tones[kind]}`} role="dialog" aria-label="対戦結果">
+  return <section className={`${styles.result} ${tones[kind]}`} role="dialog" aria-label="対戦結果" data-result-screen>
     <header className={styles.resultHeading}>
       {/* The winner by name: the signed-in user's name when they won. */}
       <h2 className={styles[kind]}>{names[winner]}のかち!!</h2>
@@ -58,29 +58,31 @@ function Result({ outcome: { winner, kind } }: { outcome: Outcome }) {
       <b className={styles.resultName}>{names[featured]}</b>
     </div>
     <div className={styles.resultBody}>
-      <dl className={styles.summary}>{rows.map(([label, value]) => <div key={label}><dt>{label}</dt><dd>{value}</dd></div>)}</dl>
-      <ResultAnalysis side={featured} onOpen={() => setAnalysisOpen(true)} />
-      {deck && <div className={styles.deckRow}>
-        <span>使用デッキ</span>
-        <button className={styles.plateButton} onClick={() => setDeckOpen(true)}>確認</button>
-        <strong>{deck.name}</strong>
-      </div>}
-      {/* A match played from a board of the 盤面エディタ: that board can be changed again or shared. */}
-      {position && <div className={styles.boardRow}>
-        <span>{position.title ?? '作った盤面'}</span>
-        <button className={styles.plateButton} onClick={editStartingBoard}>盤面を編集し直す</button>
-        <button className={styles.plateButton} onClick={() => void copyCode()}>コードをコピー</button>
-      </div>}
-      {code && <label className={styles.boardCode}>
-        <span role="status">{copied ? '始めの盤面のコードをコピーしました' : 'コピーできませんでした。下から選んでコピーしてください'}</span>
-        <textarea readOnly value={code} rows={2} onFocus={event => event.target.select()} />
-      </label>}
-    </div>
-    <div className={styles.actions} role="group" aria-label="対戦後の操作">
+      <div className={styles.resultDetails}>
+        <dl className={styles.summary}>{rows.map(([label, value]) => <div key={label}><dt>{label}</dt><dd>{value}</dd></div>)}</dl>
+        <ResultAnalysis side={featured} onOpen={() => setAnalysisOpen(true)} />
+        {deck && <div className={styles.deckRow}>
+          <span>使用デッキ</span>
+          <button className={styles.plateButton} onClick={() => setDeckOpen(true)}>確認</button>
+          <strong>{deck.name}</strong>
+        </div>}
+        {/* A match played from a board of the 盤面エディタ: that board can be changed again or shared. */}
+        {position && <div className={styles.boardRow}>
+          <span>{position.title ?? '作った盤面'}</span>
+          <button className={styles.plateButton} onClick={editStartingBoard}>盤面を編集し直す</button>
+          <button className={styles.plateButton} onClick={() => void copyCode()}>コードをコピー</button>
+        </div>}
+        {code && <label className={styles.boardCode}>
+          <span role="status">{copied ? '始めの盤面のコードをコピーしました' : 'コピーできませんでした。下から選んでコピーしてください'}</span>
+          <textarea readOnly value={code} rows={2} onFocus={event => event.target.select()} />
+        </label>}
+      </div>
+      <div className={styles.actions} role="group" aria-label="対戦後の操作">
         {canReplay && <button className={styles.plateButton} onClick={startReplay}>リプレイ</button>}
         {/* The game's own home (preparation, cards, battles), not the site's top page. */}
         <button className={styles.plateButton} onClick={leave}>{remote?.recorded ? '対戦履歴へ戻る' : remote?.watching ? '観戦をやめる' : remote?.freeMatch ? 'バトルへ戻る' : remote ? 'ルームを出る' : 'ホーム'}</button>
         {canRematch && <button className={`${styles.plateButton} ${styles.primaryPlate}`} onClick={rematch}>{remote?.freeMatch ? '次の相手を探す' : remote ? 'もう一度（デッキ選択へ）' : position ? '同じ盤面でもう一度' : '再戦する'}</button>}
+      </div>
     </div>
     {analysisOpen && <ResultSheet title="形勢の詳細" onClose={() => setAnalysisOpen(false)}><AssessmentGraph side={featured} /></ResultSheet>}
     {deck && deckOpen && <DeckSheet deck={deck} onClose={() => setDeckOpen(false)} />}

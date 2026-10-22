@@ -13,12 +13,12 @@ const turnName = ({ order, number }: AssessedPoint['turn']) => `${order === 'fir
 
 /** The current chance of winning of the side at the bottom of the screen. */
 export function AssessmentBar() {
-  const { assessment, showAssessment, assessable, view, names, game } = useBoardContext();
+  const { assessment, showAssessment, assessable, view, names, game, remote } = useBoardContext();
   const last = assessment.at(-1);
   if (!assessable || !showAssessment || !last || game.winner !== null) return null;
   const mine = percent(last.win, view);
   // Like a shogi app's bar: the far side on top, the near side filling from the bottom.
-  return <div className={styles.bar} role="status" aria-label={`形勢 ${names[view]} ${mine}%`}>
+  return <div className={styles.bar} role="status" aria-label={`形勢 ${names[view]} ${mine}%`} title={remote && !remote.recorded ? '公開盤面の目安' : undefined}>
     <span className={styles.name}>{100 - mine}%</span>
     <span className={styles.track}><span className={styles.near} style={{ height: `${mine}%` }} /></span>
     <span className={styles.name}><b>{mine}%</b></span>
@@ -27,7 +27,7 @@ export function AssessmentBar() {
 
 /** The whole match as a curve of `side`'s chance, with that side's notable moves. */
 export function AssessmentGraph({ side, compact = false }: { side: Side; compact?: boolean }) {
-  const { assessment, names } = useBoardContext();
+  const { assessment, names, remote } = useBoardContext();
   if (assessment.length < 2) return null;
   const width = 600, height = 160, first = assessment[0].index, last = assessment.at(-1)!.index;
   // Leave room for markers even on the first/last move and at 0% or 100%.
@@ -40,7 +40,7 @@ export function AssessmentGraph({ side, compact = false }: { side: Side; compact
   const mistakes = assessment.filter(p => p.grade && p.command?.actor === side).sort((a, b) => (b.loss ?? 0) - (a.loss ?? 0)).slice(0, 3);
   const highlights = assessmentHighlights(assessment, side);
   return <section className={`${styles.graph} ${compact ? styles.compact : ''}`} aria-label={`${names[side]}の形勢の推移`}>
-    <h3>形勢の推移 <small>{names[side]}の勝ちやすさ</small></h3>
+    <h3>形勢の推移 <small>{remote && !remote.recorded ? '公開盤面の目安' : `${names[side]}の勝ちやすさ`}</small></h3>
     <svg viewBox={`0 0 ${width} ${height}`} preserveAspectRatio="none" role="img" aria-label={`最後は${percent(assessment.at(-1)!.win, side)}%`}>
       <rect x="0" y="0" width={width} height={height / 2} className={styles.ahead} />
       {turns.map(p => <line key={p.index} x1={x(p.index)} x2={x(p.index)} y1="0" y2={height} className={p.turn.order === 'first' ? styles.tickFirst : styles.tickSecond} />)}

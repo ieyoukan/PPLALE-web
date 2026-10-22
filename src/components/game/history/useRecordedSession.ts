@@ -1,6 +1,7 @@
 'use client';
 
 import { useCallback, useEffect, useMemo, useState } from 'react';
+import { turnOf } from '@pplale/game-core';
 import type { Command } from '@pplale/game-core';
 import type { MatchRecording } from '@pplale/game-core/history';
 import type { BoardSession, Incoming, ReplayTimeline } from '../board/useGameSession';
@@ -56,13 +57,14 @@ export function useRecordedSession({ recording, initialStep, onLeave }: { record
     setDue(null);
     setIndex(Math.max(0, Math.min(frames.length - 1, Math.floor(at))));
   }, [frames.length]);
-  const recorded = useMemo(() => frames.flatMap((frame, at) => frame.state.phase === 'playing' && frame.presentation.assessment ? [{ index: at, win: frame.presentation.assessment.win }] : []), [frames]);
+  const recorded = useMemo(() => frames.flatMap((frame, at) => frame.state.phase === 'playing' && frame.presentation.assessment ? [{ index: at, win: frame.presentation.assessment.win, turn: turnOf(frame.state) }] : []), [frames]);
+  const assessment = useMemo(() => playing ? recorded.filter(point => point.index <= index) : recorded, [playing, recorded, index]);
   const timeline = useMemo<ReplayTimeline | null>(() => playing ? { at: index, states, viewer: match.seat, seek, recorded } : null, [playing, index, states, match.seat, seek, recorded]);
   const names = useMemo<[string, string]>(() => [match.players[0].name, match.players[1].name], [match.players]);
   const remote = useMemo(() => ({
-    seat: match.seat, watching: true, recorded: true, matchRules: match.rules, names,
+    seat: match.seat, watching: true, recorded: true, matchRules: match.rules, names, assessment,
     waiting: playing, sending: false, next, accept, resign: nothing, resigned: null, leave: onLeave,
-  }), [match.seat, match.rules, names, playing, next, accept, onLeave]);
+  }), [match.seat, match.rules, names, assessment, playing, next, accept, onLeave]);
   return {
     game: frame.state, error: '', history: [], commands: [], mode: 'room', levels: ['normal', 'normal'], ready: true, saveError: '',
     send: nothing, undo: nothing, canUndo: false, remote,

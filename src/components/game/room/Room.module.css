@@ -182,7 +182,4 @@
 
 .spectatorTools { position: fixed; left: 50%; bottom: 16px; transform: translateX(-50%); z-index: 35; display: flex; flex-wrap: wrap; justify-content: center; align-items: center; gap: 10px; max-width: calc(100cqw - 24px); padding: 10px 16px; border: 1px solid #d3bd86; border-radius: 18px; background: #142c37ee; color: #fff5de; box-shadow: 0 5px 24px #0005; font-size: 12px; }
 .spectatorTools a { padding: 8px 12px; border-radius: 12px; background: #f4bcc8; color: #65433e; font-weight: 700; white-space: nowrap; }
-.liveAssessment { display: grid; gap: 4px; min-width: 170px; }
-.liveAssessment > span { display: flex; justify-content: space-between; gap: 10px; }
-.liveAssessment meter { width: 100%; height: 9px; accent-color: #b3d788; }
 @container stage (max-width: 600px) { .spectatorTools { bottom: 8px; width: max-content; } }

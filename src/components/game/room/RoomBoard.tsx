@@ -40,7 +40,6 @@ export default function RoomBoard() {
   return <MatchAssetGate ids={roomMatchCardIds(view.rules)}>
     {watch && <aside className={link.spectatorTools} aria-label="観戦メニュー">
       <Link href={`${BATTLE_PATH}free/`}>観戦を終了</Link>
-      {view.assessment && <div className={link.liveAssessment} aria-label="観戦中の形勢（公開盤面の目安）"><span><b>{view.players[0].name} {Math.round(view.assessment.win * 100)}%</b><span>{Math.round((1 - view.assessment.win) * 100)}%</span></span><meter min={0} max={1} value={view.assessment.win} aria-label="公開盤面の形勢" /></div>}
       {view.status === 'finished' && view.replayId && <Link href={`/game/replay/?id=${view.replayId}`}>リプレイを見る ▶</Link>}
     </aside>}
     {!watch && view.status === 'finished' && view.replayId && <aside className={link.spectatorTools}><Link href={`/game/replay/?id=${view.replayId}`}>リプレイを見る ▶</Link></aside>}

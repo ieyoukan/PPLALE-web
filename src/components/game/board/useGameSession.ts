@@ -8,6 +8,7 @@ import { createMatch, randomSeed, usableSetup } from '@/lib/game/match';
 import { readSession, saveSession, sideLabel } from '@/lib/game/sessionStore';
 import type { Levels, MatchSetup, Mode } from '@/lib/game/sessionStore';
 import type { RoomTurnClock } from '@pplale/game-core/room';
+import type { AssessedPoint } from './assess';
 
 export { cpuSidesOf, sideLabel } from '@/lib/game/sessionStore';
 export type { Levels, Mode } from '@/lib/game/sessionStore';
@@ -35,6 +36,8 @@ export interface Incoming {
 }
 /** What a match played in a room adds: the server applies the commands and sends back what this seat may see. */
 export interface RemoteSession {
+  /** Public estimates observed in a room, or the saved estimates of a completed recording. */
+  assessment?: AssessedPoint[];
   turnClock?: RoomTurnClock & { serverNow: number; receivedAt: number; limitMs: number };
   freeMatch?: boolean;
   ownDeck?: Deck;
