@@ -9,7 +9,7 @@ import Image from 'next/image';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { useAuth } from '@/lib/auth';
-import { BATTLE_PATH, CARDS_PATH, EDITOR_PATH, HOME_PATH, NOTIFICATIONS_PATH } from '@/lib/game/sessionStore';
+import { BATTLE_PATH, CARDS_PATH, EDITOR_PATH, HOME_PATH, NOTIFICATIONS_PATH, PUZZLES_PATH } from '@/lib/game/sessionStore';
 import { useMyProfile } from '../social/useMyProfile';
 import { RecordedCard } from '../history/RecordedCard';
 import styles from './GameMenu.module.css';
@@ -19,6 +19,7 @@ import menuBackground from '@/lib/game/generated/menu-assets.json';
 const tabs = [
   { href: HOME_PATH, label: 'CPU対決', note: 'ひとりであそぶ', tone: styles.pink },
   { href: BATTLE_PATH, label: 'バトル', note: 'フリー・ルームマッチ', tone: styles.green },
+  { href: PUZZLES_PATH, label: 'リーサルパズル', note: 'このターンで勝利！', tone: styles.sage },
   { href: CARDS_PATH, label: 'カード', note: '図鑑・デッキ構築', tone: styles.lilac },
   { href: EDITOR_PATH, label: '盤面エディタ', note: '好きな盤面から', tone: styles.yellow },
   { href: '/game/social/', label: 'ソーシャル', note: 'フレンドの現在地', tone: styles.pink },
@@ -38,7 +39,7 @@ export default function GameMenu({ children }: { children: ReactNode }) {
   const current = pathname.startsWith('/game/performance') ? { label: '通信計測' } : pathname.startsWith('/game/profile') ? { label: 'プロフィール' } : tabs.find(tab => tab.href !== HOME_PATH && pathname.startsWith(tab.href)) ?? tabs[0];
   return <>
     <link rel="preload" as="image" type="image/avif" href={menuBackground.avif} fetchPriority="high" />
-    <div className={`${styles.menu} ${pathname === HOME_PATH ? styles.home : ''}`} style={{ '--menu-background': `image-set(url("${menuBackground.avif}") type("image/avif"), url("${menuBackground.webp}") type("image/webp"))` } as CSSProperties}>
+    <div className={`${styles.menu} ${pathname === HOME_PATH ? styles.home : ''} ${pathname.startsWith(PUZZLES_PATH) ? styles.puzzleMenu : ''}`} style={{ '--menu-background': `image-set(url("${menuBackground.avif}") type("image/avif"), url("${menuBackground.webp}") type("image/webp"))` } as CSSProperties}>
     <aside className={styles.side}>
       <Image className={styles.logo} src="/images/game/logo.webp" alt="お菓子争奪戦争 ぷぷりえーる" width={462} height={227} priority />
       <nav className={styles.tabs} aria-label="ゲームメニュー" data-landscape-action>{tabs.map(tab =>

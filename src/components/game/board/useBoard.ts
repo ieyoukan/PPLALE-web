@@ -9,7 +9,7 @@ import { useRouter } from 'next/navigation';
 import { gameCatalog } from '@/lib/game/catalog';
 import { useMyProfile } from '../social/useMyProfile';
 import { learningConsent, reportMatch } from '@/lib/game/cpuServer';
-import { HOME_PATH } from '@/lib/game/sessionStore';
+import { HOME_PATH, PUZZLES_PATH } from '@/lib/game/sessionStore';
 import { useBoardAnimations } from './useBoardAnimations';
 import { useCardDrag } from './useCardDrag';
 import type { DragSource } from './useCardDrag';
@@ -44,7 +44,8 @@ export function useBoard(container: RefObject<HTMLDivElement | null>, session: B
   const [picking, setPicking] = useState<Picking | null>(null);
   const router = useRouter();
   /** Set in a room: the seat this browser plays, and the changes arriving from the server. */
-  const { remote } = session;
+  const { remote, puzzle } = session;
+  const puzzleFinished = !!puzzle && puzzle.status !== 'playing';
   const { game: actual, mode, levels, ready, error, saveError, canUndo, send, undo: undoCommand, replaying, replayNext, setup, canRematch, canReplay, position, editing, edit: editSession } = session;
   const profile = useMyProfile(!remote && mode !== 'watch');
   /** Public profile only. Loading/missing profiles must never fall back to a Google account name. */
@@ -116,7 +117,7 @@ export function useBoard(container: RefObject<HTMLDivElement | null>, session: B
     if (!presentingOwn && !remote?.waiting) roomInputLocked.current = false;
   }, [presentingOwn, remote?.waiting]);
   const modelUsed = useCpuPlayer({
-    enabled: ready && !replaying && cpuSides.length > 0 && !loading && !paused, sides: cpuSides, levels, game: actual, act, flights,
+    enabled: ready && !replaying && !puzzleFinished && cpuSides.length > 0 && !loading && !paused, sides: cpuSides, levels, game: actual, act, flights,
     busy: { any: moving, blocking: rollingDice || !!strike || !!turnNotice || !!announcement || !!ping || !!order || !!effectRoll || !!choiceNote },
   });
   // A finished match against さいきょう goes to the CPU server once, if this browser agreed to it.
@@ -229,7 +230,7 @@ export function useBoard(container: RefObject<HTMLDivElement | null>, session: B
   const pending = useMemo(() => pendingView(game), [game]);
   const ours = !!pending && canControl(pending.actor);
   const attacks = useMemo(() => attackTargets(game, game.active, gameCatalog), [game]);
-  const playEnabled = !editing && game.phase === 'playing' && canControl(view) && game.active === view && !game.pending && !busy && !loading && game.winner === null;
+  const playEnabled = !editing && !puzzleFinished && game.phase === 'playing' && canControl(view) && game.active === view && !game.pending && !busy && !loading && game.winner === null;
   const flying = (uid: string) => flights.some(f => f.uid === uid);
   const canStrike = useCallback((uid: string, target: string | 'leader') => game.active === view && !!attacks[uid]?.includes(target), [attacks, game.active, view]);
   const canAttackNow = (uid: string) => !!attacks[uid];
@@ -339,7 +340,7 @@ export function useBoard(container: RefObject<HTMLDivElement | null>, session: B
   /** Back to the game menu. The match stays saved and can be resumed from there. */
   function leave() {
     if (remote) remote.leave();
-    else router.push(HOME_PATH);
+    else router.push(puzzle ? PUZZLES_PATH : HOME_PATH);
   }
   /** Switching to another match (rematch, replay, back from a replay): nothing carries over. */
   function resetTable() {
@@ -381,7 +382,7 @@ export function useBoard(container: RefObject<HTMLDivElement | null>, session: B
   }
 
   return {
-    game, mode, levels, view, me, panel, ready, busy, paused, names, remote,
+    game, mode, levels, view, me, panel, ready, busy, paused, names, remote, puzzle,
     assessment, assessable, showAssessment, setShowAssessment,
     setup, canRematch, canReplay, replaying, timeline, seekReplay, position, editBoard: openEditor, editStartingBoard,
     editing, edit: editBoard, picking, setPicking, session,

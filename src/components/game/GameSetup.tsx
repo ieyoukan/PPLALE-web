@@ -13,7 +13,7 @@ import { DeckSelect, UnusableDecks, useDeckChoices } from './DeckSelect';
 import { RulePicker } from './RulePicker';
 import styles from './GameSetupControls.module.css';
 import layout from './GameSetup.module.css';
-const modeNames: Record<Mode, string> = { cpu: 'CPUと対戦', watch: 'CPU同士を観戦', hotseat: '両側を操作', room: 'ルームマッチ' };
+const modeNames: Record<Mode, string> = { cpu: 'CPUと対戦', watch: 'CPU同士を観戦', hotseat: '両側を操作', room: 'ルームマッチ', puzzle: 'リーサルパズル' };
 /**
  * Mode (among `modes`), CPU levels, the rules (which cards the decks may use) and both decks for a
  * new match; how the game itself is played is fixed. Used by the preparation pages.

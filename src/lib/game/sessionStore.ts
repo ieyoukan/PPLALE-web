@@ -6,8 +6,9 @@ import type { Command, CpuLevel, Deck, GameState, MatchRules, Position, Rules, S
 /**
  * cpu: you (side 0) vs CPU. hotseat: one device controls both sides. watch: CPU vs CPU.
  * room: another player over the network; the match lives on the server, not in this browser.
+ * puzzle: a single-turn challenge; only opponent reactions are automated, and its session is separate.
  */
-export type Mode = 'cpu' | 'hotseat' | 'watch' | 'room';
+export type Mode = 'cpu' | 'hotseat' | 'watch' | 'room' | 'puzzle';
 /** CPU level per side; a side's entry is unused while a human controls it. */
 export type Levels = [CpuLevel, CpuLevel];
 /** What the match was made from, so the same one can be started again. */
@@ -51,11 +52,13 @@ export const CARDS_PATH = '/game/cards/';
 export const NOTIFICATIONS_PATH = '/game/notifications/';
 /** 盤面エディタ: place cards freely, then play from there. */
 export const EDITOR_PATH = '/game/editor/';
+export const PUZZLES_PATH = '/game/puzzles/';
+export const puzzleHref = (id: string) => `/game/puzzle/?id=${encodeURIComponent(id)}`;
 export const CARD_GALLERY_PATH = '/game/cards/zukan/';
 export const PLAY_PATH = '/game/play/';
 
 /** Sides the CPU plays in a mode. */
-export const cpuSidesOf = (mode: Mode): Side[] => mode === 'cpu' ? [1] : mode === 'watch' ? [0, 1] : [];
+export const cpuSidesOf = (mode: Mode): Side[] => mode === 'cpu' || mode === 'puzzle' ? [1] : mode === 'watch' ? [0, 1] : [];
 /** Display name of a side from the viewer's seat (side 0 is the near side). */
 export const sideLabel = (mode: Mode, side: Side) => mode === 'watch' ? `CPU ${side + 1}` : side === 0 ? 'あなた' : mode === 'cpu' ? 'CPU' : '相手';
 

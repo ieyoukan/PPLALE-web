@@ -8,11 +8,20 @@ import { NotificationSoundToggle } from '../notifications/GameNotifications';
 
 /** In-match actions only. Choosing the mode, levels and decks belongs to the preparation page. */
 export function MenuPanel() {
-  const { game, mode, paused, view, busy, canUndo, replaying, remote, assessable, showAssessment, setShowAssessment, setPanel, setPaused, setView, undo, leave, stopReplay, position, editBoard, rematch } = useBoardContext();
+  const { game, mode, paused, view, busy, canUndo, replaying, remote, puzzle, assessable, showAssessment, setShowAssessment, setPanel, setPaused, setView, undo, leave, stopReplay, position, editBoard, rematch } = useBoardContext();
   const local = !remote && !replaying, playing = game.phase === 'playing';
   // Giving up ends the match for both players, so it is asked twice.
   const [resigning, setResigning] = useState(false);
   const close = (action: () => void) => () => { action(); setPanel(null); };
+  if (puzzle) return <>
+    <h2>{puzzle.problem.title}</h2>
+    <div className={styles.menuList}>
+      <button disabled={!canUndo || busy} onClick={close(undo)}>一手戻す</button>
+      <button disabled={busy} onClick={close(rematch)}>最初からやり直す</button>
+      <button onClick={() => setPanel({ type: 'logs' })}>履歴</button>
+      <button onClick={leave}>問題一覧へ</button>
+    </div>
+  </>;
   return <>
     <h2>{replaying ? 'リプレイ' : 'メニュー'}</h2>
     <div className={styles.menuList}>

@@ -1,0 +1,55 @@
+{
+  "version": 1,
+  "renderer": "BoardTable (/game/play)",
+  "puzzles": {
+    "melon-beginner-1": {
+      "src": "/puzzle-previews/melon-beginner-1-345249d5a3d49e61.webp",
+      "width": 1280,
+      "height": 720,
+      "positionHash": "4d537598d133be344d1e04ad4c0aa337680e9b58dab3b46d6cc3241a42737ecd",
+      "imageHash": "345249d5a3d49e61209320e9bf7a109d6ba75127fadcc187eb35caa6dd08e036"
+    },
+    "melon-beginner-2": {
+      "src": "/puzzle-previews/melon-beginner-2-4ab87870b9f278e5.webp",
+      "width": 1280,
+      "height": 720,
+      "positionHash": "3573afdbeb2e3770543003d8350435f45ded5bd1764a979c218a272b9dff8ad1",
+      "imageHash": "4ab87870b9f278e5bfba814d8f8f8345df21979e21b4a2d221adcbe848451c08"
+    },
+    "melon-intermediate-1": {
+      "src": "/puzzle-previews/melon-intermediate-1-ee144c985ed12549.webp",
+      "width": 1280,
+      "height": 720,
+      "positionHash": "72e80df4b24cc407bc7cee4f2f8cf106993407a995ea7a66b1025e3d48318d54",
+      "imageHash": "ee144c985ed12549948d8b49913921709f996a9b90bf90b57267623d9ebdfa34"
+    },
+    "melon-intermediate-2": {
+      "src": "/puzzle-previews/melon-intermediate-2-04eabe7bf0896a86.webp",
+      "width": 1280,
+      "height": 720,
+      "positionHash": "47c3f8202bae4ed654fd54c11e5068a3e4303ef0897675a5766302e659931d01",
+      "imageHash": "04eabe7bf0896a86256acc573f31dce105abe764deb05f0ef38507efbd32c3af"
+    },
+    "melon-intermediate-3": {
+      "src": "/puzzle-previews/melon-intermediate-3-9e50f329aa5cc914.webp",
+      "width": 1280,
+      "height": 720,
+      "positionHash": "531a4ef36167f6ac510455f65a389a137055cbe10cbcc23fc1370f9ce6ddcea1",
+      "imageHash": "9e50f329aa5cc914fc9e075cb3e4e7f8ef6806d708d7b2fedcfc26cad301a0e9"
+    },
+    "melon-intermediate-4": {
+      "src": "/puzzle-previews/melon-intermediate-4-537378a96cc843f0.webp",
+      "width": 1280,
+      "height": 720,
+      "positionHash": "b06e0fb87347a6d1097253cce47cd051486c6b4b29be148cd0bf0fa759c5a017",
+      "imageHash": "537378a96cc843f0089ae3ce58dae601c24ac30c2b00f77b8de8baa1137958b2"
+    },
+    "melon-intermediate-5": {
+      "src": "/puzzle-previews/melon-intermediate-5-35427603d5a16c21.webp",
+      "width": 1280,
+      "height": 720,
+      "positionHash": "ca1c616df4eaa3eb103d8c5d2b9ec7c984e353b0f53010182d2c856c951177b3",
+      "imageHash": "35427603d5a16c21b809a1edab837362782a7250c1b313e3bd33384c76ae03cf"
+    }
+  }
+}

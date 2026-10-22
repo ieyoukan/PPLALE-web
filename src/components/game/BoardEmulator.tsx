@@ -32,6 +32,7 @@ import { HOME_PATH } from '@/lib/game/sessionStore';
 import type { DeckKind } from '@pplale/game-core';
 import styles from './BoardEmulator.module.css';
 import { useGameNotifications } from './notifications/GameNotifications';
+import { PuzzleControls } from './puzzles/PuzzleControls';
 
 const MulliganBoard = dynamic(() => import('./MulliganBoard').then(module => module.MulliganBoard));
 
@@ -51,7 +52,7 @@ export default function BoardEmulator() {
 export function BoardTable({ session }: { session: BoardSession }) {
   const container = useRef<HTMLDivElement>(null);
   const board = useBoard(container, session);
-  const { game, me, view, mode, paused, attacker, drag, mulligan, ready, panel, error, replaying, remote, editing, animations, setup, setPanel, setPaused, setAttacker } = board;
+  const { game, me, view, mode, paused, attacker, drag, mulligan, ready, panel, error, replaying, remote, editing, animations, setup, puzzle, setPanel, setPaused, setAttacker } = board;
   // The saved match is still loading (or missing, and the preparation page is opening).
   if (!ready) return <div data-readable className={styles.emulator} aria-busy="true" />;
   // An open drawer is closed from the corner button. An enlarged card and the skills are not: they
@@ -59,7 +60,7 @@ export function BoardTable({ session }: { session: BoardSession }) {
   const drawerOpen = !!panel && panel.type !== 'inspect' && panel.type !== 'skills';
   const { timing } = animations;
   return <BoardContext.Provider value={board}>
-    <div data-readable className={styles.emulator} ref={container}
+    <div data-readable data-puzzle={puzzle?.problem.id} data-puzzle-revision={puzzle ? game.revision : undefined} className={styles.emulator} ref={container}
       style={{ '--draw-duration': `${timing.draw}ms`, '--strike-duration': `${timing.strike}ms`, '--announcement-duration': `${timing.announce}ms`, '--ping-duration': `${timing.ping}ms` } as CSSProperties}
       onKeyDown={event => { if (event.key === 'Escape') board.clearSelection(); }}
       onPointerMove={drag.move} onPointerUp={drag.release} onPointerCancel={drag.cancel}>
@@ -78,6 +79,7 @@ export function BoardTable({ session }: { session: BoardSession }) {
       {/* Below the own PP, where nothing else on the rail sits, so the toolbar keeps its width. */}
       <FullscreenButton />
       <EditBar />
+      <PuzzleControls />
       {replaying && <ReplayBar />}
       <div className={`${styles.tableViewport} ${styles.withTurnControl}`}>
         <div className={styles.table} data-table>
@@ -112,8 +114,8 @@ export function BoardTable({ session }: { session: BoardSession }) {
       <AnimationLayer />
       <TargetPing />
       <OrderNotice />
-      <Finale />
-      <ResultScreen />
+      {!puzzle && <Finale />}
+      {!puzzle && <ResultScreen />}
       <PlayAnnouncement />
       <EffectDie />
     </div>

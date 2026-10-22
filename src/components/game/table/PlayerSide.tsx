@@ -23,7 +23,7 @@ export function PlayerSide({ side }: { side: Side }) {
   const who = (mode === 'room' ? near : side === 0) ? 'あなた' : '相手';
   const sandbox = editing || mode === 'hotseat' && game.phase === 'playing' && !game.pending && !busy;
   /** Every hand is face up: the far one sits lower so its cards can be read, and a tap enlarges one. */
-  const open = mode === 'watch' || !!remote?.watching || editing;
+  const open = mode === 'watch' || mode === 'puzzle' || !!remote?.watching || editing;
   const leaderTarget = !!attacker && side !== view && board.canStrike(attacker, 'leader');
   const concealed = player.hand.filter(uid => !game.cards[uid].revealed);
   const revealed = player.hand.filter(uid => game.cards[uid].revealed);

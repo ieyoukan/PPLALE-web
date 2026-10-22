@@ -9,6 +9,7 @@ import { readSession, saveSession, sideLabel } from '@/lib/game/sessionStore';
 import type { Levels, MatchSetup, Mode } from '@/lib/game/sessionStore';
 import type { RoomTurnClock } from '@pplale/game-core/room';
 import type { AssessedPoint } from './assess';
+import type { LethalPuzzle, PuzzleStatus } from '@/lib/game/puzzles';
 
 export { cpuSidesOf, sideLabel } from '@/lib/game/sessionStore';
 export type { Levels, Mode } from '@/lib/game/sessionStore';
@@ -293,4 +294,4 @@ export function useGameSession({ onMissing }: { onMissing: () => void }) {
   };
 }
 /** What the board plays on: the match in this browser, or one in a room (`remote`). */
-export type BoardSession = ReturnType<typeof useGameSession>;
+export type BoardSession = ReturnType<typeof useGameSession> & { puzzle?: { problem: LethalPuzzle; status: PuzzleStatus } };
