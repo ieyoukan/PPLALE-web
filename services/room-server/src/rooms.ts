@@ -107,8 +107,8 @@ export function seatView(room: Room, seat: Side | 'spectator', { online, watchin
     return {
         id, ...(mode && { mode }), version, seat: seat === 'spectator' ? 0 : seat, ...(seat === 'spectator' && { watching: true as const }), spectators: watching,
         ...(seat !== 'spectator' && seats[seat]?.deck && { ownDeck: seats[seat]!.deck! }),
-        status, match, rules, players, game: state && viewFor(state, seat === 'spectator' && mode === 'free' && status === 'playing' ? 'audience' : seat), last, resigned,
-        ...(seat === 'spectator' && mode === 'free' && { assessment: publicAssessment(room, roomCatalog) }),
+        status, match, ...(record && { matchId: record.id }), rules, players, game: state && viewFor(state, seat === 'spectator' && mode === 'free' && status === 'playing' ? 'audience' : seat), last, resigned,
+        assessment: publicAssessment(room, roomCatalog),
         ...(status === 'finished' && record && (seat !== 'spectator' || mode === 'free') && { replayId: record.id }),
         ...(turnClock && { turnClock, serverNow: Date.now() }),
     };

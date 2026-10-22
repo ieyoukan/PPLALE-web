@@ -122,9 +122,10 @@ export function useBoard(container: RefObject<HTMLDivElement | null>, session: B
   // A finished match against さいきょう goes to the CPU server once, if this browser agreed to it.
   // The course of the match (形勢), judged with what side 0 can know.
   const [showAssessment, setShowAssessment] = useAssessmentSetting();
-  const assessable = !editing && (mode === 'cpu' || mode === 'watch');
+  const assessable = !editing && (remote ? !!remote.assessment?.length : mode === 'cpu' || mode === 'watch' || mode === 'hotseat');
   const { initial, commands } = session;
-  const assessment = useAssessment({ enabled: assessable && showAssessment && ready, initial, current: actual, commands, viewer: 0 });
+  const localAssessment = useAssessment({ enabled: !remote && assessable && showAssessment && ready, initial, current: actual, commands, viewer: 0 });
+  const assessment = showAssessment ? remote?.assessment ?? localAssessment : [];
   const { record, markReported } = session;
   useEffect(() => {
     if (mode !== 'cpu' || levels[1] !== 'master' || typeof game.winner !== 'number') return;

@@ -127,6 +127,7 @@ for (const viewport of screens) {
       await page.goto(`/game/replay/?id=${fixture.match.id}&step=${fixture.frames.length - 1}`);
       const result = page.getByRole('dialog', { name: '対戦結果', exact: true });
       await fitsResult(result);
+      await expect(result.getByRole('region', { name: /の形勢の推移/ })).toBeVisible();
       await expect(result.getByRole('button', { name: '対戦履歴へ戻る', exact: true })).toBeInViewport({ ratio: .999 });
     });
   });

@@ -89,10 +89,13 @@ export interface RoomView {
     spectators: number;
     /** Available after the match is durably saved. */
     replayId?: string;
+    /** The same public-position estimate for players and spectators; excludes unrevealed hands. */
     assessment?: { win: number; method: 'public-position-value-v1' };
     status: RoomStatus;
     /** Counts the matches played in this room; a new number means a new match. */
     match: number;
+    /** Stable identity for the current match, including reconnects and room-id reuse. */
+    matchId?: string;
     rules: RoomRules;
     /** Index = seat. The second is null until someone joins. */
     players: [RoomPlayer, RoomPlayer | null];
