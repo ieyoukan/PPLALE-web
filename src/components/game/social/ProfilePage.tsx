@@ -4,7 +4,6 @@ import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { useSearchParams } from 'next/navigation';
 import { useAuth } from '@/lib/auth';
-import { displayCards } from '@/lib/game/catalog';
 import type { RoomInfo } from '@pplale/game-core/room';
 import { readRoomInfo } from '@/lib/game/room/client';
 import { defaultProfile, readFriendRooms, readFriendship, readProfile, requestFriend, saveProfile } from '@/lib/game/social';
@@ -15,6 +14,7 @@ import { locate } from './location';
 import { NOTIFICATIONS_PATH } from './NotificationsPage';
 import { DeckChooser, PublicDecks } from './ProfileDecks';
 import { RoomCard } from './RoomCard';
+import { ProfileIconPicker } from './ProfileIconPicker';
 import styles from './Social.module.css';
 
 export function ProfilePage() {
@@ -28,15 +28,17 @@ export function ProfilePage() {
 function Profile({ uid, mine }: { uid: string; mine: boolean }) {
   const { user } = useAuth();
   const [profile, setProfile] = useState<PlayerProfile | null>(null);
+  const [readAttempt, setReadAttempt] = useState(0);
   const [loading, setLoading] = useState(true), [busy, setBusy] = useState(false);
   const [error, setError] = useState(''), [message, setMessage] = useState('');
+  const [firstProfile, setFirstProfile] = useState(false);
   const [friendSent, setFriendSent] = useState(false), [friendship, setFriendship] = useState<Friendship | null>(null);
-  const [query, setQuery] = useState(''), [choosing, setChoosing] = useState(false);
+  const [choosing, setChoosing] = useState(false);
   useEffect(() => {
     let current = true;
-    void readProfile(uid).then(value => { if (current) { setProfile(value ?? (mine ? defaultProfile(uid) : null)); setLoading(false); } }, () => { if (current) { setError('プロフィールを読み込めませんでした'); setLoading(false); } });
+    void readProfile(uid).then(value => { if (current) { setProfile(value ?? (mine ? defaultProfile(uid, '') : null)); setFirstProfile(mine && !value); setLoading(false); } }, () => { if (current) { setError('プロフィールを読み込めませんでした'); setLoading(false); } });
     return () => { current = false; };
-  }, [uid, mine]);
+  }, [uid, mine, readAttempt]);
   // Someone who is already a friend (or asked, or was asked) is not offered a request.
   useEffect(() => {
     if (mine || !user) return;
@@ -45,11 +47,11 @@ function Profile({ uid, mine }: { uid: string; mine: boolean }) {
     return () => { current = false; };
   }, [uid, mine, user]);
   if (loading) return <p role="status">プロフィールを読み込み中…</p>;
-  if (!profile) return <section className={styles.panel}><h2>プロフィール</h2><p role="status">{error || 'プロフィールはまだ作成されていません。'}</p><Link href="/game/social/">ソーシャルへ戻る</Link></section>;
+  if (!profile) return <section className={styles.panel}><h2>プロフィール</h2><p role="status">{error || 'プロフィールはまだ作成されていません。'}</p>{error && <button className={styles.primary} onClick={() => { setLoading(true); setError(''); setReadAttempt(value => value + 1); }}>もう一度読み込む</button>}<Link href="/game/social/">ソーシャルへ戻る</Link></section>;
   async function save() {
     if (!profile || busy) return;
     setBusy(true); setError(''); setMessage('');
-    try { setProfile(await saveProfile(profile)); setMessage('保存しました'); window.dispatchEvent(new Event('pplale-profile-updated')); }
+    try { setProfile(await saveProfile(profile)); setFirstProfile(false); setMessage('保存しました'); window.dispatchEvent(new Event('pplale-profile-updated')); }
     catch { setError('保存できませんでした。接続とログイン状態を確認してください'); }
     finally { setBusy(false); }
   }
@@ -64,14 +66,14 @@ function Profile({ uid, mine }: { uid: string; mine: boolean }) {
     <Link className={styles.back} href="/game/social/" aria-label="ソーシャルへ戻る"><Icon name="back" /></Link>
     <header className={styles.profileHeading}>
       <button className={styles.avatarLarge} disabled={!mine} onClick={() => setChoosing(value => !value)} aria-label="カードのアイコンを選ぶ"><RecordedCard id={profile.iconCardId} sizes="120px" eager />{mine && <span>変更 <Icon name="pen" /></span>}</button>
-      <div><small>PLAYER PROFILE</small><h2>{profile.displayName}</h2><p className={styles.comment}>{profile.comment || 'よろしくお願いします！'}</p></div>
+      <div><small>PLAYER PROFILE</small><h2>{firstProfile ? 'はじめまして！' : profile.displayName}</h2><p className={styles.comment}>{firstProfile ? 'みんなに見える名前を決めよう' : profile.comment || 'よろしくお願いします！'}</p></div>
     </header>
     {!mine && friendship?.status === 'accepted' && <FriendRoom uid={uid} profile={profile} />}
     {!mine && <PublicDecks uid={uid} ids={profile.decks} />}
     {mine && <form onSubmit={event => { event.preventDefault(); void save(); }} className={styles.profileForm}>
-      <label>なまえ<input value={profile.displayName} maxLength={12} autoComplete="nickname" onChange={event => setProfile({ ...profile, displayName: event.target.value })} /></label>
+      <label>なまえ<input value={profile.displayName} maxLength={12} required autoComplete="nickname" placeholder="ニックネーム" onChange={event => setProfile({ ...profile, displayName: event.target.value })} /></label>
       <label>ひとこと<input aria-label="ひとこと" value={profile.comment} maxLength={80} placeholder="よろしくお願いします！" onChange={event => setProfile({ ...profile, comment: event.target.value })} /><small>{Array.from(profile.comment).length} / 80</small></label>
-      {choosing && <section className={styles.iconPicker} aria-label="アイコンのカードを選択"><input aria-label="アイコンのカードを検索" value={query} onChange={event => setQuery(event.target.value)} placeholder="カード名で検索" /><div>{Object.values(displayCards).filter(card => card.name.includes(query)).map(card => <button type="button" key={card.id} aria-label={`${card.name}をアイコンにする`} aria-pressed={profile.iconCardId === card.id} onClick={() => { setProfile({ ...profile, iconCardId: card.id }); setChoosing(false); }}><span className={styles.avatar}><RecordedCard id={card.id} sizes="65px" /></span><small>{card.name}</small></button>)}</div></section>}
+      {choosing && <ProfileIconPicker selected={profile.iconCardId} onSelect={iconCardId => { setProfile({ ...profile, iconCardId }); setChoosing(false); }} />}
       <DeckChooser uid={uid} chosen={profile.decks} onChange={decks => setProfile({ ...profile, decks })} />
       <button className={styles.primary} disabled={busy || !profile.displayName.trim()}>{busy ? '保存中…' : 'プロフィールを保存'}</button>
     </form>}

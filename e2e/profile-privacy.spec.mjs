@@ -24,7 +24,7 @@ for (const viewport of [{ width: 1280, height: 860 }, { width: 390, height: 844 
       }, { privateName, privateEmail, privatePhoto });
       const nickname = `公開名${viewport.width}`;
       await page.goto(`${base}/game/profile/`);
-      await expect(page.getByLabel('なまえ', { exact: true })).toHaveValue('プレイヤー');
+      await expect(page.getByLabel('なまえ', { exact: true })).toHaveValue('');
       await page.getByLabel('なまえ', { exact: true }).fill(nickname);
       await page.getByRole('button', { name: 'プロフィールを保存', exact: true }).click();
       await expect(page.getByRole('status')).toContainText('保存しました');
@@ -90,9 +90,15 @@ test('switching accounts keeps match names scoped to each public profile', async
   await expect(page.getByPlaceholder('なまえ')).toHaveAttribute('readonly', '');
   await signInFixture(page, base, b);
   await page.goto(`${base}/game/battle/free/`);
-  await expect(page.getByPlaceholder('なまえ')).toHaveValue('プレイヤー');
+  const setup = page.getByRole('dialog', { name: 'はじめまして！' });
+  await expect(setup).toBeVisible();
+  await expect(setup.getByLabel('なまえ', { exact: true })).toHaveValue('');
   await expect(page.locator('body')).not.toContainText('本名テストB');
   await expect(page.locator('body')).not.toContainText('アカウントAの公開名');
+  await setup.getByLabel('なまえ', { exact: true }).fill('アカウントBの公開名');
+  await setup.getByRole('button', { name: '保存してはじめる' }).click();
+  await expect(setup).toHaveCount(0);
+  await expect(page.getByPlaceholder('なまえ')).toHaveValue('アカウントBの公開名');
 });
 
 test('shared decks show the current profile name to visitors and update when the profile is renamed', async ({ page, browser }) => {

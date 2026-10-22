@@ -16,9 +16,12 @@ test('auth starts with its first consumer and keeps account changes while consum
     bundle: true, write: false, format: 'iife', platform: 'browser',
     define: { 'process.env.NODE_ENV': '"production"' },
     plugins: [{ name: 'auth-observer-fixture', setup(builder) {
+      builder.onResolve({ filter: /ProfileOnboarding$/ }, () => ({ path: 'onboarding', namespace: 'fixture' }));
       builder.onResolve({ filter: /^firebase\/auth$/ }, () => ({ path: 'sdk', namespace: 'fixture' }));
       builder.onResolve({ filter: /^\.\/firebaseApp$/ }, () => ({ path: 'app', namespace: 'fixture' }));
-      builder.onLoad({ filter: /.*/, namespace: 'fixture' }, ({ path }) => ({ contents: path === 'app'
+      builder.onLoad({ filter: /.*/, namespace: 'fixture' }, ({ path }) => ({ contents: path === 'onboarding'
+        ? 'export default function ProfileOnboarding({ uid }) { window.__onboardingUid = uid; return null; }'
+        : path === 'app'
         ? 'export const clientAuth = () => ({});'
         : `window.__sdkLoads++;
           export function onAuthStateChanged(auth, update) { window.__listeners.add(update); update(window.__user); return () => window.__listeners.delete(update); }
@@ -46,6 +49,7 @@ test('auth starts with its first consumer and keeps account changes while consum
   });
   await toggle.click();
   await expect(page.locator('output')).toHaveText('changed-in-another-tab');
+  await expect.poll(() => page.evaluate(() => window.__onboardingUid)).toBe('changed-in-another-tab');
   expect(await page.evaluate(() => window.__listeners.size)).toBe(1);
   await page.evaluate(() => window.__root.unmount());
   expect(await page.evaluate(() => window.__listeners.size)).toBe(0);

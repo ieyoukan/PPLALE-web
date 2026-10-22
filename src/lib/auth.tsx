@@ -1,9 +1,11 @@
 'use client';
 
-import React, { createContext, useCallback, useContext, useEffect, useState } from 'react';
+import React, { createContext, lazy, Suspense, useCallback, useContext, useEffect, useState } from 'react';
 import type { User } from 'firebase/auth';
 
-/** Auth needs only the app and auth SDK; Firestore loads when a saved deck is requested. */
+const ProfileOnboarding = lazy(() => import('@/components/game/social/ProfileOnboarding'));
+
+/** Auth needs only the app and auth SDK; Firestore loads when a public profile or saved deck is requested. */
 function loadAuth() {
   return Promise.all([import('firebase/auth'), import('./firebaseApp')]).then(([sdk, { clientAuth }]) => ({ sdk, auth: clientAuth() }));
 }
@@ -67,6 +69,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   return (
     <AuthContext.Provider value={{ user, loading, signInWithGoogle, signOut: handleSignOut, start }}>
       {children}
+      {user && <Suspense fallback={null}><ProfileOnboarding key={user.uid} uid={user.uid} /></Suspense>}
     </AuthContext.Provider>
   );
 }

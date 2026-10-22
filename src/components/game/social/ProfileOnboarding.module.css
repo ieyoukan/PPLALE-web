@@ -1,0 +1,21 @@
+.dialog { box-sizing: border-box; position: fixed; inset: 0; width: min(440px, calc(100% - 32px)); max-height: calc(100dvh - 32px); margin: auto; padding: 28px 24px; overflow-y: auto; border: 2px solid var(--brand-pink-edge); border-radius: 26px; background: var(--brand-cream); color: var(--brand-cocoa-deep); box-shadow: 0 16px 48px var(--brand-shadow); font-family: var(--font-site-body), sans-serif; animation: arrive .2s ease-out; }
+.dialog::backdrop { background: color-mix(in srgb, var(--brand-cocoa-deep) 45%, transparent); }
+.dialog h2 { margin: 0; text-align: center; font-size: 26px; }
+.dialog p { margin: 8px 0 20px; text-align: center; font-size: 13px; }
+.dialog fieldset { display: grid; gap: 16px; min-width: 0; margin: 0; padding: 0; border: 0; }
+.dialog label { display: grid; gap: 6px; color: var(--brand-cocoa-deep); font-size: 14px; }
+.dialog input { width: 100%; min-height: 44px; padding: 10px 12px; box-sizing: border-box; border: 1px solid var(--brand-pink-edge); border-radius: 12px; background: var(--brand-paper); color: var(--brand-cocoa-deep); font: inherit; }
+.dialog input::placeholder { color: var(--brand-cocoa-soft); opacity: 1; }
+.dialog button { min-height: 44px; border: 1px solid var(--brand-pink-edge); border-radius: 14px; background: var(--brand-paper); color: var(--brand-cocoa-deep); font: inherit; }
+.dialog :is(button, input):focus-visible { outline: 3px solid var(--brand-cocoa); outline-offset: 3px; }
+.dialog button:disabled { opacity: .55; cursor: default; }
+.dialog .primary { display: flex; align-items: center; justify-content: center; gap: 8px; width: 100%; padding: 12px; background: var(--brand-pink); font-weight: 700; }
+.dialog .avatar { position: relative; justify-self: center; width: 100px; height: 100px; padding: 0; overflow: hidden; border: 3px solid var(--brand-pink-edge); border-radius: 50%; background: var(--brand-vanilla-wash); }
+.avatar img { object-fit: cover; object-position: center 18%; transform: scale(1.6); transform-origin: center 28%; }
+.avatar > span { display: flex; align-items: center; justify-content: center; gap: 4px; position: absolute; bottom: 0; inset-inline: 0; padding: 4px; background: var(--brand-cocoa-deep); color: var(--brand-paper); font-size: 11px; }
+.dialog .signOut { display: block; margin: 12px auto 0; padding: 6px 14px; border: 0; background: transparent; font-size: 12px; }
+.dialog section { border-color: var(--brand-pink-edge); background: var(--brand-paper); }
+.dialog section button[aria-pressed=true] { border-color: var(--brand-cocoa); background: var(--brand-blush); }
+.dialog section small { color: var(--brand-cocoa-deep); }
+@keyframes arrive { from { opacity: 0; transform: translateY(12px); } to { opacity: 1; transform: translateY(0); } }
+@media (prefers-reduced-motion: reduce) { .dialog { animation: none; } }
