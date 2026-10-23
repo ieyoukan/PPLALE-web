@@ -55,6 +55,8 @@ test('all seven supplied boards load with their exact cards, slots and resources
   assert.equal(hidden.players[0].exSkills.kamikakushi.uses, 2);
   assert.equal(hidden.players[0].discardedYojo, 3);
   assert.equal(hidden.cards[hidden.players[0].hand[4]].hiding, false);
+  assert.deepEqual(lethalPuzzles[4].position.players[1].field, [null, null, null, { id: 'y_111' }]);
+  assert.deepEqual(hidden.players[1].field.map(uid => [hidden.cards[uid].slot, hidden.cards[uid].cardId]), [[3, 'y_111']]);
   const buffed = startPuzzle(lethalPuzzles[6]).game;
   const defender = buffed.cards[buffed.players[1].field[0]];
   assert.equal(defender.attackBonus, 7);

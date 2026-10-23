@@ -58,7 +58,7 @@ export default function GameMenu({ children }: { children: ReactNode }) {
     </aside>
     {/* The root layout already provides <main>. */}
     <section className={styles.pane}>
-      <h1>{current.label}</h1>
+      <h1>{pathname.startsWith(PUZZLES_PATH) ? 'ロリの一手を極めるために' : current.label}</h1>
       <div ref={body} className={styles.body}>{children}</div>
     </section>
   </div></>;

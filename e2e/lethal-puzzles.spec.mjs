@@ -11,7 +11,8 @@ test('all seven puzzles open from the menu and keep the saved match intact', asy
   const errors = [];
   page.on('pageerror', error => errors.push(error.message));
   await page.goto('/game/puzzles/');
-  await expect(page.getByRole('heading', { name: 'リーサルパズル', exact: true })).toBeVisible();
+  await expect(page.getByRole('heading', { name: 'ロリの一手を極めるために', exact: true })).toBeVisible();
+  await expect(page.getByRole('link', { name: /リーサルパズル/ })).toHaveAttribute('aria-current', 'page');
   expect(await page.locator('main').innerText()).not.toMatch(/[\u{1F300}-\u{1FAFF}]/u);
   await expect(page.locator('[data-puzzle-preview]')).toHaveCount(7);
   for (const problem of problems) {
