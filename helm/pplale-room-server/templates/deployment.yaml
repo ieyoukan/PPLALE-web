@@ -64,6 +64,14 @@ spec:
               value: {{ .Values.maxRooms | quote }}
             - name: ROOM_IDLE_HOURS
               value: {{ .Values.roomIdleHours | quote }}
+            {{- with .Values.push.existingSecret }}
+            - name: VAPID_PUBLIC_KEY
+              valueFrom: { secretKeyRef: { name: {{ . }}, key: publicKey } }
+            - name: VAPID_PRIVATE_KEY
+              valueFrom: { secretKeyRef: { name: {{ . }}, key: privateKey } }
+            - name: VAPID_SUBJECT
+              value: {{ $.Values.push.subject | quote }}
+            {{- end }}
             {{- with .Values.extraEnv }}
             {{- toYaml . | nindent 12 }}
             {{- end }}

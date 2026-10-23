@@ -85,6 +85,8 @@ export interface RoomView {
     seat: Side;
     /** Set on a spectator's view: nothing can be done with it. Free matches hide both hands. */
     watching?: true;
+    /** The server takes `away` messages (older servers close a socket that sends one). */
+    reportsAway?: true;
     /** People watching right now. */
     spectators: number;
     /** Available after the match is durably saved. */
@@ -157,7 +159,9 @@ export type RoomAction =
 export type ClientMessage =
     | { type: 'hello'; token?: string; watch?: true }
     | { type: 'action'; n: number; action: RoomAction }
-    | { type: 'performance'; reports: PlayReport[] };
+    | { type: 'performance'; reports: PlayReport[] }
+    /** The seat's page was hidden (another app, screen off) or shown again: while hidden, the player is told of their turn by a push notification. Only sent when the view has `reportsAway`. */
+    | { type: 'away'; away: boolean };
 /**
  * `view`: the seat's view, now and after every change. `result`: what became of action `n`
  * (`error` when it was refused; its view was already sent). `gone`: no such room or seat (any more).

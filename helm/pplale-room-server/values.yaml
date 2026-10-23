@@ -138,3 +138,10 @@ networkPolicy:
   tunnelNamespace: cloudflare-tunnel-ingress-controller
   extraIngress: []
   extraEgress: []
+
+# Web Push (手番・ルームへの入室・フレンド申請の通知)。VAPID 鍵の Secret (キー: publicKey, privateKey)
+# を指定すると送る。空なら送らず、ゲーム側にも通知のベルは出ない。
+# 鍵は `npx web-push generate-vapid-keys` で作る。鍵を変えたブラウザは次の訪問で登録し直す。
+push:
+  existingSecret: ""
+  subject: https://pplale.vercel.app

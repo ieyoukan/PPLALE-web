@@ -8,6 +8,11 @@ import { profileNames } from './profile-names.ts';
 //   POST /rooms/{id}/join  { name }         → the guest's seat
 //   WS   /rooms/{id}/socket                 hello (the seat's token), then actions ⇄ views;
 //                                           or hello (watch) to look on, where the room allows it
+//   GET  /push/key                          the key browsers subscribe with (null: no notifications)
+//   POST /push/subscribe   { subscription }  a signed-in player's browser wants notifications (push.ts)
+//   POST /push/unsubscribe { endpoint }      …or no longer
+//   POST /push/friend      { to, kind }      tell a friend of a request / its acceptance (checked in Firestore)
+//   POST /push/recruit     { roomId }        tell the friends that the player recruits for that room
 //   GET  /stats            how the server is doing
 //   GET  /healthz          the process runs
 //   GET  /readyz           …and reaches where the rooms are kept
@@ -36,6 +41,10 @@ import { playPerformance } from './play-performance.ts';
 import { isPlayKind, parsePlayReport, parseServerTiming } from '@pplale/game-core/performance';
 import type { PlayKind, ServerTiming } from '@pplale/game-core/performance';
 import type { CommandTiming } from './latency.ts';
+import { memoryPushStore, pusher, subscription } from './push.ts';
+import type { Notice, Pusher } from './push.ts';
+import { decider, notices } from './push-notices.ts';
+import { friendsOf, friendshipBetween, recruitmentOf } from './push-friends.ts';
 
 /** A request or a socket message is a few kilobytes (a deck at most); anything much larger is not one. */
 const MAX_BODY = 16 * 1024;
@@ -54,8 +63,10 @@ const GONE = 'ルームが見つかりません';
 
 type Attached = WebSocket & { alive?: boolean; entry?: Member };
 
-export function createRoomServer({ config, backend, catalog, history }: {
+export function createRoomServer({ config, backend, catalog, history, push = pusher(memoryPushStore(), null) }: {
     config: Pick<Config, 'pod' | 'origins' | 'trustProxy' | 'requestsPerHour' | 'roomsPerHour' | 'lobbyGraceMinutes' | 'abandonMinutes' | 'maxRooms' | 'idleHours' | 'beatSeconds' | 'version'>; backend: Backend; catalog: Catalog; history?: HistoryRepository;
+    /** Push notifications (none are sent without VAPID keys). */
+    push?: Pusher;
 }): Server & { stats(): Promise<RoomServerStats>; beat(): Promise<void>; shutdown(): Promise<void> } {
     const { pod, origins, trustProxy, requestsPerHour, roomsPerHour, lobbyGraceMinutes, abandonMinutes, maxRooms, idleHours, beatSeconds, version } = config;
     const names = profileNames();
@@ -104,11 +115,12 @@ export function createRoomServer({ config, backend, catalog, history }: {
             for (let attempt = 0; attempt < 6 && !stopping; attempt++) {
                 const room = await backend.get(id);
                 if (!room) return;
-                const expected = room.version, outcome = expireTurn(room, catalog);
+                const expected = room.version, before = decider(room), outcome = expireTurn(room, catalog);
                 if (!outcome) { scheduleTurn(room); return; }
                 room.version++;
                 if (!await backend.replace(room, expected, lifetime(room))) continue;
                 await announce(room);
+                deciderChanged(room, before);
                 countLater('commands');
                 if (outcome.finished) countLater('matchesFinished');
                 return;
@@ -159,6 +171,22 @@ export function createRoomServer({ config, backend, catalog, history }: {
             if (replaced) return { room, result };
         }
         throw new RoomError(503, '混み合っています。もう一度お試しください');
+    }
+    /** Tells the player of `seat` by a push notification, unless their page is open and in front. */
+    function tellIfAway(room: Room, seat: Side, notice: Notice) {
+        const uid = room.seats[seat]?.profileId;
+        if (!uid || !push.enabled) return;
+        void (async () => {
+            if ((await backend.online(room.id))[seat] && !await push.store.away(room.id, seat)) return;
+            push.later(uid, notice);
+        })().catch(error => console.error('push failed', error instanceof Error ? error.message : 'unknown'));
+    }
+    /** After a change of the match: whoever has to act now (and did not before) is told. */
+    function deciderChanged(room: Room, before: Side | null) {
+        const now = decider(room);
+        if (now === null || now === before) return;
+        // Choices answered in quick succession make one notification.
+        void push.store.once(`turn:${room.id}:${now}`, 10_000).then(first => { if (first) tellIfAway(room, now, notices.turn(room, now)); }, () => {});
     }
     const present = (id: string): Promise<Present> => backend.presence(id);
     const key = ({ online, watching }: Present) => `${online.join()}:${watching}`;
@@ -275,6 +303,8 @@ export function createRoomServer({ config, backend, catalog, history }: {
                 if (!recording) throw new RoomError(404, '履歴が見つかりません');
                 return send(response, 200, recording);
             }
+            if (request.method === 'GET' && path === '/push/key') return send(response, 200, { publicKey: push.publicKey });
+            if (request.method === 'POST' && path.startsWith('/push/')) return send(response, 200, await pushRequest(request, path));
             const freeOperation = request.method === 'POST' ? /^\/free-match\/(start|status|cancel)$/.exec(path)?.[1] as 'start' | 'status' | 'cancel' | undefined : undefined;
             if (freeOperation) {
                 const owners = freeOperation === 'start' ? await historyOwners(request) : undefined;
@@ -290,6 +320,8 @@ export function createRoomServer({ config, backend, catalog, history }: {
                     owners: owners && seatOwners(owners),
                 });
                 if (result.created) {
+                    // The player who was waiting (seat 0) may have put the phone away meanwhile.
+                    push.later(result.created.seats[0].profileId, notices.freeMatched(result.created.seats[1]?.name ?? '相手'));
                     overview = undefined;
                     await backend.count('roomsCreated');
                     await backend.count('matchesStarted');
@@ -343,6 +375,7 @@ export function createRoomServer({ config, backend, catalog, history }: {
                     return token;
                 });
                 await announce(room);
+                tellIfAway(room, 0, notices.joined(room));
                 return send(response, 200, await seated(room, 1, token));
             }
             return send(response, 404, { error: 'not found' });
@@ -356,6 +389,51 @@ export function createRoomServer({ config, backend, catalog, history }: {
             return send(response, 500, { error: 'サーバーで問題が起きました。少し待ってからお試しください' });
         }
     });
+
+    /** The /push/ requests: all need a signed-in player. */
+    async function pushRequest(request: IncomingMessage, path: string) {
+        if (!allowed(address(request))) throw new RoomError(429, '少し待ってからお試しください');
+        const uid = (await historyOwners(request)).find(owner => owner.startsWith('user:'))?.slice(5);
+        if (!uid) throw new RoomError(401, 'ログインすると通知を受け取れます');
+        const token = request.headers.authorization!.slice(7);
+        const body = await readJson(request, MAX_BODY) as Record<string, unknown> | null;
+        if (path === '/push/subscribe') {
+            const parsed = subscription.safeParse(body?.subscription);
+            if (!parsed.success) throw new RoomError(400, 'この通知先は使えません');
+            await push.store.add(uid, parsed.data);
+            return { ok: true, enabled: push.enabled };
+        }
+        if (path === '/push/unsubscribe') {
+            if (typeof body?.endpoint !== 'string' || body.endpoint.length > 1024) throw new RoomError(400, '通知先が正しくありません');
+            await push.store.remove(uid, body.endpoint);
+            return { ok: true };
+        }
+        const nameOf = async (profileId: string) => { await names.load(profileId, true); return names.name({ name: '', profileId }); };
+        if (path === '/push/friend') {
+            const to = typeof body?.to === 'string' ? body.to : '', kind = body?.kind;
+            if (kind !== 'request' && kind !== 'accepted') throw new RoomError(400, '通知の種類が正しくありません');
+            const friendship = await friendshipBetween(token, uid, to);
+            // Only what really happened: the request is the sender's, the acceptance the other's.
+            const real = kind === 'request' ? friendship?.status === 'pending' && friendship.requestedBy === uid : friendship?.status === 'accepted' && friendship.requestedBy === to;
+            if (!real) throw new RoomError(409, 'フレンドの状態が変わっています');
+            if (await push.store.once(`friend:${kind}:${[uid, to].sort().join('~')}`, 7 * 24 * HOUR)) {
+                const name = await nameOf(uid);
+                push.later(to, kind === 'request' ? notices.friendRequest(name) : notices.friendAccepted(name));
+            }
+            return { ok: true };
+        }
+        if (path === '/push/recruit') {
+            const roomId = typeof body?.roomId === 'string' ? body.roomId : '';
+            const room = isRoomId(roomId) ? await backend.get(roomId) : null;
+            if (!room || room.status !== 'lobby' || room.seats[1] || room.seats[0].profileId !== uid || await recruitmentOf(token, uid) !== roomId) throw new RoomError(409, '募集しているルームが見つかりません');
+            if (await push.store.once(`recruit:${uid}:${roomId}`, 12 * HOUR)) {
+                const notice = notices.recruit(await nameOf(uid), roomId);
+                for (const friend of await friendsOf(token, uid)) push.later(friend, notice);
+            }
+            return { ok: true };
+        }
+        throw new RoomError(404, 'not found');
+    }
 
     server.maxConnections = 2048;
     server.requestTimeout = 15_000;
@@ -451,8 +529,10 @@ export function createRoomServer({ config, backend, catalog, history }: {
             const timing = commandTiming();
             timing.queue = performance.now() - received;
             try {
+                let before: Side | null = null;
                 const { room, result: outcome } = await update(id, target => {
                     if (!target.seats[seat]) throw new RoomError(404, GONE);
+                    before = decider(target);
                     return act(target, seat, body, catalog);
                 }, timing);
                 // The view goes out before the result, so whoever waits for the result already has it.
@@ -470,6 +550,7 @@ export function createRoomServer({ config, backend, catalog, history }: {
                 if (outcome.finished) countLater('matchesFinished');
                 if (outcome.command) countLater('commands');
                 if (outcome.vacated) dismiss(id, seat);
+                deciderChanged(room, before);
             } catch (error) {
                 if (!(error instanceof RoomError)) console.error('action failed', error);
                 tell(socket, { type: 'result', n, error: error instanceof RoomError ? error.message : 'サーバーで問題が起きました' });
@@ -494,6 +575,11 @@ export function createRoomServer({ config, backend, catalog, history }: {
                     const durations = { background, inputToSend, roundTrip, sendToView, viewToPaint, inputToPaint };
                     performanceMetrics.record({ ...durations, kind: issued.kind, server: issued.timing, at: Math.floor(Date.now() / 60000) * 60000, outcome: 'ok' });
                 }
+                return;
+            }
+            if (message?.type === 'away' && typeof message.away === 'boolean') {
+                const away = message.away, entry = socket.entry;
+                if (entry && entry.seat !== 2) void push.store.setAway(id, entry.seat, away, idleHours * HOUR).catch(() => {});
                 return;
             }
             if (message?.type !== 'action' || !Number.isSafeInteger(message.n) || message.n < 0) return socket.close(4400);

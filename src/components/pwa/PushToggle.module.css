@@ -1,0 +1,12 @@
+.wrap { position: relative; display: inline-flex; align-items: center; gap: 8px; }
+.bell { display: grid; place-items: center; width: 44px; height: 44px; border: 2px solid var(--brand-pink-edge); border-radius: 99px; background: var(--brand-paper); color: var(--brand-cocoa-soft); cursor: pointer; transition: transform .15s, background .2s; }
+.bell svg { width: 22px; height: 22px; fill: none; stroke: currentColor; stroke-width: 2.2; stroke-linecap: round; stroke-linejoin: round; }
+.bell:hover { transform: translateY(-2px); }
+.bell:disabled { opacity: .55; cursor: default; }
+.bell[data-on] { border-color: #d47d9f; background: #f3a9c4; color: #fff; box-shadow: inset 0 -2px 0 #d47d9f; }
+.bell[data-on] svg { animation: ring .7s ease-out; transform-origin: 50% 15%; }
+.slash { stroke: var(--brand-cocoa-soft); }
+.hint { position: absolute; top: calc(100% + 6px); right: 0; z-index: 2; padding: 6px 12px; border: 2px solid var(--brand-pink); border-radius: 12px; background: var(--brand-cream); color: var(--brand-cocoa-deep); font-size: 12px; font-weight: 700; white-space: nowrap; animation: pop .2s ease-out; }
+@keyframes ring { 20% { transform: rotate(16deg); } 40% { transform: rotate(-12deg); } 60% { transform: rotate(8deg); } 80% { transform: rotate(-4deg); } }
+@keyframes pop { from { opacity: 0; transform: translateY(-4px); } }
+@media (prefers-reduced-motion: reduce) { .bell[data-on] svg, .hint { animation: none; } }

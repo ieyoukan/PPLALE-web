@@ -28,6 +28,11 @@
 | `POST /free-match/status` | `{ token }` → 待機中 / マッチ成立 / キャンセル済み。待機の有効期限を更新する |
 | `POST /free-match/cancel` | `{ token }` → `{ status: "cancelled" }`。先にマッチが成立した場合は成立済みの席を返す |
 | `WS /rooms/{id}/socket` | 上の流れ。`action` は `ready` `unready` `command` `resign` `rematch` `leave`。観戦は `hello` に `watch: true` |
+| `GET /push/key` | `{ publicKey }`。ブラウザが購読に使う VAPID 公開鍵。鍵がなければ `null`（通知のベルを出さない） |
+| `POST /push/subscribe` | `{ subscription }` → このブラウザの通知先を登録（ログイン必須） |
+| `POST /push/unsubscribe` | `{ endpoint }` → 登録を外す |
+| `POST /push/friend` | `{ to, kind: "request" \| "accepted" }` → 相手にフレンド申請・承認を通知。Firestore で実際の状態を確かめる |
+| `POST /push/recruit` | `{ roomId }` → 募集中のルームをフレンドに通知 |
 | `GET /stats` | サーバーの状態（下） |
 | `GET /healthz` | プロセスが動いている（liveness） |
 | `GET /readyz` | Redis に届く（readiness）。届かなければ 503 |
@@ -53,6 +58,14 @@ WebSocket を閉じるコード: `4404` ルームか席がない・観戦でき�
 - 新しい検索は `REQUESTS_PER_HOUR` に数える。同じ検索の再送、待機更新、登録済みの検索のキャンセルは数えない。待機列の保存件数は `MAX_ROOMS * 4`、対戦用ルームは既存の `MAX_ROOMS` で制限する。
 - 対戦中の切断が1分以上続いた側は自動で投了する（通常のルームマッチには適用しない）。対戦後は同じ相手とのルーム内再戦ではなく「次の相手を探す」でデッキ選択に戻る。
 
+## プッシュ通知（`src/push.ts`）
+
+- ゲームの画面を見ていない間に、手番・相手の選択待ち・ルームへの入室・フリーマッチの成立・フレンド申請と承認・フレンドの募集を Web Push で知らせる。表示は `public/sw.js`、文言は `src/push-notices.ts`。
+- 送るのはこのサーバーだけ（VAPID 秘密鍵はクラスタの Secret）。`VAPID_PUBLIC_KEY` と `VAPID_PRIVATE_KEY` がなければ何も送らず、`/push/key` が `null` を返すのでゲーム側にベルも出ない。
+- 通知先はログインしたプレイヤーごとに最大8台、最後の登録から60日。ブラウザは訪問ごとに登録し直し、サーバーの鍵が変わっていれば購読し直す。404/410 が返った通知先は消す。通知先の URL はブラウザのプッシュサービス（FCM・Apple・Mozilla・Windows）だけを受け付ける。
+- 席のブラウザは、ページが隠れた・戻ったときに `{ type: "away", away }` を送る（view に `reportsAway` があるときだけ）。席の接続がないか隠れているときだけ通知する。スマホでは画面を消す・別アプリに切り替えると隠れる。
+- iPhone・iPad はホーム画面に追加したアプリだけが通知を受け取れる。それ以外のSafariでベルを押すと追加をすすめる。
+
 ## Redis の使い方（`src/backend.ts`）
 
 ```
@@ -62,6 +75,9 @@ pplale:pod:{pod}        string  その Pod の接続数。Pod が止まると消
 pplale:totals           hash    累計（作ったルーム、始まった対戦、終わった対戦、操作）
 pplale:rooms            channel ルームが変わったことを Pod どうしで知らせる
 pplale:free-match       hash    フリーマッチの待機列と成立済みの席の案内（v, json）。最後の更新から10分で消える
+pplale:push:sub:{uid}   hash    通知先（endpoint → 購読の json）。最後の登録から60日で消える
+pplale:push:away:{id}:{seat}  string  その席のページが隠れている。ROOM_IDLE_HOURS で消える
+pplale:push:once:{key}  string  同じ通知を二度送らないための印
 ```
 
 - **ルームの変更は compare-and-set。** 読む → game-core で実行 → 「バージョンが読んだときのままなら書く」を Lua で1回に行う。別の Pod の操作が先に入っていたら読み直してやり直す。ロックは持たない。
@@ -107,7 +123,7 @@ kubectl exec -n pplale-room-server sts/pplale-room-server-redis -- redis-cli hge
 
 環境変数。意味とデフォルトは `helm/pplale-room-server/values.yaml` を参照。
 
-`PORT` `REDIS_URL` `ALLOWED_ORIGINS` `TRUST_PROXY` `REQUESTS_PER_HOUR` `ROOMS_PER_HOUR` `LOBBY_GRACE_MINUTES` `ABANDON_MINUTES` `MAX_ROOMS` `ROOM_IDLE_HOURS` `BEAT_SECONDS` `APP_VERSION` `CARD_DATA_DIR`
+`PORT` `REDIS_URL` `ALLOWED_ORIGINS` `TRUST_PROXY` `REQUESTS_PER_HOUR` `ROOMS_PER_HOUR` `LOBBY_GRACE_MINUTES` `ABANDON_MINUTES` `MAX_ROOMS` `ROOM_IDLE_HOURS` `BEAT_SECONDS` `APP_VERSION` `CARD_DATA_DIR` `VAPID_PUBLIC_KEY` `VAPID_PRIVATE_KEY` `VAPID_SUBJECT`
 
 Redis に入るのは、ルームのルール、両者の名前・デッキ・トークンのハッシュ、進行中の対戦の完全な状態。送信元のアドレスは保存しない。
 

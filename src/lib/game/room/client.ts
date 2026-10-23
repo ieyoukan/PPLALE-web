@@ -45,6 +45,12 @@ export const joinRoom = (id: string, name: string) => call<Seated>(`/rooms/${id}
 export const readRoomInfo = (id: string) => call<RoomInfo>(`/rooms/${id}`);
 /** How the server is doing: also the way to find out whether it can be reached at all. */
 export const readServerStats = () => call<RoomServerStats>('/stats');
+// Push notifications (signed-in players only; see src/lib/game/push.ts).
+export const readPushKey = () => call<{ publicKey: string | null }>('/push/key');
+export const registerPush = (subscription: PushSubscriptionJSON) => call<{ ok: true; enabled: boolean }>('/push/subscribe', { subscription });
+export const unregisterPush = (endpoint: string) => call<{ ok: true }>('/push/unsubscribe', { endpoint });
+export const pushFriend = (to: string, kind: 'request' | 'accepted') => call<{ ok: true }>('/push/friend', { to, kind });
+export const pushRecruit = (roomId: string) => call<{ ok: true }>('/push/recruit', { roomId });
 
 export const startFreeMatch = (token: string, name: string, deck: Deck) => call<FreeMatchStatus>('/free-match/start', { token, name, deck });
 export const pollFreeMatch = (token: string) => call<FreeMatchStatus>('/free-match/status', { token });
@@ -130,6 +136,13 @@ export function connectRoom(id: string, token: string | null, handlers: { onView
     }
     waiting.clear();
   };
+  // While the page is hidden (another app, screen off) the server tells the player of their turn by a push notification.
+  let reportsAway = false;
+  const reportAway = () => {
+    if (!reportsAway || socket?.readyState !== WebSocket.OPEN) return;
+    try { socket.send(JSON.stringify({ type: 'away', away: document.hidden } satisfies ClientMessage)); } catch { /* Best effort. */ }
+  };
+  document.addEventListener('visibilitychange', reportAway);
   function open() {
     if (stopped || !roomServerUrl) return;
     const next = socket = new WebSocket(`${roomServerUrl.replace(/^http/, 'ws')}/rooms/${id}/socket`);
@@ -142,6 +155,7 @@ export function connectRoom(id: string, token: string | null, handlers: { onView
         match = message.view.match;
         if (message.view.game) timing.received(message.view.game.revision);
         attempt = 0;
+        if (!reportsAway && message.view.reportsAway) { reportsAway = true; reportAway(); }
         handlers.onLink(true);
         handlers.onView(message.view);
       } else if (message.type === 'result') {
@@ -167,6 +181,7 @@ export function connectRoom(id: string, token: string | null, handlers: { onView
     next.addEventListener('close', () => {
       if (stopped || socket !== next) return;
       socket = null;
+      reportsAway = false;
       failWaiting();
       handlers.onLink(false);
       timer = setTimeout(open, RETRY_DELAYS[Math.min(attempt++, RETRY_DELAYS.length - 1)]);
@@ -197,6 +212,7 @@ export function connectRoom(id: string, token: string | null, handlers: { onView
     close() {
       flushReports(); timing.close(); clearTimeout(reportTimer);
       stopped = true;
+      document.removeEventListener('visibilitychange', reportAway);
       if (timer) clearTimeout(timer);
       failWaiting();
       socket?.close();

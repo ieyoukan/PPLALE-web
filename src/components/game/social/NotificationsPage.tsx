@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import Link from 'next/link';
 import { useAuth } from '@/lib/auth';
+import { PushToggle } from '@/components/pwa/PushToggle';
 import { FriendTile } from './FriendTile';
 import { Icon } from './Icon';
 import { useSocial } from './useSocial';
@@ -23,7 +24,7 @@ function Notifications({ uid }: { uid: string }) {
   let target = '';
   try { target = new URL(profileLink).searchParams.get('id') ?? ''; } catch { if (/^[\w-]{1,128}$/.test(profileLink)) target = profileLink; }
   return <section className={styles.panel} aria-label="通知">
-    <header className={styles.socialHeading}><h2><Icon name="bell" />通知{received.length > 0 && <em>{received.length}</em>}</h2></header>
+    <header className={styles.socialHeading}><h2><Icon name="bell" />通知{received.length > 0 && <em>{received.length}</em>}</h2><PushToggle /></header>
     {error && <p className={styles.error} role="alert">{error}</p>}
     <div className={styles.addFriend}><label><Icon name="add" /><input value={profileLink} onChange={event => setProfileLink(event.target.value)} placeholder="受け取ったプロフィールのリンク" aria-label="プロフィールのリンク" /></label>{target && <Link className={styles.primary} href={`/game/profile/?id=${encodeURIComponent(target)}`}>プロフィールを見る ›</Link>}</div>
     {!received.length && !sent.length && <div className={styles.empty} role="status"><Icon name="mail" /><p>{loading ? '読み込み中…' : '通知はありません'}</p></div>}

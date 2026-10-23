@@ -55,7 +55,7 @@ spec:
       ports:
         - { port: 8081, protocol: TCP }
     {{- end }}
-    # Firebase JWT signing keys. Private networks, metadata and the cluster API are excluded.
+    # Firebase JWT signing keys, Firestore and the browsers' push services (Web Push). Private networks, metadata and the cluster API are excluded.
     - to:
         - ipBlock:
             cidr: 0.0.0.0/0

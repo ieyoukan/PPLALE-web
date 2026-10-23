@@ -105,7 +105,7 @@ export function seatView(room: Room, seat: Side | 'spectator', { online, watchin
     const { id, mode, version, status, match, rules, last, resigned, seats, state, record, turnClock } = room;
     const players = seats.map((s, index) => s && { name: s.name, ...(s.profileId && { profileId: s.profileId }), ready: s.ready, online: online[index], ...(s.left && { left: true }), ...(index === seat && s.deck && { deck: s.deck.name }) }) as RoomView['players'];
     return {
-        id, ...(mode && { mode }), version, seat: seat === 'spectator' ? 0 : seat, ...(seat === 'spectator' && { watching: true as const }), spectators: watching,
+        id, ...(mode && { mode }), version, seat: seat === 'spectator' ? 0 : seat, ...(seat === 'spectator' ? { watching: true as const } : { reportsAway: true as const }), spectators: watching,
         ...(seat !== 'spectator' && seats[seat]?.deck && { ownDeck: seats[seat]!.deck! }),
         status, match, ...(record && { matchId: record.id }), rules, players, game: state && viewFor(state, seat === 'spectator' && mode === 'free' && status === 'playing' ? 'audience' : seat), last, resigned,
         assessment: publicAssessment(room, roomCatalog),

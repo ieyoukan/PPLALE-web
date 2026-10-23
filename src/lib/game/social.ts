@@ -1,6 +1,7 @@
 'use client';
 
 import { displayCards } from './catalog';
+import { tellFriend, tellRecruit } from './push';
 /** `decks`: ids of the player's saved decks (users/{uid}/decks) they show on their profile, at most MAX_PUBLIC_DECKS. */
 export interface PlayerProfile { uid: string; displayName: string; comment: string; iconCardId: string; decks: string[] }
 export const MAX_PUBLIC_DECKS = 3;
@@ -45,6 +46,7 @@ export async function requestFriend(other: string) {
     if ((await transaction.get(ref)).exists()) throw new Error('申請済みか、すでにフレンドです');
     transaction.set(ref, { members, requestedBy: uid, status: 'pending', createdAt: sdk.serverTimestamp() });
   });
+  tellFriend(other, 'request');
 }
 /** This player's friendship with `other`, if any (`null` also when not signed in). */
 export async function readFriendship(other: string): Promise<Friendship | null> {
@@ -55,8 +57,10 @@ export async function readFriendship(other: string): Promise<Friendship | null> 
 }
 export async function respondFriend(friendship: Friendship, accept: boolean) {
   const { sdk, db } = await store(), ref = sdk.doc(db, 'friendships', friendship.id);
-  if (accept) await sdk.updateDoc(ref, { status: 'accepted', acceptedAt: sdk.serverTimestamp() });
-  else await sdk.deleteDoc(ref);
+  if (accept) {
+    await sdk.updateDoc(ref, { status: 'accepted', acceptedAt: sdk.serverTimestamp() });
+    tellFriend(friendship.requestedBy, 'accepted');
+  } else await sdk.deleteDoc(ref);
 }
 export async function readRecruitment() {
   const { sdk, db, auth } = await store(), uid = auth.currentUser?.uid;
@@ -68,7 +72,10 @@ export async function publishRecruitment(roomId: string | null) {
   const { sdk, db, auth } = await store(), uid = auth.currentUser?.uid;
   if (!uid) throw new Error('ログインしてから募集してください');
   const ref = sdk.doc(db, 'recruitments', uid);
-  if (roomId) await sdk.setDoc(ref, { roomId, updatedAt: sdk.serverTimestamp() });
+  if (roomId) {
+    await sdk.setDoc(ref, { roomId, updatedAt: sdk.serverTimestamp() });
+    tellRecruit(roomId);
+  }
   else await sdk.deleteDoc(ref);
 }
 
@@ -103,7 +110,10 @@ export async function publishWatching(roomId: string | null) {
   const { sdk, db, auth } = await store(), uid = auth.currentUser?.uid;
   if (!uid) return;
   const ref = sdk.doc(db, 'watching', uid);
-  if (roomId) await sdk.setDoc(ref, { roomId, updatedAt: sdk.serverTimestamp() });
+  if (roomId) {
+    await sdk.setDoc(ref, { roomId, updatedAt: sdk.serverTimestamp() });
+    tellRecruit(roomId);
+  }
   else await sdk.deleteDoc(ref);
 }
 
