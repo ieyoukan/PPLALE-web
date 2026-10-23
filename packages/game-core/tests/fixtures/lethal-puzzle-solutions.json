@@ -1,0 +1,626 @@
+{
+  "version": 1,
+  "seeds": [
+    1,
+    2,
+    3
+  ],
+  "puzzles": {
+    "melon-beginner-1": {
+      "title": "メロン初級①",
+      "codeHash": "4d537598d133be344d1e04ad4c0aa337680e9b58dab3b46d6cc3241a42737ecd",
+      "method": "engine search",
+      "nodes": 9354,
+      "commands": [
+        {
+          "type": "play",
+          "actor": 0,
+          "uid": "c1"
+        },
+        {
+          "type": "play",
+          "actor": 0,
+          "uid": "c2"
+        },
+        {
+          "type": "choose",
+          "actor": 0,
+          "option": "c1"
+        },
+        {
+          "type": "play",
+          "actor": 0,
+          "uid": "c4"
+        },
+        {
+          "type": "choose",
+          "actor": 0,
+          "option": "c1"
+        },
+        {
+          "type": "play",
+          "actor": 0,
+          "uid": "c3"
+        },
+        {
+          "type": "choose",
+          "actor": 0,
+          "option": "c1"
+        },
+        {
+          "type": "skill",
+          "actor": 0,
+          "index": 1
+        },
+        {
+          "type": "skill",
+          "actor": 0,
+          "index": 0
+        },
+        {
+          "type": "choose",
+          "actor": 0,
+          "option": "c1"
+        },
+        {
+          "type": "skill",
+          "actor": 0,
+          "index": 0
+        },
+        {
+          "type": "choose",
+          "actor": 0,
+          "option": "c1"
+        },
+        {
+          "type": "play",
+          "actor": 0,
+          "uid": "c5"
+        },
+        {
+          "type": "choose",
+          "actor": 0,
+          "option": "c6"
+        },
+        {
+          "type": "choose",
+          "actor": 0,
+          "option": "c1"
+        },
+        {
+          "type": "play",
+          "actor": 0,
+          "uid": "c8"
+        },
+        {
+          "type": "choose",
+          "actor": 0,
+          "option": "c7"
+        },
+        {
+          "type": "choose",
+          "actor": 0,
+          "option": "c1"
+        },
+        {
+          "type": "attack",
+          "actor": 0,
+          "uid": "c1",
+          "target": "leader"
+        },
+        {
+          "type": "attack",
+          "actor": 0,
+          "uid": "c1",
+          "target": "leader"
+        }
+      ]
+    },
+    "melon-beginner-2": {
+      "title": "メロン初級②",
+      "codeHash": "3573afdbeb2e3770543003d8350435f45ded5bd1764a979c218a272b9dff8ad1",
+      "method": "engine search",
+      "nodes": 6670,
+      "commands": [
+        {
+          "type": "play",
+          "actor": 0,
+          "uid": "c4"
+        },
+        {
+          "type": "choose",
+          "actor": 0,
+          "option": "c10"
+        },
+        {
+          "type": "play",
+          "actor": 0,
+          "uid": "c6"
+        },
+        {
+          "type": "choose",
+          "actor": 0,
+          "option": "c10"
+        },
+        {
+          "type": "play",
+          "actor": 0,
+          "uid": "c5"
+        },
+        {
+          "type": "attack",
+          "actor": 0,
+          "uid": "c10",
+          "target": "leader"
+        }
+      ]
+    },
+    "melon-intermediate-1": {
+      "title": "メロン中級①",
+      "codeHash": "72e80df4b24cc407bc7cee4f2f8cf106993407a995ea7a66b1025e3d48318d54",
+      "method": "LLM hint + engine search",
+      "nodes": 12,
+      "commands": [
+        {
+          "actor": 0,
+          "type": "play",
+          "uid": "c3"
+        },
+        {
+          "type": "choose",
+          "actor": 0,
+          "option": "c5"
+        },
+        {
+          "type": "choose",
+          "actor": 0,
+          "option": "yojo"
+        },
+        {
+          "type": "play",
+          "actor": 0,
+          "uid": "c1"
+        },
+        {
+          "type": "choose",
+          "actor": 0,
+          "option": "c16"
+        },
+        {
+          "type": "play",
+          "actor": 0,
+          "uid": "c7"
+        },
+        {
+          "type": "skill",
+          "actor": 0,
+          "index": 1
+        },
+        {
+          "type": "skill",
+          "actor": 0,
+          "index": 1
+        },
+        {
+          "type": "play",
+          "actor": 0,
+          "uid": "c2"
+        },
+        {
+          "type": "choose",
+          "actor": 0,
+          "option": "c6"
+        },
+        {
+          "type": "skill",
+          "actor": 0,
+          "index": 2
+        },
+        {
+          "type": "skill",
+          "actor": 0,
+          "index": 3
+        },
+        {
+          "type": "end",
+          "actor": 0
+        }
+      ]
+    },
+    "melon-intermediate-2": {
+      "title": "メロン中級②",
+      "codeHash": "47c3f8202bae4ed654fd54c11e5068a3e4303ef0897675a5766302e659931d01",
+      "method": "master replan",
+      "nodes": null,
+      "commands": [
+        {
+          "type": "play",
+          "actor": 0,
+          "uid": "c6"
+        },
+        {
+          "type": "skill",
+          "actor": 0,
+          "index": 1
+        },
+        {
+          "type": "play",
+          "actor": 0,
+          "uid": "c3"
+        },
+        {
+          "type": "choose",
+          "actor": 0,
+          "option": "c8"
+        },
+        {
+          "type": "choose",
+          "actor": 0,
+          "option": "c6"
+        },
+        {
+          "type": "skill",
+          "actor": 0,
+          "index": 0
+        },
+        {
+          "type": "choose",
+          "actor": 0,
+          "option": "c6"
+        },
+        {
+          "type": "skill",
+          "actor": 0,
+          "index": 0
+        },
+        {
+          "type": "choose",
+          "actor": 0,
+          "option": "c6"
+        },
+        {
+          "type": "play",
+          "actor": 0,
+          "uid": "c4"
+        },
+        {
+          "type": "choose",
+          "actor": 0,
+          "option": "c6"
+        },
+        {
+          "type": "attack",
+          "actor": 0,
+          "uid": "c6",
+          "target": "leader"
+        },
+        {
+          "type": "play",
+          "actor": 0,
+          "uid": "c1"
+        },
+        {
+          "type": "play",
+          "actor": 0,
+          "uid": "c5"
+        },
+        {
+          "type": "choose",
+          "actor": 0,
+          "option": "c1"
+        },
+        {
+          "type": "play",
+          "actor": 0,
+          "uid": "c2"
+        },
+        {
+          "type": "choose",
+          "actor": 0,
+          "option": "c1"
+        }
+      ]
+    },
+    "melon-intermediate-3": {
+      "title": "メロン中級③",
+      "codeHash": "d87994cf912d500d5a5bb449b53a9c9a002e48a3101d94bcbc6d8f8af6e98a95",
+      "method": "LLM hint + engine search",
+      "nodes": 13,
+      "commands": [
+        {
+          "actor": 0,
+          "type": "play",
+          "uid": "c2"
+        },
+        {
+          "type": "exSkill",
+          "actor": 0,
+          "skill": "kamikakushi"
+        },
+        {
+          "type": "skill",
+          "actor": 0,
+          "index": 1
+        },
+        {
+          "type": "play",
+          "actor": 0,
+          "uid": "c6"
+        },
+        {
+          "type": "choose",
+          "actor": 0,
+          "option": "6"
+        },
+        {
+          "type": "choose",
+          "actor": 0,
+          "option": "c4"
+        },
+        {
+          "type": "choose",
+          "actor": 0,
+          "option": "c5"
+        },
+        {
+          "type": "choose",
+          "actor": 0,
+          "option": "c9"
+        },
+        {
+          "type": "choose",
+          "actor": 0,
+          "option": "yojo"
+        },
+        {
+          "type": "choose",
+          "actor": 0,
+          "option": "yojo"
+        },
+        {
+          "type": "play",
+          "actor": 0,
+          "uid": "c3"
+        },
+        {
+          "type": "choose",
+          "actor": 0,
+          "option": "c7"
+        },
+        {
+          "type": "choose",
+          "actor": 0,
+          "option": "c2"
+        },
+        {
+          "type": "attack",
+          "actor": 0,
+          "uid": "c2",
+          "target": "leader"
+        }
+      ]
+    },
+    "melon-intermediate-4": {
+      "title": "メロン中級④",
+      "codeHash": "b06e0fb87347a6d1097253cce47cd051486c6b4b29be148cd0bf0fa759c5a017",
+      "method": "LLM hint + engine search",
+      "nodes": 17,
+      "commands": [
+        {
+          "actor": 0,
+          "type": "skill",
+          "index": 1
+        },
+        {
+          "actor": 0,
+          "type": "play",
+          "uid": "c8"
+        },
+        {
+          "actor": 0,
+          "type": "choose",
+          "option": "c10"
+        },
+        {
+          "actor": 0,
+          "type": "choose",
+          "option": "c11"
+        },
+        {
+          "actor": 0,
+          "type": "play",
+          "uid": "c3"
+        },
+        {
+          "type": "play",
+          "actor": 0,
+          "uid": "c6"
+        },
+        {
+          "type": "choose",
+          "actor": 0,
+          "option": "c4"
+        },
+        {
+          "type": "choose",
+          "actor": 0,
+          "option": "c34"
+        },
+        {
+          "type": "choose",
+          "actor": 0,
+          "option": "c35"
+        },
+        {
+          "type": "choose",
+          "actor": 0,
+          "option": "c36"
+        },
+        {
+          "type": "choose",
+          "actor": 0,
+          "option": "c37"
+        },
+        {
+          "type": "skill",
+          "actor": 0,
+          "index": 0
+        },
+        {
+          "type": "choose",
+          "actor": 0,
+          "option": "c8"
+        },
+        {
+          "type": "skill",
+          "actor": 0,
+          "index": 0
+        },
+        {
+          "type": "choose",
+          "actor": 0,
+          "option": "c3"
+        },
+        {
+          "type": "attack",
+          "actor": 0,
+          "uid": "c8",
+          "target": "c16"
+        },
+        {
+          "type": "attack",
+          "actor": 0,
+          "uid": "c3",
+          "target": "c16"
+        },
+        {
+          "type": "attack",
+          "actor": 0,
+          "uid": "c6",
+          "target": "leader"
+        }
+      ]
+    },
+    "melon-intermediate-5": {
+      "title": "メロン中級⑤",
+      "codeHash": "ca1c616df4eaa3eb103d8c5d2b9ec7c984e353b0f53010182d2c856c951177b3",
+      "method": "LLM hint + engine search",
+      "nodes": 7962,
+      "commands": [
+        {
+          "actor": 0,
+          "type": "play",
+          "uid": "c6"
+        },
+        {
+          "type": "play",
+          "actor": 0,
+          "uid": "c1"
+        },
+        {
+          "type": "choose",
+          "actor": 0,
+          "option": "c6"
+        },
+        {
+          "type": "play",
+          "actor": 0,
+          "uid": "c2"
+        },
+        {
+          "type": "choose",
+          "actor": 0,
+          "option": "c6"
+        },
+        {
+          "type": "play",
+          "actor": 0,
+          "uid": "c3"
+        },
+        {
+          "type": "choose",
+          "actor": 0,
+          "option": "c6"
+        },
+        {
+          "type": "skill",
+          "actor": 0,
+          "index": 1
+        },
+        {
+          "type": "choose",
+          "actor": 0,
+          "option": "c14"
+        },
+        {
+          "type": "skill",
+          "actor": 0,
+          "index": 1
+        },
+        {
+          "type": "choose",
+          "actor": 0,
+          "option": "c14"
+        },
+        {
+          "type": "skill",
+          "actor": 0,
+          "index": 0
+        },
+        {
+          "type": "choose",
+          "actor": 0,
+          "option": "c6"
+        },
+        {
+          "type": "skill",
+          "actor": 0,
+          "index": 0
+        },
+        {
+          "type": "choose",
+          "actor": 0,
+          "option": "c6"
+        },
+        {
+          "type": "attack",
+          "actor": 0,
+          "uid": "c6",
+          "target": "c14"
+        },
+        {
+          "type": "play",
+          "actor": 0,
+          "uid": "c4"
+        },
+        {
+          "type": "attack",
+          "actor": 0,
+          "uid": "c4",
+          "target": "leader"
+        },
+        {
+          "type": "choose",
+          "actor": 0,
+          "option": "c6"
+        },
+        {
+          "type": "play",
+          "actor": 0,
+          "uid": "c9"
+        },
+        {
+          "type": "attack",
+          "actor": 0,
+          "uid": "c9",
+          "target": "leader"
+        },
+        {
+          "type": "choose",
+          "actor": 0,
+          "option": "c4"
+        }
+      ]
+    }
+  }
+}
