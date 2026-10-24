@@ -7,7 +7,7 @@ const used = page => page.getByText('うぃまるを使った！', { exact: true
 
 async function loadBoard(page, game) {
   game.players[0].name = 'あなた'; game.players[1].name = 'CPU';
-  await page.goto('/game/');
+  await page.goto('/game/cpu/');
   await page.getByRole('navigation', { name: 'ゲームメニュー' }).waitFor();
   await page.evaluate(({ key, game }) => localStorage.setItem(key, JSON.stringify({ game, mode: 'cpu', level: 'normal' })), { key, game });
   await page.goto('/game/play/');

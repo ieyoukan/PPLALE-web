@@ -4,7 +4,7 @@ import { HIDDEN_CARD } from '@pplale/game-core';
 import { MEMBER_GRACE } from '@pplale/game-core/room';
 import type { Entered, RoomInfo, RoomView } from '@pplale/game-core/room';
 import { catalog } from '../src/catalog.ts';
-import { actPlaza, admit, createPlaza, entryOf, formerOf, tidyPlaza } from '../src/plaza.ts';
+import { actPlaza, admit, askToEnter, createPlaza, entryOf, formerOf, tidyPlaza } from '../src/plaza.ts';
 import { connect, deck, serve, shared } from './helpers.ts';
 import type { Client, Served } from './helpers.ts';
 
@@ -218,6 +218,19 @@ test('plaza: a member away longer than the grace is no longer in it; the last on
     await Promise.all([served.close(), other.close()]);
 });
 
+test('plaza: looking rooms up tells only of those the asker may enter, and names the friend-only ones only to friends', async () => {
+    const served = await serve(), { call } = served;
+    const [open, invited, friends] = await Promise.all(['public', 'invite', 'invitePlus'].map(visibility => make(served, visibility)));
+    const { data } = await call<{ rooms: RoomInfo[] }>('/rooms/lookup', { ids: [open.data.view.id, invited.data.view.id, friends.data.view.id, '000000', 'nope'] });
+    assert.deepEqual(data.rooms.map(room => room.id), [open.data.view.id]);
+    assert.equal(data.rooms[0].plaza!.members, 1);
+    // Asking and being invited need a signed-in player.
+    assert.equal((await call('/rooms/invited', {})).status, 401);
+    assert.equal((await call('/rooms/ask', { to: 'someone' })).status, 401);
+    assert.equal((await call(`/rooms/${invited.data.view.id}/invite`, { member: invited.data.token, to: 'someone' })).status, 401);
+    await served.close();
+});
+
 test('plaza: who may come in, by visibility', () => {
     const creator = { name: 'ありす', profileId: 'alice' };
     const room = (visibility: string) => createPlaza('123456', { rules, plaza: { visibility } }, creator).room;
@@ -237,7 +250,21 @@ test('plaza: who may come in, by visibility', () => {
     assert.equal(entryOf(invited, { profileId: 'carol' }, null), 'yes');
     const strict = room('invite'), guest = admit(strict, { name: 'ぼぶ' }).member;
     assert.throws(() => actPlaza(strict, guest.id, { action: 'invite', profileId: 'carol' }, catalog), /オーナーだけ/);
-    // A guest cannot make a friends room; an unknown visibility is an invited room.
-    assert.throws(() => createPlaza('123456', { rules, plaza: { visibility: 'friends' } }, { name: 'げすと' }), /ログイン/);
+    // A friend asks to come into an invite room: only its owner answers; accepting lets them in by name.
+    const asked = room('invite'), owner = asked.plaza!.members[0], helper = admit(asked, { name: 'ぼぶ', profileId: 'bob' }).member;
+    assert.equal(askToEnter(asked, { name: 'きゃろる', profileId: 'carol' }), true);
+    assert.equal(askToEnter(asked, { name: 'ありす', profileId: 'alice' }), false);
+    assert.deepEqual(asked.plaza!.requests.map(request => request.profileId), ['carol']);
+    assert.throws(() => actPlaza(asked, helper.id, { action: 'answer', profileId: 'carol', accept: true }, catalog), /オーナーだけ/);
+    assert.equal(actPlaza(asked, owner.id, { action: 'answer', profileId: 'carol', accept: true }, catalog).invited, 'carol');
+    assert.equal(entryOf(asked, { profileId: 'carol' }, null), 'yes');
+    assert.deepEqual(asked.plaza!.requests, []);
+    // Declining tells nobody and lets nobody in; a public room is not asked.
+    askToEnter(asked, { name: 'でいぶ', profileId: 'dave' });
+    assert.equal(actPlaza(asked, owner.id, { action: 'answer', profileId: 'dave', accept: false }, catalog).invited, undefined);
+    assert.equal(entryOf(asked, { profileId: 'dave' }, null), 'no');
+    assert.equal(askToEnter(room('public'), { name: 'でいぶ', profileId: 'dave' }), false);
+    // A guest's friends' room and an unknown visibility are invited rooms.
+    assert.equal(createPlaza('123456', { rules, plaza: { visibility: 'friends' } }, { name: 'げすと' }).room.plaza!.visibility, 'invite');
     assert.equal(createPlaza('123456', { rules, plaza: { visibility: 'everyone' } }, creator).room.plaza!.visibility, 'invite');
 });

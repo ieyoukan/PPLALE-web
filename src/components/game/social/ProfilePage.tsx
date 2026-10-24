@@ -5,7 +5,7 @@ import Link from 'next/link';
 import { useSearchParams } from 'next/navigation';
 import { useAuth } from '@/lib/auth';
 import type { RoomInfo } from '@pplale/game-core/room';
-import { readRoomInfo } from '@/lib/game/room/client';
+import { lookupRooms } from '@/lib/game/room/client';
 import { defaultProfile, readFriendRooms, readFriendship, readProfile, requestFriend, saveProfile } from '@/lib/game/social';
 import type { Friendship, PlayerProfile } from '@/lib/game/social';
 import { RecordedCard } from '../history/RecordedCard';
@@ -95,7 +95,7 @@ function FriendRoom({ uid, profile }: { uid: string; profile: PlayerProfile }) {
     async function refresh() {
       if (document.hidden) return;
       const said = await readFriendRooms(uid), ids = [...new Set([said.roomId, said.watching?.roomId].filter((id): id is string => !!id))];
-      const rooms = Object.fromEntries((await Promise.all(ids.map(id => readRoomInfo(id).then(room => [id, room] as const, () => null)))).filter(entry => entry !== null));
+      const rooms = Object.fromEntries((ids.length ? (await lookupRooms(ids).catch(() => ({ rooms: [] }))).rooms : []).map(room => [room.id, room]));
       if (current) setFound(locate({ profile, ...said }, rooms, Date.now())?.room ?? null);
     }
     void refresh(); const timer = setInterval(() => void refresh(), 15_000);

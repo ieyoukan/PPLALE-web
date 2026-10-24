@@ -28,6 +28,11 @@
 | `POST /free-match/status` | `{ token }` → 待機中 / マッチ成立 / キャンセル済み。待機の有効期限を更新する |
 | `POST /free-match/cancel` | `{ token }` → `{ status: "cancelled" }`。先にマッチが成立した場合は成立済みの席を返す |
 | `WS /rooms/{id}/socket` | 上の流れ。`action` は `ready` `unready` `command` `resign` `rematch` `leave`。観戦は `hello` に `watch: true` |
+| `POST /rooms`（`plaza` 付き） | 集まれるルームを作る → `{ token, view }`。`plaza.from` で閉じたルームの後継に入る |
+| `POST /rooms/lookup` | `{ ids }` → `{ rooms }`。尋ねた人が入れるルームだけ（フレンドの現在地） |
+| `POST /rooms/invited` | ログイン必須。名指しで招待されているルーム |
+| `POST /rooms/ask` | `{ to }` ログイン必須。フレンドのいるインバイト系ルームへ招待をリクエスト（結果は返さない） |
+| `POST /rooms/{id}/invite` | `{ member, to }` ログイン必須。在室者がフレンドを名指しで招待し、通知する（フレンド関係を Firestore で確認） |
 | `GET /push/key` | `{ publicKey }`。ブラウザが購読に使う VAPID 公開鍵。鍵がなければ `null`（通知のベルを出さない） |
 | `POST /push/subscribe` | `{ subscription }` → このブラウザの通知先を登録（ログイン必須） |
 | `POST /push/unsubscribe` | `{ endpoint }` → 登録を外す |

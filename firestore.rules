@@ -87,7 +87,7 @@ service cloud.firestore {
       allow delete: if isOwner(userId);
     }
 
-    // 観戦中のルーム。募集と同じく、承認済みフレンドだけが読める。観戦中は1分ごとに更新し、古いものは表示しない。
+    // いるルーム（フレンドが見つけられる集まれるルーム、または観戦中の2人用ルーム）。募集と同じく、承認済みフレンドだけが読める。1分ごとに更新し、古いものは表示しない。
     match /watching/{userId} {
       function friends() {
         let key = request.auth.uid < userId ? request.auth.uid + '~' + userId : userId + '~' + request.auth.uid;

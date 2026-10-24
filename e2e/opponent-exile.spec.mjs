@@ -11,7 +11,7 @@ for (const viewport of [{ width: 1280, height: 860 }, { width: 844, height: 390 
       const game = arena({ me: { hand: ['s_30'], field: ['y_9'] }, foe: { field: ['y_9', 'y_37'] } });
       game.players[0].played.push('s_28'); // Second chai: exile the selected opponent unit.
       const source = hand(game)[0], [target, remaining] = field(game, 1);
-      await page.goto('/game/');
+      await page.goto('/game/cpu/');
       await page.getByRole('navigation', { name: 'ゲームメニュー' }).waitFor();
       await page.evaluate(({ key, game }) => localStorage.setItem(key, JSON.stringify({ game, mode: 'hotseat', level: 'easy' })), { key, game });
       await page.goto('/game/play/');

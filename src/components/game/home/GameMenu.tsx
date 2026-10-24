@@ -1,15 +1,18 @@
 'use client';
 
-// The frame around everything outside the board: a column of tabs (CPU対決 / バトル / カード / 盤面エディタ) with the
-// logo and the player on the left, and the chosen tab's page on the right. There is no separate
-// home screen; the first tab is where the game opens.
+// The frame around everything outside the board: a column of tabs (ルーム / CPU対決 / バトル / カード / 盤面エディタ …)
+// with the logo and the player on the left, and the chosen tab's page on the right. The game opens
+// in the player's room, which the first tab goes back to; the game's menu opens from here too.
 import { useLayoutEffect, useRef } from 'react';
 import type { CSSProperties, ReactNode } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { useAuth } from '@/lib/auth';
-import { BATTLE_PATH, CARDS_PATH, EDITOR_PATH, HOME_PATH, NOTIFICATIONS_PATH, PUZZLES_PATH } from '@/lib/game/sessionStore';
+import { BATTLE_PATH, CARDS_PATH, CPU_PATH, EDITOR_PATH, HOME_PATH, NOTIFICATIONS_PATH, PUZZLES_PATH } from '@/lib/game/sessionStore';
+import { useLaunchpad } from '../plaza/Launchpad';
+import { PlazaIcon } from '../plaza/PlazaIcon';
+import { plazaHref, usePlaza } from '../plaza/PlazaProvider';
 import { useMyProfile } from '../social/useMyProfile';
 import { RecordedCard } from '../history/RecordedCard';
 import styles from './GameMenu.module.css';
@@ -17,8 +20,9 @@ import { NotificationSoundToggle } from '../notifications/GameNotifications';
 import menuBackground from '@/lib/game/generated/menu-assets.json';
 
 const tabs = [
-  { href: HOME_PATH, label: 'CPU対決', note: 'ひとりであそぶ', tone: styles.pink },
-  { href: BATTLE_PATH, label: 'バトル', note: 'フリー・ルームマッチ', tone: styles.green },
+  { href: HOME_PATH, label: 'ルーム', note: 'みんなで遊ぶ場所', tone: styles.yellow },
+  { href: CPU_PATH, label: 'CPU対決', note: 'ひとりであそぶ', tone: styles.pink },
+  { href: BATTLE_PATH, label: 'バトル', note: 'フリーマッチ・履歴', tone: styles.green },
   { href: PUZZLES_PATH, label: 'リーサルパズル', note: 'このターンで勝利！', tone: styles.sage },
   { href: CARDS_PATH, label: 'カード', note: '図鑑・デッキ構築', tone: styles.lilac },
   { href: EDITOR_PATH, label: '盤面エディタ', note: '好きな盤面から', tone: styles.yellow },
@@ -35,15 +39,19 @@ export default function GameMenu({ children }: { children: ReactNode }) {
   }, [pathname]);
   const { user, signInWithGoogle } = useAuth();
   const profile = useMyProfile();
+  const launchpad = useLaunchpad(), plaza = usePlaza();
   // The first tab is the root, so it only matches exactly; the others also cover their sub-pages.
   const current = pathname.startsWith('/game/performance') ? { label: '通信計測' } : pathname.startsWith('/game/profile') ? { label: 'プロフィール' } : tabs.find(tab => tab.href !== HOME_PATH && pathname.startsWith(tab.href)) ?? tabs[0];
   return <>
     <link rel="preload" as="image" type="image/avif" href={menuBackground.avif} fetchPriority="high" />
-    <div className={`${styles.menu} ${pathname === HOME_PATH ? styles.home : ''} ${pathname.startsWith(PUZZLES_PATH) ? styles.puzzleMenu : ''}`} style={{ '--menu-background': `image-set(url("${menuBackground.avif}") type("image/avif"), url("${menuBackground.webp}") type("image/webp"))` } as CSSProperties}>
+    <div className={`${styles.menu} ${pathname === CPU_PATH ? styles.home : ''} ${pathname.startsWith(PUZZLES_PATH) ? styles.puzzleMenu : ''}`} style={{ '--menu-background': `image-set(url("${menuBackground.avif}") type("image/avif"), url("${menuBackground.webp}") type("image/webp"))` } as CSSProperties}>
     <aside className={styles.side}>
-      <Image className={styles.logo} src="/images/game/logo.webp" alt="お菓子争奪戦争 ぷぷりえーる" width={462} height={227} priority />
+      <div className={styles.brand}>
+        <Image className={styles.logo} src="/images/game/logo.webp" alt="お菓子争奪戦争 ぷぷりえーる" width={462} height={227} priority />
+        <button className={styles.launch} onClick={launchpad.open} aria-label="メニューを開く（Esc）" title="メニュー（Esc）"><PlazaIcon name="grid" /></button>
+      </div>
       <nav className={styles.tabs} aria-label="ゲームメニュー" data-landscape-action>{tabs.map(tab =>
-        <Link key={tab.href} href={tab.href} prefetch={false} className={`${styles.tab} ${tab.tone}`} aria-current={tab === current ? 'page' : undefined}>
+        <Link key={tab.href} href={tab.href === HOME_PATH && plaza.id ? plazaHref(plaza.id) : tab.href} prefetch={false} className={`${styles.tab} ${tab.tone}`} aria-current={tab === current ? 'page' : undefined}>
           <b data-ui-title>{tab.label}</b><small>{tab.note}</small>
         </Link>)}
       </nav>

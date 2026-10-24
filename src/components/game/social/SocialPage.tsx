@@ -5,13 +5,14 @@ import Link from 'next/link';
 import { useAuth } from '@/lib/auth';
 import type { Friendship, SocialPlayer } from '@/lib/game/social';
 import type { RoomInfo } from '@pplale/game-core/room';
-import { readRoomInfo } from '@/lib/game/room/client';
+import { lookupRooms } from '@/lib/game/room/client';
 import { RecordedCard } from '../history/RecordedCard';
 import { FriendTile } from './FriendTile';
 import { Icon } from './Icon';
 import { locate, placeLabel, placeOf, placeOrder } from './location';
 import { NOTIFICATIONS_PATH } from './NotificationsPage';
 import { RoomCard } from './RoomCard';
+import { Invitations } from './Invitations';
 import { useMyProfile } from './useMyProfile';
 import { useSocial } from './useSocial';
 import styles from './Social.module.css';
@@ -36,8 +37,9 @@ function Social({ uid }: { uid: string }) {
     let current = true;
     async function refresh() {
       if (document.hidden) return;
-      const entries = await Promise.all(roomIds.split(',').filter(Boolean).map(async id => { try { return [id, await readRoomInfo(id)] as const; } catch { return null; } }));
-      if (current) { setRooms(Object.fromEntries(entries.filter(entry => entry !== null))); setNow(Date.now()); }
+      // One request for every room; the server leaves out those this player may not enter.
+      const found = roomIds ? await lookupRooms(roomIds.split(',')).then(result => result.rooms, () => null) : [];
+      if (current && found) { setRooms(Object.fromEntries(found.map(room => [room.id, room]))); setNow(Date.now()); }
     }
     void refresh(); const timer = setInterval(() => void refresh(), 15_000);
     document.addEventListener('visibilitychange', refresh);
@@ -68,11 +70,12 @@ function Social({ uid }: { uid: string }) {
       </span>
     </header>
     {error && <p className={styles.error} role="alert">{error}</p>}
+    <Invitations />
     {!friends.length && <div className={styles.empty} role="status"><Icon name="heart" /><p>{loading ? '読み込み中…' : 'プロフィールのリンクから、フレンドになろう。'}</p>{!loading && <Link className={styles.primary} href={NOTIFICATIONS_PATH}><Icon name="add" />フレンドを追加</Link>}</div>}
     {ordered.map(({ room, members }) => {
       const place = placeOf(room);
       return <details key={room.id} className={styles.group} data-place={place} open>
-        <summary><span className={styles.chevron} aria-hidden="true" />{room.host}のルーム<span className={styles.placeChip}>{placeLabel[place]}</span></summary>
+        <summary><span className={styles.chevron} aria-hidden="true" />{room.plaza?.name ?? `${room.host}のルーム`}<span className={styles.placeChip}>{placeLabel[place]}</span></summary>
         <div className={styles.groupBody}>
           <RoomCard room={room} />
           <div className={styles.tiles}>{members.map(({ player, role }) => role === 'host' ? tile(player, place, placeLabel[place]) : tile(player, 'watching', '観戦中'))}</div>

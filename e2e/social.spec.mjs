@@ -62,7 +62,7 @@ test('public lounge shows players and links to live spectators and finished repl
   await page.goto(`${base}/game/battle/free/`);
   const lounge = page.getByRole('region', { name: 'いま遊んでいるプレイヤー' });
   await expect(lounge).toContainText('待っている人');
-  await expect(lounge.getByRole('link', { name: '観戦する ›' })).toHaveAttribute('href', '/game/room/?id=123456&watch=1');
+  await expect(lounge.getByRole('link', { name: '観戦する ›' })).toHaveAttribute('href', '/game/room/123456/?watch=1');
   await expect(lounge.getByRole('link', { name: 'リプレイ ▶' })).toHaveAttribute('href', '/game/replay/?id=aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa');
   expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(375);
 });

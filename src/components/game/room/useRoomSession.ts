@@ -28,7 +28,11 @@ function reducer(table: Table, action: Played | 'accept'): Table {
  * A room's match as the board plays it. Nothing is decided here: a command goes to the server, and
  * the view it (or the other side's command) leads to waits in a queue until the board has shown it.
  */
-export function useRoomSession({ room, initial, seat, onLeave, onFindNext }: { room: Pick<Room, 'send' | 'subscribe' | 'linked' | 'presented'>; initial: Played; seat: Side; onLeave: () => void; onFindNext?: () => void }): BoardSession {
+export function useRoomSession({ room, initial, seat, onLeave, onFindNext, plaza }: {
+  room: Pick<Room, 'send' | 'subscribe' | 'linked' | 'presented'>; initial: Played; seat: Side; onLeave: () => void; onFindNext?: () => void;
+  /** A match at a plaza's table: after it, the seat is kept for the next one (`rematch`) or given up (`onLeave`). */
+  plaza?: { rematch: () => void; menu: () => void };
+}): BoardSession {
   const watching = !!initial.watching;
   const { send: request, subscribe, linked } = room;
   const [{ shown, queue, assessment }, dispatch] = useReducer(reducer, initial, view => ({ shown: view, queue: [], assessment: readRoomAssessment(view) }));
@@ -64,12 +68,14 @@ export function useRoomSession({ room, initial, seat, onLeave, onFindNext }: { r
     request({ action }).catch((failure: unknown) => setError(failure instanceof Error ? failure.message : '操作を送れませんでした'));
   }, [request]);
   const resign = useCallback(() => ask('resign'), [ask]);
-  const rematch = useCallback(() => initial.mode === 'free' ? (onFindNext ?? onLeave)() : ask('rematch'), [ask, initial.mode, onFindNext, onLeave]);
+  const plazaRematch = plaza?.rematch;
+  const rematch = useCallback(() => plazaRematch ? plazaRematch() : initial.mode === 'free' ? (onFindNext ?? onLeave)() : ask('rematch'), [ask, initial.mode, onFindNext, onLeave, plazaRematch]);
 
   const names = useMemo<[string, string]>(() => [shown.players[0]?.name ?? '相手', shown.players[1]?.name ?? '相手'], [shown.players]);
   const { presented } = room;
-  const remote = useMemo(() => ({ seat, watching, assessment, turnClock, ownDeck: shown.ownDeck, matchRules: shown.rules, freeMatch: initial.mode === 'free', names, sending: !linked || sending, waiting: !linked || sending || queue.length > 0, failed, next, accept, resign, resigned: shown.resigned, leave: onLeave, presented }),
-    [seat, watching, assessment, turnClock, shown.ownDeck, shown.rules, initial.mode, names, linked, sending, queue.length, failed, next, accept, resign, shown.resigned, onLeave, presented]);
+  const plazaMenu = plaza?.menu;
+  const remote = useMemo(() => ({ seat, watching, assessment, turnClock, ownDeck: shown.ownDeck, matchRules: shown.rules, freeMatch: initial.mode === 'free', names, sending: !linked || sending, waiting: !linked || sending || queue.length > 0, failed, next, accept, resign, resigned: shown.resigned, leave: onLeave, presented, ...(plazaMenu && { plaza: { menu: plazaMenu } }) }),
+    [seat, watching, assessment, turnClock, shown.ownDeck, shown.rules, initial.mode, names, linked, sending, queue.length, failed, next, accept, resign, shown.resigned, onLeave, presented, plazaMenu]);
   return {
     game: shown.game, error, history: [], commands: [], mode: 'room', levels: ['normal', 'normal'], ready: true, saveError: '',
     send, undo: nothing, canUndo: false, remote,

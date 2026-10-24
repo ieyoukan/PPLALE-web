@@ -24,7 +24,7 @@ VRChatのイベント「[ロリっ子喫茶ぷぷりえ](https://pple.vr2.info/)
 Next.js / game-core の分離方針、Vercelへの配置、未確定ルールは [対戦ゲームの設計](docs/game-design.md) を参照。
 ゲーム本体の独立パッケージは [`packages/game-core`](packages/game-core/README.md) に置く。
 
-対戦エミュレータは `/game/`。いちご・ぶどう・オレンジのカードと通常プレイアブルで、CPU対戦・両側操作・ルーム対戦・Firebaseの保存済みデッキ読み込みができる。`/game/editor/` には新カードの効果を試す盤面も用意している。操作と対応範囲は [盤面エミュレータ](docs/board-emulator.md) を参照。
+ゲームは `/game/`。開くとフレンドと集まれるルームに入り、招待リンク（Discordに貼れる）で友だちを呼んで対戦・観戦したり、空席にCPUを呼んだりできる（[集まって遊べるルームの設計](docs/social-rooms-design.md)）。ひとりでのCPU対戦・両側操作は `/game/cpu/`。Firebaseの保存済みデッキも読み込める。`/game/editor/` には新カードの効果を試す盤面も用意している。操作と対応範囲は [盤面エミュレータ](docs/board-emulator.md) を参照。
 
 ## 開発環境のセットアップ
 

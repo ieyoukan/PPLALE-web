@@ -2,7 +2,7 @@ import { test, expect } from '@playwright/test';
 import { arena, run } from '../packages/game-core/tests/helpers.mjs';
 
 async function load(page, game, mode = 'cpu') {
-  await page.goto('/game/');
+  await page.goto('/game/cpu/');
   await page.getByRole('navigation', { name: 'ゲームメニュー' }).waitFor();
   await page.evaluate(({ game, mode }) => {
     localStorage.setItem('pplale-show-assessment', 'hidden');

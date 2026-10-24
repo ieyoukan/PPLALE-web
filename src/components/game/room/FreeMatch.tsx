@@ -9,7 +9,7 @@ import type { FreeMatchStatus } from '@pplale/game-core/room';
 import { useAuth } from '@/lib/auth';
 import { usableChoice } from '@/lib/game/deckSources';
 import { randomSeed } from '@/lib/game/match';
-import { BATTLE_PATH, HOME_PATH, ROOM_PLAY_PATH, roomHref } from '@/lib/game/sessionStore';
+import { BATTLE_PATH, CPU_PATH, roomHref } from '@/lib/game/sessionStore';
 import { abandonFreeMatch, cancelFreeMatch, keepSeat, pollFreeMatch, RoomRequestError, roomServerUrl, startFreeMatch } from '@/lib/game/room/client';
 import { DeckSelect, UnusableDecks, useDeckChoices } from '../DeckSelect';
 import { NameField, usePlayerName } from './RoomEntrance';
@@ -76,7 +76,7 @@ export function FreeMatch() {
         notify('matched', `${result.roomId}:1`);
         matched.current = true;
         keepSeat(result.roomId, result.key);
-        replace(roomHref(ROOM_PLAY_PATH, result.roomId));
+        replace(roomHref(result.roomId));
         return true;
       }
       if (result.status === 'cancelled') {
@@ -135,7 +135,7 @@ export function FreeMatch() {
         notify('matched', `${result.roomId}:1`);
         matched.current = true;
         keepSeat(result.roomId, result.key);
-        replace(roomHref(ROOM_PLAY_PATH, result.roomId));
+        replace(roomHref(result.roomId));
       } else {
         currentSearch.current = null;
         setSearch(null);
@@ -186,7 +186,7 @@ export function FreeMatch() {
     </div>
     <div className={styles.row}>
       <Link href={BATTLE_PATH} className={styles.secondary}>バトルへ戻る</Link>
-      {!search && <Link href={HOME_PATH} className={styles.secondary}>CPU対戦で遊ぶ</Link>}
+      {!search && <Link href={CPU_PATH} className={styles.secondary}>CPU対戦で遊ぶ</Link>}
     </div>
   </div>;
 }

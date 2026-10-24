@@ -28,7 +28,7 @@ import { AssessmentBar } from './table/Assessment';
 import { CardPicker, EditBar, EditButton } from './table/EditMode';
 import { FullscreenButton } from './table/FullscreenButton';
 import { displayCards, gameCatalog } from '@/lib/game/catalog';
-import { HOME_PATH } from '@/lib/game/sessionStore';
+import { CPU_PATH } from '@/lib/game/sessionStore';
 import type { DeckKind } from '@pplale/game-core';
 import styles from './BoardEmulator.module.css';
 import { useGameNotifications } from './notifications/GameNotifications';
@@ -40,7 +40,7 @@ const MulliganBoard = dynamic(() => import('./MulliganBoard').then(module => mod
 export default function BoardEmulator() {
   const router = useRouter();
   // No saved match (opened directly, or storage cleared): prepare one first.
-  const session = useGameSession({ onMissing: () => router.replace(HOME_PATH) });
+  const session = useGameSession({ onMissing: () => router.replace(CPU_PATH) });
   const { notify } = useGameNotifications();
   const startKey = session.ready && !session.position && !session.replaying && session.mode !== 'watch'
     && session.game.phase === 'dice' && session.record ? String(session.record.seed) : null;
@@ -52,7 +52,7 @@ export default function BoardEmulator() {
 export function BoardTable({ session }: { session: BoardSession }) {
   const container = useRef<HTMLDivElement>(null);
   const board = useBoard(container, session);
-  const { game, me, view, mode, paused, attacker, drag, mulligan, ready, panel, error, replaying, remote, editing, animations, setup, puzzle, setPanel, setPaused, setAttacker } = board;
+  const { game, me, view, mode, paused, attacker, selected, drag, mulligan, ready, panel, error, replaying, remote, editing, animations, setup, puzzle, setPanel, setPaused, setAttacker } = board;
   // The saved match is still loading (or missing, and the preparation page is opening).
   if (!ready) return <div data-readable className={styles.emulator} aria-busy="true" />;
   // An open drawer is closed from the corner button. An enlarged card and the skills are not: they
@@ -62,7 +62,8 @@ export function BoardTable({ session }: { session: BoardSession }) {
   return <BoardContext.Provider value={board}>
     <div data-readable data-puzzle={puzzle?.problem.id} data-puzzle-revision={puzzle ? game.revision : undefined} className={styles.emulator} ref={container}
       style={{ '--draw-duration': `${timing.draw}ms`, '--strike-duration': `${timing.strike}ms`, '--announcement-duration': `${timing.announce}ms`, '--ping-duration': `${timing.ping}ms` } as CSSProperties}
-      onKeyDown={event => { if (event.key === 'Escape') board.clearSelection(); }}
+      // Escape closes what is open on the table first; with nothing open it is left to the game's menu.
+      onKeyDown={event => { if (event.key === 'Escape' && (panel || selected || attacker)) { board.clearSelection(); event.preventDefault(); } }}
       onPointerMove={drag.move} onPointerUp={drag.release} onPointerCancel={drag.cancel}>
       <header className={styles.toolbar}>
         {/* One button in one place: opens the menu, and closes whatever drawer is open. */}

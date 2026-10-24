@@ -3,12 +3,12 @@
 import { useEffect, useState } from 'react';
 import { describeRoomRules } from '@pplale/game-core/room';
 import type { RoomRules } from '@pplale/game-core/room';
-import { ROOM_PATH, roomHref, watchHref } from '@/lib/game/sessionStore';
+import { roomHref, watchHref } from '@/lib/game/sessionStore';
 import styles from './Room.module.css';
 
 /** The words an invitation is made of; the link opens the room's page, where the friend joins. */
 export function invitation(id: string, rules: RoomRules, origin: string) {
-  const url = `${origin}${roomHref(ROOM_PATH, id)}`;
+  const url = `${origin}${roomHref(id)}`;
   const lines = ['ぷぷりえーるのルームマッチ、対戦相手を募集中！', `ルームID：${id}`, describeRoomRules(rules)];
   return {
     url,

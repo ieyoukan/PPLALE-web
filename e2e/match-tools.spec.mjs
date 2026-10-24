@@ -11,7 +11,7 @@ for (const viewport of [{ width: 1280, height: 860 }, { width: 844, height: 390 
       game.players[0].played = ['y_2', 'yt_0', 's_1', 's_1'];
       game.players[0].mochidaLeft = 10;
       game.log = [`${game.players[0].name}の1ターン目`, '猫まんじゅうをプレイ', 'お菓子ポイント 15 → 13'];
-      await page.goto('/game/');
+      await page.goto('/game/cpu/');
       await page.getByRole('navigation', { name: 'ゲームメニュー' }).waitFor();
       await page.evaluate(({ game, deck }) => {
         localStorage.setItem('pplale-show-assessment', 'hidden');
@@ -41,7 +41,7 @@ test('spectators can open logs and search without controlling the match', async 
   const game = arena({ foe: { pp: 0 } });
   game.active = 1;
   game.log = ['観戦テスト：猫まんじゅうをプレイ'];
-  await page.goto('/game/');
+  await page.goto('/game/cpu/');
   await page.getByRole('navigation', { name: 'ゲームメニュー' }).waitFor();
   await page.evaluate(game => {
     localStorage.setItem('pplale-show-assessment', 'hidden');

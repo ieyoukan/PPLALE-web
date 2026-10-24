@@ -10,7 +10,7 @@ for (const viewport of [{ width: 1280, height: 860 }, { width: 390, height: 844 
       initial.queue = [{ op: 'die', actor: 0 }];
       const game = run(initial, { type: 'adjust', actor: 0, resource: 'pp', delta: 0 }, true);
       game.pending.options.unshift({ id: 'roll', label: '使わずに振る' });
-      await page.goto('/game/');
+      await page.goto('/game/cpu/');
       await page.getByRole('navigation', { name: 'ゲームメニュー' }).waitFor();
       await page.evaluate(game => {
         localStorage.setItem('pplale-show-assessment', 'hidden');

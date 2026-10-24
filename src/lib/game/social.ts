@@ -117,6 +117,19 @@ export async function publishWatching(roomId: string | null) {
   else await sdk.deleteDoc(ref);
 }
 
+/**
+ * Tells friends which room this player is in (`null`: none they could find). It is the `watching`
+ * document, whose rules are already deployed: written only while in a room friends may see
+ * (public, friends, friends+), repeated every WATCHING_BEAT, readable only by accepted friends.
+ */
+export async function publishPresence(roomId: string | null) {
+  const { sdk, db, auth } = await store(), uid = auth.currentUser?.uid;
+  if (!uid) return;
+  const ref = sdk.doc(db, 'watching', uid);
+  if (roomId) await sdk.setDoc(ref, { roomId, updatedAt: sdk.serverTimestamp() });
+  else await sdk.deleteDoc(ref);
+}
+
 /** Listeners exist only while the social screen is open. Presence itself stays in Redis. */
 export function watchSocial(uid: string, receive: (players: SocialPlayer[]) => void, fail: () => void): () => void {
   let cancelled = false, stop: (() => void) | undefined;

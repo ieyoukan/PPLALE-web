@@ -173,7 +173,7 @@ export type RoomAction =
     | { action: 'rules'; rules: RoomRules }
     /** A new invitation link; the previous one stops working. */
     | { action: 'renewInvite' }
-    /** Lets one signed-in friend in (and tells them). */
+    /** Lets one signed-in person in by name (a friend is invited over HTTP, `/rooms/{id}/invite`, which also tells them). */
     | { action: 'invite'; profileId: string }
     /** Answers a friend who asked to be let in. */
     | { action: 'answer'; profileId: string; accept: boolean };

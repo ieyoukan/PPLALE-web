@@ -51,7 +51,7 @@ for (const viewport of phones) {
     test.use({ viewport });
     test('all navigation and setup actions fit, including a resumed match and CPU spectating', async ({ page }, info) => {
       await page.addInitScript(() => localStorage.setItem('pplale-install-dismissed-v1', String(Date.now())));
-      await page.goto('/game/');
+      await page.goto('/game/cpu/');
       await expect(page.locator('[data-game-stage]')).toBeVisible({ timeout: 15000 });
       const start = page.getByRole('button', { name: '対戦をはじめる', exact: false });
       await expect(start).toBeInViewport({ ratio: .999 });
@@ -92,7 +92,7 @@ for (const viewport of screens) {
     test.use({ viewport });
     test('analysis, deck and editor details never push the replay/home/rematch actions off screen', async ({ page }, info) => {
       const fixture = finishedSession();
-      await page.goto('/game/');
+      await page.goto('/game/cpu/');
       await expect(page.locator('[data-game-stage]')).toBeVisible({ timeout: 15000 });
       await page.evaluate(fixture => {
         const { points, ...session } = fixture;
@@ -142,7 +142,7 @@ for (const viewport of [{ width: 320, height: 480 }, { width: 667, height: 320 }
         localStorage.setItem('pplale-install-dismissed-v1', String(Date.now()));
         localStorage.setItem('pplale-cpu-learning-consent-v1', 'agreed');
       });
-      await page.goto('/game/');
+      await page.goto('/game/cpu/');
       await expect(page.locator('[data-game-stage]')).toBeVisible({ timeout: 15000 });
       const strength = page.getByRole('combobox', { name: 'CPUの強さ', exact: true });
       if (await strength.isVisible()) await strength.selectOption('master');
@@ -163,7 +163,7 @@ test.describe('shared landscape game frame', () => {
   test.use({ viewport: { width: 390, height: 844 } });
   test('menus, card details and waiting screens share one landscape stage across rotations', async ({ page }, info) => {
     await page.addInitScript(() => localStorage.setItem('pplale-install-dismissed-v1', String(Date.now())));
-    await page.goto('/game/');
+    await page.goto('/game/cpu/');
     await expect(page.locator('[data-game-stage]')).toBeVisible({ timeout: 15000 });
     const stage = page.locator('[data-game-stage]');
     await expect(stage).toHaveCount(1);
@@ -224,7 +224,7 @@ for (const allowed of [true, false]) {
           if (!allowed) throw new Error('Unavailable');
         };
       }, allowed);
-      await page.goto('/game/');
+      await page.goto('/game/cpu/');
       await expect(page.locator('[data-game-stage]')).toBeVisible({ timeout: 15000 });
       // These native browser actions must retain their user gesture.
       await page.getByRole('button', { name: 'ログイン', exact: true }).dispatchEvent('pointerup');

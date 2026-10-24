@@ -1,14 +1,14 @@
 'use client';
 
-// The board of a room's match, for its players and (`&watch=1`) for spectators. The room is
-// followed here; the table itself is the same one the matches in this browser use, playing on
-// what the server sends.
-import { useCallback, useEffect } from 'react';
+// A two-seat room (free matches, and rooms made before rooms became places): the board of its
+// match for its players and (`watch`) for spectators, and its lobby before a match. The table
+// itself is the same one the matches in this browser use, playing on what the server sends.
+import { useCallback } from 'react';
 import Link from 'next/link';
-import { useRouter, useSearchParams } from 'next/navigation';
+import { useRouter } from 'next/navigation';
 import type { GameState, Side } from '@pplale/game-core';
 import type { RoomView } from '@pplale/game-core/room';
-import { BATTLE_PATH, ROOM_PATH, roomHref } from '@/lib/game/sessionStore';
+import { BATTLE_PATH } from '@/lib/game/sessionStore';
 import { BoardTable } from '../BoardEmulator';
 import { useWatchingPresence } from '../social/useWatchingPresence';
 import { useRoom } from './useRoom';
@@ -18,21 +18,20 @@ import styles from '../BoardEmulator.module.css';
 import link from './Room.module.css';
 import { MatchAssetGate } from '../MatchPreparation';
 import { roomMatchCardIds } from '@/lib/game/matchAssets';
+import { RoomLobby } from './RoomLobby';
 
 type Played = RoomView & { game: GameState };
 
-export default function RoomBoard() {
-  const params = useSearchParams(), id = params.get('id'), watch = params.get('watch') === '1';
-  const router = useRouter();
+export default function RoomBoard({ id, watch = false }: { id: string; watch?: boolean }) {
   const room = useRoom(id, watch);
   const { stage, view, linked, error } = room;
-  // For a player, anything that is not a match (no seat, still choosing decks, room gone) belongs to the room's page.
+  // For a player, anything that is not a match (no seat, still choosing decks, room gone) is the room's lobby.
   const elsewhere = !watch && (stage === 'gone' || stage === 'visitor' || stage === 'seated' && !view?.game);
-  useEffect(() => { if (elsewhere) router.replace(id ? roomHref(ROOM_PATH, id) : BATTLE_PATH); }, [elsewhere, id, router]);
   // Friends see a signed-in spectator in this room while a match can be watched.
   useWatchingPresence(watch && stage === 'seated' && view?.game ? id : null);
   // A spectator stays here between matches, and is told when there is nothing to watch.
   if (watch && (stage === 'gone' || view && !view.game)) return <Waiting view={stage === 'gone' ? null : view} reason={error} />;
+  if (elsewhere) return <div className={link.standalone}><RoomLobby room={room} /></div>;
   if (stage !== 'seated' || !view?.game) return <div className={styles.emulator} aria-busy="true" />;
   // What the table cannot show by itself: a connection that dropped, and who is looking on.
   const away = view.players.flatMap((player, seat) => player && !player.online && (watch || seat !== view.seat) ? [watch ? player.name : '相手'] : []);

@@ -102,14 +102,15 @@ function newMember(visitor: Visitor, now: number): { member: PlazaMember; token:
 
 /**
  * A new plaza with its creator in it (not seated) as its owner. `body`: `{ rules, plaza: { name, visibility } }` as sent.
- * Without a usable visibility it is an invited room, never a public one by mistake.
+ * Without a usable visibility (or a guest's friends' room) it is an invited room, never a public one by mistake.
  */
 export function createPlaza(id: string, body: unknown, visitor: Visitor, now = Date.now()): { room: Room; token: string } {
     const input = body as { rules?: unknown; plaza?: { name?: unknown; visibility?: unknown } } | null;
     const rules = parseRoomRules(input?.rules);
     if (!rules) throw new RoomError(400, '使えるフルーツを1つ以上選んでください');
-    const visibility = isRoomVisibility(input?.plaza?.visibility) ? input.plaza.visibility : DEFAULT_VISIBILITY;
-    if (!visitor.profileId && (visibility === 'friends' || visibility === 'friendsPlus')) throw new RoomError(401, 'フレンドのルームはログインすると作れます');
+    const asked = isRoomVisibility(input?.plaza?.visibility) ? input.plaza.visibility : DEFAULT_VISIBILITY;
+    // A guest has no friends: their friends' room would let nobody in, so it is an invited one instead (never public).
+    const visibility = !visitor.profileId && (asked === 'friends' || asked === 'friendsPlus') ? DEFAULT_VISIBILITY : asked;
     const { member, token } = newMember(visitor, now);
     const plaza: Plaza = {
         key: randomUUID(), name: roomName(input?.plaza?.name, `${visitor.name}のルーム`), visibility,

@@ -5,7 +5,7 @@ const key = 'pplale-game-session-v2';
 const savedGame = page => page.evaluate(key => JSON.parse(localStorage.getItem(key)).game, key);
 
 async function loadBoard(page, game) {
-  await page.goto('/game/');
+  await page.goto('/game/cpu/');
   await page.getByRole('navigation', { name: 'ゲームメニュー' }).waitFor();
   await page.evaluate(({ game, key }) => localStorage.setItem(key, JSON.stringify({ game, mode: 'hotseat', level: 'easy' })), { game, key });
   await page.goto('/game/play/');

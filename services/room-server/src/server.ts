@@ -7,6 +7,7 @@ import { profileNames } from './profile-names.ts';
 //                          { rules, name, plaza } → a new plaza (plaza.ts) and its creator's member secret
 //   GET  /rooms/{id}       what a visitor may know (a plaza: only one they may enter; `?invite=`)
 //   POST /rooms/{id}/join  { name }         → the guest's seat; a plaza: { name, invite } → a member secret
+//   POST /rooms/{id}/invite { member, to }  a signed-in member lets a friend into the plaza by name (and tells them)
 //   POST /rooms/lookup     { ids }          what the asker may know of several rooms at once (friends' rooms)
 //   POST /rooms/ask        { to }           a signed-in player asks a friend's invited room to let them in
 //   POST /rooms/invited                     plazas that let the signed-in player in by name
@@ -100,6 +101,8 @@ export function createRoomServer({ config, backend, catalog, history, push = pus
     let activityCache: { until: number; value: Awaited<ReturnType<typeof freeMatchActivity>> } | undefined;
     let activityLoading: Promise<Awaited<ReturnType<typeof freeMatchActivity>>> | undefined;
     const activityAllowed = limiter(requestsPerHour * 4);
+    // The friends screen asks every 15–30 seconds while it is shown, perhaps from several devices at home.
+    const lookupAllowed = limiter(requestsPerHour * 8);
     const started = Date.now();
     const latency = roomLatency();
     const performanceMetrics = playPerformance(backend);
@@ -433,6 +436,22 @@ export function createRoomServer({ config, backend, catalog, history, push = pus
             push.later(uid, notice);
         })().catch(error => console.error('push failed', error instanceof Error ? error.message : 'unknown'));
     }
+    /** A member invites a friend by name: only a real friend of theirs, so a notification is never sent to a stranger. */
+    async function inviteFriend(request: IncomingMessage, id: string) {
+        const owners = await historyOwners(request), token = idToken(request);
+        const uid = owners.find(owner => owner.startsWith('user:'))?.slice(5);
+        if (!uid || !token) throw new RoomError(401, 'ログインするとフレンドを招待できます');
+        const body = await readJson(request, MAX_BODY) as Record<string, unknown> | null;
+        const to = typeof body?.to === 'string' ? body.to : '';
+        const current = await backend.get(id);
+        const member = current ? memberOf(current, body?.member) : null;
+        if (!current?.plaza || !member || member.profileId !== uid) throw new RoomError(404, GONE);
+        if ((await friendshipBetween(token, uid, to))?.status !== 'accepted') throw new RoomError(409, 'フレンドの状態が変わっています');
+        const { room } = await update(id, target => actPlaza(target, member.id, { action: 'invite', profileId: to }, catalog));
+        await announce(room);
+        if (await push.store.once(`invite:${id}:${to}`, 10 * 60_000)) push.later(to, notices.invited(member.name, id));
+        return { ok: true };
+    }
     /** The plaza routes under /rooms/ that are not one room. */
     async function plazaRequest(request: IncomingMessage, name: string) {
         const owners = await historyOwners(request), token = idToken(request);
@@ -486,7 +505,7 @@ export function createRoomServer({ config, backend, catalog, history, push = pus
         }
         try {
             const path = new URL(request.url ?? '/', 'http://localhost').pathname.replace(/\/+$/, '') || '/';
-            const route = `${request.method} ${path}`, [, id, tail] = /^\/rooms\/([^/]+)(\/join)?$/.exec(path) ?? [];
+            const route = `${request.method} ${path}`, [, id, tail] = /^\/rooms\/([^/]+)(\/join|\/invite)?$/.exec(path) ?? [];
             if (request.method === 'OPTIONS') {
                 return send(response, 204, undefined, { 'access-control-allow-methods': 'GET, POST', 'access-control-allow-headers': 'content-type,authorization,x-history-key', 'access-control-max-age': '86400' });
             }
@@ -557,7 +576,7 @@ export function createRoomServer({ config, backend, catalog, history, push = pus
             }
             if (route !== 'POST /rooms' && !id) return send(response, 404, { error: 'not found' });
             if (request.method === 'POST' && !tail && (id === 'lookup' || id === 'ask' || id === 'invited')) {
-                if (!activityAllowed(address(request))) throw new RoomError(429, '少し待ってからお試しください');
+                if (!(id === 'ask' ? allowed : lookupAllowed)(address(request))) throw new RoomError(429, '少し待ってからお試しください');
                 return send(response, 200, await plazaRequest(request, id));
             }
             if (!allowed(address(request))) throw new RoomError(429, '操作が多すぎます。しばらく待ってからお試しください');
@@ -596,6 +615,7 @@ export function createRoomServer({ config, backend, catalog, history, push = pus
                 }
                 return send(response, 200, { ...roomInfo(room), hostOnline: (await backend.online(room.id))[0] });
             }
+            if (request.method === 'POST' && tail === '/invite') return send(response, 200, await inviteFriend(request, id));
             const existing = request.method === 'POST' && tail ? await backend.get(id) : null;
             if (existing?.plaza) {
                 const body = await readJson(request, MAX_BODY) as Record<string, unknown> | null;
@@ -826,7 +846,9 @@ export function createRoomServer({ config, backend, catalog, history, push = pus
                 if (outcome.finished) countLater('matchesFinished');
                 if (outcome.command) countLater('commands');
                 deciderChanged(room, before);
-                if (outcome.invited) push.later(outcome.invited, notices.invited(room.plaza!.members.find(other => other.id === member)?.name ?? 'フレンド', room.id));
+                // Only an asked request is answered by a notification here (asking checked the friendship);
+                // an invitation by name comes over HTTP, where the friendship is checked (`inviteFriend`).
+                if (outcome.invited && (body as RoomAction).action === 'answer') push.later(outcome.invited, notices.invited(room.plaza!.members.find(other => other.id === member)?.name ?? 'フレンド', room.id));
             } catch (error) {
                 if (!(error instanceof RoomError)) console.error('action failed', error);
                 tell(socket, { type: 'result', n, error: error instanceof RoomError ? error.message : 'サーバーで問題が起きました' });

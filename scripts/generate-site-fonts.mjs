@@ -44,6 +44,10 @@ export async function gameMenuCodePoints() {
     'src/components/game/home/GameMenu.tsx', 'src/components/game/GameLobby.tsx',
     'src/components/game/GameSetup.tsx', 'src/components/game/DeckSelect.tsx',
     'src/components/game/RulePicker.tsx', 'src/components/pwa/InstallPrompt.tsx',
+    // The game opens on the launch screen and the room's table, with its menu over them.
+    'src/components/game/plaza/LaunchScreen.tsx', 'src/components/game/plaza/RoomPage.tsx', 'src/components/game/plaza/PlazaTable.tsx',
+    'src/components/game/plaza/PlazaSheets.tsx', 'src/components/game/plaza/ShareSheet.tsx', 'src/components/game/plaza/Launchpad.tsx',
+    'src/components/game/plaza/visibility.ts',
     'src/lib/game/deckSources.ts', 'src/lib/game/sessionStore.ts',
     'packages/game-core/src/rules.ts', 'packages/game-core/src/ai/profiles.ts',
   ]);

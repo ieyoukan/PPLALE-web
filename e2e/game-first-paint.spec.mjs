@@ -6,7 +6,7 @@ for (const viewport of [{width:320,height:480}, {width:390,height:844}, {width:8
     let release;
     const held = new Promise(resolve => { release = resolve; });
     await page.route('**/_next/static/chunks/*.js', async route => { await held; await route.continue(); });
-    await page.goto('/game/', { waitUntil:'commit' });
+    await page.goto('/game/cpu/', { waitUntil:'commit' });
     const stage = page.locator('[data-game-stage]');
     await expect(page.getByRole('navigation', {name:'ゲームメニュー'})).toBeVisible();
     const before = await stage.boundingBox();

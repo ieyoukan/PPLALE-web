@@ -1,36 +1,31 @@
 'use client';
 
-// A room before its match: who is here, the rules, inviting, choosing a deck. This is the page a
-// shared link opens, so someone without a seat is first asked to join.
-import { useEffect, useState } from 'react';
+// A two-seat room before its match: who is here, the rules, inviting, choosing a deck. A link to
+// one opens this, so someone without a seat is first asked to join.
+import { useState } from 'react';
 import Link from 'next/link';
-import { useRouter, useSearchParams } from 'next/navigation';
+import { useRouter } from 'next/navigation';
 import { useAuth } from '@/lib/auth';
 import { usableChoice } from '@/lib/game/deckSources';
 import { randomSeed } from '@/lib/game/match';
 import { describeRoomRules } from '@pplale/game-core/room';
 import type { RoomView } from '@pplale/game-core/room';
-import { BATTLE_PATH, ROOM_PLAY_PATH, roomHref, watchHref } from '@/lib/game/sessionStore';
+import { BATTLE_PATH, watchHref } from '@/lib/game/sessionStore';
 import { DeckSelect, UnusableDecks, useDeckChoices } from '../DeckSelect';
 import { NameField, usePlayerName } from './RoomEntrance';
 import { RecruitmentButton } from '../social/RecruitmentButton';
 import { RoomShare } from './RoomShare';
-import { useRoom } from './useRoom';
 import type { Room } from './useRoom';
 import { useRoomPreparation } from './useRoomPreparation';
 import styles from './Room.module.css';
 import { PreparationProgress } from '../MatchPreparation';
 
-export function RoomLobby() {
-  const id = useSearchParams().get('id');
-  const router = useRouter();
-  const room = useRoom(id);
+export function RoomLobby({ room }: { room: Room }) {
   const { stage, info, view, error } = room;
   const [name, setName, nameReady] = usePlayerName();
   const [joining, setJoining] = useState(false);
-  // A match is on (or just over): its board is another page.
-  const onBoard = !!id && stage === 'seated' && (view?.status === 'playing' || view?.status === 'finished');
-  useEffect(() => { if (onBoard) router.replace(roomHref(ROOM_PLAY_PATH, id)); }, [onBoard, id, router]);
+  // A match is on (or just over): the same page shows its board.
+  const onBoard = stage === 'seated' && (view?.status === 'playing' || view?.status === 'finished');
 
   const back = <Link href={BATTLE_PATH} className={styles.secondary}>バトルへ戻る</Link>;
   if (stage === 'gone' || view?.status === 'closed') return <section className={styles.panel}>

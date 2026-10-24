@@ -1,0 +1,67 @@
+/* The game's menu: a glassy cream card over the dimmed screen, the room on top, pastel app tiles below. */
+.backdrop { position: absolute; inset: 0; z-index: 300; display: grid; place-items: center; padding: 22px; background: radial-gradient(ellipse at 50% 40%, #3a242099, #1d110dcc); backdrop-filter: blur(6px) saturate(1.1); animation: fade .18s ease both; }
+.pad {
+  position: relative; display: grid; gap: 18px; width: min(1000px, 100%); max-height: 100%; overflow: auto; padding: 22px 26px 20px;
+  border-radius: 34px; color: var(--brand-cocoa-deep); background: linear-gradient(160deg, #fffdf9f5, #fff8f0ec 60%, #fbece3ec);
+  box-shadow: 0 0 0 2px #fff, 0 0 0 5px #e8c8c8aa, 0 30px 60px #0008; animation: open .26s cubic-bezier(.2, 1.3, .4, 1) both;
+}
+.pad a, .pad button { cursor: pointer; -webkit-tap-highlight-color: transparent; text-decoration: none; color: inherit; }
+.pad :focus-visible { outline: 3px solid var(--brand-vanilla); outline-offset: 3px; }
+.close { position: absolute; top: 16px; right: 16px; z-index: 1; display: grid; place-items: center; width: 44px; height: 44px; border: 0; border-radius: 50%; background: var(--brand-blush); color: var(--brand-cocoa); font-size: 22px; }
+
+/* ── The room ── */
+.roomCard { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 14px; align-items: stretch; padding-right: 54px; }
+.roomMain { display: flex; align-items: center; gap: 14px; min-width: 0; padding: 12px 18px; border: 0; border-radius: 26px; background: linear-gradient(110deg, var(--brand-blush), #fff 70%); box-shadow: inset 0 0 0 2px #fff, 0 6px 16px var(--brand-shadow); text-align: left; }
+.roomBadge { display: grid; place-items: center; flex: none; width: 54px; height: 54px; border-radius: 18px; background: #fff; color: var(--brand-cocoa); font-size: 28px; box-shadow: 0 0 0 2px var(--brand-pink); }
+.roomText { display: grid; flex: 1; min-width: 0; }
+.roomText b { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 24px; color: var(--brand-cocoa); }
+.roomText small { font-size: 14px; color: var(--brand-cocoa-soft); }
+.faces { display: flex; align-items: center; }
+.faces > span + span { margin-left: -8px; }
+.faces b { margin-left: 6px; font-size: 14px; }
+.enterHint { display: flex; align-items: center; gap: 4px; flex: none; padding: 6px 12px; border-radius: 999px; background: var(--brand-cocoa); color: #fff8f0; font-size: 14px; font-weight: 700; }
+.roomActions { display: flex; gap: 12px; }
+.bigAction { display: grid; justify-items: center; align-content: center; gap: 4px; min-width: 128px; padding: 10px 16px; border: 3px solid #fff; border-radius: 24px; background: linear-gradient(#fff, var(--brand-vanilla-wash)); font-size: 30px; box-shadow: 0 5px 0 #d9c590, 0 10px 18px var(--brand-shadow); transition: transform .12s ease; }
+.bigAction span { font-size: 16px; }
+.bigAction[data-tone=cocoa] { background: var(--brand-cocoa-deep); color: #fff8f0 !important; box-shadow: 0 5px 0 #3e2b2b, 0 10px 18px var(--brand-shadow); }
+.bigAction:disabled { opacity: .45; cursor: default; }
+.bigAction:active:not(:disabled) { transform: translateY(3px); }
+
+/* ── Every other place ── */
+.grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 14px; }
+.tile { display: flex; align-items: center; gap: 14px; padding: 12px 16px; border-radius: 22px; background: #fff; box-shadow: 0 0 0 2px #fff, 0 4px 0 var(--tile-edge), 0 8px 16px var(--brand-shadow); font-size: 18px; transition: transform .14s ease; animation: tileIn .35s cubic-bezier(.3, 1.5, .5, 1) both; }
+.tile:nth-child(2) { animation-delay: .03s; } .tile:nth-child(3) { animation-delay: .06s; } .tile:nth-child(4) { animation-delay: .09s; }
+.tile:nth-child(5) { animation-delay: .12s; } .tile:nth-child(6) { animation-delay: .15s; } .tile:nth-child(7) { animation-delay: .18s; } .tile:nth-child(8) { animation-delay: .21s; }
+.tile:hover { transform: translateY(-3px); }
+.tile[aria-current=page] { box-shadow: 0 0 0 3px var(--brand-cocoa), 0 4px 0 var(--brand-cocoa); }
+.tileIcon { display: grid; place-items: center; flex: none; width: 52px; height: 52px; border-radius: 17px; background: var(--tile-wash); color: var(--brand-cocoa); font-size: 28px; }
+.tile[data-tone=pink] { --tile-wash: var(--brand-blush); --tile-edge: var(--brand-pink); }
+.tile[data-tone=vanilla] { --tile-wash: var(--brand-vanilla-wash); --tile-edge: var(--brand-vanilla); }
+.tile[data-tone=sage] { --tile-wash: var(--brand-sage-wash); --tile-edge: var(--brand-sage); }
+.tile[data-tone=peach] { --tile-wash: var(--brand-peach-wash); --tile-edge: var(--brand-peach); }
+
+.foot { display: flex; flex-wrap: wrap; justify-content: center; gap: 10px; }
+.footButton, .me { display: inline-flex; align-items: center; gap: 8px; padding: 10px 20px; border: 0; border-radius: 999px; background: #fffaf0; font-size: 15px; font-weight: 700; box-shadow: 0 0 0 2px var(--brand-pink); }
+.footButton svg, .me svg { font-size: 19px; color: var(--brand-cocoa); }
+
+/* ── Settings and a new room ── */
+.setting { display: grid; gap: 10px; }
+.setting h3 { font-size: 18px; color: var(--brand-cocoa); }
+.kinds { display: grid; grid-template-columns: repeat(5, 1fr); gap: 10px; }
+.kind { display: grid; justify-items: center; gap: 4px; padding: 12px 6px; border: 0; border-radius: 20px; background: #fff; color: var(--brand-cocoa-deep); box-shadow: 0 0 0 2px var(--brand-pink), 0 4px 0 var(--brand-pink-edge); cursor: pointer; }
+.kind[aria-checked=true] { background: var(--brand-blush); box-shadow: 0 0 0 3px var(--brand-cocoa), 0 4px 0 var(--brand-cocoa); }
+.kind:disabled { opacity: .45; cursor: default; }
+.kind b { font-size: 15px; }
+.kind small { font-size: 11px; color: var(--brand-cocoa-soft); text-align: center; }
+.kindIcon { position: relative; display: grid; place-items: center; width: 46px; height: 46px; border-radius: 50%; background: var(--brand-cream); font-size: 24px; color: var(--brand-cocoa); }
+.kindIcon i { position: absolute; right: -4px; bottom: -2px; display: grid; place-items: center; width: 20px; height: 20px; border-radius: 50%; background: var(--brand-cocoa); color: #fff; font: 700 13px/1 sans-serif; font-style: normal; }
+.settingNote { font-size: 13px; color: var(--brand-cocoa-soft); text-align: center; }
+.newRoom { display: grid; justify-items: center; gap: 12px; text-align: center; }
+.newIcon { display: grid; place-items: center; width: 74px; height: 74px; border-radius: 24px; background: var(--brand-sage-wash); color: var(--brand-cocoa); font-size: 40px; }
+.warn { display: flex; align-items: center; gap: 8px; padding: 6px 14px; border-radius: 999px; background: var(--brand-peach-wash); font-weight: 700; }
+.makeButton { display: inline-flex; align-items: center; gap: 8px; padding: 14px 40px; border: 3px solid #fff; border-radius: 999px; background: linear-gradient(#ffe3e8, #f0b5c2); color: var(--brand-cocoa-deep); font-size: 22px; box-shadow: 0 5px 0 #c48795; cursor: pointer; }
+
+@keyframes fade { from { opacity: 0; } }
+@keyframes open { from { opacity: 0; transform: scale(.94) translateY(12px); } }
+@keyframes tileIn { from { opacity: 0; transform: translateY(14px) scale(.9); } }
+@media (prefers-reduced-motion: reduce) { .backdrop, .pad, .tile { animation: none; } }
