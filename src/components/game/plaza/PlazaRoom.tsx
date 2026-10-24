@@ -31,6 +31,9 @@ export function PlazaRoom({ view, onMenu }: { view: RoomView; onMenu: () => void
   const current = view.game && (view.status === 'playing' || view.status === 'finished') ? view as Played : result;
   const shown = current && !(current.status === 'finished' && current.matchId === dismissed) ? current : null;
   const done = useCallback(() => setDismissed(shown?.matchId ?? null), [shown?.matchId]);
+  // Those in the room see its name on the tab (the shared link's title only says what the link may).
+  const name = view.plaza?.name;
+  useEffect(() => { if (name) document.title = `${name}｜ぷぷりえーる`; }, [name]);
   if (!shown) return <PlazaTable view={view} onMenu={onMenu} />;
   return <MatchAssetGate ids={roomMatchCardIds(shown.rules)}>
     {/* A new match, or sitting down or standing up, is another table. */}
