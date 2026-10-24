@@ -38,7 +38,7 @@ const config: NextConfig = {
     optimizePackageImports: ['framer-motion'],
   },
   serverExternalPackages: ['@vercel/og', 'sharp'],
-  outputFileTracingIncludes: { '/about': ['./docs/game-rules.md'], '/api/og/**': ['./public/og-cards/**/*.png'], '/api/og/profile/**': ['./public/images/token/**/*.webp', './public/og-cards/profile-bg.jpg'] },
+  outputFileTracingIncludes: { '/about': ['./docs/game-rules.md'], '/api/og/**': ['./public/og-cards/**/*.png'], '/api/og/profile/**': ['./public/images/token/**/*.webp', './public/og-cards/profile-bg.jpg'], '/api/og/room/**': ['./public/images/game/logo.webp', './public/images/game/characters/friends.webp', './public/og-cards/profile-bg.jpg'] },
   // 本番環境用の設定
   assetPrefix: '',
   basePath: '',

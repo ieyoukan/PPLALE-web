@@ -13,7 +13,7 @@ import type { RoomAction, RoomPlayer, RoomView } from '@pplale/game-core/room';
 import { useAuth } from '@/lib/auth';
 import { usableChoice } from '@/lib/game/deckSources';
 import { randomSeed } from '@/lib/game/match';
-import { fruitArt } from '../RulePicker';
+import { fruitArt, roomThumbnail } from '@/lib/game/roomThumbnail';
 import { useDeckChoices } from '../DeckSelect';
 import { PreparationProgress } from '../MatchPreparation';
 import { useRoomPreparation } from '../room/useRoomPreparation';
@@ -123,7 +123,7 @@ export function PlazaTable({ view, onMenu }: { view: RoomView; onMenu: () => voi
 
     <aside className={styles.side}>
       <button className={styles.rulesCard} onClick={() => setOpen('rules')} aria-label="ルール">
-        <span className={styles.fruits}>{view.rules.fruits.map(fruit => <span key={fruit} style={{ background: fruitArt[fruit].tone }}><Image src={fruitArt[fruit].image} alt="" fill sizes="80px" /></span>)}</span>
+        <span className={styles.fruits}>{roomThumbnail(view.rules).fruits.map(fruit => <span key={fruit} style={{ background: fruitArt[fruit].tone }}><Image src={fruitArt[fruit].image} alt="" fill sizes="80px" /></span>)}</span>
         <span className={styles.ruleChips}>
           <span><PlazaIcon name="star" />{view.rules.extendedPlayable ? '拡張' : '通常'}</span>
           <span><PlazaIcon name="timer" />{view.rules.turnSeconds ? `${view.rules.turnSeconds / 60}分` : '∞'}</span>

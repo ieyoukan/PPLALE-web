@@ -4,7 +4,7 @@ import Link from 'next/link';
 import { fruitNames } from '@pplale/game-core/room';
 import type { RoomInfo } from '@pplale/game-core/room';
 import { roomHref, watchHref } from '@/lib/game/sessionStore';
-import { fruitArt } from '../RulePicker';
+import { fruitArt, roomThumbnail } from '@/lib/game/roomThumbnail';
 import { PlazaIcon } from '../plaza/PlazaIcon';
 import { usePlaza } from '../plaza/PlazaProvider';
 import { visibilityInfo } from '../plaza/visibility';
@@ -19,18 +19,18 @@ import own from './RoomCard.module.css';
  */
 export function RoomCard({ room, large }: { room: RoomInfo; large?: boolean }) {
   const { go } = usePlaza();
-  const place = placeOf(room), plaza = room.plaza;
+  const place = placeOf(room), plaza = room.plaza, { fruits } = roomThumbnail(room.rules);
   const href = plaza ? roomHref(room.id) : place === 'open' ? roomHref(room.id) : place === 'playing' ? watchHref(room.id) : undefined;
   const title = plaza ? plaza.name : `${room.host}のルーム`;
   const verb = plaza ? '入る' : place === 'open' ? '参加' : '観戦';
   const card = <>
-    <span className={styles.roomArt} aria-hidden="true">{room.rules.fruits.map(fruit => <span key={fruit} style={{ background: fruitArt[fruit].tone }}><Image src={fruitArt[fruit].image} alt="" fill sizes={large ? '320px' : '120px'} /></span>)}</span>
+    <span className={styles.roomArt} aria-hidden="true">{fruits.map(fruit => <span key={fruit} style={{ background: fruitArt[fruit].tone }}><Image src={fruitArt[fruit].image} alt="" fill sizes={large ? '320px' : '120px'} /></span>)}</span>
     <span className={styles.roomBadge}>{placeLabel[place]}</span>
     {href && <span className={styles.roomAction}><Icon name={plaza || place === 'open' ? 'play' : 'eye'} />{verb}</span>}
     <span className={styles.roomInfo}>
       {(large || plaza) && <b className={styles.roomHost}>{title}</b>}
       {plaza ? <span className={own.people} title={visibilityInfo[plaza.visibility].label}><PlazaIcon name={visibilityInfo[plaza.visibility].icon} /><PlazaIcon name="people" />{plaza.members}</span> : <b>#{room.id}</b>}
-      <span className={styles.fruitDots}>{room.rules.fruits.map(fruit => <i key={fruit} title={fruitNames[fruit]} style={{ background: fruitArt[fruit].tone }} />)}</span>
+      <span className={styles.fruitDots}>{fruits.map(fruit => <i key={fruit} title={fruitNames[fruit]} style={{ background: fruitArt[fruit].tone }} />)}</span>
     </span>
   </>;
   const className = large ? `${styles.room} ${styles.roomLarge}` : styles.room;

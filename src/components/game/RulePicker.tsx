@@ -11,13 +11,10 @@ import { fruitNames, fruits, fruitsUpTo, playableNow } from '@pplale/game-core';
 import type { Fruit, MatchRules } from '@pplale/game-core';
 import styles from './RulePicker.module.css';
 
-/** The fruit's colour and picture, as on the 2pick tiles. */
-export const fruitArt: Record<Fruit, { tone: string; image: string }> = {
-  strawberry: { tone: '#9B4341', image: '/images/fruits/いちご.webp' },
-  grape: { tone: '#6E25AB', image: '/images/fruits/ぶどう.webp' },
-  melon: { tone: '#40923D', image: '/images/fruits/めろん.webp' },
-  orange: { tone: '#E5872C', image: '/images/fruits/おれんじ.webp' },
-};
+import { fruitArt } from '@/lib/game/roomThumbnail';
+
+/** The fruit's colour and picture, as on the 2pick tiles (shared with the rooms' pictures). */
+export { fruitArt };
 
 /**
  * One tile. With `onChange` it is a checkbox that covers the whole tile; without, it only shows a
