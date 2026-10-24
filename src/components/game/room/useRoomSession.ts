@@ -66,7 +66,7 @@ export function useRoomSession({ room, initial, seat, onLeave, onFindNext }: { r
   const resign = useCallback(() => ask('resign'), [ask]);
   const rematch = useCallback(() => initial.mode === 'free' ? (onFindNext ?? onLeave)() : ask('rematch'), [ask, initial.mode, onFindNext, onLeave]);
 
-  const names = useMemo<[string, string]>(() => [shown.players[0].name, shown.players[1]?.name ?? '相手'], [shown.players]);
+  const names = useMemo<[string, string]>(() => [shown.players[0]?.name ?? '相手', shown.players[1]?.name ?? '相手'], [shown.players]);
   const { presented } = room;
   const remote = useMemo(() => ({ seat, watching, assessment, turnClock, ownDeck: shown.ownDeck, matchRules: shown.rules, freeMatch: initial.mode === 'free', names, sending: !linked || sending, waiting: !linked || sending || queue.length > 0, failed, next, accept, resign, resigned: shown.resigned, leave: onLeave, presented }),
     [seat, watching, assessment, turnClock, shown.ownDeck, shown.rules, initial.mode, names, linked, sending, queue.length, failed, next, accept, resign, shown.resigned, onLeave, presented]);

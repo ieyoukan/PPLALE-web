@@ -18,13 +18,13 @@ test('presence reads both players and spectators together, expiring dead connect
     const backend = await shared().open();
     t.after(() => backend.close());
     const id = '123456';
-    assert.deepEqual(await backend.presence(id), { online: [false, false], watching: 0 });
+    assert.deepEqual(await backend.presence(id), { online: [false, false], watching: 0, members: [] });
     await backend.enter({ id, seat: 0, member: 'host' }, 60_000);
     await backend.enter({ id, seat: 1, member: 'dead' }, 0);
     await backend.enter({ id, seat: 2, member: 'watcher' }, 60_000);
-    assert.deepEqual(await backend.presence(id), { online: [true, false], watching: 1 });
+    assert.deepEqual(await backend.presence(id), { online: [true, false], watching: 1, members: [] });
     await backend.leave({ id, seat: 2, member: 'watcher' });
-    assert.deepEqual(await backend.presence(id), { online: [true, false], watching: 0 });
+    assert.deepEqual(await backend.presence(id), { online: [true, false], watching: 0, members: [] });
 });
 
 test('a committed command and the next command do not wait for a blocked statistics write', async t => {
@@ -44,9 +44,24 @@ test('a committed command and the next command do not wait for a blocked statist
     const acknowledged = await Promise.race([response.then(() => true), new Promise<boolean>(resolve => setTimeout(() => resolve(false), 500))]);
     assert.equal(acknowledged, true, 'response was held by statistics');
     assert.equal(await command(0, { type: 'openingDraw', actor: 0, deck: 'yojo' }), undefined);
-    assert.equal(sockets[0].latest().game!.players[0].hand.length, 2);
+    assert.equal(sockets[0].latest().game!.players[0]!.hand.length, 2);
     const diagnostics = (await served.server.stats()).latency!;
     assert.equal(diagnostics.count, before + 2);
     assert.ok(diagnostics.milliseconds.total.p95 >= 0);
     gate.resolve();
+});
+
+test('presence lists the plaza members connected now, once each however many sockets they have', async t => {
+    const backend = await shared().open();
+    t.after(() => backend.close());
+    const id = '123457';
+    assert.equal(await backend.enter({ id, seat: 'm', member: 'alice~pod:1' }, 60_000), true);
+    assert.equal(await backend.enter({ id, seat: 'm', member: 'alice~pod:2' }, 60_000), false);
+    assert.equal(await backend.enter({ id, seat: 'm', member: 'bob~pod:3' }, 0), true);
+    assert.deepEqual((await backend.presence(id)).members, ['alice']);
+    assert.equal(await backend.leave({ id, seat: 'm', member: 'alice~pod:1' }), false);
+    assert.equal(await backend.leave({ id, seat: 'm', member: 'alice~pod:2' }), true);
+    assert.deepEqual((await backend.presence(id)).members, []);
+    assert.equal(await backend.claim('cpu:x:1', 60_000), true);
+    assert.equal(await backend.claim('cpu:x:1', 60_000), false);
 });

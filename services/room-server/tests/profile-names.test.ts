@@ -9,18 +9,18 @@ test('public names: existing rooms, state, logs and host use the current profile
     const resolver = profileNames(async () => '現在の公開名');
     const { room } = createRoom('123456', { name: '旧アカウント名', rules: { fruits: ['strawberry'] } });
     joinRoom(room, { name: 'ゲストの名前' });
-    room.seats[0].profileId = 'verified-uid';
+    room.seats[0]!.profileId = 'verified-uid';
     room.state = arena();
-    room.state.players[0].name = '旧アカウント名';
+    room.state.players[0]!.name = '旧アカウント名';
     room.state.players[1].name = 'ゲストの名前';
     room.state.log = ['旧アカウント名のダイス：6', '旧アカウント名が先攻を選びました', '旧アカウント名の1ターン目', '旧アカウント名：「カード」をプレイ', '旧アカウント名が投了しました', 'カード「旧アカウント名」をプレイ'];
     const original = structuredClone(room);
     const view = seatView(room, 0, { online: [true, true], watching: 0 });
-    assert.equal(resolver.view(view).players[0].name, 'プレイヤー');
+    assert.equal(resolver.view(view).players[0]!.name, 'プレイヤー');
     const result = await resolver.response({ view }) as { view: typeof view };
-    assert.equal(result.view.players[0].name, '現在の公開名');
+    assert.equal(result.view.players[0]!.name, '現在の公開名');
     assert.equal(result.view.players[1]!.name, 'ゲストの名前');
-    assert.equal(result.view.game!.players[0].name, '現在の公開名');
+    assert.equal(result.view.game!.players[0]!.name, '現在の公開名');
     assert.ok(result.view.game!.log.slice(0, 5).every(line => line.startsWith('現在の公開名')));
     assert.equal(result.view.game!.log[5], 'カード「旧アカウント名」をプレイ');
     assert.deepEqual(room, original);
@@ -30,7 +30,7 @@ test('public names: existing rooms, state, logs and host use the current profile
 test('public names: old public replays, lists and free-match activity resolve by UID without modifying the archive', async () => {
     let current = '新しい公開名', now = 1, reads = 0;
     const resolver = profileNames(async () => { reads++; return current; }, () => now);
-    const game = arena(); game.players[0].name = '旧名[.*]'; game.players[1].name = 'ゲスト';
+    const game = arena(); game.players[0]!.name = '旧名[.*]'; game.players[1].name = 'ゲスト';
     game.log = ['旧名[.*]：初期手札を2枚交換'];
     const match = { players: [{ name: 'もっと古い名前', profileId: 'uid' }, { name: 'ゲスト' }] };
     const recording = { match, frames: [{ state: game, hash: 'archive-hash', previousHash: '' }] } as unknown as MatchRecording;
@@ -46,8 +46,8 @@ test('public names: old public replays, lists and free-match activity resolve by
     assert.equal(reads, 1);
     now += 60_001; current = '変更後の公開名';
     const changed = await resolver.response(recording) as MatchRecording;
-    assert.equal(changed.match.players[0].name, current);
-    assert.equal(changed.frames[0].state.players[0].name, current);
+    assert.equal(changed.match.players[0]!.name, current);
+    assert.equal(changed.frames[0].state.players[0]!.name, current);
     assert.equal(reads, 2);
 });
 
@@ -118,18 +118,18 @@ test('public names: HTTP intake verifies identity and overrides aliases; HTTP an
     const served = await serve(); t.after(() => served.close());
     const created = await served.call<import('@pplale/game-core/room').Seated>('/rooms', { name: 'アカウントの本名', profileId: 'spoofed-uid', rules: { fruits: ['strawberry'] } }, { authorization: `Bearer ${token}` });
     assert.equal(created.status, 200);
-    assert.equal(created.data.view.players[0].name, '統一した公開名');
-    assert.equal(created.data.view.players[0].profileId, 'verified-profile');
+    assert.equal(created.data.view.players[0]!.name, '統一した公開名');
+    assert.equal(created.data.view.players[0]!.profileId, 'verified-profile');
     const id = created.data.view.id;
     const room = (await served.backend.get(id))!;
-    room.seats[0].name = '過去の本名';
+    room.seats[0]!.name = '過去の本名';
     await served.backend.replace(room, room.version, 60_000);
     const response = await served.call(`/rooms/${id}`);
     assert.equal(JSON.stringify(response).includes('過去の本名'), false);
     assert.ok(JSON.stringify(response).includes('統一した公開名'));
     const socket = await connect(served, id, created.data.token);
     const view = await socket.until(() => true);
-    assert.equal(view.players[0].name, '統一した公開名');
+    assert.equal(view.players[0]!.name, '統一した公開名');
     assert.equal(JSON.stringify(view).includes('過去の本名'), false);
     await socket.close();
     const bad = await served.call('/rooms', { name: '勝手な名前', rules: { fruits: ['strawberry'] } }, { authorization: 'Bearer invalid' });

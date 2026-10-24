@@ -54,7 +54,7 @@ test('a spectator can open the full free replay only after the match ends; priva
     const finished = await observer.until(view => view.status === 'finished');
     assert.equal(finished.replayId, room.record!.id);
     const replay = await history.recording(['device:outsider'], finished.replayId!);
-    assert.equal(replay!.match.complete, true); assert.deepEqual(replay!.match.players[0].deck, deck);
+    assert.equal(replay!.match.complete, true); assert.deepEqual(replay!.match.players[0]!.deck, deck);
 });
 
 test('rolling updates do not enable public spectators until every live pod can redact both hands', async t => {
@@ -83,7 +83,7 @@ test('players in private rooms and free matches receive the same public estimate
     const state = structuredClone(recording.frames.find(frame => frame.state.phase === 'playing')!.state);
     for (const mode of [undefined, 'free'] as const) {
         const { room } = createRoom(mode ? '534122' : '534123', { rules: { fruits: ['strawberry'] } });
-        room.seats[1] = { ...room.seats[0], name: '相手' };
+        room.seats[1] = { ...room.seats[0]!, name: "相手" };
         room.state = state; room.status = 'playing'; room.mode = mode;
         room.record = { id: `estimate-${mode ?? 'private'}`, startedAt: 0 };
         const present = { online: [true, true] as [boolean, boolean], watching: 1 };

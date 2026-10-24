@@ -17,7 +17,7 @@ const historyTest = (name: string, fn: (t: TestContext) => Promise<void>) => tes
 function ready(id = '123456') {
     const { room } = createRoom(id, { rules: { fruits: ['strawberry'], extendedPlayable: false } });
     joinRoom(room, {});
-    room.seats[0].historyOwners = ['device:host', 'user:host'];
+    room.seats[0]!.historyOwners = ['device:host', 'user:host'];
     room.seats[1]!.historyOwners = ['device:guest'];
     act(room, 0, { action: 'ready', deck }, catalog);
     act(room, 1, { action: 'ready', deck }, catalog);
@@ -75,7 +75,7 @@ historyTest('history API: only participants can read completed decks, favorites 
     assert.equal(page.data.entries.length, 1);
     assert.equal((await served.call(`/history/${room.record!.id}`, {}, stranger)).status, 404);
     const replay = await served.call<MatchRecording>(`/history/${room.record!.id}`, {}, guest);
-    assert.equal(replay.data.match.seat, 1); assert.deepEqual(replay.data.match.players[0].deck, deck);
+    assert.equal(replay.data.match.seat, 1); assert.deepEqual(replay.data.match.players[0]!.deck, deck);
     assert.equal(JSON.stringify(replay.data).includes('device:'), false);
     assert.equal((await served.call(`/history/${room.record!.id}/favorite`, { value: true }, host)).status, 200);
     assert.equal((await served.call<HistoryPage>('/history/list', { favorites: true }, host)).data.entries.length, 1);
@@ -237,7 +237,7 @@ historyTest('history: command appends still check catalog integrity and retry an
 
 historyTest('history: claiming guest history preserves favorites, excludes a second account and allows new guest matches after logout', async t => {
     const { backend, history } = await fixture(t);
-    const room = ready(); room.seats[0].historyOwners = ['device:host']; await backend.create(room, 3_600_000);
+    const room = ready(); room.seats[0]!.historyOwners = ['device:host']; await backend.create(room, 3_600_000);
     act(room, 1, { action: 'resign' }, catalog); await store(backend, room);
     await history.favorite(['device:host'], room.record!.id, true);
     await history.linkGuest(['device:host', 'user:alice']);
@@ -246,7 +246,7 @@ historyTest('history: claiming guest history preserves favorites, excludes a sec
     await history.linkGuest(['device:host', 'user:bob']);
     assert.equal((await history.list(['user:bob'])).entries.length, 0);
     await new Promise(resolve => setTimeout(resolve, 5));
-    const next = ready('654321'); next.seats[0].historyOwners = ['device:host']; await backend.create(next, 3_600_000);
+    const next = ready('654321'); next.seats[0]!.historyOwners = ['device:host']; await backend.create(next, 3_600_000);
     act(next, 1, { action: 'resign' }, catalog); await store(backend, next);
     assert.equal((await history.list(['device:host'])).entries.length, 1);
     await history.linkGuest(['device:host', 'user:bob']);
@@ -264,7 +264,7 @@ historyTest('history: a slow backup snapshot cannot stall room commands or HTTP 
     act(room, 1, { action: 'ready', deck }, catalog);
     await backend.create(room, 3_600_000);
     const client = await connect(served, room.id, token);
-    await client.until(view => view.players[0].online);
+    await client.until(view => view.players[0]!.online);
     const backup = await pool.connect();
     try {
         await backup.query('BEGIN ISOLATION LEVEL REPEATABLE READ READ ONLY');

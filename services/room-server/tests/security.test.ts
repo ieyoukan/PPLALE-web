@@ -16,7 +16,7 @@ function request(headers = {}) {
 test('privacy: room responses never include account fields, seat secrets or history owner keys', () => {
     const { room, token } = createRoom('123456', { name: '公開名', rules: { fruits: ['strawberry'], spectators: true } });
     joinRoom(room, { name: '相手の公開名' });
-    Object.assign(room.seats[0], {
+    Object.assign(room.seats[0]!, {
         profileId: 'public-profile-id', historyOwners: ['user:private-history-owner', 'device:private-device-key'],
         email: 'private-account@example.invalid', displayName: 'private-google-name', photoURL: 'https://example.invalid/private-photo',
     });
@@ -24,7 +24,7 @@ test('privacy: room responses never include account fields, seat secrets or hist
     const output = JSON.stringify([roomInfo(room), seatView(room, 0, presence), seatView(room, 1, presence), seatView(room, 'spectator', presence)]);
     assert.ok(output.includes('公開名'));
     assert.ok(output.includes('public-profile-id'));
-    for (const hidden of [token, room.seats[0].tokenHash, 'historyOwners', 'private-history-owner', 'private-device-key', 'private-account', 'private-google-name', 'private-photo', 'email', 'photoURL'])
+    for (const hidden of [token, room.seats[0]!.tokenHash, 'historyOwners', 'private-history-owner', 'private-device-key', 'private-account', 'private-google-name', 'private-photo', 'email', 'photoURL'])
         assert.equal(output.includes(hidden), false, hidden);
 });
 

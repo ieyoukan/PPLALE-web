@@ -86,7 +86,7 @@ function Waiting({ room, view }: { room: Room; view: RoomView }) {
       {view.rules.spectators && <p className={styles.note}>観戦している人には、2人の手札が両方とも見えます。{view.spectators > 0 && `いま${view.spectators}人が観戦しています。`}</p>}
       {!foe && <p className={styles.note}>この画面を閉じたまま10分たつと、ルームは解散します。</p>}
       {(!foe || view.rules.spectators) && <RoomShare id={view.id} rules={view.rules} />}
-      {view.seat === 0 && !foe && <RecruitmentButton roomId={view.id} hostProfileId={view.players[0].profileId} />}
+      {view.seat === 0 && !foe && <RecruitmentButton roomId={view.id} hostProfileId={view.players[0]?.profileId} />}
     </section>
     <section className={styles.panel}>
       <div className={styles.seats}>{seat('あなた', me)}{seat('相手', foe)}</div>

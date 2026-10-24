@@ -42,7 +42,7 @@ export function loadConfig(): Config {
         origins: (process.env.ALLOWED_ORIGINS ?? '*').split(',').map(origin => origin.trim()).filter(Boolean),
         trustProxy: process.env.TRUST_PROXY !== 'false',
         requestsPerHour: number('REQUESTS_PER_HOUR', 120, 1),
-        roomsPerHour: number('ROOMS_PER_HOUR', 10, 1),
+        roomsPerHour: number('ROOMS_PER_HOUR', 30, 1),
         lobbyGraceMinutes: number('LOBBY_GRACE_MINUTES', 10, 0.0001),
         abandonMinutes: number('ABANDON_MINUTES', 30, 0.0001),
         maxRooms: number('MAX_ROOMS', 500, 1),

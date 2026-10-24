@@ -15,7 +15,7 @@ test('rooms: made with the rules the game can play, looked up and joined once', 
     // What the engine cannot play yet is dropped from the rules (rules.ts `playableNow`).
     const supportedRules = { ...rules, fruits: ['strawberry', 'grape'], extendedPlayable: playableNow.extendedPlayable };
     assert.deepEqual(view.rules, supportedRules);
-    assert.equal(view.players[0].name, 'ほすと太郎ながいなまえで');
+    assert.equal(view.players[0]!.name, 'ほすと太郎ながいなまえで');
     assert.equal((await call('/rooms', { rules: { fruits: ['grape'] } })).status, 200);
     assert.equal((await call('/rooms', { rules: { fruits: ['orange'] } })).status, 200);
     assert.equal((await call('/rooms', { rules: { fruits: ['melon'] } })).status, playableNow.fruits.includes('melon') ? 200 : 400);
@@ -55,7 +55,7 @@ test('sockets: an origin that is not allowed cannot connect', async () => {
     const { data } = await served.call<Seated>('/rooms', { rules });
     await assert.rejects(connect(served, data.view.id, data.token, { origin: 'https://elsewhere.example' }));
     const allowed = await connect(served, data.view.id, data.token, { origin: 'https://pplale.vercel.app' });
-    assert.equal((await allowed.until(() => true)).players[0].online, true);
+    assert.equal((await allowed.until(() => true)).players[0]!.online, true);
     await served.close();
 });
 
@@ -65,11 +65,11 @@ test('lobby: decks are checked against the room, and the match starts when both 
     assert.equal(await b.act({ action: 'ready', deck: { ...deck, playable: 'p_6' } }), 'このルームでは拡張プレイアブルを使えません');
     assert.equal(await b.act({ action: 'ready', deck: { ...deck, yojo: [...deck.yojo.slice(1), 'y_40'] } }), 'このルームではぶどうのカードを使えません');
     assert.equal(await a.act({ action: 'ready', deck }), undefined);
-    assert.equal(a.latest().players[0].deck, deck.name);
+    assert.equal(a.latest().players[0]!.deck, deck.name);
     assert.deepEqual(a.latest().ownDeck, deck);
-    assert.equal((await b.until(view => view.players[0].ready)).ownDeck, undefined);
+    assert.equal((await b.until(view => view.players[0]!.ready)).ownDeck, undefined);
     // The other side learns that the deck is chosen, not which.
-    assert.deepEqual((await b.until(view => view.players[0].ready)).players[0], { name: 'ほすと', ready: true, online: true });
+    assert.deepEqual((await b.until(view => view.players[0]!.ready)).players[0], { name: 'ほすと', ready: true, online: true });
     assert.equal(await a.act({ action: 'unready' }), undefined);
     assert.equal(await b.act({ action: 'ready', deck }), undefined);
     assert.equal(b.latest().status, 'lobby');
@@ -153,7 +153,7 @@ test('spectators: only where the room allows them; they see both hands, are coun
     assert.equal(view.watching, true);
     assert.equal(view.ownDeck, undefined);
     assert.deepEqual(view.players.map(player => player!.name), ['ほすと', 'げすと']);
-    assert.equal(view.players[0].deck, undefined);
+    assert.equal(view.players[0]!.deck, undefined);
     for (const side of [0, 1] as const) {
         const hand = view.game!.players[side].hand.map(uid => view.game!.cards[uid].cardId);
         assert.equal(hand.length, 1);
@@ -201,7 +201,7 @@ test('restart: rooms and their matches are still there, and the seats still work
 
     const after = await serve({ data });
     const back = await connect(after, id, host.token);
-    const view = await back.until(latest => latest.players[0].online);
+    const view = await back.until(latest => latest.players[0]!.online);
     assert.equal(view.status, 'playing');
     assert.equal(view.game!.revision, revision);
     assert.equal(view.game!.rules.firstPlayer, first);
@@ -230,10 +230,10 @@ test('two instances: the players of a room may be on different ones, and one can
     await a.close();
     assert.equal(await sockets[0].closed, 1012);
     const moved = await connect(b, id, host.token);
-    const view = await moved.until(latest => latest.players[0].online && latest.players[1]!.online);
+    const view = await moved.until(latest => latest.players[0]!.online && latest.players[1]!.online);
     assert.equal(view.game!.players[drawer].hand.length, 1);
     assert.equal(await moved.act({ action: 'command', command: { type: 'openingDraw', actor: 0, deck: 'yojo' }, revision: view.game!.revision }), undefined);
-    await sockets[1].until(latest => latest.game!.players[0].hand.length === (drawer === 0 ? 2 : 1));
+    await sockets[1].until(latest => latest.game!.players[0]!.hand.length === (drawer === 0 ? 2 : 1));
     await b.close();
 });
 
@@ -243,11 +243,11 @@ test('a player whose instance died without a word is noticed by the others', asy
     const guest = (await served.call<Seated>(`/rooms/${id}/join`, { name: 'げすと' })).data;
     const socket = await connect(served, id, guest.token);
     await socket.until(view => view.players[1]!.online);
-    assert.equal(socket.latest().players[0].online, false);
+    assert.equal(socket.latest().players[0]!.online, false);
     // The host's socket is on an instance that stops refreshing it: it counts for a while, then lapses.
     await served.backend.enter({ id, seat: 0, member: 'dead-pod:1' }, 400);
-    await socket.until(view => view.players[0].online);
-    await socket.until(view => !view.players[0].online);
+    await socket.until(view => view.players[0]!.online);
+    await socket.until(view => !view.players[0]!.online);
     await served.close();
 });
 
@@ -292,7 +292,7 @@ test('upkeep: idle rooms lapse, and one address cannot ask without end', async (
     const served = await serve({ requestsPerHour: 3, idleHours: 0.4 / 3600 });
     const { data } = await served.call<Seated>('/rooms', { rules }, { 'cf-connecting-ip': '203.0.113.1' });
     const socket = await connect(served, data.view.id, data.token);
-    await socket.until(view => view.players[0].online);
+    await socket.until(view => view.players[0]!.online);
     // Nobody does anything: the room lapses and its socket is told.
     assert.equal(await socket.closed, 4404);
 

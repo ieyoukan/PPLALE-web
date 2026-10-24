@@ -1,5 +1,5 @@
 import type { GameState } from '@pplale/game-core';
-import type { RoomView } from '@pplale/game-core/room';
+import type { RoomInfo, RoomView } from '@pplale/game-core/room';
 import type { HistoryEntry, MatchRecording } from '@pplale/game-core/history';
 
 const FALLBACK = 'プレイヤー';
@@ -63,7 +63,8 @@ export function profileNames(read = readPublicName, now = Date.now) {
             }) };
     }
     function view(value: RoomView): RoomView {
-        return { ...value, players: players(value.players) as RoomView['players'], ...(value.game && { game: state(value.game, value.players) }) };
+        return { ...value, players: players(value.players) as RoomView['players'], ...(value.game && { game: state(value.game, value.players) }),
+            ...(value.plaza && { plaza: { ...value.plaza, creator: { ...value.plaza.creator, name: name(value.plaza.creator) }, members: players(value.plaza.members) } }) };
     }
     const entry = (value: HistoryEntry): HistoryEntry => ({ ...value, players: players(value.players) as HistoryEntry['players'] });
     async function warm(list: (Player | null)[]) {
@@ -74,10 +75,15 @@ export function profileNames(read = readPublicName, now = Date.now) {
     async function response(value: unknown): Promise<unknown> {
         if (!value || typeof value !== 'object') return value;
         const body = value as Record<string, unknown>;
-        if (body.view) { await warm((body.view as RoomView).players); return { ...body, view: view(body.view as RoomView) }; }
+        if (body.view) { await warm([...(body.view as RoomView).players, ...(body.view as RoomView).plaza?.members ?? []]); return { ...body, view: view(body.view as RoomView) }; }
+        if (Array.isArray(body.rooms)) {
+            const rooms = body.rooms as RoomInfo[], hosts = rooms.map(room => ({ name: room.host, profileId: room.hostProfileId }));
+            await warm(hosts);
+            return { ...body, rooms: rooms.map(room => ({ ...room, host: name({ name: room.host, profileId: room.hostProfileId }), ...(room.plaza && { plaza: { ...room.plaza, creator: { ...room.plaza.creator, name: name(room.plaza.creator) } } }) })) };
+        }
         if (typeof body.host === 'string') {
-            const host = { name: body.host, profileId: body.hostProfileId as string | undefined };
-            await warm([host]); return { ...body, host: name(host) };
+            const host = { name: body.host, profileId: body.hostProfileId as string | undefined }, plaza = body.plaza as RoomInfo['plaza'];
+            await warm([host]); return { ...body, host: name(host), ...(plaza && { plaza: { ...plaza, creator: { ...plaza.creator, name: name(plaza.creator) } } }) };
         }
         if (Array.isArray(body.entries)) {
             await warm(body.entries.flatMap((match: HistoryEntry) => match.players));

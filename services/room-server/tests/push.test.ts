@@ -51,7 +51,7 @@ test('push: whoever has to act is told when their page is hidden, and not while 
     await Promise.all(sockets.map(socket => socket.until(view => view.game!.phase === 'playing')));
     // The seats belong to signed-in players (set by their ID tokens in real use).
     const room = (await served.backend.get(id))!;
-    room.seats[0].profileId = 'host-uid';
+    room.seats[0]!.profileId = 'host-uid';
     room.seats[1]!.profileId = 'guest-uid';
     const expected = room.version++;
     assert.ok(await served.backend.replace(room, expected, 60_000));
@@ -73,7 +73,7 @@ test('push: whoever has to act is told when their page is hidden, and not while 
     await settle();
     assert.deepEqual(sent.map(item => item.endpoint), ['https://fcm.googleapis.com/fcm/send/second']);
     assert.equal(sent[0].notice.title, 'あなたの番だよ');
-    assert.equal(sent[0].notice.url, `/game/room/?id=${id}`);
+    assert.equal(sent[0].notice.url, `/game/room/${id}/`);
 
     // Back on the screen: the next turn is not pushed to the first player, who is looking.
     sockets[second].socket.send(JSON.stringify({ type: 'away', away: false }));

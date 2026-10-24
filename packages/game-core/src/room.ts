@@ -2,6 +2,7 @@
 // what the browser and the room server (services/room-server) say to each other. The server keeps
 // the match; a browser only ever gets its own seat's view of it (redact.ts).
 import type { Catalog, Command, Deck, GameState, Side } from './model.ts';
+import type { CpuLevel } from './ai/types.ts';
 import { defaultMatchRules, deckRuleErrors, describeMatchRules, parseMatchRules, playableNow } from './rules.ts';
 import type { MatchRules } from './rules.ts';
 import type { PlayPerformance, PlayReport, ServerTiming } from './performance.ts';
@@ -59,7 +60,7 @@ export interface RoomTurnClock {
 }
 
 // ── What a seat is told ──
-/** lobby: choosing decks. playing / finished: a match. closed: the host left before a match. */
+/** lobby: choosing decks (in a plaza: no match on the table). playing / finished: a match. closed: the room is gone (its host left, or everyone did). */
 export type RoomStatus = 'lobby' | 'playing' | 'finished' | 'closed';
 
 /** A command the other side may see: never a test command, and always from the sender's own seat. */
@@ -99,8 +100,10 @@ export interface RoomView {
     /** Stable identity for the current match, including reconnects and room-id reuse. */
     matchId?: string;
     rules: RoomRules;
-    /** Index = seat. The second is null until someone joins. */
-    players: [RoomPlayer, RoomPlayer | null];
+    /** Index = seat. Null: nobody sits there (in a two-seat room only the second, until someone joins). */
+    players: [RoomPlayer | null, RoomPlayer | null];
+    /** The room as a place people gather in (rooms made by the game's launcher); absent for free matches and older rooms. */
+    plaza?: PlazaView;
     /** Original deck list, only sent to its owner; never includes shuffle order. */
     ownDeck?: Deck;
     game: GameState | null;
@@ -118,6 +121,10 @@ export interface RoomPlayer {
     left?: boolean;
     /** Only told to the seat itself. */
     deck?: string;
+    /** In a plaza: the member who sits here. */
+    member?: string;
+    /** The server plays this seat. */
+    cpu?: CpuLevel;
 }
 
 /** What someone without a seat may know (the page a shared link opens). */
@@ -132,6 +139,8 @@ export interface RoomInfo {
     open: boolean;
     /** The room may be watched. */
     spectators: boolean;
+    /** A plaza, as far as the asker may know it (only asked about when they may enter it). */
+    plaza?: PlazaInfo;
 }
 
 /** A seat and the secret that acts for it (kept in that player's browser only). */
@@ -148,8 +157,96 @@ export type RoomAction =
     | { action: 'unready' }
     | { action: 'command'; command: RoomCommand; revision: number }
     | { action: 'resign' }
+    /** In a plaza: keep the seat for the next match (two-seat rooms: back to choosing decks together). */
     | { action: 'rematch' }
-    | { action: 'leave' };
+    /** Gives up the room (a match in progress is lost). */
+    | { action: 'leave' }
+    // ── A plaza only ──
+    | { action: 'sit'; seat: Side }
+    /** Frees the own seat and stays in the room (a match in progress is lost). */
+    | { action: 'stand' }
+    | { action: 'cpu'; seat: Side; level: CpuLevel }
+    | { action: 'dismissCpu' }
+    /** Becomes the owner of a room that has none. */
+    | { action: 'claim' }
+    /** The owner sets the rules of the next match. */
+    | { action: 'rules'; rules: RoomRules }
+    /** A new invitation link; the previous one stops working. */
+    | { action: 'renewInvite' }
+    /** Lets one signed-in friend in (and tells them). */
+    | { action: 'invite'; profileId: string }
+    /** Answers a friend who asked to be let in. */
+    | { action: 'answer'; profileId: string; accept: boolean };
+
+// ── A plaza: a room people gather in, with one table of two seats ──
+/**
+ * Who may come in, chosen when the room is made and never changed:
+ * public: anyone. friends: friends of its creator. friendsPlus: friends of its creator or of anyone in it.
+ * invite: those its owner invites (a shared invitation link counts). invitePlus: those anyone in it invites.
+ */
+export type RoomVisibility = 'public' | 'friends' | 'friendsPlus' | 'invite' | 'invitePlus';
+export const roomVisibilities: readonly RoomVisibility[] = ['public', 'friends', 'friendsPlus', 'invite', 'invitePlus'];
+/** What a new room uses until the player chooses otherwise. */
+export const DEFAULT_VISIBILITY: RoomVisibility = 'invite';
+export const isRoomVisibility = (value: unknown): value is RoomVisibility => roomVisibilities.includes(value as RoomVisibility);
+/** Rooms friends can find (and see their friends in); the others are only reached by an invitation. */
+export const listedVisibility = (visibility: RoomVisibility) => visibility === 'public' || visibility === 'friends' || visibility === 'friendsPlus';
+export const invitedVisibility = (visibility: RoomVisibility) => visibility === 'invite' || visibility === 'invitePlus';
+export const MAX_ROOM_NAME_LENGTH = 16;
+/** People in one room at once, seated or not. */
+export const MAX_MEMBERS = 16;
+/** A member whose last connection closed this long ago is no longer in the room (ms). */
+export const MEMBER_GRACE = 120_000;
+
+/** Someone in a plaza: seated, waiting or watching. */
+export interface PlazaMember {
+    id: string;
+    name: string;
+    profileId?: string;
+    /** Connected right now (a member away for a moment stays in the room for MEMBER_GRACE). */
+    online: boolean;
+    seat?: Side;
+}
+/** What a member is told about the plaza besides the table. */
+export interface PlazaView {
+    name: string;
+    visibility: RoomVisibility;
+    /** Who made the room; never changes, even after they left. */
+    creator: { name: string; profileId?: string };
+    /** The member who may change the rules now; null while nobody is (anyone in the room may become it). */
+    owner: string | null;
+    /** The member this view is for. */
+    me: string;
+    members: PlazaMember[];
+    /** The rules of the next match, when the owner changed them during this one. */
+    nextRules?: RoomRules;
+    /** The secret of the invitation link, only for those who may share it. */
+    invite?: string;
+    /** Signed-in friends asking to be let in, only for those who may let them. */
+    requests?: { profileId: string; name: string }[];
+}
+/** What someone who may enter a plaza is told before entering it. */
+export interface PlazaInfo {
+    name: string;
+    visibility: RoomVisibility;
+    creator: { name: string; profileId?: string };
+    /** People in the room, seated or not. */
+    members: number;
+    /** Seats taken (by people or the CPU). */
+    seated: number;
+}
+/** A plaza to make: its fixed name and visibility, and (after a closed room) the room it takes over from. */
+export interface PlazaRequest {
+    name: string;
+    visibility: RoomVisibility;
+    /** The member token of a closed room this browser was in: its successor is entered instead of making another. */
+    from?: { id: string; token: string };
+}
+/** The answer to making or entering a plaza: the member's secret and their first view. */
+export interface Entered {
+    token: string;
+    view: RoomView;
+}
 
 // ── The socket of a seat (`/rooms/{id}/socket`) ──
 /**
@@ -157,6 +254,7 @@ export type RoomAction =
  * `n` numbers an action so its `result` can be told apart.
  */
 export type ClientMessage =
+    /** `token`: a seat's, or a plaza member's. */
     | { type: 'hello'; token?: string; watch?: true }
     | { type: 'action'; n: number; action: RoomAction }
     | { type: 'performance'; reports: PlayReport[] }
@@ -169,7 +267,8 @@ export type ClientMessage =
 export type ServerMessage =
     | { type: 'view'; view: RoomView }
     | { type: 'result'; n: number; error?: string; revision?: number; timing?: ServerTiming }
-    | { type: 'gone'; error: string };
+    /** `closed`: a plaza closed while this member was away; they may make its successor (`PlazaRequest.from`). */
+    | { type: 'gone'; error: string; closed?: true };
 
 /** How the room server is doing (`GET /stats`): shown on the バトル tab and useful when something is off. */
 export interface RoomServerStats {
