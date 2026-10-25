@@ -1,4 +1,4 @@
-import type { CardContext } from '../effects/context.ts';
+import type { CardContext, Effects } from '../effects/context.ts';
 import type { ExSkillId, Task } from '../model.ts';
 import { enterField, FIELD_SIZE } from '../core/zones.ts';
 
@@ -30,13 +30,16 @@ export function gainEx(ctx: CardContext, id: ExSkillId, uses: number, owner = ct
     ctx.note(`Exスキルを獲得：${id}`);
 }
 
-export function take(ctx: CardContext, uid: string, zone: 'yojo' | 'sweet' | 'nap', reveal = false, zero = false) {
+export function take(ctx: Effects, uid: string, zone: 'yojo' | 'sweet' | 'nap', reveal = false, zero = false) {
     ctx.me[zone] = ctx.me[zone].filter(id => id !== uid);
     ctx.me.hand.push(uid);
     // Moved into the hand: what effects gave it goes (core/movement.ts), then this effect's cost applies.
     ctx.touch(uid);
     if (zero) ctx.s.cards[uid].costDelta = -ctx.defOf(uid).cost;
     if (reveal) ctx.reveal(uid);
+    // サーチもカード効果でデッキから手札に加えた1枚として魅惑の水煙を数える。
+    // お昼寝場所から戻したカードや生成したカードは数えない。
+    if (zone !== 'nap' && ctx.me.exSkills?.smoke) ctx.losePoints(ctx.side, 1, 'reduce');
 }
 export function randomSearch(ctx: CardContext, fruit: string, except?: string) {
     const eligible = ctx.me.yojo.filter(uid => ctx.fruits(uid).includes(fruit) && ctx.s.cards[uid].cardId !== except);

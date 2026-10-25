@@ -51,7 +51,8 @@ export const orangeYojo: CardScripts = {
                 if (!t.target) return ctx.ask('このカードの行き先を選んでください', ['hand', 'yojo', 'nap', 'exile'].filter(id => !(t.ids ?? []).includes(id)).map(id => ({ id, label: ({ hand: '手札', yojo: '幼女デッキ', nap: 'お昼寝場所', exile: '除外ゾーン' } as Record<string, string>)[id] })), t);
                 const uid = t.subject!;
                 if (t.target === 'exile') ctx.exile(uid);
-                else if (t.target !== 'yojo') { ctx.me.yojo = ctx.me.yojo.filter(id => id !== uid); ctx.me[t.target as 'hand' | 'nap'].push(uid); }
+                else if (t.target === 'hand') take(ctx, uid, 'yojo');
+                else if (t.target === 'nap') { ctx.me.yojo = ctx.me.yojo.filter(id => id !== uid); ctx.me.nap.push(uid); }
                 step(ctx, 'pick', { candidates: t.candidates?.filter(id => id !== uid), ids: [...(t.ids ?? []), t.target] });
             }
         },

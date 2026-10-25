@@ -4,6 +4,7 @@ import type { CardContext } from '../effects/context.ts';
 import type { Keyword } from '../model.ts';
 import type { CardScript, CardScripts, OpTable } from './types.ts';
 import { selectable } from '../effects/targets.ts';
+import { take } from './helpers.ts';
 
 const ofType = (ctx: CardContext, sweetType: string) => (cardId: string) => ctx.catalog[cardId]?.sweetType === sweetType;
 /** このカードを含めて、このゲーム中にプレイした `sweetType` の種類数。 */
@@ -53,8 +54,7 @@ const floatOps: OpTable = {
                 fx.pick('手札に加えるフロートを選んでください', fx.me.sweet.filter(id => fx.defOf(id).sweetType === 'float'), t);
                 return;
             }
-            fx.me.sweet = fx.me.sweet.filter(id => id !== t.target);
-            fx.me.hand.push(t.target);
+            take(fx, t.target, 'sweet');
         },
     },
 };

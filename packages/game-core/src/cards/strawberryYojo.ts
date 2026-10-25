@@ -1,6 +1,7 @@
 // いちご（strawberry）の幼女カード。各カードの原文は src/data/yojo.json / tokenYojo.json。
 import type { Catalog, GameState, Side } from '../model.ts';
 import type { CardScript, CardScripts } from './types.ts';
+import { take } from './helpers.ts';
 
 const inomuOnField = (s: GameState, side: Side, catalog: Catalog) =>
     s.players[side].field.some(uid => catalog[s.cards[uid].cardId]?.name === 'いのむー');
@@ -115,9 +116,7 @@ export const strawberryYojo: CardScripts = {
                     const shown = fx.me.yojo.slice(0, at < 0 ? undefined : at);
                     if (shown.length) fx.note(`ももか：めくったカード ${shown.map(uid => fx.defOf(uid).name).join('、')}`);
                     if (found) {
-                        fx.me.yojo = fx.me.yojo.filter(uid => uid !== found);
-                        fx.me.hand.push(found);
-                        fx.reveal(found);
+                        take(fx, found, 'yojo', true);
                     }
                     fx.shuffleDeck('yojo');
                 },
