@@ -10,7 +10,7 @@ import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { useAuth } from '@/lib/auth';
 import { BATTLE_PATH, CARDS_PATH, CPU_PATH, EDITOR_PATH, HOME_PATH, NOTIFICATIONS_PATH, PUZZLES_PATH } from '@/lib/game/sessionStore';
-import { useLaunchpad } from '../plaza/Launchpad';
+import { useLaunchpad } from '../plaza/LaunchpadContext';
 import { PlazaIcon } from '../plaza/PlazaIcon';
 import { plazaHref, usePlaza } from '../plaza/PlazaProvider';
 import { useMyProfile } from '../social/useMyProfile';
@@ -20,7 +20,7 @@ import { NotificationSoundToggle } from '../notifications/GameNotifications';
 import menuBackground from '@/lib/game/generated/menu-assets.json';
 
 const tabs = [
-  { href: HOME_PATH, label: 'ルーム', note: 'みんなで遊ぶ場所', tone: styles.yellow },
+  { href: HOME_PATH, label: 'ホーム', note: 'みんなで遊ぶ場所', tone: styles.yellow },
   { href: CPU_PATH, label: 'CPU対決', note: 'ひとりであそぶ', tone: styles.pink },
   { href: BATTLE_PATH, label: 'バトル', note: 'フリーマッチ・履歴', tone: styles.green },
   { href: PUZZLES_PATH, label: 'リーサルパズル', note: 'このターンで勝利！', tone: styles.sage },
@@ -30,7 +30,7 @@ const tabs = [
   { href: NOTIFICATIONS_PATH, label: '通知', note: 'フレンド申請', tone: styles.lilac },
 ];
 
-export default function GameMenu({ children }: { children: ReactNode }) {
+export default function GameMenu({ children, overlay }: { children: ReactNode; overlay?: { title: string; tools: ReactNode; onReturn?: () => void; dock?: boolean } }) {
   const pathname = usePathname() ?? HOME_PATH;
   const body = useRef<HTMLDivElement>(null);
   useLayoutEffect(() => {
@@ -48,7 +48,7 @@ export default function GameMenu({ children }: { children: ReactNode }) {
     <aside className={styles.side}>
       <div className={styles.brand}>
         <Image className={styles.logo} src="/images/game/logo.webp" alt="お菓子争奪戦争 ぷぷりえーる" width={462} height={227} priority />
-        <button className={styles.launch} onClick={launchpad.open} aria-label="メニューを開く（Esc）" title="メニュー（Esc）"><PlazaIcon name="grid" /></button>
+        <button className={styles.launch} onClick={overlay ? overlay.onReturn ?? launchpad.close : launchpad.open} aria-label={overlay ? '盤面に戻る' : 'メニューを開く（Esc）'} title="メニュー（Esc）"><PlazaIcon name={overlay ? 'home' : 'grid'} /></button>
       </div>
       <nav className={styles.tabs} aria-label="ゲームメニュー" data-landscape-action>{tabs.map(tab =>
         <Link key={tab.href} href={tab.href === HOME_PATH && plaza.id ? plazaHref(plaza.id) : tab.href} prefetch={false} className={`${styles.tab} ${tab.tone}`} aria-current={tab === current ? 'page' : undefined}>
@@ -66,8 +66,8 @@ export default function GameMenu({ children }: { children: ReactNode }) {
     </aside>
     {/* The root layout already provides <main>. */}
     <section className={styles.pane}>
-      <h1>{pathname.startsWith(PUZZLES_PATH) ? 'ロリの一手を極めるために' : current.label}</h1>
-      <div ref={body} className={styles.body}>{children}</div>
+      <header className={overlay ? styles.paneHead : undefined}><h1>{overlay?.title ?? (pathname.startsWith(PUZZLES_PATH) ? 'ロリの一手を極めるために' : current.label)}</h1>{overlay?.tools}</header>
+      <div ref={body} className={`${styles.body} ${overlay?.dock ? styles.overlayBody : ''}`}>{children}</div>
     </section>
   </div></>;
 }

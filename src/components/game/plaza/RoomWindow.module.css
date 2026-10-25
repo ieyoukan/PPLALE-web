@@ -1,0 +1,18 @@
+/* A page over the room: the room dims behind a framed paper window; the page scrolls inside it. */
+.backdrop { position: absolute; inset: 0; z-index: 250; display: grid; place-items: center; padding: 18px 26px; background: #2b170cb0; backdrop-filter: blur(3px); animation: fade .18s ease both; }
+.window { --pad: 22px 30px 26px; --frame-face: var(--brand-vanilla-wash); display: flex; flex-direction: column; width: min(1180px, 100%); height: 100%; min-height: 0; filter: drop-shadow(0 24px 40px #0009); animation: rise .26s cubic-bezier(.2, 1.2, .4, 1) both; }
+.head { position: relative; display: flex; align-items: center; justify-content: center; min-height: 46px; padding: 0 90px 8px; }
+.head h2 { font-size: 26px; color: var(--brand-cocoa); }
+.body { flex: 1; min-height: 0; overflow-y: auto; overscroll-behavior: contain; padding: 4px 6px 0; color: var(--brand-cocoa-deep); }
+.body[data-page=cpu] { display: flex; flex-direction: column; }
+@keyframes fade { from { opacity: 0; } }
+@keyframes rise { from { opacity: 0; transform: translateY(24px); } }
+@media (prefers-reduced-motion: reduce) { .backdrop, .window { animation: none; } }
+
+.expanded { width: 100%; height: 100%; min-height: 0; }
+.tools { display: flex; align-items: center; gap: 5px; }
+.head .tools { position: absolute; right: 0; top: 0; }
+.tool { display: grid; place-items: center; width: 38px; height: 38px; border: 0; background: transparent; color: var(--brand-cocoa); font-size: 22px; cursor: pointer; }
+.tool svg { display: block; }
+.tool:hover { background: var(--brand-blush); }
+.tool:focus-visible { outline: 2px solid var(--brand-cocoa); outline-offset: 2px; }

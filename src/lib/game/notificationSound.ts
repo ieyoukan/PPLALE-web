@@ -5,6 +5,7 @@ export class NotificationSound {
   private context: AudioContext | null = null;
   private output: GainNode | null = null;
   private nextAt = 0;
+  private volume = 1;
 
   /** Browsers require creation/resume inside a click, tap or keyboard gesture. */
   unlock() {
@@ -12,7 +13,7 @@ export class NotificationSound {
       if (!this.context || this.context.state === 'closed') {
         this.context = new AudioContext();
         this.output = this.context.createGain();
-        this.output.gain.value = 0.35;
+        this.output.gain.value = 0.35 * this.volume;
         this.output.connect(this.context.destination);
       }
       if (this.context.state === 'suspended') void this.context.resume().catch(() => {});
@@ -25,7 +26,7 @@ export class NotificationSound {
     try {
       const notes = kind === 'matched' ? [659.25, 880] : [523.25, 659.25, 783.99];
       const at = Math.max(context.currentTime + 0.01, this.nextAt);
-      output.gain.setValueAtTime(0.35, context.currentTime);
+      output.gain.setValueAtTime(0.35 * this.volume, context.currentTime);
       notes.forEach((frequency, index) => {
         const oscillator = context.createOscillator(), gain = context.createGain();
         const start = at + index * 0.13, end = start + 0.25;
@@ -40,6 +41,11 @@ export class NotificationSound {
       });
       this.nextAt = at + notes.length * 0.13 + 0.25;
     } catch { /* A suspended/closed audio device must not interrupt matchmaking. */ }
+  }
+
+  setVolume(volume: number) {
+    this.volume = Math.max(0, Math.min(1, volume));
+    this.output?.gain.setValueAtTime(0.35 * this.volume, this.context?.currentTime ?? 0);
   }
 
   mute() { this.output?.gain.setValueAtTime(0, this.context?.currentTime ?? 0); }

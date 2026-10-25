@@ -8,7 +8,7 @@
 .screen input, .screen textarea { user-select: text; -webkit-user-select: text; }
 /* Menu lists and forms retain native scrolling; board dragging keeps its existing touch handling. */
 .menu { touch-action: manipulation; }
-.screen:has([data-result-screen]) { touch-action: manipulation; }
+.screen:has([data-launchpad]), .screen:has([data-room-window]), .screen:has([data-result-screen]) { touch-action: manipulation; }
 /* The part of the screen the stage may use (viewport-fit=cover lets the wood reach the edges). */
 .safe {
   position: absolute; pointer-events: none;

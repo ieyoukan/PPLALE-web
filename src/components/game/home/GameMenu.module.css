@@ -48,3 +48,9 @@
 .footerActions > a { flex: 1; }
 .backShort { display: none; }
 @media (prefers-reduced-motion: reduce) { .tab { transition: none; } }
+
+.pane > header { flex: none; }
+.paneHead { display: flex; align-items: center; justify-content: space-between; flex: none; background: var(--brand-vanilla-wash); color: var(--brand-cocoa-deep); }
+.paneHead h1 { flex: 1; background: transparent; color: inherit; }
+.paneHead > div { padding-right: 12px; }
+.overlayBody { display: flex; flex-direction: column; overflow: hidden; gap: 12px; }
