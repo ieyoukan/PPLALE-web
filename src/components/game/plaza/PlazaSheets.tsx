@@ -76,7 +76,7 @@ export function RulesSheet({ view, onSave, onClose }: { view: RoomView; onSave: 
       </div>
     </div>
     <div className={styles.sheetFoot}>
-      {mine ? <button className={styles.primaryButton} onClick={() => onSave(rules)}><PlazaIcon name="check" /><span data-ui-title>{playing ? '次の対戦からこのルール' : 'このルールにする'}</span></button>
+      {mine ? <OrnateFrame as="button" size="sm" className={styles.primaryButton} onClick={() => onSave(rules)}><PlazaIcon name="check" /><span data-ui-title>{playing ? '次の対戦からこのルール' : 'このルールにする'}</span></OrnateFrame>
         : <span className={styles.note}>ルールを変えられるのはオーナーだけです。</span>}
     </div>
   </Sheet>;

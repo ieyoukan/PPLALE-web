@@ -142,8 +142,8 @@ export function PlazaTable({ view, onMenu }: { view: RoomView; onMenu: () => voi
           <span className={styles.deckName}><small>デッキ</small><b>{chosen?.name ?? 'えらぶ'}</b></span>
         </OrnateFrame>
         {me.ready
-          ? <button className={`${styles.ready} ${styles.readyDone}`} disabled={busy} onClick={() => ask({ action: 'unready' })}><PlazaIcon name="check" /><span data-ui-title>じゅんびOK</span><small>タップでやめる</small></button>
-          : <button className={styles.ready} disabled={busy || !chosen} onClick={ready}><span data-ui-title>{preparation.busy ? 'じゅんび中…' : 'じゅんびOK!'}</span></button>}
+          ? <OrnateFrame as="button" size="sm" className={`${styles.ready} ${styles.readyDone}`} disabled={busy} onClick={() => ask({ action: 'unready' })}><PlazaIcon name="check" /><span data-ui-title>じゅんびOK</span><small>タップでやめる</small></OrnateFrame>
+          : <OrnateFrame as="button" size="sm" className={styles.ready} disabled={busy || !chosen} onClick={ready}><span data-ui-title>{preparation.busy ? 'じゅんび中…' : 'じゅんびOK!'}</span></OrnateFrame>}
         <PreparationProgress progress={preparation.progress} />
       </> : empty.length
         ? <OrnateFrame as="p" size="sm" className={styles.hint}><PlazaIcon name="seat" /><span>空いている席をタップして、対戦にさんか</span></OrnateFrame>

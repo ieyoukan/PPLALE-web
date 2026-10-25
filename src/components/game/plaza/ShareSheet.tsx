@@ -8,6 +8,7 @@ import { invitedVisibility } from '@pplale/game-core/room';
 import { useAuth } from '@/lib/auth';
 import { FriendInvites } from './FriendInvites';
 import { DiscordMark, PlazaIcon } from './PlazaIcon';
+import { OrnateFrame } from '../ornament/OrnateFrame';
 import { Sheet } from './Sheet';
 import { invitation, plazaLink } from './share';
 import { usePlaza } from './PlazaProvider';
@@ -27,10 +28,10 @@ export function ShareSheet({ view, onClose }: { view: RoomView; onClose: () => v
   const info = visibilityInfo[plaza.visibility];
   return <Sheet title="ルームにさそう" onClose={onClose}>
     {mayShare ? <>
-      <button className={styles.discordButton} onClick={() => copy('discord', words.discord)}>
+      <OrnateFrame as="button" size="sm" tone="cream" className={styles.discordButton} onClick={() => copy('discord', words.discord)}>
         <DiscordMark /><span><b data-ui-title>Discordに貼る</b><small>メッセージをコピーします</small></span>
         {done === 'discord' && <span className={styles.copied}><PlazaIcon name="check" /></span>}
-      </button>
+      </OrnateFrame>
       <div className={styles.shareRow}>
         <button className={styles.shareTile} onClick={() => copy('link', url)}><PlazaIcon name="link" /><span>リンク</span>{done === 'link' && <i className={styles.copiedDot}><PlazaIcon name="check" /></i>}</button>
         <a className={styles.shareTile} href={words.post} target="_blank" rel="noopener noreferrer"><b className={styles.xMark}>𝕏</b><span>ポスト</span></a>
