@@ -11,6 +11,7 @@ import type { Fruit } from '@pplale/game-core';
 import type { RoomInfo } from '@pplale/game-core/room';
 import { displayCards } from '@/lib/game/catalog';
 import { RoomThumbnailImage } from './RoomThumbnailImage';
+import { OrnateFrame } from '../ornament/OrnateFrame';
 import styles from './LaunchScreen.module.css';
 
 interface Shown { id: string; name: string; image: string; kind: string; fruit: string; effect: string }
@@ -37,19 +38,19 @@ export function LaunchScreen({ status = 'ルームを準備しています', pre
   return <section className={styles.launch} aria-busy={!children} aria-label="ぷぷりえーる">
     <span className={styles.stars} aria-hidden="true">{stars.map(([left, top, delay], index) => <i key={index} style={{ left: `${left}%`, top: `${top}%`, animationDelay: `${delay}s` }} />)}</span>
     <Image className={styles.logo} src="/images/game/logo.webp" alt="お菓子争奪戦争 ぷぷりえーる" width={462} height={227} priority />
-    {preview?.plaza && <div className={styles.roomPreview}>
+    {preview?.plaza && <OrnateFrame size="sm" className={styles.roomPreview}>
       <RoomThumbnailImage rules={preview.rules} alt="" sizes="240px" />
       <span>{preview.plaza.name}</span>
-    </div>}
+    </OrnateFrame>}
     <div className={styles.feature} data-shown={card ? '' : undefined}>
       <span className={styles.cardArt}>{card && <Image src={card.image} alt="" fill sizes="240px" priority />}</span>
-      {card && <div className={styles.cardText}>
+      {card && <OrnateFrame className={styles.cardText}>
         <span className={styles.chips}><b>{card.kind}</b>{card.fruit && <b>{card.fruit}</b>}</span>
         <h2 data-ui-title>{card.name}</h2>
         <p>{card.effect}</p>
-      </div>}
+      </OrnateFrame>}
     </div>
-    {children ? <div className={styles.trouble}>{children}</div>
+    {children ? <OrnateFrame className={styles.trouble}>{children}</OrnateFrame>
       : <p className={styles.status} role="status"><span className={styles.dots} aria-hidden="true"><i /><i /><i /></span><span>{status}</span></p>}
   </section>;
 }

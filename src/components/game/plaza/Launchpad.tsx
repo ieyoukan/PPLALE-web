@@ -15,6 +15,7 @@ import type { RoomVisibility } from '@pplale/game-core/room';
 import { useAuth } from '@/lib/auth';
 import { BATTLE_PATH, CARDS_PATH, CPU_PATH, EDITOR_PATH, NOTIFICATIONS_PATH, PUZZLES_PATH } from '@/lib/game/sessionStore';
 import { NotificationSoundToggle } from '../notifications/GameNotifications';
+import { OrnateFrame } from '../ornament/OrnateFrame';
 import { Avatar } from './Avatar';
 import { CpuSheet } from './PlazaSheets';
 import { DiscordMark, PlazaIcon } from './PlazaIcon';
@@ -93,30 +94,30 @@ function Launchpad({ onClose }: { onClose: () => void }) {
   const subpanel = panel !== 'home';
 
   return <div className={styles.backdrop} onClick={onClose} data-launchpad>
-    <div ref={box} className={styles.pad} role="dialog" aria-modal="true" aria-label="ゲームメニュー" data-launchpad onClick={event => event.stopPropagation()}
+    <OrnateFrame ref={box} className={styles.pad} role="dialog" aria-modal="true" aria-label="ゲームメニュー" data-launchpad onClick={event => event.stopPropagation()}
       onKeyDown={event => { if (event.key === 'Escape' && !subpanel) { event.stopPropagation(); event.preventDefault(); onClose(); } }}>
       <button className={styles.close} onClick={onClose} aria-label="メニューを閉じる"><PlazaIcon name="close" /></button>
       {room && view ? <section className={styles.roomCard} aria-label="いまのルーム">
-        <button className={styles.roomMain} onClick={() => onRoomPage ? onClose() : go(plazaHref(view.id))}>
+        <OrnateFrame as="button" size="sm" className={styles.roomMain} onClick={() => onRoomPage ? onClose() : go(plazaHref(view.id))}>
           <span className={styles.roomBadge}><PlazaIcon name={visibilityInfo[room.visibility].icon} /></span>
           <span className={styles.roomText}><b data-ui-title>{room.name}</b><small>{visibilityInfo[room.visibility].label}・{view.status === 'playing' ? '対戦中' : '待ち合わせ中'}</small></span>
           <span className={styles.faces}>{room.members.slice(0, 5).map(member => <Avatar key={member.id} card={member.profileId && profiles[member.profileId] ? profiles[member.profileId].iconCardId : guestIcon(member.id)} size={34} dim={!member.online} />)}
             {room.members.length > 5 && <b>+{room.members.length - 5}</b>}</span>
           {!onRoomPage && <span className={styles.enterHint}><PlazaIcon name="back" />もどる</span>}
-        </button>
+        </OrnateFrame>
         <div className={styles.roomActions}>
           <button className={styles.bigAction} data-tone="cocoa" onClick={() => setPanel('share')}><DiscordMark /><span data-ui-title>さそう</span></button>
           <button className={styles.bigAction} disabled={cpuSeat === null} onClick={() => setPanel('cpu')}><PlazaIcon name="cpu" /><span data-ui-title>CPUを呼ぶ</span></button>
           {room.owner === room.me && <button className={styles.bigAction} onClick={() => setPanel('name')}><PlazaIcon name="pen" /><span data-ui-title>名前</span></button>}
         </div>
-      </section> : <section className={styles.roomCard}><button className={styles.roomMain} onClick={() => go('/game/')}>
+      </section> : <section className={styles.roomCard}><OrnateFrame as="button" size="sm" className={styles.roomMain} onClick={() => go('/game/')}>
         <span className={styles.roomBadge}><PlazaIcon name="home" /></span><span className={styles.roomText}><b data-ui-title>ルームへ</b><small>{plaza.stage.kind === 'entering' ? 'つないでいます…' : 'みんなで遊ぶ場所'}</small></span>
-      </button></section>}
+      </OrnateFrame></section>}
 
       <nav className={styles.grid} aria-label="ゲームのページ">{places.map(place =>
-        <Link key={place.href} href={place.href} className={styles.tile} data-tone={place.tone} onClick={onClose} prefetch={false} aria-current={pathname?.startsWith(place.href) ? 'page' : undefined}>
+        <OrnateFrame as={Link} size="sm" key={place.href} href={place.href} className={styles.tile} data-tone={place.tone} onClick={onClose} prefetch={false} aria-current={pathname?.startsWith(place.href) ? 'page' : undefined}>
           <span className={styles.tileIcon}><PlazaIcon name={place.icon} /></span><span data-ui-title>{place.label}</span>
-        </Link>)}
+        </OrnateFrame>)}
       </nav>
 
       <footer className={styles.foot}>
@@ -127,7 +128,7 @@ function Launchpad({ onClose }: { onClose: () => void }) {
         <button className={styles.footButton} onClick={() => setPanel('new')}><PlazaIcon name="door" /><span>新しいルーム</span></button>
         <Link href="/" className={styles.footButton}><PlazaIcon name="exit" /><span>サイトへ</span></Link>
       </footer>
-    </div>
+    </OrnateFrame>
     <span onClick={event => event.stopPropagation()}>
       {panel === 'share' && view?.plaza && <ShareSheet view={view} onClose={() => setPanel('home')} />}
       {panel === 'cpu' && cpuSeat !== null && <CpuSheet onClose={() => setPanel('home')} onChoose={level => { setPanel('home'); onClose(); void plaza.send({ action: 'cpu', seat: cpuSeat, level }).catch(() => {}); if (!onRoomPage && view) router.push(plazaHref(view.id)); }} />}
@@ -166,7 +167,7 @@ function NewRoom({ onClose, onDone }: { onClose: () => void; onDone: () => void 
   return <Sheet title="新しいルームを作る" onClose={onClose} wide>
     <div className={styles.newRoom}>
       <p className={styles.createPrompt}>公開範囲を選ぶ</p>
-      <div className={styles.creationKinds} role="radiogroup" aria-label="ルームの公開範囲">{creationKinds.map(kind => {
+      <OrnateFrame size="sm" className={styles.creationKinds} role="radiogroup" aria-label="ルームの公開範囲">{creationKinds.map(kind => {
         const info = visibilityInfo[kind], needsLogin = !user && (kind === 'friends' || kind === 'friendsPlus');
         return <button key={kind} type="button" role="radio" aria-checked={visibility === kind} disabled={busy || needsLogin}
           className={styles.creationKind} onClick={() => setVisibility(kind)}>
@@ -174,7 +175,7 @@ function NewRoom({ onClose, onDone }: { onClose: () => void; onDone: () => void 
           <span className={styles.creationText}><b data-ui-title>{info.label}</b><small>{needsLogin ? 'ログインして選べます' : info.note}</small></span>
           <span className={styles.creationCheck} aria-hidden="true">{visibility === kind && <PlazaIcon name="check" />}</span>
         </button>;
-      })}</div>
+      })}</OrnateFrame>
       {view?.status === 'playing' && seated && <p className={styles.warn}><PlazaIcon name="sword" />対戦中の試合は負けになります</p>}
       {room?.owner === room?.me && others && <p className={styles.warn}><PlazaIcon name="crown" />このルームのオーナーがいなくなります</p>}
       {others && <p className={styles.settingNote}>ほかの人はこのルームに残ります。</p>}

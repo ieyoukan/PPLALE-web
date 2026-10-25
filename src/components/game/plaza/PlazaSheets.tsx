@@ -7,6 +7,7 @@ import type { CpuLevel } from '@pplale/game-core';
 import type { RoomRules, RoomView } from '@pplale/game-core/room';
 import type { DeckChoice } from '@/lib/game/deckSources';
 import { RulePicker } from '../RulePicker';
+import { OrnateFrame } from '../ornament/OrnateFrame';
 import { Avatar } from './Avatar';
 import { PlazaIcon } from './PlazaIcon';
 import { Sheet } from './Sheet';
@@ -20,12 +21,12 @@ export function DeckSheet({ choices, chosen, onChoose, onClose, signIn, loading 
     <ul className={styles.deckGrid}>{choices.map(choice => {
       const playable = choice.source === 'random' ? null : choice.deck(0).playable;
       return <li key={choice.id}>
-        <button className={styles.deckTile} aria-pressed={choice.id === chosen?.id} disabled={!!choice.errors.length} onClick={() => onChoose(choice.id)} title={choice.errors.join(' / ') || undefined}>
-          <span className={styles.deckTileArt}>{playable ? <Avatar card={playable} size={64} /> : <span className={styles.randomDeck}><PlazaIcon name="sparkle" /></span>}</span>
+        <OrnateFrame as="button" size="sm" className={styles.deckTile} aria-pressed={choice.id === chosen?.id} disabled={!!choice.errors.length} onClick={() => onChoose(choice.id)} title={choice.errors.join(' / ') || undefined}>
+          <span className={styles.deckTileArt}>{playable ? <Avatar card={playable} size={75} /> : <span className={styles.randomDeck}><PlazaIcon name="sparkle" /></span>}</span>
           <b>{choice.name}</b>
           <small>{choice.errors.length ? 'このルールでは使えない' : choice.note}</small>
           {choice.id === chosen?.id && <span className={styles.tileCheck}><PlazaIcon name="check" /></span>}
-        </button>
+        </OrnateFrame>
       </li>;
     })}</ul>
     <div className={styles.sheetFoot}>
@@ -40,11 +41,11 @@ export function DeckSheet({ choices, chosen, onChoose, onClose, signIn, loading 
 export function CpuSheet({ onChoose, onClose }: { onChoose: (level: CpuLevel) => void; onClose: () => void }) {
   return <Sheet title="CPUを呼ぶ" onClose={onClose} wide>
     <ul className={styles.cpuGrid}>{cpuLevels.map((level, index) => <li key={level}>
-      <button className={styles.cpuTile} data-level={level} onClick={() => onChoose(level)}>
-        <Avatar cpu size={64} />
+      <OrnateFrame as="button" size="sm" className={styles.cpuTile} data-level={level} onClick={() => onChoose(level)}>
+        <Avatar cpu size={72} />
         <b data-ui-title>{cpuProfiles[level].name}</b>
         <span className={styles.stars} aria-label={`強さ${index + 1}`}>{cpuLevels.map((_, star) => <PlazaIcon key={star} name="star" className={star <= index ? styles.starOn : styles.starOff} />)}</span>
-      </button>
+      </OrnateFrame>
     </li>)}</ul>
     <p className={styles.note}>CPUのデッキは、このルームのルールに合うおまかせデッキです。</p>
   </Sheet>;

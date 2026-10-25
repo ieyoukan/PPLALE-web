@@ -16,6 +16,7 @@ import { RoomRequestError, connectRoom, createPlaza, currentPlaza, enterPlaza, k
 import type { RoomConnection } from '@/lib/game/room/client';
 import { guestName, readRoomSettings, saveRoomSettings } from '@/lib/game/plazaSettings';
 import { useGameNotifications } from '../notifications/GameNotifications';
+import { OrnateFrame } from '../ornament/OrnateFrame';
 import styles from './Plaza.module.css';
 
 export const plazaHref = (id: string) => `/game/room/${id}/`;
@@ -327,6 +328,6 @@ export function PlazaProvider({ children }: { children: ReactNode }) {
   return <Context.Provider value={value}>
     {children}
     {/* Moving between rooms: the current one stays on screen under a small sign. */}
-    {stage.kind === 'entering' && !stage.full && <div className={styles.veil} role="status" aria-live="polite"><span className={styles.veilSign}><i />{stage.to ? 'ルームへ移動中' : 'ルームを準備中'}</span></div>}
+    {stage.kind === 'entering' && !stage.full && <div className={styles.veil} role="status" aria-live="polite"><OrnateFrame as="span" size="sm" className={styles.veilSign}><span className={styles.veilDots} aria-hidden="true"><span /><span /><span /></span>{stage.to ? 'ルームへ移動中' : 'ルームを準備中'}</OrnateFrame></div>}
   </Context.Provider>;
 }
