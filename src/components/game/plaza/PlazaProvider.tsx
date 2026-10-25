@@ -8,8 +8,8 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from 'react';
 import type { ReactNode } from 'react';
 import { usePathname, useRouter } from 'next/navigation';
-import { listedVisibility } from '@pplale/game-core/room';
-import type { RoomAction, RoomView } from '@pplale/game-core/room';
+import { DEFAULT_VISIBILITY, listedVisibility } from '@pplale/game-core/room';
+import type { RoomAction, RoomView, RoomVisibility } from '@pplale/game-core/room';
 import { useAuth } from '@/lib/auth';
 import { WATCHING_BEAT, publishPresence } from '@/lib/game/social';
 import { RoomRequestError, connectRoom, createPlaza, currentPlaza, enterPlaza, keepInvite, keepPlaza, keepSeat, leavePlaza, plazaKey } from '@/lib/game/room/client';
@@ -42,8 +42,8 @@ export interface PlazaContextValue {
   enter(id: string, invite?: string | null): Promise<string | null>;
   /** Enters a room and then shows it (from a list or a menu): the current room stays on screen meanwhile. */
   go(id: string): Promise<void>;
-  /** A new room of the player's settings, leaving this one. */
-  create(): Promise<void>;
+  /** A new room of the chosen visibility, leaving this one. */
+  create(visibility: RoomVisibility): Promise<string | null>;
   /** Leaves the room for good. */
   leave(): Promise<void>;
   send(action: RoomAction, inputAt?: number): Promise<void>;
@@ -184,10 +184,10 @@ export function PlazaProvider({ children }: { children: ReactNode }) {
   }, []);
 
   /** A new room of the player's settings (or the successor of a closed one: `from`). */
-  const make = useCallback(async (from?: { id: string; token: string }) => {
+  const make = useCallback(async (from?: { id: string; token: string }, visibility: RoomVisibility = DEFAULT_VISIBILITY) => {
     const settings = readRoomSettings();
     try {
-      const entered = await createPlaza(settings.rules, guestName(), { name: '', visibility: settings.visibility, ...(from && { from }) });
+      const entered = await createPlaza(settings.rules, guestName(), { name: '', visibility, ...(from && { from }) });
       if (from) leavePlaza(from.id);
       // The room becomes this browser's current one once its socket is up (`adopt`).
       keepPlaza(entered.view.id, { token: entered.token, ...(entered.view.plaza?.invite && { invite: entered.view.plaza.invite }) }, false);
@@ -291,10 +291,11 @@ export function PlazaProvider({ children }: { children: ReactNode }) {
     router.push(plazaHref(roomId));
   }, [enter, router]);
 
-  const create = useCallback(() => serial(async () => {
+  const create = useCallback((visibility: RoomVisibility) => serial(async () => {
     setStage({ kind: 'entering', to: null, full: !held.current });
-    const made = await make();
-    if (made) router.push(plazaHref(made));
+    const made = await make(undefined, visibility);
+    if (made) router.push(`${plazaHref(made)}?created=1`);
+    return made;
   }), [make, router, serial]);
 
   const leave = useCallback(() => serial(async () => {

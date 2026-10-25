@@ -6,6 +6,9 @@
     radial-gradient(circle at 88% 82%, var(--brand-peach-wash), transparent 42%), linear-gradient(160deg, var(--brand-blush), var(--brand-cream) 55%, var(--brand-sage-wash));
 }
 .logo { width: 300px; height: auto; filter: drop-shadow(0 6px 14px var(--brand-shadow)); animation: bob 4.2s ease-in-out infinite; }
+.roomPreview { position: absolute; top: 38px; right: 48px; z-index: 1; display: grid; gap: 4px; width: 188px; padding: 7px; border: 2px solid var(--brand-pink); border-radius: 16px; background: var(--brand-paper); box-shadow: 0 8px 20px var(--brand-shadow); }
+.roomPreview img { display: block; width: 100%; height: auto; aspect-ratio: 16 / 9; border-radius: 10px; object-fit: cover; }
+.roomPreview span { overflow: hidden; padding: 0 3px; color: var(--brand-cocoa-deep); font-size: 13px; font-weight: 700; text-overflow: ellipsis; white-space: nowrap; }
 .feature { display: flex; align-items: center; gap: 44px; opacity: 0; transform: translateY(10px); transition: opacity .5s ease, transform .5s ease; }
 .feature[data-shown] { opacity: 1; transform: none; }
 .cardArt {
@@ -47,3 +50,4 @@
 .troubleText { display: grid; gap: 4px; font-size: 20px; font-weight: 700; color: var(--brand-cocoa); }
 .troubleText small { font-size: 13px; font-weight: 500; color: var(--brand-cocoa-soft); }
 .troubleActions { display: flex; flex-wrap: wrap; justify-content: center; gap: 12px; }
+@media (max-width: 700px) { .launch { padding: 22px 18px; } .logo { width: 210px; } .roomPreview { top: 18px; right: 16px; width: 112px; } .feature { gap: 14px; } .cardArt { width: 120px; } .cardText { width: min(55vw, 300px); padding: 12px; } .cardText h2 { font-size: 19px; } .cardText p { font-size: 13px; } }

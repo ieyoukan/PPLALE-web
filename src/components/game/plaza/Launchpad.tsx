@@ -10,16 +10,16 @@ import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
 import { other } from '@pplale/game-core';
 import type { Side } from '@pplale/game-core';
-import { roomVisibilities } from '@pplale/game-core/room';
+import { DEFAULT_VISIBILITY } from '@pplale/game-core/room';
 import type { RoomVisibility } from '@pplale/game-core/room';
 import { useAuth } from '@/lib/auth';
-import { onRoomSettings, readRoomSettings, saveRoomSettings } from '@/lib/game/plazaSettings';
 import { BATTLE_PATH, CARDS_PATH, CPU_PATH, EDITOR_PATH, NOTIFICATIONS_PATH, PUZZLES_PATH } from '@/lib/game/sessionStore';
 import { NotificationSoundToggle } from '../notifications/GameNotifications';
 import { Avatar } from './Avatar';
 import { CpuSheet } from './PlazaSheets';
 import { DiscordMark, PlazaIcon } from './PlazaIcon';
 import type { PlazaIconName } from './PlazaIcon';
+import { RoomNameSheet } from './RoomManagementSheets';
 import { isPlazaPath, plazaHref, usePlaza } from './PlazaProvider';
 import { ShareSheet } from './ShareSheet';
 import { Sheet } from './Sheet';
@@ -59,7 +59,7 @@ export function LaunchpadProvider({ children }: { children: ReactNode }) {
   return <Context.Provider value={value}>{children}{shown && pathname !== '/game/' && <Launchpad onClose={close} />}</Context.Provider>;
 }
 
-type Panel = 'home' | 'share' | 'cpu' | 'settings' | 'new';
+type Panel = 'home' | 'share' | 'cpu' | 'settings' | 'new' | 'name';
 interface Place { href: string; icon: PlazaIconName; label: string; tone: string }
 const places: Place[] = [
   { href: '/game/social/', icon: 'heart', label: 'フレンド', tone: 'pink' },
@@ -107,6 +107,7 @@ function Launchpad({ onClose }: { onClose: () => void }) {
         <div className={styles.roomActions}>
           <button className={styles.bigAction} data-tone="cocoa" onClick={() => setPanel('share')}><DiscordMark /><span data-ui-title>さそう</span></button>
           <button className={styles.bigAction} disabled={cpuSeat === null} onClick={() => setPanel('cpu')}><PlazaIcon name="cpu" /><span data-ui-title>CPUを呼ぶ</span></button>
+          {room.owner === room.me && <button className={styles.bigAction} onClick={() => setPanel('name')}><PlazaIcon name="pen" /><span data-ui-title>名前</span></button>}
         </div>
       </section> : <section className={styles.roomCard}><button className={styles.roomMain} onClick={() => go('/game/')}>
         <span className={styles.roomBadge}><PlazaIcon name="home" /></span><span className={styles.roomText}><b data-ui-title>ルームへ</b><small>{plaza.stage.kind === 'entering' ? 'つないでいます…' : 'みんなで遊ぶ場所'}</small></span>
@@ -132,47 +133,53 @@ function Launchpad({ onClose }: { onClose: () => void }) {
       {panel === 'cpu' && cpuSeat !== null && <CpuSheet onClose={() => setPanel('home')} onChoose={level => { setPanel('home'); onClose(); void plaza.send({ action: 'cpu', seat: cpuSeat, level }).catch(() => {}); if (!onRoomPage && view) router.push(plazaHref(view.id)); }} />}
       {panel === 'settings' && <Settings onClose={() => setPanel('home')} />}
       {panel === 'new' && <NewRoom onClose={() => setPanel('home')} onDone={onClose} />}
+      {panel === 'name' && view?.plaza && <RoomNameSheet view={view} onClose={() => setPanel('home')} />}
     </span>
   </div>;
 }
 
-/** The kind of room this player makes next (kept on this device), and the sound of notices. */
+/** Game-wide preferences; the room's visibility is chosen on its creation screen. */
 function Settings({ onClose }: { onClose: () => void }) {
-  const [visibility, setVisibility] = useState<RoomVisibility>(() => readRoomSettings().visibility);
-  const { user } = useAuth();
-  useEffect(() => onRoomSettings(() => setVisibility(readRoomSettings().visibility)), []);
-  return <Sheet title="設定" onClose={onClose} wide>
-    <section className={styles.setting}>
-      <h3>新しく作るルーム</h3>
-      <div className={styles.kinds} role="radiogroup" aria-label="新しく作るルームの種類">{roomVisibilities.map(kind => {
-        const info = visibilityInfo[kind], needsLogin = !user && (kind === 'friends' || kind === 'friendsPlus');
-        return <button key={kind} role="radio" aria-checked={visibility === kind} className={styles.kind} disabled={needsLogin}
-          onClick={() => setVisibility(saveRoomSettings({ visibility: kind }).visibility)}>
-          <span className={styles.kindIcon}><PlazaIcon name={info.icon} />{info.plus && <i>＋</i>}</span>
-          <b data-ui-title>{info.label}</b><small>{needsLogin ? 'ログインで使える' : info.note}</small>
-        </button>;
-      })}</div>
-      <p className={styles.settingNote}>いまいるルームは変わりません。次に作るルームから使います。</p>
-    </section>
+  return <Sheet title="設定" onClose={onClose}>
     <section className={styles.setting}><h3>通知の音</h3><NotificationSoundToggle /></section>
   </Sheet>;
 }
 
-/** Leaving this room for a new one: what that ends is said before it happens. */
+const creationKinds: RoomVisibility[] = ['public', 'friendsPlus', 'friends', 'invitePlus', 'invite'];
+/** Choose this room's access at creation; once it exists, access stays fixed. */
 function NewRoom({ onClose, onDone }: { onClose: () => void; onDone: () => void }) {
   const plaza = usePlaza(), view = plaza.view, room = view?.plaza;
-  const [busy, setBusy] = useState(false);
+  const { user } = useAuth();
+  const [visibility, setVisibility] = useState<RoomVisibility>(DEFAULT_VISIBILITY);
+  const [busy, setBusy] = useState(false), [error, setError] = useState('');
   const seated = !!view && view.players.some(player => player?.member === room?.me);
   const others = (room?.members.length ?? 1) > 1;
-  const kind = visibilityInfo[readRoomSettings().visibility];
-  return <Sheet title="新しいルームを作る" onClose={onClose}>
+  const create = async () => {
+    setBusy(true); setError('');
+    try {
+      const made = await plaza.create(visibility);
+      if (made) onDone();
+      else setError('ルームを作れませんでした。もう一度お試しください');
+    } catch (failure) { setError(failure instanceof Error ? failure.message : 'ルームを作れませんでした'); }
+    finally { setBusy(false); }
+  };
+  return <Sheet title="新しいルームを作る" onClose={onClose} wide>
     <div className={styles.newRoom}>
-      <span className={styles.newIcon}><PlazaIcon name="door" /></span>
-      <p>いまのルームを出て、<b>{kind.label}</b>のルームを新しく作ります。</p>
+      <p className={styles.createPrompt}>公開範囲を選ぶ</p>
+      <div className={styles.creationKinds} role="radiogroup" aria-label="ルームの公開範囲">{creationKinds.map(kind => {
+        const info = visibilityInfo[kind], needsLogin = !user && (kind === 'friends' || kind === 'friendsPlus');
+        return <button key={kind} type="button" role="radio" aria-checked={visibility === kind} disabled={busy || needsLogin}
+          className={styles.creationKind} onClick={() => setVisibility(kind)}>
+          <span className={styles.creationIcon}><PlazaIcon name={info.icon} />{info.plus && <i>＋</i>}</span>
+          <span className={styles.creationText}><b data-ui-title>{info.label}</b><small>{needsLogin ? 'ログインして選べます' : info.note}</small></span>
+          <span className={styles.creationCheck} aria-hidden="true">{visibility === kind && <PlazaIcon name="check" />}</span>
+        </button>;
+      })}</div>
       {view?.status === 'playing' && seated && <p className={styles.warn}><PlazaIcon name="sword" />対戦中の試合は負けになります</p>}
       {room?.owner === room?.me && others && <p className={styles.warn}><PlazaIcon name="crown" />このルームのオーナーがいなくなります</p>}
       {others && <p className={styles.settingNote}>ほかの人はこのルームに残ります。</p>}
-      <button className={styles.makeButton} disabled={busy} onClick={() => { setBusy(true); onDone(); void plaza.create(); }}><PlazaIcon name="sparkle" /><span data-ui-title>作る</span></button>
+      {error && <p className={styles.createError} role="alert">{error}</p>}
+      <button className={styles.makeButton} disabled={busy} onClick={() => void create()}><PlazaIcon name="sparkle" /><span data-ui-title>{busy ? '作成中…' : 'この公開範囲で作る'}</span></button>
     </div>
   </Sheet>;
 }

@@ -44,6 +44,15 @@
 .me > svg { color: #c98aa4; }
 
 .group { margin-top: 14px; border-top: 2px dotted #edcbd7; }
+.ruleFilters { display: grid; gap: 10px; margin: 14px 0 18px; padding: 12px 14px; border: 2px solid var(--brand-pink); border-radius: 18px; background: var(--brand-paper); color: var(--brand-cocoa-deep); }
+.ruleFilters strong { display: flex; align-items: center; gap: 6px; color: var(--brand-cocoa); font-size: 15px; }
+.ruleFilters strong small { margin-left: auto; color: var(--brand-cocoa-soft); font-size: 13px; }
+.ruleFilterControls { display: flex; flex-wrap: wrap; align-items: end; gap: 9px; }
+.ruleFilterControls label { display: grid; gap: 3px; color: var(--brand-cocoa-deep); font-size: 12px; font-weight: 700; }
+.ruleFilterControls select { min-height: 38px; padding: 5px 24px 5px 10px; border: 1.5px solid var(--brand-pink-edge); border-radius: 10px; background: var(--brand-cream); color: var(--brand-cocoa-deep); font-size: 14px; }
+.ruleFilterControls select:focus-visible, .clearRules:focus-visible { outline: 3px solid var(--brand-cocoa); outline-offset: 2px; }
+.clearRules { display: inline-flex; align-items: center; gap: 3px; min-height: 38px; padding: 6px 10px; border: 1.5px solid var(--brand-pink-edge); border-radius: 10px; background: var(--brand-blush); color: var(--brand-cocoa-deep); font-size: 13px; font-weight: 700; cursor: pointer; }
+.filterEmpty { margin: 18px 0; color: var(--brand-cocoa-deep); font-size: 14px; }
 .group summary svg { color: var(--place); }
 .group summary { display: flex; align-items: center; gap: 10px; padding: 12px 4px; cursor: pointer; list-style: none; font-size: 17px; font-weight: 700; color: #7b4d58; }
 .group summary::-webkit-details-marker { display: none; }
@@ -61,8 +70,7 @@
 .room { position: relative; display: grid; grid-template-rows: 112px auto; overflow: hidden; border: 3px solid #fff; border-radius: 18px; background: #fff; box-shadow: 0 0 0 2px var(--place), 0 6px 14px var(--glow); color: #67463e; transition: transform .18s, box-shadow .18s; }
 a.room:hover { transform: translateY(-2px); box-shadow: 0 0 0 3px var(--place), 0 10px 20px var(--glow); }
 .roomArt { position: relative; display: flex; overflow: hidden; background: repeating-linear-gradient(45deg, #fde9f0 0 10px, #fff6f9 10px 20px); }
-.roomArt > span { position: relative; flex: 1; }
-.roomArt img { object-fit: cover; }
+.roomArt img { display: block; width: 100%; height: 100%; object-fit: cover; }
 .roomBadge { position: absolute; top: 8px; left: 8px; padding: 3px 10px; border-radius: 10px 10px 10px 2px; background: var(--place); color: #fff; font-size: 12px; font-weight: 700; box-shadow: 0 2px 0 #0002; }
 .group[data-place=open] .roomBadge { animation: bob 1.6s ease-in-out infinite; }
 .roomAction { display: inline-flex; align-items: center; gap: 4px; position: absolute; top: 72px; right: 8px; padding: 5px 12px; border-radius: 99px; background: #fff; color: var(--place); font-size: 13px; font-weight: 800; box-shadow: 0 0 0 2px var(--place); }

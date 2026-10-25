@@ -1,7 +1,7 @@
 // A plaza: a room people gather in. The game's launcher makes one for every player, and a shared
 // link brings friends into it. Its members come and go; its two seats are taken and given up by them
 // (or by the CPU); one match at a time is played at its table and everyone else in the room watches.
-// What it is called and who may come in are fixed when it is made. When nobody is left it closes.
+// Who may come in is fixed when it is made; the owner may rename it. When nobody is left it closes.
 // Like rooms.ts nothing here knows about sockets: a request changes the room or throws RoomError.
 import { randomBytes, randomInt, randomUUID, timingSafeEqual } from 'node:crypto';
 import { z } from 'zod';
@@ -84,6 +84,7 @@ const action = z.discriminatedUnion('action', [
     z.object({ action: z.literal('dismissCpu') }),
     z.object({ action: z.literal('claim') }),
     z.object({ action: z.literal('rules'), rules: z.unknown() }),
+    z.object({ action: z.literal('rename'), name: z.string() }),
     z.object({ action: z.literal('renewInvite') }),
     z.object({ action: z.literal('answer'), profileId, accept: z.boolean() }),
 ]);
@@ -391,6 +392,13 @@ export function actPlaza(room: Room, id: string, body: unknown, catalog: Catalog
             if (!rules) throw new RoomError(400, '使えるフルーツを1つ以上選んでください');
             if (room.status === 'lobby') rulesChanged(room, rules, catalog);
             else plaza.nextRules = { ...rules, spectators: true };
+            break;
+        }
+        case 'rename': {
+            if (plaza.owner !== id) throw new RoomError(403, 'ルーム名を変えられるのはオーナーだけです');
+            const name = roomName(request.name, '');
+            if (!name) throw new RoomError(400, 'ルーム名を入力してください');
+            plaza.name = name;
             break;
         }
         case 'renewInvite':

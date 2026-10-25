@@ -47,17 +47,23 @@
 /* ── Settings and a new room ── */
 .setting { display: grid; gap: 10px; }
 .setting h3 { font-size: 18px; color: var(--brand-cocoa); }
-.kinds { display: grid; grid-template-columns: repeat(5, 1fr); gap: 10px; }
-.kind { display: grid; justify-items: center; gap: 4px; padding: 12px 6px; border: 0; border-radius: 20px; background: #fff; color: var(--brand-cocoa-deep); box-shadow: 0 0 0 2px var(--brand-pink), 0 4px 0 var(--brand-pink-edge); cursor: pointer; }
-.kind[aria-checked=true] { background: var(--brand-blush); box-shadow: 0 0 0 3px var(--brand-cocoa), 0 4px 0 var(--brand-cocoa); }
-.kind:disabled { opacity: .45; cursor: default; }
-.kind b { font-size: 15px; }
-.kind small { font-size: 11px; color: var(--brand-cocoa-soft); text-align: center; }
-.kindIcon { position: relative; display: grid; place-items: center; width: 46px; height: 46px; border-radius: 50%; background: var(--brand-cream); font-size: 24px; color: var(--brand-cocoa); }
-.kindIcon i { position: absolute; right: -4px; bottom: -2px; display: grid; place-items: center; width: 20px; height: 20px; border-radius: 50%; background: var(--brand-cocoa); color: #fff; font: 700 13px/1 sans-serif; font-style: normal; }
 .settingNote { font-size: 13px; color: var(--brand-cocoa-soft); text-align: center; }
-.newRoom { display: grid; justify-items: center; gap: 12px; text-align: center; }
-.newIcon { display: grid; place-items: center; width: 74px; height: 74px; border-radius: 24px; background: var(--brand-sage-wash); color: var(--brand-cocoa); font-size: 40px; }
+.newRoom { display: grid; justify-items: center; gap: 14px; text-align: center; }
+.createPrompt { width: min(620px, 100%); text-align: left; color: var(--brand-cocoa); font-size: 16px; font-weight: 700; }
+.creationKinds { display: grid; width: min(620px, 100%); border: 2px solid var(--brand-pink); border-radius: 22px; overflow: hidden; background: var(--brand-paper); }
+.creationKind { display: grid; grid-template-columns: 54px minmax(0, 1fr) 24px; align-items: center; gap: 14px; width: 100%; min-height: 72px; padding: 9px 18px; border: 0; border-bottom: 1px solid var(--brand-pink); background: var(--brand-paper); color: var(--brand-cocoa-deep); text-align: left; cursor: pointer; transition: background .15s, transform .15s; }
+.creationKind:last-child { border-bottom: 0; }
+.creationKind:hover:not(:disabled), .creationKind[aria-checked=true] { background: var(--brand-blush); }
+.creationKind:hover:not(:disabled) { transform: translateX(3px); }
+.creationKind:disabled { opacity: .55; cursor: default; }
+.creationKind:focus-visible { position: relative; z-index: 1; outline: 3px solid var(--brand-cocoa); outline-offset: -4px; }
+.creationIcon { position: relative; display: grid; place-items: center; width: 48px; height: 48px; border-radius: 15px; background: var(--brand-cream); color: var(--brand-cocoa); font-size: 26px; }
+.creationIcon i { position: absolute; right: -3px; bottom: -3px; display: grid; place-items: center; width: 19px; height: 19px; border-radius: 50%; background: var(--brand-sage); color: var(--brand-cocoa-deep); font: 700 14px/1 sans-serif; font-style: normal; }
+.creationText { display: grid; gap: 2px; }
+.creationText b { font-size: 18px; }
+.creationText small { color: var(--brand-cocoa-soft); font-size: 13px; }
+.creationCheck { color: var(--brand-cocoa); font-size: 22px; }
+.createError { color: var(--brand-cocoa-deep); font-size: 14px; font-weight: 700; }
 .warn { display: flex; align-items: center; gap: 8px; padding: 6px 14px; border-radius: 999px; background: var(--brand-peach-wash); font-weight: 700; }
 .makeButton { display: inline-flex; align-items: center; gap: 8px; padding: 14px 40px; border: 3px solid #fff; border-radius: 999px; background: linear-gradient(#ffe3e8, #f0b5c2); color: var(--brand-cocoa-deep); font-size: 22px; box-shadow: 0 5px 0 #c48795; cursor: pointer; }
 
@@ -65,3 +71,5 @@
 @keyframes open { from { opacity: 0; transform: scale(.94) translateY(12px); } }
 @keyframes tileIn { from { opacity: 0; transform: translateY(14px) scale(.9); } }
 @media (prefers-reduced-motion: reduce) { .backdrop, .pad, .tile { animation: none; } }
+@media (prefers-reduced-motion: reduce) { .creationKind { transition: none; } }
+@container stage (max-width: 600px) { .creationKind { grid-template-columns: 44px minmax(0, 1fr) 20px; gap: 9px; padding: 9px 12px; } .creationIcon { width: 40px; height: 40px; font-size: 22px; } .creationText b { font-size: 16px; } .creationText small { font-size: 12px; } }

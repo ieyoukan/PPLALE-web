@@ -1,11 +1,11 @@
 'use client';
-import Image from 'next/image';
 import Link from 'next/link';
 import { fruitNames } from '@pplale/game-core/room';
 import type { RoomInfo } from '@pplale/game-core/room';
 import { roomHref, watchHref } from '@/lib/game/sessionStore';
 import { fruitArt, roomThumbnail } from '@/lib/game/roomThumbnail';
 import { PlazaIcon } from '../plaza/PlazaIcon';
+import { RoomThumbnailImage } from '../plaza/RoomThumbnailImage';
 import { usePlaza } from '../plaza/PlazaProvider';
 import { visibilityInfo } from '../plaza/visibility';
 import { Icon } from './Icon';
@@ -24,7 +24,7 @@ export function RoomCard({ room, large }: { room: RoomInfo; large?: boolean }) {
   const title = plaza ? plaza.name : `${room.host}のルーム`;
   const verb = plaza ? '入る' : place === 'open' ? '参加' : '観戦';
   const card = <>
-    <span className={styles.roomArt} aria-hidden="true">{fruits.map(fruit => <span key={fruit} style={{ background: fruitArt[fruit].tone }}><Image src={fruitArt[fruit].image} alt="" fill sizes={large ? '320px' : '120px'} /></span>)}</span>
+    <span className={styles.roomArt} aria-hidden="true"><RoomThumbnailImage rules={room.rules} sizes={large ? '420px' : '200px'} /></span>
     <span className={styles.roomBadge}>{placeLabel[place]}</span>
     {href && <span className={styles.roomAction}><Icon name={plaza || place === 'open' ? 'play' : 'eye'} />{verb}</span>}
     <span className={styles.roomInfo}>

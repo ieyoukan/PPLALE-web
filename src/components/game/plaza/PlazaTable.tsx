@@ -19,6 +19,7 @@ import { PreparationProgress } from '../MatchPreparation';
 import { useRoomPreparation } from '../room/useRoomPreparation';
 import { Avatar } from './Avatar';
 import { CpuSheet, DeckSheet, RulesSheet } from './PlazaSheets';
+import { RoomNameSheet } from './RoomManagementSheets';
 import { ShareSheet } from './ShareSheet';
 import { DiscordMark, PlazaIcon } from './PlazaIcon';
 import { usePlaza } from './PlazaProvider';
@@ -27,7 +28,7 @@ import { visibilityInfo } from './visibility';
 import styles from './Plaza.module.css';
 
 const DECK_KEY = 'pplale-plaza-deck-v1';
-type Open = null | 'deck' | 'rules' | 'share' | { cpu: Side };
+type Open = null | 'deck' | 'rules' | 'share' | 'name' | { cpu: Side };
 
 /** The deck this browser chose last, so the next match starts with it already chosen. */
 function useChosenDeck() {
@@ -96,6 +97,7 @@ export function PlazaTable({ view, onMenu }: { view: RoomView; onMenu: () => voi
         <span className={styles.count}><PlazaIcon name="people" />{room.members.length}</span>
       </button>
       <div className={styles.topActions}>
+        {room.owner === room.me && <button className={styles.round} onClick={() => setOpen('name')} aria-label="ルーム名を変える"><PlazaIcon name="pen" /></button>}
         <button className={styles.inviteButton} onClick={() => setOpen('share')}><DiscordMark /><span data-ui-title>さそう</span></button>
         <button className={styles.round} onClick={onMenu} aria-label="メニュー"><PlazaIcon name="grid" /></button>
       </div>
@@ -161,6 +163,7 @@ export function PlazaTable({ view, onMenu }: { view: RoomView; onMenu: () => voi
     {open === 'deck' && <DeckSheet choices={choices} chosen={chosen} onChoose={id => { choose(id); setOpen(null); }} onClose={() => setOpen(null)}
       signIn={user ? undefined : () => { signInWithGoogle().catch(() => setError('ログインできませんでした')); }} loading={saved.loading} />}
     {open === 'rules' && <RulesSheet view={view} onClose={() => setOpen(null)} onSave={rules => { setOpen(null); ask({ action: 'rules', rules }); }} />}
+    {open === 'name' && <RoomNameSheet view={view} onClose={() => setOpen(null)} />}
     {open === 'share' && <ShareSheet view={view} onClose={() => setOpen(null)} />}
     {open && typeof open === 'object' && <CpuSheet onClose={() => setOpen(null)} onChoose={level => { const side = open.cpu; setOpen(null); ask({ action: 'cpu', seat: side, level }); }} />}
   </div>;

@@ -121,6 +121,13 @@ test('plaza: an owner who leaves leaves it without one; one person becomes the n
     const [b, c] = await Promise.all(others.map(entry => connect(served, id, entry.data.token)));
     await until(alice, view => view.plaza!.members.every(member => member.online));
     assert.equal(await b.act({ action: 'rules', rules: { ...rules, turnSeconds: 120 } }), 'ルールを変えられるのはオーナーだけです');
+    assert.equal(await b.act({ action: 'rename', name: 'ほかの名前' }), 'ルーム名を変えられるのはオーナーだけです');
+    assert.equal(await alice.act({ action: 'rename', name: '   ' }), 'ルーム名を入力してください');
+    assert.equal(await alice.act({ action: 'rename', name: 'あたらしいおちゃかい' }), undefined);
+    const renamed = await until(b, view => view.plaza!.name === 'あたらしいおちゃかい');
+    assert.equal(renamed.plaza!.creator.name, 'ありす');
+    assert.equal(renamed.plaza!.visibility, 'public');
+    assert.equal((await call<RoomInfo>(`/rooms/${id}`)).data.plaza!.name, 'あたらしいおちゃかい');
     assert.equal(await alice.act({ action: 'rules', rules: { ...rules, turnSeconds: 180 } }), undefined);
     assert.equal((await until(b, view => view.rules.turnSeconds === 180)).rules.turnSeconds, 180);
     assert.equal(await b.act({ action: 'claim' }), 'ほかの人がオーナーになりました');

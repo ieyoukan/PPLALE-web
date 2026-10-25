@@ -171,6 +171,8 @@ export type RoomAction =
     | { action: 'claim' }
     /** The owner sets the rules of the next match. */
     | { action: 'rules'; rules: RoomRules }
+    /** The owner changes the room's displayed name; its creator and visibility stay fixed. */
+    | { action: 'rename'; name: string }
     /** A new invitation link; the previous one stops working. */
     | { action: 'renewInvite' }
     /** Answers a friend who asked to be let in. */
@@ -233,7 +235,7 @@ export interface PlazaInfo {
     /** Seats taken (by people or the CPU). */
     seated: number;
 }
-/** A plaza to make: its fixed name and visibility, and (after a closed room) the room it takes over from. */
+/** A plaza to make: its initial name and fixed visibility, and (after a closed room) the room it takes over from. */
 export interface PlazaRequest {
     name: string;
     visibility: RoomVisibility;

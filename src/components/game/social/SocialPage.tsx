@@ -12,6 +12,8 @@ import { Icon } from './Icon';
 import { locate, placeLabel, placeOf, placeOrder } from './location';
 import { NOTIFICATIONS_PATH } from './NotificationsPage';
 import { RoomCard } from './RoomCard';
+import { RoomRuleFilters, allRoomRules, matchesRoomRules } from './RoomRuleFilters';
+import type { RoomRuleFilter } from './RoomRuleFilters';
 import { Invitations } from './Invitations';
 import { useMyProfile } from './useMyProfile';
 import { useSocial } from './useSocial';
@@ -31,6 +33,7 @@ function Social({ uid }: { uid: string }) {
   const me = useMyProfile();
   const { friends, received, error, loading, busy, respond } = useSocial(uid);
   const [rooms, setRooms] = useState<Record<string, RoomInfo>>({}), [now, setNow] = useState(() => Date.now());
+  const [ruleFilter, setRuleFilter] = useState<RoomRuleFilter>(allRoomRules);
   const [remove, setRemove] = useState<Friendship | null>(null);
   const roomIds = [...new Set(friends.flatMap(player => [player.roomId, player.watching?.roomId].filter((id): id is string => !!id)))].sort().join(',');
   useEffect(() => {
@@ -53,6 +56,7 @@ function Social({ uid }: { uid: string }) {
     group.members.push({ player, role: found.role }); groups.set(found.room.id, group);
   }
   const ordered = [...groups.values()].sort((a, b) => placeOrder.indexOf(placeOf(a.room)) - placeOrder.indexOf(placeOf(b.room)) || a.room.id.localeCompare(b.room.id));
+  const filtered = ordered.filter(group => matchesRoomRules(group.room, ruleFilter));
   const tile = ({ profile, friendship }: SocialPlayer, place: string, status: string) => <FriendTile key={friendship.id} profile={profile} place={place} status={status}>
     <button className={styles.more} aria-label={`${profile.displayName}をフレンドから外す`} onClick={() => setRemove(friendship)}><Icon name="more" /></button>
     {remove?.id === friendship.id && <div className={styles.remove} role="dialog" aria-label="フレンドから外す">
@@ -70,9 +74,11 @@ function Social({ uid }: { uid: string }) {
       </span>
     </header>
     {error && <p className={styles.error} role="alert">{error}</p>}
-    <Invitations />
+    <RoomRuleFilters value={ruleFilter} onChange={setRuleFilter} />
+    <Invitations filter={ruleFilter} />
     {!friends.length && <div className={styles.empty} role="status"><Icon name="heart" /><p>{loading ? '読み込み中…' : 'プロフィールのリンクから、フレンドになろう。'}</p>{!loading && <Link className={styles.primary} href={NOTIFICATIONS_PATH}><Icon name="add" />フレンドを追加</Link>}</div>}
-    {ordered.map(({ room, members }) => {
+    {ordered.length > 0 && filtered.length === 0 && <p className={styles.filterEmpty}>このルールのルームは見つかりません</p>}
+    {filtered.map(({ room, members }) => {
       const place = placeOf(room);
       return <details key={room.id} className={styles.group} data-place={place} open>
         <summary><span className={styles.chevron} aria-hidden="true" />{room.plaza?.name ?? `${room.host}のルーム`}<span className={styles.placeChip}>{placeLabel[place]}</span></summary>
