@@ -63,6 +63,8 @@ export interface PlazaOutcome extends Outcome {
     invited?: string;
     /** The room closed (nobody is left). */
     closed?: true;
+    /** Nobody is left, but a match just ended in this change: it is recorded first, then `closeEmpty` closes the room. */
+    emptied?: true;
 }
 
 const MAX_REQUESTS = 8, MAX_ALLOWED = 64, MAX_TOKENS = 4, MAX_FORMER = 64;
@@ -83,7 +85,6 @@ const action = z.discriminatedUnion('action', [
     z.object({ action: z.literal('claim') }),
     z.object({ action: z.literal('rules'), rules: z.unknown() }),
     z.object({ action: z.literal('renewInvite') }),
-    z.object({ action: z.literal('invite'), profileId }),
     z.object({ action: z.literal('answer'), profileId, accept: z.boolean() }),
 ]);
 
@@ -144,7 +145,8 @@ const sameSecret = (saved: string | undefined, given: unknown) =>
  */
 export function entryOf(room: Room, visitor: Pick<Visitor, 'profileId'>, invite: unknown): 'yes' | 'no' | { friendsOf: string[] } {
     const plaza = room.plaza!, uid = visitor.profileId;
-    if (uid && (plaza.creator.profileId === uid || plaza.allowed.includes(uid) || plaza.members.some(member => member.profileId === uid))) return 'yes';
+    // Being let in by name only opens invited rooms: a friends' room stays its creator's (and members') friends'.
+    if (uid && (plaza.creator.profileId === uid || plaza.members.some(member => member.profileId === uid) || invitedVisibility(plaza.visibility) && plaza.allowed.includes(uid))) return 'yes';
     switch (plaza.visibility) {
         case 'public': return 'yes';
         case 'friends': return uid && plaza.creator.profileId ? { friendsOf: [plaza.creator.profileId] } : 'no';
@@ -249,17 +251,29 @@ function remove(room: Room, id: string, reason: MatchEnd, outcome: PlazaOutcome)
     const seat = seatOf(room, id);
     if (seat !== null) vacate(room, seat, reason, outcome);
     (outcome.removed ??= []).push(id);
-    // A CPU does not keep a room open.
+    // A CPU does not keep a room open. A match this just lost is kept for one more change, so the
+    // history records how it ended (and who won) rather than a match abandoned.
     if (!plaza.members.length) {
-        room.status = 'closed';
-        room.state = null;
-        outcome.closed = true;
+        if (outcome.finished) outcome.emptied = true;
+        else closeEmpty(room, outcome);
     }
+}
+
+/** Closes a plaza nobody is in. True when it did. */
+export function closeEmpty(room: Room, outcome: PlazaOutcome = {}): boolean {
+    if (!room.plaza || room.plaza.members.length || room.status === 'closed') return false;
+    room.status = 'closed';
+    room.state = null;
+    delete room.turnClock;
+    outcome.closed = true;
+    return true;
 }
 
 /** Members away for longer than MEMBER_GRACE are no longer in the room; null when nothing changed. */
 export function tidyPlaza(room: Room, online: ReadonlySet<string>, now: number): PlazaOutcome | null {
     if (!room.plaza || room.status === 'closed') return null;
+    const empty: PlazaOutcome = {};
+    if (closeEmpty(room, empty)) return empty;
     const changed = notePresence(room, online, now), outcome: PlazaOutcome = {};
     for (const member of [...room.plaza.members]) if (member.away !== undefined && now - member.away >= MEMBER_GRACE) remove(room, member.id, 'disconnect', outcome);
     if (outcome.removed) syncTurnClock(room, now);
@@ -384,11 +398,6 @@ export function actPlaza(room: Room, id: string, body: unknown, catalog: Catalog
             if (!mayInvite(plaza, id)) throw new RoomError(403, '招待できるのはオーナーだけです');
             plaza.invite = secret();
             break;
-        case 'invite':
-            if (!mayInvite(plaza, id)) throw new RoomError(403, '招待できるのはオーナーだけです');
-            if (!plaza.allowed.includes(request.profileId)) plaza.allowed = [...plaza.allowed, request.profileId].slice(-MAX_ALLOWED);
-            outcome.invited = request.profileId;
-            break;
         case 'answer': {
             if (!mayInvite(plaza, id)) throw new RoomError(403, '招待できるのはオーナーだけです');
             const asked = plaza.requests.some(entry => entry.profileId === request.profileId);
@@ -403,6 +412,22 @@ export function actPlaza(room: Room, id: string, body: unknown, catalog: Catalog
     if (!outcome.command) room.last = null;
     syncTurnClock(room, now);
     return outcome;
+}
+
+/**
+ * Member `id` invites a signed-in friend by name (the server checked the friendship). In an invited
+ * room they are let in by name; in the others they may come in already (`entryOf`), so they are only
+ * told: in a friends' room only its creator's friends may, so only the creator invites there.
+ */
+export function inviteByName(room: Room, id: string, profileId: string): PlazaOutcome {
+    const plaza = room.plaza!;
+    if (room.status === 'closed' || !plaza.members.some(member => member.id === id)) throw new RoomError(404, 'ルームが見つかりません');
+    if (!mayInvite(plaza, id)) throw new RoomError(403, '招待できるのはオーナーだけです');
+    if (plaza.visibility === 'friends' && plaza.members.find(member => member.id === id)?.profileId !== plaza.creator.profileId)
+        throw new RoomError(403, 'このルームに入れるのは作った人のフレンドだけです');
+    if (invitedVisibility(plaza.visibility) && !plaza.allowed.includes(profileId)) plaza.allowed = [...plaza.allowed, profileId].slice(-MAX_ALLOWED);
+    room.last = null;
+    return { invited: profileId };
 }
 
 /** A friend of a member asks to be let in. False when they may come in already or the room is not asked like this. */

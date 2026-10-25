@@ -4,7 +4,7 @@ import { HIDDEN_CARD } from '@pplale/game-core';
 import { MEMBER_GRACE } from '@pplale/game-core/room';
 import type { Entered, RoomInfo, RoomView } from '@pplale/game-core/room';
 import { catalog } from '../src/catalog.ts';
-import { actPlaza, admit, askToEnter, createPlaza, entryOf, formerOf, tidyPlaza } from '../src/plaza.ts';
+import { actPlaza, admit, askToEnter, createPlaza, entryOf, formerOf, inviteByName, tidyPlaza } from '../src/plaza.ts';
 import { connect, deck, serve, shared } from './helpers.ts';
 import type { Client, Served } from './helpers.ts';
 
@@ -179,6 +179,8 @@ test('plaza: the CPU sits at the table and plays its moves itself, and leaves no
     assert.ok(opened.last?.command.actor === 1 || opened.game!.openingRemaining[1] === 0);
     // Nobody but the CPU left: the room closes.
     assert.equal(await alice.act({ action: 'leave' }), undefined);
+    // The lost match is recorded as ended first; the room closes right after.
+    for (let wait = 0; wait < 50 && (await backend.get(id))!.status !== 'closed'; wait++) await new Promise(resolve => setTimeout(resolve, 20));
     const closed = await backend.get(id);
     assert.equal(closed!.status, 'closed');
     assert.equal((await call(`/rooms/${id}/join`, { name: 'ぼぶ', invite: made.view.plaza!.invite })).status, 410);
@@ -247,10 +249,16 @@ test('plaza: who may come in, by visibility', () => {
     assert.equal(entryOf(invited, { profileId: 'alice' }, null), 'yes');
     // In an invitePlus room anyone in it may invite by name; in an invite room only its owner.
     const bob = admit(invited, { name: 'ぼぶ', profileId: 'bob' }).member;
-    actPlaza(invited, bob.id, { action: 'invite', profileId: 'carol' }, catalog);
+    assert.equal(inviteByName(invited, bob.id, 'carol').invited, 'carol');
     assert.equal(entryOf(invited, { profileId: 'carol' }, null), 'yes');
     const strict = room('invite'), guest = admit(strict, { name: 'ぼぶ' }).member;
-    assert.throws(() => actPlaza(strict, guest.id, { action: 'invite', profileId: 'carol' }, catalog), /オーナーだけ/);
+    assert.throws(() => inviteByName(strict, guest.id, 'carol'), /オーナーだけ/);
+    // Inviting by name is not a way over the socket, and never opens a friends' room to others.
+    assert.throws(() => actPlaza(strict, guest.id, { action: 'invite', profileId: 'carol' }, catalog), /形式/);
+    const friendsOnly = room('friends'), member = admit(friendsOnly, { name: 'ぼぶ', profileId: 'bob' }).member;
+    assert.throws(() => inviteByName(friendsOnly, member.id, 'stranger'), /作った人のフレンド/);
+    assert.equal(inviteByName(friendsOnly, friendsOnly.plaza!.members[0].id, 'stranger').invited, 'stranger');
+    assert.deepEqual(entryOf(friendsOnly, { profileId: 'stranger' }, null), { friendsOf: ['alice'] });
     // A friend asks to come into an invite room: only its owner answers; accepting lets them in by name.
     const asked = room('invite'), owner = asked.plaza!.members[0], helper = admit(asked, { name: 'ぼぶ', profileId: 'bob' }).member;
     assert.equal(askToEnter(asked, { name: 'きゃろる', profileId: 'carol' }), true);

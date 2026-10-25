@@ -8,6 +8,7 @@
 //   PORT=8099 pnpm run start --workspace=@pplale/room-server
 //   NEXT_PUBLIC_ROOM_SERVER_URL=http://localhost:8099 npx next dev -p 3100
 //   PPLALE_ROOM_TEST_URL=http://localhost:3100 npx playwright test room-match
+// (PPLALE_ROOM_SERVER_URL names the room server when it is not http://localhost:8099.)
 import { test, expect } from '@playwright/test';
 
 const base = process.env.PPLALE_ROOM_TEST_URL;
@@ -129,4 +130,19 @@ test('the CPU sits down in an empty seat and plays its own moves at the same tab
   await expect.poll(() => alice.locator('[aria-label^="相手の手札"]').getAttribute('aria-label'), { timeout: 20000 }).toMatch(/[1-9]枚/);
   expect(errors).toEqual([]);
   await alice.context().close();
+});
+
+test('a link to an older two-seat room opens its lobby, where joining is the visitor\'s choice', async ({ browser }) => {
+  test.setTimeout(60000);
+  const server = process.env.PPLALE_ROOM_SERVER_URL ?? 'http://localhost:8099';
+  const made = await (await fetch(`${server}/rooms`, { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ rules: { fruits: ['strawberry'], extendedPlayable: false }, name: 'ほすと' }) })).json();
+  const visitor = await open(browser, 'げすと');
+  await visitor.goto(`${base}/game/battle/room/?id=${made.view.id}`);
+  await visitor.waitForURL(`${base}/game/room/${made.view.id}/?id=${made.view.id}`);
+  await expect(visitor.getByRole('button', { name: 'このルームに入る' })).toBeVisible({ timeout: 20000 });
+  // Nobody took the seat on the visitor's behalf.
+  const info = await (await fetch(`${server}/rooms/${made.view.id}`)).json();
+  expect(info.open).toBe(true);
+  expect(errors).toEqual([]);
+  await visitor.context().close();
 });

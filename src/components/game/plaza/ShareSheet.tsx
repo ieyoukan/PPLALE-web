@@ -39,7 +39,8 @@ export function ShareSheet({ view, onClose }: { view: RoomView; onClose: () => v
       <p className={styles.shareNote}><PlazaIcon name={info.icon} />{plaza.visibility === 'friends' ? `${plaza.creator.name}のフレンドだけが入れます` : plaza.visibility === 'friendsPlus' ? 'ルームにいる人のフレンドが入れます' : invited ? 'このリンクを知っている人が入れます' : 'リンクを開いた人はだれでも入れます'}</p>
       {invited && <button className={styles.textButton} onClick={() => { void send({ action: 'renewInvite' }).then(() => setDone('renewed')); }}><PlazaIcon name="refresh" />{done === 'renewed' ? '新しいリンクにしました（前のリンクは使えません）' : 'リンクを作り直す'}</button>}
     </> : <p className={styles.shareNote}><PlazaIcon name="crown" />このルームに招待できるのはオーナーだけです。</p>}
-    {mayShare && user && <FriendInvites uid={user.uid} view={view} />}
+    {/* A friend invited by name comes in where that lets them in: an invited room, or one they may enter anyway (told by a notification). */}
+    {mayShare && user && (plaza.visibility !== 'friends' || plaza.creator.profileId === user.uid) && <FriendInvites uid={user.uid} view={view} />}
     {done === 'コピーできませんでした' && <p className={styles.note} role="alert">{done}</p>}
     <p className={styles.srOnly} role="status">{done === 'discord' ? 'Discordに貼るメッセージをコピーしました' : done === 'link' ? 'リンクをコピーしました' : ''}</p>
   </Sheet>;

@@ -6,7 +6,7 @@
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
-import { readRoomInfo, seatFor } from '@/lib/game/room/client';
+import { plazaKey, readRoomInfo, seatFor } from '@/lib/game/room/client';
 import { CPU_PATH } from '@/lib/game/sessionStore';
 import RoomBoard from '../room/RoomBoard';
 import { LaunchScreen } from './LaunchScreen';
@@ -26,11 +26,14 @@ export function RoomPage({ id }: { id: string }) {
   const [kind, setKind] = useState<'plaza' | 'legacy' | null>(null);
   useEffect(() => {
     if (seatFor(id)) return setKind('legacy');
-    if (!watch) return setKind('plaza');
+    // A room this browser is in, or was: a room to gather in.
+    if (plazaKey(id) && !watch) return setKind('plaza');
+    // Otherwise ask first: a two-seat room's link opens its lobby (joining it is the player's choice).
+    // A room that is not told of may still be an invited one: entering decides.
     let current = true;
-    readRoomInfo(id).then(info => { if (current) setKind(info.plaza ? 'plaza' : 'legacy'); }, () => { if (current) setKind('plaza'); });
+    readRoomInfo(id, invite).then(info => { if (current) setKind(info.plaza ? 'plaza' : 'legacy'); }, () => { if (current) setKind('plaza'); });
     return () => { current = false; };
-  }, [id, watch]);
+  }, [id, watch, invite]);
   const legacy = kind === 'legacy' || legacyId === id;
   useEffect(() => {
     if (kind !== 'plaza') return;
@@ -39,6 +42,7 @@ export function RoomPage({ id }: { id: string }) {
   }, [kind, id, invite, watch, enter, router]);
 
   if (legacy) return <RoomBoard id={id} watch={watch && !seatFor(id)} />;
+  if (kind === null) return <LaunchScreen status="ルームに入っています" />;
   if (current === id && view) return <PlazaRoom view={view} onMenu={launchpad.open} />;
   if (stage.kind === 'refused' && stage.to === id) return <LaunchScreen><Refused reason={stage.reason} message={stage.message} id={id} /></LaunchScreen>;
   return <LaunchScreen status="ルームに入っています" />;

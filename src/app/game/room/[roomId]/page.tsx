@@ -1,5 +1,6 @@
 import { Suspense } from 'react';
 import type { Metadata } from 'next';
+import { headers } from 'next/headers';
 import { notFound } from 'next/navigation';
 import { defaultRoomRules, describeMatchRules, isRoomId } from '@pplale/game-core/room';
 import type { RoomInfo } from '@pplale/game-core/room';
@@ -12,6 +13,8 @@ import { roomThumbnail, thumbnailPath } from '@/lib/game/roomThumbnail';
 
 export const viewport = gameViewport;
 type Props = { params: Promise<{ roomId: string }>; searchParams: Promise<{ invite?: string | string[] }> };
+/** The fetchers of link previews (Discord, X, LINE, Slack, …), as opposed to someone opening the link. */
+const PREVIEW = /bot|crawl|spider|preview|facebookexternalhit|discord|slack|twitter|line\/|whatsapp|telegram|skype|embedly|pinterest|vkshare|mastodon|misskey|bluesky|cardyb/i;
 
 /** What the room server tells anyone with this link (a room only invited people may enter needs its invitation). */
 async function readShared(id: string, invite: string | null): Promise<RoomInfo | null> {
@@ -30,7 +33,9 @@ async function readShared(id: string, invite: string | null): Promise<RoomInfo |
  */
 export async function generateMetadata({ params, searchParams }: Props): Promise<Metadata> {
   const { roomId } = await params, { invite } = await searchParams;
-  const room = isRoomId(roomId) ? await readShared(roomId, typeof invite === 'string' ? invite : null) : null;
+  // Only a chat app's link preview needs the room's words; people opening the link see the room itself.
+  const preview = PREVIEW.test((await headers()).get('user-agent') ?? '');
+  const room = preview && isRoomId(roomId) ? await readShared(roomId, typeof invite === 'string' ? invite : null) : null;
   const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || 'https://pplale.pgw.jp';
   const rules = room?.rules ?? defaultRoomRules;
   const closed = room?.status === 'closed';

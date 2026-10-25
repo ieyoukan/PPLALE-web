@@ -39,7 +39,7 @@ import type { Backend, Member, Overview, RoomEvent, Spot } from './backend.ts';
 import type { Config } from './config.ts';
 import { RoomError, act, createRoom, expireTurn, joinRoom, playerName, roomInfo, seatOf, seatView, tidy } from './rooms.ts';
 import type { Present, Room } from './rooms.ts';
-import { actPlaza, admit, askToEnter, cpuToAct, createPlaza, entryOf, formerOf, memberOf, notePresence, playCpu, plazaInfo, plazaView, succeed, tidyPlaza } from './plaza.ts';
+import { actPlaza, admit, askToEnter, closeEmpty, cpuToAct, createPlaza, entryOf, formerOf, inviteByName, memberOf, notePresence, playCpu, plazaInfo, plazaView, succeed, tidyPlaza } from './plaza.ts';
 import type { PlazaOutcome, Visitor } from './plaza.ts';
 import { cpuThinker } from './cpu.ts';
 import { handReactionOps } from '@pplale/game-core';
@@ -136,9 +136,12 @@ export function createRoomServer({ config, backend, catalog, history, push = pus
     }
     async function playCpuMove(id: string, version: number, seat: Side) {
         try {
-            if (!await backend.claim(`cpu:${id}:${version}`, 60_000)) return;
+            // Longer than a move takes to decide (cpu.ts gives up after 15 seconds), short enough to retry soon.
+            if (!await backend.claim(`cpu:${id}:${version}`, 20_000)) return;
             const room = await backend.get(id);
-            if (!room || room.version !== version || cpuToAct(room) !== seat) return;
+            if (!room) return;
+            // Something else changed the room meanwhile (perhaps without a view going out): look again.
+            if (room.version !== version || cpuToAct(room) !== seat) { scheduleCpu(room); return; }
             const level = room.seats[seat]!.cpu!, expected = { match: room.match, revision: room.state!.revision };
             const state = room.state!;
             // Should no move be found, the turn (or the choice) is still finished rather than left waiting.
@@ -405,27 +408,39 @@ export function createRoomServer({ config, backend, catalog, history, push = pus
         const made = await makeRoom(id => createPlaza(id, body, visitor));
         return entered(made.room, made.room.plaza!.members[0].id, made.token);
     }
-    /** Who is let in by name to which plazas, read again at most every few seconds. */
-    let invitedIndex: { until: number; value: Promise<Map<string, string[]>> } | undefined;
-    function invitations() {
-        if (!invitedIndex || invitedIndex.until <= Date.now()) invitedIndex = { until: Date.now() + 5000, value: (async () => {
-            const index = new Map<string, string[]>();
+    /**
+     * Who is in which plaza, and who is let in by name to which: one pass over the rooms, shared by
+     * the requests that need it and read again at most every 15 seconds.
+     */
+    let roomIndex: { until: number; value: Promise<{ members: Map<string, string>; allowed: Map<string, string[]> }> } | undefined;
+    function indexOfRooms() {
+        if (!roomIndex || roomIndex.until <= Date.now()) roomIndex = { until: Date.now() + 15_000, value: (async () => {
+            const members = new Map<string, string>(), allowed = new Map<string, string[]>();
             for (const id of await backend.ids()) {
                 const room = await backend.get(id).catch(() => null);
                 if (!room?.plaza || room.status === 'closed') continue;
-                for (const uid of room.plaza.allowed) if (!room.plaza.members.some(member => member.profileId === uid)) index.set(uid, [...index.get(uid) ?? [], id]);
+                for (const member of room.plaza.members) if (member.profileId) members.set(member.profileId, id);
+                for (const uid of room.plaza.allowed) if (!room.plaza.members.some(member => member.profileId === uid)) allowed.set(uid, [...allowed.get(uid) ?? [], id]);
             }
-            return index;
+            return { members, allowed };
         })() };
-        return invitedIndex.value;
+        roomIndex.value.catch(() => { roomIndex = undefined; });
+        return roomIndex.value;
     }
-    /** The plaza a signed-in person is in now, if any. */
+    /** The plaza a signed-in person is in now, if any (checked against the room itself). */
     async function plazaOf(uid: string) {
-        for (const id of await backend.ids()) {
-            const room = await backend.get(id).catch(() => null);
-            if (room?.plaza && room.status !== 'closed' && room.plaza.members.some(member => member.profileId === uid)) return room;
+        const id = (await indexOfRooms()).members.get(uid);
+        const room = id ? await backend.get(id) : null;
+        return room?.plaza && room.status !== 'closed' && room.plaza.members.some(member => member.profileId === uid) ? room : null;
+    }
+    /** A plaza whose last member left as its match ended: closed now that the match is recorded. */
+    async function closeEmptied(id: string) {
+        try {
+            const { room, result } = await update(id, target => closeEmpty(target));
+            if (result) await announce(room);
+        } catch (error) {
+            if (!(error instanceof RoomError)) console.error('closing an empty room failed', error instanceof Error ? error.message : error);
         }
-        return null;
     }
     /** Tells a plaza member of something by a push notification, unless their page is open and in front. */
     function tellMember(room: Room, member: string, notice: Notice) {
@@ -447,7 +462,7 @@ export function createRoomServer({ config, backend, catalog, history, push = pus
         const member = current ? memberOf(current, body?.member) : null;
         if (!current?.plaza || !member || member.profileId !== uid) throw new RoomError(404, GONE);
         if ((await friendshipBetween(token, uid, to))?.status !== 'accepted') throw new RoomError(409, 'フレンドの状態が変わっています');
-        const { room } = await update(id, target => actPlaza(target, member.id, { action: 'invite', profileId: to }, catalog));
+        const { room } = await update(id, target => inviteByName(target, member.id, to));
         await announce(room);
         if (await push.store.once(`invite:${id}:${to}`, 10 * 60_000)) push.later(to, notices.invited(member.name, id));
         return { ok: true };
@@ -470,7 +485,7 @@ export function createRoomServer({ config, backend, catalog, history, push = pus
         }
         if (!uid || !token) throw new RoomError(401, 'ログインすると使えます');
         if (name === 'invited') {
-            const ids = (await invitations()).get(uid) ?? [];
+            const ids = (await indexOfRooms()).allowed.get(uid) ?? [];
             const rooms = await Promise.all(ids.slice(0, MAX_LOOKUP).map(id => backend.get(id)));
             return { rooms: rooms.flatMap(room => room?.plaza && room.status !== 'closed' && room.plaza.allowed.includes(uid) ? [plazaInfo(room)] : []) };
         }
@@ -481,7 +496,8 @@ export function createRoomServer({ config, backend, catalog, history, push = pus
             const room = await plazaOf(to);
             const visitor = { ...await visitorOf(owners, ''), profileId: uid };
             // Nothing tells whether the friend is in a room, or which: only those in it learn of the request.
-            if (room && await push.store.once(`ask:${room.id}:${uid}`, 60_000)) {
+            // Nothing is written unless the request is new (a written room is a new version for everyone).
+            if (room && askToEnter(structuredClone(room), visitor) && await push.store.once(`ask:${room.id}:${uid}`, 60_000)) {
                 try {
                     const { room: asked, result } = await update(room.id, target => askToEnter(target, visitor));
                     if (result) {
@@ -607,7 +623,8 @@ export function createRoomServer({ config, backend, catalog, history, push = pus
             if (!isRoomId(id)) throw new RoomError(404, GONE);
             if (request.method === 'GET' && !tail) {
                 const room = await backend.get(id);
-                if (!room) throw new RoomError(404, GONE);
+                // A missing room and one the asker may not enter give the same answer.
+                if (!room) throw new RoomError(404, HIDDEN);
                 if (room.plaza) {
                     const owners = await historyOwners(request), invite = new URL(request.url ?? '/', 'http://localhost').searchParams.get('invite');
                     if (!await mayEnter(room, askerOf(owners), idToken(request), invite)) throw new RoomError(404, HIDDEN);
@@ -617,14 +634,16 @@ export function createRoomServer({ config, backend, catalog, history, push = pus
             }
             if (request.method === 'POST' && tail === '/invite') return send(response, 200, await inviteFriend(request, id));
             const existing = request.method === 'POST' && tail ? await backend.get(id) : null;
+            if (request.method === 'POST' && tail && !existing) throw new RoomError(404, HIDDEN);
             if (existing?.plaza) {
                 const body = await readJson(request, MAX_BODY) as Record<string, unknown> | null;
                 const owners = await historyOwners(request);
                 if (history && !owners.length) throw new RoomError(426, '画面を更新してから、もう一度お試しください');
                 const visitor = await visitorOf(owners, body?.name);
-                if (existing.status === 'closed') throw new RoomError(410, CLOSED);
                 // A member whose moment away ran out comes back in (the owner's role is not given back).
                 if (!formerOf(existing, body?.rejoin) && !await mayEnter(existing, visitor, idToken(request), body?.invite)) throw new RoomError(404, HIDDEN);
+                // Only those who may enter learn that it closed.
+                if (existing.status === 'closed') throw new RoomError(410, CLOSED);
                 const { room, result } = await update(id, target => admit(target, visitor));
                 await announce(room);
                 // Someone waiting alone (perhaps in Discord, sharing the link) learns that a friend came.
@@ -845,6 +864,7 @@ export function createRoomServer({ config, backend, catalog, history, push = pus
                 if (outcome.started) countLater('matchesStarted');
                 if (outcome.finished) countLater('matchesFinished');
                 if (outcome.command) countLater('commands');
+                if (outcome.emptied) await closeEmptied(id);
                 deciderChanged(room, before);
                 // Only an asked request is answered by a notification here (asking checked the friendship);
                 // an invitation by name comes over HTTP, where the friendship is checked (`inviteFriend`).
@@ -979,6 +999,7 @@ export function createRoomServer({ config, backend, catalog, history, push = pus
                     const { room: tidied, result } = await update(id, target => tidyPlaza(target, here, now) ?? {} as PlazaOutcome);
                     if (result.finished) await backend.count('matchesFinished');
                     await announce(tidied, undefined, undefined, result.removed);
+                    if (result.emptied) await closeEmptied(id);
                 } catch (error) {
                     if (!(error instanceof RoomError)) throw error;
                 }

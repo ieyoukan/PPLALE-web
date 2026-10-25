@@ -34,6 +34,7 @@ export function cpuThinker(catalog: Catalog): CpuThinker {
             asked.resolve(command);
         });
         started.on('error', error => { console.error('cpu worker', error instanceof Error ? error.message : error); fail(); });
+        // Only the worker in use fails its waiting moves; one given up has already answered them.
         started.on('exit', () => { if (worker === started) fail(); });
         return started;
     }
@@ -44,7 +45,15 @@ export function cpuThinker(catalog: Catalog): CpuThinker {
             return new Promise(resolve => {
                 try { worker ??= start(); } catch { return resolve(here(state, level, side)); }
                 const id = ++serial;
-                const timer = setTimeout(() => { waiting.delete(id); resolve(here(state, 'easy', side)); }, TIMEOUT);
+                // A move that takes too long is given up, and the worker with it, so later moves do not queue behind it.
+                const timer = setTimeout(() => {
+                    waiting.delete(id);
+                    resolve(here(state, 'easy', side));
+                    // The moves queued behind it are decided here instead.
+                    const stuck = worker;
+                    fail();
+                    void stuck?.terminate();
+                }, TIMEOUT);
                 waiting.set(id, { resolve, timer, state, side });
                 worker.postMessage({ id, state, level, side });
             });

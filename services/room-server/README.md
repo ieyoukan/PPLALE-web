@@ -32,7 +32,7 @@
 | `POST /rooms/lookup` | `{ ids }` → `{ rooms }`。尋ねた人が入れるルームだけ（フレンドの現在地） |
 | `POST /rooms/invited` | ログイン必須。名指しで招待されているルーム |
 | `POST /rooms/ask` | `{ to }` ログイン必須。フレンドのいるインバイト系ルームへ招待をリクエスト（結果は返さない） |
-| `POST /rooms/{id}/invite` | `{ member, to }` ログイン必須。在室者がフレンドを名指しで招待し、通知する（フレンド関係を Firestore で確認） |
+| `POST /rooms/{id}/invite` | `{ member, to }` ログイン必須。在室者がフレンドを名指しで招待し、通知する（フレンド関係を Firestore で確認）。名指しの許可で入れるようになるのはインバイト系のルームだけ |
 | `GET /push/key` | `{ publicKey }`。ブラウザが購読に使う VAPID 公開鍵。鍵がなければ `null`（通知のベルを出さない） |
 | `POST /push/subscribe` | `{ subscription }` → このブラウザの通知先を登録（ログイン必須） |
 | `POST /push/unsubscribe` | `{ endpoint }` → 登録を外す |
@@ -53,7 +53,7 @@ WebSocket を閉じるコード: `4404` ルームか席がない・観戦でき�
 - `POST /rooms` に `plaza: { name, visibility }` を付けると作る。作成者は席に座らず入室し、最初のオーナーになる。名前（16文字）と公開範囲は作成後に変えられない。公開範囲が不正・未指定ならインバイト。ゲストはフレンド系を作れない。
 - 返るのは席ではなく入室者の秘密（`{ token, view }`）。`view.plaza` に名前・公開範囲・作成者・オーナー・自分（`me`）・在室者が入る。WebSocket の `hello` は同じ `token` を使う。
 - 入室は `POST /rooms/{id}/join { name, invite?, rejoin? }`。パブリックは誰でも、フレンドは作成者のフレンド、フレンド＋は作成者か在室者のフレンド（Firestore を本人の ID token で読む）、インバイト系は招待リンクの秘密（`invite`）か名指しの許可。入れない部屋は存在しない部屋と同じ 404 にする。同じアカウントの別端末は同じ入室者になる（秘密は最大4つ）。
-- `GET /rooms/{id}?invite=` も入れる人にだけ情報を返す。`POST /rooms/lookup { ids }` はフレンド画面向けにまとめて返す（入れる部屋だけ）。`POST /rooms/invited` は名指しで招待されている部屋、`POST /rooms/ask { to }` はフレンドのいるインバイト系の部屋への招待のリクエスト（部屋があるかどうかは返さない）。
+- `GET /rooms/{id}?invite=` も入れる人にだけ情報を返す。`POST /rooms/lookup { ids }` はフレンド画面向けにまとめて返す（入れる部屋だけ）。`POST /rooms/invited` は名指しで招待されている部屋、`POST /rooms/ask { to }` はフレンドのいるインバイト系の部屋への招待のリクエスト（部屋があるかどうかは返さない）。この2つは全ルームを1回読んだ索引を15秒使い回す。
 - 操作（`action`）: `sit` `stand` `ready` `unready` `cpu` `dismissCpu` `rematch`（席を維持して次へ） `claim`（オーナー不在のときだけ） `rules`（オーナー。対戦中は次の対戦から） `renewInvite` `invite`（名指し） `answer`（リクエストへの返事） `leave`。招待を出せるのはインバイトではオーナー、それ以外では在室者。
 - 席に座っていない人は観戦者として、両者の手札・山札を伏せた盤面（`audience`）を受け取る。リプレイの案内は着席者だけ。
 - CPU は空席に1体まで。強さを選び、デッキはルールに合うおまかせ。サーバーが worker thread で手を決め（さいきょうで最大1秒ほど）、ほかの操作と同じ CAS で反映する。同じ局面の手は `pplale:claim:cpu:{id}:{version}` を取った1台だけが打つ。部屋の接続を持つ Pod が担当し、Pod が落ちても定期処理で引き継ぐ。
