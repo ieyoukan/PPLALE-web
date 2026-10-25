@@ -129,6 +129,7 @@ test('plaza: an owner who leaves leaves it without one; one person becomes the n
     assert.equal(without.plaza!.owner, null);
     // The creator stays the creator.
     assert.equal(without.plaza!.creator.name, 'ありす');
+    assert.equal(await alice.closed, 4404);
     assert.equal(alice.gone(), 'ルームから出ました');
     const claims = await Promise.all([b.act({ action: 'claim' }), c.act({ action: 'claim' })]);
     assert.deepEqual(claims.filter(error => error === undefined).length, 1);

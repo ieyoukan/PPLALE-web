@@ -120,6 +120,12 @@ redis.call('HSET', KEYS[1], 'v', ARGV[2], 'json', ARGV[3])
 redis.call('PEXPIRE', KEYS[1], 600000)
 return 1`;
 
+// KEYS[1] a presence set. ARGV: the socket's lapse time, the socket, its ttl. The set outlives its longest-lived socket.
+const MARK = `
+redis.call('ZADD', KEYS[1], ARGV[1], ARGV[2])
+if redis.call('PTTL', KEYS[1]) < tonumber(ARGV[3]) then redis.call('PEXPIRE', KEYS[1], ARGV[3]) end
+return 1`;
+
 // The seats and spectators are counted; a plaza's member entries are listed after the counts.
 const PRESENCE = `
 local result = {}
@@ -152,10 +158,8 @@ export async function redisBackend(url: string, prefix = 'pplale:'): Promise<Bac
         const prefix = `${memberOfEntry(entry)}~`;
         return (await client.zRange(seatKey(id, 'm'), 0, -1)).filter(value => value.startsWith(prefix)).length;
     };
-    const mark = (entry: Member, ttl: number) => Promise.all([
-        client.zAdd(seatKey(entry.id, entry.seat), { score: Date.now() + ttl, value: entry.member }),
-        client.pExpire(seatKey(entry.id, entry.seat), Math.ceil(ttl)),
-    ]);
+    // A plaza's members share one key: a socket only ever lengthens its life, never cuts the others'.
+    const mark = (entry: Member, ttl: number) => client.eval(MARK, { keys: [seatKey(entry.id, entry.seat)], arguments: [String(Date.now() + ttl), entry.member, String(Math.ceil(ttl))] });
     async function keys(pattern: string) {
         const found: string[] = [];
         for await (const batch of client.scanIterator({ MATCH: pattern, COUNT: 500 })) found.push(...(Array.isArray(batch) ? batch : [batch]));
