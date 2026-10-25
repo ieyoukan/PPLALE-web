@@ -39,7 +39,7 @@ export function DeckSheet({ choices, chosen, onChoose, onClose, signIn, loading 
 
 /** How strong the CPU that sits down is: one tile each, with as many stars. */
 export function CpuSheet({ onChoose, onClose }: { onChoose: (level: CpuLevel) => void; onClose: () => void }) {
-  return <Sheet title="CPUを呼ぶ" onClose={onClose} wide>
+  return <Sheet title="CPUをえらぶ" onClose={onClose} wide>
     <ul className={styles.cpuGrid}>{cpuLevels.map((level, index) => <li key={level}>
       <OrnateFrame as="button" size="sm" className={styles.cpuTile} data-level={level} onClick={() => onChoose(level)}>
         <Avatar cpu size={72} />
@@ -48,6 +48,16 @@ export function CpuSheet({ onChoose, onClose }: { onChoose: (level: CpuLevel) =>
       </OrnateFrame>
     </li>)}</ul>
     <p className={styles.note}>CPUのデッキは、このルームのルールに合うおまかせデッキです。</p>
+  </Sheet>;
+}
+
+/** The empty opponent seat offers a person or a CPU before choosing CPU strength. */
+export function OpponentSheet({ onInvite, onCpu, onClose }: { onInvite: () => void; onCpu: () => void; onClose: () => void }) {
+  return <Sheet title="対戦相手をえらぶ" onClose={onClose}>
+    <div className={styles.opponentChoices}>
+      <button onClick={onInvite}><PlazaIcon name="people" /><span data-ui-title>人をさそう</span></button>
+      <button onClick={onCpu}><PlazaIcon name="cpu" /><span data-ui-title>CPUと対戦</span></button>
+    </div>
   </Sheet>;
 }
 

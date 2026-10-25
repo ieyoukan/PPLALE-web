@@ -2,21 +2,18 @@
 
 // The game's menu, over whatever is on screen (the room, a match, the cards, the editor): Escape
 // or a menu button opens and closes it, and nothing behind it is touched meanwhile. The room the
-// player is in comes first (inviting, the CPU), then every other place of the game. Going
+// player is in comes first, then the most useful places of the game. Going
 // somewhere keeps the player in their room; only making a new room leaves it, and says so first.
 import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from 'react';
 import type { ReactNode } from 'react';
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
-import { other } from '@pplale/game-core';
-import type { Side } from '@pplale/game-core';
 import { DEFAULT_VISIBILITY } from '@pplale/game-core/room';
 import type { RoomVisibility } from '@pplale/game-core/room';
 import { useAuth } from '@/lib/auth';
-import { BATTLE_PATH, CARDS_PATH, CPU_PATH, EDITOR_PATH, NOTIFICATIONS_PATH, PUZZLES_PATH } from '@/lib/game/sessionStore';
+import { BATTLE_PATH, CARDS_PATH, EDITOR_PATH, NOTIFICATIONS_PATH, PUZZLES_PATH } from '@/lib/game/sessionStore';
 import { NotificationSoundToggle } from '../notifications/GameNotifications';
 import { OrnateFrame } from '../ornament/OrnateFrame';
-import { CpuSheet } from './PlazaSheets';
 import { DiscordMark, PlazaIcon } from './PlazaIcon';
 import type { PlazaIconName } from './PlazaIcon';
 import { RoomNameSheet } from './RoomManagementSheets';
@@ -59,16 +56,15 @@ export function LaunchpadProvider({ children }: { children: ReactNode }) {
   return <Context.Provider value={value}>{children}{shown && pathname !== '/game/' && <Launchpad onClose={close} />}</Context.Provider>;
 }
 
-type Panel = 'home' | 'share' | 'cpu' | 'settings' | 'new' | 'name';
+type Panel = 'home' | 'share' | 'settings' | 'new' | 'name';
 interface Place { href: string; icon: PlazaIconName; label: string }
 const places: Place[] = [
   { href: '/game/social/', icon: 'heart', label: 'フレンド' },
   { href: CARDS_PATH, icon: 'cards', label: 'カード' },
-  { href: CPU_PATH, icon: 'star', label: 'ひとりで' },
   { href: `${BATTLE_PATH}free/`, icon: 'sword', label: 'フリーマッチ' },
+  { href: PUZZLES_PATH, icon: 'puzzle', label: 'パズル' },
 ];
 const morePlaces: Place[] = [
-  { href: PUZZLES_PATH, icon: 'puzzle', label: 'パズル' },
   { href: EDITOR_PATH, icon: 'pen', label: 'エディタ' },
   { href: `${BATTLE_PATH}history/`, icon: 'history', label: '対戦履歴' },
   { href: '/', icon: 'exit', label: 'サイトへ' },
@@ -87,10 +83,6 @@ function Launchpad({ onClose }: { onClose: () => void }) {
     return () => previous?.focus?.();
   }, []);
   const onRoomPage = isPlazaPath(pathname);
-  const mine = view ? view.players.findIndex(player => player?.member === room?.me) : -1;
-  // The CPU sits across from the player, or wherever there is room.
-  const cpuSeat: Side | null = !view || view.status === 'playing' || view.players.some(player => player?.cpu) ? null
-    : mine >= 0 ? (view.players[other(mine as Side)] ? null : other(mine as Side)) : !view.players[1] ? 1 : !view.players[0] ? 0 : null;
   const go = (href: string) => { onClose(); router.push(href); };
   const subpanel = panel !== 'home';
 
@@ -98,7 +90,7 @@ function Launchpad({ onClose }: { onClose: () => void }) {
     <OrnateFrame ref={box} className={styles.pad} role="dialog" aria-modal="true" aria-label="ゲームメニュー" data-launchpad onClick={event => event.stopPropagation()}
       onKeyDown={event => { if (event.key === 'Escape' && !subpanel) { event.stopPropagation(); event.preventDefault(); onClose(); } }}>
       <header className={styles.head}>
-        <h2 data-ui-title>クイックパッド</h2>
+        <h2 data-ui-title>ランチパッド</h2>
         <div className={styles.headTools}>
           <Link href={NOTIFICATIONS_PATH} className={styles.iconButton} onClick={onClose} aria-label="通知"><PlazaIcon name="bell" /></Link>
           <Link href={user ? '/game/profile/' : '#'} className={styles.iconButton} aria-label={user ? 'プロフィール' : 'ログイン'} onClick={event => { if (!user) { event.preventDefault(); signInWithGoogle().catch(() => {}); } else onClose(); }}><PlazaIcon name={user ? 'star' : 'heart'} /></Link>
@@ -114,7 +106,7 @@ function Launchpad({ onClose }: { onClose: () => void }) {
         </OrnateFrame>
         {room.owner === room.me && <button className={styles.rename} onClick={() => setPanel('name')} aria-label="ルーム名を変える"><PlazaIcon name="pen" /></button>}
       </section> : <section className={styles.roomCard} aria-label="いまのルーム"><OrnateFrame size="sm" className={styles.roomMain}>
-        <span className={styles.emptyRoomArt}><PlazaIcon name="home" /></span><span className={styles.roomText}><small>いまのルーム</small><b data-ui-title>ルームへ</b><span>{plaza.stage.kind === 'entering' ? 'つないでいます…' : 'みんなで遊ぶ場所'}</span></span>
+        <span className={styles.emptyRoomArt}><PlazaIcon name="home" /></span><span className={styles.roomText}><small>いまのルーム</small><b data-ui-title>ホーム</b><span>{plaza.stage.kind === 'entering' ? 'つないでいます…' : 'みんなで遊ぶ場所'}</span></span>
       </OrnateFrame></section>}
 
       <section className={styles.section} aria-label="あそぶ">
@@ -128,10 +120,9 @@ function Launchpad({ onClose }: { onClose: () => void }) {
 
       <section className={styles.section} aria-label="すぐに">
         <h3 data-ui-title>すぐに</h3>
-        <div className={styles.grid}>
-          <button className={styles.tile} onClick={() => room && view ? onRoomPage ? onClose() : go(plazaHref(view.id)) : go('/game/')}><PlazaIcon name="home" /><span data-ui-title>ルームへ</span></button>
+        <div className={`${styles.grid} ${styles.actionGrid}`}>
+          <button className={styles.tile} onClick={() => room && view ? onRoomPage ? onClose() : go(plazaHref(view.id)) : go('/game/')}><PlazaIcon name="home" /><span data-ui-title>ホーム</span></button>
           <button className={styles.tile} disabled={!room} onClick={() => setPanel('share')}><DiscordMark /><span data-ui-title>さそう</span></button>
-          <button className={styles.tile} disabled={cpuSeat === null} onClick={() => setPanel('cpu')}><PlazaIcon name="cpu" /><span data-ui-title>CPUを呼ぶ</span></button>
           <button className={styles.tile} onClick={() => setPanel('new')}><PlazaIcon name="door" /><span data-ui-title>新しいルーム</span></button>
         </div>
       </section>
@@ -145,7 +136,6 @@ function Launchpad({ onClose }: { onClose: () => void }) {
     </OrnateFrame>
     <span onClick={event => event.stopPropagation()}>
       {panel === 'share' && view?.plaza && <ShareSheet view={view} onClose={() => setPanel('home')} />}
-      {panel === 'cpu' && cpuSeat !== null && <CpuSheet onClose={() => setPanel('home')} onChoose={level => { setPanel('home'); onClose(); void plaza.send({ action: 'cpu', seat: cpuSeat, level }).catch(() => {}); if (!onRoomPage && view) router.push(plazaHref(view.id)); }} />}
       {panel === 'settings' && <Settings onClose={() => setPanel('home')} />}
       {panel === 'new' && <NewRoom onClose={() => setPanel('home')} onDone={onClose} />}
       {panel === 'name' && view?.plaza && <RoomNameSheet view={view} onClose={() => setPanel('home')} />}

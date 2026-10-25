@@ -12,11 +12,11 @@
 .table :focus-visible, .sheet :focus-visible { outline: 3px solid var(--brand-vanilla); outline-offset: 3px; }
 
 /* ── The soft buttons ── */
-.round, .inviteButton, .claim, .cpuCall, .softButton, .shareTile {
+.round, .inviteButton, .claim, .softButton, .shareTile {
   border: 2px solid #fff1d3; background: linear-gradient(#fffaf0, #ecd9ba); color: var(--brand-cocoa-deep);
   box-shadow: 0 4px 0 #9a7457, 0 8px 16px #43272833; transition: transform .12s ease, box-shadow .12s ease;
 }
-:is(.round, .inviteButton, .claim, .cpuCall, .softButton, .shareTile):active:not(:disabled) { transform: translateY(3px); box-shadow: 0 1px 0 #9a7457, 0 4px 10px #43272833; }
+:is(.round, .inviteButton, .claim, .softButton, .shareTile):active:not(:disabled) { transform: translateY(3px); box-shadow: 0 1px 0 #9a7457, 0 4px 10px #43272833; }
 .round { display: grid; place-items: center; width: 52px; height: 52px; border-radius: 18px; font-size: 26px; }
 
 /* ── Top: the room and inviting ── */
@@ -82,15 +82,13 @@ a.person:hover { background: #fff3d61a; }
 .thinking i:nth-child(2) { animation-delay: .15s; }
 .thinking i:nth-child(3) { animation-delay: .3s; }
 .seatCorner { position: absolute; top: -12px; right: -12px; display: grid; place-items: center; width: 40px; height: 40px; border-radius: 50%; border: 2px solid #fff; background: var(--brand-cocoa); color: #fff8f0; font-size: 20px; box-shadow: 0 4px 10px #4327284d; }
-.seatEmpty { grid-template-columns: 1fr auto; filter: none; animation: none; }
+.seatEmpty { grid-template-columns: 1fr; filter: none; animation: none; }
 .sitButton { display: flex; align-items: center; gap: 18px; height: 100%; padding: 0; border: 0; background: none; color: var(--brand-cocoa); text-align: left; }
 .sitButton b { font-size: 28px; }
 /* A diamond like the cards' ornaments, calling from far to near. */
 .plus { display: grid; place-items: center; width: 80px; height: 80px; background: var(--brand-cocoa); color: #fff8f0; font-size: 36px; clip-path: polygon(50% 0, 100% 50%, 50% 100%, 0 50%); animation: beckon 1.8s ease-in-out infinite; }
 .plusSoft { background: #b8862b; color: #fff8f0; animation-duration: 2.6s; }
 .sitButton:hover .plus { animation-duration: .9s; }
-.cpuCall { display: grid; justify-items: center; gap: 2px; padding: 8px 14px; border-radius: 18px; font-size: 13px; font-weight: 700; }
-.cpuCall svg { font-size: 30px; }
 
 /* ── Right: the rules, and who looks after them ── */
 .side { grid-area: side; display: flex; flex-direction: column; gap: 12px; min-height: 0; }
@@ -153,6 +151,11 @@ a.person:hover { background: #fff3d61a; }
 .deckGrid, .cpuGrid { display: grid; gap: 12px; list-style: none; margin: 0; padding: 0; }
 .deckGrid { grid-template-columns: repeat(auto-fill, minmax(168px, 1fr)); }
 .cpuGrid { grid-template-columns: repeat(4, 1fr); }
+.opponentChoices { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; }
+.opponentChoices button { display: grid; justify-items: center; align-content: center; gap: 9px; min-height: 108px; border: 2px solid var(--brand-pink-edge); background: var(--brand-paper); color: var(--brand-cocoa-deep); font-size: 17px; font-weight: 700; cursor: pointer; }
+.opponentChoices button:hover { background: var(--brand-blush); }
+.opponentChoices button:focus-visible { outline: 3px solid var(--brand-cocoa); outline-offset: 2px; }
+.opponentChoices svg { font-size: 36px; color: var(--brand-cocoa); }
 .deckTile, .cpuTile { --pad: 16px 10px 14px; display: grid; justify-items: center; gap: 6px; width: 100%; border: 0; background: none; color: var(--brand-cocoa-deep); cursor: pointer; transition: transform .12s ease; }
 .deckTile:hover:not(:disabled), .cpuTile:hover { transform: translateY(-3px); }
 .deckTile[aria-pressed=true] { --frame-face: var(--brand-blush); }

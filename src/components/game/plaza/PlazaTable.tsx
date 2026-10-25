@@ -19,7 +19,7 @@ import { PreparationProgress } from '../MatchPreparation';
 import { useRoomPreparation } from '../room/useRoomPreparation';
 import { OrnateFrame } from '../ornament/OrnateFrame';
 import { Avatar } from './Avatar';
-import { CpuSheet, DeckSheet, RulesSheet } from './PlazaSheets';
+import { CpuSheet, DeckSheet, OpponentSheet, RulesSheet } from './PlazaSheets';
 import { RoomNameSheet } from './RoomManagementSheets';
 import { ShareSheet } from './ShareSheet';
 import { DiscordMark, PlazaIcon } from './PlazaIcon';
@@ -29,7 +29,7 @@ import { visibilityInfo } from './visibility';
 import styles from './Plaza.module.css';
 
 const DECK_KEY = 'pplale-plaza-deck-v1';
-type Open = null | 'deck' | 'rules' | 'share' | 'name' | { cpu: Side };
+type Open = null | 'deck' | 'rules' | 'share' | 'name' | { opponent: Side } | { cpu: Side };
 
 /** The deck this browser chose last, so the next match starts with it already chosen. */
 function useChosenDeck() {
@@ -62,7 +62,6 @@ export function PlazaTable({ view, onMenu }: { view: RoomView; onMenu: () => voi
   const me = mySeat === null ? null : view.players[mySeat]!;
   const ready = () => { if (chosen) { const deck = chosen.deck(randomSeed()); ask(() => preparation.prepare().then(() => plaza.send({ action: 'ready', deck }))); } };
   const owner = room.members.find(member => member.id === room.owner);
-  const seatedCpu = view.players.some(player => player?.cpu);
   const empty = ([0, 1] as const).filter(side => !view.players[side]);
   const info = visibilityInfo[room.visibility];
 
@@ -75,10 +74,9 @@ export function PlazaTable({ view, onMenu }: { view: RoomView; onMenu: () => voi
         ? <button className={styles.sitButton} disabled={busy} onClick={() => ask({ action: 'sit', seat: side })} aria-label="この席にすわる">
           <span className={styles.plus}><PlazaIcon name="plus" /></span><b data-ui-title>すわる</b>
         </button>
-        : <button className={styles.sitButton} disabled={busy} onClick={() => setOpen('share')} aria-label="あいてをさそう">
-          <span className={`${styles.plus} ${styles.plusSoft}`}><PlazaIcon name="sparkle" /></span><b data-ui-title>あいて募集中</b>
+        : <button className={styles.sitButton} disabled={busy} onClick={() => setOpen({ opponent: side })} aria-label="対戦相手をえらぶ">
+          <span className={`${styles.plus} ${styles.plusSoft}`}><PlazaIcon name="people" /></span><b data-ui-title>相手をえらぶ</b>
         </button>}
-      {!seatedCpu && <button className={styles.cpuCall} disabled={busy} onClick={() => setOpen({ cpu: side })}><PlazaIcon name="cpu" /><span>CPU</span></button>}
     </OrnateFrame>;
     const self = side === mySeat;
     return <OrnateFrame size="sm" className={`${styles.seat} ${position}`} data-ready={player.ready || undefined} data-self={self || undefined} key={`${player.member ?? player.cpu}-${side}`}>
@@ -166,7 +164,8 @@ export function PlazaTable({ view, onMenu }: { view: RoomView; onMenu: () => voi
     {open === 'rules' && <RulesSheet view={view} onClose={() => setOpen(null)} onSave={rules => { setOpen(null); ask({ action: 'rules', rules }); }} />}
     {open === 'name' && <RoomNameSheet view={view} onClose={() => setOpen(null)} />}
     {open === 'share' && <ShareSheet view={view} onClose={() => setOpen(null)} />}
-    {open && typeof open === 'object' && <CpuSheet onClose={() => setOpen(null)} onChoose={level => { const side = open.cpu; setOpen(null); ask({ action: 'cpu', seat: side, level }); }} />}
+    {open && typeof open === 'object' && 'opponent' in open && <OpponentSheet onClose={() => setOpen(null)} onInvite={() => setOpen('share')} onCpu={() => setOpen({ cpu: open.opponent })} />}
+    {open && typeof open === 'object' && 'cpu' in open && <CpuSheet onClose={() => setOpen({ opponent: open.cpu })} onChoose={level => { const side = open.cpu; setOpen(null); ask({ action: 'cpu', seat: side, level }); }} />}
   </div>;
 }
 

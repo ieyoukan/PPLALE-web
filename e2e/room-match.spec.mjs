@@ -131,10 +131,17 @@ test('the CPU sits down in an empty seat and plays its own moves at the same tab
   await alice.goto(`${base}/game/`);
   await alice.waitForURL(/\/game\/room\/\d{6}\/$/, { timeout: 30000 });
   await seats(alice).last().click();
-  await alice.getByRole('button', { name: 'CPU', exact: true }).click();
+  await alice.getByRole('button', { name: '対戦相手をえらぶ' }).click();
+  await alice.getByRole('dialog', { name: '対戦相手をえらぶ' }).getByRole('button', { name: '人をさそう' }).click();
+  await expect(alice.getByRole('dialog', { name: 'ルームにさそう' })).toBeVisible();
+  await alice.getByRole('dialog', { name: 'ルームにさそう' }).getByRole('button', { name: '閉じる' }).click();
+  await alice.getByRole('button', { name: '対戦相手をえらぶ' }).click();
+  await alice.getByRole('dialog', { name: '対戦相手をえらぶ' }).getByRole('button', { name: 'CPUと対戦' }).click();
+  await expect(alice.getByRole('dialog', { name: 'CPUをえらぶ' })).toBeVisible();
   await alice.getByRole('button', { name: /ふつう/ }).click();
   await expect(alice.getByText('CPU・ふつう')).toBeVisible();
   await alice.getByRole('button', { name: 'じゅんびOK!' }).click();
+  await expect(alice.locator('[data-table]')).toBeVisible({ timeout: 20000 });
   // The CPU throws its die after ours; whoever wins chooses.
   for (let round = 0; round < 8; round++) {
     await alice.getByRole('button', { name: 'あなたのサイコロを振る' }).click({ timeout: 20000 });
