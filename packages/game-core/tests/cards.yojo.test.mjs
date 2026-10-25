@@ -158,6 +158,15 @@ for (const inomu of ['y_44', 'y_83']) {
   });
 }
 
+for (const makoponi of ['y_15', 'y_45', 'y_84']) {
+  test(`y_16 いのむー: ${makoponi} entering the field grants +1/+1`, () => {
+    let s = arena({ me: { hand: [makoponi], field: ['y_16'] } });
+    const inomu = field(s)[0];
+    s = play(s, hand(s)[0]);
+    assert.deepEqual(stats(s, inomu), [catalog.y_16.attack + 1, catalog.y_16.hp + 1]);
+  });
+}
+
 test('y_15 まこぽに: いのむー outside the friendly field grants neither bonus', () => {
   for (const inomu of ['y_16', 'y_44', 'y_83']) {
     let s = arena({ me: { hand: ['y_15', inomu], nap: [inomu], pp: 3 }, foe: { field: [inomu] } });

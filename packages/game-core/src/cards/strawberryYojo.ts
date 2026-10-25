@@ -136,7 +136,7 @@ export const strawberryYojo: CardScripts = {
     y_16: {
         keywords: ['guard'],
         onAllyEnter(ctx, ally) {
-            if (ctx.s.cards[ally].cardId === 'y_15') ctx.buff(ctx.uid, 1, 1);
+            if (ctx.defOf(ally).name === 'まこぽに') ctx.buff(ctx.uid, 1, 1);
         },
     },
     // y_17 まめろん: 防衛。お菓子を食べられない。
