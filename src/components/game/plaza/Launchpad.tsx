@@ -16,15 +16,14 @@ import { useAuth } from '@/lib/auth';
 import { BATTLE_PATH, CARDS_PATH, CPU_PATH, EDITOR_PATH, NOTIFICATIONS_PATH, PUZZLES_PATH } from '@/lib/game/sessionStore';
 import { NotificationSoundToggle } from '../notifications/GameNotifications';
 import { OrnateFrame } from '../ornament/OrnateFrame';
-import { Avatar } from './Avatar';
 import { CpuSheet } from './PlazaSheets';
 import { DiscordMark, PlazaIcon } from './PlazaIcon';
 import type { PlazaIconName } from './PlazaIcon';
 import { RoomNameSheet } from './RoomManagementSheets';
+import { RoomThumbnailImage } from './RoomThumbnailImage';
 import { isPlazaPath, plazaHref, usePlaza } from './PlazaProvider';
 import { ShareSheet } from './ShareSheet';
 import { Sheet } from './Sheet';
-import { guestIcon, useProfiles } from './useProfiles';
 import { visibilityInfo } from './visibility';
 import styles from './Launchpad.module.css';
 
@@ -61,25 +60,27 @@ export function LaunchpadProvider({ children }: { children: ReactNode }) {
 }
 
 type Panel = 'home' | 'share' | 'cpu' | 'settings' | 'new' | 'name';
-interface Place { href: string; icon: PlazaIconName; label: string; tone: string }
+interface Place { href: string; icon: PlazaIconName; label: string }
 const places: Place[] = [
-  { href: '/game/social/', icon: 'heart', label: 'フレンド', tone: 'pink' },
-  { href: NOTIFICATIONS_PATH, icon: 'bell', label: '通知', tone: 'vanilla' },
-  { href: CARDS_PATH, icon: 'cards', label: 'カード', tone: 'sage' },
-  { href: CPU_PATH, icon: 'cpu', label: 'ひとりで', tone: 'peach' },
-  { href: `${BATTLE_PATH}free/`, icon: 'sword', label: 'フリーマッチ', tone: 'pink' },
-  { href: PUZZLES_PATH, icon: 'puzzle', label: 'パズル', tone: 'sage' },
-  { href: EDITOR_PATH, icon: 'pen', label: 'エディタ', tone: 'vanilla' },
-  { href: `${BATTLE_PATH}history/`, icon: 'history', label: '対戦履歴', tone: 'peach' },
+  { href: '/game/social/', icon: 'heart', label: 'フレンド' },
+  { href: CARDS_PATH, icon: 'cards', label: 'カード' },
+  { href: CPU_PATH, icon: 'star', label: 'ひとりで' },
+  { href: `${BATTLE_PATH}free/`, icon: 'sword', label: 'フリーマッチ' },
+];
+const morePlaces: Place[] = [
+  { href: PUZZLES_PATH, icon: 'puzzle', label: 'パズル' },
+  { href: EDITOR_PATH, icon: 'pen', label: 'エディタ' },
+  { href: `${BATTLE_PATH}history/`, icon: 'history', label: '対戦履歴' },
+  { href: '/', icon: 'exit', label: 'サイトへ' },
 ];
 
 function Launchpad({ onClose }: { onClose: () => void }) {
   const plaza = usePlaza(), router = useRouter(), pathname = usePathname();
   const { user, signInWithGoogle } = useAuth();
   const [panel, setPanel] = useState<Panel>('home');
+  const [more, setMore] = useState(false);
   const box = useRef<HTMLDivElement>(null);
   const view = plaza.view, room = view?.plaza;
-  const profiles = useProfiles(room?.members.map(member => member.profileId) ?? []);
   useEffect(() => {
     const previous = document.activeElement as HTMLElement | null;
     box.current?.querySelector<HTMLElement>('button, a')?.focus();
@@ -96,37 +97,50 @@ function Launchpad({ onClose }: { onClose: () => void }) {
   return <div className={styles.backdrop} onClick={onClose} data-launchpad>
     <OrnateFrame ref={box} className={styles.pad} role="dialog" aria-modal="true" aria-label="ゲームメニュー" data-launchpad onClick={event => event.stopPropagation()}
       onKeyDown={event => { if (event.key === 'Escape' && !subpanel) { event.stopPropagation(); event.preventDefault(); onClose(); } }}>
-      <button className={styles.close} onClick={onClose} aria-label="メニューを閉じる"><PlazaIcon name="close" /></button>
-      {room && view ? <section className={styles.roomCard} aria-label="いまのルーム">
-        <OrnateFrame as="button" size="sm" className={styles.roomMain} onClick={() => onRoomPage ? onClose() : go(plazaHref(view.id))}>
-          <span className={styles.roomBadge}><PlazaIcon name={visibilityInfo[room.visibility].icon} /></span>
-          <span className={styles.roomText}><b data-ui-title>{room.name}</b><small>{visibilityInfo[room.visibility].label}・{view.status === 'playing' ? '対戦中' : '待ち合わせ中'}</small></span>
-          <span className={styles.faces}>{room.members.slice(0, 5).map(member => <Avatar key={member.id} card={member.profileId && profiles[member.profileId] ? profiles[member.profileId].iconCardId : guestIcon(member.id)} size={34} dim={!member.online} />)}
-            {room.members.length > 5 && <b>+{room.members.length - 5}</b>}</span>
-          {!onRoomPage && <span className={styles.enterHint}><PlazaIcon name="back" />もどる</span>}
-        </OrnateFrame>
-        <div className={styles.roomActions}>
-          <button className={styles.bigAction} data-tone="cocoa" onClick={() => setPanel('share')}><DiscordMark /><span data-ui-title>さそう</span></button>
-          <button className={styles.bigAction} disabled={cpuSeat === null} onClick={() => setPanel('cpu')}><PlazaIcon name="cpu" /><span data-ui-title>CPUを呼ぶ</span></button>
-          {room.owner === room.me && <button className={styles.bigAction} onClick={() => setPanel('name')}><PlazaIcon name="pen" /><span data-ui-title>名前</span></button>}
+      <header className={styles.head}>
+        <h2 data-ui-title>クイックパッド</h2>
+        <div className={styles.headTools}>
+          <Link href={NOTIFICATIONS_PATH} className={styles.iconButton} onClick={onClose} aria-label="通知"><PlazaIcon name="bell" /></Link>
+          <Link href={user ? '/game/profile/' : '#'} className={styles.iconButton} aria-label={user ? 'プロフィール' : 'ログイン'} onClick={event => { if (!user) { event.preventDefault(); signInWithGoogle().catch(() => {}); } else onClose(); }}><PlazaIcon name={user ? 'star' : 'heart'} /></Link>
+          <button className={styles.iconButton} onClick={() => setPanel('settings')} aria-label="設定"><PlazaIcon name="gear" /></button>
+          <button className={styles.iconButton} onClick={onClose} aria-label="メニューを閉じる"><PlazaIcon name="close" /></button>
         </div>
-      </section> : <section className={styles.roomCard}><OrnateFrame as="button" size="sm" className={styles.roomMain} onClick={() => go('/game/')}>
-        <span className={styles.roomBadge}><PlazaIcon name="home" /></span><span className={styles.roomText}><b data-ui-title>ルームへ</b><small>{plaza.stage.kind === 'entering' ? 'つないでいます…' : 'みんなで遊ぶ場所'}</small></span>
+      </header>
+
+      {room && view ? <section className={styles.roomCard} aria-label="いまのルーム">
+        <OrnateFrame size="sm" className={styles.roomMain}>
+          <RoomThumbnailImage rules={room.nextRules ?? view.rules} className={styles.roomArt} sizes="160px" />
+          <span className={styles.roomText}><small>いまのルーム</small><b data-ui-title>{room.name}</b><span><PlazaIcon name={visibilityInfo[room.visibility].icon} />{visibilityInfo[room.visibility].label}<PlazaIcon name="people" />{room.members.length}</span></span>
+        </OrnateFrame>
+        {room.owner === room.me && <button className={styles.rename} onClick={() => setPanel('name')} aria-label="ルーム名を変える"><PlazaIcon name="pen" /></button>}
+      </section> : <section className={styles.roomCard} aria-label="いまのルーム"><OrnateFrame size="sm" className={styles.roomMain}>
+        <span className={styles.emptyRoomArt}><PlazaIcon name="home" /></span><span className={styles.roomText}><small>いまのルーム</small><b data-ui-title>ルームへ</b><span>{plaza.stage.kind === 'entering' ? 'つないでいます…' : 'みんなで遊ぶ場所'}</span></span>
       </OrnateFrame></section>}
 
-      <nav className={styles.grid} aria-label="ゲームのページ">{places.map(place =>
-        <OrnateFrame as={Link} size="sm" key={place.href} href={place.href} className={styles.tile} data-tone={place.tone} onClick={onClose} prefetch={false} aria-current={pathname?.startsWith(place.href) ? 'page' : undefined}>
-          <span className={styles.tileIcon}><PlazaIcon name={place.icon} /></span><span data-ui-title>{place.label}</span>
-        </OrnateFrame>)}
-      </nav>
+      <section className={styles.section} aria-label="あそぶ">
+        <h3 data-ui-title>あそぶ</h3>
+        <nav className={styles.grid} aria-label="ゲームのページ">{places.map(place =>
+          <Link key={place.href} href={place.href} className={styles.tile} onClick={onClose} prefetch={false} aria-current={pathname?.startsWith(place.href) ? 'page' : undefined}>
+            <PlazaIcon name={place.icon} /><span data-ui-title>{place.label}</span>
+          </Link>)}
+        </nav>
+      </section>
+
+      <section className={styles.section} aria-label="すぐに">
+        <h3 data-ui-title>すぐに</h3>
+        <div className={styles.grid}>
+          <button className={styles.tile} onClick={() => room && view ? onRoomPage ? onClose() : go(plazaHref(view.id)) : go('/game/')}><PlazaIcon name="home" /><span data-ui-title>ルームへ</span></button>
+          <button className={styles.tile} disabled={!room} onClick={() => setPanel('share')}><DiscordMark /><span data-ui-title>さそう</span></button>
+          <button className={styles.tile} disabled={cpuSeat === null} onClick={() => setPanel('cpu')}><PlazaIcon name="cpu" /><span data-ui-title>CPUを呼ぶ</span></button>
+          <button className={styles.tile} onClick={() => setPanel('new')}><PlazaIcon name="door" /><span data-ui-title>新しいルーム</span></button>
+        </div>
+      </section>
 
       <footer className={styles.foot}>
-        <Link href={user ? '/game/profile/' : '#'} className={styles.me} onClick={event => { if (!user) { event.preventDefault(); signInWithGoogle().catch(() => {}); } else onClose(); }}>
-          <PlazaIcon name={user ? 'star' : 'heart'} /><span>{user ? 'プロフィール' : 'ログイン'}</span>
-        </Link>
-        <button className={styles.footButton} onClick={() => setPanel('settings')}><PlazaIcon name="gear" /><span>設定</span></button>
-        <button className={styles.footButton} onClick={() => setPanel('new')}><PlazaIcon name="door" /><span>新しいルーム</span></button>
-        <Link href="/" className={styles.footButton}><PlazaIcon name="exit" /><span>サイトへ</span></Link>
+        <button className={styles.moreButton} aria-expanded={more} aria-controls="launchpad-more" onClick={() => setMore(value => !value)}><PlazaIcon name={more ? 'close' : 'grid'} />{more ? '閉じる' : 'もっと見る'}</button>
+        {more && <nav id="launchpad-more" className={styles.moreLinks} aria-label="その他のページ">{morePlaces.map(place =>
+          <Link key={place.href} href={place.href} onClick={onClose} prefetch={false}><PlazaIcon name={place.icon} /><span>{place.label}</span></Link>)}
+        </nav>}
       </footer>
     </OrnateFrame>
     <span onClick={event => event.stopPropagation()}>
