@@ -39,5 +39,8 @@ export default defineConfig([
     'next-env.d.ts',
     'node_modules/**',
     'styled-system/**',
+    'research/cpu/.venv/**',
+    'research/cpu/data/**',
+    'research/cpu/runs/**',
   ]),
 ])

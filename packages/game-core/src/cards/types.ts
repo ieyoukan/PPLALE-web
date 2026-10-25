@@ -1,6 +1,24 @@
 import type { CardContext, Effects } from '../effects/context.ts';
 import type { DeckKind, GameState, Keyword, Side, Task, TaskOp } from '../model.ts';
 
+/** Describes an effect for learning; never executes or replaces a card's rules. */
+export interface ResearchEffect {
+    trigger: string;
+    operation: string;
+    target: string;
+    selection?: string;
+    /** null means variable/unknown, not zero. */
+    amount?: number | null;
+    hp?: number | null;
+    keyword?: string;
+    condition?: { kind: string; cards?: string[]; threshold?: number };
+}
+
+export interface ResearchAnnotation {
+    coverage: 'partial' | 'complete';
+    effects: ResearchEffect[];
+}
+
 /**
  * A queued effect step. Generic ones are in effects/ops.ts; a card or skill may declare its own
  * in `ops` when the step only makes sense for it.
@@ -32,6 +50,8 @@ export interface DrawEvent {
  * (ctx.queue) that resolve in order and may wait for the player's choice.
  */
 export interface CardScript {
+    /** JSON-only learning descriptors. Missing means unannotated, never "no effect". */
+    research?: ResearchAnnotation;
     /** Printed keywords (常在能力). */
     keywords?: Keyword[];
     evasion?: number;

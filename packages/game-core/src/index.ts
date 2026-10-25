@@ -1,5 +1,7 @@
 export { cpuLevels, cpuProfiles } from './ai/profiles.ts';
 export * from './model.ts';
+export { actingSides, actionCost } from './core/actions.ts';
+export type { ActionCost } from './core/actions.ts';
 export { applyCommand } from './commands/index.ts';
 export { newGame, validateDeck } from './setup.ts';
 export { decideMatch, winReasonOf } from './core/outcome.ts';
@@ -10,7 +12,7 @@ export { buildPosition, checkPosition, decodePosition, encodePosition, parsePosi
 export type { Position, PositionHandCard, PositionSide, PositionUnit } from './position.ts';
 export { editGame, printedKeywords } from './edit.ts';
 export type { BoardEdit, EditZone } from './edit.ts';
-export { actingSides, cpuCommand, cpuStrategies, createHard, createMaster, createValueEvaluator, determinize, evaluate, defaultWeights, findLethal, legalMoves, playMatch, randomStrawberryDeck, valueFeatures, valueLayout, valueLogit } from './ai/index.ts';
+export { cpuCommand, cpuStrategies, createHard, createMaster, createValueEvaluator, determinize, evaluate, defaultWeights, findLethal, legalMoves, playMatch, randomStrawberryDeck, valueFeatures, valueLayout, valueLogit } from './ai/index.ts';
 export type { CpuDecision, CpuLevel, CpuOptions, CpuStrategy, Evaluator, LethalOptions, LethalResult, MatchOptions, MatchResult, Move, TurnSearchOptions, ValueModel, Weights } from './ai/index.ts';
 export { attackOf, availablePpMaximum, costOf, hpOf, maxPp, spawnCard } from './core/cards.ts';
 export { canAttack } from './core/combat.ts';

@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { useAuth } from '@/lib/auth';
-import type { Friendship, SocialPlayer } from '@/lib/game/social';
+import type { SocialPlayer } from '@/lib/game/social';
 import type { RoomInfo } from '@pplale/game-core/room';
 import { readRoomInfo } from '@/lib/game/room/client';
 import { RecordedCard } from '../history/RecordedCard';
@@ -28,9 +28,8 @@ export function SocialPage() {
 }
 function Social({ uid }: { uid: string }) {
   const me = useMyProfile();
-  const { friends, received, error, loading, busy, respond } = useSocial(uid);
+  const { friends, received, error, loading } = useSocial(uid);
   const [rooms, setRooms] = useState<Record<string, RoomInfo>>({}), [now, setNow] = useState(() => Date.now());
-  const [remove, setRemove] = useState<Friendship | null>(null);
   const roomIds = [...new Set(friends.flatMap(player => [player.roomId, player.watching?.roomId].filter((id): id is string => !!id)))].sort().join(',');
   useEffect(() => {
     let current = true;
@@ -51,12 +50,7 @@ function Social({ uid }: { uid: string }) {
     group.members.push({ player, role: found.role }); groups.set(found.room.id, group);
   }
   const ordered = [...groups.values()].sort((a, b) => placeOrder.indexOf(placeOf(a.room)) - placeOrder.indexOf(placeOf(b.room)) || a.room.id.localeCompare(b.room.id));
-  const tile = ({ profile, friendship }: SocialPlayer, place: string, status: string) => <FriendTile key={friendship.id} profile={profile} place={place} status={status}>
-    <button className={styles.more} aria-label={`${profile.displayName}をフレンドから外す`} onClick={() => setRemove(friendship)}><Icon name="more" /></button>
-    {remove?.id === friendship.id && <div className={styles.remove} role="dialog" aria-label="フレンドから外す">
-      <button disabled={!!busy} onClick={() => void respond(friendship, false).then(done => { if (done) setRemove(null); })}>外す</button><button onClick={() => setRemove(null)}>やめる</button>
-    </div>}
-  </FriendTile>;
+  const tile = ({ profile, friendship }: SocialPlayer, place: string, status: string) => <FriendTile key={friendship.id} profile={profile} place={place} status={status} />;
   return <section className={styles.panel} aria-label="ソーシャル">
     <header className={styles.socialHeading}>
       <h2><Icon name="heart" className={styles.beat} />フレンドの現在地<em>{friends.length}</em></h2>

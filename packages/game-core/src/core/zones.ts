@@ -10,7 +10,8 @@ import { syncZones, touch } from './movement.ts';
 import { buff, hpOf, note, recordEffectBlock, spawnCard } from './cards.ts';
 import { shuffled } from './rng.ts';
 
-export const FIELD_SIZE = 7;
+import { FIELD_SIZE } from './constants.ts';
+export { FIELD_SIZE } from './constants.ts';
 
 export function ownerOnField(s: GameState, uid: string): Side | undefined {
     return sides.find(side => s.players[side].field.includes(uid));

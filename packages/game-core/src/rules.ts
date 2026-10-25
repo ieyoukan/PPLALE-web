@@ -1,3 +1,4 @@
+import { DECK_SIZE } from './core/constants.ts';
 // The rules of a match: which cards its decks may use. A room is made with them (room.ts), and a
 // match against the CPU is prepared with them; a deck source (saved decks, the trial decks, a random
 // deck, later a 2pick draft) only offers decks that fit.
@@ -46,6 +47,15 @@ export const isExtendedPlayable = (catalog: Catalog, id: string) => catalog[id]?
 /** ぷぷりえーる (s_24) left the game with the orange set: no deck has it where orange is allowed. */
 const retired = (id: string, rules: MatchRules) => id === 's_24' && rules.fruits.includes('orange');
 
+/** Card-level eligibility shared by deck generators and enumerable card definitions. */
+export function cardAllowedInMatch(catalog: Catalog, id: string, rules: MatchRules): boolean {
+    const card = catalog[id];
+    if (!card) return false;
+    if (card.type === 'playable') return Object.hasOwn(playableSkills, id) && (rules.extendedPlayable || !isExtendedPlayable(catalog, id));
+    return (card.type === 'yojo' || card.type === 'sweet') && deckCard(catalog, id, card.type)
+        && rules.fruits.includes(card.fruit as Fruit) && !retired(id, rules);
+}
+
 /** Why the deck cannot be used under these rules (empty when it can). `where` names them: このルーム, この対戦 … */
 export function deckRuleErrors(deck: Deck, rules: MatchRules, catalog: Catalog, where = 'このルール'): string[] {
     const errors: string[] = [];
@@ -65,15 +75,15 @@ const cardNumber = (id: string) => Number(id.slice(2));
 export function randomDeck(rules: MatchRules, catalog: Catalog, seed: number): Deck | null {
     const rng = { rng: seed >>> 0 };
     const cards = (kind: 'yojo' | 'sweet', count: number): string[] | null => {
-        const ids = Object.keys(catalog).filter(id => deckCard(catalog, id, kind) && rules.fruits.includes(catalog[id].fruit as Fruit) && !retired(id, rules));
+        const ids = Object.keys(catalog).filter(id => catalog[id].type === kind && cardAllowedInMatch(catalog, id, rules));
         // Up to two of a card, as decks are usually built; more only where the allowed cards are too few.
         const repeatable = ids.filter(id => !singleCopy(catalog, id));
         const pool = [...ids, ...repeatable];
         while (pool.length < count && repeatable.length) pool.push(...repeatable);
         return pool.length < count ? null : shuffled(rng, pool).slice(0, count).sort((a, b) => cardNumber(a) - cardNumber(b));
     };
-    const playables = Object.keys(playableSkills).filter(id => catalog[id]?.type === 'playable' && (rules.extendedPlayable || !isExtendedPlayable(catalog, id)));
-    const yojo = cards('yojo', 20), sweet = cards('sweet', 10);
+    const playables = Object.keys(playableSkills).filter(id => cardAllowedInMatch(catalog, id, rules));
+    const yojo = cards('yojo', DECK_SIZE.yojo), sweet = cards('sweet', DECK_SIZE.sweet);
     if (!yojo || !sweet || !playables.length) return null;
     return { name: 'おまかせデッキ', yojo, sweet, playable: playables[random(rng, playables.length)] };
 }

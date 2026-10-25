@@ -44,7 +44,10 @@
     "test:fonts": "node --test tests/site-fonts.test.mjs",
     "game:assets": "node scripts/generate-game-assets.mjs",
     "pretest:game-assets": "pnpm run game:assets",
-    "test:game-assets": "node --test tests/game-assets.test.mjs"
+    "test:game-assets": "node --test tests/game-assets.test.mjs",
+    "cpu:research": "pnpm --filter @pplale/game-core run research",
+    "test:cpu-research": "pnpm --filter @pplale/game-core run test:research",
+    "cpu:gameplay": "pnpm --filter @pplale/game-core run gameplay"
   },
   "dependencies": {
     "@pplale/game-core": "workspace:*",

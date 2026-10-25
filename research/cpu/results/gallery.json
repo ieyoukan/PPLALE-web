@@ -1,0 +1,143 @@
+{
+  "title": "CPU研究の結果ギャラリー",
+  "headline": "本番CPUはまだ現行のまま",
+  "lead": "4回の対戦テストはすべて現行CPUに届かず（43.8〜46.1%）。データを10倍にすると予測は大きく良くなったが、対戦の強さには結びつかなかった。次は「勝率の予測」ではなく「どちらの手が良いか」を学ぶ方向（探索の評価値をまねる・手の候補の学習を増やす）が有望。",
+  "entries": [
+    {
+      "id": "first",
+      "date": "10/23",
+      "title": "初回の研究（640試合）",
+      "verdict": "keep",
+      "summary": "640試合で線形とMLPを学習し、4つの候補をふるい分け→絞り込み→最終テストの順に比べた。選ばれたMLP25%混合は現行CPUに44.9%。",
+      "points": [
+        "MLPは学習1回目で最良になり、すぐ覚えすぎ（過学習）になった。",
+        "候補は探索を600局面に絞っていて、現行CPU（2400局面）とは探索量が違う。"
+      ],
+      "match": {
+        "pairs": 128,
+        "score": 0.44921875,
+        "bootstrap95": [
+          0.40234375,
+          0.49609375
+        ],
+        "timeRatio": 0.6675347086103604
+      },
+      "figures": [
+        {
+          "file": "2026-10-23-learning.svg",
+          "caption": "学習の進み方と予測の当たり方"
+        },
+        {
+          "file": "2026-10-23-cpu-comparison.svg",
+          "caption": "ふるい分け→絞り込み→最終テスト"
+        },
+        {
+          "file": "2026-10-23-cpu-environments.svg",
+          "caption": "フルーツ別の得点率と考える時間"
+        },
+        {
+          "file": "2026-10-23-decks.svg",
+          "caption": "見つけたデッキの強さ"
+        }
+      ],
+      "report": "../runs/20261023-study/report/report.html"
+    },
+    {
+      "id": "budget",
+      "date": "10/23",
+      "title": "探索量を揃えた確認",
+      "verdict": "keep",
+      "summary": "同じMLP25%混合に、現行CPUと同じ2400局面を読ませた。46.1%で、600局面のときとほぼ同じ。探索量より学習モデルが弱さの原因と判断。",
+      "points": [
+        "考える時間は現行の149%。学習評価は1局面あたりの計算が重い。"
+      ],
+      "match": {
+        "pairs": 128,
+        "score": 0.4609375,
+        "bootstrap95": [
+          0.41015625,
+          0.5078125
+        ],
+        "timeRatio": 1.4926599171928963
+      },
+      "figures": [
+        {
+          "file": "2026-10-23-master-budget-cpu-comparison.svg",
+          "caption": "最終テスト（同じ探索量）"
+        },
+        {
+          "file": "2026-10-23-master-budget-cpu-environments.svg",
+          "caption": "フルーツ別の得点率と考える時間"
+        }
+      ],
+      "report": "../runs/20261023-master-budget/report/report.html"
+    },
+    {
+      "id": "libraries",
+      "date": "10/23",
+      "title": "データ10倍＋ライブラリで学習方式を比較",
+      "verdict": "info",
+      "summary": "6,400試合（76,930局面）で、NumPy・scikit-learn・PyTorchの6方式を同じ分割で学習。どれもテスト用のlog lossが0.67→0.56前後に下がり、データ量が一番効いた。",
+      "points": [
+        "最良は勾配ブースティング（0.555）。Deep Setsとロジスティック回帰（約0.563）がほぼ並ぶ。",
+        "対戦に使える方式の中では、検証用データでロジスティック回帰（scikit-learn）を選んだ。"
+      ],
+      "figures": [
+        {
+          "file": "2026-10-23-data10x-value-comparison.svg",
+          "caption": "勝ち負け予測の比較（左ほど良い）"
+        }
+      ],
+      "report": "../runs/20261023-data10x/ml/value-summary.json"
+    },
+    {
+      "id": "arena",
+      "date": "10/23",
+      "title": "データ10倍のモデルで対戦",
+      "verdict": "keep",
+      "summary": "ロジスティック回帰（scikit-learn）を、混ぜる割合25/50/100%でふるい分け→25%を最終テスト。現行CPUに43.8%で、予測が良くなっても強さは上がらなかった。",
+      "points": [
+        "学習評価だけ（100%）は35.9%と大きく弱い。勝率の予測が正確でも、手の良し悪しを見分ける力とは別。",
+        "考える時間は現行の66%。探索600局面の制限が強さの上限になっている可能性が高い。"
+      ],
+      "match": {
+        "pairs": 128,
+        "score": 0.4375,
+        "bootstrap95": [
+          0.390625,
+          0.484375
+        ],
+        "timeRatio": 0.659290349186424
+      },
+      "figures": [
+        {
+          "file": "2026-10-23-data10x-cpu-comparison.svg",
+          "caption": "ふるい分け（混ぜる割合）→最終テスト"
+        },
+        {
+          "file": "2026-10-23-data10x-cpu-environments.svg",
+          "caption": "フルーツ別の得点率と考える時間"
+        }
+      ],
+      "report": "../runs/20261023-data10x-arena/report/report.html"
+    },
+    {
+      "id": "policy",
+      "date": "10/23",
+      "title": "さいきょうCPUの手を当てる（手の候補の学習）",
+      "verdict": "info",
+      "summary": "さいきょうCPU同士の80試合（7,112判断）で、選ばれた手を当てるモデルを学習。PyTorchの順位づけネットが最良で、1番目で当たり49%（ランダムは34%）。",
+      "points": [
+        "選択肢6つ以上では上位3つに入るのが67%。探索の候補を3つに絞ると3回に1回はさいきょうの手を落とすので、まだ絞り込みには使えない。",
+        "読む順番の並べ替えなら使える見込み。データ（80試合）が少なく、テストは8試合分だけ。"
+      ],
+      "figures": [
+        {
+          "file": "2026-10-23-master-policy-comparison.svg",
+          "caption": "選ばれた手を当てた割合（右ほど良い）"
+        }
+      ],
+      "report": "../runs/20261023-master-policy-80/ml/policy-summary.json"
+    }
+  ]
+}

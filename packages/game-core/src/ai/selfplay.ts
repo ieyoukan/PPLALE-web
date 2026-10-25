@@ -1,7 +1,7 @@
 // CPU-vs-CPU matches: level comparisons now, training data for a learned CPU (③) later.
 import { applyCommand } from '../commands/index.ts';
 import { cpuCommand } from './index.ts';
-import { actingSides } from './moves.ts';
+import { actingSides } from '../core/actions.ts';
 import type { CpuLevel, CpuStrategy } from './types.ts';
 import { newGame } from '../setup.ts';
 import { matchTurns, sandboxRules } from '../model.ts';

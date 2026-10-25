@@ -15,6 +15,7 @@ import { NOTIFICATIONS_PATH } from './NotificationsPage';
 import { DeckChooser, PublicDecks } from './ProfileDecks';
 import { RoomCard } from './RoomCard';
 import { ProfileIconPicker } from './ProfileIconPicker';
+import { FriendActions } from './FriendActions';
 import styles from './Social.module.css';
 
 export function ProfilePage() {
@@ -23,7 +24,7 @@ export function ProfilePage() {
   // A shared profile link (?id=) renders without waiting for the visitor's login check.
   if (!uid && loading) return <p role="status">読み込み中…</p>;
   if (!uid) return <section className={styles.panel}><h2>プロフィール</h2><p>ログインして、カードのアイコンとひとことを設定しよう。</p><button className={styles.primary} onClick={() => void signInWithGoogle()}>ログイン</button></section>;
-  return <Profile key={`${uid}:${uid === user?.uid}`} uid={uid} mine={uid === user?.uid} />;
+  return <Profile key={`${uid}:${user?.uid ?? 'guest'}`} uid={uid} mine={uid === user?.uid} />;
 }
 function Profile({ uid, mine }: { uid: string; mine: boolean }) {
   const { user } = useAuth();
@@ -78,7 +79,7 @@ function Profile({ uid, mine }: { uid: string; mine: boolean }) {
       <button className={styles.primary} disabled={busy || !profile.displayName.trim()}>{busy ? '保存中…' : 'プロフィールを保存'}</button>
     </form>}
     <div className={styles.actions}>
-      {!mine && user && (friendship?.status === 'accepted' ? <span className={styles.friendChip}><Icon name="heart" />フレンド</span>
+      {!mine && user && (friendship?.status === 'accepted' ? <FriendActions friendship={friendship} name={profile.displayName} onRemoved={() => { setFriendship(null); setFriendSent(false); setError(''); setMessage('フレンドを解除しました'); }} />
         : friendship && friendship.requestedBy !== user.uid ? <Link className={styles.primary} href={NOTIFICATIONS_PATH}>届いた申請を見る ›</Link>
         : <button className={styles.primary} disabled={busy || friendSent || !!friendship} onClick={() => void friend()}>{friendship ? '申請中' : '＋ フレンド申請'}</button>)}
       <button onClick={() => void share()}>リンクをコピー</button>

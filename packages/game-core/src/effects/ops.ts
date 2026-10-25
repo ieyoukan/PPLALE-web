@@ -1,3 +1,4 @@
+import { HAND_LIMIT } from '../core/constants.ts';
 // Generic effect steps shared by many cards. Card-only steps are declared next to the card.
 import { finishTurn } from '../commands/phases.ts';
 import { scriptFor } from '../cards/registry.ts';
@@ -132,7 +133,7 @@ export const genericOps: OpTable = {
                 fx.me.exile.push(t.target);
                 fx.note(`${fx.defOf(t.target).name}を手札上限のため除外`);
             }
-            if (fx.me.hand.length > 9) fx.pick(`あと${fx.me.hand.length - 9}枚除外`, fx.me.hand, { ...t, target: undefined });
+            if (fx.me.hand.length > HAND_LIMIT) fx.pick(`あと${fx.me.hand.length - HAND_LIMIT}枚除外`, fx.me.hand, { ...t, target: undefined });
         },
     },
     finishTurn: { run: (fx, t) => finishTurn(fx.s, t.actor, fx.catalog) },

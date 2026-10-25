@@ -101,6 +101,10 @@ export const strawberrySweets: CardScripts = {
     s_0: animalSoda, s_1: animalSoda, s_2: animalSoda, s_3: animalSoda, s_4: animalSoda, s_5: animalSoda,
     // s_6 猫カフェオレ: 相手の幼女1体に3ダメージ。既に犬カフェオレをプレイしていたなら1枚引く。
     s_6: {
+        research: { coverage: 'complete', effects: [
+            { trigger: 'onPlay', operation: 'damage', target: 'enemy.unit', selection: 'one', amount: 3 },
+            { trigger: 'onPlay', operation: 'draw', target: 'self', amount: 1, condition: { kind: 'played', cards: ['s_7'] } },
+        ] },
         canPlay: enemyUnitOnField,
         onPlay(ctx) {
             ctx.queue('damage', { scope: 'enemy', amount: 3 });
@@ -110,6 +114,10 @@ export const strawberrySweets: CardScripts = {
     },
     // s_7 犬カフェオレ: 相手の幼女1体に3ダメージ。既に猫カフェオレをプレイしていたならお菓子を1個奪う。
     s_7: {
+        research: { coverage: 'complete', effects: [
+            { trigger: 'onPlay', operation: 'damage', target: 'enemy.unit', selection: 'one', amount: 3 },
+            { trigger: 'onPlay', operation: 'steal', target: 'enemy.leader', amount: 1, condition: { kind: 'played', cards: ['s_6'] } },
+        ] },
         canPlay: enemyUnitOnField,
         onPlay(ctx) {
             ctx.queue('damage', { scope: 'enemy', amount: 3 });
@@ -119,6 +127,11 @@ export const strawberrySweets: CardScripts = {
     },
     // s_8 ラテアート: 相手の幼女すべてに3ダメージ。猫と犬の両方をプレイしていたなら1枚引き、お菓子を2個奪う。
     s_8: {
+        research: { coverage: 'complete', effects: [
+            { trigger: 'onPlay', operation: 'damage', target: 'enemy.units', selection: 'all', amount: 3 },
+            { trigger: 'onPlay', operation: 'draw', target: 'self', amount: 1, condition: { kind: 'played', cards: ['s_6', 's_7'] } },
+            { trigger: 'onPlay', operation: 'steal', target: 'enemy.leader', amount: 2, condition: { kind: 'played', cards: ['s_6', 's_7'] } },
+        ] },
         onPlay(ctx) {
             ctx.queue('allDamage', { scope: 'enemy', amount: 3 });
             if (ctx.playedBefore('s_6') && ctx.playedBefore('s_7')) {
@@ -152,6 +165,10 @@ export const strawberrySweets: CardScripts = {
     },
     // s_19 ふわふわパンケーキ: お菓子を3回復。食べる／奪う効果を1度だけ無効化（重複しない）。
     s_19: {
+        research: { coverage: 'complete', effects: [
+            { trigger: 'onPlay', operation: 'heal', target: 'self.leader', amount: 3 },
+            { trigger: 'onPlay', operation: 'shield', target: 'self.leader', amount: 1 },
+        ] },
         onPlay(ctx) {
             ctx.queue('heal', { amount: 3 });
             ctx.me.shield = true;
@@ -159,7 +176,12 @@ export const strawberrySweets: CardScripts = {
         cpu: { worthPlaying: ctx => ctx.me.points < ctx.me.maxPoints || !ctx.me.shield },
     },
     // s_20 でっかいシュークリーム: 自分の幼女1人を +4/+4 し、防衛を付与。
-    s_20: { canPlay: ownUnitOnField, onPlay: ctx => ctx.queue('buff', { scope: 'friendly', amount: 4, hp: 4, keyword: 'guard' }), cpu: needsOwnUnit },
+    s_20: {
+        canPlay: ownUnitOnField, onPlay: ctx => ctx.queue('buff', { scope: 'friendly', amount: 4, hp: 4, keyword: 'guard' }), cpu: needsOwnUnit,
+        research: { coverage: 'complete', effects: [
+            { trigger: 'onPlay', operation: 'buff', target: 'self.unit', selection: 'one', amount: 4, hp: 4, keyword: 'guard' },
+        ] },
+    },
     // s_21 ぷるぷるギガプリン: ギガプリンを1体出す。お菓子を2回復。
     s_21: {
         onPlay(ctx) {

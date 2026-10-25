@@ -22,6 +22,7 @@ VRChatのイベント「[ロリっ子喫茶ぷぷりえ](https://pple.vr2.info/)
 能力説明とイチゴ・ぶどうのFAQは [ルール・裁定集](docs/game-rules.md) を参照。
 カード効果の機械向け処理と、提供ルールへの対応状況は [カード効果の実装状況](docs/card-effect-rules.md) を参照。
 Next.js / game-core の分離方針、Vercelへの配置、未確定ルールは [対戦ゲームの設計](docs/game-design.md) を参照。
+名前付きルーム、公開範囲、オーナー不在・引き継ぎ、席交代、共通メニューの計画は [集まって遊べるルームの設計](docs/social-rooms-design.md) を参照（未実装）。
 ゲーム本体の独立パッケージは [`packages/game-core`](packages/game-core/README.md) に置く。
 
 対戦エミュレータは `/game/`。いちご・ぶどう・オレンジのカードと通常プレイアブルで、CPU対戦・両側操作・ルーム対戦・Firebaseの保存済みデッキ読み込みができる。`/game/editor/` には新カードの効果を試す盤面も用意している。操作と対応範囲は [盤面エミュレータ](docs/board-emulator.md) を参照。

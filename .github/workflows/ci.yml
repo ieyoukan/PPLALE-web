@@ -36,6 +36,18 @@ jobs:
       - name: Check game opening and draw flow
         run: pnpm run test:game
 
+      - name: Set up research Python
+        uses: actions/setup-python@v6
+        with:
+          python-version: '3.13'
+          cache: pip
+          cache-dependency-path: research/cpu/requirements.lock.txt
+
+      - name: Test research data, training and evaluation
+        run: |
+          python3 -m pip install -r research/cpu/requirements.lock.txt
+          python3 -m unittest discover -s research/cpu -p 'test_*.py'
+
       - name: Test the CPU server
         run: pnpm run test:cpu-server
 

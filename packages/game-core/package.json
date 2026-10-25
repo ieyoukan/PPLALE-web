@@ -36,6 +36,14 @@
     "./history": {
       "types": "./src/history.ts",
       "default": "./src/history.ts"
+    },
+    "./research": {
+      "types": "./src/research/index.ts",
+      "default": "./src/research/index.ts"
+    },
+    "./gameplay": {
+      "types": "./src/gameplay/index.ts",
+      "default": "./src/gameplay/index.ts"
     }
   },
   "scripts": {
@@ -46,7 +54,10 @@
     "deck": "pnpm run build && node scripts/deck-search.mjs",
     "value": "pnpm run build && node scripts/value.mjs",
     "policy": "pnpm run build && node scripts/policy.mjs",
-    "compare": "pnpm run build && node scripts/compare.mjs"
+    "compare": "pnpm run build && node scripts/compare.mjs",
+    "research": "pnpm run build && node scripts/research.mjs",
+    "test:research": "pnpm run build && node --test tests/gameplay.test.mjs tests/research.test.mjs tests/feedback.test.mjs && python3 -m unittest discover -s ../../research/cpu -p 'test_*.py'",
+    "gameplay": "pnpm run build && node scripts/gameplay.mjs"
   },
   "dependencies": {
     "zod": "^4.6.5"

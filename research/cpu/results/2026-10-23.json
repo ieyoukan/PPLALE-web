@@ -1,0 +1,1980 @@
+{
+  "date": "2026-10-23",
+  "status": "exploratory; production CPU unchanged",
+  "run": "../runs/20261023-study",
+  "sourceArchiveSha256": "6f29c0b27fffa933697ad25a2aa4d28e18f09bb9f78633624e13b8611200c372",
+  "data": {
+    "games": 640,
+    "decisions": 7801,
+    "splitMatches": {
+      "train": 512,
+      "validation": 64,
+      "test": 64
+    },
+    "unfinished": 0,
+    "trainSeedStart": 1600000
+  },
+  "decision": {
+    "algorithm": {
+      "id": "mlp-blend25",
+      "kind": "pooled-search",
+      "search": {
+        "maxNodes": 600,
+        "beamWidth": 4,
+        "worlds": 2,
+        "candidates": 5,
+        "lethalNodes": 400
+      },
+      "model": "../runs/20261023-study/training/mlp.json",
+      "modelHash": "784b3c60bc379b08c168d50f109f3cd2587bfb8431fa4d460c9f356cf219b9a0",
+      "blend": 0.25
+    },
+    "verdict": {
+      "adopt": false,
+      "reasons": [
+        "Superiority over the incumbent is not demonstrated",
+        "Environment non-inferiority is not demonstrated"
+      ],
+      "rule": {
+        "alpha": 0.05,
+        "minPairs": 128,
+        "minPairsPerEnvironment": 32,
+        "environmentMargin": 0.1,
+        "maxTimeRatio": 1.25
+      },
+      "inference": "Fixed-sample Hoeffding lower bounds with Bonferroni correction for overall + four environments; paired bootstrap intervals are descriptive"
+    },
+    "testPlanHash": "1881c141b597494096f7d8455d35382aeef6f4d7e0c558b6c635a2579af85198"
+  },
+  "phases": {
+    "screen": {
+      "seedStart": 3600000,
+      "phase": "screen",
+      "planHash": "962aec01da5869f9d13d7e60ca63e6f9b5788ddcfb6a96d14db0b850ca87c3d6",
+      "provenance": {
+        "schemaHash": "308842410db37a65a191415f9d643444055683b631748598f5f813de3deeb8c8",
+        "catalogHash": "698dedd4ca3ca3000fc5958d58710dccf27cb8430a253f04041dc7f9f01a21bd",
+        "gameHash": "45dec9911be5db9f3b95f257797d500c3a23e7dc610b1f6d9ed33f057316d4cb",
+        "poolHash": "2e4df918d0e1d15dc8f40516e7a38259eaa626290cdb83b46cf4d9670b1dc3e7",
+        "node": "v26.12.1",
+        "engineCommit": "b0dfbe6dd84e5e20bfe6133628ce7b26b9178476",
+        "workingTreeDirty": true,
+        "sourceHash": "1eec86bd65d466ab50e1c5378ffda87b4af6b57f8d8814cede96e01435cf792e",
+        "runnerHash": "cadc95697593aebe1720d8683c6b71d907e737f9f6c1804326e6c5301693bd19"
+      },
+      "candidates": {
+        "legacy-600": {
+          "pairs": 8,
+          "score": 0.3125,
+          "bootstrap95": [
+            0.0625,
+            0.5625
+          ],
+          "hoeffdingLower": 0,
+          "games": 16,
+          "wins": 5,
+          "draws": 0,
+          "unfinished": 0,
+          "meanDecisionMs": 176.6156955996203,
+          "p95DecisionMs": 504.95728574999214,
+          "opponentMeanMs": 419.11752272628706,
+          "meanThinkingPerGameMs": 11634.558947624986,
+          "opponentThinkingPerGameMs": 28997.693603624983,
+          "environments": {
+            "strawberry": {
+              "pairs": 2,
+              "score": 0,
+              "bootstrap95": [
+                0.0,
+                0.0
+              ],
+              "hoeffdingLower": 0
+            },
+            "grape": {
+              "pairs": 2,
+              "score": 0,
+              "bootstrap95": [
+                0.0,
+                0.0
+              ],
+              "hoeffdingLower": 0
+            },
+            "melon": {
+              "pairs": 2,
+              "score": 0.5,
+              "bootstrap95": [
+                0.5,
+                0.5
+              ],
+              "hoeffdingLower": 0
+            },
+            "orange": {
+              "pairs": 2,
+              "score": 0.75,
+              "bootstrap95": [
+                0.5,
+                1.0
+              ],
+              "hoeffdingLower": 0
+            }
+          },
+          "timeRatio": 0.40122359752675496
+        },
+        "rules-600": {
+          "pairs": 8,
+          "score": 0.375,
+          "bootstrap95": [
+            0.1875,
+            0.5
+          ],
+          "hoeffdingLower": 0,
+          "games": 16,
+          "wins": 6,
+          "draws": 0,
+          "unfinished": 0,
+          "meanDecisionMs": 150.1247014888008,
+          "p95DecisionMs": 420.7436793499728,
+          "opponentMeanMs": 399.5205159278519,
+          "meanThinkingPerGameMs": 11728.492303812563,
+          "opponentThinkingPerGameMs": 29764.278436624965,
+          "environments": {
+            "strawberry": {
+              "pairs": 2,
+              "score": 0.25,
+              "bootstrap95": [
+                0.0,
+                0.5
+              ],
+              "hoeffdingLower": 0
+            },
+            "grape": {
+              "pairs": 2,
+              "score": 0.5,
+              "bootstrap95": [
+                0.5,
+                0.5
+              ],
+              "hoeffdingLower": 0
+            },
+            "melon": {
+              "pairs": 2,
+              "score": 0.5,
+              "bootstrap95": [
+                0.5,
+                0.5
+              ],
+              "hoeffdingLower": 0
+            },
+            "orange": {
+              "pairs": 2,
+              "score": 0.25,
+              "bootstrap95": [
+                0.0,
+                0.5
+              ],
+              "hoeffdingLower": 0
+            }
+          },
+          "timeRatio": 0.39404591409078626
+        },
+        "linear-blend25": {
+          "pairs": 8,
+          "score": 0.25,
+          "bootstrap95": [
+            0.0625,
+            0.4375
+          ],
+          "hoeffdingLower": 0,
+          "games": 16,
+          "wins": 4,
+          "draws": 0,
+          "unfinished": 0,
+          "meanDecisionMs": 246.40086411151321,
+          "p95DecisionMs": 652.0429326999866,
+          "opponentMeanMs": 347.5997040308372,
+          "meanThinkingPerGameMs": 16986.25956968744,
+          "opponentThinkingPerGameMs": 24657.854004687513,
+          "environments": {
+            "strawberry": {
+              "pairs": 2,
+              "score": 0.25,
+              "bootstrap95": [
+                0.0,
+                0.5
+              ],
+              "hoeffdingLower": 0
+            },
+            "grape": {
+              "pairs": 2,
+              "score": 0,
+              "bootstrap95": [
+                0.0,
+                0.0
+              ],
+              "hoeffdingLower": 0
+            },
+            "melon": {
+              "pairs": 2,
+              "score": 0.5,
+              "bootstrap95": [
+                0.5,
+                0.5
+              ],
+              "hoeffdingLower": 0
+            },
+            "orange": {
+              "pairs": 2,
+              "score": 0.25,
+              "bootstrap95": [
+                0.0,
+                0.5
+              ],
+              "hoeffdingLower": 0
+            }
+          },
+          "timeRatio": 0.6888782603083916
+        },
+        "mlp-blend25": {
+          "pairs": 8,
+          "score": 0.5,
+          "bootstrap95": [
+            0.3125,
+            0.6875
+          ],
+          "hoeffdingLower": 0,
+          "games": 16,
+          "wins": 8,
+          "draws": 0,
+          "unfinished": 0,
+          "meanDecisionMs": 251.29200333034865,
+          "p95DecisionMs": 701.6937336000615,
+          "opponentMeanMs": 385.80287062812715,
+          "meanThinkingPerGameMs": 17543.322982499965,
+          "opponentThinkingPerGameMs": 27946.595441124962,
+          "environments": {
+            "strawberry": {
+              "pairs": 2,
+              "score": 0.5,
+              "bootstrap95": [
+                0.5,
+                0.5
+              ],
+              "hoeffdingLower": 0
+            },
+            "grape": {
+              "pairs": 2,
+              "score": 0.5,
+              "bootstrap95": [
+                0.0,
+                1.0
+              ],
+              "hoeffdingLower": 0
+            },
+            "melon": {
+              "pairs": 2,
+              "score": 0.5,
+              "bootstrap95": [
+                0.5,
+                0.5
+              ],
+              "hoeffdingLower": 0
+            },
+            "orange": {
+              "pairs": 2,
+              "score": 0.5,
+              "bootstrap95": [
+                0.5,
+                0.5
+              ],
+              "hoeffdingLower": 0
+            }
+          },
+          "timeRatio": 0.6277445501173282
+        }
+      }
+    },
+    "validation": {
+      "seedStart": 3700000,
+      "phase": "validation",
+      "planHash": "aff38636679dc08f5968c669f60022c92d14d1e44445bbec80d8b195730ac800",
+      "provenance": {
+        "schemaHash": "308842410db37a65a191415f9d643444055683b631748598f5f813de3deeb8c8",
+        "catalogHash": "698dedd4ca3ca3000fc5958d58710dccf27cb8430a253f04041dc7f9f01a21bd",
+        "gameHash": "45dec9911be5db9f3b95f257797d500c3a23e7dc610b1f6d9ed33f057316d4cb",
+        "poolHash": "2e4df918d0e1d15dc8f40516e7a38259eaa626290cdb83b46cf4d9670b1dc3e7",
+        "node": "v26.12.1",
+        "engineCommit": "b0dfbe6dd84e5e20bfe6133628ce7b26b9178476",
+        "workingTreeDirty": true,
+        "sourceHash": "1eec86bd65d466ab50e1c5378ffda87b4af6b57f8d8814cede96e01435cf792e",
+        "runnerHash": "cadc95697593aebe1720d8683c6b71d907e737f9f6c1804326e6c5301693bd19"
+      },
+      "candidates": {
+        "mlp-blend25": {
+          "pairs": 32,
+          "score": 0.46875,
+          "bootstrap95": [
+            0.375,
+            0.546875
+          ],
+          "hoeffdingLower": 0.2005042467138316,
+          "games": 64,
+          "wins": 30,
+          "draws": 0,
+          "unfinished": 0,
+          "meanDecisionMs": 276.12700482798306,
+          "p95DecisionMs": 825.4568750000035,
+          "opponentMeanMs": 383.5528131081362,
+          "meanThinkingPerGameMs": 16528.789929625047,
+          "opponentThinkingPerGameMs": 22833.378405343734,
+          "environments": {
+            "strawberry": {
+              "pairs": 8,
+              "score": 0.5625,
+              "bootstrap95": [
+                0.5,
+                0.6875
+              ],
+              "hoeffdingLower": 0.026008493427663204
+            },
+            "grape": {
+              "pairs": 8,
+              "score": 0.4375,
+              "bootstrap95": [
+                0.25,
+                0.625
+              ],
+              "hoeffdingLower": 0
+            },
+            "melon": {
+              "pairs": 8,
+              "score": 0.4375,
+              "bootstrap95": [
+                0.3125,
+                0.5
+              ],
+              "hoeffdingLower": 0
+            },
+            "orange": {
+              "pairs": 8,
+              "score": 0.4375,
+              "bootstrap95": [
+                0.25,
+                0.625
+              ],
+              "hoeffdingLower": 0
+            }
+          },
+          "timeRatio": 0.7238871811346492
+        },
+        "rules-600": {
+          "pairs": 32,
+          "score": 0.34375,
+          "bootstrap95": [
+            0.25,
+            0.453125
+          ],
+          "hoeffdingLower": 0.0755042467138316,
+          "games": 64,
+          "wins": 22,
+          "draws": 0,
+          "unfinished": 0,
+          "meanDecisionMs": 151.81694320974412,
+          "p95DecisionMs": 476.32442080000067,
+          "opponentMeanMs": 390.87977964002204,
+          "meanThinkingPerGameMs": 9251.344976843782,
+          "opponentThinkingPerGameMs": 23837.55906148447,
+          "environments": {
+            "strawberry": {
+              "pairs": 8,
+              "score": 0.125,
+              "bootstrap95": [
+                0.0,
+                0.3125
+              ],
+              "hoeffdingLower": 0
+            },
+            "grape": {
+              "pairs": 8,
+              "score": 0.5,
+              "bootstrap95": [
+                0.25,
+                0.75
+              ],
+              "hoeffdingLower": 0
+            },
+            "melon": {
+              "pairs": 8,
+              "score": 0.375,
+              "bootstrap95": [
+                0.1875,
+                0.5
+              ],
+              "hoeffdingLower": 0
+            },
+            "orange": {
+              "pairs": 8,
+              "score": 0.375,
+              "bootstrap95": [
+                0.1875,
+                0.5
+              ],
+              "hoeffdingLower": 0
+            }
+          },
+          "timeRatio": 0.38809950939111215
+        }
+      }
+    },
+    "test": {
+      "seedStart": 3800000,
+      "phase": "test",
+      "planHash": "1881c141b597494096f7d8455d35382aeef6f4d7e0c558b6c635a2579af85198",
+      "provenance": {
+        "schemaHash": "308842410db37a65a191415f9d643444055683b631748598f5f813de3deeb8c8",
+        "catalogHash": "698dedd4ca3ca3000fc5958d58710dccf27cb8430a253f04041dc7f9f01a21bd",
+        "gameHash": "45dec9911be5db9f3b95f257797d500c3a23e7dc610b1f6d9ed33f057316d4cb",
+        "poolHash": "2e4df918d0e1d15dc8f40516e7a38259eaa626290cdb83b46cf4d9670b1dc3e7",
+        "node": "v26.12.1",
+        "engineCommit": "b0dfbe6dd84e5e20bfe6133628ce7b26b9178476",
+        "workingTreeDirty": true,
+        "sourceHash": "1eec86bd65d466ab50e1c5378ffda87b4af6b57f8d8814cede96e01435cf792e",
+        "runnerHash": "cadc95697593aebe1720d8683c6b71d907e737f9f6c1804326e6c5301693bd19"
+      },
+      "candidates": {
+        "mlp-blend25": {
+          "pairs": 128,
+          "score": 0.44921875,
+          "bootstrap95": [
+            0.40234375,
+            0.49609375
+          ],
+          "hoeffdingLower": 0.3150958733569158,
+          "games": 256,
+          "wins": 115,
+          "draws": 0,
+          "unfinished": 0,
+          "meanDecisionMs": 288.7490654277916,
+          "p95DecisionMs": 848.7537495000288,
+          "opponentMeanMs": 425.34207378738273,
+          "meanThinkingPerGameMs": 16948.216629367176,
+          "opponentThinkingPerGameMs": 25389.266521660138,
+          "environments": {
+            "strawberry": {
+              "pairs": 32,
+              "score": 0.515625,
+              "bootstrap95": [
+                0.421875,
+                0.609375
+              ],
+              "hoeffdingLower": 0.2473792467138316
+            },
+            "grape": {
+              "pairs": 32,
+              "score": 0.46875,
+              "bootstrap95": [
+                0.375,
+                0.5625
+              ],
+              "hoeffdingLower": 0.2005042467138316
+            },
+            "melon": {
+              "pairs": 32,
+              "score": 0.40625,
+              "bootstrap95": [
+                0.3125,
+                0.515625
+              ],
+              "hoeffdingLower": 0.1380042467138316
+            },
+            "orange": {
+              "pairs": 32,
+              "score": 0.40625,
+              "bootstrap95": [
+                0.328125,
+                0.484375
+              ],
+              "hoeffdingLower": 0.1380042467138316
+            }
+          },
+          "timeRatio": 0.6675347086103604
+        }
+      }
+    }
+  },
+  "models": {
+    "linear": {
+      "modelHash": "1c3bc3bfcd362941b197945a562abff720a926d6299790b55ed68d6e67fc0cba",
+      "selectedEpoch": 5,
+      "validationLogLoss": 0.6369889392502919,
+      "testLogLoss": 0.6345181319992146,
+      "testBrier": 0.22087148189252412
+    },
+    "mlp": {
+      "modelHash": "784b3c60bc379b08c168d50f109f3cd2587bfb8431fa4d460c9f356cf219b9a0",
+      "selectedEpoch": 1,
+      "validationLogLoss": 0.6356518885842625,
+      "testLogLoss": 0.6708431410358566,
+      "testBrier": 0.2389601504487552
+    }
+  },
+  "decks": [
+    {
+      "environment": "strawberry",
+      "extendedPlayable": false,
+      "deck": {
+        "name": "candidate-2",
+        "yojo": [
+          "y_0",
+          "y_1",
+          "y_2",
+          "y_8",
+          "y_10",
+          "y_10",
+          "y_11",
+          "y_12",
+          "y_12",
+          "y_14",
+          "y_17",
+          "y_18",
+          "y_9",
+          "y_20",
+          "y_23",
+          "y_24",
+          "y_24",
+          "y_28",
+          "y_29",
+          "y_30"
+        ],
+        "sweet": [
+          "s_3",
+          "s_5",
+          "s_9",
+          "s_10",
+          "s_11",
+          "s_16",
+          "s_19",
+          "s_20",
+          "s_23",
+          "s_27"
+        ],
+        "playable": "p_1"
+      },
+      "test": {
+        "pairs": 16,
+        "score": 0.6875,
+        "bootstrap95": [
+          0.53125,
+          0.84375
+        ],
+        "hoeffdingLower": 0.3081432176537134,
+        "games": 32,
+        "wins": 22,
+        "draws": 0,
+        "unfinished": 0,
+        "meanDecisionMs": 4.241598341497557,
+        "p95DecisionMs": 12.701616800000094,
+        "opponentMeanMs": 4.031496466346158,
+        "meanThinkingPerGameMs": 189.41387593750028,
+        "opponentThinkingPerGameMs": 157.22836218750015,
+        "environments": {
+          "strawberry": {
+            "pairs": 16,
+            "score": 0.6875,
+            "bootstrap95": [
+              0.53125,
+              0.84375
+            ],
+            "hoeffdingLower": 0.3081432176537134
+          }
+        },
+        "timeRatio": 1.2047055206974542
+      },
+      "search": {
+        "generations": 2,
+        "candidates": 6,
+        "copyLimit": 2,
+        "driver": "hard"
+      }
+    },
+    {
+      "environment": "grape",
+      "extendedPlayable": false,
+      "deck": {
+        "name": "candidate-3",
+        "yojo": [
+          "y_2",
+          "y_4",
+          "y_6",
+          "y_10",
+          "y_14",
+          "y_15",
+          "y_19",
+          "y_20",
+          "y_22",
+          "y_47",
+          "y_30",
+          "y_38",
+          "y_51",
+          "y_49",
+          "y_50",
+          "y_52",
+          "y_52",
+          "y_54",
+          "y_57",
+          "y_61"
+        ],
+        "sweet": [
+          "s_8",
+          "s_12",
+          "s_20",
+          "s_22",
+          "s_24",
+          "s_25",
+          "s_28",
+          "s_30",
+          "s_34",
+          "s_36"
+        ],
+        "playable": "p_1"
+      },
+      "test": {
+        "pairs": 16,
+        "score": 0.65625,
+        "bootstrap95": [
+          0.46875,
+          0.84375
+        ],
+        "hoeffdingLower": 0.2768932176537134,
+        "games": 32,
+        "wins": 21,
+        "draws": 0,
+        "unfinished": 0,
+        "meanDecisionMs": 4.131896685810802,
+        "p95DecisionMs": 13.55552679999992,
+        "opponentMeanMs": 6.096424689680235,
+        "meanThinkingPerGameMs": 191.1002217187496,
+        "opponentThinkingPerGameMs": 262.14626165625015,
+        "environments": {
+          "grape": {
+            "pairs": 16,
+            "score": 0.65625,
+            "bootstrap95": [
+              0.46875,
+              0.84375
+            ],
+            "hoeffdingLower": 0.2768932176537134
+          }
+        },
+        "timeRatio": 0.7289832039235313
+      },
+      "search": {
+        "generations": 2,
+        "candidates": 6,
+        "copyLimit": 2,
+        "driver": "hard"
+      }
+    },
+    {
+      "environment": "melon",
+      "extendedPlayable": false,
+      "deck": {
+        "name": "おまかせデッキ",
+        "yojo": [
+          "y_1",
+          "y_2",
+          "y_17",
+          "y_20",
+          "y_28",
+          "y_36",
+          "y_39",
+          "y_40",
+          "y_51",
+          "y_54",
+          "y_68",
+          "y_71",
+          "y_77",
+          "y_88",
+          "y_90",
+          "y_92",
+          "y_97",
+          "y_98",
+          "y_99",
+          "y_102"
+        ],
+        "sweet": [
+          "s_1",
+          "s_15",
+          "s_18",
+          "s_19",
+          "s_20",
+          "s_23",
+          "s_25",
+          "s_26",
+          "s_29",
+          "s_34"
+        ],
+        "playable": "p_0"
+      },
+      "test": {
+        "pairs": 16,
+        "score": 0.25,
+        "bootstrap95": [
+          0.125,
+          0.40625
+        ],
+        "hoeffdingLower": 0,
+        "games": 32,
+        "wins": 8,
+        "draws": 0,
+        "unfinished": 0,
+        "meanDecisionMs": 5.919263472321429,
+        "p95DecisionMs": 16.91285,
+        "opponentMeanMs": 8.289123657258061,
+        "meanThinkingPerGameMs": 207.17422153125,
+        "opponentThinkingPerGameMs": 321.2035417187499,
+        "environments": {
+          "melon": {
+            "pairs": 16,
+            "score": 0.25,
+            "bootstrap95": [
+              0.125,
+              0.40625
+            ],
+            "hoeffdingLower": 0
+          }
+        },
+        "timeRatio": 0.6449935776631458
+      },
+      "search": {
+        "generations": 2,
+        "candidates": 6,
+        "copyLimit": 2,
+        "driver": "hard"
+      }
+    },
+    {
+      "environment": "orange",
+      "extendedPlayable": false,
+      "deck": {
+        "name": "candidate-3",
+        "yojo": [
+          "y_1",
+          "y_8",
+          "y_23",
+          "y_37",
+          "y_42",
+          "y_46",
+          "y_52",
+          "y_94",
+          "y_4",
+          "y_77",
+          "y_89",
+          "y_99",
+          "y_106",
+          "y_13",
+          "y_124",
+          "y_129",
+          "y_132",
+          "y_133",
+          "y_137",
+          "y_144"
+        ],
+        "sweet": [
+          "s_5",
+          "s_8",
+          "s_8",
+          "s_11",
+          "s_15",
+          "s_22",
+          "s_26",
+          "s_27",
+          "s_28",
+          "s_42"
+        ],
+        "playable": "p_2"
+      },
+      "test": {
+        "pairs": 16,
+        "score": 0.34375,
+        "bootstrap95": [
+          0.21875,
+          0.46875
+        ],
+        "hoeffdingLower": 0,
+        "games": 32,
+        "wins": 11,
+        "draws": 0,
+        "unfinished": 0,
+        "meanDecisionMs": 7.336620297297289,
+        "p95DecisionMs": 18.870091799999862,
+        "opponentMeanMs": 8.917888781129163,
+        "meanThinkingPerGameMs": 246.00604934374974,
+        "opponentThinkingPerGameMs": 360.33844356250023,
+        "environments": {
+          "orange": {
+            "pairs": 16,
+            "score": 0.34375,
+            "bootstrap95": [
+              0.21875,
+              0.46875
+            ],
+            "hoeffdingLower": 0
+          }
+        },
+        "timeRatio": 0.6827083086433999
+      },
+      "search": {
+        "generations": 2,
+        "candidates": 6,
+        "copyLimit": 2,
+        "driver": "hard"
+      }
+    },
+    {
+      "environment": "strawberry",
+      "extendedPlayable": true,
+      "deck": {
+        "name": "candidate-4",
+        "yojo": [
+          "y_0",
+          "y_1",
+          "y_2",
+          "y_4",
+          "y_5",
+          "y_6",
+          "y_7",
+          "y_8",
+          "y_8",
+          "y_9",
+          "y_12",
+          "y_13",
+          "y_14",
+          "y_15",
+          "y_20",
+          "y_20",
+          "y_23",
+          "y_28",
+          "y_29",
+          "y_30"
+        ],
+        "sweet": [
+          "s_0",
+          "s_7",
+          "s_8",
+          "s_10",
+          "s_15",
+          "s_16",
+          "s_20",
+          "s_21",
+          "s_26",
+          "s_27"
+        ],
+        "playable": "p_1"
+      },
+      "test": {
+        "pairs": 16,
+        "score": 0.75,
+        "bootstrap95": [
+          0.625,
+          0.875
+        ],
+        "hoeffdingLower": 0.3706432176537134,
+        "games": 32,
+        "wins": 24,
+        "draws": 0,
+        "unfinished": 0,
+        "meanDecisionMs": 7.57247837416975,
+        "p95DecisionMs": 19.062837499999993,
+        "opponentMeanMs": 7.398053292307707,
+        "meanThinkingPerGameMs": 320.64713115625034,
+        "opponentThinkingPerGameMs": 270.49132350000053,
+        "environments": {
+          "strawberry": {
+            "pairs": 16,
+            "score": 0.75,
+            "bootstrap95": [
+              0.625,
+              0.875
+            ],
+            "hoeffdingLower": 0.3706432176537134
+          }
+        },
+        "timeRatio": 1.1854248299252739
+      },
+      "search": {
+        "generations": 2,
+        "candidates": 6,
+        "copyLimit": 2,
+        "driver": "hard"
+      }
+    },
+    {
+      "environment": "grape",
+      "extendedPlayable": true,
+      "deck": {
+        "name": "candidate-4",
+        "yojo": [
+          "y_2",
+          "y_2",
+          "y_14",
+          "y_16",
+          "y_18",
+          "y_18",
+          "y_3",
+          "y_30",
+          "y_35",
+          "y_42",
+          "y_47",
+          "y_39",
+          "y_51",
+          "y_52",
+          "y_57",
+          "y_59",
+          "y_61",
+          "y_62",
+          "y_63",
+          "y_64"
+        ],
+        "sweet": [
+          "s_11",
+          "s_20",
+          "s_21",
+          "s_22",
+          "s_25",
+          "s_25",
+          "s_32",
+          "s_33",
+          "s_33",
+          "s_34"
+        ],
+        "playable": "p_8"
+      },
+      "test": {
+        "pairs": 16,
+        "score": 0.5625,
+        "bootstrap95": [
+          0.40625,
+          0.71875
+        ],
+        "hoeffdingLower": 0.18314321765371339,
+        "games": 32,
+        "wins": 18,
+        "draws": 0,
+        "unfinished": 0,
+        "meanDecisionMs": 12.891356939473695,
+        "p95DecisionMs": 35.49719580000029,
+        "opponentMeanMs": 13.560240021386425,
+        "meanThinkingPerGameMs": 612.3394546250005,
+        "opponentThinkingPerGameMs": 574.6151709062498,
+        "environments": {
+          "grape": {
+            "pairs": 16,
+            "score": 0.5625,
+            "bootstrap95": [
+              0.40625,
+              0.71875
+            ],
+            "hoeffdingLower": 0.18314321765371339
+          }
+        },
+        "timeRatio": 1.0656513883182968
+      },
+      "search": {
+        "generations": 2,
+        "candidates": 6,
+        "copyLimit": 2,
+        "driver": "hard"
+      }
+    },
+    {
+      "environment": "melon",
+      "extendedPlayable": true,
+      "deck": {
+        "name": "candidate-5",
+        "yojo": [
+          "y_1",
+          "y_2",
+          "y_12",
+          "y_13",
+          "y_34",
+          "y_44",
+          "y_51",
+          "y_53",
+          "y_60",
+          "y_67",
+          "y_74",
+          "y_75",
+          "y_76",
+          "y_79",
+          "y_79",
+          "y_82",
+          "y_84",
+          "y_84",
+          "y_102",
+          "y_110"
+        ],
+        "sweet": [
+          "s_7",
+          "s_9",
+          "s_13",
+          "s_18",
+          "s_19",
+          "s_26",
+          "s_26",
+          "s_30",
+          "s_32",
+          "s_38"
+        ],
+        "playable": "p_1"
+      },
+      "test": {
+        "pairs": 16,
+        "score": 0.40625,
+        "bootstrap95": [
+          0.21875,
+          0.625
+        ],
+        "hoeffdingLower": 0.026893217653713386,
+        "games": 32,
+        "wins": 13,
+        "draws": 0,
+        "unfinished": 0,
+        "meanDecisionMs": 9.938283885997503,
+        "p95DecisionMs": 26.277201849999848,
+        "opponentMeanMs": 10.278206584854633,
+        "meanThinkingPerGameMs": 501.2621934999991,
+        "opponentThinkingPerGameMs": 475.0458605937501,
+        "environments": {
+          "melon": {
+            "pairs": 16,
+            "score": 0.40625,
+            "bootstrap95": [
+              0.21875,
+              0.625
+            ],
+            "hoeffdingLower": 0.026893217653713386
+          }
+        },
+        "timeRatio": 1.0551869515786998
+      },
+      "search": {
+        "generations": 2,
+        "candidates": 6,
+        "copyLimit": 2,
+        "driver": "hard"
+      }
+    },
+    {
+      "environment": "orange",
+      "extendedPlayable": true,
+      "deck": {
+        "name": "candidate-1",
+        "yojo": [
+          "y_0",
+          "y_4",
+          "y_18",
+          "y_31",
+          "y_35",
+          "y_62",
+          "y_66",
+          "y_73",
+          "y_75",
+          "y_82",
+          "y_86",
+          "y_106",
+          "y_107",
+          "y_110",
+          "y_111",
+          "y_116",
+          "y_125",
+          "y_126",
+          "y_132",
+          "y_141"
+        ],
+        "sweet": [
+          "s_6",
+          "s_19",
+          "s_20",
+          "s_21",
+          "s_25",
+          "s_31",
+          "s_36",
+          "s_30",
+          "s_44",
+          "s_45"
+        ],
+        "playable": "p_3"
+      },
+      "test": {
+        "pairs": 16,
+        "score": 0.40625,
+        "bootstrap95": [
+          0.24921875000000004,
+          0.59375
+        ],
+        "hoeffdingLower": 0.026893217653713386,
+        "games": 32,
+        "wins": 13,
+        "draws": 0,
+        "unfinished": 0,
+        "meanDecisionMs": 7.3545852358855335,
+        "p95DecisionMs": 24.97429139999979,
+        "opponentMeanMs": 16.71966296657185,
+        "meanThinkingPerGameMs": 297.17120968749987,
+        "opponentThinkingPerGameMs": 734.6201915937506,
+        "environments": {
+          "orange": {
+            "pairs": 16,
+            "score": 0.40625,
+            "bootstrap95": [
+              0.24921875000000004,
+              0.59375
+            ],
+            "hoeffdingLower": 0.026893217653713386
+          }
+        },
+        "timeRatio": 0.4045236070122033
+      },
+      "search": {
+        "generations": 2,
+        "candidates": 6,
+        "copyLimit": 2,
+        "driver": "hard"
+      }
+    }
+  ],
+  "feedback": {
+    "origin": "synthetic-smoke",
+    "baseGames": 160,
+    "feedbackGames": 8,
+    "positions": 2554,
+    "pairedSmokeGames": 4,
+    "adopt": false
+  },
+  "sourceArchiveMatchesTestSourceHash": true,
+  "masterBudgetConfirmation": {
+    "run": "../runs/20261023-master-budget",
+    "seedStart": 9800000,
+    "hypothesis": "fixed before testing: 20261023-study: at 600 nodes mlp-blend25 scored 46.9% vs rules-600 34.4% in validation; test whether the learned blend beats master at master's own default search budget",
+    "sourceArchiveSha256": "ed9ed893d32491fec2546314884813225ecf9946c13f7926b7f241c5e45c07c6",
+    "decision": {
+      "algorithm": {
+        "id": "mlp-blend25-master-budget",
+        "kind": "pooled-search",
+        "search": {},
+        "model": "../runs/20261023-study/training/mlp.json",
+        "modelHash": "784b3c60bc379b08c168d50f109f3cd2587bfb8431fa4d460c9f356cf219b9a0",
+        "blend": 0.25
+      },
+      "verdict": {
+        "adopt": false,
+        "reasons": [
+          "Superiority over the incumbent is not demonstrated",
+          "Environment non-inferiority is not demonstrated",
+          "Thinking-time budget exceeded"
+        ],
+        "rule": {
+          "alpha": 0.05,
+          "minPairs": 128,
+          "minPairsPerEnvironment": 32,
+          "environmentMargin": 0.1,
+          "maxTimeRatio": 1.25
+        },
+        "inference": "Fixed-sample Hoeffding lower bounds with Bonferroni correction for overall + four environments; paired bootstrap intervals are descriptive"
+      },
+      "testPlanHash": "abc05bc46245256fb342f47a110cc89fe87f821ec337f2645932f4ebdd28c33d"
+    },
+    "test": {
+      "phase": "test",
+      "planHash": "abc05bc46245256fb342f47a110cc89fe87f821ec337f2645932f4ebdd28c33d",
+      "provenance": {
+        "schemaHash": "308842410db37a65a191415f9d643444055683b631748598f5f813de3deeb8c8",
+        "catalogHash": "698dedd4ca3ca3000fc5958d58710dccf27cb8430a253f04041dc7f9f01a21bd",
+        "gameHash": "45dec9911be5db9f3b95f257797d500c3a23e7dc610b1f6d9ed33f057316d4cb",
+        "poolHash": "2e4df918d0e1d15dc8f40516e7a38259eaa626290cdb83b46cf4d9670b1dc3e7",
+        "rulesEngineHash": "27730c0d2d0ccd338f89a93c404e4292a8273e9c48a22bbdd0c3bc4a0a2fadf9",
+        "node": "v26.12.1",
+        "engineCommit": "b0dfbe6dd84e5e20bfe6133628ce7b26b9178476",
+        "workingTreeDirty": true,
+        "sourceHash": "1f262fd7be7b6dea2739f2fa73890f62eddcc3cd0488be2d27d2fcc037afe317",
+        "runnerHash": "2afde9d042bc9271abf813c2b55fa57d4b4bd24e60433a4ad5a648c3799752dc"
+      },
+      "candidates": {
+        "mlp-blend25-master-budget": {
+          "pairs": 128,
+          "score": 0.4609375,
+          "bootstrap95": [
+            0.41015625,
+            0.5078125
+          ],
+          "hoeffdingLower": 0.3268146233569158,
+          "games": 256,
+          "wins": 118,
+          "draws": 0,
+          "unfinished": 0,
+          "meanDecisionMs": 859.7145422700049,
+          "p95DecisionMs": 3184.248520999914,
+          "opponentMeanMs": 576.1800815837406,
+          "meanThinkingPerGameMs": 53097.447764965036,
+          "opponentThinkingPerGameMs": 35572.367927464926,
+          "environments": {
+            "strawberry": {
+              "pairs": 32,
+              "score": 0.453125,
+              "bootstrap95": [
+                0.359375,
+                0.546875
+              ],
+              "hoeffdingLower": 0.1848792467138316
+            },
+            "grape": {
+              "pairs": 32,
+              "score": 0.453125,
+              "bootstrap95": [
+                0.34375,
+                0.5625
+              ],
+              "hoeffdingLower": 0.1848792467138316
+            },
+            "melon": {
+              "pairs": 32,
+              "score": 0.46875,
+              "bootstrap95": [
+                0.375,
+                0.5625
+              ],
+              "hoeffdingLower": 0.2005042467138316
+            },
+            "orange": {
+              "pairs": 32,
+              "score": 0.46875,
+              "bootstrap95": [
+                0.375,
+                0.5625
+              ],
+              "hoeffdingLower": 0.2005042467138316
+            }
+          },
+          "timeRatio": 1.4926599171928963
+        }
+      }
+    }
+  },
+  "data10x": {
+    "collection": {
+      "games": 6400,
+      "seedStart": 20000000,
+      "level": "hard",
+      "exploration": 0.15,
+      "share": 0.16,
+      "positions": 76930,
+      "sourceArchiveSha256": "5437e7e8b5247bd3a200d049e770d0b266999cd69667820eef6a6034704ed689"
+    },
+    "valueModels": {
+      "constant": {
+        "kind": "baseline",
+        "metrics": {
+          "validation": {
+            "samples": 7333,
+            "logLoss": 0.6921380606469645,
+            "brier": 0.2494955655774102,
+            "accuracy": 0.5229378716167521,
+            "decisiveSamples": 7333,
+            "ece": 0.004659563468483396,
+            "matches": 640
+          },
+          "test": {
+            "samples": 7636,
+            "logLoss": 0.6921726092167682,
+            "brier": 0.24951282230615351,
+            "accuracy": 0.5226252206640452,
+            "decisiveSamples": 7636,
+            "ece": 0.004972214421190335,
+            "matches": 640
+          }
+        },
+        "playable": false
+      },
+      "numpy-linear": {
+        "kind": "NumPy linear (learning.py)",
+        "playable": true,
+        "selectedEpoch": 5,
+        "metrics": {
+          "validation": {
+            "samples": 7333,
+            "logLoss": 0.5309653092742674,
+            "brier": 0.17862176074223476,
+            "accuracy": 0.731482524857568,
+            "decisiveSamples": 7333,
+            "ece": 0.011979022360676618,
+            "matches": 640,
+            "constantBaseline": {
+              "samples": 7333,
+              "logLoss": 0.6921380606469645,
+              "brier": 0.2494955655774102,
+              "accuracy": 0.5229378716167521,
+              "decisiveSamples": 7333,
+              "ece": 0.004659563468483396,
+              "calibration": [
+                {
+                  "low": 0.5,
+                  "count": 7333,
+                  "predicted": 0.5275974350852355,
+                  "observed": 0.5229378716167521,
+                  "weight": 1.0
+                }
+              ]
+            }
+          },
+          "test": {
+            "samples": 7636,
+            "logLoss": 0.5826092146339408,
+            "brier": 0.19711133383350915,
+            "accuracy": 0.6976132832201836,
+            "decisiveSamples": 7636,
+            "ece": 0.03850858070964178,
+            "matches": 640,
+            "constantBaseline": {
+              "samples": 7636,
+              "logLoss": 0.6921726092167682,
+              "brier": 0.24951282230615351,
+              "accuracy": 0.5226252206640452,
+              "decisiveSamples": 7636,
+              "ece": 0.004972214421190335,
+              "calibration": [
+                {
+                  "low": 0.5,
+                  "count": 7636,
+                  "predicted": 0.5275974350852355,
+                  "observed": 0.5226252206640452,
+                  "weight": 1.0
+                }
+              ]
+            }
+          }
+        },
+        "sha256": "527b837d31857ca3d6f49765145e98b06c7e06ead48503ed1c6a0c65e8511994"
+      },
+      "numpy-mlp": {
+        "kind": "NumPy tanh MLP 16 (learning.py)",
+        "playable": true,
+        "selectedEpoch": 9,
+        "metrics": {
+          "validation": {
+            "samples": 7333,
+            "logLoss": 0.549225246011303,
+            "brier": 0.18565013707176303,
+            "accuracy": 0.7193436894442055,
+            "decisiveSamples": 7333,
+            "ece": 0.01230180044095463,
+            "matches": 640,
+            "constantBaseline": {
+              "samples": 7333,
+              "logLoss": 0.6921380606469645,
+              "brier": 0.2494955655774102,
+              "accuracy": 0.5229378716167521,
+              "decisiveSamples": 7333,
+              "ece": 0.004659563468483396,
+              "calibration": [
+                {
+                  "low": 0.5,
+                  "count": 7333,
+                  "predicted": 0.5275974350852355,
+                  "observed": 0.5229378716167521,
+                  "weight": 1.0
+                }
+              ]
+            }
+          },
+          "test": {
+            "samples": 7636,
+            "logLoss": 0.5804833011291213,
+            "brier": 0.198350547918548,
+            "accuracy": 0.6937744353689574,
+            "decisiveSamples": 7636,
+            "ece": 0.029814683179582132,
+            "matches": 640,
+            "constantBaseline": {
+              "samples": 7636,
+              "logLoss": 0.6921726092167682,
+              "brier": 0.24951282230615351,
+              "accuracy": 0.5226252206640452,
+              "decisiveSamples": 7636,
+              "ece": 0.004972214421190335,
+              "calibration": [
+                {
+                  "low": 0.5,
+                  "count": 7636,
+                  "predicted": 0.5275974350852355,
+                  "observed": 0.5226252206640452,
+                  "weight": 1.0
+                }
+              ]
+            }
+          }
+        },
+        "sha256": "ae3625af23b628822db806fbc9a831d529f61aa22518be8ba4286e306c7981a5"
+      },
+      "sklearn-logistic": {
+        "kind": "scikit-learn LogisticRegression (L2)",
+        "playable": true,
+        "search": [
+          {
+            "C": 0.0003,
+            "validationLogLoss": 0.537261338132537,
+            "seconds": 5.794768584019039
+          },
+          {
+            "C": 0.001,
+            "validationLogLoss": 0.5286096799325173,
+            "seconds": 8.616370750009082
+          },
+          {
+            "C": 0.003,
+            "validationLogLoss": 0.5247872051962319,
+            "seconds": 15.832442332990468
+          },
+          {
+            "C": 0.01,
+            "validationLogLoss": 0.5229176502962565,
+            "seconds": 34.92950900000869
+          },
+          {
+            "C": 0.03,
+            "validationLogLoss": 0.5216541130435932,
+            "seconds": 59.10098079199088
+          }
+        ],
+        "selectedC": 0.03,
+        "metrics": {
+          "validation": {
+            "samples": 7333,
+            "logLoss": 0.5216541147543798,
+            "brier": 0.17559780813127213,
+            "accuracy": 0.7342846513133185,
+            "decisiveSamples": 7333,
+            "ece": 0.01513913357573856,
+            "matches": 640
+          },
+          "test": {
+            "samples": 7636,
+            "logLoss": 0.5631729900093915,
+            "brier": 0.19140602001686424,
+            "accuracy": 0.701349378488042,
+            "decisiveSamples": 7636,
+            "ece": 0.020102774704972827,
+            "matches": 640
+          }
+        },
+        "sha256": "61830e3231439c7990d2bd6b56897f7c267d4af65e490a33f6cd16ef0a508e0c"
+      },
+      "sklearn-boosting": {
+        "kind": "scikit-learn HistGradientBoosting",
+        "playable": false,
+        "selectedIterations": 351,
+        "metrics": {
+          "validation": {
+            "samples": 7333,
+            "logLoss": 0.515993983760646,
+            "brier": 0.1725502479024656,
+            "accuracy": 0.7369638746256577,
+            "decisiveSamples": 7333,
+            "ece": 0.021972321802571592,
+            "matches": 640
+          },
+          "test": {
+            "samples": 7636,
+            "logLoss": 0.5551243604593722,
+            "brier": 0.18811990451097807,
+            "accuracy": 0.711107345311411,
+            "decisiveSamples": 7636,
+            "ece": 0.010673988320115225,
+            "matches": 640
+          }
+        }
+      },
+      "torch-mlp": {
+        "kind": "PyTorch tanh MLP 32 + dropout",
+        "playable": true,
+        "selectedEpoch": 9,
+        "metrics": {
+          "validation": {
+            "samples": 7333,
+            "logLoss": 0.5321420402470269,
+            "brier": 0.17852187647265827,
+            "accuracy": 0.7322966799480252,
+            "decisiveSamples": 7333,
+            "ece": 0.02144082948561443,
+            "matches": 640
+          },
+          "test": {
+            "samples": 7636,
+            "logLoss": 0.5688229028696111,
+            "brier": 0.19410808834133098,
+            "accuracy": 0.6995412613844512,
+            "decisiveSamples": 7636,
+            "ece": 0.022464179642441916,
+            "matches": 640
+          }
+        },
+        "sha256": "98fa45f6c2ce6adb755a754199f4b896443d7245e9ccf28c8fbe09aff8a8aac8"
+      },
+      "torch-deepsets": {
+        "kind": "PyTorch Deep Sets (per-card encoder, learned pooling)",
+        "playable": false,
+        "selectedEpoch": 5,
+        "metrics": {
+          "validation": {
+            "samples": 7333,
+            "logLoss": 0.5160619409168803,
+            "brier": 0.17311349567973938,
+            "accuracy": 0.7405301007815053,
+            "decisiveSamples": 7333,
+            "ece": 0.020560475555669106,
+            "matches": 640
+          },
+          "test": {
+            "samples": 7636,
+            "logLoss": 0.5637211676316372,
+            "brier": 0.19149095797884946,
+            "accuracy": 0.7025456639063486,
+            "decisiveSamples": 7636,
+            "ece": 0.027650729297797653,
+            "matches": 640
+          }
+        }
+      }
+    },
+    "selectedPlayable": "sklearn-logistic",
+    "arena": {
+      "screen": {
+        "phase": "screen",
+        "planHash": "a02f8d6a7a8dbb4ba5a5317437543600932de397ef3464cf3c4b00c8bd6de445",
+        "provenance": {
+          "schemaHash": "308842410db37a65a191415f9d643444055683b631748598f5f813de3deeb8c8",
+          "catalogHash": "698dedd4ca3ca3000fc5958d58710dccf27cb8430a253f04041dc7f9f01a21bd",
+          "gameHash": "45dec9911be5db9f3b95f257797d500c3a23e7dc610b1f6d9ed33f057316d4cb",
+          "poolHash": "2e4df918d0e1d15dc8f40516e7a38259eaa626290cdb83b46cf4d9670b1dc3e7",
+          "rulesEngineHash": "27730c0d2d0ccd338f89a93c404e4292a8273e9c48a22bbdd0c3bc4a0a2fadf9",
+          "node": "v26.12.1",
+          "engineCommit": "addd79d6871e16a97953dcc4ebed251b81dd784d",
+          "workingTreeDirty": true,
+          "sourceHash": "0f4e4fa4f0a5d17a9dc07ef649bc5a5cc76bf076e6702249e99d75be6ba874ee",
+          "runnerHash": "2afde9d042bc9271abf813c2b55fa57d4b4bd24e60433a4ad5a648c3799752dc"
+        },
+        "candidates": {
+          "sklearn-logistic-blend25": {
+            "pairs": 32,
+            "score": 0.46875,
+            "bootstrap95": [
+              0.375,
+              0.546875
+            ],
+            "hoeffdingLower": 0.2005042467138316,
+            "games": 64,
+            "wins": 30,
+            "draws": 0,
+            "unfinished": 0,
+            "meanDecisionMs": 292.72033346163244,
+            "p95DecisionMs": 859.1085705999749,
+            "opponentMeanMs": 424.76656499414906,
+            "meanThinkingPerGameMs": 18656.347502968732,
+            "opponentThinkingPerGameMs": 27224.882025093742,
+            "environments": {
+              "strawberry": {
+                "pairs": 8,
+                "score": 0.375,
+                "bootstrap95": [
+                  0.1875,
+                  0.5
+                ],
+                "hoeffdingLower": 0
+              },
+              "grape": {
+                "pairs": 8,
+                "score": 0.5625,
+                "bootstrap95": [
+                  0.5,
+                  0.6875
+                ],
+                "hoeffdingLower": 0.026008493427663204
+              },
+              "melon": {
+                "pairs": 8,
+                "score": 0.5625,
+                "bootstrap95": [
+                  0.375,
+                  0.75
+                ],
+                "hoeffdingLower": 0.026008493427663204
+              },
+              "orange": {
+                "pairs": 8,
+                "score": 0.375,
+                "bootstrap95": [
+                  0.1875,
+                  0.5
+                ],
+                "hoeffdingLower": 0
+              }
+            },
+            "timeRatio": 0.6852682588586715
+          },
+          "sklearn-logistic-blend50": {
+            "pairs": 32,
+            "score": 0.453125,
+            "bootstrap95": [
+              0.34375,
+              0.546875
+            ],
+            "hoeffdingLower": 0.1848792467138316,
+            "games": 64,
+            "wins": 29,
+            "draws": 0,
+            "unfinished": 0,
+            "meanDecisionMs": 300.54049936961803,
+            "p95DecisionMs": 906.0490544999248,
+            "opponentMeanMs": 449.32104244578613,
+            "meanThinkingPerGameMs": 17558.139486609405,
+            "opponentThinkingPerGameMs": 26741.622666812487,
+            "environments": {
+              "strawberry": {
+                "pairs": 8,
+                "score": 0.5,
+                "bootstrap95": [
+                  0.1875,
+                  0.8125
+                ],
+                "hoeffdingLower": 0
+              },
+              "grape": {
+                "pairs": 8,
+                "score": 0.4375,
+                "bootstrap95": [
+                  0.3125,
+                  0.5
+                ],
+                "hoeffdingLower": 0
+              },
+              "melon": {
+                "pairs": 8,
+                "score": 0.4375,
+                "bootstrap95": [
+                  0.25,
+                  0.625
+                ],
+                "hoeffdingLower": 0
+              },
+              "orange": {
+                "pairs": 8,
+                "score": 0.4375,
+                "bootstrap95": [
+                  0.3125,
+                  0.5
+                ],
+                "hoeffdingLower": 0
+              }
+            },
+            "timeRatio": 0.6565846697253648
+          },
+          "sklearn-logistic-blend100": {
+            "pairs": 32,
+            "score": 0.359375,
+            "bootstrap95": [
+              0.28125,
+              0.4375
+            ],
+            "hoeffdingLower": 0.0911292467138316,
+            "games": 64,
+            "wins": 23,
+            "draws": 0,
+            "unfinished": 0,
+            "meanDecisionMs": 268.3359319779777,
+            "p95DecisionMs": 818.0576165999751,
+            "opponentMeanMs": 399.85183466691717,
+            "meanThinkingPerGameMs": 16372.684599593795,
+            "opponentThinkingPerGameMs": 25078.20725551571,
+            "environments": {
+              "strawberry": {
+                "pairs": 8,
+                "score": 0.4375,
+                "bootstrap95": [
+                  0.3125,
+                  0.5
+                ],
+                "hoeffdingLower": 0
+              },
+              "grape": {
+                "pairs": 8,
+                "score": 0.3125,
+                "bootstrap95": [
+                  0.125,
+                  0.4375
+                ],
+                "hoeffdingLower": 0
+              },
+              "melon": {
+                "pairs": 8,
+                "score": 0.3125,
+                "bootstrap95": [
+                  0.125,
+                  0.5
+                ],
+                "hoeffdingLower": 0
+              },
+              "orange": {
+                "pairs": 8,
+                "score": 0.375,
+                "bootstrap95": [
+                  0.1875,
+                  0.5
+                ],
+                "hoeffdingLower": 0
+              }
+            },
+            "timeRatio": 0.652865032686608
+          }
+        }
+      },
+      "test": {
+        "phase": "test",
+        "planHash": "25594d1eb4b30973b2a1b092a5d9b4f36dbc2f589a4154ecaa8d255facb8bfc6",
+        "provenance": {
+          "schemaHash": "308842410db37a65a191415f9d643444055683b631748598f5f813de3deeb8c8",
+          "catalogHash": "698dedd4ca3ca3000fc5958d58710dccf27cb8430a253f04041dc7f9f01a21bd",
+          "gameHash": "45dec9911be5db9f3b95f257797d500c3a23e7dc610b1f6d9ed33f057316d4cb",
+          "poolHash": "2e4df918d0e1d15dc8f40516e7a38259eaa626290cdb83b46cf4d9670b1dc3e7",
+          "rulesEngineHash": "27730c0d2d0ccd338f89a93c404e4292a8273e9c48a22bbdd0c3bc4a0a2fadf9",
+          "node": "v26.12.1",
+          "engineCommit": "addd79d6871e16a97953dcc4ebed251b81dd784d",
+          "workingTreeDirty": true,
+          "sourceHash": "0f4e4fa4f0a5d17a9dc07ef649bc5a5cc76bf076e6702249e99d75be6ba874ee",
+          "runnerHash": "2afde9d042bc9271abf813c2b55fa57d4b4bd24e60433a4ad5a648c3799752dc"
+        },
+        "candidates": {
+          "sklearn-logistic-blend25": {
+            "pairs": 128,
+            "score": 0.4375,
+            "bootstrap95": [
+              0.390625,
+              0.484375
+            ],
+            "hoeffdingLower": 0.3033771233569158,
+            "games": 256,
+            "wins": 112,
+            "draws": 0,
+            "unfinished": 0,
+            "meanDecisionMs": 229.3840376067344,
+            "p95DecisionMs": 666.2819062499265,
+            "opponentMeanMs": 347.16581350693764,
+            "meanThinkingPerGameMs": 13918.951719464892,
+            "opponentThinkingPerGameMs": 21112.021033890644,
+            "environments": {
+              "strawberry": {
+                "pairs": 32,
+                "score": 0.4375,
+                "bootstrap95": [
+                  0.359375,
+                  0.5
+                ],
+                "hoeffdingLower": 0.1692542467138316
+              },
+              "grape": {
+                "pairs": 32,
+                "score": 0.390625,
+                "bootstrap95": [
+                  0.296875,
+                  0.484375
+                ],
+                "hoeffdingLower": 0.1223792467138316
+              },
+              "melon": {
+                "pairs": 32,
+                "score": 0.421875,
+                "bootstrap95": [
+                  0.328125,
+                  0.515625
+                ],
+                "hoeffdingLower": 0.1536292467138316
+              },
+              "orange": {
+                "pairs": 32,
+                "score": 0.5,
+                "bootstrap95": [
+                  0.390625,
+                  0.609375
+                ],
+                "hoeffdingLower": 0.2317542467138316
+              }
+            },
+            "timeRatio": 0.659290349186424
+          }
+        }
+      },
+      "decision": {
+        "algorithm": {
+          "id": "sklearn-logistic-blend25",
+          "kind": "pooled-search",
+          "search": {
+            "maxNodes": 600,
+            "beamWidth": 4,
+            "worlds": 2,
+            "candidates": 5,
+            "lethalNodes": 400
+          },
+          "model": "../runs/20261023-data10x/ml/sklearn-logistic.json",
+          "modelHash": "61830e3231439c7990d2bd6b56897f7c267d4af65e490a33f6cd16ef0a508e0c",
+          "blend": 0.25
+        },
+        "verdict": {
+          "adopt": false,
+          "reasons": [
+            "Superiority over the incumbent is not demonstrated",
+            "Environment non-inferiority is not demonstrated"
+          ],
+          "rule": {
+            "alpha": 0.05,
+            "minPairs": 128,
+            "minPairsPerEnvironment": 32,
+            "environmentMargin": 0.1,
+            "maxTimeRatio": 1.25
+          },
+          "inference": "Fixed-sample Hoeffding lower bounds with Bonferroni correction for overall + four environments; paired bootstrap intervals are descriptive"
+        },
+        "testPlanHash": "25594d1eb4b30973b2a1b092a5d9b4f36dbc2f589a4154ecaa8d255facb8bfc6"
+      }
+    },
+    "policy": {
+      "games": 80,
+      "seedStart": 21000000,
+      "level": "master",
+      "share": 1.0,
+      "decisions": 7112,
+      "actions": 30705,
+      "matches": {
+        "train": 64,
+        "validation": 8,
+        "test": 8
+      },
+      "teacher": "master self-play choices",
+      "results": {
+        "uniform": {
+          "kind": "ランダム",
+          "metrics": {
+            "validation": {
+              "decisions": 756,
+              "top1": 0.3306878306878307,
+              "top3": 0.7923280423280423,
+              "meanActions": 4.412698412698413,
+              "wideDecisions": 193,
+              "wideTop1": 0.12953367875647667,
+              "wideTop3": 0.37823834196891193
+            },
+            "test": {
+              "decisions": 672,
+              "top1": 0.34375,
+              "top3": 0.7678571428571429,
+              "meanActions": 4.345238095238095,
+              "wideDecisions": 179,
+              "wideTop1": 0.11173184357541899,
+              "wideTop3": 0.35195530726256985
+            }
+          }
+        },
+        "type-prior": {
+          "kind": "行動の種類の頻度",
+          "metrics": {
+            "validation": {
+              "decisions": 756,
+              "top1": 0.4126984126984127,
+              "top3": 0.8333333333333334,
+              "meanActions": 4.412698412698413,
+              "wideDecisions": 193,
+              "wideTop1": 0.21761658031088082,
+              "wideTop3": 0.48186528497409326
+            },
+            "test": {
+              "decisions": 672,
+              "top1": 0.41220238095238093,
+              "top3": 0.8244047619047619,
+              "meanActions": 4.345238095238095,
+              "wideDecisions": 179,
+              "wideTop1": 0.1564245810055866,
+              "wideTop3": 0.45251396648044695
+            }
+          }
+        },
+        "sklearn-logistic": {
+          "kind": "scikit-learn LogisticRegression",
+          "metrics": {
+            "validation": {
+              "decisions": 756,
+              "top1": 0.419973544973545,
+              "top3": 0.8503086419753085,
+              "meanActions": 4.412698412698413,
+              "wideDecisions": 193,
+              "wideTop1": 0.2504317789291882,
+              "wideTop3": 0.5509499136442142
+            },
+            "test": {
+              "decisions": 672,
+              "top1": 0.4523809523809524,
+              "top3": 0.858234126984127,
+              "meanActions": 4.345238095238095,
+              "wideDecisions": 179,
+              "wideTop1": 0.28212290502793297,
+              "wideTop3": 0.5981378026070763
+            }
+          }
+        },
+        "sklearn-boosting": {
+          "kind": "scikit-learn HistGradientBoosting",
+          "metrics": {
+            "validation": {
+              "decisions": 756,
+              "top1": 0.46241900735948355,
+              "top3": 0.8839501437715724,
+              "meanActions": 4.412698412698413,
+              "wideDecisions": 193,
+              "wideTop1": 0.28983818426823604,
+              "wideTop3": 0.6363539310430503
+            },
+            "test": {
+              "decisions": 672,
+              "top1": 0.4815942696523054,
+              "top3": 0.8894752692743763,
+              "meanActions": 4.345238095238095,
+              "wideDecisions": 179,
+              "wideTop1": 0.3035270905382637,
+              "wideTop3": 0.6433559457302475
+            }
+          }
+        },
+        "torch-listwise": {
+          "kind": "PyTorch listwise scorer",
+          "selectedEpoch": 8,
+          "metrics": {
+            "validation": {
+              "decisions": 756,
+              "top1": 0.4972514588586017,
+              "top3": 0.8960753642301261,
+              "meanActions": 4.412698412698413,
+              "wideDecisions": 193,
+              "wideTop1": 0.31833559359466096,
+              "wideTop3": 0.6622606667943456
+            },
+            "test": {
+              "decisions": 672,
+              "top1": 0.48829069822373394,
+              "top3": 0.8922034438775509,
+              "meanActions": 4.345238095238095,
+              "wideDecisions": 179,
+              "wideTop1": 0.32028686707457654,
+              "wideTop3": 0.6657023144453312
+            }
+          }
+        }
+      }
+    }
+  }
+}

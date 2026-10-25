@@ -1,3 +1,4 @@
+import { THRESHOLD_DRAWS } from './constants.ts';
 // お菓子ポイント: 食べる / 奪う / 減らす / 回復.
 import { scriptFor } from '../cards/registry.ts';
 import { other } from '../model.ts';
@@ -40,7 +41,7 @@ export function losePoints(s: GameState, side: Side, amount: number, mode: Point
     const before = p.points;
     p.points = Math.max(0, p.points - amount);
     note(s, `${p.name}：お菓子ポイント ${before} → ${p.points}`);
-    for (const threshold of [10, 5]) {
+    for (const threshold of THRESHOLD_DRAWS) {
         if (before > threshold && p.points <= threshold && !p.milestones.includes(threshold)) {
             p.milestones.push(threshold);
             note(s, `${threshold}ポイント到達：お菓子を1枚引くことができます`);

@@ -1,6 +1,9 @@
 // Entry point for CPU players. A level (ai/levels/*) only picks one legal move; this file decides
 // who acts, hides what the CPU cannot know, and double-checks the choice against the real state.
 import { applyCommand } from '../commands/index.ts';
+import { bindDecision } from '../gameplay/decision.ts';
+import type { DecisionInput, ActionSelection } from '../gameplay/decision.ts';
+import { commandKey } from '../gameplay/actions.ts';
 import { random } from '../core/rng.ts';
 import type { Catalog, Command, GameState, Side } from '../model.ts';
 import { determinize } from './hidden.ts';
@@ -20,17 +23,24 @@ export interface CpuOptions {
     strategy?: CpuStrategy;
     /** The side the CPU plays. Omitted: whichever side has to act (side 1 first in the opening). */
     side?: Side;
+    /** JSON-only model boundary. Receives a player observation and returns an offered action ID. */
+    policy?: (input: DecisionInput) => ActionSelection;
 }
 
 /**
  * The CPU's next command, or null when the side has nothing to do now.
  * The dice phase is left to the caller, which shows the throw (the result is random anyway).
  */
-export function cpuCommand(s: GameState, catalog: Catalog, { level = 'normal', side, strategy = cpuStrategies[level] }: CpuOptions = {}): Command | null {
+export function cpuCommand(s: GameState, catalog: Catalog, { level = 'normal', side, strategy = cpuStrategies[level], policy }: CpuOptions = {}): Command | null {
     if (s.phase === 'dice') return null;
     const acting = actingSides(s);
     const actor = side ?? (acting.includes(1) ? 1 : acting[0]);
     if (actor === undefined || !acting.includes(actor)) return null;
+    if (policy) {
+        const decision = bindDecision(s, actor, catalog);
+        if (!decision.input.observation.actions.length) return null;
+        return decision.command(s, policy(decision.input));
+    }
     // A fixed seed per position: the same situation gives the same decision (replays, tests).
     const known = determinize(s, actor, catalog, (s.rng ^ 0x5bd1e995 ^ s.revision) >>> 0);
     // Human reveal choices are reversible; the CPU advances through each card at most once.
@@ -38,7 +48,10 @@ export function cpuCommand(s: GameState, catalog: Catalog, { level = 'normal', s
     const selected = draft?.op === 'cardEffect' && draft.step === 'reveal' ? draft.ids ?? [] : [];
     const moves = legalMoves(known, actor, catalog).filter(move => move.command.type !== 'choose' || !selected.includes(move.command.option));
     if (!moves.length) return null;
-    const command = strategy.choose({ state: known, side: actor, catalog, moves, random: size => random(known, size) }).command;
+    const chosen = strategy.choose({ state: known, side: actor, catalog, moves, random: size => random(known, size) });
+    const chosenKey = moves.includes(chosen) ? null : commandKey(chosen.command);
+    const command = chosenKey === null ? chosen.command : moves.find(move => commandKey(move.command) === chosenKey)?.command;
+    if (!command) throw new Error('CPU strategy must choose one of the offered legal actions');
     if (!applyCommand(s, command, catalog).error) return command;
     // The guessed world allowed something the real one does not; fall back to a real legal move.
     return legalMoves(s, actor, catalog)[0]?.command ?? null;
@@ -58,6 +71,11 @@ export { BLUNDER, DUBIOUS, gradeOf, moveLoss, winProbability } from './assess.ts
 export type { MoveGrade, WinOptions } from './assess.ts';
 export { createValueEvaluator, parseValueModel, valueFeatures, valueLayout, valueLogit } from './value.ts';
 export { valueModel } from './value-model.ts';
+export { createResearchEvaluator } from './research-evaluator.ts';
+export { createPooledEvaluator, parsePooledValueModel, pooledLogit } from './pooled-value.ts';
+export type { PooledValueModel } from './pooled-value.ts';
+export type { MasterOptions } from './levels/master.ts';
+export type { ResearchScorer } from './research-evaluator.ts';
 export type { Evaluator, ValueModel } from './value.ts';
 export type { TurnSearchOptions, TurnSearchResult } from './turn-search.ts';
 export type { MatchOptions, MatchResult } from './selfplay.ts';

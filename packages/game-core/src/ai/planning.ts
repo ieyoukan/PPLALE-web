@@ -1,3 +1,4 @@
+import { MAX_PP } from '../core/constants.ts';
 // Evaluation for multi-action plans. Hand/deck values are estimates, never deck-top predictions.
 import { scriptOf } from '../cards/registry.ts';
 import { attackOf, costOf, hpOf, immobilized, isRealSweet, maxPp } from '../core/cards.ts';
@@ -52,7 +53,7 @@ function sweetValue(s: GameState, side: Side, uid: string, catalog: Catalog): nu
 function handValue(s: GameState, side: Side, uid: string, catalog: Catalog, impact: (uid: string) => number): number {
     const p = s.players[side], card = s.cards[uid], def = catalog[card.cardId];
     // Temporary discounts and borrowed PP cannot be saved for the next turn.
-    const nextPp = Math.max(0, Math.min(12, maxPp(s, side) + 1) - p.nextPpDebt);
+    const nextPp = Math.max(0, Math.min(MAX_PP, maxPp(s, side) + 1) - p.nextPpDebt);
     const futureCost = Math.max(0, costOf(s, uid, catalog, side) - card.temporaryCost);
     const ready = futureCost <= nextPp ? 0.28 : 0.09;
     if (def.type === 'yojo') {

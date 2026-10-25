@@ -1,3 +1,4 @@
+import { SECOND_PLAYER_BONUS } from '../core/constants.ts';
 // dice → initiative → opening → mulligan → playing, and the start of each turn.
 import { availablePpMaximum, expireTimed, note } from '../core/cards.ts';
 import { settleStall } from '../core/stall.ts';
@@ -12,7 +13,7 @@ export function startTurn(s: GameState, side: Side) {
     s.turn++;
     const p = s.players[side];
     p.turns++;
-    p.turnPpBonus = side !== s.rules.firstPlayer && p.turns === 5 ? 2 : 0;
+    p.turnPpBonus = side !== s.rules.firstPlayer && p.turns === SECOND_PLAYER_BONUS.turn ? SECOND_PLAYER_BONUS.pp : 0;
     p.pp = Math.max(0, availablePpMaximum(s, side) + p.turnPpBonus - p.nextPpDebt);
     p.nextPpDebt = 0;
     p.field.forEach(uid => { s.cards[uid].exhausted = false; delete s.cards[uid].actions; });

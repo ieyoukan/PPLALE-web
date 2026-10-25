@@ -1,0 +1,19 @@
+.friendActions { display: inline-grid; gap: 8px; align-self: flex-start; }
+.friendActions + button { align-self: flex-start; }
+.friendActions .friendButton { display: inline-flex; align-items: center; justify-content: center; gap: 8px; min-height: 44px; border: 1px solid var(--brand-pink-edge); border-radius: 14px; background: var(--brand-blush); color: var(--brand-cocoa-deep); }
+.friendButton svg { fill: currentColor; }
+.arrow { width: 7px; height: 7px; margin: -4px 2px 0 4px; border-right: 2px solid currentColor; border-bottom: 2px solid currentColor; transform: rotate(45deg); transition: transform .15s; }
+.friendButton[aria-expanded=true] .arrow { transform: translateY(3px) rotate(225deg); }
+.dropdown { display: grid; animation: unfold .15s ease-out; }
+.friendActions .dropdown > button { min-height: 44px; padding: 10px 16px; border: 1px solid var(--brand-pink-edge); border-radius: 14px; background: var(--brand-paper); color: var(--brand-cocoa-deep); box-shadow: 0 4px 12px var(--brand-shadow); }
+.dialog { box-sizing: border-box; position: fixed; inset: 0; width: min(420px, calc(100% - 32px)); max-height: calc(100dvh - 32px); margin: auto; padding: 24px; overflow: auto; border: 2px solid var(--brand-pink-edge); border-radius: 24px; background: var(--brand-cream); color: var(--brand-cocoa-deep); box-shadow: 0 16px 48px var(--brand-shadow); font-family: var(--font-site-body), sans-serif; animation: unfold .15s ease-out; }
+.dialog::backdrop { background: color-mix(in srgb, var(--brand-cocoa-deep) 45%, transparent); }
+.friendActions .dialog h2 { margin: 0; font-size: 21px; text-align: center; }
+.dialog p { margin: 18px 0; font-size: 14px; line-height: 1.8; overflow-wrap: anywhere; text-align: center; }
+.confirmActions { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 24px; }
+.dialog .cancel, .dialog .confirm { flex: 1; min-height: 44px; padding: 10px 12px; border: 1px solid var(--brand-pink-edge); border-radius: 14px; background: var(--brand-paper); color: var(--brand-cocoa-deep); white-space: nowrap; }
+.dialog .confirm { background: var(--brand-pink); }
+.friendActions button:focus-visible, .dialog button:focus-visible { outline: 3px solid var(--brand-cocoa); outline-offset: 3px; }
+.dialog button:disabled { opacity: .55; cursor: default; }
+@keyframes unfold { from { opacity: 0; transform: translateY(-5px); } to { opacity: 1; transform: translateY(0); } }
+@media (prefers-reduced-motion: reduce) { .dropdown, .dialog { animation: none; } .arrow { transition: none; } }

@@ -1,6 +1,7 @@
 import { cpuProfiles } from '../profiles.ts';
 // さいきょう: look for lethal, then compare complete own plans against sampled opponent replies.
 import { findLethal } from '../lethal.ts';
+import type { LethalOptions } from '../lethal.ts';
 import { drawValue } from '../planning.ts';
 import { searchTurn } from '../turn-search.ts';
 import type { TurnSearchOptions } from '../turn-search.ts';
@@ -12,7 +13,12 @@ import { plainHard as hard } from './hard.ts';
 /** Lethal search is bounded separately from the turn/reply search. */
 const SEARCH_NODES = 4000;
 
-export const createMaster = (options: TurnSearchOptions = {}): CpuStrategy => ({
+export interface MasterOptions extends TurnSearchOptions {
+    lethalNodes?: number;
+    /** Lethal search options other than the budget (see lethal.ts). */
+    lethal?: Omit<LethalOptions, 'maxNodes'>;
+}
+export const createMaster = (options: MasterOptions = {}): CpuStrategy => ({
     level: 'master',
     ...cpuProfiles.master,
     choose(d) {
@@ -29,7 +35,7 @@ export const createMaster = (options: TurnSearchOptions = {}): CpuStrategy => ({
             }
         }
         if (d.state.phase === 'playing') {
-            const lethal = findLethal(d.state, d.side, d.catalog, { maxNodes: SEARCH_NODES });
+            const lethal = findLethal(d.state, d.side, d.catalog, { ...options.lethal, maxNodes: options.lethalNodes ?? SEARCH_NODES });
             const first = lethal.line[0] && d.moves.find(m => JSON.stringify(m.command) === JSON.stringify(lethal.line[0]));
             if (first) return first;
             if (d.state.active === d.side) return searchTurn(d, hard.choose(d), options).move;

@@ -12,6 +12,10 @@ node_modules
 
 # testing
 /coverage
+/research/cpu/data/
+/research/cpu/runs/
+/research/cpu/.venv/
+__pycache__/
 /test-results/
 /playwright-report/
 

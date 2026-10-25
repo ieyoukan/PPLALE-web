@@ -1,3 +1,4 @@
+import { DECK_SIZE } from './core/constants.ts';
 // Deck validation and creating a new match.
 import { note, spawnCard } from './core/cards.ts';
 import { shuffled } from './core/rng.ts';
@@ -20,8 +21,8 @@ export const singleCopy = (catalog: Catalog, id: string) => catalog[id]?.sweetTy
  */
 export function validateDeck(deck: Deck, catalog: Catalog): string[] {
     const errors: string[] = [];
-    if (deck.yojo.length !== 20) errors.push('幼女デッキは20枚にしてください');
-    if (deck.sweet.length !== 10) errors.push('お菓子デッキは10枚にしてください');
+    if (deck.yojo.length !== DECK_SIZE.yojo) errors.push(`幼女デッキは${DECK_SIZE.yojo}枚にしてください`);
+    if (deck.sweet.length !== DECK_SIZE.sweet) errors.push(`お菓子デッキは${DECK_SIZE.sweet}枚にしてください`);
     for (const kind of ['yojo', 'sweet'] as const) {
         for (const id of deck[kind]) {
             if (!deckCard(catalog, id, kind)) errors.push(`${id}: 対応している${kind === 'yojo' ? '幼女' : 'お菓子'}デッキに入れられません`);

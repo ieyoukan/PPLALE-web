@@ -44,7 +44,7 @@ export interface Rules {
     firstPlayer: Side;
     turnDraw: DeckKind;
 }
-export const MAX_PP = 12;
+export { MAX_PP } from './core/constants.ts';
 // Test setup values; turn flow and PP/hand limits follow the rulebook.
 export const sandboxRules: Rules = {
     initialPoints: 12, initialYojo: 3, initialSweet: 0, firstPlayer: 0,

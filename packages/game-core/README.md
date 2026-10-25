@@ -15,11 +15,13 @@ Next.js / React / Firebase に依存しない、ぷぷりえーるのローカ�
 | `effects/ops.ts` | 複数のカードで共有する効果の手順（ダメージ・ドロー・捨てる…） |
 | `effects/expandedOps.ts` | 回避、ダイス、手札誘発、攻撃とターンの段階処理、カード固有の継続手順 |
 | `effects/resolve.ts` | 効果キューの解決。対象選択が必要なら `pending` で待つ |
-| `core/` | カード・ポイント・領域移動・戦闘の基本処理 |
+| `core/` | カード・ポイント・領域移動・戦闘の基本処理。`actions.ts` は手番と必要コスト、`constants.ts` は共有するルール定数 |
 | `commands/` | Command ごとの処理（`opening.ts` 開始前 / `turn.ts` ターン中 / `sandbox.ts` テスト操作）と `applyCommand` |
 | `setup.ts` | デッキ検証と `newGame` |
 | `view.ts` | UI 向けの読み取り専用ヘルパー（`pendingView` で選択肢の表示場所、`attackTargets`） |
-| `ai/` | CPU。`moves.ts` 合法手、`hidden.ts` 見えない情報の推測、`evaluate.ts` 盤面評価、`lethal.ts` 予算付きの勝ち筋探索、`turn-search.ts` 自分のターンと相手の返しの探索、`value.ts` 学習した局面の価値、`selfplay.ts` CPU同士の対戦、`levels/` 強さごとの戦略 |
+| `gameplay/` | ルール・カード・コマンド定義、合法手・選択分岐、観測と行動IDの境界。`./gameplay` で公開 |
+| `research/` | 研究用の特徴量スキーマ・数値変換・データセット形式。共通APIを利用し、ゲーム本体からは依存しない |
+| `ai/` | CPU。`moves.ts` 共通合法手の再公開と枝刈り、`hidden.ts` 見えない情報の推測、`evaluate.ts` 盤面評価、`lethal.ts` 予算付きの勝ち筋探索、`turn-search.ts` 自分のターンと相手の返しの探索、`value.ts` 学習した局面の価値、`selfplay.ts` CPU同士の対戦、`levels/` 強さごとの戦略 |
 | `core/state.ts` | `cloneState`。探索で大量に呼ぶ状態コピー（structuredClone の約10倍速い） |
 | `snapshot.ts` | 保存された状態の検証・復元と旧形式の移行 |
 | `position.ts` | 盤面エディタの盤面（`Position`）。`buildPosition` で対戦中の状態にし、`positionOf` で対戦中の盤面を書き出す。`encodePosition` / `decodePosition` は共有コード（`PPL1.…`） |
@@ -66,6 +68,8 @@ y_8: {
 ## CPU
 
 判断の流れ、難易度ごとの評価式と正確な重み、探索予算、学習モデルの全入力、学習・比較コマンド、過去の実験記録は [CPUの判断・評価式・学習](../../docs/cpu.md) に集約する。
+
+TS/Python共通のカード・局面データ、特徴量、学習・比較・デッキ探索とグラフ、フィードバック再学習は [CPU研究](../../research/cpu/README.md) を参照。現行CPUの入力とは分けて拡張する。
 
 新しい戦略は `ai/levels/*.ts` に「合法手から1つ選ぶ」`CpuStrategy` を実装し、`ai/index.ts` の `cpuStrategies` に登録する。`cpuCommand` が手番判定・非公開情報の置き換え・実状態での合法性の再確認を担当する。
 

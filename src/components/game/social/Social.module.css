@@ -88,17 +88,11 @@ a.room:hover .roomAction { background: var(--place); color: #fff; }
 .tileText small { display: flex; align-items: center; gap: 5px; min-width: 0; font-size: 11px; color: #8f6f6a; }
 .tileText small > span:last-child { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .dot { flex: 0 0 8px; height: 8px; border-radius: 50%; background: var(--place); }
-.panel .more { position: absolute; top: 4px; right: 4px; min-height: 0; padding: 0 8px; border: 0; background: #fffc; font-size: 14px; line-height: 22px; opacity: 0; transition: opacity .15s; }
-.tile:hover .more, .more:focus-visible { opacity: 1; }
-@media (hover: none) { .panel .more { opacity: .8; } }
 .answer { position: relative; display: flex; gap: 6px; padding-right: 10px; }
 .panel .answer button { width: 38px; min-height: 38px; padding: 0; border: 0; border-radius: 50%; color: #fff; font-size: 17px; font-weight: 800; box-shadow: inset 0 -3px 0 #0002; transition: transform .12s; }
 .panel .answer button:hover { transform: scale(1.12); }
 .panel .accept { background: #ef6f9c; }
 .panel .decline { background: #c7b8b3; }
-.remove { position: absolute; inset: 0; z-index: 1; display: flex; align-items: center; justify-content: center; gap: 8px; background: #fff5f8f0; animation: pop .2s; }
-.panel .remove button { min-height: 32px; padding: 4px 12px; font-size: 12px; }
-.panel .remove button:first-of-type { border-color: #d36f8f; background: #f6c4d4; font-weight: 700; }
 
 .addFriend { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; margin-top: 24px; padding: 14px; border: 2px dashed #efc3d2; border-radius: 18px; background: #fff8fb; font-size: 13px; }
 .addFriend label { display: flex; flex: 1; min-width: 220px; align-items: center; gap: 10px; color: #e07fa3; font-size: 22px; }
@@ -108,7 +102,7 @@ a.room:hover .roomAction { background: var(--place); color: #fff; }
 @keyframes bob { 50% { transform: translateY(-3px); } }
 @keyframes ring { 0% { box-shadow: 0 0 0 2.5px var(--place), 0 0 0 2.5px var(--glow); } 100% { box-shadow: 0 0 0 2.5px var(--place), 0 0 0 10px transparent; } }
 @keyframes pop { from { opacity: 0; transform: scale(.94); } }
-@media (prefers-reduced-motion: reduce) { .beat, .group[data-place=open] .roomBadge, .tile[data-place=open] .avatar, .tile, .remove { animation: none; } }
+@media (prefers-reduced-motion: reduce) { .beat, .group[data-place=open] .roomBadge, .tile[data-place=open] .avatar, .tile { animation: none; } }
 @container stage (max-width: 600px) { .groupBody { grid-template-columns: 1fr; } .room { grid-template-rows: 80px auto; } .roomAction { top: 42px; } .tiles { grid-template-columns: 1fr; } .tile { width: 100%; } }
 .group[data-place=sent], .tile[data-place=sent], .room[data-place=sent] { --place: #b39ad8; --glow: #b39ad855; }
 .headingLinks { display: flex; align-items: center; gap: 10px; }
@@ -122,9 +116,6 @@ a.room:hover .roomAction { background: var(--place); color: #fff; }
 .elsewhere { margin-top: 18px; padding-top: 18px; border-top: 2px dotted #edcbd7; }
 .watchMark { display: inline-grid; place-items: center; flex: none; color: var(--place); font-size: 13px; }
 .panel .answer button svg { font-size: 18px; }
-.panel .more svg { display: block; font-size: 16px; }
-.friendChip { display: inline-flex; align-items: center; gap: 6px; min-height: 42px; padding: 9px 16px; border-radius: 14px; background: #fde4ec; color: #c45f86; font-weight: 700; }
-.friendChip svg { fill: currentColor; }
 
 /* Profile: back to the friends (top left), where a friend is now, and the decks they show. */
 .back { display: inline-grid; place-items: center; width: 44px; height: 44px; margin-bottom: 12px; border: 2px solid #f0c3d3; border-radius: 50%; background: #fff; color: #c45f86; font-size: 22px; transition: transform .15s; }

@@ -53,10 +53,15 @@ export function turnStarts(): (state: GameState) => boolean {
  * in each environment too).
  */
 export function environmentDecks(catalog: Catalog, seed: number): [Deck, Deck] {
-    const environments = fruits.filter(fruit => playableNow.fruits.includes(fruit));
-    const rules = { fruits: fruitsUpTo(environments[seed % environments.length]), extendedPlayable: playableNow.extendedPlayable && (seed >>> 2) % 2 === 1 };
+    const rules = environmentRules(seed);
     const deck = (n: number) => randomDeck(rules, catalog, Math.imul(seed, 2654435761) + n) ?? randomStrawberryDeck(seed + n);
     return [deck(1), deck(2)];
+}
+
+/** Public sampling metadata; all four environments and both Ex settings occur in each block of eight. */
+export function environmentRules(seed: number) {
+    const environments = fruits.filter(fruit => playableNow.fruits.includes(fruit));
+    return { fruits: fruitsUpTo(environments[seed % environments.length]), extendedPlayable: playableNow.extendedPlayable && (seed >>> 2) % 2 === 1 };
 }
 
 /**
