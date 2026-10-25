@@ -101,7 +101,7 @@ export const strawberryYojo: CardScripts = {
     // y_13 がと: 早食い。挑発。場に出たとき +X/0（X は自分のお昼寝場所のがとの数）。
     y_13: {
         keywords: ['fast', 'taunt'],
-        onEnter: ctx => ctx.buff(ctx.uid, ctx.me.nap.filter(uid => ctx.s.cards[uid].cardId === 'y_13').length, 0),
+        onEnter: ctx => ctx.buff(ctx.uid, ctx.me.nap.filter(uid => ctx.defOf(uid).name === 'がと' && ctx.fruits(uid).includes('strawberry')).length, 0),
     },
     // y_14 ももか: 店長または副店長を公開してデッキから手札に加える。
     // 裁定: 山札の上からめくり、最初に出た該当カードを加え、残りはシャッフルする。

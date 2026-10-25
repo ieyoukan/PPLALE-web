@@ -114,10 +114,21 @@ test('y_12 あみの: +1 max PP; 7+ adds random damage, 10+ adds stealing 2', ()
   assert.equal(s.players[1].points, 10);
 });
 
-test('y_13 がと: +X attack per がと in the own nap', () => {
+test('y_13 がと: +X attack per strawberry-type がと in the own nap', () => {
   let s = arena({ me: { hand: ['y_13'], nap: ['y_13', 'y_13'] } });
   s = play(s, hand(s)[0]);
   assert.deepEqual(stats(s, newest(s)), [4, 1]);
+});
+
+test('y_13 がと: counts strawberry-type がと in the nap, including fruit gained from soda', () => {
+  let s = arena({ me: { hand: ['y_13'], nap: ['y_13', 'y_37', 'y_70'] } });
+  s = play(s, hand(s)[0]);
+  assert.deepEqual(stats(s, newest(s)), [3, 1]);
+
+  s = arena({ me: { hand: ['y_13'], nap: ['y_13', 'y_37', 'y_70'] } });
+  s.players[0].lastingFruits = ['strawberry'];
+  s = play(s, hand(s)[0]);
+  assert.deepEqual(stats(s, newest(s)), [5, 1]);
 });
 
 test('y_14 ももか: takes the first manager / assistant manager from the top, revealed, then shuffles', () => {
