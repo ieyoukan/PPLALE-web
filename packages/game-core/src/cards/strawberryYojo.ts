@@ -1,8 +1,9 @@
 // いちご（strawberry）の幼女カード。各カードの原文は src/data/yojo.json / tokenYojo.json。
-import type { CardContext } from '../effects/context.ts';
+import type { Catalog, GameState, Side } from '../model.ts';
 import type { CardScript, CardScripts } from './types.ts';
 
-const onField = (ctx: CardContext, cardId: string) => ctx.me.field.some(uid => ctx.s.cards[uid].cardId === cardId);
+const inomuOnField = (s: GameState, side: Side, catalog: Catalog) =>
+    s.players[side].field.some(uid => catalog[s.cards[uid].cardId]?.name === 'いのむー');
 
 /** うゆち系: このバトル中に手札から場に出した「うゆち」が既に5枚以上なら +3/+3 して早食い。 */
 const uyuchi = (next?: string): CardScript => ({
@@ -127,9 +128,9 @@ export const strawberryYojo: CardScripts = {
     // +1/+1 は「手札から」に限らないので、さらの複製などで出たときも乗る。
     y_15: {
         keywords: ['fast'],
-        baseCost: (s, side) => s.players[side].field.some(uid => s.cards[uid].cardId === 'y_16') ? 2 : undefined,
+        baseCost: (s, side, catalog) => inomuOnField(s, side, catalog) ? 2 : undefined,
         onEnter(ctx) {
-            if (onField(ctx, 'y_16')) ctx.buff(ctx.uid, 1, 1);
+            if (inomuOnField(ctx.s, ctx.side, ctx.catalog)) ctx.buff(ctx.uid, 1, 1);
         },
     },
     // y_16 いのむー: 防衛。場にいる状態でまこぽにが出たとき +1/+1。

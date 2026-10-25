@@ -141,7 +141,7 @@ export function increasePp(s: GameState, side: Side, amount: number) {
 
 export function costOf(s: GameState, uid: string, catalog: Catalog, side: Side) {
     const card = s.cards[uid];
-    const base = scriptFor(s, uid).baseCost?.(s, side) ?? catalog[card.cardId].cost;
+    const base = scriptFor(s, uid).baseCost?.(s, side, catalog) ?? catalog[card.cardId].cost;
     return Math.max(0, base + card.costDelta + card.temporaryCost);
 }
 
