@@ -1,14 +1,15 @@
-/* The five-tab pad floats over the live board; expansion uses the shared game menu. */
+/* The five-tab pad floats over the live board, its tabs down the left side; expansion uses the shared
+   game menu, whose own tabs are on the left, and this pad's tabs become icons at the top right. */
 .backdrop { position: absolute; inset: 0; z-index: 300; display: grid; place-items: center; padding: 16px; background: #261710bd; backdrop-filter: blur(5px); animation: fade .18s ease both; }
-.dialog { width: min(760px, 100%); max-height: 100%; min-height: 0; display: flex; }
+.dialog { width: min(840px, 100%); max-height: 100%; min-height: 0; display: flex; }
 .expanded { width: 100%; height: 100%; min-height: 0; overflow: hidden; }
-.pad { --pad: 29px 38px 24px; display: flex; flex-direction: column; gap: 13px; width: 100%; min-height: 0; max-height: 100%; color: var(--brand-cocoa-deep); filter: drop-shadow(0 25px 32px #0008); animation: open .24s cubic-bezier(.2, 1.2, .4, 1) both; }
+.pad { --pad: 29px 38px 24px; display: grid; grid-template-columns: 82px minmax(0, 1fr); grid-template-rows: auto minmax(0, 1fr); grid-template-areas: 'tabs head' 'tabs panel'; gap: 13px 18px; width: 100%; min-height: 0; max-height: 100%; color: var(--brand-cocoa-deep); filter: drop-shadow(0 25px 32px #0008); animation: open .24s cubic-bezier(.2, 1.2, .4, 1) both; }
 .backdrop a, .backdrop button { cursor: pointer; -webkit-tap-highlight-color: transparent; text-decoration: none; color: inherit; }
 .backdrop :focus-visible { outline: 3px solid var(--brand-cocoa); outline-offset: 2px; }
 .head { display: flex; justify-content: space-between; align-items: center; gap: 12px; min-height: 42px; }
 .head h2 { margin: 0; color: var(--brand-cocoa); font-size: 23px; }
 .headTools { display: flex; gap: 5px; }
-.iconButton { display: grid; place-items: center; width: 38px; height: 38px; border: 0; background: transparent; color: var(--brand-cocoa); font-size: 22px; }
+.iconButton { display: grid; place-items: center; width: 38px; height: 38px; border: 0; border-radius: 6px; background: transparent; color: var(--brand-cocoa); font-size: 22px; }
 .iconButton:hover { background: var(--brand-blush); }
 
 .roomBanner { width: 100%; min-width: 0; padding: 0; border: 0; background: none; text-align: left; }
@@ -69,17 +70,23 @@
 @media (prefers-reduced-motion: reduce) { .creationKind { transition: none; } }
 @container stage (max-width: 600px) { .creationKind { grid-template-columns: 44px minmax(0, 1fr) 20px; gap: 9px; padding: 9px 12px; } .creationIcon { width: 40px; height: 40px; font-size: 22px; } .creationText b { font-size: 16px; } .creationText small { font-size: 12px; } }
 
-.head, .tabBar { flex: none; }
+.pad > .head { grid-area: head; }
+.pad > .tabPanel { grid-area: panel; }
+.pad > .tabBar { grid-area: tabs; }
 .iconButton svg { display: block; flex: none; }
 .homeContent { display: grid; gap: 13px; }
 .tabPanel { flex: 1; min-height: 0; overflow-y: auto; overscroll-behavior: contain; }
 .dialog .tabPanel { min-height: 310px; }
-.tabBar { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 6px; padding-top: 10px; border-top: 1px solid var(--brand-pink-edge); }
-.tabBar button { display: grid; place-items: center; gap: 3px; min-height: 58px; padding: 7px 2px; border: 0; background: transparent; color: var(--brand-cocoa-deep); }
+.tabBar { display: grid; align-content: start; gap: 6px; padding-right: 12px; border-right: 1px solid var(--brand-pink-edge); }
+.tabBar button { display: grid; place-items: center; gap: 3px; min-height: 64px; padding: 7px 2px; border: 0; border-radius: 6px; background: transparent; color: var(--brand-cocoa-deep); }
 .tabBar button:hover { background: var(--brand-vanilla-wash); }
-.tabBar button[aria-selected=true] { background: var(--brand-blush); box-shadow: inset 0 -3px var(--brand-cocoa); }
+.tabBar button[aria-selected=true] { background: var(--brand-blush); box-shadow: inset 3px 0 var(--brand-cocoa); }
+/* Expanded: the same tabs as icons only, before the expand and close buttons. */
+.tabIcons { display: flex; gap: 2px; margin-right: 6px; padding-right: 8px; border-right: 1px solid var(--brand-pink-edge); }
+.tabIcons button { border-radius: 6px; }
+.tabIcons button[aria-selected=true] { background: var(--brand-blush); box-shadow: inset 0 -3px var(--brand-cocoa); }
 .tabBar svg { display: block; width: 25px; height: 25px; }
-.tabBar span { font-size: 12px; }
+.tabBar span { font-size: 12px; white-space: nowrap; }
 .instance { display: grid; gap: 12px; }
 .instanceArt { width: 100%; height: auto; max-height: 230px; object-fit: contain; background: var(--brand-vanilla-wash); }
 .instanceHeading { display: flex; align-items: baseline; flex-wrap: wrap; gap: 10px; }
@@ -98,4 +105,5 @@
 .settingLink { display: flex; align-items: center; justify-content: center; gap: 8px; padding: 10px 18px; border: 1px solid var(--brand-pink-edge); background: var(--brand-paper); font-weight: 700; }
 .empty { display: grid; justify-items: center; align-content: center; gap: 18px; min-height: 310px; }
 .empty > svg { width: 48px; height: 48px; }
-@container stage (max-height: 650px) { .dialog .tabPanel { min-height: 0; } .pad { --pad: 22px 30px 18px; gap: 8px; } .tabBar { padding-top: 7px; } .tabBar button { min-height: 46px; } }
+@container stage (max-height: 650px) { .dialog .tabPanel { min-height: 0; } .pad { --pad: 22px 30px 18px; gap: 8px 14px; } .tabBar { gap: 3px; } .tabBar button { min-height: 50px; padding: 4px 2px; } }
+@container stage (max-width: 600px) { .pad { grid-template-columns: 58px minmax(0, 1fr); gap: 8px 10px; } .tabBar { padding-right: 8px; } .tabBar span { font-size: 10px; } .tabBar svg { width: 21px; height: 21px; } }

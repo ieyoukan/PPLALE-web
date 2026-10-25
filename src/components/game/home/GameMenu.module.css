@@ -54,3 +54,11 @@
 .paneHead h1 { flex: 1; background: transparent; color: inherit; }
 .paneHead > div { padding-right: 12px; }
 .overlayBody { display: flex; flex-direction: column; overflow: hidden; gap: 12px; }
+/* 通知 and 設定 at the top right of the page: icons with no frame, on the title's band. */
+.paneBand { position: relative; }
+.paneBand .corner { position: absolute; top: 50%; right: 10px; transform: translateY(-50%); }
+.corner { display: flex; gap: 2px; }
+.cornerLink { display: grid; place-items: center; width: 38px; height: 38px; border-radius: 6px; color: #fffdeb; font-size: 22px; }
+.cornerLink:hover, .cornerLink[aria-current=page] { background: #fffdeb2e; }
+.puzzleMenu .cornerLink, .paneHead .cornerLink { color: var(--brand-cocoa); }
+.puzzleMenu .cornerLink:hover, .puzzleMenu .cornerLink[aria-current=page], .paneHead .cornerLink:hover { background: var(--brand-blush); }

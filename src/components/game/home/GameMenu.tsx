@@ -3,13 +3,14 @@
 // The frame around everything outside the board: a column of tabs (ルーム / CPU対決 / バトル / カード / 盤面エディタ …)
 // with the logo and the player on the left, and the chosen tab's page on the right. The game opens
 // in the player's room, which the first tab goes back to; the game's menu opens from here too.
+// 通知 and 設定 are icons at the top right of the page rather than tabs.
 import { useLayoutEffect, useRef } from 'react';
 import type { CSSProperties, ReactNode } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { useAuth } from '@/lib/auth';
-import { BATTLE_PATH, CARDS_PATH, CPU_PATH, EDITOR_PATH, HOME_PATH, NOTIFICATIONS_PATH, PUZZLES_PATH } from '@/lib/game/sessionStore';
+import { BATTLE_PATH, CARDS_PATH, CPU_PATH, EDITOR_PATH, HOME_PATH, NOTIFICATIONS_PATH, PUZZLES_PATH, SETTINGS_PATH } from '@/lib/game/sessionStore';
 import { useLaunchpad } from '../plaza/LaunchpadContext';
 import { PlazaIcon } from '../plaza/PlazaIcon';
 import { plazaHref, usePlaza } from '../plaza/PlazaProvider';
@@ -27,8 +28,18 @@ const tabs = [
   { href: CARDS_PATH, label: 'カード', note: '図鑑・デッキ構築', tone: styles.lilac },
   { href: EDITOR_PATH, label: '盤面エディタ', note: '好きな盤面から', tone: styles.yellow },
   { href: '/game/social/', label: 'ソーシャル', note: 'フレンドの現在地', tone: styles.pink },
-  { href: NOTIFICATIONS_PATH, label: '通知', note: 'フレンド申請', tone: styles.lilac },
 ];
+const corner = [
+  { href: NOTIFICATIONS_PATH, label: '通知', icon: 'bell' },
+  { href: SETTINGS_PATH, label: '設定', icon: 'gear' },
+] as const;
+
+/** 通知 and 設定, as icons only (the page's top right). */
+export function MenuCorner({ pathname }: { pathname: string }) {
+  return <nav className={styles.corner} aria-label="通知と設定">{corner.map(item =>
+    <Link key={item.href} href={item.href} prefetch={false} className={styles.cornerLink} aria-label={item.label} title={item.label} aria-current={pathname.startsWith(item.href) ? 'page' : undefined}><PlazaIcon name={item.icon} /></Link>)}
+  </nav>;
+}
 
 export default function GameMenu({ children, overlay }: { children: ReactNode; overlay?: { title: string; tools: ReactNode; onReturn?: () => void; dock?: boolean } }) {
   const pathname = usePathname() ?? HOME_PATH;
@@ -41,7 +52,7 @@ export default function GameMenu({ children, overlay }: { children: ReactNode; o
   const profile = useMyProfile();
   const launchpad = useLaunchpad(), plaza = usePlaza();
   // The first tab is the root, so it only matches exactly; the others also cover their sub-pages.
-  const current = pathname.startsWith('/game/performance') ? { label: '通信計測' } : pathname.startsWith('/game/profile') ? { label: 'プロフィール' } : tabs.find(tab => tab.href !== HOME_PATH && pathname.startsWith(tab.href)) ?? tabs[0];
+  const current = pathname.startsWith('/game/performance') ? { label: '通信計測' } : pathname.startsWith('/game/profile') ? { label: 'プロフィール' } : corner.find(item => pathname.startsWith(item.href)) ?? tabs.find(tab => tab.href !== HOME_PATH && pathname.startsWith(tab.href)) ?? tabs[0];
   return <>
     <link rel="preload" as="image" type="image/avif" href={menuBackground.avif} fetchPriority="high" />
     <div className={`${styles.menu} ${pathname === CPU_PATH ? styles.home : ''} ${pathname.startsWith(PUZZLES_PATH) ? styles.puzzleMenu : ''}`} style={{ '--menu-background': `image-set(url("${menuBackground.avif}") type("image/avif"), url("${menuBackground.webp}") type("image/webp"))` } as CSSProperties}>
@@ -66,7 +77,7 @@ export default function GameMenu({ children, overlay }: { children: ReactNode; o
     </aside>
     {/* The root layout already provides <main>. */}
     <section className={styles.pane}>
-      <header className={overlay ? styles.paneHead : undefined}><h1>{overlay?.title ?? (pathname.startsWith(PUZZLES_PATH) ? 'ロリの一手を極めるために' : current.label)}</h1>{overlay?.tools}</header>
+      <header className={overlay ? styles.paneHead : styles.paneBand}><h1>{overlay?.title ?? (pathname.startsWith(PUZZLES_PATH) ? 'ロリの一手を極めるために' : current.label)}</h1>{overlay?.tools ?? <MenuCorner pathname={pathname} />}</header>
       <div ref={body} className={`${styles.body} ${overlay?.dock ? styles.overlayBody : ''}`}>{children}</div>
     </section>
   </div></>;

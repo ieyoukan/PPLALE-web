@@ -14,8 +14,8 @@ import { useAuth } from '@/lib/auth';
 import { BATTLE_PATH, CARDS_PATH, EDITOR_PATH, PUZZLES_PATH } from '@/lib/game/sessionStore';
 import { NotificationVolumeControl } from '../notifications/GameNotifications';
 import { NotificationsPage } from '../social/NotificationsPage';
-import { PushToggle } from '@/components/pwa/PushToggle';
 import GameMenu from '../home/GameMenu';
+import { GameSettings } from '../settings/GameSettings';
 import { RulesSheet } from './PlazaSheets';
 import { OrnateFrame } from '../ornament/OrnateFrame';
 import { DiscordMark, PlazaIcon } from './PlazaIcon';
@@ -88,7 +88,6 @@ const morePlaces: Place[] = [
 
 function Launchpad({ onClose, expanded, setExpanded }: { onClose: () => void; expanded: boolean; setExpanded: (expanded: boolean) => void }) {
   const plaza = usePlaza(), router = useRouter(), pathname = usePathname();
-  const { user, signInWithGoogle } = useAuth();
   const [tab, setTab] = useState<Tab>('home');
   const [panel, setPanel] = useState<Panel>(null);
   const [more, setMore] = useState(false);
@@ -101,7 +100,9 @@ function Launchpad({ onClose, expanded, setExpanded }: { onClose: () => void; ex
   const home = () => room && view ? onRoomPage ? onClose() : go(plazaHref(view.id)) : go('/game/');
   const current = tabs.find(item => item.id === tab)!;
   const title = tab === 'home' ? 'ランチパッド' : current.label;
+  // Expanded, the game menu's own tabs are on the left: this menu's tabs become icons up here.
   const tools = <div className={styles.headTools}>
+    {expanded && <div className={styles.tabIcons} role="tablist" aria-label="ランチパッドのタブ">{tabs.map(item => <button key={item.id} id={`${tabId}-${item.id}`} type="button" role="tab" className={styles.iconButton} aria-label={item.label} aria-selected={tab === item.id} aria-controls={`${tabId}-panel`} title={item.label} onClick={() => setTab(item.id)}><PlazaIcon name={item.icon} /></button>)}</div>}
     <button className={styles.iconButton} onClick={() => setExpanded(!expanded)} aria-label={expanded ? 'ランチパッドに縮小' : 'ゲームメニューを拡大'} title={expanded ? '縮小' : '拡大'}><PlazaIcon name={expanded ? 'collapse' : 'expand'} /></button>
     <button className={styles.iconButton} onClick={onClose} aria-label="メニューを閉じる"><PlazaIcon name="close" /></button>
   </div>;
@@ -154,22 +155,19 @@ function Launchpad({ onClose, expanded, setExpanded }: { onClose: () => void; ex
         </div>
       </div> : <div className={styles.empty}><PlazaIcon name="pin" /><p>ルームに入ると、ここに表示されます</p><button className={styles.tile} onClick={home}>ホーム</button></div>)}
       {tab === 'volume' && <div className={styles.preferences}><PlazaIcon name="volume" className={styles.preferenceIcon} /><NotificationVolumeControl /></div>}
-      {tab === 'settings' && <div className={styles.preferences}>
-        <PlazaIcon name="gear" className={styles.preferenceIcon} />
-        <section className={styles.setting}><h3 data-ui-title>アカウント</h3>{user ? <Link className={styles.settingLink} href="/game/profile/" onClick={onClose}><PlazaIcon name="star" />プロフィール</Link> : <button className={styles.settingLink} onClick={() => void signInWithGoogle().catch(() => {})}><PlazaIcon name="heart" />ログイン</button>}</section>
-        {user && <section className={styles.setting}><h3 data-ui-title>ブラウザの通知</h3><PushToggle /></section>}
-        <Link className={styles.settingLink} href="/" onClick={onClose}><PlazaIcon name="exit" />サイトへ</Link>
-      </div>}
+      {tab === 'settings' && <GameSettings volume={false} onLeave={onClose} />}
       {error && <p className={styles.createError} role="alert">{error}</p>}
     </div>
-    <nav className={styles.tabBar} role="tablist" aria-label="ランチパッドのタブ" onKeyDown={event => {
+  </>;
+  // The tabs down the left side of the pad.
+  const tabRail = <nav className={styles.tabBar} role="tablist" aria-orientation="vertical" aria-label="ランチパッドのタブ" onKeyDown={event => {
       const index = tabs.findIndex(item => item.id === tab);
-      const next = event.key === 'ArrowRight' ? (index + 1) % tabs.length : event.key === 'ArrowLeft' ? (index + tabs.length - 1) % tabs.length : event.key === 'Home' ? 0 : event.key === 'End' ? tabs.length - 1 : -1;
+      const forward = event.key === 'ArrowDown' || event.key === 'ArrowRight', back = event.key === 'ArrowUp' || event.key === 'ArrowLeft';
+      const next = forward ? (index + 1) % tabs.length : back ? (index + tabs.length - 1) % tabs.length : event.key === 'Home' ? 0 : event.key === 'End' ? tabs.length - 1 : -1;
       if (next < 0) return;
       event.preventDefault(); setTab(tabs[next].id);
       event.currentTarget.querySelectorAll<HTMLButtonElement>('[role=tab]')[next]?.focus();
-    }}>{tabs.map(item => <button key={item.id} id={`${tabId}-${item.id}`} type="button" role="tab" aria-label={item.label} aria-selected={tab === item.id} aria-controls={`${tabId}-panel`} tabIndex={tab === item.id ? 0 : -1} title={item.label} onClick={() => setTab(item.id)}><PlazaIcon name={item.icon} /><span data-ui-title>{item.id === 'home' ? 'ホーム' : item.id === 'instance' ? 'ルーム' : item.label}</span></button>)}</nav>
-  </>;
+    }}>{tabs.map(item => <button key={item.id} id={`${tabId}-${item.id}`} type="button" role="tab" aria-label={item.label} aria-selected={tab === item.id} aria-controls={`${tabId}-panel`} tabIndex={tab === item.id ? 0 : -1} title={item.label} onClick={() => setTab(item.id)}><PlazaIcon name={item.icon} /><span data-ui-title>{item.id === 'home' ? 'ホーム' : item.id === 'instance' ? 'ルーム' : item.label}</span></button>)}</nav>;
 
   return <div className={styles.backdrop} onClick={onClose} data-launchpad>
     <div ref={box} inert={!!panel} className={expanded ? styles.expanded : styles.dialog} role="dialog" aria-modal="true" aria-label="ゲームメニュー" data-launchpad onClick={event => event.stopPropagation()} onKeyDown={event => {
@@ -184,7 +182,7 @@ function Launchpad({ onClose, expanded, setExpanded }: { onClose: () => void; ex
       }
     }}>
       {expanded ? <GameMenu overlay={{ title, tools, onReturn: home, dock: true }}>{content}</GameMenu> : <OrnateFrame className={styles.pad}>
-        <header className={styles.head}><h2 data-ui-title>{title}</h2>{tools}</header>{content}
+        {tabRail}<header className={styles.head}><h2 data-ui-title>{title}</h2>{tools}</header>{content}
       </OrnateFrame>}
     </div>
     <span onClick={event => event.stopPropagation()}>

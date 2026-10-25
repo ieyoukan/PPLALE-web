@@ -8,7 +8,7 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from 'react';
 import type { ReactNode } from 'react';
 import { usePathname, useRouter } from 'next/navigation';
-import { DEFAULT_VISIBILITY, listedVisibility } from '@pplale/game-core/room';
+import { listedVisibility } from '@pplale/game-core/room';
 import type { RoomAction, RoomView, RoomVisibility } from '@pplale/game-core/room';
 import { useAuth } from '@/lib/auth';
 import { WATCHING_BEAT, publishPresence } from '@/lib/game/social';
@@ -185,8 +185,8 @@ export function PlazaProvider({ children }: { children: ReactNode }) {
   }, []);
 
   /** A new room of the player's settings (or the successor of a closed one: `from`). */
-  const make = useCallback(async (from?: { id: string; token: string }, visibility: RoomVisibility = DEFAULT_VISIBILITY) => {
-    const settings = readRoomSettings();
+  const make = useCallback(async (from?: { id: string; token: string }, chosen?: RoomVisibility) => {
+    const settings = readRoomSettings(), visibility = chosen ?? settings.homeVisibility;
     try {
       const entered = await createPlaza(settings.rules, guestName(), { name: '', visibility, ...(from && { from }) });
       if (from) leavePlaza(from.id);

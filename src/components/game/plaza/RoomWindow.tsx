@@ -6,8 +6,8 @@
 // The page itself is the same component as on its own address (src/app/game/room/[roomId]/@window).
 import { useCallback, useEffect, useRef } from 'react';
 import type { KeyboardEvent as ReactKeyboardEvent, ReactNode } from 'react';
-import { useRouter } from 'next/navigation';
-import GameMenu from '../home/GameMenu';
+import { usePathname, useRouter } from 'next/navigation';
+import GameMenu, { MenuCorner } from '../home/GameMenu';
 import { useLaunchpad } from './LaunchpadContext';
 import { OrnateFrame } from '../ornament/OrnateFrame';
 import { PlazaIcon } from './PlazaIcon';
@@ -16,7 +16,7 @@ import styles from './RoomWindow.module.css';
 
 const titles: Record<string, string> = {
   social: 'フレンド', notifications: '通知', profile: 'プロフィール', cards: 'カード', 'cards/zukan': 'カード図鑑',
-  cpu: 'CPU対決', battle: 'バトル', 'battle/free': 'フリーマッチ', 'battle/history': '対戦履歴', puzzles: 'リーサルパズル', editor: '盤面エディタ',
+  cpu: 'CPU対決', battle: 'バトル', 'battle/free': 'フリーマッチ', 'battle/history': '対戦履歴', puzzles: 'リーサルパズル', editor: '盤面エディタ', settings: '設定',
 };
 
 export function RoomWindow({ page, children }: { page: string; children: ReactNode }) {
@@ -50,7 +50,9 @@ export function RoomWindow({ page, children }: { page: string; children: ReactNo
     else if (!event.shiftKey && document.activeElement === last) { event.preventDefault(); first?.focus(); }
   };
   const title = titles[page] ?? 'ページ';
+  const pathname = usePathname() ?? '';
   const tools = <div className={styles.tools}>
+    {expanded && <MenuCorner pathname={pathname} />}
     <button className={styles.tool} onClick={() => setExpanded(!expanded)} aria-label={expanded ? 'メニューを縮小' : 'ゲームメニューを拡大'}><PlazaIcon name={expanded ? 'collapse' : 'expand'} /></button>
     <button className={styles.tool} onClick={close} aria-label="ルームにもどる"><PlazaIcon name="close" /></button>
   </div>;

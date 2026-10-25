@@ -50,6 +50,7 @@ export const roomHref = (id: string) => `${ROOM_PATH}${id}/`;
 export const watchHref = (id: string) => `${ROOM_PATH}${id}/?watch=1`;
 export const CARDS_PATH = '/game/cards/';
 export const NOTIFICATIONS_PATH = '/game/notifications/';
+export const SETTINGS_PATH = '/game/settings/';
 /** 盤面エディタ: place cards freely, then play from there. */
 export const EDITOR_PATH = '/game/editor/';
 export const PUZZLES_PATH = '/game/puzzles/';

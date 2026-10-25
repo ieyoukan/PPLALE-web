@@ -15,6 +15,9 @@ test('five tabs switch in place, room actions and volume persist, and Escape res
   page.on('pageerror', error => errors.push(error.message));
   const pad = await openPad(page), roomURL = page.url();
   await expect(pad.getByRole('tab')).toHaveCount(5);
+  // The tabs run down the left side of the pad.
+  const rail = await pad.getByRole('tablist').boundingBox(), panelBox = await pad.getByRole('tabpanel').boundingBox();
+  expect(rail.x + rail.width).toBeLessThanOrEqual(panelBox.x);
   await expect(pad.getByRole('tab', { name: 'ランチパッドホーム' })).toHaveAttribute('aria-selected', 'true');
   await expect(pad.getByRole('region', { name: 'あそぶ' }).getByRole('link')).toHaveCount(4);
   await expect(pad.getByRole('region', { name: 'すぐに' }).getByRole('button')).toHaveCount(3);
@@ -49,6 +52,10 @@ test('five tabs switch in place, room actions and volume persist, and Escape res
   await expect(pad.getByRole('button', { name: '音をたしかめる' })).toBeDisabled();
   await pad.getByRole('tab', { name: '設定', exact: true }).click();
   await expect(pad.getByRole('tabpanel')).toContainText('アカウント');
+  // The home room's visibility is kept for the next room the game opens with.
+  await pad.getByRole('radio', { name: /パブリック/ }).click();
+  await expect(pad.getByRole('radio', { name: /パブリック/ })).toHaveAttribute('aria-checked', 'true');
+  expect(await page.evaluate(() => JSON.parse(localStorage.getItem('pplale-room-settings-v1')).homeVisibility)).toBe('public');
   await expect(page).toHaveURL(roomURL);
   await page.keyboard.press('Escape');
   await expect(pad).toHaveCount(0);
@@ -71,6 +78,9 @@ test('expansion uses the full game menu while keeping the same live room and boa
   page.on('websocket', socket => sockets.push(socket.url()));
   await pad.getByRole('button', { name: 'ゲームメニューを拡大' }).click();
   await expect(pad.getByRole('navigation', { name: 'ゲームメニュー' })).toBeVisible();
+  // Expanded, the game menu's tabs are on the left and this pad's tabs are icons only at the top right.
+  await expect(pad.getByRole('tab')).toHaveCount(5);
+  await expect(pad.getByRole('tab', { name: '設定' })).toHaveText('');
   await expect(page).toHaveURL(roomURL);
   const friend = await browser.newPage();
   await friend.goto(`${roomURL}?invite=${saved.invite}`);

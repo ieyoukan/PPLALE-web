@@ -1,16 +1,17 @@
-// The initial match rules for a new room. Its visibility is chosen when the player explicitly
-// creates it; opening the game without a room starts in an invited one.
-import { defaultRoomRules, parseRoomRules } from '@pplale/game-core/room';
-import type { RoomRules } from '@pplale/game-core/room';
+// The initial match rules for a new room, and the visibility of the home room: the one opening the
+// game makes when this browser has no room (chosen in 設定; invited unless changed). A room made from
+// the menu has its visibility chosen there.
+import { DEFAULT_VISIBILITY, defaultRoomRules, isRoomVisibility, parseRoomRules } from '@pplale/game-core/room';
+import type { RoomRules, RoomVisibility } from '@pplale/game-core/room';
 
 const KEY = 'pplale-room-settings-v1';
-export interface RoomSettings { rules: RoomRules }
+export interface RoomSettings { rules: RoomRules; homeVisibility: RoomVisibility }
 
 export function readRoomSettings(): RoomSettings {
   try {
     const saved = JSON.parse(localStorage.getItem(KEY) ?? 'null') as Partial<RoomSettings> | null;
-    return { rules: parseRoomRules(saved?.rules) ?? defaultRoomRules };
-  } catch { return { rules: defaultRoomRules }; }
+    return { rules: parseRoomRules(saved?.rules) ?? defaultRoomRules, homeVisibility: isRoomVisibility(saved?.homeVisibility) ? saved.homeVisibility : DEFAULT_VISIBILITY };
+  } catch { return { rules: defaultRoomRules, homeVisibility: DEFAULT_VISIBILITY }; }
 }
 export function saveRoomSettings(change: Partial<RoomSettings>) {
   const next = { ...readRoomSettings(), ...change };
