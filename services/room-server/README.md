@@ -153,7 +153,7 @@ Redis に入るのは、ルームのルール、両者の名前・デッキ・�
 
 ## 手元で動かす
 
-Node が TypeScript をそのまま実行するので、ビルドは要らない。
+Node が TypeScript をそのまま実行するので、ビルドは要らない。ゲームと一緒に試すだけなら、リポジトリのルートで `pnpm run dev:rooms`（このサーバーを :8099 で起動し、つないだ `pnpm run dev` を :3000 で起動する）。個別に動かすときは次のとおり。
 
 ```
 npm run start --workspace=@pplale/room-server          # http://localhost:8080（Redis なし）

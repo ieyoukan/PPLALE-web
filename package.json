@@ -11,6 +11,7 @@
     "predev": "panda codegen && pnpm run fonts:generate && pnpm run cards:generate",
     "prebuild": "panda codegen && pnpm --filter @pplale/game-core run build && pnpm run fonts:generate && pnpm run cards:generate",
     "dev": "next dev",
+    "dev:rooms": "node scripts/dev-with-rooms.mjs",
     "build": "next build",
     "export": "next export",
     "start": "next start",

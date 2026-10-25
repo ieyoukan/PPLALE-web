@@ -39,6 +39,14 @@ pnpm run dev
 miseをシェルへ有効化し、このディレクトリで指定のNode.jsが選ばれている状態で実行する。
 パッケージマネージャーは pnpm を使う（`pnpm-lock.yaml` が正）。pnpm workspaces が `packages/game-core` をリポジトリ内でリンクするため、game-core を npm に公開する必要はない。
 `mise run install` と `mise run dev` も、それぞれ同じpnpmコマンドを呼び出す補助タスクとして利用できる。
+
+ルーム（フレンドとの対戦・CPUを呼ぶ・招待）まで手元で試すときは、ルームサーバーとWebアプリをまとめて起動する。
+
+```bash
+pnpm run dev:rooms   # ルームサーバー http://localhost:8099 と http://localhost:3000/game/
+```
+
+ルームサーバーが応答してから、そこにつないだ `pnpm run dev` を始める。Ctrl+C で両方止まる。ルームはプロセス内に持つので、止めると消える（`REDIS_URL` を付ければそのRedisを使う）。ポートは `ROOM_PORT`・`PORT` で変えられる。別の人として入るときはシークレットウィンドウを使う。
 型チェック・Lint・カードデータ検査をまとめて実行する場合は `mise run check` を使う。
 
 ## 開発経緯
