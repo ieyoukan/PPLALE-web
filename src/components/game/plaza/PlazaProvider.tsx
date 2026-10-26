@@ -56,6 +56,8 @@ export interface PlazaContextValue {
   presented(revision: number): void;
   /** Forgets a refusal (after showing it). */
   settle(): void;
+  /** A room that could not be entered: says why for a moment, then back to the player's own room (made if there is none). */
+  goHome(notice: string): Promise<void>;
   /** A room id that turned out to be a two-seat room (older rooms and free matches): shown the old way. */
   legacy: string | null;
 }
@@ -353,6 +355,14 @@ export function PlazaProvider({ children }: { children: ReactNode }) {
   }, []);
   const presented = useCallback((revision: number) => held.current?.socket.presented(revision), []);
   const settleStage = useCallback(() => setStage(held.current ? { kind: 'in' } : { kind: 'idle' }), []);
+  const goHome = useCallback(async (notice: string) => {
+    setStage({ kind: 'entering', to: null, full: !held.current, notice });
+    await pause(GONE_NOTICE);
+    const home = await launch();
+    if (!home) return;
+    setStage({ kind: 'in' });
+    router.replace(plazaHref(home));
+  }, [launch, router]);
 
   usePresence(id, view?.plaza && listedVisibility(view.plaza.visibility) ? view.id : null);
 
@@ -360,8 +370,8 @@ export function PlazaProvider({ children }: { children: ReactNode }) {
   const rulesKey = view?.plaza && view.plaza.owner === view.plaza.me ? JSON.stringify(view.plaza.nextRules ?? view.rules) : null;
   useEffect(() => { if (rulesKey) saveRoomSettings({ rules: JSON.parse(rulesKey) }); }, [rulesKey]);
 
-  const value = useMemo<PlazaContextValue>(() => ({ stage, id, view, linked, launch, enter, go, create, leave, send, subscribe, presented, settle: settleStage, legacy }),
-    [stage, id, view, linked, launch, enter, go, create, leave, send, subscribe, presented, settleStage, legacy]);
+  const value = useMemo<PlazaContextValue>(() => ({ stage, id, view, linked, launch, enter, go, create, leave, send, subscribe, presented, settle: settleStage, goHome, legacy }),
+    [stage, id, view, linked, launch, enter, go, create, leave, send, subscribe, presented, settleStage, goHome, legacy]);
   return <Context.Provider value={value}>
     {children}
     {/* Moving between rooms: the current one stays on screen under a small sign. */}

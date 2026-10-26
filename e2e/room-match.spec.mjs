@@ -64,9 +64,11 @@ test('opening the game makes a room; its invitation brings a friend to the same 
   await alice.keyboard.press('Escape');
   await expect(alice.getByRole('button', { name: /Discordに貼る/ })).toHaveCount(0);
 
-  // Without the invitation the room cannot be found; with it, the friend comes straight in.
+  // Without the invitation the room cannot be found: that is said, then carol is back in a room of
+  // her own. With it, the friend comes straight in.
   await carol.goto(`${base}/game/room/${id}/`);
-  await expect(carol.getByRole('alert').filter({ hasText: '招待が必要です' })).toBeVisible();
+  await expect(carol.getByRole('status').filter({ hasText: '招待が必要です' })).toBeVisible();
+  await carol.waitForURL(url => /\/game\/room\/\d{6}\/$/.test(url.pathname) && !url.pathname.includes(id), { timeout: 30000 });
   await bob.goto(`${base}/game/room/${id}/?invite=${invite}`);
   await bob.waitForURL(`${base}/game/room/${id}/`);
   await expect(bob.getByRole('complementary', { name: 'ルームにいる人' }).getByRole('listitem')).toHaveCount(2);

@@ -39,8 +39,8 @@ function stop(code = 0) {
 process.on('SIGINT', () => stop(0));
 process.on('SIGTERM', () => stop(0));
 
-// Locally rooms are made again and again (reloads, e2e runs): the hourly limit per address is lifted.
-run('rooms', ['--filter', '@pplale/room-server', 'run', 'start'], { PORT: roomPort, ROOMS_PER_HOUR: process.env.ROOMS_PER_HOUR ?? '10000' });
+// Locally rooms are made and asked for again and again (reloads, e2e runs): the hourly limits per address are lifted.
+run('rooms', ['--filter', '@pplale/room-server', 'run', 'start'], { PORT: roomPort, ROOMS_PER_HOUR: process.env.ROOMS_PER_HOUR ?? '10000', REQUESTS_PER_HOUR: process.env.REQUESTS_PER_HOUR ?? '100000' });
 // The web app starts once the room server answers, so the first page never finds it missing.
 for (let attempt = 0; ; attempt++) {
   if (stopping) process.exit(1);

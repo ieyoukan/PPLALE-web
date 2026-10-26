@@ -23,7 +23,7 @@ import plazaStyles from './Plaza.module.css';
 
 export function RoomPage({ id }: { id: string }) {
   const params = useSearchParams(), invite = params.get('invite'), watch = params.get('watch') === '1', created = params.get('created') === '1';
-  const router = useRouter(), { enter, stage, view, id: current, legacy: legacyId } = usePlaza();
+  const router = useRouter(), { enter, stage, view, id: current, legacy: legacyId, goHome } = usePlaza();
   const launchpad = useLaunchpad();
   // null: not known yet. A seat kept in this browser is a two-seat room's; a link to watch may be either.
   const [kind, setKind] = useState<'plaza' | 'legacy' | null>(null);
@@ -39,6 +39,12 @@ export function RoomPage({ id }: { id: string }) {
     return () => { current = false; };
   }, [id, watch, invite]);
   const legacy = kind === 'legacy' || legacyId === id;
+  // A room that cannot be entered (gone, closed, full, or an invitation is needed): said, then back to
+  // the player's own room rather than a page with nowhere to go. Out of reach stays here (it says so).
+  const refusal = stage.kind === 'refused' && stage.to === id && stage.reason !== 'offline' ? stage.reason : null;
+  useEffect(() => {
+    if (refusal) void goHome(reasons[refusal]);
+  }, [refusal, goHome]);
   useEffect(() => {
     if (kind !== 'plaza') return;
     // The invitation's secret is kept by this browser; the address bar shows the plain link.
@@ -72,7 +78,7 @@ export function Refused({ reason, message, id }: { reason: Refusal; message: str
       {reason === 'offline' && <button className={plazaStyles.primaryButton} disabled={busy} onClick={() => { setBusy(true); router.refresh(); window.location.reload(); }}><PlazaIcon name="refresh" /><span data-ui-title>もう一度</span></button>}
       {other ? <button className={plazaStyles.primaryButton} onClick={() => { plaza.settle(); router.push(plazaHref(other)); }}><PlazaIcon name="back" /><span data-ui-title>もとのルームへ</span></button>
         : reason !== 'offline' && <button className={plazaStyles.primaryButton} disabled={busy} onClick={() => { setBusy(true); void plaza.create(DEFAULT_VISIBILITY); }}><PlazaIcon name="door" /><span data-ui-title>インバイトのルームを作る</span></button>}
-      <Link className={plazaStyles.softButton} href={CPU_PATH}><PlazaIcon name="cpu" />ひとりで遊ぶ</Link>
+      <Link className={plazaStyles.softButton} href={CPU_PATH} prefetch={false}><PlazaIcon name="cpu" />ひとりで遊ぶ</Link>
     </div>
   </>;
 }
