@@ -1,17 +1,8 @@
 /* All setup controls stay directly editable on the shared landscape stage. */
-.content { display: flex; flex: 1; flex-direction: column; min-height: 0; gap: 8px; }
-.content .modes { flex: none; min-width: 0; gap: 4px; margin: 0; }
-.content .modes button { min-width: 0; min-height: 42px; padding: 4px; font-size: 16px; line-height: 1.3; }
-.content .modes span { min-width: 2.8em; font-size: 14px; }
-.content .rulesInline { flex: none; min-width: 0; margin: 0; padding: 8px; border-width: 2px; border-radius: 12px; }
-.rulesInline > h2 { display: none; }
-.content .decks { flex: none; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 8px; margin: 0; padding: 6px; border-width: 2px; border-radius: 14px; }
-.content .decks label { min-width: 0; gap: 4px; padding: 6px; border-width: 1px; border-radius: 10px; font-size: 14px; line-height: 1.3; }
-.content .decks label small, .content .decks > i { display: none; }
-.content .decks select { min-width: 0; min-height: 38px; padding: 6px; border-radius: 8px; font-size: 16px; }
-.content .login { flex: none; min-height: 28px; padding: 3px; font-size: 12px; line-height: 1.4; }
-.content .help { margin: 0; font-size: 12px; line-height: 1.4; }
-.content .start { flex: none; min-height: 48px; margin-top: auto; padding: 6px 12px; font-size: 18px; line-height: 1.4; }
+.content { display: flex; flex: 1; flex-direction: column; min-height: 0; gap: 10px; }
+.modes, .rulesInline, .decks, .login { flex: none; min-width: 0; }
+.login { align-self: center; }
+.start { flex: none; margin-top: auto; }
 .learning { display: flex; align-items: center; justify-content: space-between; gap: 6px; }
 .learning button { flex: none; }
 

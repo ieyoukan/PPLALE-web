@@ -1,11 +1,10 @@
 'use client';
 
-// 図鑑: every card the game knows, by kind. Tap one to read it large.
+// 図鑑: every card the game knows, by kind (the launchpad's heading names it). Tap one to read it large.
 import { useState } from 'react';
-import Link from 'next/link';
 import { displayCards } from '@/lib/game/catalog';
-import { CARDS_PATH } from '@/lib/game/sessionStore';
 import { GameCard } from '../GameCard';
+import { PlazaIcon } from '../plaza/PlazaIcon';
 import styles from './CardGallery.module.css';
 
 const groups = [
@@ -21,10 +20,6 @@ export default function CardGallery() {
   const [open, setOpen] = useState<string | null>(null);
   const shown = all.filter(groups.find(g => g.id === group)!.has), card = open ? displayCards[open] : null;
   return <div className={styles.gallery}>
-    <header className={styles.heading}>
-      <h2>図鑑</h2>
-      <Link href={CARDS_PATH}>カードへ戻る</Link>
-    </header>
     <div className={styles.tabs} role="tablist" aria-label="カードの種類">{groups.map(g =>
       <button key={g.id} role="tab" aria-selected={group === g.id} onClick={() => setGroup(g.id)}>{g.label}<small>{all.filter(g.has).length}</small></button>)}
     </div>
@@ -35,9 +30,9 @@ export default function CardGallery() {
       <div className={styles.sheet} onClick={event => event.stopPropagation()}>
         <div className={styles.large}><GameCard id={card.id} sizes="(max-width: 700px) 80vw, 420px" /></div>
         <div className={styles.text}>
-          <h2>{card.name}</h2>
+          <h2 data-ui-title>{card.name}</h2>
           {card.effect && <p>{card.effect}</p>}
-          <button onClick={() => setOpen(null)}>閉じる</button>
+          <button onClick={() => setOpen(null)}><PlazaIcon name="close" />閉じる</button>
         </div>
       </div>
     </div>}

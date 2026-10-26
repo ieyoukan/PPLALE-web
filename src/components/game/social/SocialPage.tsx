@@ -7,6 +7,7 @@ import type { Friendship, SocialPlayer } from '@/lib/game/social';
 import type { RoomInfo } from '@pplale/game-core/room';
 import { lookupRooms } from '@/lib/game/room/client';
 import { RecordedCard } from '../history/RecordedCard';
+import { OrnateFrame } from '../ornament/OrnateFrame';
 import { FriendTile } from './FriendTile';
 import { Icon } from './Icon';
 import { locate, placeLabel, placeOf, placeOrder } from './location';
@@ -26,7 +27,7 @@ interface Group { room: RoomInfo; members: Member[] }
 export function SocialPage() {
   const { user, loading, signInWithGoogle } = useAuth();
   if (loading) return <p role="status">読み込み中…</p>;
-  if (!user) return <section className={styles.panel}><h2>フレンドと遊ぼう</h2><p>プロフィールを作って、フレンドの募集に参加しよう。</p><button className={styles.primary} onClick={() => void signInWithGoogle()}>ログイン</button></section>;
+  if (!user) return <section className={`${styles.panel} ${styles.signIn}`}><h3 data-ui-title>フレンドと遊ぼう</h3><p>プロフィールを作って、フレンドの募集に参加しよう。</p><OrnateFrame as="button" size="sm" className={styles.cardButton} onClick={() => void signInWithGoogle()}><Icon name="heart" /><span data-ui-title>ログイン</span></OrnateFrame></section>;
   return <Social key={user.uid} uid={user.uid} />;
 }
 function Social({ uid }: { uid: string }) {
@@ -65,7 +66,7 @@ function Social({ uid }: { uid: string }) {
   </FriendTile>;
   return <section className={styles.panel} aria-label="ソーシャル">
     <header className={styles.socialHeading}>
-      <h2><Icon name="heart" className={styles.beat} />フレンドの現在地<em>{friends.length}</em></h2>
+      <h3 data-ui-title><Icon name="heart" className={styles.beat} />フレンドの現在地<em>{friends.length}</em></h3>
       <span className={styles.headingLinks}>
         <Link className={styles.bell} href={NOTIFICATIONS_PATH} aria-label={`通知${received.length ? ` ${received.length}件` : ''}`}><Icon name="bell" />{received.length > 0 && <em className={styles.badge}>{received.length}</em>}</Link>
         <Link className={styles.me} href="/game/profile/" aria-label="マイプロフィール">

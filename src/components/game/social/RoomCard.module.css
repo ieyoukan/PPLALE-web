@@ -2,7 +2,7 @@
 .people { display: inline-flex; align-items: center; gap: 3px; font-weight: 700; }
 .people svg + svg { margin-left: 4px; }
 /* Rooms that invited this player, above the friends' whereabouts. */
-.invited { display: grid; gap: 10px; padding: 12px 14px; border-radius: 18px; background: var(--brand-vanilla-wash); box-shadow: 0 0 0 2px var(--brand-vanilla); }
+.invited { display: grid; gap: 10px; padding: 12px 14px; border-radius: 6px; background: var(--brand-vanilla-wash); box-shadow: 0 0 0 2px var(--brand-vanilla); }
 .invited h3 { display: flex; align-items: center; gap: 6px; font-size: 17px; color: var(--brand-cocoa); }
-.ask { display: inline-flex; align-items: center; gap: 4px; margin: 0 10px 10px auto; padding: 4px 12px; border: 0; border-radius: 999px; background: var(--brand-blush); color: var(--brand-cocoa-deep); font-size: 13px; font-weight: 700; cursor: pointer; }
+.ask { display: inline-flex; align-items: center; gap: 4px; margin: 0 10px 10px auto; padding: 4px 12px; border: 0; border-radius: 6px; background: var(--brand-blush); color: var(--brand-cocoa-deep); font-size: 13px; font-weight: 700; cursor: pointer; }
 .ask[data-state=sent] { background: var(--brand-sage-wash); cursor: default; }

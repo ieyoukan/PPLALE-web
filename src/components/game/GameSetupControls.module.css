@@ -1,38 +1,40 @@
-.help { font-size: 10px; color: #987f67; line-height: 1.8; margin: 10px 0; }
-.help a { text-decoration: underline; }
-.setupModes { display: flex; gap: 8px; margin: 18px 0; }
-.setupModes button { flex: 1; padding: 12px 8px; border: 1px solid #d9cab1; border-radius: 5px; background: #fffdf7; font-size: 12px; }
-.setupModes button[aria-pressed=true] { border-color: #a4bd98; background: #e9f1df; }
-.setupModes small { display: block; font-size: 9px; color: #a08d75; margin-top: 4px; }
-.setupModeLabel { flex: 0 0 auto; align-self: center; min-width: 4.5em; font-size: 16px; color: #7a5967; }
-.deckTable { position: relative; display: grid; gap: 34px; margin: 18px 0; padding: 16px; border: 3px solid #e7c3e2; border-radius: 22px; background: #fffdeb repeating-conic-gradient(#f4b0bb33 0 25%, transparent 0 50%) 0 0 / 44px 44px; }
-.deckTable label { display: grid; gap: 6px; padding: 12px 14px; border: 2px solid #e7c3e2; border-radius: 16px; background: #fffdebf2; font-size: 18px; color: #6b5444; }
-.deckTable label span { display: flex; align-items: baseline; justify-content: space-between; font-weight: 700; }
-.deckTable label small { font-size: 14px; font-weight: 400; color: #6e5546; }
-.deckTable .deckFar { border-color: #c9b3e6; }
-.deckTable .deckNear { border-color: #f4b0bb; }
-.deckTable select { display: block; width: 100%; min-height: 52px; padding: 12px; border: 1px solid #d7c8af; border-radius: 14px; background: #fff; color: #6b5946; font-size: 18px; }
-.deckTable > i { position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%); padding: 2px 16px; border-radius: 999px; background: #826247; color: #fffdeb; font: italic 700 18px Georgia, serif; }
-.setupRules { margin: 18px 0; padding: 14px 16px 16px; border: 3px solid #b3d788; border-radius: 22px; background: #fff; color: #6b4a3a; }
-.setupRules h2 { margin-bottom: 10px; font-size: 20px; font-weight: 700; letter-spacing: .08em; }
-.setupRules h2 small { margin-left: 12px; font-size: 14px; font-weight: 400; letter-spacing: 0; color: #6e5546; }
-.secondaryButton { padding: 8px; border: 1px solid #c7b497; border-radius: 4px; font-size: 10px; }
-.ruleSettings { padding: 10px; margin: 14px 0; border: 1px solid #ddcfb7; border-radius: 4px; font-size: 10px; color: #685441; }
-.ruleSettings summary { cursor: pointer; }
-.ruleSettings p { white-space: pre-wrap; margin: 10px 0; line-height: 1.8; }
-.startButton { display: block; width: 100%; margin-top: 20px; padding: 12px; border: 1px solid #9bb18d; border-radius: 5px; background: #e1ecd3; color: #37532e; font-size: 13px; font-weight: 700; }
-.startButton span { float: right; }
+/* The setup of a CPU match, on the launchpad's paper: small square buttons, framed groups and a card
+   to start (docs/design-system.md). */
+.help { margin: 0; color: var(--brand-cocoa-soft); font-size: 13px; line-height: 1.6; }
+.help a { color: var(--brand-cocoa-deep); text-decoration: underline; }
+.setupModes { display: flex; gap: 6px; }
+.setupModes button { flex: 1; min-width: 0; min-height: 42px; padding: 6px 8px; border: 1px solid var(--brand-pink-edge); border-radius: 6px; background: var(--brand-paper); color: var(--brand-cocoa-deep); font-size: 16px; line-height: 1.3; cursor: pointer; transition: background .12s ease; }
+.setupModes button:hover { background: var(--brand-vanilla-wash); }
+.setupModes button[aria-pressed=true] { border-color: var(--brand-cocoa); background: var(--brand-blush); box-shadow: inset 0 0 0 1px var(--brand-cocoa); }
+.setupModes button:focus-visible, .deckTable select:focus-visible, .secondaryButton:focus-visible, .startButton:focus-visible { outline: 3px solid var(--brand-cocoa); outline-offset: 2px; }
+.setupModeLabel { flex: none; align-self: center; min-width: 4.5em; color: var(--brand-cocoa); font-size: 14px; font-weight: 700; }
+.setupRules { --pad: 16px 22px 12px; }
+.deckTable { --pad: 12px 18px 14px; display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px; }
+.deckTable label { display: grid; gap: 4px; min-width: 0; color: var(--brand-cocoa); font-size: 15px; }
+.deckTable select { display: block; width: 100%; min-width: 0; min-height: 40px; padding: 6px 8px; border: 1px solid var(--brand-pink-edge); border-radius: 6px; background: var(--brand-paper); color: var(--brand-cocoa-deep); font: inherit; font-size: 16px; }
+/* Frameless: a short line of text that presses. */
+.secondaryButton { padding: 4px 10px; border: 0; border-radius: 6px; background: none; color: var(--brand-cocoa-deep); font-size: 13px; text-decoration: underline; cursor: pointer; }
+.secondaryButton:hover { background: var(--brand-blush); }
+.ruleSettings { padding: 4px 2px 0; border-top: 1px solid var(--brand-pink); color: var(--brand-cocoa-soft); font-size: 13px; }
+.ruleSettings summary { min-height: 30px; cursor: pointer; }
+.ruleSettings p { margin: 6px 0; white-space: pre-wrap; line-height: 1.7; }
+/* The large button: a card of its own in the ornament frame. */
+.startButton {
+  --pad: 14px 34px; --frame-face: var(--brand-blush);
+  display: flex; align-items: center; justify-content: center; gap: 14px; width: 100%; min-height: 76px; border: 0; background: none;
+  color: var(--brand-cocoa-deep); font-size: 20px; cursor: pointer; filter: none; transition: transform .12s ease;
+}
+.startButton:hover:not(:disabled) { transform: translateY(-2px); }
+.startButton:active:not(:disabled) { transform: translateY(2px); }
 .startButton:disabled { opacity: .55; cursor: default; }
-.consentBackdrop { position: fixed; z-index: 200; inset: 0; border: 0; background: #30203588; backdrop-filter: blur(5px); }
-.consent { position: fixed; z-index: 201; top: 50%; left: 50%; transform: translate(-50%, -50%); box-sizing: border-box; width: min(560px, 92cqw); max-height: 90cqh; overflow: auto; padding: 28px; border-radius: 24px; background: #fff9f0; color: #685441; box-shadow: 0 12px 40px #33202a55; font-size: 16px; line-height: 1.8; }
-.consent h2 { margin-bottom: 14px; font-size: 22px; }
+.error { margin: 0; padding: 8px 12px; border-left: 4px solid var(--brand-peach); background: var(--brand-peach-wash); color: var(--brand-cocoa-deep); font-size: 14px; }
+.consentBackdrop { position: fixed; z-index: 200; inset: 0; border: 0; background: color-mix(in srgb, var(--brand-cocoa-deep) 50%, transparent); backdrop-filter: blur(5px); }
+.consent { --pad: 30px 34px; position: fixed; z-index: 201; top: 50%; left: 50%; transform: translate(-50%, -50%); box-sizing: border-box; width: min(560px, 92cqw); max-height: 90cqh; overflow: auto; color: var(--brand-cocoa-deep); font-size: 16px; line-height: 1.8; filter: none; }
+.consent h2 { margin-bottom: 12px; color: var(--brand-cocoa); font-size: 22px; }
 .consent p { margin: 10px 0; }
 .consent ul { margin: 10px 0 10px 1.4em; list-style: disc; }
 .consent a, .textButton { text-decoration: underline; }
-.consent .secondaryButton { display: block; width: 100%; margin-top: 12px; }
-.textButton { font-size: inherit; color: inherit; }
-.error { padding: 7px; background: #fbe5dc; color: #ac655b; font-size: 10px; }
-.help, .ruleSettings, .error { font-size: 18px; }
-.setupModes button, .secondaryButton, .startButton { font-size: 18px; min-height: 52px; border-radius: 14px; padding: 12px; }
-.setupModes button { min-height: 70px; }
-.ruleSettings summary { min-height: 44px; }
+.consent .startButton { margin-top: 12px; }
+.consent .secondaryButton { display: block; width: 100%; margin-top: 8px; }
+.textButton { padding: 0; border: 0; background: none; color: inherit; font-size: inherit; cursor: pointer; }
+@media (prefers-reduced-motion: reduce) { .setupModes button, .startButton { transition: none; } }

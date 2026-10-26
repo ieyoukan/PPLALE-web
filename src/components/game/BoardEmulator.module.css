@@ -130,7 +130,7 @@
 .shieldIndicator { position: absolute; top: -.8cqw; left: 10%; font-size: .65cqw; color: #4e8a6a; }
 .turnControl { position: absolute; right: 0; top: 43%; width: 7%; display: flex; flex-direction: column; align-items: center; gap: 6px; pointer-events: auto; }
 .turnControl span { font-size: .6cqw; color: #fff1d9; white-space: nowrap; }
-.turnControl button { width: 5.6cqw; padding: .9cqw .2cqw; border-radius: 5px; border: 2px solid #dac69b; background: #e3edd6; color: #527957; font-size: .72cqw; box-shadow: 0 2px 7px #35252244; }
+.turnControl button { width: 5.6cqw; padding: .9cqw .2cqw; border-radius: 5px; border: 2px solid #dac69b; background: #e3edd6; color: var(--brand-cocoa-deep); font-size: .72cqw; box-shadow: none; }
 .turnControl button:disabled { opacity: .5; }
 .opponentHand { position: absolute; right: .8%; top: 14%; width: 4.5%; height: 15%; }
 .hiddenCard { display: block; position: absolute; width: 3cqw; height: 4.5cqw; top: calc(var(--hand-index) * 5px); left: 0; transform: rotate(calc(var(--hand-index) * 2deg)); background: url('/images/back-card.webp') center / 100% 100%; border: 1px solid #e8d8c1; border-radius: 2px; box-shadow: 1px 2px 3px #32212155; }
@@ -284,7 +284,7 @@
 .slideDrawer.drawerOpen { transform: none; visibility: visible; }
 .menuLeave { margin-top: 12px; color: #a4514f; }
 @media (prefers-reduced-motion: reduce) { .slideDrawer, .menuButton span { transition: none; } }
-.menuButton { width: 56px; height: 56px; border: 2px solid #fff1d3; border-radius: 18px; background: linear-gradient(#fffaf0, #ecd9ba); color: #826452; font-size: 28px; box-shadow: 0 5px 0 #9a7457, 0 9px 20px #43272840; }
+.menuButton { width: 56px; height: 56px; border: 2px solid #fff1d3; border-radius: 18px; background: var(--brand-cream); color: #826452; font-size: 28px; box-shadow: none; }
 /* Short screens: keep the corner button clear of the opponent's PP gauge. */
 @container stage (max-height: 500px) { .toolbar { top: 6px; right: 8px; } .menuButton { width: 46px; height: 46px; font-size: 22px; border-radius: 14px; } }
 .tableViewport { width: 100%; height: 100%; overflow: auto; }
@@ -316,8 +316,8 @@
 .thresholds > span { font-size: 24px; }
 .shieldIndicator { font-size: 18px; top: -24px; }
 .turnControl { right: .5%; top: 39%; width: 12%; gap: 12px; z-index: 22; }
-.turnControl button { display: flex; flex-direction: column; align-items: center; justify-content: center; width: clamp(104px, 10cqw, 156px); height: clamp(104px, 10cqw, 156px); padding: 6px; border-radius: 50%; border: 5px double #fff4ca; background: radial-gradient(circle at 36% 22%, #ffe9ed, #e9a9bf 55%, #b7779e); color: #fffdf0; font-size: clamp(22px, 2cqw, 30px); font-weight: 700; line-height: 1.15; text-shadow: 0 2px #a95d84; box-shadow: inset 0 0 0 3px #c788a2, 0 7px 0 #986081, 0 13px 22px #5a314770; transition: transform .15s, filter .15s; }
-.turnControl button > span { font-size: 26px; color: #fff4c4; line-height: 1; }
+.turnControl button { display: flex; flex-direction: column; align-items: center; justify-content: center; width: clamp(104px, 10cqw, 156px); height: clamp(104px, 10cqw, 156px); padding: 6px; border-radius: 50%; border: 5px double #fff4ca; background: var(--brand-blush); color: var(--brand-cocoa-deep); font-size: clamp(22px, 2cqw, 30px); font-weight: 700; line-height: 1.15; text-shadow: none; box-shadow: none; transition: transform .15s, filter .15s; }
+.turnControl button > span { font-size: 26px; color: var(--brand-cocoa-deep); line-height: 1; }
 .turnControl button:not(:disabled):active { transform: translateY(5px); }
 .turnControl button:disabled { opacity: 1; filter: saturate(.45) brightness(.9); }
 .opponentHand { left: 50%; right: auto; top: -82px; width: 0; height: 165px; z-index: 18; perspective: 700px; }
@@ -338,7 +338,7 @@
 .hiddenCard.revealedOpponentCard { pointer-events: auto; transform: translateX(calc(var(--hand-index) * var(--fan-step) + var(--reveal-shift))) translateY(28px) rotateX(-12deg); border-color: #d8afd6; }
 .revealedOpponentCard .revealed { bottom: 6px; background: #785773ed; font-size: 14px; }
 .attackActions { display: flex; justify-content: center; gap: 12px; pointer-events: auto; padding: 12px; }
-.attackActions button { min-height: 52px; min-width: 100px; padding: 10px 24px; background: #fff7e4; border: 2px solid #ffebc7; border-radius: 24px; color: #7f5a64; font-size: 20px; box-shadow: 0 4px 0 #b48b90; }
+.attackActions button { min-height: 52px; min-width: 100px; padding: 10px 24px; background: #fff7e4; border: 2px solid #ffebc7; border-radius: 24px; color: #7f5a64; font-size: 20px; box-shadow: none; }
 .attackActions { position: fixed; z-index: 50; bottom: 120px; left: 50%; transform: translateX(-50%); }
 .revealed { font-size: 18px; }
 .choiceTray { position: fixed; z-index: 65; left: 50%; top: 50%; transform: translate(-50%, -50%); max-width: 92cqw; max-height: 70cqh; overflow: auto; display: flex; flex-wrap: wrap; align-items: center; justify-content: center; gap: 14px; padding: 18px; border: 2px solid #ffedc7; border-radius: 24px; background: #fff8edee; box-shadow: 0 10px 30px #45304444; font-size: 20px; }
@@ -346,7 +346,7 @@
 .choiceTray button { min-width: 72px; min-height: 52px; padding: 10px 16px; background: #d9ebc9; border-radius: 16px; font-size: 20px; }
 .choiceThumb { width: 160px; }
 .revealComplete { position: fixed; z-index: 65; left: 50%; bottom: 160px; transform: translateX(-50%); }
-.revealComplete button { min-height: 52px; padding: 10px 24px; border: 2px solid #fff0c9; border-radius: 24px; background: #d9ebc9; color: #527652; box-shadow: 0 4px 0 #8d9e78, 0 8px 18px #442a3c44; font-size: 20px; font-weight: 700; white-space: nowrap; }
+.revealComplete button { min-height: 52px; padding: 10px 24px; border: 2px solid #fff0c9; border-radius: 24px; background: #d9ebc9; color: #527652; box-shadow: none; font-size: 20px; font-weight: 700; white-space: nowrap; }
 .handCard[data-reveal-pending] .revealed { left: 6px; width: calc(100% - 46px); font-size: 16px; }
 @container stage (max-height: 600px) { .revealComplete { bottom: 110px; } .revealComplete button { min-height: 44px; padding: 8px 20px; } .handCard[data-reveal-pending] .revealed { font-size: 12px; } }
 .errorToast { position: fixed; top: 18px; left: 50%; transform: translateX(-50%); z-index: 180; max-width: 80cqw; padding: 16px 24px; border-radius: 18px; background: #ffe6e2; color: #98464a; font-size: 18px; box-shadow: 0 5px 15px #5a353344; }
@@ -371,7 +371,7 @@
 .skillModal { top: 50%; bottom: auto; left: 50%; right: auto; transform: translate(-50%, -50%); width: min(1000px, 94cqw); max-height: 92cqh; border-radius: 28px; padding: 30px; }
 .skillModal > .inspectImage { width: 120px; float: left; margin: 0 24px 20px 0; }
 .skillModal > h2 { margin: 25px 60px 35px 0; }
-.skillButton { clear: both; padding: 20px; gap: 20px; border: 2px solid #e6c9cf; border-radius: 22px; background: linear-gradient(120deg, #fff8e9, #ffeaf0); font-size: 20px; box-shadow: 0 4px 0 #ddbbc5; margin: 16px 0; }
+.skillButton { clear: both; padding: 20px; gap: 20px; border: 2px solid #e6c9cf; border-radius: 22px; background: var(--brand-blush); font-size: 20px; box-shadow: none; margin: 16px 0; }
 .skillButton b { box-sizing: border-box; display: grid; place-items: center; width: 76px; height: 76px; min-width: 76px; flex-shrink: 0; padding: 0; font-size: 22px; text-align: center; border-radius: 50%; background: #dfedcd; }
 .skillButton strong { font-size: 22px; }
 .skillButton p { font-size: 18px; line-height: 1.7; margin-top: 8px; color: #7d6961; }
@@ -391,7 +391,7 @@
 .near .playableZone { top: 72%; height: 17%; }
 .skillModal > .inspectImage { width: 76px; }
 .skillModal > h2 { margin: 22px 60px 40px 0; }
-.skillButton:disabled { opacity: 1; background: #f0eae2; box-shadow: 0 2px 0 #d1c4b8; border-color: #d6c9bb; }
+.skillButton:disabled { opacity: 1; background: #f0eae2; box-shadow: none; border-color: #d6c9bb; }
 .skillButton:disabled b { background: #e0dfd3; color: #7f8273; }
 .table { width: max(760px, 100cqw); min-height: 0; }
 .stack { width: auto; height: 70%; }
@@ -425,9 +425,9 @@
 .cardSelection { position: fixed; z-index: 72; left: 50%; bottom: 125px; transform: translateX(-50%); display: flex; align-items: center; gap: 20px; pointer-events: none; }
 .selectedCardImage { position: relative; height: min(62cqh, 480px); aspect-ratio: 533 / 800; padding: 0; border: 2px solid #ffeec6; border-radius: 8px; background: #735047; box-shadow: 12px 22px 20px #36243588; transform: rotate(-2deg); touch-action: none; pointer-events: auto; animation: selectCard .2s ease-out; }
 .cardSelectionActions { display: flex; flex-direction: column; gap: 14px; pointer-events: auto; }
-.cardSelectionActions button { min-width: 145px; min-height: 56px; padding: 12px 20px; border: 2px solid #fff0c9; border-radius: 24px; background: #fff7e5; box-shadow: 0 5px 0 #b78c85, 0 8px 18px #442a3c44; color: #7a5967; font-size: 22px; }
-.cardSelectionActions .primaryAction { background: #d5e9bd; color: #527652; box-shadow: 0 5px 0 #8d9e78, 0 8px 18px #442a3c44; }
-.cardSelectionActions button:disabled { background: #eee6d9; color: #a18b80; box-shadow: 0 3px 0 #c2b5a7; }
+.cardSelectionActions button { min-width: 145px; min-height: 56px; padding: 12px 20px; border: 2px solid #fff0c9; border-radius: 24px; background: #fff7e5; box-shadow: none; color: #7a5967; font-size: 22px; }
+.cardSelectionActions .primaryAction { background: #d5e9bd; color: #527652; box-shadow: none; }
+.cardSelectionActions button:disabled { background: #eee6d9; color: #a18b80; box-shadow: none; }
 @keyframes selectCard { from { opacity: .4; transform: translateY(80px) rotate(-8deg) scale(.7); } to { opacity: 1; transform: translateY(0) rotate(-2deg) scale(1); } }
 @container stage (max-height: 600px) { .cardSelection { bottom: 24px; gap: 14px; } .selectedCardImage { height: calc(100cqh - 60px); } .cardSelectionActions button { min-width: 128px; min-height: 52px; font-size: 20px; } }
 @container stage (max-width: 600px) and (min-height: 601px) { .cardSelection { bottom: 110px; flex-direction: column; gap: 16px; } .selectedCardImage { height: min(56cqh, 450px); } .cardSelectionActions { flex-direction: row; gap: 10px; } .cardSelectionActions button { min-width: 108px; font-size: 20px; padding: 10px 14px; } }
@@ -459,8 +459,8 @@
 .ppGems i { box-sizing: border-box; width: min(18px, calc((100% - (var(--pp-count) - 1) * 3px) / var(--pp-count))); aspect-ratio: 1; border: 2px solid #e8d5ad; border-radius: 50%; box-shadow: 0 2px 2px #061e29, inset 0 0 0 1px #173d35; transition: background .22s, filter .22s; }
 .availablePp { background: radial-gradient(circle at 35% 25%, #f4ffc0, #9bda59 40%, #357d44 85%); filter: drop-shadow(0 0 3px #b4f68599); }
 .spentPp { background: radial-gradient(circle at 35% 25%, #9aa499, #4e5c56 75%); }
-.turnControl .endTurnButton { width: clamp(136px, 11cqw, 172px); height: clamp(136px, 11cqw, 172px); border: 5px solid #f4dba4; font-size: clamp(24px, 2cqw, 30px); background: radial-gradient(circle at 38% 25%, #f3c3ce, #d78ba4 60%, #9b547e); box-shadow: inset 0 0 0 9px #28303f, inset 0 0 0 11px #d4b587, inset 0 -18px 28px #743c6844, 0 6px 0 #715266, 0 12px 22px #27172988; }
-.turnControl .endTurnButton.enemyTurn { background: radial-gradient(circle at 38% 25%, #d96c78, #ab344f 60%, #662438); text-shadow: 0 2px #732d49; }
+.turnControl .endTurnButton { width: clamp(136px, 11cqw, 172px); height: clamp(136px, 11cqw, 172px); border: 5px solid #f4dba4; font-size: clamp(24px, 2cqw, 30px); background: var(--brand-blush); box-shadow: none; }
+.turnControl .endTurnButton.enemyTurn { background: var(--brand-peach); text-shadow: none; }
 .turnControl .endTurnButton:disabled { filter: none; }
 @container stage (max-height: 600px) { .turnControl { top: 50%; gap: 5px; } .ppPanel { height: 72px; } .ownPp { height: 88px; gap: 5px; } .ppAmount b { font-size: 38px; } .turnControl .endTurnButton { width: 118px; height: 118px; font-size: 24px; } }
 
@@ -544,7 +544,7 @@
 .editBarTurn button, .editSwitch, .editPair button { padding: 6px 14px; border: 2px solid #e7c3e2; border-radius: 999px; background: #fff; color: #6b4a3a; font-size: 15px; }
 .editBarTurn button { padding: 5px 10px; font-size: 14px; }
 .editBarTurn button[aria-pressed=true], .editSwitch[aria-pressed=true], .editPair button[aria-pressed=true] { border-color: #a88667; background: #f4b0bb; font-weight: 700; }
-.editToggle { height: 56px; padding: 0 18px; border: 2px solid #fff1d3; border-radius: 18px; background: linear-gradient(#fffaf0, #ecd9ba); color: #826452; font-size: 18px; font-weight: 700; box-shadow: 0 5px 0 #9a7457, 0 9px 20px #43272840; }
+.editToggle { height: 56px; padding: 0 18px; border: 2px solid #fff1d3; border-radius: 18px; background: var(--brand-cream); color: #826452; font-size: 18px; font-weight: 700; box-shadow: none; }
 .editToggle:disabled { opacity: .6; }
 /* On lower screens the box must end above the PP gauges and the round button beside the table. */
 @container stage (max-height: 860px) { .editBarHint { display: none; } .editBar { top: 70px; padding: 6px; gap: 4px; } }
@@ -556,7 +556,7 @@
 .addHand { align-self: flex-end; flex: none; width: 96px; height: 144px; margin: 0 0 70px 14px; border: 3px dashed #fffdeb; border-radius: 12px; background: #4d3a2c88; color: #fffdeb; font-size: 40px; pointer-events: auto; }
 .addFarHand { position: absolute; left: -28px; top: 236px; width: 56px; height: 48px; border: 3px dashed #fffdeb; border-radius: 14px; background: #4d3a2c88; color: #fffdeb; font-size: 28px; pointer-events: auto; }
 .addHand:hover, .addFarHand:hover { background: #4d3a2ccc; }
-.turnControl .playButton { background: radial-gradient(circle at 38% 25%, #dff0c4, #9cc76a 60%, #5d8a35); font-size: clamp(19px, 1.6cqw, 24px); }
+.turnControl .playButton { background: var(--brand-sage); font-size: clamp(19px, 1.6cqw, 24px); }
 
 .picker { position: fixed; inset: 0; z-index: 140; display: grid; place-items: center; padding: 16px; background: #000a; backdrop-filter: blur(4px); }
 .pickerSheet { display: grid; grid-template-rows: auto auto 1fr; gap: 12px; width: min(1100px, 96cqw); max-height: 92cqh; padding: 18px; border-radius: 24px; background: #fff9f0; color: #6b4a3a; }
@@ -602,7 +602,7 @@
 /* The skills of a playable card end with the same 閉じる as an enlarged card. */
 .skillClose { position: sticky; bottom: -30px; z-index: 5; display: flex; justify-content: flex-end; clear: both; margin: 18px -30px -30px; padding: 14px 30px 24px; background: linear-gradient(#fff9f000, #fff9f0 18px); pointer-events: none; }
 .skillClose button { pointer-events: auto; }
-.skillClose button { min-width: 145px; min-height: 56px; padding: 12px 20px; border: 2px solid #fff0c9; border-radius: 24px; background: #fff7e5; box-shadow: 0 5px 0 #b78c85, 0 8px 18px #442a3c44; color: #7a5967; font-size: 22px; }
+.skillClose button { min-width: 145px; min-height: 56px; padding: 12px 20px; border: 2px solid #fff0c9; border-radius: 24px; background: #fff7e5; box-shadow: none; color: #7a5967; font-size: 22px; }
 /* 拡張プレイアブル: MP (on the playable and in its skills), costs paid in MP, and a passive, which is text and not a button. */
 .mpBadge { position: absolute; left: 50%; bottom: 0; z-index: 2; transform: translateX(-50%); padding: 1px 8px; border: 2px solid #a9c3de; border-radius: 12px; background: #f1f8fff0; color: #3f5f86; font: 700 clamp(16px, 1.3cqw, 24px) Arial, sans-serif; white-space: nowrap; pointer-events: none; }
 .far .mpBadge { transform: translateX(-50%) rotate(180deg); }
@@ -639,7 +639,7 @@
 @media (prefers-reduced-motion: reduce) { .handCard[data-submitting]::after { animation: none; } }
 
 /* Match reference tools stay available to players and spectators. */
-.infoButton { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px; min-width: 54px; height: 58px; padding: 5px 10px; border: 1px solid #e4cdb4; border-radius: 17px; background: #fff9eff2; color: #805849; box-shadow: 0 3px 0 #d8bca5, 0 5px 14px #58384422; font-size: 23px; cursor: pointer; }
+.infoButton { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px; min-width: 54px; height: 58px; padding: 5px 10px; border: 1px solid #e4cdb4; border-radius: 17px; background: #fff9eff2; color: #805849; box-shadow: none; font-size: 23px; cursor: pointer; }
 .infoButton small { font-size: 10px; font-weight: 700; white-space: nowrap; }
 .infoButton[aria-expanded='true'] { background: #ffe2ed; border-color: #df9fb7; }
 .matchCardList { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; margin: 12px 0; }
@@ -665,7 +665,7 @@
 .logTurn ol { list-style: none; padding: 0; margin: 0; }
 .logEntry { padding: 9px 0; border-bottom: 1px solid #eadfce; font-size: 14px; line-height: 1.7; overflow-wrap: anywhere; }
 @container stage ((max-height: 500px) or (max-width: 700px)) { .infoButton { height: 46px; min-width: 44px; padding: 3px 6px; border-radius: 13px; font-size: 19px; } .toolbar { gap: 7px; } }
-.fieldCounts { position: absolute; right: 0; top: -2.9cqw; display: flex; align-items: center; gap: .8cqw; padding: .25cqw .8cqw; border: 1px solid #d8bfa8; border-radius: 2cqw; background: #fff8ecee; box-shadow: 0 .12cqw .4cqw #6b4b3222; color: #805849; font-size: 1cqw; cursor: pointer; white-space: nowrap; }
+.fieldCounts { position: absolute; right: 0; top: -2.9cqw; display: flex; align-items: center; gap: .8cqw; padding: .25cqw .8cqw; border: 1px solid #d8bfa8; border-radius: 2cqw; background: #fff8ecee; box-shadow: none; color: #805849; font-size: 1cqw; cursor: pointer; white-space: nowrap; }
 .fieldCounts b { display: inline-block; min-width: 1.3em; color: #b65e83; font-size: 1.3cqw; font-variant-numeric: tabular-nums; }
 .cardPlayed { display: block; padding: 0 6px 7px; color: #947c68; font-size: 10px; }
 .cardPlayed[data-played='true'] { color: #ad577b; font-weight: 700; }

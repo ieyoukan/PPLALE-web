@@ -9,12 +9,14 @@ import type { FreeMatchStatus } from '@pplale/game-core/room';
 import { useAuth } from '@/lib/auth';
 import { usableChoice } from '@/lib/game/deckSources';
 import { randomSeed } from '@/lib/game/match';
-import { BATTLE_PATH, CPU_PATH, roomHref } from '@/lib/game/sessionStore';
+import { CPU_PATH, roomHref } from '@/lib/game/sessionStore';
 import { abandonFreeMatch, cancelFreeMatch, keepSeat, pollFreeMatch, RoomRequestError, roomServerUrl, startFreeMatch } from '@/lib/game/room/client';
 import { DeckSelect, UnusableDecks, useDeckChoices } from '../DeckSelect';
 import { NameField, usePlayerName } from './RoomEntrance';
 import { BattleCompanion } from './BattleCompanion';
 import { MatchDeckPreview } from './MatchDeckPreview';
+import { OrnateFrame } from '../ornament/OrnateFrame';
+import { PlazaIcon } from '../plaza/PlazaIcon';
 import styles from './Room.module.css';
 import { useGameNotifications } from '../notifications/GameNotifications';
 import { useRoomPreparation } from './useRoomPreparation';
@@ -146,14 +148,12 @@ export function FreeMatch() {
     } finally { setCancelling(false); }
   }
 
-  return <div className={styles.stack}>
-    <header className={styles.matchHeading}>
-      <h2>フリーマッチ</h2>
-      <p>デッキを選んで、いま遊びたい人と対戦しよう。</p>
-    </header>
+  // In the launchpad, whose heading already says フリーマッチ.
+  return <div className={`${styles.stack} ${styles.padScreen}`}>
+    <p className={styles.matchIntro}>デッキを選んで、いま遊びたい人と対戦しよう。</p>
     <div className={styles.matchGrid}>
       <BattleCompanion />
-      <section className={`${styles.panel} ${styles.matchPanel}`} aria-label="フリーマッチ">
+      <OrnateFrame as="section" size="sm" className={styles.matchPanel} aria-label="フリーマッチ">
         {!roomServerUrl && <p role="alert" className={styles.error}>対戦サーバーが設定されていないため、フリーマッチは使えません。</p>}
         {search ? <div className={styles.freeWaiting}>
           <div className={styles.searchSignal} aria-hidden="true"><i /><i /><i /></div>
@@ -161,7 +161,7 @@ export function FreeMatch() {
           <MatchDeckPreview name={search.deck.name} deck={search.deck} />
           <p className={styles.note} role="timer" aria-live="off">待ち時間 {Math.floor(elapsed / 60)}分{elapsed % 60}秒</p>
           <p className={styles.note}>見つかると自動で対戦が始まります。</p>
-          <button className={styles.secondary} disabled={cancelling} onClick={() => void cancel()}>検索をキャンセル</button>
+          <button className={styles.smallButton} disabled={cancelling} onClick={() => void cancel()}>検索をキャンセル</button>
         </div> : <>
           <NameField name={name} onChange={setName} publicName disabled={!nameReady} />
           <label className={styles.field}>使うデッキ
@@ -169,7 +169,7 @@ export function FreeMatch() {
           </label>
           {chosen && <MatchDeckPreview name={chosen.name} deck={previewDeck} />}
           <UnusableDecks choices={choices} className={styles.note} />
-          <button className={`${styles.primary} ${styles.matchStart}`} disabled={preparation.busy || !chosen || !roomServerUrl || !nameReady} onClick={() => void start()}>{preparation.busy ? '対戦を準備中…' : 'このデッキで対戦相手を探す'} <span aria-hidden="true">›</span></button>
+          <OrnateFrame as="button" size="sm" className={`${styles.cardButton} ${styles.matchStart}`} disabled={preparation.busy || !chosen || !roomServerUrl || !nameReady} onClick={() => void start()}><span data-ui-title>{preparation.busy ? '対戦を準備中…' : 'このデッキで対戦相手を探す'}</span> <span aria-hidden="true">›</span></OrnateFrame>
           <PreparationProgress progress={preparation.progress} />
           {!user ? <button className={styles.matchLogin} onClick={() => { signInWithGoogle().catch(() => setError('ログインできませんでした')); }}>ログインして保存済みデッキを使う</button>
             : <p className={styles.note}>{saved.loading ? 'デッキを読み込み中…' : `${saved.decks.length}件の保存済みデッキ`} · <Link href="/build">デッキを編集する</Link></p>}
@@ -182,11 +182,8 @@ export function FreeMatch() {
         </details>
         {saved.error && <p role="alert" className={styles.error}>{saved.error}</p>}
         {error && <p role="alert" className={styles.error}>{error}</p>}
-      </section>
+      </OrnateFrame>
     </div>
-    <div className={styles.row}>
-      <Link href={BATTLE_PATH} className={styles.secondary}>バトルへ戻る</Link>
-      {!search && <Link href={CPU_PATH} className={styles.secondary}>CPU対戦で遊ぶ</Link>}
-    </div>
+    {!search && <div className={styles.row}><Link href={CPU_PATH} className={styles.textLink}><PlazaIcon name="cpu" />CPU対戦で遊ぶ</Link></div>}
   </div>;
 }

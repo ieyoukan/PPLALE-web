@@ -8,7 +8,7 @@
 .primary:disabled { opacity: .55; cursor: default; }
 .primary:focus-visible, .actions button:focus-visible { outline: 3px solid var(--brand-cocoa); outline-offset: 2px; }
 .created { display: grid; justify-items: center; gap: 14px; width: 100%; }
-.thumbnail { display: block; width: min(100%, 560px); height: auto; aspect-ratio: 16 / 9; object-fit: cover; background: var(--brand-cream); filter: drop-shadow(0 6px 12px var(--brand-shadow)); }
+.thumbnail { display: block; width: min(100%, 560px); height: auto; aspect-ratio: 16 / 9; object-fit: cover; background: var(--brand-cream); filter: none; }
 .identity { display: flex; flex-wrap: wrap; justify-content: center; align-items: center; gap: 8px 16px; color: var(--brand-cocoa-deep); text-align: center; }
 .identity b { font-size: 22px; }
 .identity > span { font-size: 17px; font-weight: 700; }
