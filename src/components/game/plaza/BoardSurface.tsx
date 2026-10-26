@@ -16,7 +16,7 @@ const nothing = () => {};
 export function BoardSurface({ className }: { className?: string }) {
   return <div className={`${board.table} ${className ?? ''}`} aria-hidden="true" inert>
     <div className={board.mat}><div className={board.logoLayer}>
-      {Array.from({ length: 8 }, (_, index) => <Image key={index} src="https://rp2.alfred511.top/huggingface/images/game/cafe-logo.svg" alt="" width={1568} height={882} unoptimized className={board.matLogo} />)}
+      {Array.from({ length: 8 }, (_, index) => <Image key={index} src="/images/game/cafe-logo.svg" alt="" width={1568} height={882} unoptimized className={board.matLogo} />)}
     </div></div>
     {([0, 1] as Side[]).map(side => <section key={side} className={`${board.playerSide} ${side === 0 ? board.near : board.far}`}>
       {zones.map(([kind, place]) => <div key={kind} className={place}><DeckStack side={side} kind={kind} ids={[]} enabled={false} onClick={nothing} /></div>)}
