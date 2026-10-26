@@ -92,8 +92,8 @@ export function PlazaTable({ view, onMenu }: { view: RoomView; onMenu: () => voi
           <span className={styles.deckName}><small>デッキ</small><b>{chosen?.name ?? 'えらぶ'}</b></span>
         </OrnateFrame>
         {me.ready
-          ? <OrnateFrame as="button" size="sm" className={`${styles.ready} ${styles.readyDone}`} disabled={busy} onClick={() => ask({ action: 'unready' })}><PlazaIcon name="check" /><span data-ui-title>じゅんびOK</span><small>タップでやめる</small></OrnateFrame>
-          : <OrnateFrame as="button" size="sm" className={styles.ready} disabled={busy || !chosen} onClick={ready}><span data-ui-title>じゅんびOK!</span></OrnateFrame>}
+          ? <OrnateFrame as="button" size="line" className={`${styles.ready} ${styles.readyDone}`} disabled={busy} onClick={() => ask({ action: 'unready' })}><PlazaIcon name="check" /><span data-ui-title>じゅんびOK</span><small>タップでやめる</small></OrnateFrame>
+          : <OrnateFrame as="button" size="line" className={styles.ready} disabled={busy || !chosen} onClick={ready}><span data-ui-title>じゅんびOK!</span></OrnateFrame>}
       </div>}
       {self && <button className={styles.leaveSeat} disabled={busy} onClick={() => ask({ action: 'stand' })} aria-label="席を立つ"><PlazaIcon name="exit" /><span data-ui-title>席を立つ</span></button>}
       {player.cpu && <button className={styles.seatCorner} disabled={busy} onClick={() => ask({ action: 'dismissCpu' })} aria-label="CPUに帰ってもらう"><PlazaIcon name="close" /></button>}
@@ -130,7 +130,9 @@ export function PlazaTable({ view, onMenu }: { view: RoomView; onMenu: () => voi
     <div className={styles.mat}>
       {/* The board with seat 0's half nearest, turned a quarter so seat 0 is at the left end and seat 1 at the right. */}
       <div className={styles.tableTop}>
+        <span className={styles.floorShadow} aria-hidden="true" />
         <BoardSurface className={styles.surface} />
+        <span className={styles.light} aria-hidden="true" />
       </div>
         {([0, 1] as const).map(side => <div key={side} className={styles.spot} data-seat={side}>
           <span className={styles.shadow} aria-hidden="true" />
