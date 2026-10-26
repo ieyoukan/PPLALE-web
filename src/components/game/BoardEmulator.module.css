@@ -145,7 +145,7 @@
 .hand { display: flex; justify-content: center; align-items: flex-end; height: 118px; padding-top: 8px; isolation: isolate; }
 .handCard { position: relative; width: 90px; height: 135px; flex-shrink: 0; margin-left: calc(-1 * var(--overlap)); background: #604747; border: 1px solid #e0c7a3; border-radius: 4px; box-shadow: -3px 6px 8px #21141f88; transform: translateY(var(--lift)) rotate(var(--angle)); transform-origin: bottom center; transition: transform .2s ease, box-shadow .2s; }
 .handCard:first-child { margin-left: 0; }
-.handCard:hover, .handCard:focus-visible, .selectedHand { z-index: 70 !important; transform: translateY(-45px) rotate(0) scale(1.25); box-shadow: 0 10px 25px #1f172080; }
+.handCard:focus-visible, .selectedHand { z-index: 70 !important; transform: translateY(-45px) rotate(0) scale(1.25); box-shadow: 0 10px 25px #1f172080; }
 .playableHand { border-color: #addeb0; box-shadow: 0 0 8px #8bc28a80, -3px 6px 8px #21141f88; }
 .selectedHand { outline: 2px solid #f1d78d; }
 .dealing { visibility: hidden; }
@@ -328,10 +328,10 @@
 .handDock { position: fixed; z-index: 45; left: 50%; bottom: -105px; transform: translateX(-50%); width: min(850px, 90cqw); min-width: 0; min-height: 0; padding: 0; background: none; transition: bottom .35s cubic-bezier(.2,.8,.2,1), width .35s; pointer-events: none; }
 .hand { height: 210px; padding: 0 12px; overflow: visible; align-items: flex-end; perspective: 1000px; }
 .handCard { pointer-events: auto; touch-action: none; width: 140px; height: 210px; border-radius: 7px; border: 2px solid #dfc5a0; background: #634237; transform: translateY(var(--lift)) rotate(var(--angle)) rotateX(7deg); box-shadow: -5px 9px 8px #341c2866, inset 0 -3px #eedcba; transition: transform .25s, width .3s, height .3s, box-shadow .25s; }
-.handCard:hover, .handCard:focus-visible, .selectedHand { transform: translateY(-25px) rotate(0) scale(1.05); }
+.handCard:focus-visible, .selectedHand { transform: translateY(-25px) rotate(0) scale(1.05); }
 .handCard.revealedHandCard { transform: translateY(-28px) rotateX(7deg); border-color: #d8afd6; }
 .handCard.revealedHandStart { margin-left: clamp(32px, 4cqw, 56px); }
-.handCard.revealedHandCard:hover, .handCard.revealedHandCard:focus-visible, .revealedHandCard.selectedHand { transform: translateY(-42px) scale(1.05); }
+.handCard.revealedHandCard:focus-visible, .revealedHandCard.selectedHand { transform: translateY(-42px) scale(1.05); }
 .revealedHandCard .revealed { top: 6px; bottom: auto; background: #785773ed; }
 .hiddenCard { padding: 0; }
 .opponentHandWithRevealed .hiddenCard { transform: translateX(calc(var(--hand-index) * var(--fan-step) + var(--reveal-shift))) rotate(clamp(-8deg, calc(var(--hand-index) * -7deg), 8deg)) rotateX(-12deg); }
@@ -417,10 +417,10 @@
   .handDock { bottom: -65px; }
   .hand { height: 160px; padding: 0 12px 10px; justify-content: flex-start; gap: 8px; overflow-x: auto; overflow-y: hidden; }
   .handCard { width: 100px; height: 150px; margin-left: 0; transform: none; }
-  .handCard:hover, .handCard:focus-visible, .selectedHand { transform: translateY(-5px); }
+.handCard:focus-visible, .selectedHand { transform: translateY(-5px); }
   .handCard.revealedHandCard { transform: translateY(-12px); }
   .handCard.revealedHandStart { margin-left: 24px; }
-  .handCard.revealedHandCard:hover, .handCard.revealedHandCard:focus-visible, .revealedHandCard.selectedHand { transform: translateY(-17px); }
+.handCard.revealedHandCard:focus-visible, .revealedHandCard.selectedHand { transform: translateY(-17px); }
 }
 .cardSelection { position: fixed; z-index: 72; left: 50%; bottom: 125px; transform: translateX(-50%); display: flex; align-items: center; gap: 20px; pointer-events: none; }
 .selectedCardImage { position: relative; height: min(62cqh, 480px); aspect-ratio: 533 / 800; padding: 0; border: 2px solid #ffeec6; border-radius: 8px; background: #735047; box-shadow: 12px 22px 20px #36243588; transform: rotate(-2deg); touch-action: none; pointer-events: auto; animation: selectCard .2s ease-out; }
@@ -567,7 +567,6 @@
 .pickerSheet > p { font-size: 15px; }
 .pickerSheet ul { display: grid; grid-template-columns: repeat(auto-fill, minmax(clamp(88px, 10cqw, 130px), 1fr)); gap: 10px; overflow: auto; margin: 0; padding: 6px; list-style: none; }
 .pickerSheet li button { position: relative; display: block; width: 100%; aspect-ratio: 533 / 800; padding: 0; border-radius: 8px; transition: transform .12s; }
-.pickerSheet li button:hover { transform: translateY(-4px) scale(1.04); }
 
 .editCard { position: relative; width: min(60%, 200px); aspect-ratio: 533 / 800; margin: 0 auto 12px; }
 .editNow { margin-bottom: 8px; text-align: center; font-weight: 700; }

@@ -24,7 +24,6 @@
   display: flex; align-items: center; justify-content: center; gap: 14px; width: 100%; min-height: 76px; border: 0; background: none;
   color: var(--brand-cocoa-deep); font-size: 20px; cursor: pointer; filter: none; transition: transform .12s ease;
 }
-.startButton:hover:not(:disabled) { transform: translateY(-2px); }
 .startButton:active:not(:disabled) { transform: translateY(2px); }
 .startButton:disabled { opacity: .55; cursor: default; }
 .error { margin: 0; padding: 8px 12px; border-left: 4px solid var(--brand-peach); background: var(--brand-peach-wash); color: var(--brand-cocoa-deep); font-size: 14px; }

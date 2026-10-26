@@ -19,7 +19,7 @@
 .swapBadge { position: absolute; top: -12px; right: -12px; width: 42px; height: 42px; display: grid; place-items: center; border: 2px solid #e5c1bf; border-radius: 50%; background: #fff7e8; color: #a76686; font: 32px Arial, sans-serif; box-shadow: 0 4px 8px #54345144; }
 .controls { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 20px; }
 .confirm { width: 100%; aspect-ratio: 1; border: 5px solid #fff0cb; border-radius: 50%; background: var(--brand-blush); color: var(--brand-cocoa-deep); font: clamp(28px, 3.2cqw, 46px) 'BoardHandwriting', 'Yu Kyokasho', cursive; box-shadow: none; transition: filter .2s, transform .2s; }
-.confirm:enabled:hover { filter: brightness(1.08); transform: translateY(-3px); }
+.confirm:enabled:hover { filter: brightness(1.08); }
 .confirm:disabled { filter: saturate(.5); opacity: .65; }
 .waiting { display: flex; gap: 10px; }
 .waiting i { width: 12px; height: 12px; border-radius: 50%; background: #fff2d6; animation: waitBounce 1s ease-in-out infinite; }

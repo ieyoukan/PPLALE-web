@@ -12,7 +12,7 @@ export async function openSavedDeckList(page, options = {}) {
         createRoot(document.getElementById('root')).render(<LocaleProvider initialLocale={window.__decks.locale || 'ja'}><SavedDeckGrid userId="fixture-user" /></LocaleProvider>);`,
       resolveDir: process.cwd(), loader: 'tsx',
     },
-    bundle: true, write: false, platform: 'browser', format: 'iife',
+    bundle: true, write: false, outdir: '.cache/saved-deck-fixture', platform: 'browser', format: 'iife',
     alias: { 'styled-system/css': resolve('styled-system/css/index.mjs'), 'styled-system/recipes': resolve('styled-system/recipes/index.mjs') },
     define: { 'process.env.NODE_ENV': '"production"' },
     plugins: [{ name: 'fixture-services', setup(builder) {
@@ -40,10 +40,12 @@ export async function openSavedDeckList(page, options = {}) {
     } }],
   });
   const [{ outputFiles }, css] = await Promise.all([bundle, readFile('styled-system/styles.css', 'utf8')]);
+  const componentCss = outputFiles.filter(file => file.path.endsWith('.css')).map(file => file.text).join('\n');
+  const script = outputFiles.find(file => file.path.endsWith('.js')).text;
   const fixture = { decks: makeDecks(), delay: 60, reads: [], deleted: [], ...options };
   await page.addInitScript(data => { window.__decks = data; }, fixture);
   await page.route('**/deck-list-fixture', route => route.fulfill({
-    contentType: 'text/html', body: `<html lang="ja"><style>${css}</style><body style="padding:24px"><div id="root"></div><script>${outputFiles[0].text.replaceAll('</script', '<\\/script')}</script></body></html>`,
+    contentType: 'text/html', body: `<html lang="ja"><style>${css}\n${componentCss}</style><body style="padding:24px"><div id="root"></div><script>${script.replaceAll('</script', '<\\/script')}</script></body></html>`,
   }));
   await page.goto('/deck-list-fixture');
 }

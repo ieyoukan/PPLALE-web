@@ -1,0 +1,32 @@
+.home { display: grid; gap: 13px; }
+.destinations { display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); gap: 9px; }
+.destinations > button { grid-column: span 2; }
+.destinations > button:nth-child(4) { grid-column: 2 / span 2; }
+.destinations > button:nth-child(5) { grid-column: 4 / span 2; }
+.roomBanner { width: 100%; min-width: 0; padding: 0; border: 0; background: none; text-align: left; }
+.roomBanner:hover { filter: brightness(.98); }
+.roomMain { --pad: 8px 18px 8px 12px; --frame-face: var(--brand-vanilla-wash); display: flex; align-items: center; gap: 16px; width: 100%; min-height: 112px; border: 0; background: none; text-align: left; }
+.roomArt, .emptyRoomArt { display: grid; place-items: center; flex: none; width: 156px; height: 88px; object-fit: cover; background: var(--brand-cream); }
+.emptyRoomArt { color: var(--brand-cocoa); font-size: 38px; }
+.roomText { display: grid; gap: 3px; min-width: 0; flex: 1; }
+.roomText small { color: var(--brand-cocoa-soft); font-size: 12px; font-weight: 700; }
+.roomText b { overflow: hidden; color: var(--brand-cocoa-deep); font-size: 20px; text-overflow: ellipsis; white-space: nowrap; }
+.roomText > span { display: flex; align-items: center; gap: 5px; color: var(--brand-cocoa-soft); font-size: 13px; }
+.roomText > span svg:nth-of-type(2) { margin-left: 9px; }
+
+/* The room's own actions: a small row of frameless buttons under the links. */
+.quick { display: flex; flex-wrap: wrap; justify-content: center; gap: 6px; }
+.quick button { display: inline-flex; align-items: center; gap: 6px; min-height: 36px; padding: 6px 14px; border: 1px solid var(--brand-pink-edge); border-radius: 6px; background: var(--brand-paper); color: var(--brand-cocoa-deep); font-size: 14px; font-weight: 700; }
+.quick button:hover:not(:disabled) { background: var(--brand-blush); }
+.quick button:disabled { opacity: .48; cursor: default; }
+.quick svg { width: 18px; height: 18px; color: var(--brand-cocoa); }
+.foot { display: grid; justify-items: center; padding-top: 2px; border-top: 1px solid var(--brand-pink); }
+.moreButton { display: flex; align-items: center; gap: 6px; min-height: 32px; padding: 3px 12px; border: 0; background: transparent; color: var(--brand-cocoa-soft); font-size: 13px; font-weight: 700; }
+.moreLinks { display: grid; grid-template-columns: repeat(3, 1fr); gap: 5px; width: 100%; padding: 6px 0 0; }
+.moreLinks a { display: flex; align-items: center; justify-content: center; gap: 5px; min-height: 38px; color: var(--brand-cocoa-deep); font-size: 13px; font-weight: 700; }
+.moreLinks a:hover { background: var(--brand-blush); }
+.moreLinks svg { font-size: 18px; }
+
+.moreLinks button { display: flex; align-items: center; justify-content: center; gap: 5px; min-height: 38px; border: 0; background: transparent; font-size: 13px; font-weight: 700; }
+.moreLinks button:hover { background: var(--brand-blush); }
+@media (max-width: 600px) { .roomMain { --pad: 8px 34px 8px 9px; min-height: 94px; gap: 8px; } .roomArt, .emptyRoomArt { width: 94px; height: 62px; } .roomText b { font-size: 16px; } .roomText > span { font-size: 11px; } .moreLinks { grid-template-columns: repeat(2, 1fr); } }

@@ -36,7 +36,7 @@
     "puzzles:images": "node scripts/generate-puzzle-previews.mjs",
     "cards:generate": "pnpm run cards:og-images && pnpm run cards:thumbnails && pnpm run game:assets",
     "pretest:deck-images": "pnpm run cards:generate",
-    "test:deck-images": "node --test tests/ogDeckImage.test.mjs",
+    "test:deck-images": "node --test tests/ogDeckImage.test.mjs tests/deckImageLayout.test.mjs",
     "cards:check": "node scripts/check-cards.mjs",
     "test:e2e": "playwright test",
     "test:e2e:ui": "playwright test --ui",

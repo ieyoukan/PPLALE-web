@@ -1,35 +1,32 @@
-/* The rules of a match as tiles (like the start of the 2pick deck builder). Square pictures with a fine
-   cocoa line; an allowed one is framed in the logo's leaf green and marked with a diamond. */
+/* Rules use unobscured pictures, fine cocoa/pink borders and a small corner check. */
 /* Text colours keep at least 4.5:1 against the cream background (small text included). */
 .picker { container-type: inline-size; display: grid; gap: 10px; color: var(--brand-cocoa-deep); }
 /* Wide: the four fruits and the two playable versions in one row, every tile the same size. */
 .groups { display: grid; grid-template-columns: minmax(0, 2fr) minmax(0, 1fr); gap: 18px 14px; }
 .group { min-width: 0; margin: 0; padding: 0; border: 0; }
-.group legend { margin-bottom: 8px; padding: 0; font-size: 16px; font-weight: 700; }
+.group legend { color: var(--brand-cocoa-deep); margin-bottom: 8px; padding: 0; font-size: 16px; font-weight: 700; }
 .group legend small { margin-left: 8px; font-size: 13px; font-weight: 400; color: var(--brand-cocoa-soft); }
 .tiles { display: grid; grid-template-columns: repeat(var(--columns), minmax(0, 1fr)); gap: 14px; }
 .fruits { --columns: 4; }
 .versions { --columns: 2; }
 
-.tile { position: relative; display: grid; align-content: start; gap: 6px; text-align: center; cursor: pointer; }
+.tile { color: var(--brand-cocoa-deep); position: relative; display: grid; align-content: start; gap: 6px; text-align: center; cursor: pointer; }
 .tile[data-fixed], .tile[data-soon] { cursor: default; }
 /* The checkbox covers its tile: a tap anywhere on it changes it, and it is still a checkbox to a keyboard or a screen reader. */
 .box { position: absolute; inset: 0; z-index: 1; width: 100%; height: 100%; margin: 0; opacity: 0; cursor: inherit; }
 /* The picture on the fruit's colour (which shows until the picture has loaded). */
-.art { position: relative; display: block; aspect-ratio: 16 / 9; overflow: hidden; background: var(--tone); box-shadow: 0 0 0 1px var(--brand-cocoa-soft); transition: box-shadow .2s, transform .2s; }
+.art { position: relative; display: block; box-sizing: border-box; aspect-ratio: 16 / 9; overflow: hidden; border: 2px solid var(--brand-pink-edge); background: var(--tone); transition: border-color .2s, transform .2s; }
 .art img { display: block; width: 100%; height: 100%; object-fit: cover; }
-/* Allowed: a thick green frame and a mark over the darkened picture, as on the 2pick tiles. */
-.tile[data-on] .art { box-shadow: 0 0 0 3px #7da552, 0 5px 10px #2b170c33; }
-.mark { position: absolute; inset: 0; display: grid; place-items: center; background: #3b2a2240; }
-/* A diamond like the cards' ornaments. */
-.mark svg { box-sizing: border-box; width: clamp(30px, 32%, 50px); height: auto; aspect-ratio: 1; padding: 22%; background: #7da552; clip-path: polygon(50% 0, 100% 50%, 50% 100%, 0 50%); fill: none; stroke: #fffdeb; stroke-width: 3.2; stroke-linecap: round; stroke-linejoin: round; }
+/* A selected picture stays bright and readable; only its border and corner mark change. */
+.tile[data-on] .art { border-color: var(--brand-cocoa); }
+.mark { position: absolute; top: 5px; right: 5px; display: grid; place-items: center; width: 24px; height: 24px; border: 1px solid var(--brand-pink-edge); border-radius: 6px; background: var(--brand-paper); color: var(--brand-cocoa-deep); }
+.mark svg { display: block; width: 18px; height: 18px; fill: none; stroke: currentColor; stroke-width: 3; stroke-linecap: round; stroke-linejoin: round; }
 /* Not playable yet: grey behind a cream veil with its label. */
 .tile[data-soon] .art { filter: grayscale(.8); }
 .soon { position: absolute; inset: 0; display: grid; place-items: center; background: #fffdebd9; color: #4d3a2c; font-size: 14px; font-weight: 700; letter-spacing: .12em; }
 .name { font-size: 16px; font-weight: 700; line-height: 1.3; }
 .name small { display: block; font-size: 12px; font-weight: 400; color: var(--brand-cocoa-soft); }
 .tile[data-soon] .name { color: #7d6b5d; }
-.tile:not([data-fixed], [data-soon]):hover .art { transform: translateY(-2px); }
 .tile:has(.box:focus-visible) .art { outline: 3px solid var(--brand-cocoa); outline-offset: 4px; }
 .note { font-size: 14px; line-height: 1.7; color: var(--brand-cocoa-soft); }
 
@@ -53,6 +50,6 @@
 .compact .tile { gap: 4px; }
 .compact .name { font-size: 14px; line-height: 1.25; overflow-wrap: anywhere; }
 .compact .name small, .compact .group legend small { display: none; }
-.compact .group legend { margin-bottom: 5px; font-size: 14px; line-height: 1.3; }
-.compact .mark svg { width: 24px; }
-.compact .tile[data-on] .art { box-shadow: 0 0 0 2px #7da552, 0 3px 6px #2b170c33; }
+.compact .group legend { color: var(--brand-cocoa-deep); margin-bottom: 5px; font-size: 14px; line-height: 1.3; }
+.compact .mark { top: 3px; right: 3px; width: 20px; height: 20px; }
+.compact .mark svg { width: 14px; height: 14px; }

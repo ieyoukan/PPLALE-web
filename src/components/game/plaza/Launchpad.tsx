@@ -7,10 +7,9 @@
 // (places.ts). Going somewhere keeps the player in their room; only making a new room leaves it,
 // and says so first. Small, its tabs run down the left; expanded, the left lists the game's screens
 // and the tabs become icons at the top right.
-import { useCallback, useEffect, useId, useMemo, useRef, useState } from 'react';
+import { Suspense, useCallback, useEffect, useId, useMemo, useRef, useState } from 'react';
 import type { ReactNode } from 'react';
 import dynamic from 'next/dynamic';
-import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
 import { preconnect } from 'react-dom';
 import { DEFAULT_VISIBILITY } from '@pplale/game-core/room';
@@ -22,13 +21,14 @@ import { NotificationsPage } from '../social/NotificationsPage';
 import { GameSettings } from '../settings/GameSettings';
 import { RulesSheet } from './PlazaSheets';
 import { OrnateFrame } from '../ornament/OrnateFrame';
-import { DiscordMark, PlazaIcon } from './PlazaIcon';
+import { PlazaIcon } from './PlazaIcon';
 import { RoomNameSheet } from './RoomManagementSheets';
 import { RoomThumbnailImage } from './RoomThumbnailImage';
 import { isPlazaPath, plazaHref, usePlaza } from './PlazaProvider';
 import { placeOf, samePlace, sectionInfo } from './places';
 import type { Place, Section } from './places';
 import { ShareSheet } from './ShareSheet';
+import { LaunchpadHome } from './LaunchpadHome';
 import { Sheet } from './Sheet';
 import { visibilityInfo } from './visibility';
 import styles from './Launchpad.module.css';
@@ -47,6 +47,8 @@ const CardGallery = dynamic(() => import('../home/CardGallery'));
 const EditorLobby = dynamic(() => import('../editor/EditorLobby'));
 const SocialPage = dynamic(() => import('../social/SocialPage').then(module => module.SocialPage));
 const ProfilePage = dynamic(() => import('../social/ProfilePage').then(module => module.ProfilePage));
+const InstanceMembers = dynamic(() => import('./InstanceMembers').then(module => module.InstanceMembers));
+const GameDiscover = dynamic(() => import('./GameDiscover').then(module => module.GameDiscover));
 const PlayPerformancePanel = dynamic(() => import('../performance/PlayPerformancePanel').then(module => module.PlayPerformancePanel));
 
 /** Something else answers Escape first: a dialog, a sheet, or typing (including choosing kanji). */
@@ -60,10 +62,10 @@ function busyWithEscape(event: KeyboardEvent) {
 /** The launchpad's own tabs (small, down the left; expanded, icons at the top right). */
 const padTabs: Section[] = ['home', 'notifications', 'instance', 'volume', 'settings'];
 /** Expanded, the game's screens down the left. */
-const screens: Section[] = ['home', 'cpu', 'battle', 'puzzles', 'cards', 'editor', 'social'];
+const screens: Section[] = ['discover', 'social', 'cards', 'puzzles', 'history', 'editor'];
 const home: Place = { section: 'home' };
 /** A screen opened from another is shown under it on the rail. */
-const parent: Partial<Record<Section, Section>> = { zukan: 'cards', profile: 'social', free: 'battle', history: 'battle', performance: 'battle' };
+const parent: Partial<Record<Section, Section>> = { zukan: 'cards', profile: 'social', free: 'history', performance: 'history' };
 
 export function LaunchpadProvider({ children }: { children: ReactNode }) {
   // Profiles, decks and friends are read from Firestore as soon as a screen of them opens.
@@ -134,19 +136,20 @@ export function LaunchpadProvider({ children }: { children: ReactNode }) {
 }
 
 type Panel = 'share' | 'new' | 'name' | 'rules' | null;
-const tabLabel = (section: Section) => section === 'home' ? 'ホーム' : section === 'instance' ? 'ルーム' : sectionInfo[section].label;
+const tabLabel = (section: Section) => section === 'home' ? 'ホーム' : section === 'discover' ? 'ぷぷりえーる' : sectionInfo[section].label;
 
 function Launchpad({ stack, choose }: { stack: Place[]; choose: (section: Section) => void }) {
-  const { close: onClose, expanded, setExpanded, openAt, place, back } = useLaunchpad();
+  const { close: onClose, expanded, setExpanded, place, back } = useLaunchpad();
   const plaza = usePlaza(), router = useRouter(), pathname = usePathname();
   const [panel, setPanel] = useState<Panel>(null);
-  const [more, setMore] = useState(false);
   const [error, setError] = useState('');
   const box = useRef<HTMLDivElement>(null), panelRef = useRef<HTMLDivElement>(null), tabId = useId();
   const view = plaza.view, room = view?.plaza;
-  const section = place.section;
+  // The small pad is for quick actions; its expanded landing page introduces the game instead.
+  const shownSection = (section: Section) => expanded && section === 'home' ? 'discover' : !expanded && section === 'discover' ? 'home' : section;
+  const section = shownSection(place.section);
   // Each screen opens at its top.
-  useEffect(() => { panelRef.current?.scrollTo({ top: 0 }); }, [place]);
+  useEffect(() => { panelRef.current?.scrollTo({ top: 0 }); }, [place, expanded]);
   // Focus moves into the pad (to the pad itself, so no button looks chosen by it).
   useEffect(() => { box.current?.focus(); }, [expanded]);
   const onRoomPage = isPlazaPath(pathname);
@@ -154,7 +157,7 @@ function Launchpad({ stack, choose }: { stack: Place[]; choose: (section: Sectio
   const toRoom = () => room && view ? onRoomPage ? onClose() : go(plazaHref(view.id)) : go('/game/');
   const rail = expanded ? screens : padTabs;
   // The rail shows the screen the shown one was opened from (a profile from フレンド: フレンド).
-  const current = [...stack].reverse().map(item => parent[item.section] ?? item.section).find(item => rail.includes(item));
+  const current = [...stack].reverse().map(item => shownSection(parent[item.section] ?? item.section)).find(item => rail.includes(item));
   const title = sectionInfo[section].label;
   const icons = expanded && <div className={styles.tabIcons} role="tablist" aria-label="ランチパッドのタブ">{padTabs.filter(item => item !== 'home').map(item =>
     <button key={item} id={`${tabId}-${item}`} type="button" role="tab" className={styles.iconButton} aria-label={sectionInfo[item].label} aria-selected={section === item} aria-controls={`${tabId}-panel`} title={sectionInfo[item].label} onClick={() => choose(item)}><PlazaIcon name={sectionInfo[item].icon} /></button>)}</div>;
@@ -167,38 +170,9 @@ function Launchpad({ stack, choose }: { stack: Place[]; choose: (section: Sectio
       <button className={styles.iconButton} onClick={onClose} aria-label="メニューを閉じる"><PlazaIcon name="close" /></button>
     </div>
   </header>;
-  const tile = (target: Section, icon = sectionInfo[target].icon, label = sectionInfo[target].label) =>
-    <button key={target} className={styles.tile} onClick={() => openAt({ section: target })}><PlazaIcon name={icon} /><span data-ui-title>{label}</span></button>;
-  const roomBanner = room && view ? <button className={styles.roomBanner} onClick={() => openAt({ section: 'instance' })} aria-label="いまのルームの詳細">
-    <OrnateFrame size="sm" className={styles.roomMain}>
-      <RoomThumbnailImage rules={room.nextRules ?? view.rules} className={styles.roomArt} sizes="160px" />
-      <span className={styles.roomText}><small>いまのルーム</small><b data-ui-title>{room.name}</b><span><PlazaIcon name={visibilityInfo[room.visibility].icon} />{visibilityInfo[room.visibility].label}<PlazaIcon name="people" />{room.members.length}</span></span>
-      <PlazaIcon name="pin" />
-    </OrnateFrame>
-  </button> : <OrnateFrame size="sm" className={styles.roomMain}>
-    <span className={styles.emptyRoomArt}><PlazaIcon name="home" /></span><span className={styles.roomText}><small>いまのルーム</small><b data-ui-title>ホーム</b><span>{plaza.stage.kind === 'entering' ? 'つないでいます…' : 'みんなで遊ぶ場所'}</span></span>
-  </OrnateFrame>;
   const screen = {
-    home: <div className={styles.homeContent}>
-      {roomBanner}
-      {/* Playing (against the CPU, a free match) is done at the room's table: here are the other places. */}
-      <section className={styles.section} aria-label="クイックリンク">
-        <h3 data-ui-title>クイックリンク</h3>
-        <nav className={styles.grid} aria-label="ゲームの画面">{tile('instance', 'pin', 'ルーム')}{tile('social')}{tile('cards')}{tile('history')}</nav>
-      </section>
-      <div className={styles.quick} role="group" aria-label="ルームの操作">
-        <button onClick={toRoom}><PlazaIcon name="home" /><span>ホーム</span></button>
-        <button disabled={!room} onClick={() => setPanel('share')}><DiscordMark /><span>さそう</span></button>
-        <button onClick={() => setPanel('new')}><PlazaIcon name="door" /><span>新しいルーム</span></button>
-      </div>
-      <footer className={styles.foot}>
-        <button className={styles.moreButton} aria-expanded={more} aria-controls={`${tabId}-more`} onClick={() => setMore(value => !value)}><PlazaIcon name={more ? 'close' : 'grid'} />{more ? '閉じる' : 'もっと見る'}</button>
-        {more && <nav id={`${tabId}-more`} className={styles.moreLinks} aria-label="その他の画面">
-          {(['puzzles', 'editor', 'battle'] as const).map(target => <button key={target} onClick={() => openAt({ section: target })}><PlazaIcon name={sectionInfo[target].icon} /><span>{sectionInfo[target].label}</span></button>)}
-          <Link href="/" prefetch={false}><PlazaIcon name="exit" /><span>サイトへ</span></Link>
-        </nav>}
-      </footer>
-    </div>,
+    discover: <GameDiscover onCreate={() => setPanel('new')} />,
+    home: <LaunchpadHome onHome={toRoom} onCreate={() => setPanel('new')} onShare={() => setPanel('share')} />,
     notifications: <NotificationsPage />,
     instance: room && view ? <div className={styles.instance}>
       <RoomThumbnailImage rules={room.nextRules ?? view.rules} alt="ルームのサムネイル" className={styles.instanceArt} sizes="(max-width: 760px) 80vw, 620px" />
@@ -210,6 +184,7 @@ function Launchpad({ stack, choose }: { stack: Place[]; choose: (section: Sectio
         <button className={styles.tile} onClick={() => setPanel('rules')}><PlazaIcon name="rules" /><span data-ui-title>ルール</span></button>
         <button className={styles.tile} onClick={() => setPanel('share')}><PlazaIcon name="link" /><span data-ui-title>共有リンク</span></button>
       </div>
+      <InstanceMembers room={room} />
     </div> : <div className={styles.empty}><PlazaIcon name="pin" /><p>ルームに入ると、ここに表示されます</p><button className={styles.tile} onClick={toRoom}>ホーム</button></div>,
     volume: <div className={styles.preferences}><PlazaIcon name="volume" className={styles.preferenceIcon} /><NotificationVolumeControl /></div>,
     settings: <GameSettings volume={false} />,
@@ -250,7 +225,7 @@ function Launchpad({ stack, choose }: { stack: Place[]; choose: (section: Sectio
       <OrnateFrame className={styles.pad} data-section={section}>
         {tabRail}{head}
         <div ref={panelRef} className={styles.tabPanel} role="tabpanel" id={`${tabId}-panel`} aria-label={title} tabIndex={0}>
-          {screen}
+          <Suspense fallback={null}>{screen}</Suspense>
           {error && <p className={styles.createError} role="alert">{error}</p>}
         </div>
       </OrnateFrame>

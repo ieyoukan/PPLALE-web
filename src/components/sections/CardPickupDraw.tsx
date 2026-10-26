@@ -1,7 +1,7 @@
 'use client';
 
 import { motion, useReducedMotion } from 'framer-motion';
-import Card from '@/components/card/Card';
+import Card from '@/components/shared/card/Card';
 import { allSweetCards, allYojoCards } from '@/data/cards';
 import type { CardInfo } from '@/types/card';
 import { css } from 'styled-system/css';

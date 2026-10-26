@@ -3,11 +3,13 @@
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
+import { ScreenSubtitle } from '@/components/shared/ui/ScreenSubtitle';
 import { lethalPuzzles, readClearedPuzzles } from '@/lib/game/puzzles';
 import { puzzleHref } from '@/lib/game/sessionStore';
 import previews from '@/data/lethalPuzzlePreviews.json';
 import { OrnateFrame } from '../ornament/OrnateFrame';
 import { PuzzleIcon } from './PuzzleIcon';
+import { PUZZLE_TAGLINE } from './copy';
 import styles from './Puzzles.module.css';
 
 export default function PuzzleLobby() {
@@ -15,6 +17,7 @@ export default function PuzzleLobby() {
   useEffect(() => { setCleared(readClearedPuzzles()); }, []);
   return <div className={styles.lobby}>
     <div className={styles.intro}>
+      <ScreenSubtitle>{PUZZLE_TAGLINE}</ScreenSubtitle>
       <progress max={lethalPuzzles.length} value={cleared.length} aria-label="パズルのクリア状況" />
       <span aria-label={`${lethalPuzzles.length}問中${cleared.length}問クリア`}>{cleared.length} / {lethalPuzzles.length}</span>
     </div>

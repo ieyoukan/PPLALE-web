@@ -3,7 +3,8 @@
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { useAuth } from '@/lib/auth';
-import type { Friendship, SocialPlayer } from '@/lib/game/social';
+import { ScreenSubtitle } from '@/components/shared/ui/ScreenSubtitle';
+import type { SocialPlayer } from '@/lib/game/social';
 import type { RoomInfo } from '@pplale/game-core/room';
 import { lookupRooms } from '@/lib/game/room/client';
 import { RecordedCard } from '../history/RecordedCard';
@@ -27,15 +28,14 @@ interface Group { room: RoomInfo; members: Member[] }
 export function SocialPage() {
   const { user, loading, signInWithGoogle } = useAuth();
   if (loading) return <p role="status">読み込み中…</p>;
-  if (!user) return <section className={`${styles.panel} ${styles.signIn}`}><h3 data-ui-title>フレンドと遊ぼう</h3><p>プロフィールを作って、フレンドの募集に参加しよう。</p><OrnateFrame as="button" size="sm" className={styles.cardButton} onClick={() => void signInWithGoogle()}><Icon name="heart" /><span data-ui-title>ログイン</span></OrnateFrame></section>;
+  if (!user) return <section className={styles.panel} aria-label="ソーシャル"><ScreenSubtitle>フレンドの現在地</ScreenSubtitle><div className={styles.signIn}><h3 data-ui-title>フレンドと遊ぼう</h3><p>プロフィールを作って、フレンドの募集に参加しよう。</p><OrnateFrame as="button" size="sm" className={styles.cardButton} onClick={() => void signInWithGoogle()}><span data-ui-title>ログイン</span></OrnateFrame></div></section>;
   return <Social key={user.uid} uid={user.uid} />;
 }
 function Social({ uid }: { uid: string }) {
   const me = useMyProfile();
-  const { friends, received, error, loading, busy, respond } = useSocial(uid);
+  const { friends, received, error, loading } = useSocial(uid);
   const [rooms, setRooms] = useState<Record<string, RoomInfo>>({}), [now, setNow] = useState(() => Date.now());
   const [ruleFilter, setRuleFilter] = useState<RoomRuleFilter>(allRoomRules);
-  const [remove, setRemove] = useState<Friendship | null>(null);
   const roomIds = [...new Set(friends.flatMap(player => [player.roomId, player.watching?.roomId].filter((id): id is string => !!id)))].sort().join(',');
   useEffect(() => {
     let current = true;
@@ -58,15 +58,10 @@ function Social({ uid }: { uid: string }) {
   }
   const ordered = [...groups.values()].sort((a, b) => placeOrder.indexOf(placeOf(a.room)) - placeOrder.indexOf(placeOf(b.room)) || a.room.id.localeCompare(b.room.id));
   const filtered = ordered.filter(group => matchesRoomRules(group.room, ruleFilter));
-  const tile = ({ profile, friendship }: SocialPlayer, place: string, status: string) => <FriendTile key={friendship.id} profile={profile} place={place} status={status}>
-    <button className={styles.more} aria-label={`${profile.displayName}をフレンドから外す`} onClick={() => setRemove(friendship)}><Icon name="more" /></button>
-    {remove?.id === friendship.id && <div className={styles.remove} role="dialog" aria-label="フレンドから外す">
-      <button disabled={!!busy} onClick={() => void respond(friendship, false).then(done => { if (done) setRemove(null); })}>外す</button><button onClick={() => setRemove(null)}>やめる</button>
-    </div>}
-  </FriendTile>;
+  const tile = ({ profile, friendship }: SocialPlayer, place: string, status: string) => <FriendTile key={friendship.id} profile={profile} place={place} status={status} />;
   return <section className={styles.panel} aria-label="ソーシャル">
     <header className={styles.socialHeading}>
-      <h3 data-ui-title><Icon name="heart" className={styles.beat} />フレンドの現在地<em>{friends.length}</em></h3>
+      <ScreenSubtitle suffix={`${friends.length}人`}>フレンドの現在地</ScreenSubtitle>
       <span className={styles.headingLinks}>
         <Link className={styles.bell} href={NOTIFICATIONS_PATH} aria-label={`通知${received.length ? ` ${received.length}件` : ''}`}><Icon name="bell" />{received.length > 0 && <em className={styles.badge}>{received.length}</em>}</Link>
         <Link className={styles.me} href="/game/profile/" aria-label="マイプロフィール">
@@ -77,7 +72,7 @@ function Social({ uid }: { uid: string }) {
     {error && <p className={styles.error} role="alert">{error}</p>}
     <RoomRuleFilters value={ruleFilter} onChange={setRuleFilter} />
     <Invitations filter={ruleFilter} />
-    {!friends.length && <div className={styles.empty} role="status"><Icon name="heart" /><p>{loading ? '読み込み中…' : 'プロフィールのリンクから、フレンドになろう。'}</p>{!loading && <Link className={styles.primary} href={NOTIFICATIONS_PATH}><Icon name="add" />フレンドを追加</Link>}</div>}
+    {!friends.length && <div className={styles.empty} role="status"><p>{loading ? '読み込み中…' : 'プロフィールのリンクから、フレンドになろう。'}</p>{!loading && <Link className={styles.primary} href={NOTIFICATIONS_PATH}><Icon name="add" />フレンドを追加</Link>}</div>}
     {ordered.length > 0 && filtered.length === 0 && <p className={styles.filterEmpty}>このルールのルームは見つかりません</p>}
     {filtered.map(({ room, members }) => {
       const place = placeOf(room);

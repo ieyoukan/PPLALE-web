@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { Suspense, useState } from 'react';
 import dynamic from 'next/dynamic';
 import { useBoardContext } from '../board/BoardContext';
 import type { Panel } from '../board/useBoard';
@@ -37,6 +37,7 @@ export function SidePanel() {
   const modal = panel?.type === 'skills';
   return <>
     <aside className={`${styles.drawer} ${styles.slideDrawer} ${drawer ? styles.drawerOpen : ''}`} inert={!drawer} aria-label="メニュー">
+      <Suspense fallback={null}>
       {last?.type === 'menu' && <MenuPanel />}
       {last?.type === 'logs' && <LogPanel />}
       {(last?.type === 'deck' || last?.type === 'counts') && <MatchInfoPanel kind={last.type} />}
@@ -50,13 +51,16 @@ export function SidePanel() {
       {drawer?.type === 'editMenu' && <EditMenuPanel />}
       {drawer?.type === 'play' && <PlayPanel />}
       {last?.type === 'zone' && <ZonePanel side={last.side} kind={last.kind} />}
+      </Suspense>
     </aside>
     {modal && <button className={styles.modalBackdrop} aria-label="スキルを閉じる" onClick={() => setPanel(null)} />}
     {(panel?.type === 'skills' || panel?.type === 'inspect') && <aside className={[styles.drawer, modal ? styles.skillModal : styles.inspection].join(' ')}
       role={modal ? 'dialog' : undefined} aria-modal={modal || undefined} aria-label={modal ? 'スキル' : 'カード情報'}>
+      <Suspense fallback={null}>
       {/* Both end with their own 閉じる, placed like the buttons of a hand card chosen in play. */}
       {panel.type === 'inspect' && <InspectPanel uid={panel.uid} />}
       {panel.type === 'skills' && <SkillPanel side={panel.side} />}
+      </Suspense>
     </aside>}
   </>;
 }

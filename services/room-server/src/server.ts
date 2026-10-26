@@ -9,6 +9,7 @@ import { profileNames } from './profile-names.ts';
 //   POST /rooms/{id}/join  { name }         → the guest's seat; a plaza: { name, invite } → a member secret
 //   POST /rooms/{id}/invite { member, to }  a signed-in member lets a friend into the plaza by name (and tells them)
 //   POST /rooms/lookup     { ids }          what the asker may know of several rooms at once (friends' rooms)
+//   POST /rooms/location   { to }           a friend's live location; inaccessible rooms expose only their visibility
 //   POST /rooms/ask        { to }           a signed-in player asks a friend's invited room to let them in
 //   POST /rooms/invited                     plazas that let the signed-in player in by name
 //   WS   /rooms/{id}/socket                 hello (the seat's or member's token), then actions ⇄ views;
@@ -484,6 +485,17 @@ export function createRoomServer({ config, backend, catalog, history, push = pus
             return { rooms: rooms.filter(room => room !== null) };
         }
         if (!uid || !token) throw new RoomError(401, 'ログインすると使えます');
+        if (name === 'location') {
+            const to = typeof body?.to === 'string' ? body.to : '';
+            if (!/^[\w-]{1,128}$/.test(to)) throw new RoomError(400, 'プロフィールが正しくありません');
+            if (to !== uid && (await friendshipBetween(token, uid, to))?.status !== 'accepted') throw new RoomError(403, '現在地はフレンドに公開しています');
+            const room = await plazaOf(to);
+            const member = room?.plaza?.members.find(member => member.profileId === to);
+            if (!room?.plaza || !member || !onlineMembers(await present(room.id)).has(member.id)) return { kind: 'offline' };
+            // Only a visitor already allowed in may see the room; everyone else sees its type alone.
+            if (!await mayEnter(room, askerOf(owners), token, null)) return { kind: 'private', visibility: room.plaza.visibility };
+            return { kind: 'room', room: plazaInfo(room) };
+        }
         if (name === 'invited') {
             const ids = (await indexOfRooms()).allowed.get(uid) ?? [];
             const rooms = await Promise.all(ids.slice(0, MAX_LOOKUP).map(id => backend.get(id)));
@@ -591,7 +603,7 @@ export function createRoomServer({ config, backend, catalog, history, push = pus
                 return send(response, 200, result.status);
             }
             if (route !== 'POST /rooms' && !id) return send(response, 404, { error: 'not found' });
-            if (request.method === 'POST' && !tail && (id === 'lookup' || id === 'ask' || id === 'invited')) {
+            if (request.method === 'POST' && !tail && (id === 'lookup' || id === 'ask' || id === 'invited' || id === 'location')) {
                 if (!(id === 'ask' ? allowed : lookupAllowed)(address(request))) throw new RoomError(429, '少し待ってからお試しください');
                 return send(response, 200, await plazaRequest(request, id));
             }

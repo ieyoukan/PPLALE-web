@@ -3,10 +3,9 @@ import { join } from 'node:path';
 import { ImageResponse } from 'next/og';
 import sharp from 'sharp';
 import { fruitNames } from '@pplale/game-core';
-import { fruitArt } from '@/lib/game/roomThumbnail';
 import type { RoomThumbnail } from '@/lib/game/roomThumbnail';
 
-// A room's share picture (Discord, X): the board's mat, the logo, the game's friends, and the fruits its rules allow.
+// The room thumbnail and share image: large fruit symbols, the logo and the game's friends.
 // It is chosen by the rules alone (roomThumbnail.ts), so every room with the same rules shares one
 // image, and nothing of who is in a room, its name or its invitation can be read from it.
 const WIDTH = 800;
@@ -37,33 +36,26 @@ async function font(text: string): Promise<ArrayBuffer> {
 }
 
 async function render({ fruits, extended, turn }: RoomThumbnail): Promise<Buffer> {
-  const title = 'ルームであそぼう！', chips = [extended ? '拡張プレイアブル' : '通常プレイアブル', turn ? `1ターン${turn / 60}分` : '時間無制限'];
+  const chips = [extended ? '拡張' : '通常', turn ? `${turn / 60}分` : '時間無制限'];
+  const symbols = { strawberry: '🍓', grape: '🍇', melon: '🍈', orange: '🍊' };
   const [bg, logo, friends, data] = await Promise.all([
-    backdrop(), picture('images/game/logo.webp', 300, 147),
-    // The supplied illustration of the game's friends, as on the battle entrance.
-    picture('images/game/characters/friends.webp', 440, 369, 'contain'),
-    font(`${title}${chips.join('')}${fruits.map(fruit => fruitNames[fruit]).join('')}ぷりえ`),
+    backdrop(), picture('images/game/logo.webp', 240, 118),
+    picture('images/game/characters/friends.webp', 320, 300, 'contain'),
+    font(chips.join('')),
   ]);
-  const outline = '0 3px 0 #fff, 3px 0 0 #fff, -3px 0 0 #fff, 0 -3px 0 #fff';
   const response = new ImageResponse(
     <div style={{ width: '100%', height: '100%', display: 'flex', fontFamily: FONT, background: '#fff9ef' }}>
       {/* eslint-disable-next-line @next/next/no-img-element -- Satori draws plain img */}
       <img alt="" src={bg} width={WIDTH} height={HEIGHT} style={{ position: 'absolute', left: 0, top: 0 }} />
       {/* eslint-disable-next-line @next/next/no-img-element -- Satori draws plain img */}
-      <img alt="" src={friends} width={440} height={369} style={{ position: 'absolute', right: -10, bottom: -6 }} />
-      <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start', justifyContent: 'center', width: 400, height: '100%', padding: '0 0 0 40px' }}>
-        {/* eslint-disable-next-line @next/next/no-img-element -- Satori draws plain img */}
-        <img alt="" src={logo} width={270} height={132} />
-        <div style={{ display: 'flex', marginTop: 14, fontSize: 38, whiteSpace: 'nowrap', color: '#785858', textShadow: outline }}>{title}</div>
-        {/* The fruits the decks may use, each in its own colour. */}
-        <div style={{ display: 'flex', gap: 6, marginTop: 16 }}>
-          {fruits.map(fruit => <div key={fruit} style={{ display: 'flex', alignItems: 'center', gap: 5, padding: '5px 12px 5px 7px', borderRadius: 30, background: '#fff', border: `3px solid ${fruitArt[fruit].tone}`, color: '#634747', fontSize: 17 }}>
-            <div style={{ display: 'flex', width: 14, height: 14, borderRadius: 14, background: fruitArt[fruit].tone }} />{fruitNames[fruit]}
-          </div>)}
-        </div>
-        <div style={{ display: 'flex', gap: 8, marginTop: 10 }}>
-          {chips.map(chip => <div key={chip} style={{ display: 'flex', padding: '6px 16px', borderRadius: 30, background: '#fff', border: '3px solid #e8c8c8', color: '#634747', fontSize: 19 }}>{chip}</div>)}
-        </div>
+      <img alt="" src={friends} width={320} height={300} style={{ position: 'absolute', right: 0, bottom: 32 }} />
+      {/* eslint-disable-next-line @next/next/no-img-element -- Satori draws plain img */}
+      <img alt="" src={logo} width={240} height={118} style={{ position: 'absolute', right: 40, top: 8 }} />
+      <div style={{ position: 'absolute', left: 24, top: 16, width: 440, height: 330, display: 'flex', flexWrap: 'wrap', justifyContent: 'center', alignItems: 'center' }}>
+        {fruits.map(fruit => <div key={fruit} aria-label={fruitNames[fruit]} style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', width: fruits.length > 1 ? 210 : 400, height: fruits.length > 2 ? 160 : 300, fontSize: fruits.length > 2 ? 136 : fruits.length > 1 ? 170 : 240 }}>{symbols[fruit]}</div>)}
+      </div>
+      <div style={{ position: 'absolute', left: 40, bottom: 22, display: 'flex', gap: 12 }}>
+        {chips.map(chip => <div key={chip} style={{ display: 'flex', padding: '8px 20px', borderRadius: 6, background: '#fff8f0', color: '#634747', fontSize: 26 }}>{chip}</div>)}
       </div>
     </div>,
     { width: WIDTH, height: HEIGHT, fonts: [{ name: FONT, data, weight: 800, style: 'normal' }] },

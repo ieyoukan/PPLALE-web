@@ -12,6 +12,13 @@ test('Unicode ranges are exact and compact at block boundaries', () => {
   assert.equal(unicodeRanges([0x100, 0xFE, 0xFF, 0x100, 0x102]), 'U+FE-100,U+102');
 });
 
+test('menu font extraction covers the current split launchpad and its shared copy', async () => {
+  const points = await gameMenuCodePoints();
+  for (const character of 'ソーシャルいまのルームプロフィールロリの一手を極めるために') {
+    assert.ok(points.has(character.codePointAt(0)), `menu character missing: ${character}`);
+  }
+});
+
 for (const font of manifest) {
   test(`${font.family} ${font.weight}: preserve all characters and glyphs across disjoint subsets`, async () => {
     const source = create(await readFile(new URL(`.cache/site-fonts/${font.file}`, root)));

@@ -6,14 +6,15 @@ import type { PlazaIconName } from './PlazaIcon';
 
 /** The launchpad's own tabs, then the game's screens. */
 export type Section = 'home' | 'notifications' | 'instance' | 'volume' | 'settings'
-  | 'cpu' | 'battle' | 'free' | 'history' | 'puzzles' | 'cards' | 'zukan' | 'editor' | 'social' | 'profile' | 'performance';
+  | 'discover' | 'cpu' | 'battle' | 'free' | 'history' | 'puzzles' | 'cards' | 'zukan' | 'editor' | 'social' | 'profile' | 'performance';
 /** A section, and for a profile whose it is (none: the player's own). */
 export interface Place { section: Section; id?: string }
 
 export const sectionInfo: Record<Section, { label: string; icon: PlazaIconName }> = {
   home: { label: 'ランチパッド', icon: 'rocket' },
+  discover: { label: 'いまのぷぷりえーる', icon: 'star' },
   notifications: { label: '通知', icon: 'bell' },
-  instance: { label: 'いまのインスタンス', icon: 'pin' },
+  instance: { label: 'いまのルーム', icon: 'pin' },
   volume: { label: '音量', icon: 'volume' },
   settings: { label: '設定', icon: 'gear' },
   cpu: { label: 'CPU対決', icon: 'cpu' },
@@ -24,7 +25,7 @@ export const sectionInfo: Record<Section, { label: string; icon: PlazaIconName }
   cards: { label: 'カード', icon: 'cards' },
   zukan: { label: 'カード図鑑', icon: 'cards' },
   editor: { label: '盤面エディタ', icon: 'pen' },
-  social: { label: 'ソーシャル', icon: 'heart' },
+  social: { label: 'ソーシャル', icon: 'social' },
   profile: { label: 'プロフィール', icon: 'star' },
   performance: { label: '通信計測', icon: 'history' },
 };

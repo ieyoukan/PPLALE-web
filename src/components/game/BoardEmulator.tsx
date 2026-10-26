@@ -2,7 +2,7 @@
 
 // Layout of the game screen. Rules live in @pplale/game-core, interaction state in board/useBoard,
 // each visible region in table/ and the drawers in panels/.
-import { useEffect, useRef } from 'react';
+import { Suspense, useEffect, useRef } from 'react';
 import type { CSSProperties } from 'react';
 import Image from 'next/image';
 import dynamic from 'next/dynamic';
@@ -105,10 +105,11 @@ export function BoardTable({ session }: { session: BoardSession }) {
       <SelectedCard />
       {/* While the replacements are drawn the table itself is used: the decks glow and the hand shows. */}
       {mulligan.remaining > 0 && board.canControl(view) && <div className={styles.drawHint} role="status">あと{mulligan.remaining}枚、好きな山札から引く</div>}
-      {game.phase === 'mulligan' && !game.pending && mulligan.remaining === 0 && !remote?.watching && <MulliganBoard key={view}
+      {/* Loading an overlay must never suspend the room's whole board. */}
+      {game.phase === 'mulligan' && !game.pending && mulligan.remaining === 0 && !remote?.watching && <Suspense fallback={null}><MulliganBoard key={view}
         cards={me.hand.map(uid => ({ uid, id: game.cards[uid].cardId, name: displayCards[game.cards[uid].cardId].name, deck: gameCatalog[game.cards[uid].cardId].type as DeckKind }))}
         selected={mulligan.selected} enabled={mulligan.enabled} confirmed={game.mulligan.confirmed[view]}
-        onToggle={mulligan.toggle} onConfirm={mulligan.confirm} />}
+        onToggle={mulligan.toggle} onConfirm={mulligan.confirm} /></Suspense>}
       <SidePanel />
       <CardPicker />
       <HeldCard />

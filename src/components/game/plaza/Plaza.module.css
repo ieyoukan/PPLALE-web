@@ -2,7 +2,7 @@
    down like the board's toolbar, and the logo's blush, vanilla and leaf green as accents. */
 .table {
   position: absolute; inset: 0; display: grid; gap: 14px; padding: 14px 18px 16px; color: var(--brand-cocoa-deep);
-  grid-template: "top top top" 64px "people mat side" minmax(0, 1fr) "people actions side" 104px / 232px minmax(0, 1fr) 232px;
+  grid-template: "top top top" 64px "people mat mat" minmax(0, 1fr) "people side side" 104px / 200px minmax(0, 1fr) 200px;
   background: radial-gradient(ellipse at 50% 45%, #ffffff12, transparent 65%), repeating-linear-gradient(1deg, #ffffff04 0 1px, transparent 1px 8px),
     repeating-linear-gradient(0deg, #2b170c35 0 1px, transparent 1px 12px), linear-gradient(90deg, #503729, #72533b 28%, #765339 75%, #503729);
   font-size: 16px;
@@ -47,10 +47,13 @@ a.person:hover { background: #fff3d61a; }
 .crown { color: var(--brand-vanilla); }
 
 /* Portraits: the profile's card, cropped to the face like the friends list. */
-/* A member's card, whole and as printed: no ring, no rounding (docs/design-system.md). */
+/* Player identities use icons; deck previews remain whole cards. */
 .avatar { position: relative; display: inline-grid; place-items: center; flex: none; filter: none; }
-.avatar img { object-fit: contain; }
-.avatar[data-cpu] { color: #fff8f0; font-size: 1.9em; }
+.avatar { overflow: hidden; border-radius: 50%; background: var(--brand-cream); }
+.avatar img { object-fit: cover; object-position: center 22%; transform: scale(1.65); }
+.avatar[data-cpu] img { display: none; }
+.avatar[data-cpu] { background: var(--brand-sage); color: var(--brand-cocoa-deep); }
+.avatar[data-cpu] { font-size: 1.9em; }
 .avatar[data-cpu] svg { position: relative; filter: none; }
 .avatar[data-dim] { filter: grayscale(.7) brightness(.9); }
 
@@ -103,9 +106,7 @@ a.person:hover { background: #fff3d61a; }
 /* ── Right: the rules, and who looks after them ── */
 .side { grid-area: side; display: flex; flex-direction: column; gap: 12px; min-height: 0; }
 .rulesCard { --pad: 18px; display: grid; gap: 10px; border: 0; background: none; color: var(--brand-cocoa-deep); text-align: left; filter: none; }
-.fruits { display: grid; grid-template-columns: repeat(2, 1fr); gap: 6px; }
-.fruits > span { position: relative; aspect-ratio: 16 / 9; overflow: hidden; }
-.fruits img { object-fit: cover; }
+.rulesThumbnail { display: block; width: 100%; height: auto; aspect-ratio: 800 / 420; object-fit: contain; }
 .ruleChips { display: flex; flex-wrap: wrap; gap: 6px; }
 .ruleChips span { display: inline-flex; align-items: center; gap: 4px; padding: 3px 10px; border-radius: 999px; background: var(--brand-vanilla-wash); font-weight: 700; font-size: 14px; }
 .editHint { position: absolute; top: 4px; right: 44px; display: flex; align-items: center; gap: 3px; padding: 2px 10px; background: var(--brand-cocoa); color: #fff8f0; font-size: 12px; font-weight: 700; }
@@ -125,7 +126,6 @@ a.person:hover { background: #fff3d61a; }
 .deckName b { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 18px; }
 /* ── Large buttons: a card of their own, in the ornament frame (OrnateFrame as a button) ── */
 .ready, .primaryButton, .discordButton { border: 0; background: none; cursor: pointer; transition: transform .12s ease, filter .12s ease; }
-:is(.ready, .primaryButton, .discordButton):hover:not(:disabled) { transform: translateY(-2px); }
 :is(.ready, .primaryButton, .discordButton):active:not(:disabled) { transform: translateY(2px); }
 .ready {
   --pad: 0 36px; --frame-face: var(--brand-blush);
@@ -147,13 +147,13 @@ a.person:hover { background: #fff3d61a; }
 .toast { position: absolute; left: 50%; bottom: 128px; z-index: 6; transform: translateX(-50%); max-width: 70%; padding: 10px 22px; border-radius: 999px; background: var(--brand-cocoa-deep); color: #fff8f0; font-size: 15px; box-shadow: none; animation: popIn .3s ease both; }
 
 /* ── Sheets ── */
-.sheetBackdrop { position: absolute; inset: 0; z-index: 60; display: grid; place-items: center; padding: 24px; background: #3a2420a6; backdrop-filter: blur(4px); animation: fade .2s ease both; }
-.sheet { --pad: 26px 34px 30px; display: flex; flex-direction: column; width: min(580px, 100%); max-height: 100%; color: var(--brand-cocoa-deep); filter: none; animation: rise .32s cubic-bezier(.25, 1.3, .5, 1) both; }
+.sheetBackdrop { position: absolute; inset: 0; z-index: 60; display: grid; grid-template: minmax(0, 1fr) / minmax(0, 1fr); place-items: center; min-height: 0; padding: 24px; background: #3a2420a6; backdrop-filter: blur(4px); animation: fade .2s ease both; }
+.sheet { --pad: 26px 34px 30px; display: flex; flex-direction: column; width: min(580px, 100%); min-height: 0; max-height: 100%; overflow: hidden; color: var(--brand-cocoa-deep); filter: none; animation: rise .32s cubic-bezier(.25, 1.3, .5, 1) both; }
 .sheetWide { width: min(900px, 100%); }
-.sheetHead { position: relative; display: flex; align-items: center; justify-content: center; gap: 12px; padding: 4px 48px 12px; }
+.sheetHead { position: relative; flex-shrink: 0; display: flex; align-items: center; justify-content: center; gap: 12px; padding: 4px 48px 12px; }
 .sheetHead h2 { font-size: 24px; color: var(--brand-cocoa); text-align: center; }
 .sheetHead .round { position: absolute; right: 0; top: 0; width: 42px; height: 42px; font-size: 20px; }
-.sheetBody { display: grid; gap: 14px; min-height: 0; overflow: auto; padding: 4px 2px 0; }
+.sheetBody { display: grid; align-content: start; flex: 1 1 auto; gap: 14px; min-height: 0; overflow: auto; overscroll-behavior: contain; touch-action: manipulation; padding: 4px 2px 0; }
 .sheetFoot { display: flex; flex-wrap: wrap; align-items: center; justify-content: center; gap: 12px; }
 .softButton { display: inline-flex; align-items: center; gap: 6px; padding: 10px 18px; font-size: 15px; font-weight: 700; text-decoration: none; }
 .primaryButton { --pad: 16px 36px; --frame-face: var(--brand-blush); display: inline-flex; align-items: center; gap: 8px; color: var(--brand-cocoa-deep); font-size: 20px; filter: none; }
@@ -161,7 +161,7 @@ a.person:hover { background: #fff3d61a; }
 .note { font-size: 14px; color: var(--brand-cocoa-soft); text-align: center; }
 .readOnly { pointer-events: none; opacity: .85; }
 .deckGrid, .cpuGrid { display: grid; gap: 12px; list-style: none; margin: 0; padding: 0; }
-.deckGrid { grid-template-columns: repeat(auto-fill, minmax(168px, 1fr)); }
+.deckGrid { grid-template-columns: repeat(auto-fill, minmax(min(240px, 100%), 1fr)); }
 .cpuGrid { grid-template-columns: repeat(4, 1fr); }
 .opponentChoices { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; }
 .opponentChoices button { display: grid; justify-items: center; align-content: center; gap: 9px; min-height: 108px; border: 2px solid var(--brand-pink-edge); border-radius: 6px; background: var(--brand-paper); color: var(--brand-cocoa-deep); font-size: 17px; font-weight: 700; cursor: pointer; }
@@ -169,13 +169,14 @@ a.person:hover { background: #fff3d61a; }
 .opponentChoices button:focus-visible { outline: 3px solid var(--brand-cocoa); outline-offset: 2px; }
 .opponentChoices svg { font-size: 36px; color: var(--brand-cocoa); }
 .deckTile, .cpuTile { --pad: 16px 10px 14px; display: grid; justify-items: center; gap: 6px; width: 100%; border: 0; background: none; color: var(--brand-cocoa-deep); cursor: pointer; transition: transform .12s ease; }
-.deckTile:hover:not(:disabled), .cpuTile:hover { transform: translateY(-3px); }
 .deckTile[aria-pressed=true] { --frame-face: var(--brand-blush); }
 .deckTile:disabled { opacity: .45; cursor: default; }
 .deckTile b, .cpuTile b { font-size: 16px; }
 .deckTile small { font-size: 12px; color: var(--brand-cocoa-soft); }
-.deckTileArt { display: grid; place-items: center; height: 78px; }
-.randomDeck { display: grid; place-items: center; width: 50px; height: 75px; background: var(--brand-vanilla-wash); font-size: 30px; color: #b8862b; }
+.deckTileArt { display: grid; place-items: center; width: 100%; overflow: hidden; }
+.deckTileArt > div { width: 100%; border-radius: 0; background: var(--brand-cream); }
+.deckTile[data-unusable] .deckTileArt { opacity: .45; }
+.randomDeck { display: grid; place-items: center; width: 100%; height: 100%; background: var(--brand-vanilla-wash); font-size: 52px; color: var(--brand-cocoa); }
 .tileCheck { position: absolute; top: 10px; right: 12px; display: grid; place-items: center; width: 26px; height: 26px; background: var(--brand-cocoa); color: #fff; font-size: 15px; clip-path: polygon(50% 0, 100% 50%, 50% 100%, 0 50%); }
 .cpuTile b { font-size: 20px; }
 /* Stronger CPUs, warmer tiles. */
@@ -239,7 +240,43 @@ a.person:hover { background: #fff3d61a; }
 .friendInvites { display: grid; gap: 8px; }
 .friendInvites h3 { display: flex; align-items: center; gap: 6px; font-size: 16px; color: var(--brand-cocoa); }
 .friendInvites ul { display: grid; gap: 6px; max-height: 220px; overflow: auto; list-style: none; margin: 0; padding: 2px; }
-.friendInvites li { display: flex; align-items: center; gap: 10px; padding: 5px 4px; border-bottom: 1px solid var(--brand-pink); }
+.friendInvites li { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; padding: 5px 4px; border-bottom: 1px solid var(--brand-pink); }
 .friendInvites li > span:not(.avatar) { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-weight: 700; }
 .friendInvites button { display: inline-flex; align-items: center; gap: 4px; padding: 6px 14px; border: 0; border-radius: 6px; background: var(--brand-pink); color: var(--brand-cocoa-deep); font-weight: 700; cursor: pointer; }
 .friendInvites button[data-state=sent] { background: var(--brand-sage-wash); cursor: default; }
+.friendInvites li > [role=alert] { flex-basis: 100%; white-space: normal; font-size: 13px; }
+
+/* Preparation stays beside the player's identity; shared rules sit in the middle. */
+.seatActions { display: grid; gap: 6px; width: 100%; min-width: 0; }
+.seatActions .deckChip { --pad: 8px 12px; gap: 8px; min-height: 54px; width: 100%; }
+.seatActions .deckArt { width: 28px; height: 42px; }
+.deckPortrait { position: relative; width: 100%; height: 100%; }
+.deckPortrait img { object-fit: contain; }
+.seatActions .deckName b { font-size: 14px; }
+.seatActions .ready { --pad: 10px; min-width: 0; width: 100%; height: 54px; font-size: 21px; }
+.seatActions .readyDone { gap: 3px; }
+.seatActions .readyDone small { font-size: 10px; }
+.side { align-items: center; justify-content: center; gap: 3px; }
+.rulesCard { --pad: 10px 22px; width: min(340px, 100%); grid-template-columns: 116px minmax(0, 1fr); gap: 4px 12px; align-items: center; }
+.ruleChips { flex-direction: column; }
+.actions { position: absolute; left: 220px; right: 18px; bottom: 128px; pointer-events: none; }
+
+.stand { transform: rotateZ(-90deg) rotateX(calc(-1 * var(--tilt))) translateZ(2px) translate(-50%, -75%); }
+.playerSeat { position: relative; padding: 12px; }
+.playerSeat .seatName b { color: var(--brand-cream); }
+.playerSeat .seatName small { color: var(--brand-cocoa-deep); }
+.rulesCard .editHint { position: static; grid-column: 2; justify-self: center; padding: 0; background: none; color: var(--brand-cocoa-deep); }
+
+/* Seats are upright UI above the 3D board so the board cannot cover their controls. */
+.mat > .spot { top: 48%; left: 2%; width: 214px; height: auto; z-index: 2; transform-style: flat; }
+.mat > .spot[data-seat='1'] { left: auto; right: 2%; }
+.mat > .spot > .stand { position: relative; width: 100%; transform: translateY(-50%); }
+.mat > .spot > .shadow { display: none; }
+
+.leaveSeat { display: inline-flex; align-items: center; justify-content: center; gap: 5px; min-height: 36px; padding: 6px 10px; border: 1px solid var(--brand-pink-edge); border-radius: 6px; background: var(--brand-cream); color: var(--brand-cocoa-deep); font-size: 13px; }
+.leaveSeat svg { width: 18px; height: 18px; }
+.leaveSeat:hover:not(:disabled) { background: var(--brand-blush); }
+
+.rulesThumbnail { grid-row: 1 / 3; }
+.rulesCard .ruleChips { flex-direction: row; gap: 4px; }
+.rulesCard .ruleChips span { padding: 3px 6px; font-size: 12px; }

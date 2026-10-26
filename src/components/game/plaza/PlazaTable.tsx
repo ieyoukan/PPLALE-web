@@ -4,11 +4,10 @@
 // rules, and (for whoever sits) the deck and 準備OK. Taking a seat, calling the CPU or getting ready
 // are single taps on the table itself; what needs choosing rises as a sheet over it.
 // The table stands in the room in 3D with the match's board lying on it, seen from its side: a seat
-// at each end. When the match starts the board itself comes round (PlazaRoom), this player's seat to
+// at each end. Upright seat controls sit above it. When the match starts the board comes round, the player's seat to
 // the front, and is looked down on from above.
 import { useEffect, useState } from 'react';
 import type { ReactNode } from 'react';
-import Image from 'next/image';
 import Link from 'next/link';
 import { cpuLevels } from '@pplale/game-core';
 import type { Side } from '@pplale/game-core';
@@ -16,23 +15,24 @@ import type { RoomAction, RoomPlayer, RoomView } from '@pplale/game-core/room';
 import { useAuth } from '@/lib/auth';
 import { usableChoice } from '@/lib/game/deckSources';
 import { randomSeed } from '@/lib/game/match';
-import { fruitArt, roomThumbnail } from '@/lib/game/roomThumbnail';
 import { useDeckChoices } from '../DeckSelect';
 import { useRoomPreparation } from '../room/useRoomPreparation';
 import { OrnateFrame } from '../ornament/OrnateFrame';
 import { Avatar } from './Avatar';
+import { RecordedCard } from '../history/RecordedCard';
 import { BoardSurface } from './BoardSurface';
-import { CpuSheet, DeckSheet, OpponentSheet, RulesSheet } from './PlazaSheets';
+import { CpuSheet, DeckContentsSheet, DeckSheet, OpponentSheet, RulesSheet } from './PlazaSheets';
 import { RoomNameSheet } from './RoomManagementSheets';
+import { RoomThumbnailImage } from './RoomThumbnailImage';
 import { ShareSheet } from './ShareSheet';
-import { DiscordMark, PlazaIcon } from './PlazaIcon';
+import { PlazaIcon } from './PlazaIcon';
 import { usePlaza } from './PlazaProvider';
 import { guestIcon, useProfiles } from './useProfiles';
 import { visibilityInfo } from './visibility';
 import styles from './Plaza.module.css';
 
 const DECK_KEY = 'pplale-plaza-deck-v1';
-type Open = null | 'deck' | 'rules' | 'share' | 'name' | { opponent: Side } | { cpu: Side };
+type Open = null | 'deck' | 'deckContents' | 'rules' | 'share' | 'name' | { opponent: Side } | { cpu: Side };
 
 /** The deck this browser chose last, so the next match starts with it already chosen. */
 function useChosenDeck() {
@@ -82,13 +82,22 @@ export function PlazaTable({ view, onMenu }: { view: RoomView; onMenu: () => voi
         </button>}
     </OrnateFrame>;
     const self = side === mySeat;
-    return <OrnateFrame size="sm" className={styles.seat} data-ready={player.ready || undefined} data-self={self || undefined} key={`${player.member ?? player.cpu}-${side}`}>
+    return <div className={`${styles.seat} ${styles.playerSeat}`} data-ready={player.ready || undefined} data-self={self || undefined} key={`${player.member ?? player.cpu}-${side}`}>
       <Avatar card={iconOf(player.member, player.profileId)} cpu={!!player.cpu} size={104} dim={!player.online} />
       <span className={styles.seatName}><b data-ui-title>{player.name}</b>{self && <small>あなた</small>}</span>
-      <SeatState player={player} />
-      {self && <button className={styles.seatCorner} disabled={busy} onClick={() => ask({ action: 'stand' })} aria-label="席を立つ"><PlazaIcon name="stand" /></button>}
+      {!self && <SeatState player={player} />}
+      {self && me && <div className={styles.seatActions}>
+        <OrnateFrame as="button" size="sm" className={styles.deckChip} disabled={busy} onClick={() => setOpen(me.ready && chosen ? 'deckContents' : 'deck')} aria-label={`デッキ: ${chosen?.name ?? 'なし'}`}>
+          <span className={styles.deckArt}><PlayableArt id={chosen && chosen.source !== 'random' ? chosen.deck(0).playable : undefined} /></span>
+          <span className={styles.deckName}><small>デッキ</small><b>{chosen?.name ?? 'えらぶ'}</b></span>
+        </OrnateFrame>
+        {me.ready
+          ? <OrnateFrame as="button" size="sm" className={`${styles.ready} ${styles.readyDone}`} disabled={busy} onClick={() => ask({ action: 'unready' })}><PlazaIcon name="check" /><span data-ui-title>じゅんびOK</span><small>タップでやめる</small></OrnateFrame>
+          : <OrnateFrame as="button" size="sm" className={styles.ready} disabled={busy || !chosen} onClick={ready}><span data-ui-title>じゅんびOK!</span></OrnateFrame>}
+      </div>}
+      {self && <button className={styles.leaveSeat} disabled={busy} onClick={() => ask({ action: 'stand' })} aria-label="席を立つ"><PlazaIcon name="exit" /><span data-ui-title>席を立つ</span></button>}
       {player.cpu && <button className={styles.seatCorner} disabled={busy} onClick={() => ask({ action: 'dismissCpu' })} aria-label="CPUに帰ってもらう"><PlazaIcon name="close" /></button>}
-    </OrnateFrame>;
+    </div>;
   };
 
   return <div className={styles.table}>
@@ -100,7 +109,7 @@ export function PlazaTable({ view, onMenu }: { view: RoomView; onMenu: () => voi
       </OrnateFrame>
       <div className={styles.topActions}>
         {room.owner === room.me && <button className={styles.round} onClick={() => setOpen('name')} aria-label="ルーム名を変える"><PlazaIcon name="pen" /></button>}
-        <button className={styles.inviteButton} onClick={() => setOpen('share')}><DiscordMark /><span data-ui-title>さそう</span></button>
+        <button className={styles.inviteButton} onClick={() => setOpen('share')}><PlazaIcon name="letter" /><span data-ui-title>さそう</span></button>
         <button className={styles.round} onClick={onMenu} aria-label="メニュー"><PlazaIcon name="grid" /></button>
       </div>
     </header>
@@ -122,39 +131,29 @@ export function PlazaTable({ view, onMenu }: { view: RoomView; onMenu: () => voi
       {/* The board with seat 0's half nearest, turned a quarter so seat 0 is at the left end and seat 1 at the right. */}
       <div className={styles.tableTop}>
         <BoardSurface className={styles.surface} />
+      </div>
         {([0, 1] as const).map(side => <div key={side} className={styles.spot} data-seat={side}>
           <span className={styles.shadow} aria-hidden="true" />
           <div className={styles.stand}>{seat(side)}</div>
         </div>)}
-      </div>
     </div>
 
     <aside className={styles.side}>
       <OrnateFrame as="button" size="sm" className={styles.rulesCard} onClick={() => setOpen('rules')} aria-label="ルール">
-        <span className={styles.fruits}>{roomThumbnail(view.rules).fruits.map(fruit => <span key={fruit} style={{ background: fruitArt[fruit].tone }}><Image src={fruitArt[fruit].image} alt="" fill sizes="80px" /></span>)}</span>
+        <RoomThumbnailImage rules={view.rules} alt="ルームのルール" className={styles.rulesThumbnail} sizes="180px" />
         <span className={styles.ruleChips}>
           <span><PlazaIcon name="star" />{view.rules.extendedPlayable ? '拡張' : '通常'}</span>
           <span><PlazaIcon name="timer" />{view.rules.turnSeconds ? `${view.rules.turnSeconds / 60}分` : '∞'}</span>
         </span>
-        {room.owner === room.me && <small className={styles.editHint}><PlazaIcon name="pen" />かえる</small>}
+        {room.owner === room.me && <small className={styles.editHint}><PlazaIcon name="pen" />ルールをかえる</small>}
       </OrnateFrame>
       {owner ? <span className={styles.ownerChip}><PlazaIcon name="crown" />{owner.id === room.me ? 'あなたがオーナー' : owner.name}</span>
         : <button className={styles.claim} disabled={busy} onClick={() => ask({ action: 'claim' })}><PlazaIcon name="crown" /><span data-ui-title>オーナーになる</span></button>}
     </aside>
 
-    <footer className={styles.actions}>
-      {me ? <>
-        <OrnateFrame as="button" size="sm" className={styles.deckChip} disabled={me.ready || busy} onClick={() => setOpen('deck')} aria-label={`デッキ: ${chosen?.name ?? 'なし'}`}>
-          <span className={styles.deckArt}><PlayableArt id={chosen && chosen.source !== 'random' ? chosen.deck(0).playable : undefined} /></span>
-          <span className={styles.deckName}><small>デッキ</small><b>{chosen?.name ?? 'えらぶ'}</b></span>
-        </OrnateFrame>
-        {me.ready
-          ? <OrnateFrame as="button" size="sm" className={`${styles.ready} ${styles.readyDone}`} disabled={busy} onClick={() => ask({ action: 'unready' })}><PlazaIcon name="check" /><span data-ui-title>じゅんびOK</span><small>タップでやめる</small></OrnateFrame>
-          : <OrnateFrame as="button" size="sm" className={styles.ready} disabled={busy || !chosen} onClick={ready}><span data-ui-title>じゅんびOK!</span></OrnateFrame>}
-      </> : empty.length
-        ? <OrnateFrame as="p" size="sm" className={styles.hint}><PlazaIcon name="seat" /><span>空いている席をタップして、対戦にさんか</span></OrnateFrame>
-        : <OrnateFrame as="p" size="sm" className={styles.hint}><PlazaIcon name="eye" /><span>席があくのを待っています</span></OrnateFrame>}
-    </footer>
+    {!me && empty.length === 0 && <footer className={styles.actions}>
+      <OrnateFrame as="p" size="sm" className={styles.hint}><PlazaIcon name="eye" /><span>席があくのを待っています</span></OrnateFrame>
+    </footer>}
 
     {!!room.requests?.length && <div className={styles.requests} role="region" aria-label="入りたい人">{room.requests.map(request => <OrnateFrame size="sm" key={request.profileId} className={styles.request}>
       <PlazaIcon name="letter" /><span><b>{request.name}</b>が入りたいって</span>
@@ -165,6 +164,7 @@ export function PlazaTable({ view, onMenu }: { view: RoomView; onMenu: () => voi
     {(error || saved.error) && <p className={styles.toast} role="alert">{error || saved.error}</p>}
     {!plaza.linked && <p className={styles.toast} role="status">再接続しています…</p>}
 
+    {open === 'deckContents' && chosen && <DeckContentsSheet choice={chosen} onClose={() => setOpen(null)} onAction={me && !me.ready ? () => setOpen('deck') : undefined} actionLabel="デッキを変更" />}
     {open === 'deck' && <DeckSheet choices={choices} chosen={chosen} onChoose={id => { choose(id); setOpen(null); }} onClose={() => setOpen(null)}
       signIn={user ? undefined : () => { signInWithGoogle().catch(() => setError('ログインできませんでした')); }} loading={saved.loading} />}
     {open === 'rules' && <RulesSheet view={view} onClose={() => setOpen(null)} onSave={rules => { setOpen(null); ask({ action: 'rules', rules }); }} />}
@@ -189,7 +189,7 @@ function SeatState({ player }: { player: RoomPlayer }) {
 
 /** The deck's playable, or (おまかせ: made when the match starts) a pile of cards. */
 function PlayableArt({ id }: { id?: string }) {
-  return id ? <Avatar card={id} size={60} /> : <PlazaIcon name="cards" />;
+  return id ? <span className={styles.deckPortrait}><RecordedCard id={id} sizes="60px" /></span> : <PlazaIcon name="cards" />;
 }
 
 function MemberLink({ profileId, children }: { profileId?: string; children: ReactNode }) {

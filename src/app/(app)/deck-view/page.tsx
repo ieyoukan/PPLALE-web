@@ -4,6 +4,7 @@ import React, { useState, useEffect } from 'react';
 import { CardInfo } from '@/types/card';
 import { getCardCatalog } from '@/data/catalog';
 import { useI18n } from '@/i18n/LocaleProvider';
+import { DECK_IMAGE_WIDTH, DECK_IMAGE_HEIGHT } from '@/lib/deckImageLayout';
 import { generateDeckImageDataUrl } from '@/components/deck/DeckImagePreview';
 import Image from 'next/image';
 import { css } from 'styled-system/css';
@@ -185,7 +186,7 @@ export default function DeckViewPage() {
           <div className={`main-background ${css({ p: '6', rounded: 'lg' })}`}>
             <h2 className={`main-color ${css({ fontSize: 'xl', fontWeight: 'bold', mb: '4' })}`}>{locale === 'ja' ? '生成されたデッキ画像' : 'Generated deck image'}</h2>
             <div className={css({ mb: '4' })}>
-              <Image src={deckImage} alt={t('デッキ画像')} width={1920} height={1080}
+              <Image src={deckImage} alt={t('デッキ画像')} width={DECK_IMAGE_WIDTH} height={DECK_IMAGE_HEIGHT}
                 className={css({ w: 'full', h: 'auto', rounded: 'lg', boxShadow: 'lg' })} unoptimized />
             </div>
             <div className={css({ display: 'flex', justifyContent: 'center' })}>

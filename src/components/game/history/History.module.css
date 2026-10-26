@@ -24,7 +24,6 @@
 .star { display: grid; place-items: center; place-self: center; height: 44px; width: 32px; padding: 0; border: 0; background: transparent; color: var(--brand-cocoa-soft); line-height: 1; cursor: pointer; transition: transform .2s, color .2s; }
 .star svg { display: block; width: 26px; height: 26px; fill: none; stroke: currentColor; stroke-width: 1.6; stroke-linejoin: round; }
 .star[aria-pressed=true] svg { fill: currentColor; }
-.star:hover { transform: translateY(-2px); }
 .star[aria-pressed=true] { color: #9a6b1f; }
 /* The opponent's playable, the whole card at 2:3. */
 .avatar { position: relative; display: block; width: 44px; aspect-ratio: 2 / 3; }
@@ -41,7 +40,7 @@
 .entryActions { display: grid; gap: 8px; }
 /* Small buttons: squares, a little rounded. リプレイ is the one to press. */
 .entryActions button:first-child,.more,.emptyLink { display: inline-flex; align-items: center; justify-content: center; gap: 8px; min-height: 42px; padding: 9px 12px; border: 1px solid var(--brand-pink-edge); border-radius: 6px; background: var(--brand-blush); color: var(--brand-cocoa-deep); font-size: 13px; font-weight: 700; text-align: center; text-decoration: none; cursor: pointer; transition: background .2s, transform .2s; }
-.entryActions button:first-child:hover,.more:hover,.emptyLink:hover { background: var(--brand-pink); transform: translateY(-1px); }
+.entryActions button:first-child:hover,.more:hover,.emptyLink:hover { background: var(--brand-pink); }
 .entryActions button:last-child { min-height: 32px; border: 1px solid var(--brand-pink-edge); border-radius: 6px; background: var(--brand-paper); color: var(--brand-cocoa-deep); font-size: 12px; cursor: pointer; }
 .entryActions button:last-child:hover { background: var(--brand-vanilla-wash); }
 .album button:disabled,.detail button:disabled { opacity: .5; cursor: default; transform: none; }

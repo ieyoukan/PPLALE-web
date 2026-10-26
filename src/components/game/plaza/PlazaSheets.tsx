@@ -1,12 +1,17 @@
 'use client';
 
 // What a room asks for one choice at a time: the deck, the CPU's strength, the rules of the next match.
-import { useState } from 'react';
+import { useRef, useState } from 'react';
+import CardDetail from '@/components/shared/card/CardDetail';
 import { cpuLevels, cpuProfiles } from '@pplale/game-core';
 import type { CpuLevel } from '@pplale/game-core';
 import type { RoomRules, RoomView } from '@pplale/game-core/room';
+import { DECK_IMAGE_ASPECT } from '@/lib/deckImageLayout';
 import type { DeckChoice } from '@/lib/game/deckSources';
+import { displayCards } from '@/lib/game/catalog';
 import { RulePicker } from '../RulePicker';
+import { DeckCardLayout } from '@/components/shared/deck/DeckCardLayout';
+import SavedDeckThumbnail from '@/components/deck/SavedDeckThumbnail';
 import { OrnateFrame } from '../ornament/OrnateFrame';
 import { Avatar } from './Avatar';
 import { PlazaIcon } from './PlazaIcon';
@@ -17,12 +22,14 @@ import styles from './Plaza.module.css';
 export function DeckSheet({ choices, chosen, onChoose, onClose, signIn, loading }: {
   choices: DeckChoice[]; chosen?: DeckChoice; onChoose: (id: string) => void; onClose: () => void; signIn?: () => void; loading: boolean;
 }) {
+  const [preview, setPreview] = useState<DeckChoice | null>(null);
+  if (preview) return <DeckContentsSheet choice={preview} onClose={() => setPreview(null)} onAction={!preview.errors.length ? () => onChoose(preview.id) : undefined} actionLabel="このデッキにする" />;
   return <Sheet title="デッキをえらぶ" onClose={onClose} wide>
     <ul className={styles.deckGrid}>{choices.map(choice => {
-      const playable = choice.source === 'random' ? null : choice.deck(0).playable;
+      const deck = choice.source === 'random' ? null : choice.deck(0);
       return <li key={choice.id}>
-        <OrnateFrame as="button" size="sm" className={styles.deckTile} aria-pressed={choice.id === chosen?.id} disabled={!!choice.errors.length} onClick={() => onChoose(choice.id)} title={choice.errors.join(' / ') || undefined}>
-          <span className={styles.deckTileArt}>{playable ? <Avatar card={playable} size={75} /> : <span className={styles.randomDeck}><PlazaIcon name="sparkle" /></span>}</span>
+        <OrnateFrame as="button" size="sm" className={styles.deckTile} aria-pressed={choice.id === chosen?.id} data-unusable={!!choice.errors.length || undefined} onClick={() => setPreview(choice)} title={choice.errors.join(' / ') || undefined}>
+          <div className={styles.deckTileArt} style={{ aspectRatio: DECK_IMAGE_ASPECT }}>{deck ? <SavedDeckThumbnail deck={{ id: choice.id, name: choice.name, updatedAt: null, yojoDeckIds: deck.yojo, sweetDeckIds: deck.sweet, playableCardId: deck.playable }} /> : <span className={styles.randomDeck}><PlazaIcon name="sparkle" /></span>}</div>
           <b>{choice.name}</b>
           <small>{choice.errors.length ? 'このルールでは使えない' : choice.note}</small>
           {choice.id === chosen?.id && <span className={styles.tileCheck}><PlazaIcon name="check" /></span>}
@@ -35,6 +42,22 @@ export function DeckSheet({ choices, chosen, onChoose, onClose, signIn, loading 
       <a className={styles.softButton} href="/build" target="_blank" rel="noopener noreferrer"><PlazaIcon name="pen" />デッキを作る</a>
     </div>
   </Sheet>;
+}
+
+/** A fixed deck's actual cards. Random decks are only generated when ready is pressed. */
+export function DeckContentsSheet({ choice, onClose, onAction, actionLabel }: { choice: DeckChoice; onClose: () => void; onAction?: () => void; actionLabel: string }) {
+  const [expanded, setExpanded] = useState<string | null>(null);
+  const trigger = useRef<HTMLButtonElement | null>(null);
+  const deck = choice.source === 'random' ? null : choice.deck(0);
+  const card = expanded ? displayCards[expanded] : null;
+  return <><div style={{ display: 'contents' }} inert={!!card}><Sheet title={choice.name} onClose={onClose} wide>
+    {!deck && <p className={styles.note}>おまかせデッキは、じゅんびOKを押したときにカードが決まります。</p>}
+    {deck && <DeckCardLayout deck={{ yojoDeckIds: deck.yojo, sweetDeckIds: deck.sweet, playableCardId: deck.playable }} label="デッキのカード" imageOf={id => displayCards[id]?.imageUrl} nameOf={id => displayCards[id]?.name ?? id} onCardClick={(id, event) => { trigger.current = event.currentTarget; setExpanded(id); }} />}
+    {!!choice.errors.length && <p className={styles.note}>{choice.errors.join(' / ')}</p>}
+    {onAction && <div className={styles.sheetFoot}><OrnateFrame as="button" size="sm" className={styles.primaryButton} onClick={onAction}><PlazaIcon name="cards" /><span data-ui-title>{actionLabel}</span></OrnateFrame></div>}
+  </Sheet></div>
+    {card && <CardDetail card={card} onClose={() => setExpanded(null)} isInDeck={false} returnFocusRef={trigger} />}
+  </>;
 }
 
 /** How strong the CPU that sits down is: one tile each, with as many stars. */

@@ -1,0 +1,17 @@
+.backdrop { position: fixed; inset: 0; z-index: 1000; display: flex; align-items: center; justify-content: center; padding: 16px; background: #00000059; backdrop-filter: blur(14px); }
+.dialog { display: flex; flex-direction: column; align-items: center; gap: 20px; }
+.cardShell { position: relative; width: min(500px, calc((100dvh - 150px) * 2 / 3), calc(100vw - 32px)); aspect-ratio: 2 / 3; perspective: 1200px; }
+.close { position: absolute; top: -16px; right: -16px; z-index: 10; display: grid; place-items: center; width: 48px; height: 48px; padding: 0; border: 1px solid var(--brand-pink-edge); border-radius: 6px; background: var(--brand-cream); color: var(--brand-cocoa-deep); font-size: 36px; line-height: 1; cursor: pointer; }
+.close:hover { background: var(--brand-blush); }
+.rotatingCard { --shine-x: 50%; --shine-y: 50%; position: absolute; inset: 0; transform: rotateX(0deg) rotateY(0deg); transform-style: preserve-3d; will-change: transform; transition: transform 80ms ease-out; }
+.face { position: absolute; inset: 0; overflow: hidden; border-radius: 4px; backface-visibility: hidden; }
+.front { transform: translateZ(4px); }
+.back { transform: translateZ(-4px) rotateY(180deg); }
+.image { object-fit: contain; }
+.shine { position: absolute; inset: 0; pointer-events: none; mix-blend-mode: soft-light; background: radial-gradient(circle at var(--shine-x) var(--shine-y), #ffffff80, transparent 38%); }
+.action { padding: 12px 24px; border: 1px solid var(--brand-pink-edge); border-radius: 6px; background: var(--brand-blush); color: var(--brand-cocoa-deep); font-weight: 700; cursor: pointer; }
+.action:hover:not(:disabled) { background: var(--brand-pink); }
+.action:disabled { opacity: .5; cursor: default; }
+.remove { background: var(--brand-peach-wash); }
+.close:focus-visible, .action:focus-visible { outline: 3px solid var(--brand-cocoa-deep); outline-offset: 3px; }
+@media (prefers-reduced-motion: reduce) { .rotatingCard { transition: none; } }

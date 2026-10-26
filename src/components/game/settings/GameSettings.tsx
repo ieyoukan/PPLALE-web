@@ -27,14 +27,13 @@ export function GameSettings({ volume = true, onLeave }: { volume?: boolean; onL
     <section className={styles.section} aria-labelledby="settings-home">
       <h3 id="settings-home" data-ui-title><PlazaIcon name="home" />ホームルームの公開範囲</h3>
       <p className={styles.note}>ゲームを開いたときに作るルームの公開範囲です</p>
-      <div className={styles.kinds} role="radiogroup" aria-labelledby="settings-home">{homeKinds.filter(kind => roomVisibilities.includes(kind)).map(kind => {
-        const info = visibilityInfo[kind], needsLogin = !user && (kind === 'friends' || kind === 'friendsPlus');
-        return <button key={kind} type="button" role="radio" aria-checked={home === kind} disabled={needsLogin} className={styles.kind} onClick={() => choose(kind)} title={needsLogin ? 'ログインして選べます' : info.note}>
-          <span className={styles.kindIcon}><PlazaIcon name={info.icon} />{info.plus && <i>＋</i>}</span>
-          <b data-ui-title>{info.label}</b>
-          <small>{needsLogin ? 'ログインで選べる' : info.note}</small>
-        </button>;
-      })}</div>
+      <select className={styles.visibilitySelect} aria-labelledby="settings-home" aria-describedby="settings-home-note" value={home ?? 'invite'} disabled={home === null} onChange={event => choose(event.target.value as RoomVisibility)}>
+        {homeKinds.filter(kind => roomVisibilities.includes(kind)).map(kind => {
+          const needsLogin = !user && (kind === 'friends' || kind === 'friendsPlus');
+          return <option key={kind} value={kind} disabled={needsLogin}>{visibilityInfo[kind].label}{needsLogin ? '（ログインが必要）' : ''}</option>;
+        })}
+      </select>
+      <p id="settings-home-note" className={styles.note}>{visibilityInfo[home ?? 'invite'].note}</p>
     </section>
     {volume && <section className={styles.section}><NotificationVolumeControl /></section>}
     {user && <section className={styles.section} aria-labelledby="settings-push"><h3 id="settings-push" data-ui-title><PlazaIcon name="bell" />ブラウザの通知</h3><PushToggle /></section>}

@@ -1,5 +1,5 @@
 .lobby { display: grid; gap: 22px; color: var(--brand-cocoa-deep); }
-.intro { display: flex; justify-content: flex-end; align-items: center; gap: 12px; font-size: 18px; }
+.intro { display: flex; flex-wrap: wrap; justify-content: flex-end; align-items: center; gap: 12px; font-size: 18px; }
 .intro progress { appearance: none; width: 120px; height: 8px; overflow: hidden; border: 1px solid var(--brand-pink-edge); border-radius: 2px; background: var(--brand-blush); }
 .intro progress::-webkit-progress-bar { background: var(--brand-blush); }
 .intro progress::-webkit-progress-value { background: var(--brand-sage); }
@@ -7,9 +7,8 @@
 .intro > span { white-space: nowrap; font-weight: 700; }
 .lobby h2 { margin-bottom: 10px; color: var(--brand-cocoa); font-size: 21px; }
 .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 320px), 1fr)); gap: 16px; margin: 0; padding: 0; list-style: none; }
-/* Each problem is a card in the ornament frame; it rises a little under the pointer. */
+/* Each problem uses the ornament frame; hovering keeps it in place. */
 .problem { --pad: 12px 14px 10px; display: grid; gap: 10px; height: 100%; color: var(--brand-cocoa-deep); text-decoration: none; filter: none; transition: transform .16s ease; }
-.problem:hover { transform: translateY(-3px); }
 .problemFooter { display: flex; align-items: center; justify-content: space-between; gap: 8px; padding: 0 4px; }
 .problemFooter > b { font-size: 19px; }
 /* Thumbnails are captures of the real game/play board; no second board layout lives here. */

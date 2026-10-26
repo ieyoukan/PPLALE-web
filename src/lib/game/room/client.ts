@@ -9,7 +9,7 @@ import type { PlayReport } from '@pplale/game-core/performance';
 import type { FreeMatchActivity } from '@pplale/game-core/room';
 import type { HistoryPage, MatchDetails, MatchRecording } from '@pplale/game-core/history';
 import type { Deck } from '@pplale/game-core';
-import type { ClientMessage, Entered, FreeMatchStatus, PlazaRequest, RoomAction, RoomInfo, RoomRules, RoomServerStats, RoomView, SeatKey, Seated, ServerMessage } from '@pplale/game-core/room';
+import type { ClientMessage, Entered, FreeMatchStatus, PlazaRequest, RoomAction, RoomInfo, ProfileLocation, RoomRules, RoomServerStats, RoomView, SeatKey, Seated, ServerMessage } from '@pplale/game-core/room';
 
 export const roomServerUrl = (process.env.NEXT_PUBLIC_ROOM_SERVER_URL ?? '').replace(/\/+$/, '') || null;
 
@@ -56,6 +56,8 @@ export const lookupRooms = (ids: string[]) => call<{ rooms: RoomInfo[] }>('/room
 export const inviteFriend = (id: string, member: string, to: string) => call<{ ok: true }>(`/rooms/${id}/invite`, { member, to });
 /** Rooms that let this signed-in player in by name. */
 export const readInvitations = () => call<{ rooms: RoomInfo[] }>('/rooms/invited', {});
+/** A connected friend's profile location; private rooms return only their visibility. */
+export const readProfileLocation = (to: string) => call<ProfileLocation>('/rooms/location', { to });
 /** Asks to be let into the invited room a friend is in (nothing tells whether there is one). */
 export const askToEnter = (to: string) => call<{ ok: true }>('/rooms/ask', { to });
 /** How the server is doing: also the way to find out whether it can be reached at all. */

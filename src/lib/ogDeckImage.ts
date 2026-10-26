@@ -3,10 +3,11 @@ import { readFile } from 'node:fs/promises';
 import { join } from 'node:path';
 import sharp from 'sharp';
 import { allPlayableCards, allSweetCards, allYojoCards } from '@/data/cards';
+import { DECK_IMAGE_WIDTH, DECK_IMAGE_HEIGHT, deckImageLayout } from './deckImageLayout';
 import type { CardInfo } from '@/types/card';
 
-const WIDTH = 1200;
-const HEIGHT = 630;
+const WIDTH = DECK_IMAGE_WIDTH;
+const HEIGHT = DECK_IMAGE_HEIGHT;
 const MAX_CACHE_BYTES = 32 * 1024 * 1024;
 const cards = new Map([...allYojoCards, ...allSweetCards, ...allPlayableCards].map(card => [card.id, card]));
 const assets = new Map<string, Promise<Buffer>>();
@@ -18,8 +19,6 @@ const waiting: Array<() => void> = [];
 let caption: Promise<Buffer> | undefined;
 let background: Promise<Buffer> | undefined;
 
-const yojoPosition = (i: number) => ({ left: (i % 5) * 104, top: Math.floor(i / 5) * 154, width: 100, height: 150 });
-const sweetPosition = (i: number) => ({ left: 548 + (i % 5) * 129, top: Math.floor(i / 5) * 184, width: 120, height: 180 });
 const ids = (value: unknown, type: CardInfo['type'], count: number): string[] => Array.isArray(value)
   ? value.filter((id): id is string => typeof id === 'string' && cards.get(id)?.type === type).slice(0, count).sort((a, b) => a.localeCompare(b, 'ja', { numeric: true })) : [];
 
@@ -37,7 +36,7 @@ function cardImage(id: string, width: number, height: number): Promise<Buffer> {
 
 function template(): Promise<Buffer> {
   if (!background) {
-    const positions = [...Array.from({ length: 20 }, (_, i) => yojoPosition(i)), ...Array.from({ length: 10 }, (_, i) => sweetPosition(i))];
+    const positions = deckImageLayout({ yojoDeckIds: [], sweetDeckIds: [], playableCardId: null }).filter(slot => slot.kind !== 'playable');
     const rectangles = positions.map(p => `<rect x="${p.left}" y="${p.top}" width="${p.width}" height="${p.height}" fill="#eee"/>`).join('');
     background = sharp(Buffer.from(`<svg xmlns="http://www.w3.org/2000/svg" width="${WIDTH}" height="${HEIGHT}"><rect width="100%" height="100%" fill="#fffbe7"/>${rectangles}</svg>`)).png().toBuffer();
     background.catch(() => { background = undefined; });
@@ -59,9 +58,7 @@ async function render(yojo: string[], sweet: string[], playable: string | null):
   else activeRenders++;
   try {
     const layers = await Promise.all([
-      ...yojo.map(async (id, i) => ({ input: await cardImage(id, 100, 150), left: yojoPosition(i).left, top: yojoPosition(i).top })),
-      ...sweet.map(async (id, i) => ({ input: await cardImage(id, 120, 180), left: sweetPosition(i).left, top: sweetPosition(i).top })),
-      ...(playable ? [cardImage(playable, 176, 264).then(input => ({ input, left: 548, top: 366 }))] : []),
+      ...deckImageLayout({ yojoDeckIds: yojo, sweetDeckIds: sweet, playableCardId: playable }).filter(slot => slot.id).map(async slot => ({ input: await cardImage(slot.id!, slot.width, slot.height), left: slot.left, top: slot.top })),
       hashtag().then(input => ({ input, left: 720, top: 558 })),
     ]);
     return await sharp(await template()).composite(layers).png({ compressionLevel: 6 }).toBuffer();

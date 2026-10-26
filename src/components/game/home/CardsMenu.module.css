@@ -9,7 +9,6 @@
 .tile > svg { width: 40px; height: 40px; color: var(--brand-cocoa); }
 .tile b { font-size: 28px; color: var(--brand-cocoa); }
 .tile span { font-size: 14px; color: var(--brand-cocoa-soft); }
-.tile:hover { transform: translateY(-3px); }
 .tile:focus-visible { outline: 3px solid var(--brand-cocoa); outline-offset: 3px; }
 @container stage (max-width: 600px) { .tiles { grid-template-columns: 1fr; } .tile { min-height: 120px; } }
 @media (prefers-reduced-motion: reduce) { .tile { transition: none; } }

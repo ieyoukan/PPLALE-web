@@ -6,6 +6,7 @@ import { useEffect, useState } from 'react';
 import type { RoomView } from '@pplale/game-core/room';
 import { invitedVisibility } from '@pplale/game-core/room';
 import { useAuth } from '@/lib/auth';
+import { canInviteFriends, canShareRoomLink } from '@/lib/game/room/invitations';
 import { FriendInvites } from './FriendInvites';
 import { DiscordMark, PlazaIcon } from './PlazaIcon';
 import { OrnateFrame } from '../ornament/OrnateFrame';
@@ -20,7 +21,7 @@ export function ShareSheet({ view, onClose }: { view: RoomView; onClose: () => v
   const [origin, setOrigin] = useState(''), [canShare, setCanShare] = useState(false);
   const [done, setDone] = useState<string>('');
   useEffect(() => { setOrigin(window.location.origin); setCanShare(typeof navigator.share === 'function'); }, []);
-  const invited = invitedVisibility(plaza.visibility), mayShare = !invited || !!plaza.invite;
+  const invited = invitedVisibility(plaza.visibility), mayShare = canShareRoomLink(plaza);
   const url = plazaLink(origin, view), words = invitation(view, url);
   const copy = (what: string, text: string) => {
     navigator.clipboard.writeText(text).then(() => setDone(what), () => setDone('コピーできませんでした'));
@@ -41,7 +42,7 @@ export function ShareSheet({ view, onClose }: { view: RoomView; onClose: () => v
       {invited && <button className={styles.textButton} onClick={() => { void send({ action: 'renewInvite' }).then(() => setDone('renewed')); }}><PlazaIcon name="refresh" />{done === 'renewed' ? '新しいリンクにしました（前のリンクは使えません）' : 'リンクを作り直す'}</button>}
     </> : <p className={styles.shareNote}><PlazaIcon name="crown" />このルームに招待できるのはオーナーだけです。</p>}
     {/* A friend invited by name comes in where that lets them in: an invited room, or one they may enter anyway (told by a notification). */}
-    {mayShare && user && (plaza.visibility !== 'friends' || plaza.creator.profileId === user.uid) && <FriendInvites uid={user.uid} view={view} />}
+    {user && canInviteFriends(plaza, user.uid) && <FriendInvites uid={user.uid} view={view} />}
     {done === 'コピーできませんでした' && <p className={styles.note} role="alert">{done}</p>}
     <p className={styles.srOnly} role="status">{done === 'discord' ? 'Discordに貼るメッセージをコピーしました' : done === 'link' ? 'リンクをコピーしました' : ''}</p>
   </Sheet>;

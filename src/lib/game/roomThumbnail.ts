@@ -20,7 +20,7 @@ export const roomThumbnail = (rules: Pick<RoomRules, 'fruits' | 'extendedPlayabl
 
 /** The share image's address for these rules: `?f=` fruits (how many, in order), `x` extended, `t` seconds. */
 export const thumbnailPath = ({ fruits: shown, extended, turn }: RoomThumbnail) =>
-  `/api/og/room/?${new URLSearchParams({ f: String(Math.max(1, shown.length)), x: extended ? '1' : '0', t: String(turn ?? 0), v: 'r2' })}`;
+  `/api/og/room/?${new URLSearchParams({ f: String(Math.max(1, shown.length)), x: extended ? '1' : '0', t: String(turn ?? 0), v: 'r3' })}`;
 export function parseThumbnail(query: URLSearchParams): RoomThumbnail {
   const count = Math.min(fruits.length, Math.max(1, Number(query.get('f')) || 1)), seconds = Number(query.get('t'));
   return { fruits: fruits.slice(0, count), extended: query.get('x') === '1', turn: seconds === 120 || seconds === 180 || seconds === 300 ? seconds : null };

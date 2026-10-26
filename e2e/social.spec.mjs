@@ -48,8 +48,13 @@ test('profiles, private friend requests, recruitment join/watch and removal work
     await bob.evaluate(() => document.dispatchEvent(new Event('visibilitychange')));
     await expect(bob.getByRole('link', { name: 'ありすのルーム: 観戦する', exact: true })).toHaveAttribute('href', '/game/room/?id=654321&watch=1');
     await bob.screenshot({ path: 'test-results/social-friends.png', fullPage: true });
-    await bob.getByRole('button', { name: 'ありすをフレンドから外す', exact: true }).click();
-    await bob.getByRole('button', { name: '外す', exact: true }).click();
+    await expect(bob.getByRole('button', { name: /リクエストインバイト|フレンドから外す/ })).toHaveCount(0);
+    await bob.locator(`a[href="/game/profile/?id=${a.localId}"]`).first().click();
+    await expect(bob.getByRole('button', { name: 'ありすに招待を送る', exact: true })).toBeVisible();
+    await bob.getByRole('button', { name: 'フレンドから外す', exact: true }).click();
+    await bob.getByRole('group', { name: 'フレンド解除の確認' }).getByRole('button', { name: '外す', exact: true }).click();
+    await expect(bob.getByRole('status')).toContainText('フレンドから外しました');
+    await bob.goto(`${base}/game/social/`);
     await expect(bob.getByText('ありす', { exact: true })).toHaveCount(0);
     expect(errors).toEqual([]);
   } finally { await contextA.close().catch(() => {}); await contextB.close().catch(() => {}); }

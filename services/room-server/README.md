@@ -29,6 +29,7 @@
 | `POST /free-match/cancel` | `{ token }` → `{ status: "cancelled" }`。先にマッチが成立した場合は成立済みの席を返す |
 | `WS /rooms/{id}/socket` | 上の流れ。`action` は `ready` `unready` `command` `resign` `rematch` `leave`。観戦は `hello` に `watch: true` |
 | `POST /rooms`（`plaza` 付き） | 集まれるルームを作る → `{ token, view }`。`plaza.from` で閉じたルームの後継に入る |
+| `POST /rooms/location` | `{ to }` → 自分・承認済みフレンドの現在地。接続なしは `offline`、入室不可は `private`＋公開範囲のみ、入室権限がある場合はインバイト系も含めて `room`＋ルーム情報（招待トークンなし） |
 | `POST /rooms/lookup` | `{ ids }` → `{ rooms }`。尋ねた人が入れるルームだけ（フレンドの現在地） |
 | `POST /rooms/invited` | ログイン必須。名指しで招待されているルーム |
 | `POST /rooms/ask` | `{ to }` ログイン必須。フレンドのいるインバイト系ルームへ招待をリクエスト（結果は返さない） |

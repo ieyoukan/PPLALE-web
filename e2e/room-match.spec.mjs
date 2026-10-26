@@ -97,7 +97,7 @@ test('opening the game makes a room; its invitation brings a friend to the same 
 
   // The owner leaves for a new room: bob stays, the room has no owner, and he takes the role.
   await alice.keyboard.press('Escape');
-  await alice.getByRole('button', { name: '新しいルーム' }).click();
+  await alice.getByRole('region', { name: 'クイックリンク' }).getByRole('button', { name: 'ルーム', exact: true }).click();
   const creation = alice.getByRole('dialog', { name: '新しいルームを作る' });
   await expect(creation.getByRole('radio', { name: /^インバイト 招待/ })).toHaveAttribute('aria-checked', 'true');
   await expect(creation.getByRole('radio')).toHaveCount(5);

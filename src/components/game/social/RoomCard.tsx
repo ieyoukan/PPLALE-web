@@ -26,7 +26,7 @@ export function RoomCard({ room, large }: { room: RoomInfo; large?: boolean }) {
   const card = <>
     <span className={styles.roomArt} aria-hidden="true"><RoomThumbnailImage rules={room.rules} sizes={large ? '420px' : '200px'} /></span>
     <span className={styles.roomBadge}>{placeLabel[place]}</span>
-    {href && <span className={styles.roomAction}><Icon name={plaza || place === 'open' ? 'play' : 'eye'} />{verb}</span>}
+    {href && <span className={styles.roomAction}>{plaza ? <PlazaIcon name="enter" /> : <Icon name={place === 'open' ? 'play' : 'eye'} />}{verb}</span>}
     <span className={styles.roomInfo}>
       {(large || plaza) && <b className={styles.roomHost}>{title}</b>}
       {plaza ? <span className={own.people} title={visibilityInfo[plaza.visibility].label}><PlazaIcon name={visibilityInfo[plaza.visibility].icon} /><PlazaIcon name="people" />{plaza.members}</span> : <b>#{room.id}</b>}
@@ -35,7 +35,7 @@ export function RoomCard({ room, large }: { room: RoomInfo; large?: boolean }) {
   </>;
   const className = large ? `${styles.room} ${styles.roomLarge}` : styles.room;
   // Entering from here keeps this screen until the room lets the player in.
-  return href ? <Link className={className} data-place={place} href={href} aria-label={`${title}: ${verb}する`}
+  return href ? <Link className={className} data-place={place} href={href} aria-label={`${title}: ${plaza ? verb : `${verb}する`}`}
     onClick={event => { if (plaza) { event.preventDefault(); void go(room.id); } }}>{card}</Link>
     : <div className={className} data-place={place}>{card}</div>;
 }

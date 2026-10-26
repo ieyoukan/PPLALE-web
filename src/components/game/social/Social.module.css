@@ -1,6 +1,6 @@
 /* The screens of フレンド, プロフィール and 通知 sit on the launchpad's paper face, inside its frame:
    no panel of their own. Small buttons are squares a little rounded; the main action is a card in
-   the ornament frame (.cardButton). Everyone is shown by their whole card (2:3), never cropped round. */
+   the ornament frame (.cardButton). People are shown by circular portraits; collectible cards keep their printed shape. */
 .panel { color: var(--brand-cocoa-deep); }
 .panel h3 { margin: 0; color: var(--brand-cocoa); font-size: 21px; }
 .panel button,.panel a { cursor: pointer; }
@@ -11,7 +11,6 @@
 .panel .primary { border-color: var(--brand-cocoa); background: var(--brand-blush); }
 /* The main action: a card in the ornament frame (OrnateFrame as a button). */
 .cardButton { --pad: 14px 30px; --frame-face: var(--brand-blush); display: inline-flex; align-items: center; justify-content: center; gap: 8px; border: 0; background: none; color: var(--brand-cocoa-deep); font-size: 19px; filter: none; cursor: pointer; transition: transform .12s ease; }
-.cardButton:hover:not(:disabled) { transform: translateY(-2px); }
 .cardButton:active:not(:disabled) { transform: translateY(2px); }
 .cardButton:disabled { opacity: .55; cursor: default; }
 .signIn { display: grid; justify-items: center; gap: 14px; padding: 36px 12px; text-align: center; }
@@ -23,11 +22,11 @@
 .profileHeading small { font: 10px Georgia,serif; color: var(--brand-cocoa-soft); letter-spacing: .12em; }
 .profileHeading h3 { margin: 4px 0 12px; overflow-wrap: anywhere; font-size: 26px; }
 .comment { display: inline-block; max-width: 100%; padding: 10px 16px; border-left: 3px solid var(--brand-pink-edge); background: var(--brand-vanilla-wash); font-size: 14px; overflow-wrap: anywhere; }
-/* The player's card, whole; their own can be changed (a label under it). */
-.panel .avatarLarge { position: relative; display: block; flex: 0 0 96px; width: 96px; height: 144px; padding: 0; border: 0; border-radius: 0; background: none; filter: none; }
-.avatarLarge img,.avatar img { object-fit: contain; }
+/* The player's portrait, shared by profiles, friends, notifications and icon selection. */
+.panel button.avatarLarge { position: relative; display: block; flex: 0 0 96px; width: 96px; height: 96px; padding: 0; overflow: hidden; border: 0; border-radius: 50%; background: var(--brand-cream); filter: none; }
+.avatarLarge img,.avatar img { object-fit: cover; object-position: center 18%; transform: scale(1.6); transform-origin: center 28%; }
 .avatarLarge > span { position: absolute; bottom: 0; inset-inline: 0; display: flex; align-items: center; justify-content: center; gap: 4px; padding: 4px; background: #634747e0; color: var(--brand-cream); font-size: 11px; }
-.avatar { position: relative; display: block; flex: 0 0 40px; width: 40px; height: 60px; filter: none; }
+.avatar { position: relative; display: block; flex: 0 0 40px; width: 40px; height: 40px; overflow: hidden; border-radius: 50%; background: var(--brand-cream); filter: none; }
 .profileForm { display: grid; gap: 16px; }
 .profileForm label { display: grid; gap: 6px; font-size: 13px; font-weight: 700; }
 .profileForm small { justify-self: end; color: var(--brand-cocoa-soft); }
@@ -38,25 +37,23 @@
 .iconPicker { padding: 12px 0; border-block: 1px solid var(--brand-pink); }
 .iconPicker > div { display: grid; grid-template-columns: repeat(auto-fill,minmax(78px,1fr)); gap: 8px; max-height: 360px; overflow: auto; margin-top: 12px; }
 .panel .iconPicker button { display: grid; justify-items: center; align-content: start; gap: 6px; padding: 8px 4px; }
-.iconPicker .avatar { width: 54px; height: 81px; flex-basis: auto; }
+.iconPicker .avatar { width: 54px; height: 54px; flex-basis: auto; }
 .panel .iconPicker button[aria-pressed=true] { border-color: var(--brand-cocoa); background: var(--brand-blush); }
 .iconPicker small { font-size: 10px; justify-self: center; }
 .empty { display: grid; place-items: center; gap: 8px; min-height: 180px; padding: 20px; text-align: center; font-size: 14px; color: var(--brand-cocoa-soft); }
 .empty > svg { font-size: 44px; color: var(--brand-cocoa); }
-@container stage (max-width:600px) { .profileHeading { gap: 15px; } .panel .avatarLarge { width: 70px; height: 105px; flex-basis: 70px; } .profileHeading h3 { font-size: 20px; } .comment { font-size: 12px; padding: 8px; } }
+@container stage (max-width:600px) { .profileHeading { gap: 15px; } .panel button.avatarLarge { width: 70px; height: 70px; flex-basis: 70px; } .profileHeading h3 { font-size: 20px; } .comment { font-size: 12px; padding: 8px; } }
 
 .primary:disabled { opacity: .55; cursor: default; }
 
 /* ── フレンドの現在地: friends grouped by the room they host, like VRChat's location list, in ぷぷりえ colours ── */
 .socialHeading { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 14px; align-items: center; margin-bottom: 18px; }
-.socialHeading h3 { display: flex; align-items: center; gap: 10px; }
 .beat { color: var(--brand-cocoa); fill: var(--brand-pink); animation: beat 2.4s ease-in-out infinite; }
-.socialHeading h3 svg { flex: none; }
 /* Counts: a small cocoa square. */
-.socialHeading h3 em, .badge { display: inline-grid; place-items: center; min-width: 26px; height: 26px; padding: 0 7px; border-radius: 6px; background: var(--brand-cocoa); color: var(--brand-cream); font-size: 14px; font-style: normal; }
+.badge { display: inline-grid; place-items: center; min-width: 26px; height: 26px; padding: 0 7px; border-radius: 6px; background: var(--brand-cocoa); color: var(--brand-cream); font-size: 14px; font-style: normal; }
 .me { display: flex; align-items: center; gap: 8px; padding: 4px 12px 4px 6px; border: 1px solid var(--brand-pink-edge); border-radius: 6px; background: var(--brand-paper); color: var(--brand-cocoa-deep); font-size: 13px; font-weight: 700; transition: transform .15s; }
-.me:hover { transform: translateY(-2px); background: var(--brand-blush); }
-.me .avatar { flex-basis: 26px; width: 26px; height: 39px; }
+.me:hover { background: var(--brand-blush); }
+.me .avatar { flex-basis: 26px; width: 26px; height: 26px; }
 .me > svg { color: var(--brand-cocoa); }
 
 .group { margin-top: 14px; border-top: 1px solid var(--brand-pink); }
@@ -84,7 +81,6 @@
 
 /* The room: its rules' fruit pictures, what can be done there, and how many friends are in it. */
 .room { position: relative; display: grid; grid-template-rows: 112px auto; overflow: hidden; border: 2px solid var(--place); border-radius: 6px; background: var(--brand-paper); color: var(--brand-cocoa-deep); text-decoration: none; transition: transform .18s; }
-a.room:hover { transform: translateY(-2px); }
 .roomArt { position: relative; display: flex; overflow: hidden; background: var(--brand-vanilla-wash); }
 .roomArt img { display: block; width: 100%; height: 100%; object-fit: cover; }
 .roomBadge { position: absolute; top: 8px; left: 8px; padding: 3px 10px; border-radius: 6px; background: var(--place); color: #fff; font-size: 12px; font-weight: 700; text-shadow: none; }
@@ -101,25 +97,18 @@ a.room:hover .roomAction { background: var(--brand-blush); }
 /* Every friend is the same width, whatever the length of their name or ひとこと. */
 .tiles { display: grid; grid-template-columns: repeat(auto-fill, 240px); gap: 10px; }
 .tile { position: relative; display: flex; width: 240px; min-width: 0; align-items: center; min-height: 76px; overflow: hidden; border: 1px solid var(--brand-pink); border-left: 4px solid var(--place); border-radius: 6px; background: var(--brand-paper); transition: transform .15s; animation: pop .35s backwards; }
-.tile:hover { transform: translateY(-2px); background: var(--brand-blush); }
+.tile:hover { background: var(--brand-blush); }
 .tileLink { position: relative; display: flex; align-items: center; gap: 10px; flex: 1; min-width: 0; padding: 6px 10px; color: var(--brand-cocoa-deep); text-decoration: none; }
-.tile .avatar { flex-basis: 40px; width: 40px; height: 60px; }
+.tile .avatar { flex-basis: 40px; width: 40px; height: 40px; }
 .tileText { display: grid; min-width: 0; }
 .tileText b { overflow: hidden; font-size: 15px; text-overflow: ellipsis; white-space: nowrap; }
 .tileText small { display: flex; align-items: center; gap: 5px; min-width: 0; font-size: 11px; color: var(--brand-cocoa-soft); }
 .tileText small > span:last-child { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .dot { flex: 0 0 8px; height: 8px; border-radius: 50%; background: var(--place); }
-.panel .more { position: absolute; top: 4px; right: 4px; min-height: 0; padding: 0 8px; border: 0; border-radius: 6px; background: #fffdf9cc; font-size: 14px; line-height: 22px; opacity: 0; transition: opacity .15s; }
-.tile:hover .more, .more:focus-visible { opacity: 1; }
-@media (hover: none) { .panel .more { opacity: .8; } }
 .answer { position: relative; display: flex; gap: 6px; padding-right: 10px; }
 .panel .answer button { width: 38px; min-height: 38px; padding: 0; border: 0; border-radius: 6px; color: var(--brand-cocoa-deep); font-size: 17px; font-weight: 800; transition: transform .12s; }
-.panel .answer button:hover { transform: translateY(-2px); }
 .panel .accept { background: var(--brand-sage); }
 .panel .decline { background: #ece3dc; }
-.remove { position: absolute; inset: 0; z-index: 1; display: flex; align-items: center; justify-content: center; gap: 8px; background: #fffdf9f0; animation: pop .2s; }
-.panel .remove button { min-height: 32px; padding: 4px 12px; font-size: 12px; }
-.panel .remove button:first-of-type { border-color: var(--brand-cocoa); background: var(--brand-blush); }
 
 .addFriend { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; margin-top: 8px; padding: 12px 0; border-block: 1px solid var(--brand-pink); font-size: 13px; }
 .addFriend label { display: flex; flex: 1; min-width: 220px; align-items: center; gap: 10px; color: var(--brand-cocoa); font-size: 22px; }
@@ -128,13 +117,13 @@ a.room:hover .roomAction { background: var(--brand-blush); }
 @keyframes beat { 0%, 70%, 100% { transform: scale(1); } 80% { transform: scale(1.25); } 90% { transform: scale(.95); } }
 @keyframes bob { 50% { transform: translateY(-3px); } }
 @keyframes pop { from { opacity: 0; transform: scale(.94); } }
-@media (prefers-reduced-motion: reduce) { .beat, .group[data-place=open] .roomBadge, .tile, .remove { animation: none; } }
+@media (prefers-reduced-motion: reduce) { .beat, .group[data-place=open] .roomBadge, .tile { animation: none; } }
 @container stage (max-width: 600px) { .groupBody { grid-template-columns: 1fr; } .room { grid-template-rows: 80px auto; } .roomAction { top: 42px; } .tiles { grid-template-columns: 1fr; } .tile { width: 100%; } }
 .group[data-place=sent], .tile[data-place=sent], .room[data-place=sent] { --place: #b39ad8; --glow: #b39ad855; }
 .headingLinks { display: flex; align-items: center; gap: 10px; }
 /* The bell: an icon with no frame. */
 .bell { position: relative; display: grid; place-items: center; width: 42px; height: 42px; border-radius: 6px; color: var(--brand-cocoa); font-size: 22px; transition: transform .15s; }
-.bell:hover { transform: translateY(-2px); background: var(--brand-blush); }
+.bell:hover { background: var(--brand-blush); }
 .bell .badge { position: absolute; top: -6px; right: -8px; min-width: 22px; height: 22px; padding: 0 6px; font-size: 12px; animation: bob 1.6s ease-in-out infinite; }
 .empty .primary { gap: 6px; margin-top: 6px; }
 @media (prefers-reduced-motion: reduce) { .bell .badge { animation: none; } }
@@ -143,19 +132,22 @@ a.room:hover .roomAction { background: var(--brand-blush); }
 .elsewhere { margin-top: 18px; padding-top: 18px; border-top: 1px solid var(--brand-pink); }
 .watchMark { display: inline-grid; place-items: center; flex: none; color: var(--place); font-size: 13px; }
 .panel .answer button svg { font-size: 18px; }
-.panel .more svg { display: block; font-size: 16px; }
 .friendChip { display: inline-flex; align-items: center; gap: 6px; min-height: 40px; padding: 8px 16px; border-radius: 6px; background: var(--brand-blush); color: var(--brand-cocoa-deep); font-weight: 700; }
 .friendChip svg { fill: currentColor; }
 
 /* Profile: where a friend is now, and the decks they show. */
+.profileLayout { display: grid; grid-template-columns: minmax(0, 1fr) minmax(240px, 320px); align-items: start; gap: 24px; }
+.profileMain { min-width: 0; }
 .where { margin-bottom: 22px; }
+.where .roomLarge { width: 100%; max-width: none; grid-template-rows: 150px auto; }
+.where .roomLarge .roomInfo { flex-wrap: wrap; }
+.ownRoomImage { width: 100%; height: auto; }
 .roomLarge { max-width: 420px; grid-template-rows: 170px auto; }
 .roomLarge .roomAction { top: auto; bottom: 58px; right: 12px; padding: 8px 18px; font-size: 16px; }
 .roomLarge .roomInfo { font-size: 14px; }
 .roomHost { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .decks { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 12px; margin-bottom: 22px; }
 .deck, .panel .deckChooser button { position: relative; display: grid; gap: 6px; padding: 6px; border: 1px solid var(--brand-pink); border-radius: 6px; background: var(--brand-paper); color: var(--brand-cocoa-deep); text-align: left; text-decoration: none; transition: transform .15s; }
-.deck:hover, .deckChooser button:hover { transform: translateY(-2px); }
 .deck b, .deckChooser b { overflow: hidden; padding: 0 4px 2px; font-size: 13px; text-overflow: ellipsis; white-space: nowrap; }
 .deckChooser { min-width: 0; margin: 0; padding: 12px 0; border: 0; border-block: 1px solid var(--brand-pink); }
 .deckChooser legend { display: flex; gap: 8px; align-items: baseline; padding: 0 6px; font-size: 13px; }
@@ -164,3 +156,16 @@ a.room:hover .roomAction { background: var(--brand-blush); }
 .panel .deckChooser button { min-height: 0; }
 .panel .deckChooser button[aria-pressed=true] { border-color: var(--brand-cocoa); background: var(--brand-blush); box-shadow: inset 0 0 0 1px var(--brand-cocoa); }
 .deckMark { position: absolute; top: 10px; right: 10px; display: grid; place-items: center; width: 26px; height: 26px; background: var(--brand-cocoa); color: var(--brand-cream); font-size: 15px; clip-path: polygon(50% 0, 100% 50%, 50% 100%, 0 50%); animation: pop .2s; }
+
+.friendConfirm { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; width: 100%; padding-top: 8px; }
+
+.actions > button { margin: 0; }
+
+.where > h3 { display: flex; align-items: center; gap: 6px; margin-bottom: 10px; font-size: 17px; }
+.profileLocation { display: flex; align-items: center; gap: 14px; min-height: 88px; padding: 14px 0; color: var(--brand-cocoa-deep); }
+.profileLocation > svg { width: 42px; height: 42px; color: var(--brand-cocoa); }
+.profileLocation > span { display: grid; min-width: 0; gap: 5px; }
+.profileLocation b { font-size: 20px; overflow-wrap: anywhere; }
+.profileLocation small { font-size: 14px; color: var(--brand-cocoa-soft); }
+.profileLocation[data-offline] { color: var(--brand-cocoa-soft); }
+@container stage (max-width: 850px) { .profileLayout { grid-template-columns: minmax(0, 1fr); } .where { grid-row: 1; } }

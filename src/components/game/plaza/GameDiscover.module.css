@@ -1,0 +1,25 @@
+.discover { display: grid; gap: 24px; color: var(--brand-cocoa-deep); }
+.feature { --pad: 22px 30px; --frame-face: var(--brand-vanilla-wash); display: grid; grid-template-columns: minmax(0, 1fr) minmax(220px, .8fr); align-items: center; gap: 20px; overflow: hidden; }
+.feature::before { background-image: var(--brand-gingham); background-size: 100px 100px; }
+.featureText { display: grid; justify-items: start; gap: 10px; }
+.logo { width: 200px; height: 92px; object-fit: contain; }
+.feature h3 { margin: 0; color: var(--brand-cocoa-deep); font-size: 32px; line-height: 1.4; }
+.feature p { margin: 0; font-size: 15px; line-height: 1.9; }
+.friends { width: 100%; height: 260px; object-fit: contain; }
+.create { --pad: 12px 24px; --frame-face: var(--brand-blush); display: inline-flex; align-items: center; justify-content: center; gap: 8px; min-height: 48px; border: 0; background: transparent; color: var(--brand-cocoa-deep); font-size: 17px; }
+.create:hover  { --frame-face: var(--brand-pink); }
+.columns { display: grid; grid-template-columns: minmax(0, 1.2fr) minmax(0, 1fr); gap: 28px; }
+.columns h3 { margin: 0 0 10px; color: var(--brand-cocoa-deep); font-size: 20px; }
+.highlights ul { display: grid; margin: 0; padding: 0; list-style: none; }
+.highlights li + li { border-top: 1px solid var(--brand-pink-edge); }
+.highlights button { display: grid; grid-template-columns: minmax(0, 1fr) 18px; align-items: center; gap: 12px; width: 100%; padding: 14px 6px; border: 0; background: transparent; text-align: left; }
+.highlights button:hover { background: var(--brand-vanilla-wash); }
+.highlights button > svg { width: 24px; height: 24px; }
+.highlights button > span, .pickup button > span { display: grid; gap: 5px; }
+.highlights b, .pickup b { font-size: 17px; line-height: 1.5; }
+.highlights small, .pickup small { color: var(--brand-cocoa-soft); font-size: 13px; line-height: 1.7; }
+.next { transform: scaleX(-1); }
+.pickup button { display: grid; gap: 12px; width: 100%; padding: 0; border: 0; background: transparent; text-align: left; }
+.pickup button:hover b { text-decoration: underline; text-underline-offset: 4px; }
+.pickup img { width: 100%; height: auto; object-fit: contain; }
+@container stage (max-width: 1250px) { .feature { --pad: 20px 26px; gap: 10px; } .feature h3 { font-size: 27px; } .friends { height: 240px; } .columns { gap: 20px; } .highlights b, .pickup b { font-size: 15px; } }

@@ -6,7 +6,6 @@
 .doors { display: flex; flex-wrap: wrap; gap: 16px; }
 /* Large buttons: cards of their own in the ornament frame; the first choice is blush. */
 .door { --pad: 16px 30px; display: grid; gap: 4px; min-width: 220px; border: 0; background: none; color: var(--brand-cocoa-deep); text-align: left; filter: none; transition: transform .12s ease; }
-.door:hover { transform: translateY(-2px); }
 .door:active { transform: translateY(2px); }
 .door b { font-size: 21px; }
 .door small { color: var(--brand-cocoa-soft); font-size: 14px; }

@@ -300,3 +300,6 @@ export interface RoomLatency {
 export const ROOM_ID_LENGTH = 6;
 export const isRoomId = (value: unknown): value is string => typeof value === 'string' && /^\d{6}$/.test(value);
 export const MAX_NAME_LENGTH = 12;
+
+/** A profile's current location, shared only with the player and accepted friends. Private rooms expose no identity. */
+export type ProfileLocation = { kind: 'offline' } | { kind: 'private'; visibility: RoomVisibility } | { kind: 'room'; room: RoomInfo };

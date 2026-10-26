@@ -19,8 +19,8 @@ test('five tabs switch in place, room actions and volume persist, and Escape res
   const rail = await pad.getByRole('tablist').boundingBox(), panelBox = await pad.getByRole('tabpanel').boundingBox();
   expect(rail.x + rail.width).toBeLessThanOrEqual(panelBox.x);
   await expect(pad.getByRole('tab', { name: 'ランチパッドホーム' })).toHaveAttribute('aria-selected', 'true');
-  await expect(pad.getByRole('region', { name: 'クイックリンク' }).getByRole('button')).toHaveCount(4);
-  await expect(pad.getByRole('group', { name: 'ルームの操作' }).getByRole('button')).toHaveCount(3);
+  await expect(pad.getByRole('region', { name: 'クイックリンク' }).getByRole('button')).toHaveCount(5);
+  await expect(pad.getByRole('group', { name: 'ルームの操作' }).getByRole('button')).toHaveCount(2);
   await expect(pad.getByRole('button', { name: 'CPUを呼ぶ' })).toHaveCount(0);
 
   await pad.getByRole('tab', { name: '通知', exact: true }).click();
@@ -28,7 +28,7 @@ test('five tabs switch in place, room actions and volume persist, and Escape res
   await pad.getByRole('tab', { name: '通知', exact: true }).dispatchEvent('keydown', { key: 'Escape', isComposing: true });
   await expect(pad).toBeVisible();
   await pad.getByRole('tab', { name: '通知', exact: true }).press('ArrowRight');
-  await expect(pad.getByRole('tab', { name: 'いまのインスタンス' })).toBeFocused();
+  await expect(pad.getByRole('tab', { name: 'いまのルーム' })).toBeFocused();
   await expect(pad.getByRole('tabpanel')).toContainText('作成者');
   await expect(pad.getByRole('img', { name: 'ルームのサムネイル' })).toBeVisible();
   await pad.getByRole('button', { name: 'ルーム名', exact: true }).click();
@@ -53,8 +53,8 @@ test('five tabs switch in place, room actions and volume persist, and Escape res
   await pad.getByRole('tab', { name: '設定', exact: true }).click();
   await expect(pad.getByRole('tabpanel')).toContainText('アカウント');
   // The home room's visibility is kept for the next room the game opens with.
-  await pad.getByRole('radio', { name: /パブリック/ }).click();
-  await expect(pad.getByRole('radio', { name: /パブリック/ })).toHaveAttribute('aria-checked', 'true');
+  await pad.getByRole('combobox', { name: 'ホームルームの公開範囲' }).selectOption('public');
+  await expect(pad.getByRole('combobox', { name: 'ホームルームの公開範囲' })).toHaveValue('public');
   expect(await page.evaluate(() => JSON.parse(localStorage.getItem('pplale-room-settings-v1')).homeVisibility)).toBe('public');
   await expect(page).toHaveURL(roomURL);
   await page.keyboard.press('Escape');
@@ -79,17 +79,18 @@ test('the game\'s screens open in the expanded pad over the same live room, with
   await pad.getByRole('button', { name: 'ゲームメニューを拡大' }).click();
   // Expanded, the game's screens are down the left and the pad's tabs are icons only at the top right.
   const screens = pad.getByRole('tablist', { name: 'ゲームの画面' }), icons = pad.getByRole('tablist', { name: 'ランチパッドのタブ' });
-  await expect(screens.getByRole('tab')).toHaveCount(7);
+  await expect(screens.getByRole('tab')).toHaveCount(6);
   await expect(icons.getByRole('tab')).toHaveCount(4);
+  await expect(screens.getByRole('tab', { name: /CPU対決|バトル/ })).toHaveCount(0);
   await expect(icons.getByRole('tab', { name: '設定' })).toHaveText('');
   const friend = await browser.newPage();
   await friend.goto(`${roomURL}?invite=${saved.invite}`);
   await expect(friend.getByRole('complementary', { name: 'ルームにいる人' }).getByRole('listitem')).toHaveCount(2);
-  await icons.getByRole('tab', { name: 'いまのインスタンス' }).click();
+  await icons.getByRole('tab', { name: 'いまのルーム' }).click();
   await expect(pad.getByRole('tabpanel')).toContainText('2人');
   await pad.getByRole('button', { name: 'ランチパッドに縮小' }).click();
   await expect(screens).toHaveCount(0);
-  await expect(pad.getByRole('tab', { name: 'いまのインスタンス' })).toHaveAttribute('aria-selected', 'true');
+  await expect(pad.getByRole('tab', { name: 'いまのルーム' })).toHaveAttribute('aria-selected', 'true');
   await pad.getByRole('button', { name: 'ゲームメニューを拡大' }).click();
   // A screen, and a link inside it to another, open in the pad; the address stays the room's.
   await screens.getByRole('tab', { name: 'カード' }).click();
