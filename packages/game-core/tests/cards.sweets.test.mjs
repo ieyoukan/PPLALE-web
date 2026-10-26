@@ -56,7 +56,7 @@ test('s_9 / s_10 フロート: partner upgrades the damage, the first float may 
   assert.equal(s.cards[field(s, 1)[0]].damage, 6);
 });
 
-test('s_11〜s_14 ドーナツ: discarding another doughnut grants the keyword, otherwise nothing', () => {
+test('s_11〜s_14 ドーナツ: discarding another doughnut grants the keyword, cannot play without a spare', () => {
   for (const [id, keyword] of [['s_11', 'pierce'], ['s_12', 'taunt'], ['s_13', 'guard'], ['s_14', 'fast']]) {
     let s = arena({ me: { hand: [id, 's_11'], field: ['y_9'] } });
     s = play(s, hand(s)[0]);
@@ -64,10 +64,16 @@ test('s_11〜s_14 ドーナツ: discarding another doughnut grants the keyword, 
     s = choose(s, field(s)[0]);
     assert.ok(s.cards[field(s)[0]].keywords.includes(keyword), id);
   }
-  let s = arena({ me: { hand: ['s_11'], field: ['y_9'] } });
-  s = play(s, hand(s)[0]);
-  assert.equal(s.pending, null);
-  assert.deepEqual(s.cards[field(s)[0]].keywords, []);
+  for (const id of ['s_11', 's_12', 's_13', 's_14']) {
+    for (const cards of [[id], [id, 's_17']]) {
+      const s = arena({ me: { hand: cards, field: ['y_9'] }, foe: { hand: ['s_11'] } });
+      const before = structuredClone(s);
+      assert.ok(failure(s, { type: 'play', actor: 0, uid: hand(s)[0] }), `${id}: needs another doughnut in own hand`);
+      assert.deepEqual(s, before, 'rejected play consumes neither PP nor cards');
+    }
+    const s = arena({ me: { hand: [id, id] } });
+    assert.ok(failure(s, { type: 'play', actor: 0, uid: hand(s)[0] }), 'still needs a friendly unit');
+  }
 });
 
 test('s_15 / s_16 / s_17 ケーキ: the three-kind bonus includes this card', () => {

@@ -7,7 +7,7 @@ import { cardCounts, countCards } from '../board/matchInfo';
 import { GameCard } from '../GameCard';
 import styles from '../BoardEmulator.module.css';
 
-function CardList({ ids, played }: { ids: string[]; played?: string[] }) {
+export function CardList({ ids, played }: { ids: string[]; played?: string[] }) {
   const [expanded, setExpanded] = useState<string | null>(null);
   return <div className={styles.matchCardList}>
     {countCards(ids).sort((a, b) => (gameCatalog[a.id]?.cost ?? 0) - (gameCatalog[b.id]?.cost ?? 0) || a.id.localeCompare(b.id, undefined, { numeric: true })).map(({ id, count }) => <button

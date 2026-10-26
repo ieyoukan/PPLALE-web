@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { arena, field, run } from './helpers.mjs';
+import { arena, catalog, field, run } from './helpers.mjs';
 
 const end = s => run(s, { type: 'end', actor: s.active });
 /** Both sides out of cards, so a turn only has an action if someone chooses one. */
@@ -70,4 +70,18 @@ test('remaining acorns prevent immediate certainty of a stalled match; Exスキ�
     Object.assign(s.players[0], { exSkills });
     s = end(s); assert.equal(s.winner, 1, 'an Exスキル left does not keep the match going');
   }
+});
+
+
+test('a zero-attack unit prevents immediate stall and its action resets idle turns', () => {
+  let s = exhausted({ me: { field: ['y_9'] } });
+  for (const p of s.players) p.skills.fill(0);
+  const uid = field(s)[0];
+  s.cards[uid].attackBonus = -catalog.y_9.attack;
+  s = end(end(s));
+  assert.equal(s.winner, null);
+  s = run(s, { type: 'attack', actor: 0, uid, target: 'leader' });
+  s = end(end(s));
+  assert.equal(s.winner, null);
+  assert.equal(s.stall.idleTurns, 1);
 });

@@ -301,8 +301,12 @@
 .readyGem { width: 14px; height: 14px; bottom: -7px; border: 2px solid #fff5cc; border-radius: 50%; background: #92d3a3; }
 .tauntCard { box-shadow: 0 0 0 3px #e7a9ba, 0 0 20px #f8bbc28c; }
 .zoneLabel { font-size: clamp(18px, 1.5cqw, 28px); }
-.deckCount { box-sizing: border-box; display: grid; place-items: center; width: 36px; height: 36px; min-width: 0; padding: 0; font-size: 22px; line-height: 1; border-radius: 50%; color: #654854; }
+.deckCount { z-index: 75; pointer-events: none; box-sizing: border-box; display: grid; place-items: center; width: 36px; height: 36px; min-width: 0; padding: 0; font-size: 22px; line-height: 1; border-radius: 50%; color: var(--brand-cocoa-deep); background: var(--brand-paper); }
 .deckCount small { display: none; }
+.deckContentsButton { pointer-events: auto; cursor: pointer; border: 2px solid var(--brand-pink-edge); }
+.deckContentsButton:hover, .deckContentsButton:focus-visible { background: var(--brand-blush); outline: 2px solid var(--brand-cocoa); outline-offset: 2px; }
+/* Keep the near deck count above the hand fan, including revealed cards. */
+.near .deckYojo .deckCount { top: 0; right: 5%; bottom: auto; }
 .stack { transform: rotateX(8deg) rotateY(-7deg); transform-style: preserve-3d; filter: drop-shadow(6px 12px 5px #49262d70); }
 .drawReady .stack { animation: deckLift 1.3s ease-in-out infinite; }
 .drawReady::after { content: '↓'; position: absolute; right: 23%; top: -24%; font: 700 42px Arial, sans-serif; color: #fff8cf; text-shadow: 0 3px #659782, 0 0 12px #619173; animation: beckon 1.2s ease-in-out infinite; }
@@ -643,10 +647,10 @@
 .infoButton small { font-size: 10px; font-weight: 700; white-space: nowrap; }
 .infoButton[aria-expanded='true'] { background: #ffe2ed; border-color: #df9fb7; }
 .matchCardList { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; margin: 12px 0; }
-.matchCardList > button { min-width: 0; border: 1px solid #eadac8; border-radius: 12px; overflow: hidden; background: #fffdf8; color: #685441; text-align: left; cursor: pointer; }
+.matchCardList > button { min-width: 0; border: 1px solid var(--brand-pink-edge); border-radius: 12px; overflow: hidden; background: var(--brand-paper); color: var(--brand-cocoa-deep); text-align: left; cursor: pointer; }
 .matchCardFace { display: block; position: relative; width: 100%; aspect-ratio: 533 / 800; }
 .matchCardList > button > span:last-child { display: flex; justify-content: space-between; gap: 4px; padding: 6px; font-size: 11px; }
-.matchCardList b { color: #b65e83; white-space: nowrap; }
+.matchCardList b { color: var(--brand-cocoa-deep); white-space: nowrap; }
 .matchCardList > .matchCardExpanded { grid-column: 1 / -1; width: min(100%, 360px); justify-self: center; }
 .matchCountSection { margin: 16px 0; padding: 16px; border: 1px solid #ead7c4; border-radius: 20px; background: #ffffff90; }
 .matchCounts { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; }

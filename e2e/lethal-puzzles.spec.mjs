@@ -134,3 +134,47 @@ test('an unknown problem provides a way back', async ({ page }) => {
   await page.getByRole('link', { name: '問題一覧へ' }).click();
   await expect(page).toHaveURL(/\/game\/puzzles\//);
 });
+
+test('puzzle decks show grouped contents and inspection does not consume a pending draw', async ({ page }) => {
+  await page.goto('/game/puzzle/?id=melon-intermediate-1');
+  await expect(endTurn(page)).toBeEnabled();
+  const panel = page.getByRole('complementary', { name: 'メニュー', exact: true });
+  const inspectYojo = page.getByRole('button', { name: 'あなたの幼女デッキの中身を見る（2枚）', exact: true });
+  const close = () => page.getByRole('button', { name: 'メニューを閉じる', exact: true }).click();
+  await inspectYojo.click();
+  await expect(panel.getByRole('heading', { name: '幼女デッキ（2枚）', exact: true })).toBeVisible();
+  await expect(panel.getByRole('button')).toHaveCount(1);
+  await expect(panel.getByRole('button')).toHaveAccessibleName(/2枚$/);
+  await panel.getByRole('button').click();
+  await expect(panel.getByRole('button')).toHaveAttribute('aria-expanded', 'true');
+  await close();
+  await page.locator('[data-deck="1-sweet"]').click();
+  await expect(panel.getByRole('heading', { name: 'お菓子デッキ（0枚）', exact: true })).toBeVisible();
+  await expect(panel.getByRole('button')).toHaveCount(0);
+  await close();
+  // いちごパフェ: spend one card, then choose two decks to draw from.
+  await page.locator('[data-hand-list] [data-hand="c6"]').click();
+  await page.getByRole('button', { name: '使う', exact: true }).click();
+  await expect(page.locator('[data-deck="0-yojo"]')).toHaveClass(/drawReady/);
+  await inspectYojo.click();
+  await expect(panel.getByRole('heading', { name: '幼女デッキ（2枚）', exact: true })).toBeVisible();
+  await close();
+  await expect(inspectYojo).toBeVisible();
+  await expect(page.locator('[data-hand-list] [data-hand]')).toHaveCount(8);
+  await page.locator('[data-deck="0-yojo"] [data-stack]').click();
+  await expect(page.getByRole('button', { name: 'あなたの幼女デッキの中身を見る（1枚）', exact: true })).toBeVisible();
+  await expect(page.locator('[data-hand-list] [data-hand]')).toHaveCount(9);
+});
+
+test('deck count stays clickable above a large hand on desktop and small landscape screens', async ({ page }) => {
+  for (const [width, height] of [[1280, 720], [844, 390]]) {
+    await page.setViewportSize({ width, height });
+    await page.goto('/game/puzzle/?id=grape-advanced-1');
+    await expect(page.locator('[data-hand-list] [data-hand]')).toHaveCount(10);
+    const count = page.getByRole('button', { name: 'あなたの幼女デッキの中身を見る（0枚）', exact: true });
+    await expect(count).toBeVisible();
+    await page.screenshot({ path: `/tmp/pplale-deck-count-${width}.png` });
+    await count.click({ timeout: 5000 });
+    await expect(page.getByRole('heading', { name: '幼女デッキ（0枚）', exact: true })).toBeVisible();
+  }
+});

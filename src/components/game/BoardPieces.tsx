@@ -8,13 +8,13 @@ import styles from './BoardEmulator.module.css';
 import cue from './DrawCue.module.css';
 
 export type ZoneKind = 'yojo' | 'sweet' | 'nap' | 'exile';
-export function DeckStack({ side, kind, ids, thresholds = [], enabled, drawing = false, thresholdDraw = false, onClick }: {
+export function DeckStack({ side, kind, ids, thresholds = [], enabled, drawing = false, thresholdDraw = false, onClick, onInspect }: {
   side: Side; kind: ZoneKind; ids: string[]; thresholds?: number[];
-  enabled: boolean; drawing?: boolean; thresholdDraw?: boolean; onClick: () => void;
+  enabled: boolean; drawing?: boolean; thresholdDraw?: boolean; onClick: () => void; onInspect?: () => void;
 }) {
   const label = { yojo: '幼女デッキ', sweet: 'お菓子デッキ', nap: 'お昼寝場所', exile: '除外カード' }[kind];
   const helpId = `threshold-draw-${side}`;
-  return <button type="button" data-deck={`${side}-${kind}`} data-threshold-draw={thresholdDraw || undefined} data-label={{ yojo: '幼女', sweet: 'お菓子', nap: 'お昼寝', exile: '除外' }[kind]} className={`${styles.deckZone} ${drawing ? styles.drawReady : ''} ${thresholdDraw ? cue.required : ''}`}
+  return <><button type="button" data-deck={`${side}-${kind}`} data-threshold-draw={thresholdDraw || undefined} data-label={{ yojo: '幼女', sweet: 'お菓子', nap: 'お昼寝', exile: '除外' }[kind]} className={`${styles.deckZone} ${drawing ? styles.drawReady : ''} ${thresholdDraw ? cue.required : ''}`}
     onClick={onClick} disabled={!enabled} aria-label={`${side === 0 ? 'あなた' : '相手'}の${label} ${ids.length}枚`} aria-describedby={thresholdDraw ? helpId : undefined}>
     {thresholdDraw && <span className={cue.guide} data-draw-cue>
       <span className={cue.label} id={helpId}>お菓子を1枚引く</span>
@@ -26,13 +26,17 @@ export function DeckStack({ side, kind, ids, thresholds = [], enabled, drawing =
       {ids.map((uid, index) => <span className={styles.stackCard} key={uid}
         style={{ transform: `translate(${index * .18}px, ${-index * .85}px)`, zIndex: index + 1 }} />)}
     </span>
-    <span className={styles.deckCount}>{ids.length}<small>枚</small></span>
     {kind === 'sweet' && <span className={styles.thresholds}>{[10, 5].map(value => <span key={value}
       className={thresholds.includes(value) ? styles.reached : ''}
       role="img" aria-label={`${value}ポイントのドロー${thresholds.includes(value) ? '機会使用済み' : '未達'}`}>
       <i />{value === 10 ? '⑩' : '⑤'}
     </span>)}</span>}
-  </button>;
+  </button>
+    {onInspect
+      ? <button type="button" className={`${styles.deckCount} ${styles.deckContentsButton}`} onClick={onInspect}
+        aria-label={`${side === 0 ? 'あなた' : '相手'}の${label}の中身を見る（${ids.length}枚）`} title="中身を見る">{ids.length}<small>枚</small></button>
+      : <span className={styles.deckCount}>{ids.length}<small>枚</small></span>}
+  </>;
 }
 
 export function Counter({ label, value, points, bonus = 0, temporaryBonus = 0, pp, adjusts, onAdjust, onReset, test, target, onClick }: {

@@ -81,7 +81,10 @@ const doughnutOps: OpTable = {
         },
     },
 };
-const doughnut = (keyword: Keyword): CardScript => ({ canPlay: ownUnitOnField, onPlay: ctx => ctx.queue('doughnut', { keyword }), ops: doughnutOps, cpu: needsOwnUnit });
+const doughnut = (keyword: Keyword): CardScript => ({
+    canPlay: ctx => ownUnitOnField(ctx) && ctx.me.hand.some(uid => uid !== ctx.uid && ctx.catalog[ctx.s.cards[uid].cardId]?.sweetType === 'doughnut'),
+    onPlay: ctx => ctx.queue('doughnut', { keyword }), ops: doughnutOps, cpu: needsOwnUnit,
+});
 
 /** ケーキ: 自分の幼女1人を +1/+1。このカードを含めてケーキを3種類プレイしていたなら追加効果。 */
 const cake = (bonus: 'draw' | 'big' | 'all'): CardScript => ({

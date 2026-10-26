@@ -69,12 +69,12 @@ const enemyTargets = (fx: Effects) => selectable(fx.s, fx.side, fx.foe.field);
 /** It entered this turn and could attack if it did not have to wait. */
 const waiting = (fx: Effects, uid: string) => {
     const c = fx.s.cards[uid];
-    return c.entered === fx.s.turn && !c.exhausted && attack(fx, uid) > 0 && !cannotAct(fx, uid);
+    return c.entered === fx.s.turn && !c.exhausted && !cannotAct(fx, uid);
 };
 /** It can attack this turn. */
 const ready = (fx: Effects, uid: string) => {
     const c = fx.s.cards[uid];
-    return !c.exhausted && attack(fx, uid) > 0 && !cannotAct(fx, uid) && (c.entered !== fx.s.turn || has(fx, uid, 'fast', 'charge'));
+    return !c.exhausted && !cannotAct(fx, uid) && (c.entered !== fx.s.turn || has(fx, uid, 'fast', 'charge'));
 };
 
 // 【突撃！隣のおやつタイム】コスト0, 場の幼女1人に突撃を付与する。2回。

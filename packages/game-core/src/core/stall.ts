@@ -3,8 +3,8 @@
 import { decideMatch } from './outcome.ts';
 import { skillsFor } from '../playables/skills.ts';
 import { other, sides } from '../model.ts';
-import type { Catalog, GameState, Side } from '../model.ts';
-import { attackOf, note } from './cards.ts';
+import type { GameState, Side } from '../model.ts';
+import { note } from './cards.ts';
 
 /** Consecutive turns without any action that end the match. A turn is one player's turn. */
 export const STALL_TURNS = 3;
@@ -16,14 +16,14 @@ export function markAction(s: GameState) {
 }
 
 /** Neither side can ever act again: no cards to draw or play, no unit that can attack, no skill left. */
-function certainlyStuck(s: GameState, catalog: Catalog): boolean {
+function certainlyStuck(s: GameState): boolean {
     return sides.every(side => {
         const p = s.players[side];
         if (p.yojo.length || p.sweet.length || p.hand.length) return false;
         // Exスキル and skills without a use limit are not actions here (`markAction`), so they do not keep a match going.
         if ((p.acorns ?? 0) > 0) return false;
         // 行動不能 for a limited time ends, so only a unit that is 行動不能 for good can never attack.
-        if (p.field.some(uid => attackOf(s.cards[uid], catalog) > 0 && !(s.cards[uid].keywords.includes('immobile') && s.cards[uid].immobileUntil === undefined))) return false;
+        if (p.field.some(uid => !(s.cards[uid].keywords.includes('immobile') && s.cards[uid].immobileUntil === undefined))) return false;
         if (p.extraSkills?.some(extra => extra.uses > 0)) return false;
         // The common skill (index 0) needs a unit on the field; with no cards left none can arrive.
         return skillsFor(p.playable).every((skill, index) => skill.uses === undefined || p.skills[index] <= 0 || index === 0 && !p.field.length);
@@ -36,10 +36,10 @@ const winnerByPoints = (s: GameState): Side => {
 };
 
 /** Called when a turn ends. Returns true when the match was ended by the stall rule. */
-export function settleStall(s: GameState, catalog: Catalog): boolean {
+export function settleStall(s: GameState): boolean {
     const idleTurns = s.stall?.acted ? 0 : (s.stall?.idleTurns ?? 0) + 1;
     s.stall = { acted: false, idleTurns };
-    const stuck = certainlyStuck(s, catalog);
+    const stuck = certainlyStuck(s);
     if (idleTurns < STALL_TURNS && !stuck) return false;
     decideMatch(s, winnerByPoints(s), 'stall');
     const [a, b] = s.players;
