@@ -3,11 +3,14 @@
 // A room between matches: its table with two seats on the mat, everyone in the room beside it, the
 // rules, and (for whoever sits) the deck and 準備OK. Taking a seat, calling the CPU or getting ready
 // are single taps on the table itself; what needs choosing rises as a sheet over it.
+// The table stands in the room in 3D with the match's board lying on it, seen from its side: a seat
+// at each end. When the match starts the board itself comes round (PlazaRoom), this player's seat to
+// the front, and is looked down on from above.
 import { useEffect, useState } from 'react';
-import type { CSSProperties, ReactNode } from 'react';
+import type { ReactNode } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
-import { cpuLevels, other } from '@pplale/game-core';
+import { cpuLevels } from '@pplale/game-core';
 import type { Side } from '@pplale/game-core';
 import type { RoomAction, RoomPlayer, RoomView } from '@pplale/game-core/room';
 import { useAuth } from '@/lib/auth';
@@ -15,10 +18,10 @@ import { usableChoice } from '@/lib/game/deckSources';
 import { randomSeed } from '@/lib/game/match';
 import { fruitArt, roomThumbnail } from '@/lib/game/roomThumbnail';
 import { useDeckChoices } from '../DeckSelect';
-import { PreparationProgress } from '../MatchPreparation';
 import { useRoomPreparation } from '../room/useRoomPreparation';
 import { OrnateFrame } from '../ornament/OrnateFrame';
 import { Avatar } from './Avatar';
+import { BoardSurface } from './BoardSurface';
 import { CpuSheet, DeckSheet, OpponentSheet, RulesSheet } from './PlazaSheets';
 import { RoomNameSheet } from './RoomManagementSheets';
 import { ShareSheet } from './ShareSheet';
@@ -43,7 +46,7 @@ export function PlazaTable({ view, onMenu }: { view: RoomView; onMenu: () => voi
   const plaza = usePlaza(), room = view.plaza!;
   const { user, signInWithGoogle } = useAuth();
   const mine = view.players.findIndex(player => player?.member === room.me);
-  const mySeat = mine < 0 ? null : mine as Side, near: Side = mySeat ?? 0;
+  const mySeat = mine < 0 ? null : mine as Side;
   const profiles = useProfiles([...room.members.map(member => member.profileId), ...view.players.map(player => player?.profileId)]);
   const iconOf = (member?: string, profileId?: string) => profileId && profiles[profileId] ? profiles[profileId].iconCardId : guestIcon(member ?? '');
   const [open, setOpen] = useState<Open>(null);
@@ -58,9 +61,10 @@ export function PlazaTable({ view, onMenu }: { view: RoomView; onMenu: () => voi
   const [selected, choose] = useChosenDeck();
   const { choices, saved } = useDeckChoices(view.rules, 'このルーム');
   const chosen = usableChoice(choices, selected);
-  const preparation = useRoomPreparation(chosen && chosen.source !== 'random' ? chosen.deck(0) : null, view.rules);
+  // The match's cards and code load in the background meanwhile; getting ready does not wait for them.
+  useRoomPreparation(chosen && chosen.source !== 'random' ? chosen.deck(0) : null, view.rules);
   const me = mySeat === null ? null : view.players[mySeat]!;
-  const ready = () => { if (chosen) { const deck = chosen.deck(randomSeed()); ask(() => preparation.prepare().then(() => plaza.send({ action: 'ready', deck }))); } };
+  const ready = () => { if (chosen) ask({ action: 'ready', deck: chosen.deck(randomSeed()) }); };
   const owner = room.members.find(member => member.id === room.owner);
   const empty = ([0, 1] as const).filter(side => !view.players[side]);
   const info = visibilityInfo[room.visibility];
@@ -68,8 +72,7 @@ export function PlazaTable({ view, onMenu }: { view: RoomView; onMenu: () => voi
   /** One seat on the mat: who sits there, or the way to sit there (or to call the CPU). */
   const seat = (side: Side) => {
     const player = view.players[side];
-    const position = side === near ? styles.near : styles.far;
-    if (!player) return <OrnateFrame size="sm" faint className={`${styles.seat} ${styles.seatEmpty} ${position}`} key={`empty-${side}`}>
+    if (!player) return <OrnateFrame size="sm" faint className={`${styles.seat} ${styles.seatEmpty}`} key={`empty-${side}`}>
       {mySeat === null
         ? <button className={styles.sitButton} disabled={busy} onClick={() => ask({ action: 'sit', seat: side })} aria-label="この席にすわる">
           <span className={styles.plus}><PlazaIcon name="plus" /></span><b data-ui-title>すわる</b>
@@ -79,7 +82,7 @@ export function PlazaTable({ view, onMenu }: { view: RoomView; onMenu: () => voi
         </button>}
     </OrnateFrame>;
     const self = side === mySeat;
-    return <OrnateFrame size="sm" className={`${styles.seat} ${position}`} data-ready={player.ready || undefined} data-self={self || undefined} key={`${player.member ?? player.cpu}-${side}`}>
+    return <OrnateFrame size="sm" className={styles.seat} data-ready={player.ready || undefined} data-self={self || undefined} key={`${player.member ?? player.cpu}-${side}`}>
       <Avatar card={iconOf(player.member, player.profileId)} cpu={!!player.cpu} size={104} dim={!player.online} />
       <span className={styles.seatName}><b data-ui-title>{player.name}</b>{self && <small>あなた</small>}</span>
       <SeatState player={player} />
@@ -88,7 +91,7 @@ export function PlazaTable({ view, onMenu }: { view: RoomView; onMenu: () => voi
     </OrnateFrame>;
   };
 
-  return <div className={styles.table} style={{ '--table-art': `url(/images/game/cafe-logo.svg)` } as CSSProperties}>
+  return <div className={styles.table}>
     <header className={styles.top}>
       <OrnateFrame as="button" size="sm" className={styles.roomPlate} onClick={onMenu} aria-label={`${room.name}（${info.label}）のメニュー`}>
         <span className={styles.roomBadge} data-visibility={room.visibility}><PlazaIcon name={info.icon} />{info.plus && <i>＋</i>}</span>
@@ -115,12 +118,16 @@ export function PlazaTable({ view, onMenu }: { view: RoomView; onMenu: () => voi
       </li>)}</ul>
     </OrnateFrame>
 
-    <OrnateFrame bare className={styles.mat}>
-      <span className={styles.matLogo} aria-hidden="true" />
-      {seat(other(near))}
-      <span className={styles.vs} aria-hidden="true">VS</span>
-      {seat(near)}
-    </OrnateFrame>
+    <div className={styles.mat}>
+      {/* The board with seat 0's half nearest, turned a quarter so seat 0 is at the left end and seat 1 at the right. */}
+      <div className={styles.tableTop}>
+        <BoardSurface className={styles.surface} />
+        {([0, 1] as const).map(side => <div key={side} className={styles.spot} data-seat={side}>
+          <span className={styles.shadow} aria-hidden="true" />
+          <div className={styles.stand}>{seat(side)}</div>
+        </div>)}
+      </div>
+    </div>
 
     <aside className={styles.side}>
       <OrnateFrame as="button" size="sm" className={styles.rulesCard} onClick={() => setOpen('rules')} aria-label="ルール">
@@ -143,8 +150,7 @@ export function PlazaTable({ view, onMenu }: { view: RoomView; onMenu: () => voi
         </OrnateFrame>
         {me.ready
           ? <OrnateFrame as="button" size="sm" className={`${styles.ready} ${styles.readyDone}`} disabled={busy} onClick={() => ask({ action: 'unready' })}><PlazaIcon name="check" /><span data-ui-title>じゅんびOK</span><small>タップでやめる</small></OrnateFrame>
-          : <OrnateFrame as="button" size="sm" className={styles.ready} disabled={busy || !chosen} onClick={ready}><span data-ui-title>{preparation.busy ? 'じゅんび中…' : 'じゅんびOK!'}</span></OrnateFrame>}
-        <PreparationProgress progress={preparation.progress} />
+          : <OrnateFrame as="button" size="sm" className={styles.ready} disabled={busy || !chosen} onClick={ready}><span data-ui-title>じゅんびOK!</span></OrnateFrame>}
       </> : empty.length
         ? <OrnateFrame as="p" size="sm" className={styles.hint}><PlazaIcon name="seat" /><span>空いている席をタップして、対戦にさんか</span></OrnateFrame>
         : <OrnateFrame as="p" size="sm" className={styles.hint}><PlazaIcon name="eye" /><span>席があくのを待っています</span></OrnateFrame>}

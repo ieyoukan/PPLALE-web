@@ -73,7 +73,8 @@ test('opening the game makes a room; its invitation brings a friend to the same 
   await expect(alice.getByRole('complementary', { name: 'ルームにいる人' })).toContainText('ぼぶ');
 
   // Both sit down and get ready: the match starts on the same page.
-  await seats(bob).first().click();
+  // Seats are in seat order (0 at the table's left end): bob takes seat 1, so alice (seat 0) throws first.
+  await seats(bob).last().click();
   await expect(seats(alice)).toHaveCount(1);
   await seats(alice).click();
   for (const page of [alice, bob]) await page.getByRole('button', { name: 'じゅんびOK!' }).click();
