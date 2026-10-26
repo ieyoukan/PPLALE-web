@@ -55,8 +55,8 @@ for (const viewport of phones) {
       await expect(page.locator('[data-game-stage]')).toBeVisible({ timeout: 15000 });
       const start = page.getByRole('button', { name: '対戦をはじめる', exact: false });
       await expect(start).toBeInViewport({ ratio: .999 });
-      const nav = page.getByRole('navigation', { name: 'ゲームメニュー' });
-      for (const link of await nav.getByRole('link').all()) await expect(link).toBeInViewport({ ratio: .999 });
+      const nav = page.getByRole('dialog', { name: 'ゲームメニュー' }).getByRole('tablist', { name: 'ゲームの画面' });
+      for (const tab of await nav.getByRole('tab').all()) await expect(tab).toBeInViewport({ ratio: .999 });
       await fitsPage(page);
       const rules = page.getByRole('region', { name: '対戦のルール', exact: true });
       await expect(rules).toBeVisible();
@@ -170,20 +170,22 @@ test.describe('shared landscape game frame', () => {
     await expect(stage).toHaveAttribute('data-rotated', 'true');
     const layout = () => stage.evaluate(element => ({ width: element.clientWidth, height: element.clientHeight }));
     expect((await layout()).width).toBeGreaterThan((await layout()).height);
-    const nav = page.getByRole('navigation', { name: 'ゲームメニュー' });
+    // The game's screens open in the launchpad: its tabs, and 通知 among the icons at the top right.
+    const pad = page.getByRole('dialog', { name: 'ゲームメニュー' }), nav = pad.getByRole('tablist', { name: 'ゲームの画面' });
     for (const label of ['バトル', 'カード', '盤面エディタ', 'ソーシャル', '通知', 'CPU対決']) {
-      await nav.getByRole('link', { name: new RegExp(label) }).click();
-      await expect(page.getByRole('heading', { level: 1, name: label, exact: true })).toBeInViewport({ ratio: .999, timeout: 15000 });
+      await pad.getByRole('tab', { name: label, exact: true }).click();
+      await expect(pad.getByRole('heading', { level: 2, name: label, exact: true })).toBeInViewport({ ratio: .999, timeout: 15000 });
       await expect(stage).toHaveCount(1);
       await expect(stage).toHaveAttribute('data-rotated', 'true');
       await fitsPage(page);
     }
-    await page.locator('a[href="/game/profile/"]').click();
-    await expect(page.getByRole('heading', { level: 1, name: 'プロフィール', exact: true })).toBeVisible();
-    await nav.getByRole('link', { name: /カード/ }).click();
+    await nav.getByRole('tab', { name: 'ソーシャル' }).click();
+    await pad.locator('a[href="/game/profile/"]').first().click();
+    await expect(pad.getByRole('heading', { level: 2, name: 'プロフィール', exact: true })).toBeVisible();
+    await nav.getByRole('tab', { name: 'カード' }).click();
     await page.getByRole('link', { name: /^図鑑/ }).click();
     await page.locator('li button').first().click();
-    const viewer = page.getByRole('dialog');
+    const viewer = page.getByRole('dialog').last(); // The card viewer, over the launchpad's own dialog.
     await expect(viewer).toBeInViewport({ ratio: .999 });
     await expect(viewer.getByRole('button', { name: '閉じる', exact: true })).toBeInViewport({ ratio: .999 });
     await page.screenshot({ path: info.outputPath('landscape-card-details.png') });
@@ -193,10 +195,10 @@ test.describe('shared landscape game frame', () => {
     await fitsPage(page);
     await page.setViewportSize({ width: 390, height: 844 });
     await expect(stage).toHaveAttribute('data-rotated', 'true');
-    const pane = await page.getByRole('heading', { level: 1, name: 'カード', exact: true }).locator('..').locator(':scope > div').elementHandle();
+    const pane = await pad.getByRole('tabpanel').elementHandle();
     await pane.evaluate(element => { element.scrollTop = 500; });
     expect(await pane.evaluate(element => element.scrollTop)).toBeGreaterThan(0);
-    await nav.getByRole('link', { name: /CPU対決/ }).click();
+    await nav.getByRole('tab', { name: 'CPU対決' }).click();
     await expect(page.getByRole('button', { name: '対戦をはじめる', exact: false })).toBeInViewport({ ratio: .999 });
     expect(await pane.evaluate(element => element.scrollTop)).toBe(0);
     await page.goto('/game/replay/');

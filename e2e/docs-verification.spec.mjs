@@ -7,8 +7,8 @@ const saved = page => page.evaluate(key => JSON.parse(localStorage.getItem(key))
 
 async function load(page, game) {
   game.players[0].name = 'あなた'; game.players[1].name = '相手';
-  await page.goto(new URL('cpu/', base).href);
-  await page.getByRole('navigation', { name: 'ゲームメニュー' }).waitFor();
+  // Any page of the site keeps the saved match: a plain file, so no room is made on the way.
+  await page.goto(new URL('/robots.txt', base).href);
   await page.evaluate(({ key, game }) => localStorage.setItem(key, JSON.stringify({ game, mode: 'hotseat', level: 'normal' })), { key, game });
   await page.goto(new URL('play/', base).href);
   await expect(page.locator('[data-table]')).toBeVisible();
@@ -168,9 +168,9 @@ test('editor can filter melon cards and retain the selected card after reload', 
 test('375px game menu keeps every navigation tab inside the viewport', async ({ page }) => {
   await page.setViewportSize({ width: 375, height: 812 });
   await page.goto(new URL('cpu/', base).href);
-  const nav = page.getByRole('navigation', { name: 'ゲームメニュー' });
-  await expect(nav.getByRole('link')).toHaveCount(8);
-  for (const tab of await nav.getByRole('link').all()) {
+  const nav = page.getByRole('dialog', { name: 'ゲームメニュー' }).getByRole('tablist', { name: 'ゲームの画面' });
+  await expect(nav.getByRole('tab')).toHaveCount(7);
+  for (const tab of await nav.getByRole('tab').all()) {
     await expect(tab).toBeInViewport({ ratio: 1 });
     const size = await tab.evaluate(el => ({ content: el.scrollWidth, box: el.clientWidth }));
     expect(size.content).toBeLessThanOrEqual(size.box + 1);

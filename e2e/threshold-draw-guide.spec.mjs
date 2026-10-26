@@ -2,8 +2,8 @@ import { test, expect } from '@playwright/test';
 import { arena, run } from '../packages/game-core/tests/helpers.mjs';
 
 async function load(page, game, mode = 'cpu') {
-  await page.goto('/game/cpu/');
-  await page.getByRole('navigation', { name: 'ゲームメニュー' }).waitFor();
+  // Any page of the site keeps the saved match: a plain file, so no room is made on the way.
+  await page.goto('/robots.txt');
   await page.evaluate(({ game, mode }) => {
     localStorage.setItem('pplale-show-assessment', 'hidden');
     localStorage.setItem('pplale-game-session-v2', JSON.stringify({ game, mode, level: 'easy' }));

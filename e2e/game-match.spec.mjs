@@ -9,8 +9,8 @@ async function loadBoard(page, game, mode = 'hotseat') {
   game.players[0].name = 'あなた';
   game.players[1].name = mode === 'cpu' ? 'CPU' : '相手';
   // Store the match from the game menu, then open the board, which loads it.
-  await page.goto(new URL('cpu/', url).href);
-  await page.getByRole('navigation', { name: 'ゲームメニュー' }).waitFor();
+  // Any page of the site keeps the saved match: a plain file, so no room is made on the way.
+  await page.goto(new URL('/robots.txt', url).href);
   await page.evaluate(({ game, mode, key }) => localStorage.setItem(key, JSON.stringify({ game, mode, level: 'easy' })), { game, mode, key: storageKey });
   await page.goto(new URL('play/', url).href);
   await expect(page.locator('[data-table]')).toBeVisible();

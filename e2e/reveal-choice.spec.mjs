@@ -8,8 +8,8 @@ const card = (page, uid) => page.locator(`[data-hand-list] [data-hand="${uid}"]`
 const handOrder = page => page.locator('[data-hand-list] [data-hand]').evaluateAll(cards => cards.map(card => card.dataset.hand));
 const completion = page => page.getByRole('button', { name: '公開を完了', exact: true });
 async function loadBoard(page, game) {
-  await page.goto('/game/cpu/');
-  await page.getByRole('navigation', { name: 'ゲームメニュー' }).waitFor();
+  // Any page of the site keeps the saved match: a plain file, so no room is made on the way.
+  await page.goto('/robots.txt');
   await page.evaluate(({ key, game }) => localStorage.setItem(key, JSON.stringify({ game, mode: 'hotseat', level: 'easy' })), { key, game });
   await page.goto('/game/play/');
   await expect(page.locator('[data-table]')).toBeVisible();

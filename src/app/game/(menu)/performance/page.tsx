@@ -1,4 +1,8 @@
+import { Suspense } from 'react';
 import type { Metadata } from 'next';
-import { PlayPerformancePanel } from '@/components/game/performance/PlayPerformancePanel';
+import { OpenInRoom } from '@/components/game/plaza/OpenInRoom';
+
 export const metadata: Metadata = { title: 'ぷぷりえーる 通信計測', robots: { index: false, follow: false } };
-export default function Page() { return <PlayPerformancePanel />; }
+
+/** Opens in the launchpad, over the room (places.ts). */
+export default function Page() { return <Suspense><OpenInRoom section="performance" /></Suspense>; }

@@ -9,20 +9,25 @@ import { lookupRooms } from '@/lib/game/room/client';
 import { defaultProfile, readFriendRooms, readFriendship, readProfile, requestFriend, saveProfile } from '@/lib/game/social';
 import type { Friendship, PlayerProfile } from '@/lib/game/social';
 import { RecordedCard } from '../history/RecordedCard';
+import { OrnateFrame } from '../ornament/OrnateFrame';
 import { Icon } from './Icon';
 import { locate } from './location';
 import { NOTIFICATIONS_PATH } from './NotificationsPage';
 import { DeckChooser, PublicDecks } from './ProfileDecks';
 import { RoomCard } from './RoomCard';
+import { useMarkOwnProfileOpen } from './ownProfile';
 import { ProfileIconPicker } from './ProfileIconPicker';
 import styles from './Social.module.css';
 
-export function ProfilePage() {
+/** `id`: whose profile (the launchpad's place); without it, the address's `?id=`, or the player's own. */
+export function ProfilePage({ id }: { id?: string }) {
   const { user, loading, signInWithGoogle } = useAuth();
-  const requested = useSearchParams().get('id'), uid = requested ?? user?.uid;
+  const params = useSearchParams();
+  const requested = id ?? params.get('id'), uid = requested ?? user?.uid;
+  useMarkOwnProfileOpen(!requested || requested === user?.uid);
   // A shared profile link (?id=) renders without waiting for the visitor's login check.
   if (!uid && loading) return <p role="status">読み込み中…</p>;
-  if (!uid) return <section className={styles.panel}><h2>プロフィール</h2><p>ログインして、カードのアイコンとひとことを設定しよう。</p><button className={styles.primary} onClick={() => void signInWithGoogle()}>ログイン</button></section>;
+  if (!uid) return <section className={`${styles.panel} ${styles.signIn}`}><Icon name="pen" className={styles.signInIcon} /><p>ログインして、カードのアイコンとひとことを設定しよう。</p><OrnateFrame as="button" size="sm" className={styles.cardButton} onClick={() => void signInWithGoogle()}><Icon name="heart" /><span data-ui-title>ログイン</span></OrnateFrame></section>;
   return <Profile key={`${uid}:${uid === user?.uid}`} uid={uid} mine={uid === user?.uid} />;
 }
 function Profile({ uid, mine }: { uid: string; mine: boolean }) {
@@ -47,7 +52,7 @@ function Profile({ uid, mine }: { uid: string; mine: boolean }) {
     return () => { current = false; };
   }, [uid, mine, user]);
   if (loading) return <p role="status">プロフィールを読み込み中…</p>;
-  if (!profile) return <section className={styles.panel}><h2>プロフィール</h2><p role="status">{error || 'プロフィールはまだ作成されていません。'}</p>{error && <button className={styles.primary} onClick={() => { setLoading(true); setError(''); setReadAttempt(value => value + 1); }}>もう一度読み込む</button>}<Link href="/game/social/">ソーシャルへ戻る</Link></section>;
+  if (!profile) return <section className={`${styles.panel} ${styles.signIn}`}><p role="status">{error || 'プロフィールはまだ作成されていません。'}</p>{error && <button className={styles.primary} onClick={() => { setLoading(true); setError(''); setReadAttempt(value => value + 1); }}>もう一度読み込む</button>}</section>;
   async function save() {
     if (!profile || busy) return;
     setBusy(true); setError(''); setMessage('');
@@ -63,10 +68,9 @@ function Profile({ uid, mine }: { uid: string; mine: boolean }) {
   }
   async function share() { try { await navigator.clipboard.writeText(`${location.origin}/game/profile/?id=${encodeURIComponent(uid)}`); setMessage('プロフィールのリンクをコピーしました'); } catch { setError('リンクをコピーできませんでした'); } }
   return <section className={styles.panel} aria-label="プロフィール">
-    <Link className={styles.back} href="/game/social/" aria-label="ソーシャルへ戻る"><Icon name="back" /></Link>
     <header className={styles.profileHeading}>
       <button className={styles.avatarLarge} disabled={!mine} onClick={() => setChoosing(value => !value)} aria-label="カードのアイコンを選ぶ"><RecordedCard id={profile.iconCardId} sizes="120px" eager />{mine && <span>変更 <Icon name="pen" /></span>}</button>
-      <div><small>PLAYER PROFILE</small><h2>{firstProfile ? 'はじめまして！' : profile.displayName}</h2><p className={styles.comment}>{firstProfile ? 'みんなに見える名前を決めよう' : profile.comment || 'よろしくお願いします！'}</p></div>
+      <div><small>PLAYER PROFILE</small><h3 data-ui-title>{firstProfile ? 'はじめまして！' : profile.displayName}</h3><p className={styles.comment}>{firstProfile ? 'みんなに見える名前を決めよう' : profile.comment || 'よろしくお願いします！'}</p></div>
     </header>
     {!mine && friendship?.status === 'accepted' && <FriendRoom uid={uid} profile={profile} />}
     {!mine && <PublicDecks uid={uid} ids={profile.decks} />}
@@ -75,13 +79,13 @@ function Profile({ uid, mine }: { uid: string; mine: boolean }) {
       <label>ひとこと<input aria-label="ひとこと" value={profile.comment} maxLength={80} placeholder="よろしくお願いします！" onChange={event => setProfile({ ...profile, comment: event.target.value })} /><small>{Array.from(profile.comment).length} / 80</small></label>
       {choosing && <ProfileIconPicker selected={profile.iconCardId} onSelect={iconCardId => { setProfile({ ...profile, iconCardId }); setChoosing(false); }} />}
       <DeckChooser uid={uid} chosen={profile.decks} onChange={decks => setProfile({ ...profile, decks })} />
-      <button className={styles.primary} disabled={busy || !profile.displayName.trim()}>{busy ? '保存中…' : 'プロフィールを保存'}</button>
+      <OrnateFrame as="button" size="sm" className={styles.cardButton} disabled={busy || !profile.displayName.trim()}><Icon name="check" /><span data-ui-title>{busy ? '保存中…' : 'プロフィールを保存'}</span></OrnateFrame>
     </form>}
     <div className={styles.actions}>
       {!mine && user && (friendship?.status === 'accepted' ? <span className={styles.friendChip}><Icon name="heart" />フレンド</span>
         : friendship && friendship.requestedBy !== user.uid ? <Link className={styles.primary} href={NOTIFICATIONS_PATH}>届いた申請を見る ›</Link>
-        : <button className={styles.primary} disabled={busy || friendSent || !!friendship} onClick={() => void friend()}>{friendship ? '申請中' : '＋ フレンド申請'}</button>)}
-      <button onClick={() => void share()}>リンクをコピー</button>
+        : <OrnateFrame as="button" size="sm" className={styles.cardButton} disabled={busy || friendSent || !!friendship} onClick={() => void friend()}><span data-ui-title>{friendship ? '申請中' : '＋ フレンド申請'}</span></OrnateFrame>)}
+      <button onClick={() => void share()}><Icon name="send" />リンクをコピー</button>
     </div>
     {message && <p className={styles.success} role="status">{message}</p>}{error && <p className={styles.error} role="alert">{error}</p>}
   </section>;

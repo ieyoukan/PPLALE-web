@@ -19,8 +19,8 @@ test('five tabs switch in place, room actions and volume persist, and Escape res
   const rail = await pad.getByRole('tablist').boundingBox(), panelBox = await pad.getByRole('tabpanel').boundingBox();
   expect(rail.x + rail.width).toBeLessThanOrEqual(panelBox.x);
   await expect(pad.getByRole('tab', { name: 'ランチパッドホーム' })).toHaveAttribute('aria-selected', 'true');
-  await expect(pad.getByRole('region', { name: 'あそぶ' }).getByRole('link')).toHaveCount(4);
-  await expect(pad.getByRole('region', { name: 'すぐに' }).getByRole('button')).toHaveCount(3);
+  await expect(pad.getByRole('region', { name: 'クイックリンク' }).getByRole('button')).toHaveCount(4);
+  await expect(pad.getByRole('group', { name: 'ルームの操作' }).getByRole('button')).toHaveCount(3);
   await expect(pad.getByRole('button', { name: 'CPUを呼ぶ' })).toHaveCount(0);
 
   await pad.getByRole('tab', { name: '通知', exact: true }).click();
@@ -68,7 +68,7 @@ test('five tabs switch in place, room actions and volume persist, and Escape res
   expect(errors).toEqual([]);
 });
 
-test('expansion uses the full game menu while keeping the same live room and board', async ({ page, browser }) => {
+test('the game\'s screens open in the expanded pad over the same live room, without the address changing', async ({ page, browser }) => {
   const pad = await openPad(page), roomURL = page.url();
   const saved = await page.evaluate(() => {
     const value = JSON.parse(localStorage.getItem('pplale-plaza-v1'));
@@ -77,28 +77,33 @@ test('expansion uses the full game menu while keeping the same live room and boa
   const sockets = [];
   page.on('websocket', socket => sockets.push(socket.url()));
   await pad.getByRole('button', { name: 'ゲームメニューを拡大' }).click();
-  await expect(pad.getByRole('navigation', { name: 'ゲームメニュー' })).toBeVisible();
-  // Expanded, the game menu's tabs are on the left and this pad's tabs are icons only at the top right.
-  await expect(pad.getByRole('tab')).toHaveCount(5);
-  await expect(pad.getByRole('tab', { name: '設定' })).toHaveText('');
-  await expect(page).toHaveURL(roomURL);
+  // Expanded, the game's screens are down the left and the pad's tabs are icons only at the top right.
+  const screens = pad.getByRole('tablist', { name: 'ゲームの画面' }), icons = pad.getByRole('tablist', { name: 'ランチパッドのタブ' });
+  await expect(screens.getByRole('tab')).toHaveCount(7);
+  await expect(icons.getByRole('tab')).toHaveCount(4);
+  await expect(icons.getByRole('tab', { name: '設定' })).toHaveText('');
   const friend = await browser.newPage();
   await friend.goto(`${roomURL}?invite=${saved.invite}`);
   await expect(friend.getByRole('complementary', { name: 'ルームにいる人' }).getByRole('listitem')).toHaveCount(2);
-  await pad.getByRole('tab', { name: 'いまのインスタンス' }).click();
+  await icons.getByRole('tab', { name: 'いまのインスタンス' }).click();
   await expect(pad.getByRole('tabpanel')).toContainText('2人');
   await pad.getByRole('button', { name: 'ランチパッドに縮小' }).click();
-  await expect(pad.getByRole('navigation', { name: 'ゲームメニュー' })).toHaveCount(0);
+  await expect(screens).toHaveCount(0);
   await expect(pad.getByRole('tab', { name: 'いまのインスタンス' })).toHaveAttribute('aria-selected', 'true');
   await pad.getByRole('button', { name: 'ゲームメニューを拡大' }).click();
-  await pad.getByRole('navigation', { name: 'ゲームメニュー' }).getByRole('link', { name: /カード/ }).click();
-  await page.waitForURL(/\/game\/cards\/$/);
-  await expect(pad).toHaveCount(0);
-  const cards = page.getByRole('dialog', { name: 'カード', exact: true });
-  await cards.getByRole('navigation', { name: 'ゲームメニュー' }).getByRole('link', { name: /ホーム/ }).click();
+  // A screen, and a link inside it to another, open in the pad; the address stays the room's.
+  await screens.getByRole('tab', { name: 'カード' }).click();
+  await pad.getByRole('tabpanel').getByRole('link', { name: /図鑑/ }).click();
+  await expect(pad.getByRole('heading', { name: 'カード図鑑' })).toBeVisible();
   await expect(page).toHaveURL(roomURL);
-  await expect(cards).toHaveCount(0);
+  await pad.getByRole('button', { name: 'もどる' }).click();
+  await expect(pad.getByRole('heading', { name: 'カード', exact: true })).toBeVisible();
+  await pad.getByRole('button', { name: 'メニューを閉じる' }).click();
   await expect(page.getByRole('complementary', { name: 'ルームにいる人' }).getByRole('listitem')).toHaveCount(2);
   expect(sockets).toEqual([]);
+  // An old address of a screen goes to the room with the pad open on it.
+  await page.goto(`${base}/game/cpu/`);
+  await page.waitForURL(roomURL, { timeout: 30000 });
+  await expect(pad.getByRole('heading', { name: 'CPU対決' })).toBeVisible();
   await friend.close();
 });
