@@ -3,23 +3,31 @@
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
-import { lethalPuzzles, readClearedPuzzles } from '@/lib/game/puzzles';
-import { puzzleHref } from '@/lib/game/sessionStore';
+import { useSearchParams } from 'next/navigation';
+import { lethalPuzzles, puzzleDifficulties, puzzleFruits, readClearedPuzzles } from '@/lib/game/puzzles';
+import { puzzleHref, puzzleListHref } from '@/lib/game/sessionStore';
 import previews from '@/data/lethalPuzzlePreviews.json';
 import { PuzzleIcon } from './PuzzleIcon';
 import styles from './Puzzles.module.css';
 
 export default function PuzzleLobby() {
   const [cleared, setCleared] = useState<string[]>([]);
+  const fruitId = useSearchParams().get('fruit');
+  const fruit = puzzleFruits.find(option => option.id === fruitId) ?? puzzleFruits[0];
   useEffect(() => { setCleared(readClearedPuzzles()); }, []);
   return <div className={styles.lobby}>
     <div className={styles.intro}>
-      <progress max={lethalPuzzles.length} value={cleared.length} aria-label="パズルのクリア状況" />
-      <span aria-label={`${lethalPuzzles.length}問中${cleared.length}問クリア`}>{cleared.length} / {lethalPuzzles.length}</span>
+      <nav className={styles.fruitPicker} aria-label="パズルのフルーツ">
+        {puzzleFruits.map(option => <Link key={option.id} href={puzzleListHref(option.id)} scroll={false} prefetch={false} aria-current={fruit.id === option.id ? 'page' : undefined} data-ui-title>{option.label}</Link>)}
+      </nav>
+      <div className={styles.progress}>
+        <progress max={lethalPuzzles.length} value={cleared.length} aria-label="パズルのクリア状況" />
+        <span aria-label={`${lethalPuzzles.length}問中${cleared.length}問クリア`}>{cleared.length} / {lethalPuzzles.length}</span>
+      </div>
     </div>
-    {['初級', '中級'].map(difficulty => <section key={difficulty}>
-      <h2>メロン {difficulty}</h2>
-      <ul className={styles.grid}>{lethalPuzzles.filter(puzzle => puzzle.difficulty === difficulty).map(puzzle => {
+    {puzzleDifficulties.map(difficulty => <section key={difficulty}>
+      <h2>{fruit.label} {difficulty}</h2>
+      <ul className={styles.grid}>{lethalPuzzles.filter(puzzle => puzzle.fruit === fruit.id && puzzle.difficulty === difficulty).map(puzzle => {
         const done = cleared.includes(puzzle.id);
         const preview = previews.puzzles[puzzle.id as keyof typeof previews.puzzles];
         return <li key={puzzle.id}>

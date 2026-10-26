@@ -1,10 +1,15 @@
 .lobby { display: grid; gap: 24px; color: var(--brand-cocoa-deep); }
-.intro { display: flex; justify-content: flex-end; align-items: center; gap: 12px; font-size: 18px; }
+.intro { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; gap: 12px; font-size: 18px; }
+.fruitPicker { display: flex; gap: 8px; }
+.fruitPicker a { padding: 8px 16px; border: 2px solid var(--brand-pink-edge); border-radius: 999px; background: var(--brand-paper); color: var(--brand-cocoa-deep); text-decoration: none; }
+.fruitPicker a[aria-current="page"] { border-color: var(--brand-cocoa); background: var(--brand-vanilla); }
+.fruitPicker a:focus-visible { outline: 3px solid var(--brand-cocoa-deep); outline-offset: 3px; }
+.progress { display: flex; align-items: center; gap: 12px; margin-left: auto; }
 .intro progress { appearance: none; width: 100px; height: 7px; overflow: hidden; border: 0; border-radius: 5px; background: var(--brand-blush); }
 .intro progress::-webkit-progress-bar { background: var(--brand-blush); }
 .intro progress::-webkit-progress-value { background: var(--brand-sage); }
 .intro progress::-moz-progress-bar { background: var(--brand-sage); }
-.intro > span { white-space: nowrap; font-weight: 700; }
+.progress > span { white-space: nowrap; font-weight: 700; }
 .lobby h2 { margin-bottom: 12px; font-size: 22px; }
 .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 350px), 1fr)); gap: 18px; margin: 0; padding: 0; list-style: none; }
 .problem { display: grid; gap: 12px; height: 100%; padding: 10px; border: 2px solid var(--brand-pink-edge); border-radius: 22px; background: var(--brand-paper); color: var(--brand-cocoa-deep); box-shadow: 0 5px 0 var(--brand-pink); text-decoration: none; transition: transform .18s, box-shadow .18s; }

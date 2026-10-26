@@ -9,7 +9,7 @@ import { useRouter } from 'next/navigation';
 import { gameCatalog } from '@/lib/game/catalog';
 import { useMyProfile } from '../social/useMyProfile';
 import { learningConsent, reportMatch } from '@/lib/game/cpuServer';
-import { HOME_PATH, PUZZLES_PATH } from '@/lib/game/sessionStore';
+import { HOME_PATH, puzzleListHref } from '@/lib/game/sessionStore';
 import { useBoardAnimations } from './useBoardAnimations';
 import { useCardDrag } from './useCardDrag';
 import type { DragSource } from './useCardDrag';
@@ -340,7 +340,7 @@ export function useBoard(container: RefObject<HTMLDivElement | null>, session: B
   /** Back to the game menu. The match stays saved and can be resumed from there. */
   function leave() {
     if (remote) remote.leave();
-    else router.push(puzzle ? PUZZLES_PATH : HOME_PATH);
+    else router.push(puzzle ? puzzleListHref(puzzle.problem.fruit) : HOME_PATH);
   }
   /** Switching to another match (rematch, replay, back from a replay): nothing carries over. */
   function resetTable() {

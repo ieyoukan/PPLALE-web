@@ -2,12 +2,96 @@
   "version": 1,
   "renderer": "BoardTable (/game/play)",
   "puzzles": {
+    "strawberry-beginner-1": {
+      "src": "/puzzle-previews/strawberry-beginner-1-347e1aaa53e78a14.webp",
+      "width": 1280,
+      "height": 720,
+      "positionHash": "14ec4e43daee6e23e9fcb11e60ab352b29ae8892f11d625386391c706d1258e8",
+      "imageHash": "347e1aaa53e78a14c619e1e2fdd258bf892dd2a54c462e55a0e6ca3cdfe02db1"
+    },
+    "strawberry-beginner-2": {
+      "src": "/puzzle-previews/strawberry-beginner-2-a7d79311cfea2b2e.webp",
+      "width": 1280,
+      "height": 720,
+      "positionHash": "7e652d922bef72cef8ec2feda47acc16711d2449c36d67a341af0dddfd4ddb85",
+      "imageHash": "a7d79311cfea2b2e1db5ce417c1ccaf71692ca3bb08719b1bd5988188e01b89d"
+    },
+    "strawberry-beginner-3": {
+      "src": "/puzzle-previews/strawberry-beginner-3-5ac0343c307f089b.webp",
+      "width": 1280,
+      "height": 720,
+      "positionHash": "9b570dc6c9b09e7f3d5ef8471e863d7d2d5a0ea9d16bad32a6196582406432fb",
+      "imageHash": "5ac0343c307f089b19d8e65f5fd299c085dc67de5c30c40c085e563f5f827b8f"
+    },
+    "strawberry-intermediate-1": {
+      "src": "/puzzle-previews/strawberry-intermediate-1-b121b9128c662c47.webp",
+      "width": 1280,
+      "height": 720,
+      "positionHash": "5b11725497a23e417d7a95e28b6c8e8bd8967a5a065222112c1e8d4be15f21bd",
+      "imageHash": "b121b9128c662c47b3b8474cc848a2a97a0d1633e2d57d482a424e41b2c2730c"
+    },
+    "strawberry-intermediate-2": {
+      "src": "/puzzle-previews/strawberry-intermediate-2-f01fb8ed241b1e50.webp",
+      "width": 1280,
+      "height": 720,
+      "positionHash": "881c9dcf1bacc0044d121e28b475225f4af1d376b29f8efcdd7bcb0679577332",
+      "imageHash": "f01fb8ed241b1e50c745db89354103e8cdae6f0812f321c3436ead8fc147c783"
+    },
+    "strawberry-advanced-1": {
+      "src": "/puzzle-previews/strawberry-advanced-1-2a8cab211fd735e1.webp",
+      "width": 1280,
+      "height": 720,
+      "positionHash": "d11fbf9bee0799d4db77298b4ca60d154b5dfeb3fd311a7342f6521664f8df2d",
+      "imageHash": "2a8cab211fd735e1c4ef8302536f309b7a36af80e88d815afa7c82d31f135dac"
+    },
+    "grape-beginner-1": {
+      "src": "/puzzle-previews/grape-beginner-1-4426387eed41e95b.webp",
+      "width": 1280,
+      "height": 720,
+      "positionHash": "96e0c12f88933be96654a738e0ac54924b7b4988c0020367850440b2b8a1d1a5",
+      "imageHash": "4426387eed41e95b58b0d9d235add90f0bf189718c806292484dac561e44cf55"
+    },
+    "grape-intermediate-1": {
+      "src": "/puzzle-previews/grape-intermediate-1-cb9e14dc86ec0305.webp",
+      "width": 1280,
+      "height": 720,
+      "positionHash": "fb2a609748363083ce947c7bad4b345b41670af615c9a82cebd2e9b05c7d4901",
+      "imageHash": "cb9e14dc86ec03050636c070a44044ac257396f590f2c7c91812924f83a58b5d"
+    },
+    "grape-intermediate-2": {
+      "src": "/puzzle-previews/grape-intermediate-2-2b19f7931eda664c.webp",
+      "width": 1280,
+      "height": 720,
+      "positionHash": "996d2273cc233ecd7e9fcebeed858fb6d8d5cefff2b3f996c0b1b96b6d38c07d",
+      "imageHash": "2b19f7931eda664cfb9f88cd6abc1c327408ea1c70027836d10c76f65d7b8714"
+    },
+    "grape-intermediate-3": {
+      "src": "/puzzle-previews/grape-intermediate-3-d0adff3b24a1221b.webp",
+      "width": 1280,
+      "height": 720,
+      "positionHash": "3262204f2dc4d097a17bf56929e03a4d88fc32d562598eb8c5da4079feb9be1f",
+      "imageHash": "d0adff3b24a1221b523068995617d924d3409a699dde2df54500e214f59d55d5"
+    },
+    "grape-advanced-1": {
+      "src": "/puzzle-previews/grape-advanced-1-ee0721c8f8d4d602.webp",
+      "width": 1280,
+      "height": 720,
+      "positionHash": "ec3ebdc1bf14d659ade4e9c51779497080942346304261b69c67c7fbefe5cb58",
+      "imageHash": "ee0721c8f8d4d602c3ea86eea0ca90f4a176fc6a57652a91eac9fdb91e63ea3c"
+    },
+    "grape-advanced-2": {
+      "src": "/puzzle-previews/grape-advanced-2-70fce8c4967255dd.webp",
+      "width": 1280,
+      "height": 720,
+      "positionHash": "254575676073977bc66957669b5178df75f96ed61aba82ca3e7ca6fbe3b7528f",
+      "imageHash": "70fce8c4967255dd90be6e3f8eb1947dba6a0c3bfd29f9d396453d2c1eec574c"
+    },
     "melon-beginner-1": {
-      "src": "/puzzle-previews/melon-beginner-1-345249d5a3d49e61.webp",
+      "src": "/puzzle-previews/melon-beginner-1-80b8e990184951ad.webp",
       "width": 1280,
       "height": 720,
       "positionHash": "4d537598d133be344d1e04ad4c0aa337680e9b58dab3b46d6cc3241a42737ecd",
-      "imageHash": "345249d5a3d49e61209320e9bf7a109d6ba75127fadcc187eb35caa6dd08e036"
+      "imageHash": "80b8e990184951ad50280328e476f86c11630281dc1e46f430ef878e67d43147"
     },
     "melon-beginner-2": {
       "src": "/puzzle-previews/melon-beginner-2-4ab87870b9f278e5.webp",
@@ -31,18 +115,18 @@
       "imageHash": "04eabe7bf0896a86256acc573f31dce105abe764deb05f0ef38507efbd32c3af"
     },
     "melon-intermediate-3": {
-      "src": "/puzzle-previews/melon-intermediate-3-36e788f9fdfc4fa8.webp",
+      "src": "/puzzle-previews/melon-intermediate-3-e9db45a3064e04ac.webp",
       "width": 1280,
       "height": 720,
       "positionHash": "d87994cf912d500d5a5bb449b53a9c9a002e48a3101d94bcbc6d8f8af6e98a95",
-      "imageHash": "36e788f9fdfc4fa87a29d6fb4a95bb1ef27f0350130eab14fd13b89b02189e29"
+      "imageHash": "e9db45a3064e04aca09de8accf58ef5b650d4718cfc9b1c96b2cc849ab152eca"
     },
     "melon-intermediate-4": {
-      "src": "/puzzle-previews/melon-intermediate-4-537378a96cc843f0.webp",
+      "src": "/puzzle-previews/melon-intermediate-4-ce3e92886ea8c257.webp",
       "width": 1280,
       "height": 720,
       "positionHash": "b06e0fb87347a6d1097253cce47cd051486c6b4b29be148cd0bf0fa759c5a017",
-      "imageHash": "537378a96cc843f0089ae3ce58dae601c24ac30c2b00f77b8de8baa1137958b2"
+      "imageHash": "ce3e92886ea8c25791b7423bc200acf960b720b592a6de040504f8368013221e"
     },
     "melon-intermediate-5": {
       "src": "/puzzle-previews/melon-intermediate-5-35427603d5a16c21.webp",
@@ -50,6 +134,48 @@
       "height": 720,
       "positionHash": "ca1c616df4eaa3eb103d8c5d2b9ec7c984e353b0f53010182d2c856c951177b3",
       "imageHash": "35427603d5a16c21b809a1edab837362782a7250c1b313e3bd33384c76ae03cf"
+    },
+    "melon-advanced-1": {
+      "src": "/puzzle-previews/melon-advanced-1-cc6a31c6392c4bb5.webp",
+      "width": 1280,
+      "height": 720,
+      "positionHash": "01a6a65238246e41aa421c3166c33419a3bfb75aebbdcab370fd19fd9f1d6c73",
+      "imageHash": "cc6a31c6392c4bb5d58c6c058142047d76067426c69e6b4316babc4c16d19fb4"
+    },
+    "melon-advanced-2": {
+      "src": "/puzzle-previews/melon-advanced-2-7cc4552dfaaad92f.webp",
+      "width": 1280,
+      "height": 720,
+      "positionHash": "4dbcd6e35f492626e3c35179b9b79568654fd6552d6f6f752c4267ccb646d006",
+      "imageHash": "7cc4552dfaaad92f1463405ccbade4e12454e77219319195d15b7d301bc1cbe8"
+    },
+    "melon-advanced-3": {
+      "src": "/puzzle-previews/melon-advanced-3-7136c82c9b29cfc2.webp",
+      "width": 1280,
+      "height": 720,
+      "positionHash": "ca53b5dee1d313a4dad5a70a1d72c9a11fd03c1467f31c7afe5a16fcf7b4097a",
+      "imageHash": "7136c82c9b29cfc24025f169b1affe4953bc4c21506eb55de8504b2aad83acf5"
+    },
+    "melon-advanced-4": {
+      "src": "/puzzle-previews/melon-advanced-4-2998856e01e8c983.webp",
+      "width": 1280,
+      "height": 720,
+      "positionHash": "0f73924b5bc6a29ba69a946045505270a80d64792edfa4ca5b30ca57204a262f",
+      "imageHash": "2998856e01e8c9835bba08fc316d21eb0968de3f71c941b12e5ee6bb2586dda5"
+    },
+    "melon-advanced-5": {
+      "src": "/puzzle-previews/melon-advanced-5-75dd244618938499.webp",
+      "width": 1280,
+      "height": 720,
+      "positionHash": "9fa2622f8d208846b4d24e0f6041fb6200711552aa784b1352c4b078923f1571",
+      "imageHash": "75dd24461893849989793e814bfeccd62da952827bfc8b06979fbd208ffb282f"
+    },
+    "melon-advanced-6": {
+      "src": "/puzzle-previews/melon-advanced-6-a15184d961f202b4.webp",
+      "width": 1280,
+      "height": 720,
+      "positionHash": "a6d2f0ac9f855b6fa072d7bb86d2743fd21f66ea2252f6490650353b89b17b58",
+      "imageHash": "a15184d961f202b42d1356134a5caff3b92864a0ddc23f0b6b23df22bf767881"
     }
   }
 }

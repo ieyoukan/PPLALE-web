@@ -6,20 +6,25 @@ test.use({ reducedMotion: 'reduce' });
 const toolbar = page => page.getByRole('toolbar', { name: 'リーサルパズル', exact: true });
 const endTurn = page => page.getByRole('button', { name: /ターン\s*終了/ });
 
-test('all seven puzzles open from the menu and keep the saved match intact', async ({ page }) => {
-  test.setTimeout(90000);
+test('all 25 puzzles open from their fruit groups and keep the saved match intact', async ({ page }) => {
+  test.setTimeout(180000);
   const errors = [];
   page.on('pageerror', error => errors.push(error.message));
   await page.goto('/game/puzzles/');
   await expect(page.getByRole('heading', { name: 'ロリの一手を極めるために', exact: true })).toBeVisible();
   await expect(page.getByRole('link', { name: /リーサルパズル/ })).toHaveAttribute('aria-current', 'page');
   expect(await page.locator('main').innerText()).not.toMatch(/[\u{1F300}-\u{1FAFF}]/u);
-  await expect(page.locator('[data-puzzle-preview]')).toHaveCount(7);
-  for (const problem of problems) {
-    const preview = page.locator(`[data-puzzle-preview="${problem.id}"]`);
-    await expect(preview.getByRole('img')).toHaveAttribute('src', previews.puzzles[problem.id].src);
-    await preview.scrollIntoViewIfNeeded();
-    await expect.poll(() => preview.getByRole('img').evaluate(image => image.complete && image.naturalWidth === 1280 && image.naturalHeight === 720)).toBe(true);
+  for (const [fruit, label] of [['strawberry', 'イチゴ'], ['grape', 'ぶどう'], ['melon', 'メロン']]) {
+    const group = problems.filter(problem => problem.fruit === fruit);
+    await page.getByRole('navigation', { name: 'パズルのフルーツ' }).getByRole('link', { name: label, exact: true }).click();
+    await expect(page.locator('[data-puzzle-preview]')).toHaveCount(group.length);
+    for (const difficulty of ['初級', '中級', '上級']) await expect(page.getByRole('heading', { name: `${label} ${difficulty}`, exact: true })).toBeVisible();
+    for (const problem of group) {
+      const preview = page.locator(`[data-puzzle-preview="${problem.id}"]`);
+      await expect(preview.getByRole('img')).toHaveAttribute('src', previews.puzzles[problem.id].src);
+      await preview.scrollIntoViewIfNeeded();
+      await expect.poll(() => preview.getByRole('img').evaluate(image => image.complete && image.naturalWidth === 1280 && image.naturalHeight === 720)).toBe(true);
+    }
   }
   await page.evaluate(() => localStorage.setItem('pplale-game-session-v2', 'existing match'));
   for (const problem of problems) {
@@ -35,9 +40,31 @@ test('all seven puzzles open from the menu and keep the saved match intact', asy
     await expect(page.getByRole('button', { name: '✎ 編集', exact: true })).toHaveCount(0);
     await page.getByRole('button', { name: '問題一覧へ', exact: true }).click();
     await expect(page).toHaveURL(/\/game\/puzzles\//);
+    expect(new URL(page.url()).searchParams.get('fruit')).toBe(problem.fruit);
+    await expect(page.locator(`[data-puzzle-preview="${problem.id}"]`)).toBeVisible();
   }
   expect(await page.evaluate(() => localStorage.getItem('pplale-game-session-v2'))).toBe('existing match');
   expect(errors).toEqual([]);
+  await page.setViewportSize({ width: 1440, height: 1000 });
+  await page.goto('/game/puzzles/?fruit=melon');
+  await page.screenshot({ path: '/tmp/pplale-puzzle-list-desktop.png' });
+});
+
+test('fruit selection survives reload and fits a phone screen', async ({ page }) => {
+  await page.setViewportSize({ width: 390, height: 844 });
+  await page.goto('/game/puzzles/');
+  await expect(page.locator('[data-puzzle-preview]')).toHaveCount(6);
+  const fruits = page.getByRole('navigation', { name: 'パズルのフルーツ' });
+  await fruits.getByRole('link', { name: 'メロン', exact: true }).click();
+  await expect(page.locator('[data-puzzle-preview]')).toHaveCount(13);
+  await page.reload();
+  await expect(fruits.getByRole('link', { name: 'メロン', exact: true })).toHaveAttribute('aria-current', 'page');
+  await expect(page.locator('[data-puzzle-preview]')).toHaveCount(13);
+  expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(true);
+  await page.screenshot({ path: '/tmp/pplale-puzzle-list-mobile.png' });
+  await page.goto('/game/puzzles/?fruit=unknown');
+  await expect(fruits.getByRole('link', { name: 'イチゴ', exact: true })).toHaveAttribute('aria-current', 'page');
+  await expect(page.locator('[data-puzzle-preview]')).toHaveCount(6);
 });
 
 test('failed turn can be undone or restarted on a small screen', async ({ page }) => {
