@@ -169,7 +169,7 @@ export function FreeMatch() {
           </label>
           {chosen && <MatchDeckPreview name={chosen.name} deck={previewDeck} />}
           <UnusableDecks choices={choices} className={styles.note} />
-          <OrnateFrame as="button" size="sm" className={`${styles.cardButton} ${styles.matchStart}`} disabled={preparation.busy || !chosen || !roomServerUrl || !nameReady} onClick={() => void start()}><span data-ui-title>{preparation.busy ? '対戦を準備中…' : 'このデッキで対戦相手を探す'}</span> <span aria-hidden="true">›</span></OrnateFrame>
+          <OrnateFrame as="button" size="line" className={`${styles.cardButton} ${styles.matchStart}`} disabled={preparation.busy || !chosen || !roomServerUrl || !nameReady} onClick={() => void start()}><span data-ui-title>{preparation.busy ? '対戦を準備中…' : 'このデッキで対戦相手を探す'}</span> <span aria-hidden="true">›</span></OrnateFrame>
           <PreparationProgress progress={preparation.progress} />
           {!user ? <button className={styles.matchLogin} onClick={() => { signInWithGoogle().catch(() => setError('ログインできませんでした')); }}>ログインして保存済みデッキを使う</button>
             : <p className={styles.note}>{saved.loading ? 'デッキを読み込み中…' : `${saved.decks.length}件の保存済みデッキ`} · <Link href="/build">デッキを編集する</Link></p>}

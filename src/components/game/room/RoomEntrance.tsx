@@ -117,7 +117,7 @@ export function RoomEntrance() {
         <input type="text" className={styles.idInput} value={id} inputMode="numeric" autoComplete="off" maxLength={ROOM_ID_LENGTH} placeholder={'0'.repeat(ROOM_ID_LENGTH)}
           onChange={event => setId(event.target.value.replace(/\D/g, '').slice(0, ROOM_ID_LENGTH))} />
       </label>
-      <OrnateFrame as="button" size="sm" className={styles.cardButton} disabled={!isRoomId(id)}><span data-ui-title>ルームへ行く</span></OrnateFrame>
+      <OrnateFrame as="button" size="line" className={styles.cardButton} disabled={!isRoomId(id)}><span data-ui-title>ルームへ行く</span></OrnateFrame>
     </OrnateFrame>}
   </div>;
 }

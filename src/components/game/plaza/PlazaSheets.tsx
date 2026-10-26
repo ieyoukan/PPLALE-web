@@ -54,7 +54,7 @@ export function DeckContentsSheet({ choice, onClose, onAction, actionLabel }: { 
     {!deck && <p className={styles.note}>おまかせデッキは、じゅんびOKを押したときにカードが決まります。</p>}
     {deck && <DeckCardLayout deck={{ yojoDeckIds: deck.yojo, sweetDeckIds: deck.sweet, playableCardId: deck.playable }} label="デッキのカード" imageOf={id => displayCards[id]?.imageUrl} nameOf={id => displayCards[id]?.name ?? id} onCardClick={(id, event) => { trigger.current = event.currentTarget; setExpanded(id); }} />}
     {!!choice.errors.length && <p className={styles.note}>{choice.errors.join(' / ')}</p>}
-    {onAction && <div className={styles.sheetFoot}><OrnateFrame as="button" size="sm" className={styles.primaryButton} onClick={onAction}><PlazaIcon name="cards" /><span data-ui-title>{actionLabel}</span></OrnateFrame></div>}
+    {onAction && <div className={styles.sheetFoot}><OrnateFrame as="button" size="line" className={styles.primaryButton} onClick={onAction}><PlazaIcon name="cards" /><span data-ui-title>{actionLabel}</span></OrnateFrame></div>}
   </Sheet></div>
     {card && <CardDetail card={card} onClose={() => setExpanded(null)} isInDeck={false} returnFocusRef={trigger} />}
   </>;
@@ -99,7 +99,7 @@ export function RulesSheet({ view, onSave, onClose }: { view: RoomView; onSave: 
       </div>
     </div>
     <div className={styles.sheetFoot}>
-      {mine ? <OrnateFrame as="button" size="sm" className={styles.primaryButton} onClick={() => onSave(rules)}><PlazaIcon name="check" /><span data-ui-title>{playing ? '次の対戦からこのルール' : 'このルールにする'}</span></OrnateFrame>
+      {mine ? <OrnateFrame as="button" size="line" className={styles.primaryButton} onClick={() => onSave(rules)}><PlazaIcon name="check" /><span data-ui-title>{playing ? '次の対戦からこのルール' : 'このルールにする'}</span></OrnateFrame>
         : <span className={styles.note}>ルールを変えられるのはオーナーだけです。</span>}
     </div>
   </Sheet>;

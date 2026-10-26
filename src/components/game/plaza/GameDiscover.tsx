@@ -24,7 +24,7 @@ export function GameDiscover({ onCreate }: { onCreate: () => void }) {
         <Image className={styles.logo} src="/images/game/logo.webp" alt="お菓子争奪戦争ぷぷりえーる" width={240} height={135} />
         <h3 data-ui-title>ルームで、待ち合わせ。</h3>
         <p>対戦する人も、見ている人も。<br />いつものおやつ時間を、いっしょに。</p>
-        <OrnateFrame as="button" size="sm" className={styles.create} onClick={onCreate}><PlazaIcon name="door" /><span data-ui-title>ルームを作る</span></OrnateFrame>
+        <OrnateFrame as="button" size="line" className={styles.create} onClick={onCreate}><PlazaIcon name="door" /><span data-ui-title>ルームを作る</span></OrnateFrame>
       </div>
       <Image className={styles.friends} src="/images/game/characters/friends.webp" alt="" width={480} height={360} />
     </OrnateFrame>

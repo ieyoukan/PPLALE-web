@@ -96,7 +96,7 @@ export function GameSetup({ modes, onStart }: {
     <UnusableDecks choices={choices} className={styles.ruleSettings} />
     {saved.error && <p role="alert" className={styles.error}>{saved.error}</p>}
     {error && <p role="alert" className={styles.error}>{error}</p>}
-    <OrnateFrame as="button" size="sm" data-ui-title data-landscape-action className={`${styles.startButton} ${layout.start}`} disabled={starting || chosen.some(choice => !choice)} aria-busy={starting} onClick={() => void start()}>{starting ? '対戦を準備中…' : '対戦をはじめる'} <span>→</span></OrnateFrame>
+    <OrnateFrame as="button" size="line" data-ui-title data-landscape-action className={`${styles.startButton} ${layout.start}`} disabled={starting || chosen.some(choice => !choice)} aria-busy={starting} onClick={() => void start()}>{starting ? '対戦を準備中…' : '対戦をはじめる'} <span>→</span></OrnateFrame>
     {asking && <>
       <button className={styles.consentBackdrop} aria-label="閉じる" onClick={() => setAsking(false)} />
       <OrnateFrame as="section" className={styles.consent} role="dialog" aria-modal="true" aria-labelledby="learning-consent">
@@ -107,7 +107,7 @@ export function GameSetup({ modes, onStart }: {
           <li>お互いが打った手と、勝ち負け</li>
         </ul>
         <p>名前・アカウント・デッキの名前は送りません。記録からだれの対戦かはわかりません。ログインも不要です。くわしくは<Link href="/privacy-policy" target="_blank">プライバシーポリシー</Link>をご覧ください。</p>
-        <OrnateFrame as="button" size="sm" data-ui-title className={styles.startButton} onClick={() => { agree(true); start(true); }}>同意して対戦をはじめる <span>→</span></OrnateFrame>
+        <OrnateFrame as="button" size="line" data-ui-title className={styles.startButton} onClick={() => { agree(true); start(true); }}>同意して対戦をはじめる <span>→</span></OrnateFrame>
         <button className={styles.secondaryButton} onClick={() => setAsking(false)}>同意しない（ほかの強さを選ぶ）</button>
       </OrnateFrame>
     </>}

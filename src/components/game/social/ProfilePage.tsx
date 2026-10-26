@@ -25,7 +25,7 @@ export function ProfilePage({ id }: { id?: string }) {
   useMarkOwnProfileOpen(!requested || requested === user?.uid);
   // A shared profile link (?id=) renders without waiting for the visitor's login check.
   if (!uid && loading) return <p role="status">読み込み中…</p>;
-  if (!uid) return <section className={`${styles.panel} ${styles.signIn}`}><Icon name="pen" className={styles.signInIcon} /><p>ログインして、カードのアイコンとひとことを設定しよう。</p><OrnateFrame as="button" size="sm" className={styles.cardButton} onClick={() => void signInWithGoogle()}><Icon name="heart" /><span data-ui-title>ログイン</span></OrnateFrame></section>;
+  if (!uid) return <section className={`${styles.panel} ${styles.signIn}`}><Icon name="pen" className={styles.signInIcon} /><p>ログインして、カードのアイコンとひとことを設定しよう。</p><OrnateFrame as="button" size="line" className={styles.cardButton} onClick={() => void signInWithGoogle()}><Icon name="heart" /><span data-ui-title>ログイン</span></OrnateFrame></section>;
   return <Profile key={`${uid}:${uid === user?.uid}`} uid={uid} mine={uid === user?.uid} />;
 }
 function Profile({ uid, mine }: { uid: string; mine: boolean }) {
@@ -85,12 +85,12 @@ function Profile({ uid, mine }: { uid: string; mine: boolean }) {
           <label>ひとこと<input aria-label="ひとこと" value={profile.comment} maxLength={80} placeholder="よろしくお願いします！" onChange={event => setProfile({ ...profile, comment: event.target.value })} /><small>{Array.from(profile.comment).length} / 80</small></label>
           {choosing && <ProfileIconPicker selected={profile.iconCardId} onSelect={iconCardId => { setProfile({ ...profile, iconCardId }); setChoosing(false); }} />}
           <DeckChooser uid={uid} chosen={profile.decks} onChange={decks => setProfile({ ...profile, decks })} />
-          <OrnateFrame as="button" size="sm" className={styles.cardButton} disabled={busy || !profile.displayName.trim()}><Icon name="check" /><span data-ui-title>{busy ? '保存中…' : 'プロフィールを保存'}</span></OrnateFrame>
+          <OrnateFrame as="button" size="line" className={styles.cardButton} disabled={busy || !profile.displayName.trim()}><Icon name="check" /><span data-ui-title>{busy ? '保存中…' : 'プロフィールを保存'}</span></OrnateFrame>
         </form>}
         <div className={styles.actions}>
           {!mine && user && (friendship?.status === 'accepted' ? <span className={styles.friendChip}><Icon name="heart" />フレンド</span>
             : friendship && friendship.requestedBy !== user.uid ? <Link className={styles.primary} href={NOTIFICATIONS_PATH}>届いた申請を見る ›</Link>
-            : <OrnateFrame as="button" size="sm" className={styles.cardButton} disabled={busy || friendSent || !!friendship} onClick={() => void friend()}><span data-ui-title>{friendship ? '申請中' : '＋ フレンド申請'}</span></OrnateFrame>)}
+            : <OrnateFrame as="button" size="line" className={styles.cardButton} disabled={busy || friendSent || !!friendship} onClick={() => void friend()}><span data-ui-title>{friendship ? '申請中' : '＋ フレンド申請'}</span></OrnateFrame>)}
           {!mine && user && friendship?.status === 'accepted' && <>
             <InviteToRoom uid={uid} name={profile.displayName} />
             {confirmRemove ? <div className={styles.friendConfirm} role="group" aria-label="フレンド解除の確認">

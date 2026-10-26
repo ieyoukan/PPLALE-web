@@ -7,6 +7,10 @@
   position: relative; isolation: isolate; padding: var(--pad); color: var(--brand-cocoa-deep);
 }
 :where(.frame[data-size=sm]) { --corner: 40px; --pad: 16px; }
+/* The thin frame of buttons: 14px corners, its one rule 6 units of 14 across. */
+:where(.frame[data-size=line]) { --corner: 14px; --pad: 8px 16px; }
+.frame[data-size=line] .top, .frame[data-size=line] .bottom { height: calc(var(--corner) * 6 / 14); }
+.frame[data-size=line] .left, .frame[data-size=line] .right { width: calc(var(--corner) * 6 / 14); }
 :where(.frame[data-tone=cream]) { --frame-ink: var(--brand-cream-line); --frame-face: #2b1a12b8; color: var(--brand-cream-on-dark); }
 :where(.frame[data-faint]) { --frame-ink: var(--brand-cocoa-soft); --frame-face: color-mix(in srgb, var(--brand-paper) 60%, transparent); }
 :where(.frame[data-bare]) { --frame-face: transparent; }

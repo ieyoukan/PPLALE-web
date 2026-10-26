@@ -29,7 +29,7 @@ export function ShareSheet({ view, onClose }: { view: RoomView; onClose: () => v
   const info = visibilityInfo[plaza.visibility];
   return <Sheet title="ルームにさそう" onClose={onClose}>
     {mayShare ? <>
-      <OrnateFrame as="button" size="sm" tone="cream" className={styles.discordButton} onClick={() => copy('discord', words.discord)}>
+      <OrnateFrame as="button" size="line" tone="cream" className={styles.discordButton} onClick={() => copy('discord', words.discord)}>
         <DiscordMark /><span><b data-ui-title>Discordに貼る</b><small>メッセージをコピーします</small></span>
         {done === 'discord' && <span className={styles.copied}><PlazaIcon name="check" /></span>}
       </OrnateFrame>
