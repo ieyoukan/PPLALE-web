@@ -23,10 +23,10 @@
 .mark svg { display: block; width: 18px; height: 18px; fill: none; stroke: currentColor; stroke-width: 3; stroke-linecap: round; stroke-linejoin: round; }
 /* Not playable yet: grey behind a cream veil with its label. */
 .tile[data-soon] .art { filter: grayscale(.8); }
-.soon { position: absolute; inset: 0; display: grid; place-items: center; background: #fffdebd9; color: #4d3a2c; font-size: 14px; font-weight: 700; letter-spacing: .12em; }
+.soon { position: absolute; inset: 0; display: grid; place-items: center; background: #fffdebd9; color: var(--brand-cocoa-deep); font-size: 14px; font-weight: 700; letter-spacing: .12em; }
 .name { font-size: 16px; font-weight: 700; line-height: 1.3; }
 .name small { display: block; font-size: 12px; font-weight: 400; color: var(--brand-cocoa-soft); }
-.tile[data-soon] .name { color: #7d6b5d; }
+.tile[data-soon] .name { color: var(--brand-cocoa-soft); }
 .tile:has(.box:focus-visible) .art { outline: 3px solid var(--brand-cocoa); outline-offset: 4px; }
 .note { font-size: 14px; line-height: 1.7; color: var(--brand-cocoa-soft); }
 

@@ -4,7 +4,7 @@
   position: absolute; inset: 0; display: grid; gap: 14px; padding: 14px 18px 16px; color: var(--brand-cocoa-deep);
   grid-template: "top top top" 64px "people mat mat" minmax(0, 1fr) "people side side" 104px / 200px minmax(0, 1fr) 200px;
   background: radial-gradient(ellipse at 50% 45%, #ffffff12, transparent 65%), repeating-linear-gradient(1deg, #ffffff04 0 1px, transparent 1px 8px),
-    repeating-linear-gradient(0deg, #2b170c35 0 1px, transparent 1px 12px), linear-gradient(90deg, #503729, #72533b 28%, #765339 75%, #503729);
+    repeating-linear-gradient(0deg, color-mix(in srgb, var(--brand-ink) 21%, transparent) 0 1px, transparent 1px 12px), linear-gradient(90deg, var(--brand-wood), var(--brand-wood-light) 28%, var(--brand-wood-light) 75%, var(--brand-wood));
   font-size: 16px;
 }
 .table button, .table a { cursor: pointer; -webkit-tap-highlight-color: transparent; }
@@ -13,7 +13,7 @@
 
 /* ── Small buttons: squares with corners only a little rounded (6px), or no frame at all ── */
 .round, .inviteButton, .claim, .softButton, .shareTile {
-  border: 1px solid #c9a98a; border-radius: 6px; background: var(--brand-cream); color: var(--brand-cocoa-deep);
+  border: 1px solid var(--brand-pink-edge); border-radius: 6px; background: var(--brand-cream); color: var(--brand-cocoa-deep);
   box-shadow: none; transition: transform .12s ease;
 }
 :is(.round, .inviteButton, .claim, .softButton, .shareTile):active:not(:disabled) { transform: translateY(2px); box-shadow: none; }
@@ -25,7 +25,7 @@
 .roomBadge { position: relative; display: grid; place-items: center; flex: none; width: 36px; height: 36px; font-size: 24px; color: var(--brand-cocoa); }
 .roomBadge[data-visibility=public] { background: var(--brand-sage-wash); }
 .roomBadge[data-visibility^=friends] { background: var(--brand-peach-wash); }
-.roomBadge i { position: absolute; right: -4px; bottom: -4px; display: grid; place-items: center; width: 20px; height: 20px; border-radius: 50%; background: var(--brand-cocoa); color: #fff; font: 700 13px/1 sans-serif; font-style: normal; }
+.roomBadge i { position: absolute; right: -4px; bottom: -4px; display: grid; place-items: center; width: 20px; height: 20px; border-radius: 50%; background: var(--brand-cocoa); color: var(--brand-paper); font: 700 13px/1 sans-serif; font-style: normal; }
 .roomTitle { display: grid; min-width: 0; }
 .roomTitle b { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 22px; line-height: 1.15; color: var(--brand-cocoa); }
 .roomTitle small { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 13px; color: var(--brand-cocoa-soft); }
@@ -38,12 +38,12 @@
 .people { --pad: 24px 16px; grid-area: people; min-height: 0; overflow: auto; }
 .people ul { display: grid; list-style: none; margin: 0; padding: 0; }
 /* Rows on the panel's own face, parted by a fine rule, rather than boxes of their own. */
-.person { display: flex; align-items: center; gap: 10px; padding: 6px 4px; border-bottom: 1px solid #f6e9d233; color: #fff3d6; text-decoration: none; animation: popIn .35s cubic-bezier(.3, 1.6, .5, 1) both; }
-a.person:hover { background: #fff3d61a; }
+.person { display: flex; align-items: center; gap: 10px; padding: 6px 4px; border-bottom: 1px solid color-mix(in srgb, var(--brand-cream-line) 20%, transparent); color: var(--brand-cream-on-dark); text-decoration: none; animation: popIn .35s cubic-bezier(.3, 1.6, .5, 1) both; }
+a.person:hover { background: color-mix(in srgb, var(--brand-cream-on-dark) 10%, transparent); }
 [data-away] > .person { opacity: .62; }
 .personName { display: grid; flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 15px; font-weight: 700; }
-.personName small { font-size: 11px; font-weight: 500; color: #f6e9d2cc; }
-.personMarks { display: flex; gap: 4px; font-size: 17px; color: #f6e9d2cc; }
+.personName small { font-size: 11px; font-weight: 500; color: color-mix(in srgb, var(--brand-cream-line) 80%, transparent); }
+.personMarks { display: flex; gap: 4px; font-size: 17px; color: color-mix(in srgb, var(--brand-cream-line) 80%, transparent); }
 .crown { color: var(--brand-vanilla); }
 
 /* Portraits: the profile's card, cropped to the face like the friends list. */
@@ -70,11 +70,11 @@ a.person:hover { background: #fff3d61a; }
 }
 .tableTop > .surface { position: absolute; inset: 0; width: 100%; height: 100%; min-height: 0; margin: 0; aspect-ratio: auto; perspective: none; pointer-events: none; }
 /* The board's edge toward the player (its mat ends 6% inside the board): from the side, its thickness shows. */
-.tableTop::before { content: ''; position: absolute; top: 0; bottom: 0; left: 94%; width: 22px; transform-origin: left; transform: rotateY(90deg); background: linear-gradient(90deg, #8a6143, #4f3424); }
+.tableTop::before { content: ''; position: absolute; top: 0; bottom: 0; left: 94%; width: 22px; transform-origin: left; transform: rotateY(90deg); background: linear-gradient(90deg, var(--brand-wood-edge), var(--brand-wood-deep)); }
 .spot { position: absolute; left: 50%; width: 0; height: 0; transform-style: preserve-3d; }
 .spot[data-seat='0'] { top: 112%; }
 .spot[data-seat='1'] { top: -12%; }
-.shadow { position: absolute; width: 90px; height: 200px; transform: translate(-50%, -50%); background: radial-gradient(closest-side, #2b170c55, transparent); pointer-events: none; }
+.shadow { position: absolute; width: 90px; height: 200px; transform: translate(-50%, -50%); background: radial-gradient(closest-side, color-mix(in srgb, var(--brand-ink) 33%, transparent), transparent); pointer-events: none; }
 /* Upright toward the player, standing on its spot. */
 .stand { position: absolute; left: 0; top: 0; width: 214px; transform-origin: 0 0; transform: rotateZ(-90deg) rotateX(calc(-1 * var(--tilt))) translateZ(2px) translate(-50%, -100%); }
 .seat {
@@ -82,25 +82,25 @@ a.person:hover { background: #fff3d61a; }
   width: 100%; min-height: 228px; filter: none; animation: seatIn .45s cubic-bezier(.3, 1.5, .5, 1) both;
 }
 /* Ready: the frame turns the leaf green of the logo. Yours: a blush face. */
-.seat[data-ready] { --frame-ink: #5c7a32; }
+.seat[data-ready] { --frame-ink: var(--brand-leaf-deep); }
 .seat[data-self] { --frame-face: var(--brand-blush); }
 .seatName { display: flex; flex-wrap: wrap; justify-content: center; align-items: baseline; gap: 2px 8px; max-width: 100%; min-width: 0; }
 .seatName b { max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 22px; color: var(--brand-cocoa); }
 .seatName small { flex: none; padding: 1px 9px; border-radius: 999px; background: var(--brand-pink); font-size: 12px; font-weight: 700; }
 .seatState { display: inline-flex; align-items: center; gap: 6px; justify-self: center; padding: 4px 14px; border-radius: 999px; font-weight: 700; font-size: 16px; background: var(--brand-vanilla-wash); }
 .seatState[data-state=ready] { background: var(--brand-sage); }
-.seatState[data-state=away] { background: #ece3dc; color: var(--brand-cocoa-soft); letter-spacing: .12em; }
+.seatState[data-state=away] { background: var(--brand-blush); color: var(--brand-cocoa-soft); letter-spacing: .12em; }
 .thinking { display: inline-flex; gap: 5px; padding: 3px 0; }
 .thinking i { width: 8px; height: 8px; border-radius: 50%; background: var(--brand-cocoa-soft); animation: hop 1.2s ease-in-out infinite; }
 .thinking i:nth-child(2) { animation-delay: .15s; }
 .thinking i:nth-child(3) { animation-delay: .3s; }
-.seatCorner { position: absolute; top: -12px; right: -12px; display: grid; place-items: center; width: 40px; height: 40px; border-radius: 6px; border: 2px solid #fff; background: var(--brand-cocoa); color: #fff8f0; font-size: 20px; box-shadow: none; }
+.seatCorner { position: absolute; top: -12px; right: -12px; display: grid; place-items: center; width: 40px; height: 40px; border-radius: 6px; border: 2px solid var(--brand-paper); background: var(--brand-cocoa); color: var(--brand-cream); font-size: 20px; box-shadow: none; }
 .seatEmpty { grid-template-columns: 1fr; filter: none; animation: none; }
 .sitButton { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 14px; width: 100%; height: 100%; padding: 0; border: 0; background: none; color: var(--brand-cocoa); text-align: center; }
 .sitButton b { font-size: 24px; }
 /* A diamond like the cards' ornaments, calling from far to near. */
-.plus { display: grid; place-items: center; width: 80px; height: 80px; background: var(--brand-cocoa); color: #fff8f0; font-size: 36px; clip-path: polygon(50% 0, 100% 50%, 50% 100%, 0 50%); animation: beckon 1.8s ease-in-out infinite; }
-.plusSoft { background: #b8862b; color: #fff8f0; animation-duration: 2.6s; }
+.plus { display: grid; place-items: center; width: 80px; height: 80px; background: var(--brand-cocoa); color: var(--brand-cream); font-size: 36px; clip-path: polygon(50% 0, 100% 50%, 50% 100%, 0 50%); animation: beckon 1.8s ease-in-out infinite; }
+.plusSoft { background: var(--brand-star-deep); color: var(--brand-cream); animation-duration: 2.6s; }
 .sitButton:hover .plus { animation-duration: .9s; }
 
 /* ── Right: the rules, and who looks after them ── */
@@ -109,12 +109,12 @@ a.person:hover { background: #fff3d61a; }
 .rulesThumbnail { display: block; width: 100%; height: auto; aspect-ratio: 800 / 420; object-fit: contain; }
 .ruleChips { display: flex; flex-wrap: wrap; gap: 6px; }
 .ruleChips span { display: inline-flex; align-items: center; gap: 4px; padding: 3px 10px; border-radius: 999px; background: var(--brand-vanilla-wash); font-weight: 700; font-size: 14px; }
-.editHint { position: absolute; top: 4px; right: 44px; display: flex; align-items: center; gap: 3px; padding: 2px 10px; background: var(--brand-cocoa); color: #fff8f0; font-size: 12px; font-weight: 700; }
-.ownerChip { display: flex; align-items: center; justify-content: center; gap: 6px; padding: 4px; color: #fff3d6; font-size: 14px; font-weight: 700; }
-.ownerChip svg { color: #f5df97; }
+.editHint { position: absolute; top: 4px; right: 44px; display: flex; align-items: center; gap: 3px; padding: 2px 10px; background: var(--brand-cocoa); color: var(--brand-cream); font-size: 12px; font-weight: 700; }
+.ownerChip { display: flex; align-items: center; justify-content: center; gap: 6px; padding: 4px; color: var(--brand-cream-on-dark); font-size: 14px; font-weight: 700; }
+.ownerChip svg { color: var(--brand-vanilla); }
 .claim { display: flex; align-items: center; justify-content: center; gap: 8px; padding: 12px; font-size: 18px; }
 .claim svg { animation: beckon 1.6s ease-in-out infinite; }
-.claim svg { color: #b8862b; font-size: 22px; }
+.claim svg { color: var(--brand-star-deep); font-size: 22px; }
 
 /* ── Bottom: the deck and getting ready ── */
 .actions { grid-area: actions; position: relative; display: flex; align-items: center; justify-content: center; gap: 18px; }
@@ -133,7 +133,7 @@ a.person:hover { background: #fff3d61a; }
 }
 .ready:active:not(:disabled) { animation: none; }
 .ready:disabled { filter: saturate(.6); opacity: .8; animation: none; }
-.readyDone { --frame-face: var(--brand-sage); --frame-ink: #5c7a32; grid-auto-flow: column; gap: 10px; animation: none; }
+.readyDone { --frame-face: var(--brand-sage); --frame-ink: var(--brand-leaf-deep); grid-auto-flow: column; gap: 10px; animation: none; }
 .readyDone small { grid-column: 1 / 3; font-size: 12px; color: var(--brand-cocoa-soft); }
 .hint { --pad: 14px 30px; display: flex; align-items: center; gap: 10px; font-weight: 700; font-size: 18px; filter: none; animation: bob 2.2s ease-in-out infinite; }
 .hint svg { font-size: 24px; color: var(--brand-cocoa); }
@@ -142,9 +142,9 @@ a.person:hover { background: #fff3d61a; }
 .requests { position: absolute; top: 88px; right: 18px; z-index: 5; display: grid; gap: 8px; }
 .request { --pad: 10px 12px 10px 18px; display: flex; align-items: center; gap: 10px; filter: none; animation: popIn .4s cubic-bezier(.3, 1.6, .5, 1) both; }
 .request button { display: grid; place-items: center; width: 38px; height: 38px; border: 0; border-radius: 6px; background: var(--brand-sage); color: var(--brand-cocoa-deep); font-size: 20px; }
-.request button + button { background: #ece3dc; }
+.request button + button { background: var(--brand-blush); }
 
-.toast { position: absolute; left: 50%; bottom: 128px; z-index: 6; transform: translateX(-50%); max-width: 70%; padding: 10px 22px; border-radius: 999px; background: var(--brand-cocoa-deep); color: #fff8f0; font-size: 15px; box-shadow: none; animation: popIn .3s ease both; }
+.toast { position: absolute; left: 50%; bottom: 128px; z-index: 6; transform: translateX(-50%); max-width: 70%; padding: 10px 22px; border-radius: 999px; background: var(--brand-cocoa-deep); color: var(--brand-cream); font-size: 15px; box-shadow: none; animation: popIn .3s ease both; }
 
 /* ── Sheets ── */
 .sheetBackdrop { position: absolute; inset: 0; z-index: 60; display: grid; grid-template: minmax(0, 1fr) / minmax(0, 1fr); place-items: center; min-height: 0; padding: 24px; background: #3a2420a6; backdrop-filter: blur(4px); animation: fade .2s ease both; }
@@ -177,7 +177,7 @@ a.person:hover { background: #fff3d61a; }
 .deckTileArt > div { width: 100%; border-radius: 0; background: var(--brand-cream); }
 .deckTile[data-unusable] .deckTileArt { opacity: .45; }
 .randomDeck { display: grid; place-items: center; width: 100%; height: 100%; background: var(--brand-vanilla-wash); font-size: 52px; color: var(--brand-cocoa); }
-.tileCheck { position: absolute; top: 10px; right: 12px; display: grid; place-items: center; width: 26px; height: 26px; background: var(--brand-cocoa); color: #fff; font-size: 15px; clip-path: polygon(50% 0, 100% 50%, 50% 100%, 0 50%); }
+.tileCheck { position: absolute; top: 10px; right: 12px; display: grid; place-items: center; width: 26px; height: 26px; background: var(--brand-cocoa); color: var(--brand-paper); font-size: 15px; clip-path: polygon(50% 0, 100% 50%, 50% 100%, 0 50%); }
 .cpuTile b { font-size: 20px; }
 /* Stronger CPUs, warmer tiles. */
 .cpuTile[data-level=easy] { --frame-face: var(--brand-sage-wash); }
@@ -185,12 +185,12 @@ a.person:hover { background: #fff3d61a; }
 .cpuTile[data-level=hard] { --frame-face: var(--brand-peach-wash); }
 .cpuTile[data-level=master] { --frame-face: var(--brand-blush); }
 .stars { display: flex; gap: 2px; font-size: 17px; }
-.starOn { color: #d9a93a; fill: #f5df97; }
+.starOn { color: var(--brand-star); fill: var(--brand-vanilla); }
 .starOff { color: var(--brand-pink-edge); }
 .turnChoice { display: flex; align-items: center; justify-content: center; gap: 8px; margin-top: 10px; font-size: 22px; }
 .turnChoice button { min-width: 72px; padding: 8px 16px; border: 0; border-radius: 6px; background: var(--brand-paper); color: var(--brand-cocoa-deep); font-size: 17px; font-weight: 700; outline: 2px solid var(--brand-pink); cursor: pointer; }
-.turnChoice button[aria-checked=true] { background: var(--brand-cocoa); color: #fff8f0; box-shadow: none; }
-.discordButton { --pad: 22px 30px; --frame-face: var(--brand-cocoa-deep); position: relative; display: flex; align-items: center; justify-content: center; gap: 16px; width: 100%; color: #fff8f0; font-size: 34px; filter: none; text-align: left; }
+.turnChoice button[aria-checked=true] { background: var(--brand-cocoa); color: var(--brand-cream); box-shadow: none; }
+.discordButton { --pad: 22px 30px; --frame-face: var(--brand-cocoa-deep); position: relative; display: flex; align-items: center; justify-content: center; gap: 16px; width: 100%; color: var(--brand-cream); font-size: 34px; filter: none; text-align: left; }
 .discordButton span { display: grid; }
 .discordButton b { font-size: 24px; }
 .discordButton small { font-size: 13px; opacity: .85; }
@@ -204,7 +204,7 @@ a.person:hover { background: #fff3d61a; }
 .srOnly { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); }
 
 /* ── Moving between rooms ── */
-.veil { position: absolute; inset: 0; z-index: 200; display: grid; justify-items: center; align-content: start; padding-top: 90px; background: #2b170c33; animation: fade .2s ease both; }
+.veil { position: absolute; inset: 0; z-index: 200; display: grid; justify-items: center; align-content: start; padding-top: 90px; background: color-mix(in srgb, var(--brand-ink) 20%, transparent); animation: fade .2s ease both; }
 .veilSign { --pad: 14px 28px; display: flex; align-items: center; gap: 12px; color: var(--brand-cocoa-deep); font-weight: 700; filter: none; }
 /* Three dots hop in turn (up and down; nothing turns). */
 .veilDots { display: flex; gap: 5px; }
@@ -214,7 +214,7 @@ a.person:hover { background: #fff3d61a; }
 
 /* ── During a match: the room button among the board's own ── */
 .roomTool { position: absolute; right: 16px; bottom: 88px; z-index: 136; }
-.roomTool b { position: absolute; top: -6px; right: -6px; display: grid; place-items: center; min-width: 22px; height: 22px; padding: 0 6px; border-radius: 999px; background: var(--brand-cocoa); color: #fff8f0; font-size: 12px; }
+.roomTool b { position: absolute; top: -6px; right: -6px; display: grid; place-items: center; min-width: 22px; height: 22px; padding: 0 6px; border-radius: 999px; background: var(--brand-cocoa); color: var(--brand-cream); font-size: 12px; }
 
 @keyframes popIn { from { opacity: 0; transform: scale(.6); } }
 @keyframes seatIn { from { opacity: 0; transform: translateY(14px) scale(.92); } }

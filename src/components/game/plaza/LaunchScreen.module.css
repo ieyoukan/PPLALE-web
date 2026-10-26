@@ -2,7 +2,7 @@
 .launch {
   position: absolute; inset: 0; z-index: 40; display: grid; grid-template-rows: auto 1fr auto; justify-items: center; align-items: center;
   padding: 34px 48px 30px; overflow: hidden; color: var(--brand-cocoa-deep);
-  background: radial-gradient(ellipse at 50% 58%, #fffdf9 0 22%, transparent 62%), radial-gradient(circle at 12% 14%, var(--brand-vanilla-wash), transparent 40%),
+  background: radial-gradient(ellipse at 50% 58%, var(--brand-paper) 0 22%, transparent 62%), radial-gradient(circle at 12% 14%, var(--brand-vanilla-wash), transparent 40%),
     radial-gradient(circle at 88% 82%, var(--brand-peach-wash), transparent 42%), linear-gradient(160deg, var(--brand-blush), var(--brand-cream) 55%, var(--brand-sage-wash));
 }
 .logo { width: 300px; height: auto; filter: none; animation: bob 4.2s ease-in-out infinite; }
@@ -35,7 +35,7 @@
   opacity: 0; animation: twinkle 3.2s ease-in-out infinite;
 }
 .stars i:nth-child(3n) { width: 12px; background: var(--brand-peach); }
-.stars i:nth-child(4n) { width: 24px; background: #fff; }
+.stars i:nth-child(4n) { width: 24px; background: var(--brand-paper); }
 @keyframes bob { 50% { transform: translateY(-6px); } }
 @keyframes float { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-10px); } }
 @keyframes hop { 0%, 60%, 100% { transform: none; } 30% { transform: translateY(-7px); } }

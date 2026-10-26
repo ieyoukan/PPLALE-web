@@ -15,5 +15,19 @@
   --brand-cocoa-deep: #634747;
   --brand-cocoa-soft: #7b5e58;
   --brand-shadow: #78585818;
+  /* The logo's leaf green and star yellow (accents; the deep ones also mark "ready" and "allowed"). */
+  --brand-leaf: #7da552;
+  --brand-leaf-deep: #5c7a32;
+  --brand-star: #d9a93a;
+  --brand-star-deep: #b8862b;
+  /* The wooden table the rooms stand on, and the cream written on it or on dark panels. */
+  --brand-wood: #503729;
+  --brand-wood-light: #765339;
+  --brand-wood-edge: #8a6143;
+  --brand-wood-deep: #4f3424;
+  --brand-cream-on-dark: #fff3d6;
+  --brand-cream-line: #f6e9d2;
+  /* The darkest brown, for shadows and veils (always with transparency). */
+  --brand-ink: #2b170c;
   --brand-gingham: linear-gradient(#fff8f040, #fff8f040), url("/images/check-pattern.png");
 }

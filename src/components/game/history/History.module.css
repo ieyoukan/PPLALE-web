@@ -18,8 +18,9 @@
 /* One match: a row with a ribbon (pink: won, lilac: lost, grey: stopped) at its left. */
 .entry { --ribbon: #a25570; --ribbon-bg: var(--brand-blush); position: relative; display: grid; grid-template-columns: 32px 44px minmax(0,1fr) 64px 116px; gap: 12px; align-items: center; width: 100%; padding: 14px 10px 14px 16px; border-bottom: 1px solid var(--brand-pink); animation: memoryAppear .35s ease-out both; }
 .entry::before { content: ''; position: absolute; left: 0; top: 18px; bottom: 18px; width: 4px; background: var(--ribbon-bg); }
-.entry[data-result=LOSE] { --ribbon: #6e5a8c; --ribbon-bg: #e9e0f4; }
-.entry[data-result=中断] { --ribbon: var(--brand-cocoa-soft); --ribbon-bg: #eae5da; }
+/* A loss in the cocoa of the logo (no purple: see docs/design-system.md). */
+.entry[data-result=LOSE] { --ribbon: var(--brand-cocoa); --ribbon-bg: var(--brand-cream); }
+.entry[data-result=中断] { --ribbon: var(--brand-cocoa-soft); --ribbon-bg: var(--brand-vanilla-wash); }
 .entry:hover { background: var(--brand-cream); }
 .star { display: grid; place-items: center; place-self: center; height: 44px; width: 32px; padding: 0; border: 0; background: transparent; color: var(--brand-cocoa-soft); line-height: 1; cursor: pointer; transition: transform .2s, color .2s; }
 .star svg { display: block; width: 26px; height: 26px; fill: none; stroke: currentColor; stroke-width: 1.6; stroke-linejoin: round; }

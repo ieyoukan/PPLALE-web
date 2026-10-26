@@ -7,8 +7,8 @@
   position: relative; isolation: isolate; padding: var(--pad); color: var(--brand-cocoa-deep);
 }
 :where(.frame[data-size=sm]) { --corner: 40px; --pad: 16px; }
-:where(.frame[data-tone=cream]) { --frame-ink: #f6e9d2; --frame-face: #2b1a12b8; color: #fff3d6; }
-:where(.frame[data-faint]) { --frame-ink: var(--brand-cocoa-soft); --frame-face: #fffdf999; }
+:where(.frame[data-tone=cream]) { --frame-ink: var(--brand-cream-line); --frame-face: #2b1a12b8; color: var(--brand-cream-on-dark); }
+:where(.frame[data-faint]) { --frame-ink: var(--brand-cocoa-soft); --frame-face: color-mix(in srgb, var(--brand-paper) 60%, transparent); }
 :where(.frame[data-bare]) { --frame-face: transparent; }
 .frame[data-bare]::before { content: none; }
 /* The face under the whole frame, as the cards print their frame on their own paper. */
