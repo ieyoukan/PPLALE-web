@@ -26,8 +26,12 @@ export const isPlazaPath = (path: string | null) => !!path && /^\/game\/room\/\d
 export type Refusal = 'hidden' | 'closed' | 'full' | 'offline' | 'error';
 export type PlazaStage =
   | { kind: 'idle' }
-  /** `full`: opening the game or a link (the launch screen); otherwise moving between rooms (a light veil). */
-  | { kind: 'entering'; to: string | null; full: boolean }
+  /**
+   * `full`: opening the game or a link (the launch screen); otherwise moving between rooms (a light veil).
+   * `notice`: what happened meanwhile (the server is out of reach and is tried again; the room was gone
+   * and a new one is being made), shown over whatever is on screen.
+   */
+  | { kind: 'entering'; to: string | null; full: boolean; notice?: string }
   | { kind: 'in' }
   | { kind: 'refused'; to: string | null; reason: Refusal; message: string };
 
@@ -82,6 +86,13 @@ export function usePlaza() {
 
 /** How long the launch waits for a socket before saying the server cannot be reached (it keeps trying). */
 const PATIENCE = 12_000;
+/** Out of reach: the same room is tried again, waiting a little longer each time up to this. */
+const RETRY_LONGEST = 15_000;
+/** How long the player reads that the room was gone before the new one opens. */
+const GONE_NOTICE = 2_500;
+const OUT_OF_REACH = 'ルームサーバーにつながりません。つなぎ直しています…';
+const ROOM_GONE = 'ルームが見つかりませんでした。新しいルームを作ります';
+const pause = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
 const UNREACHABLE = 'ルームサーバーにつながりません';
 type Opened = { ok: true } | { ok: false; message: string; closed: boolean; offline?: true };
 /** Coming back into a room: in it, it closed (a successor may be made), the server cannot be reached, or not let in. */
@@ -212,7 +223,27 @@ export function PlazaProvider({ children }: { children: ReactNode }) {
     } catch (failure) { return failure instanceof RoomRequestError && failure.status === 0 ? { offline: failure.message } : null; }
   }, [open]);
 
-  const lost = useCallback((room: Held, message: string, closed: boolean) => void serial(async () => {
+  /**
+   * Back into the room, however long the server is out of reach: it is tried again (the notice says
+   * so) until it answers. Resolves with whether the room is still there for this player.
+   */
+  const reconnect = useCallback(async (roomId: string, token: string, invite: string | undefined, full: boolean): Promise<Back> => {
+    for (let wait = 2_000; ; wait = Math.min(wait * 2, RETRY_LONGEST)) {
+      const back = await resume(roomId, token, invite);
+      if (!back || !('offline' in back)) return back;
+      setStage({ kind: 'entering', to: roomId, full, notice: OUT_OF_REACH });
+      await pause(wait);
+    }
+  }, [resume]);
+  /** The room was gone (the server forgot it, or it expired): said, then a new room of the player's settings. */
+  const remake = useCallback(async (roomId: string | null, full: boolean) => {
+    if (roomId) leavePlaza(roomId);
+    setStage({ kind: 'entering', to: null, full, notice: ROOM_GONE });
+    await pause(GONE_NOTICE);
+    return make();
+  }, [make]);
+
+  const lost = useCallback((room: Held, _message: string, closed: boolean) => void serial(async () => {
     if (held.current?.socket !== room.socket) return;
     held.current = null;
     setView(null);
@@ -224,17 +255,15 @@ export function PlazaProvider({ children }: { children: ReactNode }) {
       const followed = await resume(saved.id, saved.token, saved.invite);
       if (followed && 'in' in followed) return show(followed.in);
     }
-    // Everyone was away and the room closed: its successor, behind the launch screen.
+    // Everyone was away and the room closed: its successor, behind the launch screen. Otherwise the
+    // same room again, as long as it takes the server to answer.
     setStage({ kind: 'entering', to: closed ? null : room.id, full: closed });
-    const back = closed ? { closed: true as const } : await resume(room.id, room.token, plazaKey(room.id)?.invite);
+    const back = closed ? { closed: true as const } : await reconnect(room.id, room.token, plazaKey(room.id)?.invite, false);
     if (back && 'in' in back) return show(back.in);
-    if (back && 'closed' in back) {
-      const successor = await make({ id: room.id, token: room.token });
-      if (successor) show(successor);
-      return;
-    }
-    setStage({ kind: 'refused', to: room.id, reason: back ? 'offline' : 'hidden', message: back ? back.offline : message });
-  }), [make, resume, serial, show]);
+    const next = back && 'closed' in back ? await make({ id: room.id, token: room.token }) : await remake(room.id, false);
+    // A room that could not be made says why itself (its refusal).
+    if (next) show(next);
+  }), [make, reconnect, remake, resume, serial, show]);
   useEffect(() => { lostRef.current = lost; }, [lost]);
 
   const launch = useCallback(() => serial(async () => {
@@ -244,16 +273,16 @@ export function PlazaProvider({ children }: { children: ReactNode }) {
       // Another tab of this browser may have just made the room: it is used here too.
       const saved = currentPlaza();
       if (saved) {
-        const back = await resume(saved.id, saved.token, saved.invite);
+        const back = await reconnect(saved.id, saved.token, saved.invite, true);
         if (back && 'in' in back) return back.in;
         if (back && 'closed' in back) return make({ id: saved.id, token: saved.token });
-        if (back) return settle(saved.id, new RoomRequestError(0, back.offline));
-        leavePlaza(saved.id);
+        // The room this browser was in is gone: said, then a new one.
+        return remake(saved.id, true);
       }
       return make();
     };
     return typeof navigator !== 'undefined' && navigator.locks ? navigator.locks.request('pplale-plaza-launch', once) : once();
-  }), [make, resume, serial, settle]);
+  }), [make, reconnect, remake, serial]);
 
   const enter = useCallback((roomId: string, invite?: string | null) => serial(async () => {
     if (held.current?.id === roomId) { setStage({ kind: 'in' }); return roomId; }
@@ -336,6 +365,6 @@ export function PlazaProvider({ children }: { children: ReactNode }) {
   return <Context.Provider value={value}>
     {children}
     {/* Moving between rooms: the current one stays on screen under a small sign. */}
-    {stage.kind === 'entering' && !stage.full && <div className={styles.veil} role="status" aria-live="polite"><OrnateFrame as="span" size="sm" className={styles.veilSign}><span className={styles.veilDots} aria-hidden="true"><span /><span /><span /></span>{stage.to ? 'ルームへ移動中' : 'ルームを準備中'}</OrnateFrame></div>}
+    {stage.kind === 'entering' && (!stage.full || stage.notice) && <div className={styles.veil} role="status" aria-live="polite"><OrnateFrame as="span" size="sm" className={styles.veilSign}><span className={styles.veilDots} aria-hidden="true"><span /><span /><span /></span>{stage.notice ?? (stage.to ? 'ルームへ移動中' : 'ルームを準備中')}</OrnateFrame></div>}
   </Context.Provider>;
 }
