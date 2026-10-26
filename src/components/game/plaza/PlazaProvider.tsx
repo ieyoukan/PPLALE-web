@@ -8,7 +8,7 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from 'react';
 import type { ReactNode } from 'react';
 import { usePathname, useRouter } from 'next/navigation';
-import { listedVisibility } from '@pplale/game-core/room';
+import { TWO_SEAT_ROOM, listedVisibility } from '@pplale/game-core/room';
 import type { RoomAction, RoomView, RoomVisibility } from '@pplale/game-core/room';
 import { useAuth } from '@/lib/auth';
 import { WATCHING_BEAT, publishPresence } from '@/lib/game/social';
@@ -283,7 +283,15 @@ export function PlazaProvider({ children }: { children: ReactNode }) {
       const opened = await open(roomId, entered.token);
       if (!opened.ok) return settle(roomId, new RoomRequestError(opened.offline ? 0 : 404, opened.message));
       return roomId;
-    } catch (failure) { return settle(roomId, failure); }
+    } catch (failure) {
+      // A two-seat room: shown the old way, its lobby, where sitting down is the visitor's choice.
+      if (failure instanceof RoomRequestError && failure.message === TWO_SEAT_ROOM) {
+        setLegacy(roomId);
+        setStage(held.current ? { kind: 'in' } : { kind: 'idle' });
+        return null;
+      }
+      return settle(roomId, failure);
+    }
   }), [make, open, resume, serial, settle]);
 
   const go = useCallback(async (roomId: string) => {

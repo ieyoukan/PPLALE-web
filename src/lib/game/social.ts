@@ -105,16 +105,25 @@ export async function readFriendRooms(other: string): Promise<Pick<SocialPlayer,
   const roomId = recruitment?.roomId, watched = watching?.roomId, at = watching?.updatedAt?.toMillis?.();
   return { ...(typeof roomId === 'string' && /^\d{6}$/.test(roomId) && { roomId }), ...(typeof watched === 'string' && /^\d{6}$/.test(watched) && typeof at === 'number' && { watching: { roomId: watched, at } }) };
 }
+/**
+ * The room this browser says the player is at, for each reason: watching a match, or being in a room
+ * to gather in. Both go to the one `watching` document (its rules allow one room): the match watched
+ * comes first, and the document goes only once neither says anything, so one never deletes the other.
+ */
+const place: { watching: string | null; presence: string | null } = { watching: null, presence: null };
+async function publishPlace(kind: keyof typeof place, roomId: string | null) {
+  place[kind] = roomId;
+  const { sdk, db, auth } = await store(), uid = auth.currentUser?.uid;
+  if (!uid) return false;
+  const ref = sdk.doc(db, 'watching', uid), shown = place.watching ?? place.presence;
+  if (shown) await sdk.setDoc(ref, { roomId: shown, updatedAt: sdk.serverTimestamp() });
+  else await sdk.deleteDoc(ref);
+  return true;
+}
+
 /** Tells friends which room this player is watching (`null`: none). Repeated every WATCHING_BEAT while watching. */
 export async function publishWatching(roomId: string | null) {
-  const { sdk, db, auth } = await store(), uid = auth.currentUser?.uid;
-  if (!uid) return;
-  const ref = sdk.doc(db, 'watching', uid);
-  if (roomId) {
-    await sdk.setDoc(ref, { roomId, updatedAt: sdk.serverTimestamp() });
-    tellRecruit(roomId);
-  }
-  else await sdk.deleteDoc(ref);
+  if (await publishPlace('watching', roomId) && roomId) tellRecruit(roomId);
 }
 
 /**
@@ -123,11 +132,7 @@ export async function publishWatching(roomId: string | null) {
  * (public, friends, friends+), repeated every WATCHING_BEAT, readable only by accepted friends.
  */
 export async function publishPresence(roomId: string | null) {
-  const { sdk, db, auth } = await store(), uid = auth.currentUser?.uid;
-  if (!uid) return;
-  const ref = sdk.doc(db, 'watching', uid);
-  if (roomId) await sdk.setDoc(ref, { roomId, updatedAt: sdk.serverTimestamp() });
-  else await sdk.deleteDoc(ref);
+  await publishPlace('presence', roomId);
 }
 
 /** Listeners exist only while the social screen is open. Presence itself stays in Redis. */

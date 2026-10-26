@@ -26,5 +26,6 @@ export async function openEditorBoard(page, position) {
   await page.goto('/game/editor/');
   await page.getByRole('textbox', { name: '盤面のコード', exact: true }).fill(encodePosition(position));
   await page.getByRole('button', { name: 'この盤面を開く', exact: true }).click();
-  await expect(page.getByRole('toolbar', { name: '盤面エディタ' })).toBeVisible();
+  // The board prepares its cards before it shows.
+  await expect(page.getByRole('toolbar', { name: '盤面エディタ' })).toBeVisible({ timeout: 20000 });
 }

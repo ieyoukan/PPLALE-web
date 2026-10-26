@@ -49,7 +49,7 @@ export const readRoomInfo = (id: string, invite?: string | null) => call<RoomInf
 export const createPlaza = (rules: RoomRules, name: string, plaza: PlazaRequest) => call<Entered>('/rooms', { rules, name, plaza });
 /** `invite`: the secret of the link this browser came by. `rejoin`: a member secret of this room whose moment away ran out. */
 export const enterPlaza = (id: string, name: string, { invite, rejoin }: { invite?: string | null; rejoin?: string | null } = {}) =>
-  call<Entered>(`/rooms/${id}/join`, { name, ...(invite && { invite }), ...(rejoin && { rejoin }) });
+  call<Entered>(`/rooms/${id}/join`, { name, plaza: true, ...(invite && { invite }), ...(rejoin && { rejoin }) });
 /** What this player may know of these rooms (only the ones they may enter). */
 export const lookupRooms = (ids: string[]) => call<{ rooms: RoomInfo[] }>('/rooms/lookup', { ids });
 /** Lets a friend into the room by name and tells them (signed in; `member`: this browser's member secret of the room). */

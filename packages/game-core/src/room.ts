@@ -188,6 +188,8 @@ export type RoomVisibility = 'public' | 'friends' | 'friendsPlus' | 'invite' | '
 export const roomVisibilities: readonly RoomVisibility[] = ['public', 'friends', 'friendsPlus', 'invite', 'invitePlus'];
 /** What a new room uses until the player chooses otherwise. */
 export const DEFAULT_VISIBILITY: RoomVisibility = 'invite';
+/** The answer to entering a two-seat room as a room to gather in: nobody is seated; its lobby lets the visitor choose. */
+export const TWO_SEAT_ROOM = 'このルームは2人用です';
 export const isRoomVisibility = (value: unknown): value is RoomVisibility => roomVisibilities.includes(value as RoomVisibility);
 /** Rooms friends can find (and see their friends in); the others are only reached by an invitation. */
 export const listedVisibility = (visibility: RoomVisibility) => visibility === 'public' || visibility === 'friends' || visibility === 'friendsPlus';

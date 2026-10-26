@@ -1,8 +1,8 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { HIDDEN_CARD } from '@pplale/game-core';
-import { MEMBER_GRACE } from '@pplale/game-core/room';
-import type { Entered, RoomInfo, RoomView } from '@pplale/game-core/room';
+import { MEMBER_GRACE, TWO_SEAT_ROOM } from '@pplale/game-core/room';
+import type { Entered, RoomInfo, RoomView, Seated } from '@pplale/game-core/room';
 import { catalog } from '../src/catalog.ts';
 import { actPlaza, admit, askToEnter, createPlaza, entryOf, formerOf, inviteByName, tidyPlaza } from '../src/plaza.ts';
 import { connect, deck, serve, shared } from './helpers.ts';
@@ -283,4 +283,35 @@ test('plaza: who may come in, by visibility', () => {
     // A guest's friends' room and an unknown visibility are invited rooms.
     assert.equal(createPlaza('123456', { rules, plaza: { visibility: 'friends' } }, { name: 'げすと' }).room.plaza!.visibility, 'invite');
     assert.equal(createPlaza('123456', { rules, plaza: { visibility: 'everyone' } }, creator).room.plaza!.visibility, 'invite');
+});
+
+test('plaza: entering a two-seat room as a room to gather in takes no seat; its lobby lets the visitor choose', async () => {
+    const served = await serve(), { call } = served;
+    const host = (await call<Seated>('/rooms', { rules, name: 'ほすと' })).data;
+    const refused = await call(`/rooms/${host.view.id}/join`, { name: 'げすと', plaza: true });
+    assert.equal(refused.status, 409);
+    assert.equal((refused.data as { error: string }).error, TWO_SEAT_ROOM);
+    assert.equal((await call<RoomInfo>(`/rooms/${host.view.id}`)).data.open, true);
+    // Choosing to sit down (the lobby's own request) still does.
+    assert.equal((await call(`/rooms/${host.view.id}/join`, { name: 'げすと' })).status, 200);
+    await served.close();
+});
+
+test('plaza: one person on two devices is one member; one device leaving keeps them in through the other', async () => {
+    const served = await serve();
+    const { room, token: phone } = createPlaza('100099', { rules, plaza: { name: 'おちゃかい', visibility: 'public' } }, { name: 'ありす', profileId: 'alice' });
+    const { token: pc } = admit(room, { name: 'ありす', profileId: 'alice' });
+    assert.equal(room.plaza!.members.length, 1);
+    await served.backend.create(room, 60_000);
+    const onPhone = await connect(served, room.id, phone), onPc = await connect(served, room.id, pc);
+    await until(onPc, view => view.plaza!.members[0].online);
+    // The phone goes to another room: the PC stays, and so does the member.
+    assert.equal(await onPhone.act({ action: 'leave' }), undefined);
+    await onPhone.close();
+    assert.equal((await served.backend.get(room.id))!.plaza!.members.length, 1);
+    assert.equal(onPc.socket.readyState, onPc.socket.OPEN);
+    // The last device leaving takes the member out.
+    assert.equal(await onPc.act({ action: 'leave' }), undefined);
+    assert.equal(await onPc.closed, 4404);
+    await served.close();
 });

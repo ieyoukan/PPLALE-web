@@ -32,8 +32,9 @@ import { createServer } from 'node:http';
 import type { IncomingMessage, Server, ServerResponse } from 'node:http';
 import { WebSocketServer } from 'ws';
 import type { WebSocket } from 'ws';
-import type { Catalog, Side } from '@pplale/game-core';
-import { ROOM_ID_LENGTH, isRoomId } from '@pplale/game-core/room';
+import { legalMoves } from '@pplale/game-core';
+import type { Catalog, Command, Side } from '@pplale/game-core';
+import { ROOM_ID_LENGTH, TWO_SEAT_ROOM, isRoomId } from '@pplale/game-core/room';
 import type { ClientMessage, Entered, PlazaRequest, RoomAction, RoomServerStats, Seated, ServerMessage } from '@pplale/game-core/room';
 import { memberOfEntry } from './backend.ts';
 import type { Backend, Member, Overview, RoomEvent, Spot } from './backend.ts';
@@ -89,6 +90,8 @@ const LEFT = 'ルームから出ました';
 type Attached = WebSocket & { alive?: boolean; entry?: Member };
 /** The members connected now, as the views and tidying take them. */
 const onlineMembers = (present: Pick<Present, 'members'>) => new Set(present.members ?? []);
+/** The signed-in account among a request's verified owners, if any. */
+const uidOf = (owners: string[]) => owners.find(owner => owner.startsWith('user:'))?.slice(5);
 
 export function createRoomServer({ config, backend, catalog, history, push = pusher(memoryPushStore(), null) }: {
     config: Pick<Config, 'pod' | 'origins' | 'trustProxy' | 'requestsPerHour' | 'roomsPerHour' | 'lobbyGraceMinutes' | 'abandonMinutes' | 'maxRooms' | 'idleHours' | 'beatSeconds' | 'version'>; backend: Backend; catalog: Catalog; history?: HistoryRepository;
@@ -145,19 +148,33 @@ export function createRoomServer({ config, backend, catalog, history, push = pus
             if (room.version !== version || cpuToAct(room) !== seat) { scheduleCpu(room); return; }
             const level = room.seats[seat]!.cpu!, expected = { match: room.match, revision: room.state!.revision };
             const state = room.state!;
-            // Should no move be found, the turn (or the choice) is still finished rather than left waiting.
-            const sent = await thinker.think(state, level, seat)
-                ?? (state.pending ? { type: 'choose' as const, actor: seat, option: state.pending.options[0]?.id ?? '' } : state.phase === 'playing' ? { type: 'end' as const, actor: seat } : null);
-            if (!sent || stopping) return;
-            let before: Side | null = null;
-            const { room: played, result: outcome } = await update(id, target => {
-                before = decider(target);
-                return playCpu(target, seat, sent as Parameters<typeof playCpu>[2], expected, catalog);
-            });
-            await announce(played);
-            deciderChanged(played, before);
-            countLater('commands');
-            if (outcome.finished) countLater('matchesFinished');
+            const thought = await thinker.think(state, level, seat);
+            if (stopping) return;
+            // Should no move be found, or the one found be refused, a legal move of whatever phase this is
+            // (the dice, the opening draws, the mulligan, a choice, the end of the turn) is made instead:
+            // the match goes on rather than waiting for a move that never comes.
+            function* candidates(): Generator<Command> {
+                if (thought) yield thought;
+                for (const move of legalMoves(state, seat, catalog)) yield move.command;
+            }
+            for (const sent of candidates()) {
+                let before: Side | null = null;
+                try {
+                    const { room: played, result: outcome } = await update(id, target => {
+                        before = decider(target);
+                        return playCpu(target, seat, sent as Parameters<typeof playCpu>[2], expected, catalog);
+                    });
+                    await announce(played);
+                    deciderChanged(played, before);
+                    countLater('commands');
+                    if (outcome.finished) countLater('matchesFinished');
+                    return;
+                } catch (error) {
+                    // Refused by the rules: the next legal move. Anything else (the match moved on) ends here.
+                    if (!(error instanceof RoomError && error.status === 422)) throw error;
+                }
+            }
+            console.error('cpu found no legal move', id, state.phase);
         } catch (error) {
             // Someone else changed the match first: its new view schedules the next move.
             if (!(error instanceof RoomError)) console.error('cpu move failed', error instanceof Error ? error.message : error);
@@ -354,19 +371,27 @@ export function createRoomServer({ config, backend, catalog, history, push = pus
     const idToken = (request: IncomingMessage) => request.headers.authorization?.startsWith('Bearer ') ? request.headers.authorization.slice(7) : undefined;
     /** Who is asking: their verified account (whose current public name they go by) or the name a guest gave. */
     async function visitorOf(owners: string[], name: unknown): Promise<Visitor> {
-        const profileId = owners.find(owner => owner.startsWith('user:'))?.slice(5);
+        const profileId = uidOf(owners);
         if (profileId) await names.load(profileId, true);
         return { ...(profileId && { profileId }), ...(owners.length && { historyOwners: seatOwners(owners) }), name: profileId ? names.name({ name: '', profileId }) : playerName(name, 'ゲスト') };
     }
     /** Who is asking, when only whether they may enter matters (no name is read). */
-    const askerOf = (owners: string[]): Visitor => ({ ...(owners.find(owner => owner.startsWith('user:')) && { profileId: owners.find(owner => owner.startsWith('user:'))!.slice(5) }), name: '' });
-    /** Whether `visitor` may enter: friendship is read from Firestore as them, once per request. */
-    async function mayEnter(room: Room, visitor: Visitor, token: string | undefined, invite: unknown, friends?: Set<string>) {
+    const askerOf = (owners: string[]): Visitor => { const profileId = uidOf(owners); return { ...(profileId && { profileId }), name: '' }; };
+    /**
+     * Whether `visitor` may enter: friendship is read from Firestore as them, only when a friends' room
+     * asks (`friends`: shared by the rooms of one request, so it is read once at most).
+     */
+    async function mayEnter(room: Room, visitor: Visitor, token: string | undefined, invite: unknown, friends?: () => Promise<Set<string>>) {
         const entry = entryOf(room, visitor, invite);
         if (entry === 'yes') return true;
         if (entry === 'no' || !token || !visitor.profileId) return false;
-        friends ??= new Set(await friendsOf(token, visitor.profileId).catch(() => []));
-        return entry.friendsOf.some(other => friends.has(other));
+        const known = await (friends ?? friendsOnce(token, visitor.profileId))();
+        return entry.friendsOf.some(other => known.has(other));
+    }
+    /** A person's friends, read from Firestore the first time they are asked for. */
+    function friendsOnce(token: string, uid: string) {
+        let read: Promise<Set<string>> | undefined;
+        return () => read ??= friendsOf(token, uid).then(ids => new Set(ids), () => new Set<string>());
     }
     const entered = async (room: Room, member: string, token: string): Promise<Entered> => ({ token, view: plazaView(room, member, onlineMembers(await present(room.id)), catalog) });
     /** Stores a new plaza under a free id. */
@@ -417,11 +442,22 @@ export function createRoomServer({ config, backend, catalog, history, push = pus
     function indexOfRooms() {
         if (!roomIndex || roomIndex.until <= Date.now()) roomIndex = { until: Date.now() + 15_000, value: (async () => {
             const members = new Map<string, string>(), allowed = new Map<string, string[]>();
-            for (const id of await backend.ids()) {
-                const room = await backend.get(id).catch(() => null);
-                if (!room?.plaza || room.status === 'closed') continue;
-                for (const member of room.plaza.members) if (member.profileId) members.set(member.profileId, id);
-                for (const uid of room.plaza.allowed) if (!room.plaza.members.some(member => member.profileId === uid)) allowed.set(uid, [...allowed.get(uid) ?? [], id]);
+            // Someone still listed in a room they left (its moment away not yet over) is where they are
+            // connected, or else where they were last: connected beats away, and later away beats earlier.
+            const presence = new Map<string, number>();
+            const ids = await backend.ids();
+            // A batch at a time rather than one after another: the index is rebuilt every 15 seconds.
+            for (let start = 0; start < ids.length; start += 50) {
+                const rooms = await Promise.all(ids.slice(start, start + 50).map(id => backend.get(id).catch(() => null)));
+                for (const room of rooms) {
+                    if (!room?.plaza || room.status === 'closed') continue;
+                    for (const member of room.plaza.members) {
+                        if (!member.profileId) continue;
+                        const here = member.away ?? Infinity;
+                        if (here >= (presence.get(member.profileId) ?? -Infinity)) { presence.set(member.profileId, here); members.set(member.profileId, room.id); }
+                    }
+                    for (const uid of room.plaza.allowed) if (!room.plaza.members.some(member => member.profileId === uid)) allowed.set(uid, [...allowed.get(uid) ?? [], room.id]);
+                }
             }
             return { members, allowed };
         })() };
@@ -455,7 +491,7 @@ export function createRoomServer({ config, backend, catalog, history, push = pus
     /** A member invites a friend by name: only a real friend of theirs, so a notification is never sent to a stranger. */
     async function inviteFriend(request: IncomingMessage, id: string) {
         const owners = await historyOwners(request), token = idToken(request);
-        const uid = owners.find(owner => owner.startsWith('user:'))?.slice(5);
+        const uid = uidOf(owners);
         if (!uid || !token) throw new RoomError(401, 'ログインするとフレンドを招待できます');
         const body = await readJson(request, MAX_BODY) as Record<string, unknown> | null;
         const to = typeof body?.to === 'string' ? body.to : '';
@@ -471,11 +507,11 @@ export function createRoomServer({ config, backend, catalog, history, push = pus
     /** The plaza routes under /rooms/ that are not one room. */
     async function plazaRequest(request: IncomingMessage, name: string) {
         const owners = await historyOwners(request), token = idToken(request);
-        const uid = owners.find(owner => owner.startsWith('user:'))?.slice(5);
+        const uid = uidOf(owners);
         const body = await readJson(request, MAX_BODY) as Record<string, unknown> | null;
         if (name === 'lookup') {
             const ids = Array.isArray(body?.ids) ? [...new Set(body.ids.filter(isRoomId))].slice(0, MAX_LOOKUP) : [];
-            const visitor = askerOf(owners), friends = token && uid ? new Set(await friendsOf(token, uid).catch(() => [])) : undefined;
+            const visitor = askerOf(owners), friends = token && uid ? friendsOnce(token, uid) : undefined;
             const rooms = await Promise.all(ids.map(async id => {
                 const room = await backend.get(id);
                 if (!room || room.status === 'closed') return null;
@@ -614,7 +650,7 @@ export function createRoomServer({ config, backend, catalog, history, push = pus
                 if (rooms.lobby + rooms.playing + rooms.finished + rooms.closed >= maxRooms) throw new RoomError(503, 'いまはルームがいっぱいです。しばらく待ってからお試しください');
                 let body = await readJson(request, MAX_BODY);
                 const owners = await historyOwners(request);
-                const profileId = owners.find(owner => owner.startsWith('user:'))?.slice(5);
+                const profileId = uidOf(owners);
                 if (profileId) {
                     await names.load(profileId, true);
                     if (body && typeof body === 'object') body = { ...body, name: names.name({ name: '', profileId }) };
@@ -624,7 +660,7 @@ export function createRoomServer({ config, backend, catalog, history, push = pus
                 for (let attempt = 0; attempt < 8; attempt++) {
                     const made = createRoom(String(randomInt(10 ** ROOM_ID_LENGTH)).padStart(ROOM_ID_LENGTH, '0'), body);
                     if (owners.length) made.room.seats[0]!.historyOwners = seatOwners(owners);
-                    made.room.seats[0]!.profileId = owners.find(owner => owner.startsWith('user:'))?.slice(5);
+                    made.room.seats[0]!.profileId = uidOf(owners);
                     if (!await backend.create(made.room, lifetime(made.room))) continue;
                     overview = undefined;
                     await backend.count('roomsCreated');
@@ -664,8 +700,11 @@ export function createRoomServer({ config, backend, catalog, history, push = pus
             }
             if (request.method === 'POST' && tail) {
                 let body = await readJson(request, MAX_BODY);
+                // Entering it as a room to gather in (a room link, a friend's room): the seat is not taken
+                // on the visitor's behalf; the room's lobby lets them choose.
+                if (body && typeof body === 'object' && (body as { plaza?: unknown }).plaza === true) throw new RoomError(409, TWO_SEAT_ROOM);
                 const owners = await historyOwners(request);
-                const profileId = owners.find(owner => owner.startsWith('user:'))?.slice(5);
+                const profileId = uidOf(owners);
                 if (profileId) {
                     await names.load(profileId, true);
                     if (body && typeof body === 'object') body = { ...body, name: names.name({ name: '', profileId }) };
@@ -674,7 +713,7 @@ export function createRoomServer({ config, backend, catalog, history, push = pus
                 const { room, result: token } = await update(id, target => {
                     const token = joinRoom(target, body);
                     if (owners.length) target.seats[1]!.historyOwners = seatOwners(owners);
-                    target.seats[1]!.profileId = owners.find(owner => owner.startsWith('user:'))?.slice(5);
+                    target.seats[1]!.profileId = uidOf(owners);
                     return token;
                 });
                 await announce(room);
@@ -855,6 +894,12 @@ export function createRoomServer({ config, backend, catalog, history, push = pus
             const member = memberOfEntry(socket.entry!.member), timing = commandTiming();
             timing.queue = performance.now() - received;
             try {
+                // A signed-in person is one member however many devices they have it open on: one device
+                // leaving (for another room) takes only itself away while another is still here.
+                if ((body as { action?: unknown } | null)?.action === 'leave' && !await backend.leave(socket.entry!)) {
+                    tell(socket, { type: 'result', n });
+                    return;
+                }
                 let before: Side | null = null;
                 const { room, result: outcome } = await update(id, target => {
                     if (!target.plaza) throw new RoomError(404, GONE);
