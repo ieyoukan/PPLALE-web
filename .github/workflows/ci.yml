@@ -36,6 +36,9 @@ jobs:
       - name: Check game opening and draw flow
         run: pnpm run test:game
 
+      - name: Check lethal puzzle boards, sessions and previews
+        run: node --test tests/lethal-puzzles.test.mjs tests/puzzle-previews.test.mjs
+
       - name: Test the CPU server
         run: pnpm run test:cpu-server
 

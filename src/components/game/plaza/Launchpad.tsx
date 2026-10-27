@@ -192,7 +192,7 @@ function Launchpad({ stack, choose }: { stack: Place[]; choose: (section: Sectio
     battle: <RoomEntrance />,
     free: <FreeMatch />,
     history: <MatchHistory />,
-    puzzles: <PuzzleLobby />,
+    puzzles: <PuzzleLobby fruitId={place.fruit} />,
     cards: <CardsMenu />,
     zukan: <CardGallery />,
     editor: <EditorLobby />,

@@ -1,8 +1,10 @@
 // いちご（strawberry）の幼女カード。各カードの原文は src/data/yojo.json / tokenYojo.json。
-import type { CardContext } from '../effects/context.ts';
+import type { Catalog, GameState, Side } from '../model.ts';
 import type { CardScript, CardScripts } from './types.ts';
+import { take } from './helpers.ts';
 
-const onField = (ctx: CardContext, cardId: string) => ctx.me.field.some(uid => ctx.s.cards[uid].cardId === cardId);
+const inomuOnField = (s: GameState, side: Side, catalog: Catalog) =>
+    s.players[side].field.some(uid => catalog[s.cards[uid].cardId]?.name === 'いのむー');
 
 /** うゆち系: このバトル中に手札から場に出した「うゆち」が既に5枚以上なら +3/+3 して早食い。 */
 const uyuchi = (next?: string): CardScript => ({
@@ -99,7 +101,7 @@ export const strawberryYojo: CardScripts = {
     // y_13 がと: 早食い。挑発。場に出たとき +X/0（X は自分のお昼寝場所のがとの数）。
     y_13: {
         keywords: ['fast', 'taunt'],
-        onEnter: ctx => ctx.buff(ctx.uid, ctx.me.nap.filter(uid => ctx.s.cards[uid].cardId === 'y_13').length, 0),
+        onEnter: ctx => ctx.buff(ctx.uid, ctx.me.nap.filter(uid => ctx.defOf(uid).name === 'がと' && ctx.fruits(uid).includes('strawberry')).length, 0),
     },
     // y_14 ももか: 店長または副店長を公開してデッキから手札に加える。
     // 裁定: 山札の上からめくり、最初に出た該当カードを加え、残りはシャッフルする。
@@ -114,9 +116,7 @@ export const strawberryYojo: CardScripts = {
                     const shown = fx.me.yojo.slice(0, at < 0 ? undefined : at);
                     if (shown.length) fx.note(`ももか：めくったカード ${shown.map(uid => fx.defOf(uid).name).join('、')}`);
                     if (found) {
-                        fx.me.yojo = fx.me.yojo.filter(uid => uid !== found);
-                        fx.me.hand.push(found);
-                        fx.reveal(found);
+                        take(fx, found, 'yojo', true);
                     }
                     fx.shuffleDeck('yojo');
                 },
@@ -127,16 +127,16 @@ export const strawberryYojo: CardScripts = {
     // +1/+1 は「手札から」に限らないので、さらの複製などで出たときも乗る。
     y_15: {
         keywords: ['fast'],
-        baseCost: (s, side) => s.players[side].field.some(uid => s.cards[uid].cardId === 'y_16') ? 2 : undefined,
+        baseCost: (s, side, catalog) => inomuOnField(s, side, catalog) ? 2 : undefined,
         onEnter(ctx) {
-            if (onField(ctx, 'y_16')) ctx.buff(ctx.uid, 1, 1);
+            if (inomuOnField(ctx.s, ctx.side, ctx.catalog)) ctx.buff(ctx.uid, 1, 1);
         },
     },
     // y_16 いのむー: 防衛。場にいる状態でまこぽにが出たとき +1/+1。
     y_16: {
         keywords: ['guard'],
         onAllyEnter(ctx, ally) {
-            if (ctx.s.cards[ally].cardId === 'y_15') ctx.buff(ctx.uid, 1, 1);
+            if (ctx.defOf(ally).name === 'まこぽに') ctx.buff(ctx.uid, 1, 1);
         },
     },
     // y_17 まめろん: 防衛。お菓子を食べられない。

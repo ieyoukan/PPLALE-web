@@ -39,7 +39,7 @@ export function advancePhase(s: GameState, catalog: Catalog) {
 }
 
 /** Called after hand-limit exclusions, while the ending side is still active. */
-export function finishTurn(s: GameState, side: Side, catalog: Catalog) {
+export function finishTurn(s: GameState, side: Side) {
     const p = s.players[side];
     p.hand.forEach(uid => { s.cards[uid].temporaryCost = 0; });
     // The PP left stays through the opponent's turn (cards pay or count it then) and is replaced at
@@ -51,7 +51,7 @@ export function finishTurn(s: GameState, side: Side, catalog: Catalog) {
         if (card.immobileUntil !== undefined && card.immobileUntil <= s.turn) delete card.immobileUntil;
     }
     // 膠着: three turns without any action (or none possible ever) end the match on points.
-    if (settleStall(s, catalog)) return;
+    if (settleStall(s)) return;
     s.queue.push({ op: 'beginTurn', actor: other(side) });
 }
 

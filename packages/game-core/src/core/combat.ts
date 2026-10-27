@@ -2,7 +2,7 @@
 import { other } from '../model.ts';
 import type { Catalog, GameState, Side } from '../model.ts';
 import { scriptFor } from '../cards/registry.ts';
-import { attackOf, immobilized } from './cards.ts';
+import { immobilized } from './cards.ts';
 import { isHidden } from './protection.ts';
 import { losePoints } from './points.ts';
 import { skillsFor } from '../playables/skills.ts';
@@ -13,7 +13,7 @@ export function canAttack(s: GameState, side: Side, uid: string, target: string 
     // out (user ruling), so with such a playable (しゅれい) it never acts on its own.
     const skillsLeft = () => p.skills.some(left => left > 0) || skillsFor(p.playable).some(skill => skill.uses === undefined);
     const conditionalImmobile = !c?.silenced && (c?.cardId === 'y_47' ? catalog[c.cardId].hp + c.hpBonus - c.damage > 5 : c?.cardId === 'y_50' && skillsLeft());
-    if (s.phase !== 'playing' || s.active !== side || s.pending || s.winner !== null || !p.field.includes(uid) || !c || c.exhausted || c.keywords.includes('immobile') || conditionalImmobile || immobilized(s, uid) || attackOf(c, catalog) <= 0)
+    if (s.phase !== 'playing' || s.active !== side || s.pending || s.winner !== null || !p.field.includes(uid) || !c || c.exhausted || c.keywords.includes('immobile') || conditionalImmobile || immobilized(s, uid))
         return false;
     // Summoning sickness: fast allows any target, charge only units.
     if (c.entered === s.turn && !c.keywords.includes('fast') && !(target !== 'leader' && c.keywords.includes('charge')))

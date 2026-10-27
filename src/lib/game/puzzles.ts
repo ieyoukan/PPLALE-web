@@ -3,6 +3,13 @@ import type { Command, GameState } from '@pplale/game-core';
 import problems from '@/data/lethalPuzzles.json';
 import { gameCatalog } from './catalog';
 
+export const puzzleFruits = [
+  { id: 'strawberry', label: 'イチゴ' },
+  { id: 'grape', label: 'ぶどう' },
+  { id: 'melon', label: 'メロン' },
+] as const;
+export const puzzleDifficulties = ['初級', '中級', '上級'] as const;
+
 export const lethalPuzzles = problems.map(problem => {
   const position = decodePosition(problem.code);
   if (!position?.title) throw new Error(`パズルの盤面が不正です: ${problem.id}`);

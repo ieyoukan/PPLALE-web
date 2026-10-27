@@ -4,6 +4,7 @@ import type { CardContext } from '../effects/context.ts';
 import type { Keyword } from '../model.ts';
 import type { CardScript, CardScripts, OpTable } from './types.ts';
 import { selectable } from '../effects/targets.ts';
+import { take } from './helpers.ts';
 
 const ofType = (ctx: CardContext, sweetType: string) => (cardId: string) => ctx.catalog[cardId]?.sweetType === sweetType;
 /** このカードを含めて、このゲーム中にプレイした `sweetType` の種類数。 */
@@ -53,8 +54,7 @@ const floatOps: OpTable = {
                 fx.pick('手札に加えるフロートを選んでください', fx.me.sweet.filter(id => fx.defOf(id).sweetType === 'float'), t);
                 return;
             }
-            fx.me.sweet = fx.me.sweet.filter(id => id !== t.target);
-            fx.me.hand.push(t.target);
+            take(fx, t.target, 'sweet');
         },
     },
 };
@@ -81,7 +81,10 @@ const doughnutOps: OpTable = {
         },
     },
 };
-const doughnut = (keyword: Keyword): CardScript => ({ canPlay: ownUnitOnField, onPlay: ctx => ctx.queue('doughnut', { keyword }), ops: doughnutOps, cpu: needsOwnUnit });
+const doughnut = (keyword: Keyword): CardScript => ({
+    canPlay: ctx => ownUnitOnField(ctx) && ctx.me.hand.some(uid => uid !== ctx.uid && ctx.catalog[ctx.s.cards[uid].cardId]?.sweetType === 'doughnut'),
+    onPlay: ctx => ctx.queue('doughnut', { keyword }), ops: doughnutOps, cpu: needsOwnUnit,
+});
 
 /** ケーキ: 自分の幼女1人を +1/+1。このカードを含めてケーキを3種類プレイしていたなら追加効果。 */
 const cake = (bonus: 'draw' | 'big' | 'all'): CardScript => ({

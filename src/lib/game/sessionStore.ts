@@ -54,6 +54,7 @@ export const SETTINGS_PATH = '/game/settings/';
 /** 盤面エディタ: place cards freely, then play from there. */
 export const EDITOR_PATH = '/game/editor/';
 export const PUZZLES_PATH = '/game/puzzles/';
+export const puzzleListHref = (fruit: string) => `${PUZZLES_PATH}?fruit=${encodeURIComponent(fruit)}`;
 export const puzzleHref = (id: string) => `/game/puzzle/?id=${encodeURIComponent(id)}`;
 export const CARD_GALLERY_PATH = '/game/cards/zukan/';
 export const PLAY_PATH = '/game/play/';

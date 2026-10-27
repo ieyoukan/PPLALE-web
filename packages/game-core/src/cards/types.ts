@@ -1,5 +1,5 @@
 import type { CardContext, Effects } from '../effects/context.ts';
-import type { DeckKind, GameState, Keyword, Side, Task, TaskOp } from '../model.ts';
+import type { Catalog, DeckKind, GameState, Keyword, Side, Task, TaskOp } from '../model.ts';
 
 /**
  * A queued effect step. Generic ones are in effects/ops.ts; a card or skill may declare its own
@@ -42,7 +42,7 @@ export interface CardScript {
     /** 「攻撃時この幼女はダメージを受けない」: the unit it attacks deals no combat damage back. */
     unharmedAttacking?: boolean;
     /** Overrides the printed cost while in hand. */
-    baseCost?(s: GameState, side: Side): number | undefined;
+    baseCost?(s: GameState, side: Side, catalog: Catalog): number | undefined;
     /** False when the card cannot be played now (e.g. it must select a unit and none is there). */
     canPlay?(ctx: CardContext): boolean;
     /** The card can be revealed from hand at any time. */

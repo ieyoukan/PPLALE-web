@@ -127,3 +127,36 @@ test('ゼロオレンジ and レンテ trading: the active side\'s destruction e
   s = trade(['y_10'], ['y_7', 'y_9']);
   assert.deepEqual(idsOf(s, field(s, 1)), ['token_cat']);
 });
+
+
+test('zero attack can trade into a unit and receive lethal counterdamage', () => {
+  let s = arena({ me: { field: ['y_9'] }, foe: { field: ['y_9'] } });
+  const uid = field(s)[0], target = field(s, 1)[0];
+  Object.assign(s.cards[uid], { attackBonus: -catalog.y_9.attack, damage: catalog.y_9.hp - 1 });
+  assert.equal(canAttack(s, 0, uid, target, catalog), true);
+  s = run(s, { type: 'attack', actor: 0, uid, target });
+  assert.deepEqual(field(s), []);
+  assert.ok(s.players[0].nap.includes(uid));
+  assert.equal(s.cards[target].damage, 0);
+});
+
+test('zero attack still eats, spends an action, and obeys summoning sickness and guard', () => {
+  let s = arena({ me: { field: ['y_9'] }, foe: { field: ['y_9'] } });
+  const uid = field(s)[0], target = field(s, 1)[0];
+  s.cards[uid].attackBonus = -catalog.y_9.attack;
+  s.cards[uid].entered = s.turn;
+  assert.equal(canAttack(s, 0, uid, target, catalog), false);
+  s.cards[uid].keywords.push('charge');
+  assert.equal(canAttack(s, 0, uid, target, catalog), true);
+  assert.equal(canAttack(s, 0, uid, 'leader', catalog), false);
+  s.cards[uid].entered = 0;
+  s.cards[target].keywords.push('guard');
+  assert.equal(canAttack(s, 0, uid, 'leader', catalog), false);
+  s.cards[target].keywords = [];
+  const points = s.players[1].points;
+  s = run(s, { type: 'attack', actor: 0, uid, target: 'leader' });
+  assert.equal(s.players[1].points, points);
+  assert.equal(s.cards[uid].ateOn, s.turn);
+  assert.equal(s.cards[uid].exhausted, true);
+  assert.equal(canAttack(s, 0, uid, target, catalog), false);
+});

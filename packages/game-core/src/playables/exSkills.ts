@@ -9,7 +9,7 @@ export const exSkillInfo: Record<ExSkillId, { name: string; cost: number; automa
     abyss: { name: 'アビスの深淵', cost: 0, automatic: true, description: '味方幼女が破壊されると相手のお菓子ポイントを1減らす。' },
     dagger: { name: 'ダブルダガー', cost: 0, automatic: true, description: '自分ターンの効果によるPP回復を+2。1ターン2回。' },
     alice: { name: '不思議の国のアリス', cost: 0, automatic: false, description: '味方全員を+3/+3。1ターン1回。' },
-    smoke: { name: '魅惑の水煙', cost: 0, automatic: true, description: 'カード効果で引いた枚数だけ自分のお菓子ポイントを減らす。' },
+    smoke: { name: '魅惑の水煙', cost: 0, automatic: true, description: 'カード効果で引く・サーチするたび、手札に加えた1枚につき自分のお菓子ポイントを1減らす。' },
     kamikakushi: { name: '神隠し ようじょ贄', cost: 0, automatic: false, description: 'このターン中、手札から幼女を直接お昼寝場所に捨てるたびに、相手のお菓子を捨てた人数×2個奪う。1ターンに1回。' },
 };
 /** Used by hand at most once a turn (`lastTurn` is the turn of the last use). */

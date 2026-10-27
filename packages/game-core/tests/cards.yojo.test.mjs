@@ -1,5 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
+import { costOf } from '../dist/index.js';
 import { arena, catalog, choose, draws, failure, field, hand, idsOf, newest, optionIds, play, run, stats } from './helpers.mjs';
 
 test('y_0 かがり: draws on the first turn, otherwise converts remaining PP into +X/+X', () => {
@@ -113,10 +114,21 @@ test('y_12 あみの: +1 max PP; 7+ adds random damage, 10+ adds stealing 2', ()
   assert.equal(s.players[1].points, 10);
 });
 
-test('y_13 がと: +X attack per がと in the own nap', () => {
+test('y_13 がと: +X attack per strawberry-type がと in the own nap', () => {
   let s = arena({ me: { hand: ['y_13'], nap: ['y_13', 'y_13'] } });
   s = play(s, hand(s)[0]);
   assert.deepEqual(stats(s, newest(s)), [4, 1]);
+});
+
+test('y_13 がと: counts strawberry-type がと in the nap, including fruit gained from soda', () => {
+  let s = arena({ me: { hand: ['y_13'], nap: ['y_13', 'y_37', 'y_70'] } });
+  s = play(s, hand(s)[0]);
+  assert.deepEqual(stats(s, newest(s)), [3, 1]);
+
+  s = arena({ me: { hand: ['y_13'], nap: ['y_13', 'y_37', 'y_70'] } });
+  s.players[0].lastingFruits = ['strawberry'];
+  s = play(s, hand(s)[0]);
+  assert.deepEqual(stats(s, newest(s)), [5, 1]);
 });
 
 test('y_14 ももか: takes the first manager / assistant manager from the top, revealed, then shuffles', () => {
@@ -134,6 +146,46 @@ test('y_15 まこぽに / y_16 いのむー: cost 2 and +1/+1 for both when い�
   assert.equal(s.players[0].pp, 0);
   assert.deepEqual(stats(s, newest(s)), [3, 3]);
   assert.deepEqual(stats(s, field(s)[0]), [3, 4]);
+});
+
+for (const inomu of ['y_44', 'y_83']) {
+  test(`y_15 まこぽに: ${inomu} also grants cost 2 and +1/+1`, () => {
+    let s = arena({ me: { hand: ['y_15'], field: [inomu], pp: 2 } });
+    assert.equal(costOf(s, hand(s)[0], catalog, 0), 2);
+    s = play(s, hand(s)[0]);
+    assert.equal(s.players[0].pp, 0);
+    assert.deepEqual(stats(s, newest(s)), [3, 3]);
+    assert.deepEqual(stats(s, field(s)[0]), [catalog[inomu].attack, catalog[inomu].hp]);
+  });
+
+  test(`y_15 まこぽに: a copy also gets +1/+1 with ${inomu}`, () => {
+    let s = arena({ me: { hand: ['y_15', 'y_19'], field: [inomu], pp: 6 } });
+    s = play(s, hand(s)[0]);
+    const original = newest(s);
+    s = choose(play(s, hand(s)[0]), original);
+    const copy = field(s).find(uid => s.cards[uid].cardId === 'y_15');
+    assert.notEqual(copy, original);
+    assert.deepEqual(stats(s, copy), [3, 3]);
+  });
+}
+
+for (const makoponi of ['y_15', 'y_45', 'y_84']) {
+  test(`y_16 いのむー: ${makoponi} entering the field grants +1/+1`, () => {
+    let s = arena({ me: { hand: [makoponi], field: ['y_16'] } });
+    const inomu = field(s)[0];
+    s = play(s, hand(s)[0]);
+    assert.deepEqual(stats(s, inomu), [catalog.y_16.attack + 1, catalog.y_16.hp + 1]);
+  });
+}
+
+test('y_15 まこぽに: いのむー outside the friendly field grants neither bonus', () => {
+  for (const inomu of ['y_16', 'y_44', 'y_83']) {
+    let s = arena({ me: { hand: ['y_15', inomu], nap: [inomu], pp: 3 }, foe: { field: [inomu] } });
+    assert.equal(costOf(s, hand(s)[0], catalog, 0), 3);
+    s = play(s, hand(s)[0]);
+    assert.equal(s.players[0].pp, 0);
+    assert.deepEqual(stats(s, newest(s)), [2, 2]);
+  }
 });
 
 test('y_15 まこぽに: a copy made by さら also gets +1/+1 while いのむー is present', () => {

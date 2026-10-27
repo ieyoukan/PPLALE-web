@@ -4,7 +4,7 @@ import { OpenInRoom } from '@/components/game/plaza/OpenInRoom';
 
 export const metadata: Metadata = {
   title: 'ぷぷりえーる ロリの一手を極めるために',
-  description: 'このターンで勝利を目指すリーサルパズル。メロン初級・中級の7問に挑戦！',
+  description: 'このターンで勝利を目指すリーサルパズル。イチゴ・ぶどう・メロンの初級から上級まで、全25問に挑戦！',
   alternates: { canonical: '/game/puzzles/' },
 };
 

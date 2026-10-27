@@ -7,8 +7,8 @@ import type { PlazaIconName } from './PlazaIcon';
 /** The launchpad's own tabs, then the game's screens. */
 export type Section = 'home' | 'notifications' | 'instance' | 'volume' | 'settings'
   | 'discover' | 'cpu' | 'battle' | 'free' | 'history' | 'puzzles' | 'cards' | 'zukan' | 'editor' | 'social' | 'profile' | 'performance';
-/** A section, and for a profile whose it is (none: the player's own). */
-export interface Place { section: Section; id?: string }
+/** A section and its selected profile or puzzle fruit, without changing the room address. */
+export interface Place { section: Section; id?: string; fruit?: string }
 
 export const sectionInfo: Record<Section, { label: string; icon: PlazaIconName }> = {
   home: { label: 'ランチパッド', icon: 'rocket' },
@@ -45,7 +45,8 @@ export function placeOf(url: URL): Place | null {
   // A shared position for the editor opens straight on the board: that stays a page.
   if (section === 'editor' && url.search) return null;
   const id = section === 'profile' ? url.searchParams.get('id') ?? undefined : undefined;
-  return id ? { section, id } : { section };
+  const fruit = section === 'puzzles' ? url.searchParams.get('fruit') ?? undefined : undefined;
+  return { section, ...(id && { id }), ...(fruit && { fruit }) };
 }
 
-export const samePlace = (a: Place, b: Place) => a.section === b.section && a.id === b.id;
+export const samePlace = (a: Place, b: Place) => a.section === b.section && a.id === b.id && a.fruit === b.fruit;
