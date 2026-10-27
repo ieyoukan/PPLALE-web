@@ -1,0 +1,17 @@
+{
+  "generator": "built-in image_gen",
+  "transparent_background": true,
+  "style_references": [
+    "public/pupu_game.webp",
+    "public/images/game/characters/friends.webp"
+  ],
+  "output_directory": "public/images/game/fruits",
+  "export": "Trim transparent margins, fit into 560×560, add 40px transparent padding on every side, export 640×640 WebP at quality 92 with alphaQuality 100.",
+  "common_prompt": "Use case: stylized-concept. Asset type: premium illustrated fruit emblem for a cute Japanese fantasy card game's rule thumbnail, not a UI mockup. The two input images are STYLE REFERENCES only: image 1 supplies warm cocoa outlines and cream/pink/sage colors; image 2 supplies softly hand-painted anime illustration finish. Create an entirely new single fruit illustration, not an edit of the references. Art direction: tasteful hand-painted gouache and delicate colored-pencil finish, warm cocoa-brown contour lines, carefully shaped large silhouette with lovely botanical details and soft natural volume, refined illustrated game-item quality, warm gentle lighting, restrained creamy highlights, no harsh gloss. Clearly legible at 64px. One single centered object filling 80-85% of a square canvas, fully contained with generous transparent margin, true transparent background. No background, no ground shadow, no text, no logo, no characters or faces, no frame, no white sticker border, no sparkles or extra objects. Avoid stock emoji, generic clipart, flat vector look, plastic 3D or photorealism.",
+  "subjects": {
+    "strawberry": "Subject: ONE ripe whole strawberry, rich soft coral-red body with subtly golden seeds individually inset, lovely asymmetric crown of sage-green serrated leaves, gentle three-quarter view. Recognizable heart-like strawberry silhouette.",
+    "grape": "Subject: ONE elegant bunch of about twelve rounded ripe violet-purple grapes, natural cascading triangular silhouette, one softly curved cocoa stem and a single small sage-green grape leaf. Individual grapes show subtle translucent juicy volume, muted violet fruit hues matching an illustrated botanical item, gentle three-quarter view.",
+    "melon": "Subject: ONE whole round Japanese netted muskmelon, light sage-green rind with delicate creamy net-pattern, a short naturally curved T-shaped vine stem and one tiny leaf. Entire melon intact, no slices, distinctive melon silhouette, gentle three-quarter view. Net pattern readable and graceful, not busy.",
+    "orange": "Subject: ONE ripe whole mandarin orange, warm peach-orange peel with very subtle natural dimpling, one small fresh sage-green leaf and short cocoa stem, slight squat-round mandarin silhouette, gentle three-quarter view. Entire fruit intact, no slices."
+  }
+}

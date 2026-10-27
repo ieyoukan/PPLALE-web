@@ -3,9 +3,10 @@ import { join } from 'node:path';
 import { ImageResponse } from 'next/og';
 import sharp from 'sharp';
 import { fruitNames } from '@pplale/game-core';
+import { fruitIllustrations } from '@/lib/game/roomThumbnail';
 import type { RoomThumbnail } from '@/lib/game/roomThumbnail';
 
-// The room thumbnail and share image: large fruit symbols, the logo and the game's friends.
+// The room thumbnail and share image: painted fruit illustrations, the logo and the game's friends.
 // It is chosen by the rules alone (roomThumbnail.ts), so every room with the same rules shares one
 // image, and nothing of who is in a room, its name or its invitation can be read from it.
 const WIDTH = 800;
@@ -37,10 +38,11 @@ async function font(text: string): Promise<ArrayBuffer> {
 
 async function render({ fruits, extended, turn }: RoomThumbnail): Promise<Buffer> {
   const chips = [extended ? '拡張' : '通常', turn ? `${turn / 60}分` : '時間無制限'];
-  const symbols = { strawberry: '🍓', grape: '🍇', melon: '🍈', orange: '🍊' };
-  const [bg, logo, friends, data] = await Promise.all([
+  const fruitWidth = fruits.length > 1 ? 210 : 400, fruitHeight = fruits.length > 2 ? 160 : 300;
+  const [bg, logo, friends, illustrations, data] = await Promise.all([
     backdrop(), picture('images/game/logo.webp', 240, 118),
     picture('images/game/characters/friends.webp', 320, 300, 'contain'),
+    Promise.all(fruits.map(fruit => picture(fruitIllustrations[fruit], fruitWidth, fruitHeight, 'contain'))),
     font(chips.join('')),
   ]);
   const response = new ImageResponse(
@@ -52,7 +54,9 @@ async function render({ fruits, extended, turn }: RoomThumbnail): Promise<Buffer
       {/* eslint-disable-next-line @next/next/no-img-element -- Satori draws plain img */}
       <img alt="" src={logo} width={240} height={118} style={{ position: 'absolute', right: 40, top: 8 }} />
       <div style={{ position: 'absolute', left: 24, top: 16, width: 440, height: 330, display: 'flex', flexWrap: 'wrap', justifyContent: 'center', alignItems: 'center' }}>
-        {fruits.map(fruit => <div key={fruit} aria-label={fruitNames[fruit]} style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', width: fruits.length > 1 ? 210 : 400, height: fruits.length > 2 ? 160 : 300, fontSize: fruits.length > 2 ? 136 : fruits.length > 1 ? 170 : 240 }}>{symbols[fruit]}</div>)}
+        {fruits.map((fruit, index) =>
+          /* eslint-disable-next-line @next/next/no-img-element -- Satori draws plain img */
+          <img key={fruit} alt={fruitNames[fruit]} src={illustrations[index]} width={fruitWidth} height={fruitHeight} />)}
       </div>
       <div style={{ position: 'absolute', left: 40, bottom: 22, display: 'flex', gap: 12 }}>
         {chips.map(chip => <div key={chip} style={{ display: 'flex', padding: '8px 20px', borderRadius: 6, background: '#fff8f0', color: '#634747', fontSize: 26 }}>{chip}</div>)}
