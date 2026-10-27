@@ -1,5 +1,5 @@
 // The initial match rules for a new room, and the visibility of the home room: the one opening the
-// game makes when this browser has no room (chosen in 設定; invited unless changed). A room made from
+// game makes when this browser has no room, or on a confirmed home move (chosen in 設定; invited unless changed). A room made from
 // the menu has its visibility chosen there.
 import { DEFAULT_VISIBILITY, defaultRoomRules, isRoomVisibility, parseRoomRules } from '@pplale/game-core/room';
 import type { RoomRules, RoomVisibility } from '@pplale/game-core/room';

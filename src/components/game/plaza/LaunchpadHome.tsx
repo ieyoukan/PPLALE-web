@@ -15,13 +15,13 @@ import styles from './LaunchpadHome.module.css';
 /** One ordered list owns each destination's behavior and illustration. */
 const destinations = [
   { target: 'social', character: 'home-pink', tone: 'vanilla' },
-  { target: 'create', character: 'home-purple', tone: 'sage' },
+  { target: 'discover', character: 'home-purple', tone: 'sage' },
   { target: 'cards', character: 'home-mint', tone: 'pink' },
   { target: 'puzzles', character: 'home-rabbit', tone: 'vanilla' },
   { target: 'history', character: 'home-yellow', tone: 'vanilla' },
 ] as const;
 
-export function LaunchpadHome({ onHome, onCreate, onShare }: { onHome: () => void; onCreate: () => void; onShare: () => void }) {
+export function LaunchpadHome({ onHome, onShare }: { onHome: () => void; onShare: () => void }) {
   const { openAt } = useLaunchpad(), { view } = usePlaza();
   const [more, setMore] = useState(false);
   const moreId = useId();
@@ -29,8 +29,8 @@ export function LaunchpadHome({ onHome, onCreate, onShare }: { onHome: () => voi
     <CurrentRoomBanner />
     <section aria-label="クイックリンク">
       <nav className={styles.destinations} aria-label="ゲームの画面">{destinations.map(({ target, character, tone }) =>
-        <CharacterDestination key={target} character={character} tone={tone} label={target === 'create' ? 'ルーム' : sectionInfo[target].label}
-          onClick={() => target === 'create' ? onCreate() : openAt({ section: target })} />)}</nav>
+        <CharacterDestination key={target} character={character} tone={tone} label={target === 'discover' ? 'ルーム' : sectionInfo[target].label}
+          onClick={() => openAt({ section: target })} />)}</nav>
     </section>
     <div className={styles.quick} role="group" aria-label="ルームの操作">
       <button onClick={onHome}><PlazaIcon name="home" /><span>ホーム</span></button>

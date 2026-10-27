@@ -45,7 +45,6 @@
 .creationText small { color: var(--brand-cocoa-soft); font-size: 13px; }
 .creationCheck { color: var(--brand-cocoa); font-size: 22px; }
 .createError { color: var(--brand-cocoa-deep); font-size: 14px; font-weight: 700; }
-.warn { display: flex; align-items: center; gap: 8px; padding: 6px 14px; border-radius: 999px; background: var(--brand-peach-wash); font-weight: 700; }
 .makeButton { display: inline-flex; align-items: center; gap: 8px; padding: 14px 40px; border: 3px solid var(--brand-pink-edge); border-radius: 999px; background: var(--brand-blush); color: var(--brand-cocoa-deep); font-size: 22px; box-shadow: none; cursor: pointer; }
 
 @keyframes fade { from { opacity: 0; } }

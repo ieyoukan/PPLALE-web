@@ -100,6 +100,7 @@ test('opening the game makes a room; its invitation brings a friend to the same 
   // The owner leaves for a new room: bob stays, the room has no owner, and he takes the role.
   await alice.keyboard.press('Escape');
   await alice.getByRole('region', { name: 'クイックリンク' }).getByRole('button', { name: 'ルーム', exact: true }).click();
+  await alice.getByRole('button', { name: 'ルームを作る', exact: true }).click();
   const creation = alice.getByRole('dialog', { name: '新しいルームを作る' });
   await expect(creation.getByRole('radio', { name: /^インバイト 招待/ })).toHaveAttribute('aria-checked', 'true');
   await expect(creation.getByRole('radio')).toHaveCount(5);
@@ -128,7 +129,7 @@ test('opening the game makes a room; its invitation brings a friend to the same 
   for (const page of [alice, bob, carol]) await page.context().close();
 });
 
-test('the CPU sits down in an empty seat and plays its own moves at the same table', async ({ browser }) => {
+test('the CPU plays at the same table, with spectators joining before and during the match', async ({ browser }) => {
   test.setTimeout(120000);
   const alice = await open(browser, 'ありす');
   await alice.goto(`${base}/game/`);
@@ -154,8 +155,13 @@ test('the CPU sits down in an empty seat and plays its own moves at the same tab
   await alice.getByRole('button', { name: /^CPUのデッキ:/ }).click();
   await expect(alice.getByRole('button', { name: /CPUのデッキをえらぶ/ })).toContainText('いちごのおためしデッキ');
   await alice.getByRole('button', { name: 'このCPUにする' }).click();
+  const { id, invite } = await plazaOf(alice);
+  const bob = await open(browser, '観戦するぼぶ');
+  await bob.goto(`${base}/game/room/${id}/?invite=${invite}`);
+  await expect(bob.getByText('CPU・ふつう', { exact: true })).toBeVisible();
+  await expect(bob.getByRole('button', { name: 'じゅんびOK!', exact: true })).toHaveCount(0);
   await alice.getByRole('button', { name: 'じゅんびOK!' }).click();
-  await expect(alice.locator('[data-table]')).toBeVisible({ timeout: 20000 });
+  for (const page of [alice, bob]) await expect(page.locator('[data-table]')).toBeVisible({ timeout: 20000 });
   // The CPU throws its die after ours; whoever wins chooses.
   for (let round = 0; round < 8; round++) {
     await alice.getByRole('button', { name: 'あなたのサイコロを振る' }).click({ timeout: 20000 });
@@ -168,8 +174,30 @@ test('the CPU sits down in an empty seat and plays its own moves at the same tab
   }
   // The CPU draws its opening hand by itself.
   await expect.poll(() => alice.locator('[aria-label^="相手の手札"]').getAttribute('aria-label'), { timeout: 20000 }).toMatch(/[1-9]枚/);
+  // A late visitor joins the running match without taking a seat or seeing either private hand.
+  const carol = await open(browser, '途中から観戦するきゃろる');
+  await carol.goto(`${base}/game/room/${id}/?invite=${invite}`);
+  for (const page of [bob, carol]) {
+    await expect(page.locator('[data-table]')).toBeVisible({ timeout: 20000 });
+    await expect(page.locator('[data-hand-list] [data-hand]').first()).toBeDisabled();
+    await expect(page.locator('[data-hand-list] [data-hand] img')).toHaveCount(0);
+    await expect(page.getByRole('button', { name: '観戦中', exact: true })).toBeDisabled();
+  }
+  await alice.keyboard.press('Escape');
+  await alice.getByRole('dialog', { name: 'ゲームメニュー' }).getByRole('button', { name: 'ホーム', exact: true }).click();
+  const home = alice.getByRole('dialog', { name: 'ホームへ移動しますか？', exact: true });
+  await expect(home).toContainText('対戦中の試合は負けになります');
+  await home.getByRole('button', { name: 'キャンセル', exact: true }).click();
+  await expect(alice).toHaveURL(`${base}/game/room/${id}/`);
+  await alice.getByRole('dialog', { name: 'ゲームメニュー' }).getByRole('button', { name: 'ホーム', exact: true }).click();
+  await home.getByRole('button', { name: '移動する', exact: true }).click();
+  await alice.waitForURL(target => /^\/game\/room\/\d{6}\/$/.test(target.pathname) && !target.pathname.includes(id));
+  for (const page of [bob, carol]) {
+    await expect(page).toHaveURL(`${base}/game/room/${id}/`);
+    await expect(page.getByRole('dialog', { name: '対戦結果', exact: true })).toBeVisible({ timeout: 20000 });
+  }
   expect(errors).toEqual([]);
-  await alice.context().close();
+  for (const page of [alice, bob, carol]) await page.context().close();
 });
 
 test('a link to an older two-seat room opens its lobby, where joining is the visitor\'s choice', async ({ browser }) => {

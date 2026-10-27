@@ -35,10 +35,13 @@ test('home creates a room after social, and the current room scrolls to all its 
   for (const size of sizes) expect(size).toEqual(sizes[0]);
   await page.screenshot({ path: info.outputPath('launchpad-home.png') });
   await links.getByRole('button', { name: 'ルーム', exact: true }).click();
+  await pad.getByRole('button', { name: 'ルームを作る', exact: true }).click();
   const creation = page.getByRole('dialog', { name: '新しいルームを作る' });
   await expect(creation.getByRole('radio')).toHaveCount(5);
   await expect(creation.getByRole('radio', { name: /^インバイト 招待/ })).toHaveAttribute('aria-checked', 'true');
   await page.keyboard.press('Escape');
+  await pad.getByRole('button', { name: 'もどる', exact: true }).click();
+  await pad.getByRole('button', { name: 'ランチパッドに縮小', exact: true }).click();
   await pad.getByRole('button', { name: 'さそう', exact: true }).click();
   await expect(page.getByRole('dialog', { name: 'ルームにさそう' })).toBeVisible();
   await page.keyboard.press('Escape');
@@ -70,7 +73,10 @@ test('a room match replay opens from history while keeping the room connection',
   expect(messages.some(message => message.action === 'leave')).toBe(false);
   await page.keyboard.press('Escape');
   await page.getByRole('dialog', { name: 'ゲームメニュー' }).getByRole('button', { name: 'ホーム', exact: true }).click();
-  await expect(page).toHaveURL(url);
+  const confirmation = page.getByRole('dialog', { name: 'ホームへ移動しますか？', exact: true });
+  await expect(confirmation).toBeVisible();
+  await confirmation.getByRole('button', { name: '移動する', exact: true }).click();
+  await page.waitForURL(target => /^\/game\/room\/\d{6}\/$/.test(target.pathname) && target.href !== url);
   await expect(page.getByRole('button', { name: 'この席にすわる' }).first()).toBeVisible();
 });
 
@@ -104,14 +110,15 @@ for (const viewport of [{ width: 1280, height: 800 }, { width: 844, height: 390 
   });
 }
 
-test('expansion introduces the game instead of duplicating the quick pad home', async ({ page }, info) => {
+test('expansion opens public discovery over the current room', async ({ page }, info) => {
+  await page.route('**/rooms/browse', route => route.fulfill({ json: { rooms: [] } }));
   const { pad, url, messages } = await room(page);
   await pad.getByRole('button', { name: 'ゲームメニューを拡大' }).click();
   await expect(pad.getByRole('heading', { name: 'いまのぷぷりえーる', exact: true })).toBeVisible();
   await expect(pad.getByRole('tab', { name: 'ランチパッドホーム' })).toHaveCount(0);
   await expect(pad.getByRole('region', { name: 'クイックリンク' })).toHaveCount(0);
-  await expect(pad.getByRole('region', { name: 'パズルピックアップ' }).getByRole('img')).toBeVisible();
-  await expect(pad.getByRole('heading', { name: 'ロリの一手を極めるために', exact: true })).toHaveCount(1);
+  await expect(pad.getByRole('complementary', { name: 'パブリックルーム一覧' })).toBeVisible();
+  await expect(pad.getByRole('status')).toHaveText('パブリックルームがありません');
   const rail = pad.getByRole('tablist', { name: 'ゲームの画面', exact: true });
   const alignment = await rail.evaluate(element => {
     const bounds = element.getBoundingClientRect();
@@ -129,16 +136,16 @@ test('expansion introduces the game instead of duplicating the quick pad home', 
   await pad.getByRole('button', { name: 'ルームを作る', exact: true }).click();
   await expect(page.getByRole('dialog', { name: '新しいルームを作る' })).toBeVisible();
   await page.keyboard.press('Escape');
-  await pad.getByRole('button', { name: /デッキもカードも、じっくり/ }).click();
+  await pad.getByRole('tab', { name: 'カード', exact: true }).click();
   await expect(pad.getByRole('link', { name: /図鑑/ })).toBeVisible();
-  await pad.getByRole('button', { name: 'もどる', exact: true }).click();
+  await pad.getByRole('tab', { name: 'いまのぷぷりえーる', exact: true }).click();
   await expect(pad.getByRole('heading', { name: 'いまのぷぷりえーる', exact: true })).toBeVisible();
   await page.screenshot({ path: info.outputPath('game-discover.png') });
-  await pad.getByRole('region', { name: 'パズルピックアップ' }).getByRole('button').click();
+  await pad.getByRole('tab', { name: 'リーサルパズル', exact: true }).click();
   await expect(pad.getByRole('heading', { name: 'リーサルパズル', exact: true })).toBeVisible();
   await expect(pad.getByText('ロリの一手を極めるために', { exact: true })).toBeVisible();
   await page.screenshot({ path: info.outputPath('puzzle-subtitle.png') });
-  await pad.getByRole('button', { name: 'もどる', exact: true }).click();
+  await pad.getByRole('tab', { name: 'いまのぷぷりえーる', exact: true }).click();
   await pad.getByRole('button', { name: 'ランチパッドに縮小' }).click();
   await expect(pad.getByRole('region', { name: 'クイックリンク' })).toBeVisible();
   await expect(page).toHaveURL(url);

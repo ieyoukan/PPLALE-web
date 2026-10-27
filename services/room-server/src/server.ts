@@ -9,6 +9,7 @@ import { profileNames } from './profile-names.ts';
 //   POST /rooms/{id}/join  { name }         → the guest's seat; a plaza: { name, invite } → a member secret
 //   POST /rooms/{id}/invite { member, to }  a signed-in member lets a friend into the plaza by name (and tells them)
 //   POST /rooms/lookup     { ids }          what the asker may know of several rooms at once (friends' rooms)
+//   POST /rooms/browse     { known? }       every open plaza the asker may enter (no invitation secrets returned)
 //   POST /rooms/location   { to }           a friend's live location; inaccessible rooms expose only their visibility
 //   POST /rooms/ask        { to }           a signed-in player asks a friend's invited room to let them in
 //   POST /rooms/invited                     plazas that let the signed-in player in by name
@@ -35,7 +36,7 @@ import type { WebSocket } from 'ws';
 import { legalMoves } from '@pplale/game-core';
 import type { Catalog, Command, Side } from '@pplale/game-core';
 import { ROOM_ID_LENGTH, TWO_SEAT_ROOM, isRoomId } from '@pplale/game-core/room';
-import type { ClientMessage, Entered, PlazaRequest, RoomAction, RoomServerStats, Seated, ServerMessage } from '@pplale/game-core/room';
+import type { ClientMessage, Entered, PlazaRequest, RoomAction, RoomInfo, RoomServerStats, Seated, ServerMessage } from '@pplale/game-core/room';
 import { memberOfEntry } from './backend.ts';
 import type { Backend, Member, Overview, RoomEvent, Spot } from './backend.ts';
 import type { Config } from './config.ts';
@@ -509,6 +510,36 @@ export function createRoomServer({ config, backend, catalog, history, push = pus
         const owners = await historyOwners(request), token = idToken(request);
         const uid = uidOf(owners);
         const body = await readJson(request, MAX_BODY) as Record<string, unknown> | null;
+        if (name === 'browse') {
+            const visitor = askerOf(owners), friends = token && uid ? friendsOnce(token, uid) : undefined;
+            const known = new Map<string, { token?: string; invite?: string }>();
+            for (const entry of Array.isArray(body?.known) ? body.known.slice(0, MAX_LOOKUP) : []) {
+                if (!entry || typeof entry !== 'object' || !isRoomId(entry.id)) continue;
+                known.set(entry.id, {
+                    ...(typeof entry.token === 'string' && entry.token.length <= 128 && { token: entry.token }),
+                    ...(typeof entry.invite === 'string' && entry.invite.length <= 128 && { invite: entry.invite }),
+                });
+            }
+            const found: RoomInfo[] = [];
+            // Do not use the 24-id lookup limit here: browsing must include every eligible room.
+            // Read bounded batches, sharing one friendship query across all rooms in this request.
+            const ids = await backend.ids();
+            for (let start = 0; start < ids.length; start += 50) {
+                const rooms = await Promise.all(ids.slice(start, start + 50).map(async id => {
+                    const room = await backend.get(id);
+                    if (!room?.plaza || room.status === 'closed' || !room.plaza.members.length) return null;
+                    const info = plazaInfo(room);
+                    const key = known.get(id);
+                    const member = !!memberOf(room, key?.token) || !!uid && room.plaza.members.some(person => person.profileId === uid);
+                    if (!info.open && !member) return null;
+                    if (!member && !await mayEnter(room, visitor, token, key?.invite, friends)) return null;
+                    return info;
+                }));
+                found.push(...rooms.filter((room): room is RoomInfo => room !== null));
+            }
+            found.sort((a, b) => b.plaza!.members - a.plaza!.members || a.id.localeCompare(b.id));
+            return { rooms: found };
+        }
         if (name === 'lookup') {
             const ids = Array.isArray(body?.ids) ? [...new Set(body.ids.filter(isRoomId))].slice(0, MAX_LOOKUP) : [];
             const visitor = askerOf(owners), friends = token && uid ? friendsOnce(token, uid) : undefined;
@@ -639,7 +670,7 @@ export function createRoomServer({ config, backend, catalog, history, push = pus
                 return send(response, 200, result.status);
             }
             if (route !== 'POST /rooms' && !id) return send(response, 404, { error: 'not found' });
-            if (request.method === 'POST' && !tail && (id === 'lookup' || id === 'ask' || id === 'invited' || id === 'location')) {
+            if (request.method === 'POST' && !tail && (id === 'lookup' || id === 'browse' || id === 'ask' || id === 'invited' || id === 'location')) {
                 if (!(id === 'ask' ? allowed : lookupAllowed)(address(request))) throw new RoomError(429, '少し待ってからお試しください');
                 return send(response, 200, await plazaRequest(request, id));
             }

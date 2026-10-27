@@ -52,6 +52,10 @@ export const enterPlaza = (id: string, name: string, { invite, rejoin }: { invit
   call<Entered>(`/rooms/${id}/join`, { name, plaza: true, ...(invite && { invite }), ...(rejoin && { rejoin }) });
 /** What this player may know of these rooms (only the ones they may enter). */
 export const lookupRooms = (ids: string[]) => call<{ rooms: RoomInfo[] }>('/rooms/lookup', { ids });
+/** Every non-full plaza this player may enter; the server applies the usual admission rules. */
+export const browseRooms = () => call<{ rooms: RoomInfo[] }>('/rooms/browse', {
+  known: Object.entries(plazas().rooms).slice(0, KEPT_PLAZAS).map(([id, key]) => ({ id, token: key.token, ...(key.invite && { invite: key.invite }) })),
+});
 /** Lets a friend into the room by name and tells them (signed in; `member`: this browser's member secret of the room). */
 export const inviteFriend = (id: string, member: string, to: string) => call<{ ok: true }>(`/rooms/${id}/invite`, { member, to });
 /** Rooms that let this signed-in player in by name. */

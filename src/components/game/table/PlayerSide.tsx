@@ -22,7 +22,7 @@ export function PlayerSide({ side }: { side: Side }) {
   // In a room either seat may be this screen's; elsewhere side 0 is the player.
   const who = (mode === 'room' ? near : side === 0) ? 'あなた' : '相手';
   const sandbox = editing || mode === 'hotseat' && game.phase === 'playing' && !game.pending && !busy;
-  /** Every hand is face up: the far one sits lower so its cards can be read, and a tap enlarges one. */
+  // Face-up layouts still respect server redaction: room spectators cannot see unrevealed hands.
   const open = mode === 'watch' || mode === 'puzzle' || !!remote?.watching || editing;
   const leaderTarget = !!attacker && side !== view && board.canStrike(attacker, 'leader');
   const concealed = player.hand.filter(uid => !game.cards[uid].revealed);
@@ -65,10 +65,10 @@ export function PlayerSide({ side }: { side: Side }) {
     </div>
     {!near && <div className={`${styles.opponentHand} ${open ? styles.openHand : ''} ${mixed ? styles.opponentHandWithRevealed : ''}`} role="group" aria-label={`相手の手札 ${player.hand.length}枚`}>
       {[...concealed, ...revealed].map((uid, i) => {
-        const card = game.cards[uid], visible = card.revealed || open;
+        const card = game.cards[uid], face = displayCards[card.cardId], visible = !!face && (card.revealed || open);
         return <button key={uid} type="button" data-hand={uid} data-revealed={card.revealed || undefined}
           className={`${styles.hiddenCard} ${card.revealed ? styles.revealedOpponentCard : ''} ${board.flying(uid) ? styles.dealing : ''}`}
-          disabled={!visible} aria-label={visible ? `相手の${card.revealed ? '公開' : ''}手札 ${displayCards[card.cardId].name}` : '相手の非公開手札'}
+          disabled={!visible} aria-label={visible ? `相手の${card.revealed ? '公開' : ''}手札 ${face.name}` : '相手の非公開手札'}
           onClick={() => board.setPanel(editing ? { type: 'editHand', uid } : { type: 'inspect', uid })}
           style={{ '--hand-index': i - (player.hand.length - 1) / 2, '--fan-step': `${Math.min(56, 360 / Math.max(1, player.hand.length))}px`, '--reveal-shift': mixed ? card.revealed ? 'calc((104px - var(--fan-step) + 32px) / 2)' : 'calc((var(--fan-step) - 104px - 32px) / 2)' : '0px' } as CSSProperties}>
           {/* The opponent holds their cards facing them, so they are upside down from here. */}

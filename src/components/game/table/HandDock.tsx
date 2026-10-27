@@ -23,22 +23,28 @@ export function HandDock() {
   const mixed = concealed.length > 0 && revealed.length > 0;
   return <div className={styles.handDock}>
     <div className={styles.hand} data-hand-list>{[...concealed, ...revealed].map((uid, index) => {
-      const card = game.cards[uid], preview = draft.includes(uid), grouped = inRevealedGroup(uid);
+      const card = game.cards[uid], face = displayCards[card.cardId], preview = draft.includes(uid), grouped = inRevealedGroup(uid);
+      // Room spectators receive hidden IDs for both hands; never look up their costs or allow selection.
+      const hidden = !face;
       const groupIndex = grouped ? index - concealed.length : index;
       const offset = groupIndex - ((grouped ? revealed.length : concealed.length) - 1) / 2;
       const angleLimit = mixed ? 8 : 16;
       const classes = [
-        styles.handCard, board.affordable(uid) && styles.playableHand, selected === uid && styles.selectedHand,
+        styles.handCard, !hidden && board.affordable(uid) && styles.playableHand, selected === uid && styles.selectedHand,
         board.isOption(uid) && styles.targetable, (board.flying(uid) || drag.held?.uid === uid) && styles.dealing,
         grouped && styles.revealedHandCard, mixed && index === concealed.length && styles.revealedHandStart,
       ].filter(Boolean).join(' ');
       const submitting = intent && 'uid' in intent && intent.uid === uid;
-      return <button key={uid} data-hand={uid} data-submitting={submitting || undefined} aria-busy={submitting || undefined} data-revealed={card.revealed || undefined} data-reveal-pending={preview || undefined} className={classes}
-        disabled={revealing && (!board.isOption(uid) || busy)} aria-pressed={revealing && board.isOption(uid) ? preview : undefined}
+      return <button key={uid} data-hand={uid} data-concealed={hidden || undefined} data-submitting={submitting || undefined} aria-busy={submitting || undefined} data-revealed={card.revealed || undefined} data-reveal-pending={preview || undefined} className={classes}
+        disabled={hidden || revealing && (!board.isOption(uid) || busy)} aria-pressed={revealing && board.isOption(uid) ? preview : undefined}
         style={{ '--angle': `${Math.max(-angleLimit, Math.min(angleLimit, offset * 4))}deg`, '--lift': `${Math.min(35, Math.abs(offset) * 7)}px`, '--overlap': `${Math.min(100, Math.max(40, (me.hand.length - 4) * 13))}px`, zIndex: index } as CSSProperties}
-        aria-label={`手札 ${displayCards[card.cardId].name}${preview ? '（公開予定）' : card.revealed ? '（公開）' : ''}`} onPointerDown={event => drag.pickUp(event, uid, 'hand')}
-        onClick={() => { if (!drag.clickSuppressed()) board.clickHand(uid); }}>
-        <GameCard id={card.cardId} instance={card} currentCost={costOf(game, uid, gameCatalog, view)} sizes={HAND_CARD_SIZES} />
+        aria-label={hidden ? '非公開の手札' : `手札 ${face.name}${preview ? '（公開予定）' : card.revealed ? '（公開）' : ''}`} onPointerDown={event => { if (!hidden && !remote?.watching) drag.pickUp(event, uid, 'hand'); }}
+        onClick={() => {
+          if (hidden || drag.clickSuppressed()) return;
+          if (remote?.watching) board.setPanel({ type: 'inspect', uid });
+          else board.clickHand(uid);
+        }}>
+        {!hidden && <GameCard id={card.cardId} instance={card} currentCost={costOf(game, uid, gameCatalog, view)} sizes={HAND_CARD_SIZES} />}
         {grouped && <span className={styles.revealed}>{preview ? '公開予定' : '公開'}</span>}
       </button>;
     })}

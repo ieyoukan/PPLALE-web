@@ -1,0 +1,9 @@
+.confirm { display: grid; justify-items: center; gap: 16px; color: var(--brand-cocoa-deep); text-align: center; }
+.confirm p { margin: 0; }
+.homeIcon { width: 56px; height: 56px; }
+.visibility { display: inline-flex; align-items: center; gap: 6px; font-size: 14px; }
+.actions { display: flex; flex-wrap: wrap; justify-content: center; align-items: center; gap: 16px; width: 100%; }
+.cancel { min-height: 46px; padding: 10px 18px; border: 0; border-radius: 6px; background: transparent; color: inherit; font-size: 15px; }
+.cancel:hover { background: var(--brand-blush); }
+.move { --pad: 12px 26px; --frame-face: var(--brand-sage-wash); display: inline-flex; justify-content: center; align-items: center; gap: 8px; min-height: 48px; color: inherit; font-size: 18px; }
+.move:disabled { opacity: .6; }

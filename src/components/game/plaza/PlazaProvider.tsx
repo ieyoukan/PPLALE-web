@@ -49,6 +49,8 @@ export interface PlazaContextValue {
   go(id: string): Promise<void>;
   /** A new room of the chosen visibility, leaving this one. */
   create(visibility: RoomVisibility): Promise<string | null>;
+  /** Makes a fresh home room from saved settings and shows its table, without the creation tools. */
+  newHome(): Promise<string | null>;
   /** Leaves the room for good. */
   leave(): Promise<void>;
   send(action: RoomAction, inputAt?: number): Promise<void>;
@@ -338,6 +340,13 @@ export function PlazaProvider({ children }: { children: ReactNode }) {
     return made;
   }), [make, router, serial]);
 
+  const newHome = useCallback(() => serial(async () => {
+    setStage({ kind: 'entering', to: null, full: !held.current });
+    const made = await make();
+    if (made) router.push(plazaHref(made));
+    return made;
+  }), [make, router, serial]);
+
   const leave = useCallback(() => serial(async () => {
     const old = held.current;
     held.current = null;
@@ -370,8 +379,8 @@ export function PlazaProvider({ children }: { children: ReactNode }) {
   const rulesKey = view?.plaza && view.plaza.owner === view.plaza.me ? JSON.stringify(view.plaza.nextRules ?? view.rules) : null;
   useEffect(() => { if (rulesKey) saveRoomSettings({ rules: JSON.parse(rulesKey) }); }, [rulesKey]);
 
-  const value = useMemo<PlazaContextValue>(() => ({ stage, id, view, linked, launch, enter, go, create, leave, send, subscribe, presented, settle: settleStage, goHome, legacy }),
-    [stage, id, view, linked, launch, enter, go, create, leave, send, subscribe, presented, settleStage, goHome, legacy]);
+  const value = useMemo<PlazaContextValue>(() => ({ stage, id, view, linked, launch, enter, go, create, newHome, leave, send, subscribe, presented, settle: settleStage, goHome, legacy }),
+    [stage, id, view, linked, launch, enter, go, create, newHome, leave, send, subscribe, presented, settleStage, goHome, legacy]);
   return <Context.Provider value={value}>
     {children}
     {/* Moving between rooms: the current one stays on screen under a small sign. */}

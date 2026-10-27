@@ -10,7 +10,7 @@
 import { Suspense, useCallback, useEffect, useId, useMemo, useRef, useState } from 'react';
 import type { ReactNode } from 'react';
 import dynamic from 'next/dynamic';
-import { usePathname, useRouter } from 'next/navigation';
+import { usePathname } from 'next/navigation';
 import { preconnect } from 'react-dom';
 import { DEFAULT_VISIBILITY } from '@pplale/game-core/room';
 import type { RoomVisibility } from '@pplale/game-core/room';
@@ -24,11 +24,13 @@ import { OrnateFrame } from '../ornament/OrnateFrame';
 import { PlazaIcon } from './PlazaIcon';
 import { RoomNameSheet } from './RoomManagementSheets';
 import { RoomThumbnailImage } from './RoomThumbnailImage';
-import { isPlazaPath, plazaHref, usePlaza } from './PlazaProvider';
+import { isPlazaPath, usePlaza } from './PlazaProvider';
 import { placeOf, samePlace, sectionInfo } from './places';
 import type { Place, Section } from './places';
 import { ShareSheet } from './ShareSheet';
 import { LaunchpadHome } from './LaunchpadHome';
+import { HomeRoomSheet } from './HomeRoomSheet';
+import { RoomDepartureNotice } from './RoomDepartureNotice';
 import { Sheet } from './Sheet';
 import { visibilityInfo } from './visibility';
 import styles from './Launchpad.module.css';
@@ -44,11 +46,11 @@ const MatchHistory = dynamic(() => import('../history/MatchHistory').then(module
 const PuzzleLobby = dynamic(() => import('../puzzles/PuzzleLobby'));
 const CardsMenu = dynamic(() => import('../home/CardsMenu').then(module => module.CardsMenu));
 const CardGallery = dynamic(() => import('../home/CardGallery'));
+const RoomBrowser = dynamic(() => import('./RoomBrowser').then(module => module.RoomBrowser));
 const EditorLobby = dynamic(() => import('../editor/EditorLobby'));
 const SocialPage = dynamic(() => import('../social/SocialPage').then(module => module.SocialPage));
 const ProfilePage = dynamic(() => import('../social/ProfilePage').then(module => module.ProfilePage));
 const InstanceMembers = dynamic(() => import('./InstanceMembers').then(module => module.InstanceMembers));
-const GameDiscover = dynamic(() => import('./GameDiscover').then(module => module.GameDiscover));
 const PlayPerformancePanel = dynamic(() => import('../performance/PlayPerformancePanel').then(module => module.PlayPerformancePanel));
 
 /** Something else answers Escape first: a dialog, a sheet, or typing (including choosing kanji). */
@@ -135,26 +137,23 @@ export function LaunchpadProvider({ children }: { children: ReactNode }) {
   </Context.Provider>;
 }
 
-type Panel = 'share' | 'new' | 'name' | 'rules' | null;
+type Panel = 'share' | 'new' | 'home' | 'name' | 'rules' | null;
 const tabLabel = (section: Section) => section === 'home' ? 'ホーム' : section === 'discover' ? 'ぷぷりえーる' : sectionInfo[section].label;
 
 function Launchpad({ stack, choose }: { stack: Place[]; choose: (section: Section) => void }) {
   const { close: onClose, expanded, setExpanded, place, back } = useLaunchpad();
-  const plaza = usePlaza(), router = useRouter(), pathname = usePathname();
+  const plaza = usePlaza();
   const [panel, setPanel] = useState<Panel>(null);
   const [error, setError] = useState('');
   const box = useRef<HTMLDivElement>(null), panelRef = useRef<HTMLDivElement>(null), tabId = useId();
   const view = plaza.view, room = view?.plaza;
-  // The small pad is for quick actions; its expanded landing page introduces the game instead.
+  // The small pad is for quick actions; its expanded landing page finds public rooms.
   const shownSection = (section: Section) => expanded && section === 'home' ? 'discover' : !expanded && section === 'discover' ? 'home' : section;
   const section = shownSection(place.section);
   // Each screen opens at its top.
   useEffect(() => { panelRef.current?.scrollTo({ top: 0 }); }, [place, expanded]);
   // Focus moves into the pad (to the pad itself, so no button looks chosen by it).
   useEffect(() => { box.current?.focus(); }, [expanded]);
-  const onRoomPage = isPlazaPath(pathname);
-  const go = (href: string) => { onClose(); router.push(href); };
-  const toRoom = () => room && view ? onRoomPage ? onClose() : go(plazaHref(view.id)) : go('/game/');
   const rail = expanded ? screens : padTabs;
   // The rail shows the screen the shown one was opened from (a profile from フレンド: フレンド).
   const current = [...stack].reverse().map(item => shownSection(parent[item.section] ?? item.section)).find(item => rail.includes(item));
@@ -171,8 +170,8 @@ function Launchpad({ stack, choose }: { stack: Place[]; choose: (section: Sectio
     </div>
   </header>;
   const screen = {
-    discover: <GameDiscover onCreate={() => setPanel('new')} />,
-    home: <LaunchpadHome onHome={toRoom} onCreate={() => setPanel('new')} onShare={() => setPanel('share')} />,
+    discover: <RoomBrowser onCreate={() => setPanel('new')} onEntered={onClose} />,
+    home: <LaunchpadHome onHome={() => setPanel('home')} onShare={() => setPanel('share')} />,
     notifications: <NotificationsPage />,
     instance: room && view ? <div className={styles.instance}>
       <RoomThumbnailImage rules={room.nextRules ?? view.rules} alt="ルームのサムネイル" className={styles.instanceArt} sizes="(max-width: 760px) 80vw, 620px" />
@@ -185,7 +184,7 @@ function Launchpad({ stack, choose }: { stack: Place[]; choose: (section: Sectio
         <button className={styles.tile} onClick={() => setPanel('share')}><PlazaIcon name="link" /><span data-ui-title>共有リンク</span></button>
       </div>
       <InstanceMembers room={room} />
-    </div> : <div className={styles.empty}><PlazaIcon name="pin" /><p>ルームに入ると、ここに表示されます</p><button className={styles.tile} onClick={toRoom}>ホーム</button></div>,
+    </div> : <div className={styles.empty}><PlazaIcon name="pin" /><p>ルームに入ると、ここに表示されます</p><button className={styles.tile} onClick={() => setPanel('home')}>ホーム</button></div>,
     volume: <div className={styles.preferences}><PlazaIcon name="volume" className={styles.preferenceIcon} /><NotificationVolumeControl /></div>,
     settings: <GameSettings volume={false} />,
     cpu: <GameLobby />,
@@ -233,6 +232,7 @@ function Launchpad({ stack, choose }: { stack: Place[]; choose: (section: Sectio
     <span onClick={event => event.stopPropagation()}>
       {panel === 'share' && view?.plaza && <ShareSheet view={view} onClose={() => setPanel(null)} />}
       {panel === 'new' && <NewRoom onClose={() => setPanel(null)} onDone={onClose} />}
+      {panel === 'home' && <HomeRoomSheet onClose={() => setPanel(null)} onDone={onClose} />}
       {panel === 'name' && view?.plaza && <RoomNameSheet view={view} onClose={() => setPanel(null)} />}
       {panel === 'rules' && view?.plaza && <RulesSheet view={view} onClose={() => setPanel(null)} onSave={rules => {
         void plaza.send({ action: 'rules', rules }).then(() => { setError(''); setPanel(null); }, failure => { setError(failure instanceof Error ? failure.message : 'ルールを変えられませんでした'); setPanel(null); });
@@ -245,12 +245,10 @@ function Launchpad({ stack, choose }: { stack: Place[]; choose: (section: Sectio
 const creationKinds: RoomVisibility[] = ['public', 'friendsPlus', 'friends', 'invitePlus', 'invite'];
 /** Choose this room's access at creation; once it exists, access stays fixed. */
 function NewRoom({ onClose, onDone }: { onClose: () => void; onDone: () => void }) {
-  const plaza = usePlaza(), view = plaza.view, room = view?.plaza;
+  const plaza = usePlaza(), view = plaza.view;
   const { user } = useAuth();
   const [visibility, setVisibility] = useState<RoomVisibility>(DEFAULT_VISIBILITY);
   const [busy, setBusy] = useState(false), [error, setError] = useState('');
-  const seated = !!view && view.players.some(player => player?.member === room?.me);
-  const others = (room?.members.length ?? 1) > 1;
   const create = async () => {
     setBusy(true); setError('');
     try {
@@ -272,9 +270,7 @@ function NewRoom({ onClose, onDone }: { onClose: () => void; onDone: () => void 
           <span className={styles.creationCheck} aria-hidden="true">{visibility === kind && <PlazaIcon name="check" />}</span>
         </button>;
       })}</OrnateFrame>
-      {view?.status === 'playing' && seated && <p className={styles.warn}><PlazaIcon name="sword" />対戦中の試合は負けになります</p>}
-      {room?.owner === room?.me && others && <p className={styles.warn}><PlazaIcon name="crown" />このルームのオーナーがいなくなります</p>}
-      {others && <p className={styles.settingNote}>ほかの人はこのルームに残ります。</p>}
+      <RoomDepartureNotice view={view} />
       {error && <p className={styles.createError} role="alert">{error}</p>}
       <button className={styles.makeButton} disabled={busy} onClick={() => void create()}><PlazaIcon name="sparkle" /><span data-ui-title>{busy ? '作成中…' : 'この公開範囲で作る'}</span></button>
     </div>

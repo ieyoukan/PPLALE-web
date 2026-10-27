@@ -326,6 +326,7 @@
 .hand { height: 210px; padding: 0 12px; overflow: visible; align-items: flex-end; perspective: 1000px; }
 .handCard { pointer-events: auto; touch-action: none; width: 140px; height: 210px; border-radius: 7px; border: 2px solid #dfc5a0; background: #634237; transform: translateY(var(--lift)) rotate(var(--angle)) rotateX(7deg); box-shadow: -5px 9px 8px #341c2866, inset 0 -3px #eedcba; transition: transform .25s, width .3s, height .3s, box-shadow .25s; }
 .handCard:focus-visible, .selectedHand { transform: translateY(-25px) rotate(0) scale(1.05); }
+.handCard[data-concealed] { background: url('/images/back-card.webp') center / 100% 100%; cursor: default; }
 .handCard.revealedHandCard { transform: translateY(-28px) rotateX(7deg); border-color: #d8afd6; }
 .handCard.revealedHandStart { margin-left: clamp(32px, 4cqw, 56px); }
 .handCard.revealedHandCard:focus-visible, .revealedHandCard.selectedHand { transform: translateY(-42px) scale(1.05); }

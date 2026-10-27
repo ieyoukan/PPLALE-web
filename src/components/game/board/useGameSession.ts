@@ -47,7 +47,7 @@ export interface RemoteSession {
   matchRules?: MatchRules;
   /** The seat this browser plays; for a spectator the side shown near. */
   seat: Side;
-  /** Looking on without a seat: nothing can be done, and both hands are shown. */
+  /** Looking on without a seat: read-only, with card visibility determined by the server. */
   watching: boolean;
   /** A finished match played back from its recording (the 対戦履歴), not a room in progress. */
   recorded?: boolean;
