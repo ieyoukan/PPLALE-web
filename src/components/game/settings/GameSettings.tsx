@@ -11,7 +11,7 @@ import { useAuth } from '@/lib/auth';
 import { readRoomSettings, saveRoomSettings } from '@/lib/game/plazaSettings';
 import { PushToggle } from '@/components/pwa/PushToggle';
 import { NotificationVolumeControl } from '../notifications/GameNotifications';
-import { PlazaIcon } from '../plaza/PlazaIcon';
+import { GameIcon } from '@/components/shared/ui/GameIcon';
 import { visibilityInfo } from '../plaza/visibility';
 import styles from './GameSettings.module.css';
 
@@ -47,7 +47,7 @@ export function GameSettings({ volume = true, onLeave }: { volume?: boolean; onL
   };
   return <div className={styles.settings}>
     <section className={styles.section} aria-labelledby="settings-home">
-      <h3 id="settings-home" data-ui-title><PlazaIcon name="home" />ホームルームの公開範囲</h3>
+      <h3 id="settings-home" data-ui-title><GameIcon name="home" />ホームルームの公開範囲</h3>
       <p className={styles.note}>ゲームを開いたときに作るルームの公開範囲です</p>
       <select className={styles.visibilitySelect} aria-labelledby="settings-home" aria-describedby="settings-home-note" value={home ?? 'invite'} disabled={home === null} onChange={event => choose(event.target.value as RoomVisibility)}>
         {homeKinds.filter(kind => roomVisibilities.includes(kind)).map(kind => {
@@ -58,16 +58,16 @@ export function GameSettings({ volume = true, onLeave }: { volume?: boolean; onL
       <p id="settings-home-note" className={styles.note}>{visibilityInfo[home ?? 'invite'].note}</p>
     </section>
     {volume && <section className={styles.section}><NotificationVolumeControl /></section>}
-    {user && <section className={styles.section} aria-labelledby="settings-push"><h3 id="settings-push" data-ui-title><PlazaIcon name="bell" />ブラウザの通知</h3><PushToggle /></section>}
+    {user && <section className={styles.section} aria-labelledby="settings-push"><h3 id="settings-push" data-ui-title><GameIcon name="bell" />ブラウザの通知</h3><PushToggle /></section>}
     <section className={styles.section} aria-labelledby="settings-account">
-      <h3 id="settings-account" data-ui-title><PlazaIcon name="star" />アカウント</h3>
+      <h3 id="settings-account" data-ui-title><GameIcon name="star" />アカウント</h3>
       <div className={styles.links}>
         {user ? <>
-          <Link className={styles.link} href="/game/profile/" onClick={onLeave} prefetch={false}><PlazaIcon name="star" />プロフィール</Link>
-          <button className={styles.link} disabled={busy} onClick={() => void handleSwitchAccount()}><PlazaIcon name="heart" />アカウントを切り替える</button>
-          <button className={styles.link} disabled={busy} onClick={() => void handleSignOut()}><PlazaIcon name="exit" />ログアウト</button>
-        </> : <button className={styles.link} onClick={() => void signInWithGoogle().catch(() => {})}><PlazaIcon name="heart" />ログイン</button>}
-        <Link className={styles.link} href="/" onClick={onLeave}><PlazaIcon name="exit" />サイトへ</Link>
+          <Link className={styles.link} href="/game/profile/" onClick={onLeave} prefetch={false}><GameIcon name="star" />プロフィール</Link>
+          <button className={styles.link} disabled={busy} onClick={() => void handleSwitchAccount()}><GameIcon name="heart" />アカウントを切り替える</button>
+          <button className={styles.link} disabled={busy} onClick={() => void handleSignOut()}><GameIcon name="exit" />ログアウト</button>
+        </> : <button className={styles.link} onClick={() => void signInWithGoogle().catch(() => {})}><GameIcon name="heart" />ログイン</button>}
+        <Link className={styles.link} href="/" onClick={onLeave}><GameIcon name="exit" />サイトへ</Link>
       </div>
     </section>
   </div>;

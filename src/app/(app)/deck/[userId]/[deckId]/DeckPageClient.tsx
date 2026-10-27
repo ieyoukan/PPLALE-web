@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
+import { useState } from 'react';
 import Link from 'next/link';
 import { usePublicName } from '@/components/game/social/usePublicName';
 import { CardInfo } from '@/types/card';
@@ -10,7 +10,7 @@ import ImportPopup from '@/components/popup/ImportPopup';
 import ShareButtons from '@/components/ui/ShareButtons';
 import { useSettings } from '@/app/SettingsProvider';
 import DeckList from '@/components/deck/DeckList';
-import TabButtons from '@/components/ui/TabButtons';
+import TabButtons from '@/components/shared/ui/TabButtons';
 import CardList from '@/components/shared/card/CardList';
 import CardListPanel, { DECK_VIEW_TABS, DeckCardType } from '@/components/shared/card/CardListPanel';
 import { useDeckPageState } from './useDeckPageState';

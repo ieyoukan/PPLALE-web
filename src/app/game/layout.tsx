@@ -1,6 +1,6 @@
 import type { ReactNode } from 'react';
 import { GameNotifications } from '@/components/game/notifications/GameNotifications';
-import { LaunchpadProvider } from '@/components/game/plaza/Launchpad';
+import { LaunchpadProvider } from '@/components/game/launchpad/LaunchpadProvider';
 import { PlazaProvider } from '@/components/game/plaza/PlazaProvider';
 import { GameStage } from '@/components/game/stage/GameStage';
 import { gameViewport } from '@/components/game/stage/gameViewport';

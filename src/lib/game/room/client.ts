@@ -6,7 +6,6 @@ import { playTiming } from './playTiming';
 import { recordPlaySample } from './performanceLog';
 import { isPlayKind } from '@pplale/game-core/performance';
 import type { PlayReport } from '@pplale/game-core/performance';
-import type { FreeMatchActivity } from '@pplale/game-core/room';
 import type { HistoryPage, MatchDetails, MatchRecording } from '@pplale/game-core/history';
 import type { Deck } from '@pplale/game-core';
 import type { ClientMessage, Entered, FreeMatchStatus, PlazaRequest, RoomAction, RoomInfo, ProfileLocation, RoomRules, RoomServerStats, RoomView, SeatKey, Seated, ServerMessage } from '@pplale/game-core/room';
@@ -35,13 +34,11 @@ async function call<T>(path: string, body?: unknown, signed = false): Promise<T>
   return data;
 }
 
-export const readFreeMatchActivity = () => call<FreeMatchActivity>('/free-match/live');
 export const readMatchHistory = (cursor?: string, favorites = false) => call<HistoryPage>('/history/list', { cursor, favorites });
 export const readMatchDetail = (id: string) => call<MatchDetails>(`/history/${id}/detail`, {});
 export const readRecording = (id: string) => call<MatchRecording>(`/history/${id}`, {});
 export const favoriteMatch = (id: string, value: boolean) => call<{ ok: true }>(`/history/${id}/favorite`, { value });
 
-export const createRoom = (rules: RoomRules, name: string) => call<Seated>('/rooms', { rules, name });
 export const joinRoom = (id: string, name: string) => call<Seated>(`/rooms/${id}/join`, { name });
 export const readRoomInfo = (id: string, invite?: string | null) => call<RoomInfo>(`/rooms/${id}${invite ? `?${new URLSearchParams({ invite })}` : ''}`, undefined, true);
 
@@ -104,10 +101,6 @@ export function keepSeat(id: string, { seat, token }: SeatKey) {
   current.set(id, { seat, token });
   writeSeats({ ...seats(), [id]: { seat, token, at: Date.now() } });
 }
-/** The room this browser sat in last, for a way back to it. */
-export function latestRoom(): string | null {
-  return Object.entries(seats()).sort((a, b) => b[1].at - a[1].at)[0]?.[0] ?? null;
-}
 export function dropSeat(id: string) {
   current.delete(id);
   const rest = seats();
@@ -119,7 +112,7 @@ export function dropSeat(id: string) {
 const PLAZA_KEY = 'pplale-plaza-v1';
 const KEPT_PLAZAS = 8;
 /** `invite`: the latest invitation secret known for the room (to come back in, or to share). */
-export interface PlazaKey { token: string; invite?: string; at: number }
+interface PlazaKey { token: string; invite?: string; at: number }
 interface Plazas { current: string | null; rooms: Record<string, PlazaKey> }
 function plazas(): Plazas {
   try {

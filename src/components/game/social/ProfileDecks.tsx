@@ -4,7 +4,7 @@ import Link from 'next/link';
 import SavedDeckThumbnail from '@/components/deck/SavedDeckThumbnail';
 import { MAX_PUBLIC_DECKS, readMyDecks, readPublicDecks } from '@/lib/game/social';
 import type { PublicDeck } from '@/lib/game/social';
-import { Icon } from './Icon';
+import { GameIcon } from '@/components/shared/ui/GameIcon';
 import styles from './Social.module.css';
 
 /** The decks a profile shows; each opens the deck's shared page. */
@@ -35,7 +35,7 @@ export function DeckChooser({ uid, chosen, onChange }: { uid: string; chosen: st
     <legend>公開するデッキ<small>{chosen.length} / {MAX_PUBLIC_DECKS}</small></legend>
     {decks === null ? <p role="status">読み込み中…</p> : !decks.length ? <p><Link href="/build/">デッキを作る ›</Link></p>
       : <div>{decks.map(deck => <button type="button" key={deck.id} aria-pressed={chosen.includes(deck.id)} aria-label={`${deck.name}を公開する`} onClick={() => toggle(deck.id)}>
-        <SavedDeckThumbnail deck={deck} /><b>{deck.name}</b>{chosen.includes(deck.id) && <span className={styles.deckMark}><Icon name="check" /></span>}
+        <SavedDeckThumbnail deck={deck} /><b>{deck.name}</b>{chosen.includes(deck.id) && <span className={styles.deckMark}><GameIcon name="check" /></span>}
       </button>)}</div>}
   </fieldset>;
 }

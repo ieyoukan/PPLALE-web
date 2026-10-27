@@ -15,7 +15,7 @@ run = "pnpm run dev"
 
 [tasks.check]
 description = "Run type checking, linting, and card data checks"
-depends = ["typecheck", "lint", "cards-check"]
+depends = ["typecheck", "lint", "cards-check", "ui-structure"]
 
 [tasks.typecheck]
 run = "pnpm run typecheck"
@@ -29,3 +29,6 @@ run = "pnpm run cards:check"
 [tasks.build]
 description = "Create a production build"
 run = "pnpm run build"
+
+[tasks.ui-structure]
+run = "pnpm run check:ui"

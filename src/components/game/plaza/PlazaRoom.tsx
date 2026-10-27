@@ -16,7 +16,7 @@ import { BoardTable } from '../BoardEmulator';
 import { useRoomSession } from '../room/useRoomSession';
 import boardStyles from '../BoardEmulator.module.css';
 import link from '../room/Room.module.css';
-import { PlazaIcon } from './PlazaIcon';
+import { GameIcon } from '@/components/shared/ui/GameIcon';
 import { PlazaTable } from './PlazaTable';
 import { usePlaza } from './PlazaProvider';
 import styles from './Plaza.module.css';
@@ -76,7 +76,7 @@ function PlazaMatch({ initial, onDone, onMenu }: { initial: Played; onDone: () =
     {replay && <aside className={link.spectatorTools}><Link href={`/game/replay/?id=${replay}`}>リプレイを見る ▶</Link></aside>}
     {/* On the board's right rail, where nothing of the match is: the room and the game's menu. */}
     <button className={`${boardStyles.infoButton} ${styles.roomTool}`} aria-label={`ルーム（${people}人）`} onClick={onMenu}>
-      <PlazaIcon name="people" /><small>ルーム</small><b aria-hidden="true">{people}</b>
+      <GameIcon name="people" /><small>ルーム</small><b aria-hidden="true">{people}</b>
     </button>
     {!linked && <p className={`${link.badge} ${link.badgeDown}`} role="status">ルームサーバーに再接続しています…</p>}
   </>;

@@ -14,8 +14,8 @@ import type { RoomServerStats } from '@pplale/game-core/room';
 import { BATTLE_PATH, HOME_PATH, roomHref } from '@/lib/game/sessionStore';
 import { BattleIllustration } from './BattleIllustration';
 import { BattleCompanion } from './BattleCompanion';
-import { OrnateFrame } from '../ornament/OrnateFrame';
-import { PlazaIcon } from '../plaza/PlazaIcon';
+import { OrnateFrame } from '@/components/shared/ui/ornament/OrnateFrame';
+import { GameIcon } from '@/components/shared/ui/GameIcon';
 import styles from './Room.module.css';
 import { useMyProfileState } from '../social/useMyProfile';
 
@@ -85,8 +85,8 @@ export function RoomEntrance() {
 
   return <div className={`${styles.stack} ${styles.padScreen}`}>
     <nav className={styles.historyLinks} aria-label="記録">
-      <Link href={`${BATTLE_PATH}history/`} className={styles.historyLink}><PlazaIcon name="history" />対戦履歴</Link>
-      <Link href="/game/performance/" prefetch={false} className={styles.historyLink}><PlazaIcon name="timer" />通信計測</Link>
+      <Link href={`${BATTLE_PATH}history/`} className={styles.historyLink}><GameIcon name="history" />対戦履歴</Link>
+      <Link href="/game/performance/" prefetch={false} className={styles.historyLink}><GameIcon name="timer" />通信計測</Link>
     </nav>
     {/* A portrait guide beside the battle actions. */}
     <div className={styles.entrance}>

@@ -12,7 +12,7 @@ export const MAX_ASPECT = 21 / 9;
 
 /** Where the stage's top-left corner is on screen, its scale and whether it is turned. */
 export type StageTransform = { x: number; y: number; scale: number; rotated: boolean };
-export type StageRect = { x: number; y: number; width: number; height: number };
+type StageRect = { x: number; y: number; width: number; height: number };
 
 const IDENTITY: StageTransform = { x: 0, y: 0, scale: 1, rotated: false };
 let current = IDENTITY;

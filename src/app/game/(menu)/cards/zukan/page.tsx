@@ -1,6 +1,6 @@
 import { Suspense } from 'react';
 import type { Metadata } from 'next';
-import { OpenInRoom } from '@/components/game/plaza/OpenInRoom';
+import { OpenInRoom } from '@/components/game/launchpad/OpenInRoom';
 
 export const metadata: Metadata = {
     title: 'ぷぷりえーる カード図鑑',

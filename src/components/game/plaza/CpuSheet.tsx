@@ -6,10 +6,10 @@ import type { CpuLevel } from '@pplale/game-core';
 import type { RoomPlayer } from '@pplale/game-core/room';
 import { usableChoice } from '@/lib/game/deckSources';
 import type { DeckChoice } from '@/lib/game/deckSources';
-import { OrnateFrame } from '../ornament/OrnateFrame';
+import { OrnateFrame } from '@/components/shared/ui/ornament/OrnateFrame';
 import { Avatar } from '@/components/shared/player/Avatar';
 import { DeckSheet } from './PlazaSheets';
-import { PlazaIcon } from './PlazaIcon';
+import { GameIcon } from '@/components/shared/ui/GameIcon';
 import { Sheet } from './Sheet';
 import styles from './Plaza.module.css';
 import cpuStyles from './CpuSheet.module.css';
@@ -29,15 +29,15 @@ export function CpuSheet({ choices, loading, signIn, current, onChoose, onClose 
     <ul className={styles.cpuGrid}>{cpuLevels.map((item, index) => <li key={item}>
       <OrnateFrame as="button" size="sm" className={styles.cpuTile} data-level={item} aria-pressed={item === level} onClick={() => setLevel(item)}>
         <Avatar cpu size={72} /><b data-ui-title>{cpuProfiles[item].name}</b>
-        <span className={styles.stars} aria-label={`強さ${index + 1}`}>{cpuLevels.map((_, star) => <PlazaIcon key={star} name="star" className={star <= index ? styles.starOn : styles.starOff} />)}</span>
-        {item === level && <span className={styles.tileCheck}><PlazaIcon name="check" /></span>}
+        <span className={styles.stars} aria-label={`強さ${index + 1}`}>{cpuLevels.map((_, star) => <GameIcon key={star} name="star" className={star <= index ? styles.starOn : styles.starOff} />)}</span>
+        {item === level && <span className={styles.tileCheck}><GameIcon name="check" /></span>}
       </OrnateFrame>
     </li>)}</ul>
     <OrnateFrame as="button" size="line" className={cpuStyles.deck} onClick={() => setPicking(true)} aria-label={`CPUのデッキをえらぶ: ${chosen?.name ?? 'なし'}`}>
-      <PlazaIcon name="cards" /><span><small>CPUのデッキ</small><b>{chosen?.name ?? 'えらぶ'}</b></span><PlazaIcon name="pen" />
+      <GameIcon name="cards" /><span><small>CPUのデッキ</small><b>{chosen?.name ?? 'えらぶ'}</b></span><GameIcon name="pen" />
     </OrnateFrame>
     <div className={styles.sheetFoot}><OrnateFrame as="button" size="line" className={styles.primaryButton} disabled={!chosen} onClick={() => { if (chosen) onChoose(level, chosen); }}>
-      <PlazaIcon name="check" /><span data-ui-title>{current?.cpu ? 'このCPUにする' : 'このCPUを呼ぶ'}</span>
+      <GameIcon name="check" /><span data-ui-title>{current?.cpu ? 'このCPUにする' : 'このCPUを呼ぶ'}</span>
     </OrnateFrame></div>
   </Sheet>;
 }

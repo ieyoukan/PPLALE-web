@@ -2,7 +2,7 @@
 // address changing. The old addresses (`/game/cards/`, `/game/profile/?id=` …) still work: a link to
 // one opens its section in the launchpad, and opening one from outside goes to the room first.
 import { BATTLE_PATH, CARDS_PATH, CARD_GALLERY_PATH, CPU_PATH, EDITOR_PATH, NOTIFICATIONS_PATH, PUZZLES_PATH, SETTINGS_PATH } from '@/lib/game/sessionStore';
-import type { PlazaIconName } from './PlazaIcon';
+import type { GameIconName } from '@/components/shared/ui/GameIcon';
 
 /** The launchpad's own tabs, then the game's screens. */
 export type Section = 'home' | 'notifications' | 'instance' | 'volume' | 'settings'
@@ -10,7 +10,7 @@ export type Section = 'home' | 'notifications' | 'instance' | 'volume' | 'settin
 /** A section and its selected profile or puzzle fruit, without changing the room address. */
 export interface Place { section: Section; id?: string; fruit?: string }
 
-export const sectionInfo: Record<Section, { label: string; icon: PlazaIconName }> = {
+export const sectionInfo: Record<Section, { label: string; icon: GameIconName }> = {
   home: { label: 'ランチパッド', icon: 'rocket' },
   discover: { label: 'いまのぷぷりえーる', icon: 'star' },
   notifications: { label: '通知', icon: 'bell' },
@@ -50,3 +50,9 @@ export function placeOf(url: URL): Place | null {
 }
 
 export const samePlace = (a: Place, b: Place) => a.section === b.section && a.id === b.id && a.fruit === b.fruit;
+
+/** Compact controls and expanded destinations share the same metadata above. */
+export const padTabs: Section[] = ['home', 'notifications', 'instance', 'volume', 'settings'];
+export const screens: Section[] = ['discover', 'social', 'cards', 'puzzles', 'history', 'editor'];
+/** Screens opened from another keep their parent selected in the rail. */
+export const parentSection: Partial<Record<Section, Section>> = { zukan: 'cards', profile: 'social', free: 'history', performance: 'history' };

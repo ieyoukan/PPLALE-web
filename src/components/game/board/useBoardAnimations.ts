@@ -17,20 +17,20 @@ import type { Mode } from './useGameSession';
 import { useAnimationTiming } from './useAnimationTiming';
 import { stageRect } from '../stage/stageSpace';
 
-export type Strike = { uid: string; cardId: string; x: number; y: number; dx: number; dy: number; width: number; height: number };
+type Strike = { uid: string; cardId: string; x: number; y: number; dx: number; dy: number; width: number; height: number };
 /** A card, skill or hand reaction, shown large before it resolves. */
-export type Announcement = { id: number; kind: 'play' | 'skill' | 'reveal' | 'reaction'; side: Side; cardId: string; title: string; text: string };
+type Announcement = { id: number; kind: 'play' | 'skill' | 'reveal' | 'reaction'; side: Side; cardId: string; title: string; text: string };
 /** Who goes first, shown once it is decided. */
-export type OrderNotice = { chooser: Side; first: Side };
+type OrderNotice = { chooser: Side; first: Side };
 /** A die a card rolled (ぎってぃ): thrown, then its result is shown. */
-export type EffectRoll = { id: number; side: Side; value: number; cardId?: string; rolling: boolean };
+type EffectRoll = { id: number; side: Side; value: number; cardId?: string; rolling: boolean };
 /** What the opponent picked when the choice is not a card on the table (e.g. paying extra PP). */
-export type ChoiceNote = { id: number; side: Side; label: string };
+type ChoiceNote = { id: number; side: Side; label: string };
 /** End of the match: `wait` for the last animation, ゲームセット, the verdict; null shows the result screen. */
-export type Finale = 'wait' | 'set' | 'verdict' | null;
+type Finale = 'wait' | 'set' | 'verdict' | null;
 export type { Hit, Pop } from './presenters';
 /** The card the opponent picked for an effect. */
-export type Ping = { uid: string; x: number; y: number; width: number; height: number };
+type Ping = { uid: string; x: number; y: number; width: number; height: number };
 
 /**
  * 偽ラグ: a hand reaction the other player may answer with (リンネ・うぃまる・あみの to an attack, ぶらんちゃん
@@ -43,7 +43,7 @@ export const fakeLag = () => 900 + Math.random() * 1700;
 const HIT_DURATION = 1100;
 const POP_DURATION = 1300;
 const ROLL_RESULT = 1300;
-export const ORDER_NOTICE_DURATION = 3200;
+const ORDER_NOTICE_DURATION = 3200;
 // The last blow lands, then ゲームセット and the verdict are shown before the result screen.
 const FINALE_WAIT = 700;
 const FINALE_SET = 1700;

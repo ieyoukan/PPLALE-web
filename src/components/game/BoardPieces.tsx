@@ -67,7 +67,7 @@ export function Counter({ label, value, points, bonus = 0, temporaryBonus = 0, p
 }
 
 export function PpPanel({ side, name, portrait, order, current, maximum, own }: { side: number; name: string; portrait?: AvatarIdentity; order?: 'first' | 'second'; current: number; maximum: number; own: boolean }) {
-  return <div data-pp={side} className={`${styles.ppPanel} ${own ? styles.ownPp : styles.opponentPp}`} role="group" aria-label={`${own ? '自分' : '相手'}のPP ${current} / ${maximum}`}>
+  return <div data-pp={side} className={`${styles.ppPanel} ${own ? styles.ownPp : ''}`} role="group" aria-label={`${own ? '自分' : '相手'}のPP ${current} / ${maximum}`}>
     <div className={styles.ppPlayerName} title={name}>
       {portrait && <Avatar {...portrait} size={24} />}
       <div className={styles.ppNameText}>{name}</div>
@@ -78,13 +78,6 @@ export function PpPanel({ side, name, portrait, order, current, maximum, own }: 
       {Array.from({ length: maximum }, (_, index) => <i key={index} className={index < current ? styles.availablePp : styles.spentPp} />)}
     </div>}
   </div>;
-}
-
-const pips: Record<number, number[]> = { 1: [4], 2: [0, 8], 3: [0, 4, 8], 4: [0, 2, 6, 8], 5: [0, 2, 4, 6, 8], 6: [0, 2, 3, 5, 6, 8] };
-export function Die({ value, rolling }: { value: number | null; rolling: boolean }) {
-  return <span className={`${styles.die} ${rolling ? styles.rollingDie : ''}`} role="img" aria-label={value === null ? 'まだ振っていないダイス' : `ダイス ${value}`}>
-    {Array.from({ length: 9 }, (_, i) => <i key={i} className={(value !== null && pips[value]?.includes(i)) ? styles.pip : ''} />)}
-  </span>;
 }
 
 type Rect = { x: number; y: number; width: number; height: number };

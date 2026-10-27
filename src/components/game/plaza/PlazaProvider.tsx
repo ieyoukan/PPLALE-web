@@ -16,7 +16,7 @@ import { RoomRequestError, connectRoom, createPlaza, currentPlaza, enterPlaza, k
 import type { RoomConnection } from '@/lib/game/room/client';
 import { guestName, readRoomSettings, saveRoomSettings } from '@/lib/game/plazaSettings';
 import { useGameNotifications } from '../notifications/GameNotifications';
-import { OrnateFrame } from '../ornament/OrnateFrame';
+import { OrnateFrame } from '@/components/shared/ui/ornament/OrnateFrame';
 import styles from './Plaza.module.css';
 
 export const plazaHref = (id: string) => `/game/room/${id}/`;
@@ -24,7 +24,7 @@ export const isPlazaPath = (path: string | null) => !!path && /^\/game\/room\/\d
 
 /** Why a room could not be entered. */
 export type Refusal = 'hidden' | 'closed' | 'full' | 'offline' | 'error';
-export type PlazaStage =
+type PlazaStage =
   | { kind: 'idle' }
   /**
    * `full`: opening the game or a link (the launch screen); otherwise moving between rooms (a light veil).
@@ -35,7 +35,7 @@ export type PlazaStage =
   | { kind: 'in' }
   | { kind: 'refused'; to: string | null; reason: Refusal; message: string };
 
-export interface PlazaContextValue {
+interface PlazaContextValue {
   stage: PlazaStage;
   /** The room this player is in, its latest view, and whether its socket is up. */
   id: string | null;

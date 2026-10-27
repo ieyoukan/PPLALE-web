@@ -7,15 +7,16 @@ import { ScreenSubtitle } from '@/components/shared/ui/ScreenSubtitle';
 import type { SocialPlayer } from '@/lib/game/social';
 import type { RoomInfo } from '@pplale/game-core/room';
 import { lookupRooms } from '@/lib/game/room/client';
-import { RecordedCard } from '../history/RecordedCard';
-import { OrnateFrame } from '../ornament/OrnateFrame';
+import { CardArtwork } from '@/components/shared/card/CardArtwork';
+import { OrnateFrame } from '@/components/shared/ui/ornament/OrnateFrame';
 import { FriendTile } from './FriendTile';
-import { Icon } from './Icon';
+import { GameIcon } from '@/components/shared/ui/GameIcon';
 import { locate, placeLabel, placeOf, placeOrder } from './location';
 import { NOTIFICATIONS_PATH } from './NotificationsPage';
 import { RoomCard } from './RoomCard';
-import { RoomRuleFilters, allRoomRules, matchesRoomRules } from './RoomRuleFilters';
-import type { RoomRuleFilter } from './RoomRuleFilters';
+import { RoomRuleFilters } from '@/components/shared/room/RoomRuleFilters';
+import { allRoomRules, matchesRoomRules } from '@/lib/game/room/filters';
+import type { RoomRuleFilter } from '@/lib/game/room/filters';
 import { Invitations } from './Invitations';
 import { useMyProfile } from './useMyProfile';
 import { useSocial } from './useSocial';
@@ -63,16 +64,16 @@ function Social({ uid }: { uid: string }) {
     <header className={styles.socialHeading}>
       <ScreenSubtitle suffix={`${friends.length}人`}>フレンドの現在地</ScreenSubtitle>
       <span className={styles.headingLinks}>
-        <Link className={styles.bell} href={NOTIFICATIONS_PATH} aria-label={`通知${received.length ? ` ${received.length}件` : ''}`}><Icon name="bell" />{received.length > 0 && <em className={styles.badge}>{received.length}</em>}</Link>
+        <Link className={styles.bell} href={NOTIFICATIONS_PATH} aria-label={`通知${received.length ? ` ${received.length}件` : ''}`}><GameIcon name="bell" />{received.length > 0 && <em className={styles.badge}>{received.length}</em>}</Link>
         <Link className={styles.me} href="/game/profile/" aria-label="マイプロフィール">
-          <span className={styles.avatar}>{me && <RecordedCard id={me.iconCardId} sizes="40px" />}</span><span>{me?.displayName ?? 'マイプロフィール'}</span><Icon name="pen" />
+          <span className={styles.avatar}>{me && <CardArtwork id={me.iconCardId} sizes="40px" />}</span><span>{me?.displayName ?? 'マイプロフィール'}</span><GameIcon name="pen" />
         </Link>
       </span>
     </header>
     {error && <p className={styles.error} role="alert">{error}</p>}
     <RoomRuleFilters value={ruleFilter} onChange={setRuleFilter} />
     <Invitations filter={ruleFilter} />
-    {!friends.length && <div className={styles.empty} role="status"><p>{loading ? '読み込み中…' : 'プロフィールのリンクから、フレンドになろう。'}</p>{!loading && <Link className={styles.primary} href={NOTIFICATIONS_PATH}><Icon name="add" />フレンドを追加</Link>}</div>}
+    {!friends.length && <div className={styles.empty} role="status"><p>{loading ? '読み込み中…' : 'プロフィールのリンクから、フレンドになろう。'}</p>{!loading && <Link className={styles.primary} href={NOTIFICATIONS_PATH}><GameIcon name="add" />フレンドを追加</Link>}</div>}
     {ordered.length > 0 && filtered.length === 0 && <p className={styles.filterEmpty}>このルールのルームは見つかりません</p>}
     {filtered.map(({ room, members }) => {
       const place = placeOf(room);

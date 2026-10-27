@@ -407,7 +407,7 @@ CPUとの対戦も同じルームの入室者が観戦できる。対戦前か�
 | --- | --- | --- |
 | 1. ルームの土台 | 入室者・作成者・オーナー・席・試合を分けたルーム（`plaza`）。公開範囲は作成時に固定し、名前はオーナーが変更可能。入室者単位の接続、離席・着席・準備、オーナー不在と取得、ルール変更（対戦中は次の試合へ）、無人閉鎖、閉鎖後の後継ルーム、サーバーが操作するCPU席 | `packages/game-core/src/room.ts`、`services/room-server/src/{rooms,plaza,cpu,backend,server}.ts` |
 | 2. 起動と盤面 | `/game/` は起動入口（全画面ロード→在室ルームへ復帰、なければ作成）。`/game/room/<id>/` に待機・観戦・対戦を統合。接続は `/game/` の共有レイアウトで保持し、旧URLは転送 | `src/app/game/`、`src/components/game/plaza/`、`src/lib/game/room/` |
-| 3. 共通メニュー | Esc・メニューボタンで開くランチパッド。ホーム、招待（Discord用コピーを先頭）、フレンド、新しいルーム（公開範囲を選ぶ）。CPUは盤面の相手席で選ぶ | `src/components/game/plaza/` |
+| 3. 共通メニュー | Esc・メニューボタンで開くランチパッド。ホーム、招待（Discord用コピーを先頭）、フレンド、新しいルーム（公開範囲を選ぶ）。CPUは盤面の相手席で選ぶ | `src/components/game/launchpad/`、ルーム操作は `src/components/game/plaza/` |
 | 4. フレンドの現在地 | 公開範囲が許すルームだけ、フレンドの在室を自動で表示。フレンドへの招待・招待のリクエストと承認 | `src/lib/game/social.ts`、`src/components/game/social/` |
 | 5. 共有画像 | ルール別のサムネイルをOGPとルームカードで共有。非公開ルームは招待リンク以外では共通の文言・画像 | `src/app/api/og/room/`、`src/app/game/room/[roomId]/` |
 

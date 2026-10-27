@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { CardInfo } from '@/types/card';
 import { getCardCatalog } from '@/data/catalog';
 import { useI18n } from '@/i18n/LocaleProvider';

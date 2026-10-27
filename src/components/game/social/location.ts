@@ -3,7 +3,7 @@ import { WATCHING_STALE } from '@/lib/game/social';
 import type { SocialPlayer } from '@/lib/game/social';
 
 /** What a room is doing: recruiting, a match that may be watched, or getting ready. */
-export type Place = 'open' | 'playing' | 'lobby';
+type Place = 'open' | 'playing' | 'lobby';
 export const placeOrder: Place[] = ['open', 'playing', 'lobby'];
 export const placeLabel: Record<Place, string> = { open: '募集中', playing: '対戦中', lobby: '準備中' };
 export const placeOf = (room: RoomInfo): Place => room.plaza

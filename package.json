@@ -45,7 +45,8 @@
     "test:fonts": "node --test tests/site-fonts.test.mjs",
     "game:assets": "node scripts/generate-game-assets.mjs",
     "pretest:game-assets": "pnpm run game:assets",
-    "test:game-assets": "node --test tests/game-assets.test.mjs"
+    "test:game-assets": "node --test tests/game-assets.test.mjs",
+    "check:ui": "node --test tests/ui-structure.test.mjs && node scripts/check-ui-structure.mjs"
   },
   "dependencies": {
     "@pplale/game-core": "workspace:*",

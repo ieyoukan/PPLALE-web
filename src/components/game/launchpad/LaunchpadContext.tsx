@@ -3,7 +3,7 @@
 import { createContext, useContext } from 'react';
 import type { Place } from './places';
 
-export interface LaunchpadValue {
+interface LaunchpadValue {
   open: () => void;
   close: () => void;
   toggle: () => void;

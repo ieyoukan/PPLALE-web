@@ -34,6 +34,8 @@ export default defineConfig([
   },
   globalIgnores([
     '.next/**',
+    '**/.venv/**',
+    '.playwright-mcp/**',
     'out/**',
     'build/**',
     'next-env.d.ts',

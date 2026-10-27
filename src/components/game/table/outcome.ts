@@ -13,7 +13,7 @@ export interface Outcome {
  * The side that won, or null while the match is going. A match always has a winner; a save from
  * when simultaneous defeat was recorded as a draw goes to the second player, like the rule now does.
  */
-export const winnerOf = (game: GameState): Side | null => game.winner === 'draw' ? other(game.rules.firstPlayer) : game.winner;
+const winnerOf = (game: GameState): Side | null => game.winner === 'draw' ? other(game.rules.firstPlayer) : game.winner;
 
 /** How the finished match reads for the viewer, or null while it is still going. */
 export function outcomeOf({ game, view, mode, names, remote }: Pick<Board, 'game' | 'view' | 'mode' | 'names' | 'remote'>): Outcome | null {

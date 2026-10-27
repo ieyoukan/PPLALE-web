@@ -3,8 +3,8 @@
    the ornament frame (.cardButton). People are shown by circular portraits; collectible cards keep their printed shape. */
 .panel { color: var(--brand-cocoa-deep); }
 .panel h3 { margin: 0; color: var(--brand-cocoa); font-size: 21px; }
-.panel button,.panel a { cursor: pointer; }
-.panel button:focus-visible,.panel a:focus-visible { outline: 3px solid var(--brand-cocoa); outline-offset: 3px; }
+.panel button, .panel a { cursor: pointer; }
+.panel button:focus-visible, .panel a:focus-visible { outline: 3px solid var(--brand-cocoa); outline-offset: 3px; }
 .panel button:not([data-tone]) { display: inline-flex; align-items: center; justify-content: center; gap: 6px; min-height: 40px; padding: 8px 14px; border: 1px solid var(--brand-pink-edge); border-radius: 6px; background: var(--brand-paper); color: var(--brand-cocoa-deep); font-weight: 700; }
 .panel button:not([data-tone]):hover:not(:disabled) { background: var(--brand-blush); }
 .primary { display: inline-flex; align-items: center; justify-content: center; gap: 6px; min-height: 40px; padding: 8px 16px; border: 1px solid var(--brand-cocoa); border-radius: 6px; background: var(--brand-blush); color: var(--brand-cocoa-deep); font-weight: 700; text-decoration: none; }
@@ -24,7 +24,7 @@
 .comment { display: inline-block; max-width: 100%; padding: 10px 16px; border-left: 3px solid var(--brand-pink-edge); background: var(--brand-vanilla-wash); font-size: 14px; overflow-wrap: anywhere; }
 /* The player's portrait, shared by profiles, friends, notifications and icon selection. */
 .panel button.avatarLarge { position: relative; display: block; flex: 0 0 96px; width: 96px; height: 96px; padding: 0; overflow: hidden; border: 0; border-radius: 50%; background: var(--brand-cream); filter: none; }
-.avatarLarge img,.avatar img { object-fit: cover; object-position: center 18%; transform: scale(1.6); transform-origin: center 28%; }
+.avatarLarge img, .avatar img { object-fit: cover; object-position: center 18%; transform: scale(1.6); transform-origin: center 28%; }
 .avatarLarge > span { position: absolute; bottom: 0; inset-inline: 0; display: flex; align-items: center; justify-content: center; gap: 4px; padding: 4px; background: #634747e0; color: var(--brand-cream); font-size: 11px; }
 .avatar { position: relative; display: block; flex: 0 0 40px; width: 40px; height: 40px; overflow: hidden; border-radius: 50%; background: var(--brand-cream); filter: none; }
 .profileForm { display: grid; gap: 16px; }
@@ -48,7 +48,6 @@
 
 /* ── フレンドの現在地: friends grouped by the room they host, like VRChat's location list, in ぷぷりえ colours ── */
 .socialHeading { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 14px; align-items: center; margin-bottom: 18px; }
-.beat { color: var(--brand-cocoa); fill: var(--brand-pink); animation: beat 2.4s ease-in-out infinite; }
 /* Counts: a small cocoa square. */
 .badge { display: inline-grid; place-items: center; min-width: 26px; height: 26px; padding: 0 7px; border-radius: 6px; background: var(--brand-cocoa); color: var(--brand-cream); font-size: 14px; font-style: normal; }
 .me { display: flex; align-items: center; gap: 8px; padding: 4px 12px 4px 6px; border: 1px solid var(--brand-pink-edge); border-radius: 6px; background: var(--brand-paper); color: var(--brand-cocoa-deep); font-size: 13px; font-weight: 700; transition: transform .15s; }
@@ -57,14 +56,6 @@
 .me > svg { color: var(--brand-cocoa); }
 
 .group { margin-top: 14px; border-top: 1px solid var(--brand-pink); }
-.ruleFilters { display: grid; gap: 10px; margin: 14px 0 18px; padding: 10px 0; border-block: 1px solid var(--brand-pink); color: var(--brand-cocoa-deep); }
-.ruleFilters strong { display: flex; align-items: center; gap: 6px; color: var(--brand-cocoa); font-size: 15px; }
-.ruleFilters strong small { margin-left: auto; color: var(--brand-cocoa-soft); font-size: 13px; }
-.ruleFilterControls { display: flex; flex-wrap: wrap; align-items: end; gap: 9px; }
-.ruleFilterControls label { display: grid; gap: 3px; color: var(--brand-cocoa-deep); font-size: 12px; font-weight: 700; }
-.ruleFilterControls select { min-height: 38px; padding: 5px 24px 5px 10px; border: 1px solid var(--brand-pink-edge); border-radius: 6px; background: var(--brand-cream); color: var(--brand-cocoa-deep); font-size: 14px; }
-.ruleFilterControls select:focus-visible, .clearRules:focus-visible { outline: 3px solid var(--brand-cocoa); outline-offset: 2px; }
-.clearRules { display: inline-flex; align-items: center; gap: 3px; min-height: 38px; padding: 6px 10px; border: 1px solid var(--brand-pink-edge); border-radius: 6px; background: var(--brand-blush); color: var(--brand-cocoa-deep); font-size: 13px; font-weight: 700; cursor: pointer; }
 .filterEmpty { margin: 18px 0; color: var(--brand-cocoa-deep); font-size: 14px; }
 .group summary svg { color: var(--place); }
 .group summary { display: flex; align-items: center; gap: 10px; padding: 12px 4px; cursor: pointer; list-style: none; font-size: 17px; font-weight: 700; color: var(--brand-cocoa); }
@@ -91,7 +82,6 @@ a.room:hover .roomAction { background: var(--brand-blush); }
 .roomInfo b { font-family: Georgia, serif; letter-spacing: .04em; }
 .fruitDots { display: flex; gap: 3px; }
 .fruitDots i { width: 10px; height: 10px; border-radius: 50%; border: 1.5px solid #fff; box-shadow: none; }
-.count { margin-left: auto; color: var(--brand-cocoa-soft); }
 
 /* A friend: their whole card, name and ひとこと; the edge on the left shows where they are. */
 /* Every friend is the same width, whatever the length of their name or ひとこと. */
@@ -117,7 +107,7 @@ a.room:hover .roomAction { background: var(--brand-blush); }
 @keyframes beat { 0%, 70%, 100% { transform: scale(1); } 80% { transform: scale(1.25); } 90% { transform: scale(.95); } }
 @keyframes bob { 50% { transform: translateY(-3px); } }
 @keyframes pop { from { opacity: 0; transform: scale(.94); } }
-@media (prefers-reduced-motion: reduce) { .beat, .group[data-place=open] .roomBadge, .tile { animation: none; } }
+@media (prefers-reduced-motion: reduce) { .group[data-place=open] .roomBadge, .tile { animation: none; } }
 @container stage (max-width: 600px) { .groupBody { grid-template-columns: 1fr; } .room { grid-template-rows: 80px auto; } .roomAction { top: 42px; } .tiles { grid-template-columns: 1fr; } .tile { width: 100%; } }
 .group[data-place=sent], .tile[data-place=sent], .room[data-place=sent] { --place: #b39ad8; --glow: #b39ad855; }
 .headingLinks { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; max-width: 100%; }

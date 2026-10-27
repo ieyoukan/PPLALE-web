@@ -15,8 +15,8 @@ import { DeckSelect, UnusableDecks, useDeckChoices } from '../DeckSelect';
 import { NameField, usePlayerName } from './RoomEntrance';
 import { BattleCompanion } from './BattleCompanion';
 import { MatchDeckPreview } from './MatchDeckPreview';
-import { OrnateFrame } from '../ornament/OrnateFrame';
-import { PlazaIcon } from '../plaza/PlazaIcon';
+import { OrnateFrame } from '@/components/shared/ui/ornament/OrnateFrame';
+import { GameIcon } from '@/components/shared/ui/GameIcon';
 import styles from './Room.module.css';
 import { useGameNotifications } from '../notifications/GameNotifications';
 import { useRoomPreparation } from './useRoomPreparation';
@@ -184,6 +184,6 @@ export function FreeMatch() {
         {error && <p role="alert" className={styles.error}>{error}</p>}
       </OrnateFrame>
     </div>
-    {!search && <div className={styles.row}><Link href={CPU_PATH} className={styles.textLink}><PlazaIcon name="cpu" />CPU対戦で遊ぶ</Link></div>}
+    {!search && <div className={styles.row}><Link href={CPU_PATH} className={styles.textLink}><GameIcon name="cpu" />CPU対戦で遊ぶ</Link></div>}
   </div>;
 }

@@ -23,7 +23,7 @@ export const GameCard = memo(function GameCard({ id, instance, stats = false, ab
     const image = gameCardSource(id);
     return <>
     <Image src={image ?? card.imageUrl} unoptimized={!!image} alt={card.name} fill sizes={sizes} className={styles.cardImage} draggable={false}/>
-    {instance && stats && <span className={styles.stats}><b>{attackOf(instance, gameCatalog)}</b><b>{hpOf(instance, gameCatalog)}</b></span>}
+    {instance && stats && <span><b>{attackOf(instance, gameCatalog)}</b><b>{hpOf(instance, gameCatalog)}</b></span>}
     {!!instance?.damage && <span className={styles.damageMarble} role="img" aria-label={`${instance.damage}ダメージ`}>−{instance.damage}</span>}
     {instance && !!(instance.attackBonus || instance.hpBonus) && <>
       <span className={`${styles.buffMarble} ${styles.attackMarble}`} role="img" aria-label={`攻撃力の変化 ${signed(instance.attackBonus)}`}>{signed(instance.attackBonus)}</span>

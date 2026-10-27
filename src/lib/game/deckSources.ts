@@ -6,7 +6,7 @@ import type { Deck, MatchRules } from '@pplale/game-core';
 import { demoDeck, gameCatalog } from './catalog';
 import type { SavedGameDeck } from './savedDecks';
 
-export type DeckSourceId = 'trial' | 'random' | 'saved';
+type DeckSourceId = 'trial' | 'random' | 'saved';
 
 /** One deck a selector offers. */
 export interface DeckChoice {
@@ -22,13 +22,13 @@ export interface DeckChoice {
   deck: (seed: number) => Deck;
 }
 
-export interface SourceContext {
+interface SourceContext {
   /** The signed-in player's decks (savedDecks.ts); empty without a login. */
   saved: SavedGameDeck[];
   /** Names the rules in the reasons: このルール, このルーム … */
   where?: string;
 }
-export interface DeckSource {
+interface DeckSource {
   id: DeckSourceId;
   /** What the source has for a match with these rules, usable or not. */
   choices: (rules: MatchRules, context: SourceContext) => DeckChoice[];
@@ -39,7 +39,7 @@ const ready = (source: DeckSourceId, id: string, deck: Deck, rules: MatchRules, 
   ({ id: `${source}:${id}`, source, name: deck.name, note: size(deck), errors: deckRuleErrors(deck, rules, gameCatalog, where), deck: () => deck });
 
 /** In the order the selectors list them; the first usable one is chosen until the player picks another. */
-export const deckSources: DeckSource[] = [
+const deckSources: DeckSource[] = [
   // Ready-made decks that need no login.
   { id: 'trial', choices: (rules, { where }) => [ready('trial', 'strawberry', demoDeck, rules, where)] },
   // おまかせ: made anew for every match from the cards the rules allow.

@@ -1,10 +1,10 @@
 import Image from 'next/image';
 import type { Catalog } from '@pplale/game-core';
 import { displayCards } from '@/lib/game/catalog';
-import styles from './RecordedCard.module.css';
+import styles from './CardArtwork.module.css';
 
-/** The archived catalog owns names and text; existing immutable card images are referenced by URL. */
-export function RecordedCard({ id, catalog, sizes = '120px', eager }: { id: string; catalog?: Catalog; sizes?: string; eager?: boolean }) {
+/** Render a current card or an archived catalog entry, including its immutable historical image. */
+export function CardArtwork({ id, catalog, sizes = '120px', eager }: { id: string; catalog?: Catalog; sizes?: string; eager?: boolean }) {
   const card = catalog?.[id] as (Catalog[string] & { imageUrl?: string; imageHash?: string }) | undefined;
   const base = process.env.NEXT_PUBLIC_ROOM_SERVER_URL?.replace(/\/+$/, '');
   const image = card?.imageHash && base ? `${base}/history/assets/${card.imageHash}` : card?.imageUrl ?? displayCards[id]?.imageUrl;

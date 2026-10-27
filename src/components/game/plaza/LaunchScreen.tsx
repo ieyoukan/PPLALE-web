@@ -12,7 +12,7 @@ import type { RoomInfo } from '@pplale/game-core/room';
 import { displayCards } from '@/lib/game/catalog';
 import { useAuth } from '@/lib/auth';
 import { RoomThumbnailImage } from './RoomThumbnailImage';
-import { OrnateFrame } from '../ornament/OrnateFrame';
+import { OrnateFrame } from '@/components/shared/ui/ornament/OrnateFrame';
 import styles from './LaunchScreen.module.css';
 
 interface Shown { id: string; name: string; image: string; kind: string; fruit: string; effect: string }

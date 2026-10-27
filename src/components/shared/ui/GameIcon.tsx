@@ -1,5 +1,8 @@
-/** Line icons of the rooms and the launchpad (drawn, so that no emoji font decides how they look). */
+/** One line-icon vocabulary for game screens and shared UI. */
 const paths = {
+  play: 'M8 5.5v13l10-6.5z',
+  more: 'M6 12h.01M12 12h.01M18 12h.01',
+  add: 'M10 18s-6-3.8-6-8.5A3.5 3.5 0 0 1 10 7a3.5 3.5 0 0 1 6 2M18 13v6M15 16h6',
   crown: 'M4 17.5h16M5 17.5 3.5 8l5 4L12 5l3.5 7 5-4-1.5 9.5',
   seat: 'M7 4.5h10v8H7zM5.5 12.5h13V16h-13zM7.5 16v3.5M16.5 16v3.5',
   plus: 'M12 5v14M5 12h14',
@@ -41,10 +44,10 @@ const paths = {
   sparkle: 'M12 3.5c.6 4.2 2.3 5.9 6.5 6.5-4.2.6-5.9 2.3-6.5 6.5-.6-4.2-2.3-5.9-6.5-6.5 4.2-.6 5.9-2.3 6.5-6.5zM18.5 15.5c.3 1.6.9 2.2 2.5 2.5-1.6.3-2.2.9-2.5 2.5-.3-1.6-.9-2.2-2.5-2.5 1.6-.3 2.2-.9 2.5-2.5z',
   refresh: 'M19.5 12a7.5 7.5 0 1 1-2.2-5.3M19.5 4.5V8H16',
 } as const;
-export type PlazaIconName = keyof typeof paths;
+export type GameIconName = keyof typeof paths;
 
-export function PlazaIcon({ name, className }: { name: PlazaIconName; className?: string }) {
-  return <svg className={className} viewBox="0 0 24 24" width="1em" height="1em" fill="none" stroke="currentColor" strokeWidth={name === 'grid' ? 1.8 : 2.1} strokeLinecap="round" strokeLinejoin="round" aria-hidden="true" focusable="false"><path d={paths[name]} /></svg>;
+export function GameIcon({ name, className }: { name: GameIconName; className?: string }) {
+  return <svg className={className} viewBox="0 0 24 24" width="1em" height="1em" fill="none" stroke="currentColor" strokeWidth={name === 'more' ? 3.5 : name === 'grid' ? 1.8 : 2.1} strokeLinecap="round" strokeLinejoin="round" aria-hidden="true" focusable="false"><path d={paths[name]} /></svg>;
 }
 
 /** The Discord symbol (the brand's own artwork), tinted with the text colour. */

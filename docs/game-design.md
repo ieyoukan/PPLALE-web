@@ -6,10 +6,12 @@
 
 ```text
 src/data/*.json ── catalog.ts ──> game-core
-                                   ↑ Command
-GameLobby (/game/) + Firebase decks ──保存──> BoardEmulator (/game/play/) ──> GameState を描画
-                                   ↓
-                           localStorage に途中保存
+/game/ ──> 起動画面 ──> /game/room/<id>/ ──> 待機・対戦・観戦
+                          ↑ 共通レイアウトが接続を維持
+                          └─ launchpad/ ──> 各画面を重ねて表示
+
+CPUの単独対戦・リプレイ・エディタ ──> BoardEmulator
+                               └─ 単独対戦の途中保存は localStorage
 ```
 
 | 層 | 責務 | 場所 |
@@ -20,7 +22,9 @@ GameLobby (/game/) + Firebase decks ──保存──> BoardEmulator (/game/pla
 | カード効果 | カード・スキルごとの効果（いつ・何をするか） | `packages/game-core/src/cards`, `playables` |
 | CPU | 合法手から次の Command を選ぶ。強さごとの戦略、非公開情報の推測 | `packages/game-core/src/ai` |
 | 状態復元 | 保存内容の形式とカード参照を確認 | `packages/game-core/src/snapshot.ts` |
-| ルーム（画面） | 起動・入室・招待、テーブル（席・CPU・デッキ・準備）、共通メニュー、サーバーとの接続 | `src/components/game/plaza`, `src/components/game/room`, `src/lib/game/room` |
+| ルーム（画面） | 起動・入室・招待、テーブル（席・CPU・デッキ・準備）、サーバーとの接続 | `src/components/game/plaza`, `src/components/game/room`, `src/lib/game/room` |
+| ランチパッド | ナビゲーション状態（Provider）、枠・タブ（Launchpad）、遅延読込と画面対応（Screens） | `src/components/game/launchpad` |
+| 共通UI | カード画像、プレイヤーアイコン、SVGアイコン、枠と主要操作、ルール絞り込み | `src/components/shared` |
 | ルームサーバー | Redis 設定時はルームを Redis に持ち、Command を検証して実行し、各プレイヤーに盤面を WebSocket で送る。Vercel ではなく自宅クラスタで動く別プロセス | `services/room-server`, `helm/pplale-room-server`, `packages/game-core/src/room.ts` |
 | CPU サーバー | 「さいきょう」との対戦記録を集めて学習し続け、モデルを配る。Vercel ではなく自宅クラスタで動く別プロセス | `services/cpu-server`, `helm/pplale-cpu-server` |
 
@@ -117,3 +121,9 @@ UI はドロー前後の手札と山札の差分から移動演出を描く。�
 ### PPの丸
 
 自分のPPの丸は、その時点の最大PPと同じ個数を描画する。現在PPの分だけ明るい緑、消費済みの分だけ暗い緑にする。7/7では7個すべて明るく、3/7では明るい3個と暗い4個、0/7では7個すべて暗く、0/0では丸を表示しない。ゲーム全体のPP上限の未到達分は描画しない。各円の幅は個数に合わせて計算し、一列に収める。
+
+### UIの依存関係と未使用コード
+
+`components/shared` は `components/game` などの機能別UIに依存させない。ルームの作成・現在地・ルール操作は `game/plaza`、メニューの開閉と画面切替は `game/launchpad` に置く。ルール絞り込みの判定は `lib/game/room/filters.ts`、表示は `shared/room/RoomRuleFilters.tsx` に分ける。旧ルームURLの入口は既存リンクとの互換性に使うため残す。
+
+`pnpm run typecheck` は未使用のローカル宣言・引数も検査する。`pnpm run check:ui` はCSS Modulesの参照切れ・未使用クラスと共通UIの依存方向を検査し、`mise run check` に含まれる。動的なクラス名を使うモジュールは未使用判定を控えるため、削除前には呼び出し元も確認する。

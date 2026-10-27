@@ -8,7 +8,7 @@ import { isRoomId } from '@pplale/game-core/room';
 import type { RoomAction, RoomInfo, RoomView, SeatKey } from '@pplale/game-core/room';
 
 /** visitor: the room exists and this browser has no seat in it. seated: its view is here (a spectator's too). gone: no such room (any more), or it may not be watched. */
-export type RoomStage = 'loading' | 'visitor' | 'seated' | 'gone';
+type RoomStage = 'loading' | 'visitor' | 'seated' | 'gone';
 
 /**
  * A room as this browser knows it: its seat (kept from creating or joining), the seat's view as

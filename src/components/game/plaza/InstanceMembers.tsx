@@ -6,8 +6,8 @@ import { useAuth } from '@/lib/auth';
 import type { SocialPlayer } from '@/lib/game/social';
 import { useSocial } from '../social/useSocial';
 import { Avatar } from '@/components/shared/player/Avatar';
-import { PlazaIcon } from './PlazaIcon';
-import { guestIcon, useProfiles } from './useProfiles';
+import { GameIcon } from '@/components/shared/ui/GameIcon';
+import { guestIcon, useProfiles } from '@/components/shared/player/useProfiles';
 import styles from './InstanceMembers.module.css';
 
 /** Friendships are subscribed only while this tab is open; guests need no social subscription. */
@@ -35,8 +35,8 @@ function Members({ room, friends = [], checking = false, error = '' }: { room: P
         <Avatar card={profile?.iconCardId ?? guestIcon(member.id)} size={56} dim={!member.online} />
         <b>{member.name}</b>
         <span className={styles.state}>
-          {member.id === room.owner && <span role="img" aria-label="オーナー"><PlazaIcon name="crown" /></span>}
-          <PlazaIcon name={member.seat !== undefined ? 'seat' : 'eye'} />
+          {member.id === room.owner && <span role="img" aria-label="オーナー"><GameIcon name="crown" /></span>}
+          <GameIcon name={member.seat !== undefined ? 'seat' : 'eye'} />
           <small>{!member.online ? '再接続中' : member.seat !== undefined ? '席にいる' : '観戦'}</small>
         </span>
       </>;

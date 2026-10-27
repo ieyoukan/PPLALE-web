@@ -4,7 +4,7 @@ import { useEffect, useState } from 'react';
 import type { ProfileLocation } from '@pplale/game-core/room';
 import { readProfileLocation } from '@/lib/game/room/client';
 import { usePlaza } from '../plaza/PlazaProvider';
-import { PlazaIcon } from '../plaza/PlazaIcon';
+import { GameIcon } from '@/components/shared/ui/GameIcon';
 import { RoomThumbnailImage } from '../plaza/RoomThumbnailImage';
 import { visibilityInfo } from '../plaza/visibility';
 import { AskToEnter } from './AskToEnter';
@@ -34,13 +34,13 @@ export function ProfileWhere({ uid, name, mine, canRead }: { uid: string; name: 
   }, [uid, canRead, ownId]);
   const shown: ProfileLocation = canRead ? location : { kind: 'offline' };
   return <section className={styles.where} aria-label="いまいるルーム">
-    <h3 data-ui-title><PlazaIcon name="pin" />いまいるルーム</h3>
+    <h3 data-ui-title><GameIcon name="pin" />いまいるルーム</h3>
     {own && plaza.view ? <>
       <RoomThumbnailImage rules={own.nextRules ?? plaza.view.rules} className={styles.ownRoomImage} sizes="320px" />
-      <div className={styles.profileLocation}><PlazaIcon name={visibilityInfo[own.visibility].icon} /><span><b data-ui-title>{own.name}</b><small>{visibilityInfo[own.visibility].label}</small></span></div>
+      <div className={styles.profileLocation}><GameIcon name={visibilityInfo[own.visibility].icon} /><span><b data-ui-title>{own.name}</b><small>{visibilityInfo[own.visibility].label}</small></span></div>
     </> : shown.kind === 'room' ? <RoomCard room={shown.room} large />
       : <div className={styles.profileLocation} data-offline={shown.kind === 'offline' || undefined}>
-        <PlazaIcon name={shown.kind === 'offline' ? 'people' : 'letter'} />
+        <GameIcon name={shown.kind === 'offline' ? 'people' : 'letter'} />
         <span><b data-ui-title>{shown.kind === 'offline' ? 'オフライン' : 'プライベートルーム'}</b>{shown.kind === 'private' && <small>{visibilityInfo[shown.visibility].label}</small>}</span>
       </div>}
     {!mine && canRead && shown.kind === 'private' && <AskToEnter key={`${uid}:${shown.visibility}`} uid={uid} name={name} />}

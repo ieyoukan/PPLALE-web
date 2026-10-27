@@ -5,14 +5,14 @@
 /* The status box of a recording that cannot be shown (RecordedReplay), on its own dark page. */
 .history { color: #6b4a3a; min-width: 0; padding: clamp(12px, 2.4cqw, 24px); border: 1px solid #dfc4b7; border-radius: 26px; background: radial-gradient(circle at 1px 1px, #d9b8a830 1px, transparent 1.5px) 0 0 / 14px 14px, linear-gradient(145deg, #fff9ee, #fff1f4); box-shadow: 0 5px 0 #dcc5b655, inset 0 0 0 5px #fffdf6; }
 .heading { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding-bottom: 14px; border-bottom: 1px solid var(--brand-pink); }
-.heading h2,.heading h1 { color: var(--brand-cocoa); font-size: 24px; font-weight: 700; letter-spacing: .08em; }
-.heading > a,.heading > button { display: grid; place-items: center; width: 40px; height: 40px; flex: 0 0 40px; border: 0; border-radius: 6px; background: transparent; color: var(--brand-cocoa); font-size: 26px; line-height: 1; text-decoration: none; cursor: pointer; transition: background .2s; }
-.heading > a:hover,.heading > button:hover { background: var(--brand-blush); }
+.heading h2, .heading h1 { color: var(--brand-cocoa); font-size: 24px; font-weight: 700; letter-spacing: .08em; }
+.heading > a, .heading > button { display: grid; place-items: center; width: 40px; height: 40px; flex: 0 0 40px; border: 0; border-radius: 6px; background: transparent; color: var(--brand-cocoa); font-size: 26px; line-height: 1; text-decoration: none; cursor: pointer; transition: background .2s; }
+.heading > a:hover, .heading > button:hover { background: var(--brand-blush); }
 /* 一覧 / お気に入り, and whose deck in the details: squares side by side. */
 .tabs { display: grid; grid-template-columns: repeat(2,minmax(0,1fr)); gap: 6px; margin: 4px 0 16px; }
 .tabs button { min-height: 44px; padding: 9px 10px; border: 1px solid var(--brand-pink-edge); border-radius: 6px; background: var(--brand-paper); color: var(--brand-cocoa-deep); font-size: 14px; font-weight: 700; cursor: pointer; transition: background .2s; overflow-wrap: anywhere; }
 .tabs button:hover { background: var(--brand-vanilla-wash); }
-.tabs button[aria-selected=true],.tabs button[aria-pressed=true] { border-color: var(--brand-cocoa); background: var(--brand-blush); box-shadow: inset 0 0 0 1px var(--brand-cocoa); }
+.tabs button[aria-selected=true], .tabs button[aria-pressed=true] { border-color: var(--brand-cocoa); background: var(--brand-blush); box-shadow: inset 0 0 0 1px var(--brand-cocoa); }
 .tabs button svg { display: inline-block; width: 17px; height: 17px; vertical-align: -3px; fill: currentColor; }
 .list { display: grid; grid-template-columns: minmax(0,1fr); min-height: 260px; align-content: start; border-top: 1px solid var(--brand-pink); }
 /* One match: a row with a ribbon (pink: won, lilac: lost, grey: stopped) at its left. */
@@ -40,12 +40,12 @@
 .verdict[data-result=中断] { font-size: 12px; }
 .entryActions { display: grid; gap: 8px; }
 /* Small buttons: squares, a little rounded. リプレイ is the one to press. */
-.entryActions button:first-child,.more,.emptyLink { display: inline-flex; align-items: center; justify-content: center; gap: 8px; min-height: 42px; padding: 9px 12px; border: 1px solid var(--brand-pink-edge); border-radius: 6px; background: var(--brand-blush); color: var(--brand-cocoa-deep); font-size: 13px; font-weight: 700; text-align: center; text-decoration: none; cursor: pointer; transition: background .2s, transform .2s; }
-.entryActions button:first-child:hover,.more:hover,.emptyLink:hover { background: var(--brand-pink); }
+.entryActions button:first-child, .more, .emptyLink { display: inline-flex; align-items: center; justify-content: center; gap: 8px; min-height: 42px; padding: 9px 12px; border: 1px solid var(--brand-pink-edge); border-radius: 6px; background: var(--brand-blush); color: var(--brand-cocoa-deep); font-size: 13px; font-weight: 700; text-align: center; text-decoration: none; cursor: pointer; transition: background .2s, transform .2s; }
+.entryActions button:first-child:hover, .more:hover, .emptyLink:hover { background: var(--brand-pink); }
 .entryActions button:last-child { min-height: 32px; border: 1px solid var(--brand-pink-edge); border-radius: 6px; background: var(--brand-paper); color: var(--brand-cocoa-deep); font-size: 12px; cursor: pointer; }
 .entryActions button:last-child:hover { background: var(--brand-vanilla-wash); }
-.album button:disabled,.detail button:disabled { opacity: .5; cursor: default; transform: none; }
-.album button:focus-visible,.album a:focus-visible,.history a:focus-visible,.detail button:focus-visible,.detail a:focus-visible,.replayPage button:focus-visible,.replayPage a:focus-visible { outline: 3px solid var(--brand-cocoa); outline-offset: 3px; }
+.album button:disabled, .detail button:disabled { opacity: .5; cursor: default; transform: none; }
+.album button:focus-visible, .album a:focus-visible, .history a:focus-visible, .detail button:focus-visible, .detail a:focus-visible, .replayPage button:focus-visible, .replayPage a:focus-visible { outline: 3px solid var(--brand-cocoa); outline-offset: 3px; }
 .empty { display: grid; place-content: center; justify-items: center; gap: 16px; min-height: 260px; padding: 28px 16px; text-align: center; color: var(--brand-cocoa-soft); line-height: 1.8; font-size: 14px; }
 .emptyIcon { display: grid; place-items: center; color: var(--brand-cocoa); }
 .emptyIcon svg { width: 56px; height: 56px; }
@@ -79,7 +79,6 @@
 .deckCard img { object-fit: contain; }
 .deckCard b { position: absolute; right: 0; bottom: 0; min-width: 30px; padding: 3px 6px; color: var(--brand-cream); background: var(--brand-cocoa-deep); text-align: center; font-size: 12px; }
 .deckCards > div > small { display: block; margin-top: 7px; line-height: 1.5; font-size: 11px; color: var(--brand-cocoa-soft); overflow-wrap: anywhere; }
-.missingCard { display: grid; place-content: center; width: 100%; height: 100%; padding: 5px; border: 1px solid #a48f6d; background: #223e4a; color: #fff6e2; text-align: center; font-size: 12px; }
 @keyframes memoryAppear { from { opacity: 0; transform: translateY(7px); } to { opacity: 1; transform: none; } }
 @keyframes memoryBreathe { 50% { transform: translateY(-4px); } }
 @container stage (max-width: 1100px) {
@@ -114,8 +113,8 @@
   .empty { font-size: 13px; }
 }
 @media(prefers-reduced-motion: reduce) {
-  .entry,.detail,.empty[data-loading] .emptyIcon { animation: none; }
-  .album *,.detail * { transition: none !important; }
+  .entry, .detail, .empty[data-loading] .emptyIcon { animation: none; }
+  .album *, .detail * { transition: none !important; }
 }
 /* Shown while a recording loads, or when it cannot be played; the recording itself plays on the game table. */
 .replayPage { min-height: 100cqh; background: radial-gradient(ellipse at 50% 40%,#3c5d5b,#142f39 65%,#0e1d28); color: #fff6e2; padding: 14px 18px 26px; }

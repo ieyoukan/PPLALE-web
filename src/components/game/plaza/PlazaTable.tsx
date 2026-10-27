@@ -17,18 +17,18 @@ import { usableChoice } from '@/lib/game/deckSources';
 import { randomSeed } from '@/lib/game/match';
 import { useDeckChoices } from '../DeckSelect';
 import { useRoomPreparation } from '../room/useRoomPreparation';
-import { OrnateFrame } from '../ornament/OrnateFrame';
+import { OrnateFrame } from '@/components/shared/ui/ornament/OrnateFrame';
 import { Avatar } from '@/components/shared/player/Avatar';
-import { RecordedCard } from '../history/RecordedCard';
+import { CardArtwork } from '@/components/shared/card/CardArtwork';
 import { BoardSurface } from './BoardSurface';
 import { DeckContentsSheet, DeckSheet, OpponentSheet, RulesSheet } from './PlazaSheets';
 import { CpuSheet } from './CpuSheet';
 import { RoomNameSheet } from './RoomManagementSheets';
 import { RoomThumbnailImage } from './RoomThumbnailImage';
 import { ShareSheet } from './ShareSheet';
-import { PlazaIcon } from './PlazaIcon';
+import { GameIcon } from '@/components/shared/ui/GameIcon';
 import { usePlaza } from './PlazaProvider';
-import { guestIcon, useProfiles } from './useProfiles';
+import { guestIcon, useProfiles } from '@/components/shared/player/useProfiles';
 import { visibilityInfo } from './visibility';
 import styles from './Plaza.module.css';
 
@@ -76,10 +76,10 @@ export function PlazaTable({ view, onMenu }: { view: RoomView; onMenu: () => voi
     if (!player) return <OrnateFrame size="sm" faint className={`${styles.seat} ${styles.seatEmpty}`} key={`empty-${side}`}>
       {mySeat === null
         ? <button className={styles.sitButton} disabled={busy} onClick={() => ask({ action: 'sit', seat: side })} aria-label="この席にすわる">
-          <span className={styles.plus}><PlazaIcon name="plus" /></span><b data-ui-title>すわる</b>
+          <span className={styles.plus}><GameIcon name="plus" /></span><b data-ui-title>すわる</b>
         </button>
         : <button className={styles.sitButton} disabled={busy} onClick={() => setOpen({ opponent: side })} aria-label="対戦相手をえらぶ">
-          <span className={`${styles.plus} ${styles.plusSoft}`}><PlazaIcon name="people" /></span><b data-ui-title>相手をえらぶ</b>
+          <span className={`${styles.plus} ${styles.plusSoft}`}><GameIcon name="people" /></span><b data-ui-title>相手をえらぶ</b>
         </button>}
     </OrnateFrame>;
     const self = side === mySeat;
@@ -93,28 +93,28 @@ export function PlazaTable({ view, onMenu }: { view: RoomView; onMenu: () => voi
           <span className={styles.deckName}><small>デッキ</small><b>{chosen?.name ?? 'えらぶ'}</b></span>
         </OrnateFrame>
         {me.ready
-          ? <OrnateFrame as="button" size="line" className={`${styles.ready} ${styles.readyDone}`} disabled={busy} onClick={() => ask({ action: 'unready' })}><PlazaIcon name="check" /><span data-ui-title>じゅんびOK</span></OrnateFrame>
+          ? <OrnateFrame as="button" size="line" className={`${styles.ready} ${styles.readyDone}`} disabled={busy} onClick={() => ask({ action: 'unready' })}><GameIcon name="check" /><span data-ui-title>じゅんびOK</span></OrnateFrame>
           : <OrnateFrame as="button" size="line" className={styles.ready} disabled={busy || !chosen} onClick={ready}><span data-ui-title>じゅんびOK!</span></OrnateFrame>}
       </div>}
-      {self && <button className={styles.leaveSeat} disabled={busy} onClick={() => ask({ action: 'stand' })} aria-label="席を立つ"><PlazaIcon name="exit" /><span data-ui-title>席を立つ</span></button>}
+      {self && <button className={styles.leaveSeat} disabled={busy} onClick={() => ask({ action: 'stand' })} aria-label="席を立つ"><GameIcon name="exit" /><span data-ui-title>席を立つ</span></button>}
       {player.cpu && <div className={styles.seatActions}><OrnateFrame as="button" size="sm" className={styles.deckChip} disabled={busy} onClick={() => setOpen({ cpu: side })} aria-label={`CPUのデッキ: ${player.deck ?? 'おまかせデッキ'}`}>
-        <span className={styles.deckArt}><PlazaIcon name="cards" /></span><span className={styles.deckName}><small>CPUのデッキ</small><b>{player.deck ?? 'おまかせデッキ'}</b></span>
+        <span className={styles.deckArt}><GameIcon name="cards" /></span><span className={styles.deckName}><small>CPUのデッキ</small><b>{player.deck ?? 'おまかせデッキ'}</b></span>
       </OrnateFrame></div>}
-      {player.cpu && <button className={styles.seatCorner} disabled={busy} onClick={() => ask({ action: 'dismissCpu' })} aria-label="CPUに帰ってもらう"><PlazaIcon name="close" /></button>}
+      {player.cpu && <button className={styles.seatCorner} disabled={busy} onClick={() => ask({ action: 'dismissCpu' })} aria-label="CPUに帰ってもらう"><GameIcon name="close" /></button>}
     </div>;
   };
 
   return <div className={styles.table}>
     <header className={styles.top}>
       <OrnateFrame as="button" size="sm" className={styles.roomPlate} onClick={onMenu} aria-label={`${room.name}（${info.label}）のメニュー`}>
-        <span className={styles.roomBadge} data-visibility={room.visibility}><PlazaIcon name={info.icon} />{info.plus && <i>＋</i>}</span>
+        <span className={styles.roomBadge} data-visibility={room.visibility}><GameIcon name={info.icon} />{info.plus && <i>＋</i>}</span>
         <span className={styles.roomTitle}><b data-ui-title>{room.name}</b><small>{info.label}・{room.creator.name}</small></span>
-        <span className={styles.count}><PlazaIcon name="people" />{room.members.length}</span>
+        <span className={styles.count}><GameIcon name="people" />{room.members.length}</span>
       </OrnateFrame>
       <div className={styles.topActions}>
-        {room.owner === room.me && <button className={styles.round} onClick={() => setOpen('name')} aria-label="ルーム名を変える"><PlazaIcon name="pen" /></button>}
-        <button className={styles.inviteButton} onClick={() => setOpen('share')}><PlazaIcon name="letter" /><span data-ui-title>さそう</span></button>
-        <button className={styles.round} onClick={onMenu} aria-label="メニュー"><PlazaIcon name="grid" /></button>
+        {room.owner === room.me && <button className={styles.round} onClick={() => setOpen('name')} aria-label="ルーム名を変える"><GameIcon name="pen" /></button>}
+        <button className={styles.inviteButton} onClick={() => setOpen('share')}><GameIcon name="letter" /><span data-ui-title>さそう</span></button>
+        <button className={styles.round} onClick={onMenu} aria-label="メニュー"><GameIcon name="grid" /></button>
       </div>
     </header>
 
@@ -124,8 +124,8 @@ export function PlazaTable({ view, onMenu }: { view: RoomView; onMenu: () => voi
           <Avatar card={iconOf(member.id, member.profileId)} size={42} dim={!member.online} />
           <span className={styles.personName}>{member.name}{member.id === room.me && <small>あなた</small>}</span>
           <span className={styles.personMarks}>
-            {member.id === room.owner && <span className={styles.crown} role="img" aria-label="オーナー"><PlazaIcon name="crown" /></span>}
-            {member.seat !== undefined ? <span role="img" aria-label="席にいる"><PlazaIcon name="seat" /></span> : <span role="img" aria-label="観戦"><PlazaIcon name="eye" /></span>}
+            {member.id === room.owner && <span className={styles.crown} role="img" aria-label="オーナー"><GameIcon name="crown" /></span>}
+            {member.seat !== undefined ? <span role="img" aria-label="席にいる"><GameIcon name="seat" /></span> : <span role="img" aria-label="観戦"><GameIcon name="eye" /></span>}
           </span>
         </MemberLink>
       </li>)}</ul>
@@ -148,23 +148,23 @@ export function PlazaTable({ view, onMenu }: { view: RoomView; onMenu: () => voi
       <OrnateFrame as="button" size="sm" className={styles.rulesCard} onClick={() => setOpen('rules')} aria-label="ルール">
         <RoomThumbnailImage rules={view.rules} alt="ルームのルール" className={styles.rulesThumbnail} sizes="180px" />
         <span className={styles.ruleChips}>
-          <span><PlazaIcon name="star" />{view.rules.extendedPlayable ? '拡張' : '通常'}</span>
-          <span><PlazaIcon name="timer" />{view.rules.turnSeconds ? `${view.rules.turnSeconds / 60}分` : '∞'}</span>
+          <span><GameIcon name="star" />{view.rules.extendedPlayable ? '拡張' : '通常'}</span>
+          <span><GameIcon name="timer" />{view.rules.turnSeconds ? `${view.rules.turnSeconds / 60}分` : '∞'}</span>
         </span>
-        {room.owner === room.me && <small className={styles.editHint}><PlazaIcon name="pen" />ルールをかえる</small>}
+        {room.owner === room.me && <small className={styles.editHint}><GameIcon name="pen" />ルールをかえる</small>}
       </OrnateFrame>
-      {owner ? <span className={styles.ownerChip}><PlazaIcon name="crown" />{owner.id === room.me ? 'あなたがオーナー' : owner.name}</span>
-        : <button className={styles.claim} disabled={busy} onClick={() => ask({ action: 'claim' })}><PlazaIcon name="crown" /><span data-ui-title>オーナーになる</span></button>}
+      {owner ? <span className={styles.ownerChip}><GameIcon name="crown" />{owner.id === room.me ? 'あなたがオーナー' : owner.name}</span>
+        : <button className={styles.claim} disabled={busy} onClick={() => ask({ action: 'claim' })}><GameIcon name="crown" /><span data-ui-title>オーナーになる</span></button>}
     </aside>
 
     {!me && empty.length === 0 && <footer className={styles.actions}>
-      <OrnateFrame as="p" size="sm" className={styles.hint}><PlazaIcon name="eye" /><span>席があくのを待っています</span></OrnateFrame>
+      <OrnateFrame as="p" size="sm" className={styles.hint}><GameIcon name="eye" /><span>席があくのを待っています</span></OrnateFrame>
     </footer>}
 
     {!!room.requests?.length && <div className={styles.requests} role="region" aria-label="入りたい人">{room.requests.map(request => <OrnateFrame size="sm" key={request.profileId} className={styles.request}>
-      <PlazaIcon name="letter" /><span><b>{request.name}</b>が入りたいって</span>
-      <button disabled={busy} onClick={() => ask({ action: 'answer', profileId: request.profileId, accept: true })} aria-label={`${request.name}を招待する`}><PlazaIcon name="check" /></button>
-      <button disabled={busy} onClick={() => ask({ action: 'answer', profileId: request.profileId, accept: false })} aria-label="見送る"><PlazaIcon name="close" /></button>
+      <GameIcon name="letter" /><span><b>{request.name}</b>が入りたいって</span>
+      <button disabled={busy} onClick={() => ask({ action: 'answer', profileId: request.profileId, accept: true })} aria-label={`${request.name}を招待する`}><GameIcon name="check" /></button>
+      <button disabled={busy} onClick={() => ask({ action: 'answer', profileId: request.profileId, accept: false })} aria-label="見送る"><GameIcon name="close" /></button>
     </OrnateFrame>)}</div>}
 
     {(error || saved.error) && <p className={styles.toast} role="alert">{error || saved.error}</p>}
@@ -188,17 +188,17 @@ export function PlazaTable({ view, onMenu }: { view: RoomView; onMenu: () => voi
 function SeatState({ player }: { player: RoomPlayer }) {
   if (player.cpu) {
     const strength = cpuLevels.indexOf(player.cpu);
-    return <span className={styles.seatState} data-state="ready" aria-label={`準備OK・強さ${strength + 1}`}><PlazaIcon name="check" />
-      <span className={styles.stars} aria-hidden="true">{cpuLevels.map((level, star) => <PlazaIcon key={level} name="star" className={star <= strength ? styles.starOn : styles.starOff} />)}</span></span>;
+    return <span className={styles.seatState} data-state="ready" aria-label={`準備OK・強さ${strength + 1}`}><GameIcon name="check" />
+      <span className={styles.stars} aria-hidden="true">{cpuLevels.map((level, star) => <GameIcon key={level} name="star" className={star <= strength ? styles.starOn : styles.starOff} />)}</span></span>;
   }
   if (!player.online) return <span className={styles.seatState} data-state="away">Zzz</span>;
-  if (player.ready) return <span className={styles.seatState} data-state="ready"><PlazaIcon name="check" />OK</span>;
+  if (player.ready) return <span className={styles.seatState} data-state="ready"><GameIcon name="check" />OK</span>;
   return <span className={styles.seatState} data-state="choosing"><span className={styles.thinking} aria-label="デッキをえらんでいます"><i /><i /><i /></span></span>;
 }
 
 /** The deck's playable, or (おまかせ: made when the match starts) a pile of cards. */
 function PlayableArt({ id }: { id?: string }) {
-  return id ? <span className={styles.deckPortrait}><RecordedCard id={id} sizes="60px" /></span> : <PlazaIcon name="cards" />;
+  return id ? <span className={styles.deckPortrait}><CardArtwork id={id} sizes="60px" /></span> : <GameIcon name="cards" />;
 }
 
 function MemberLink({ profileId, children }: { profileId?: string; children: ReactNode }) {

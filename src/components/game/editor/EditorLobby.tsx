@@ -9,7 +9,7 @@ import type { Position } from '@pplale/game-core';
 import { deleteSaved, emptyPosition, loadSaved, openInEditor } from '@/lib/game/positions';
 import type { SavedPosition } from '@/lib/game/positions';
 import { EDITOR_PATH, PLAY_PATH, readSession } from '@/lib/game/sessionStore';
-import { OrnateFrame } from '../ornament/OrnateFrame';
+import { OrnateFrame } from '@/components/shared/ui/ornament/OrnateFrame';
 import styles from './EditorLobby.module.css';
 
 export default function EditorLobby() {

@@ -83,7 +83,7 @@ export interface ReplayTimeline {
 }
 
 /** The 盤面エディタ's part of a session: the board is changed by hand, then played from there. */
-export interface Editor {
+interface Editor {
   editing: boolean;
   edit: (change: BoardEdit) => void;
   /** Replaces the whole board being edited (cleared, opened from a code or a saved board). */

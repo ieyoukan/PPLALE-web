@@ -11,7 +11,7 @@ import type { Levels, MatchSetup, Mode } from '@/lib/game/sessionStore';
 import { useAuth } from '@/lib/auth';
 import { DeckSelect, UnusableDecks, useDeckChoices } from './DeckSelect';
 import { RulePicker } from './RulePicker';
-import { OrnateFrame } from './ornament/OrnateFrame';
+import { OrnateFrame } from '@/components/shared/ui/ornament/OrnateFrame';
 import styles from './GameSetupControls.module.css';
 import layout from './GameSetup.module.css';
 const modeNames: Record<Mode, string> = { cpu: 'CPUと対戦', watch: 'CPU同士を観戦', hotseat: '両側を操作', room: 'ルームマッチ', puzzle: 'リーサルパズル' };
@@ -82,7 +82,7 @@ export function GameSetup({ modes, onStart }: {
       {mode === 'watch' && <span className={styles.setupModeLabel}>{sideLabel(mode, side)}</span>}
       {cpuLevels.map(id => <button key={id} aria-pressed={levels[side] === id} title={cpuProfiles[id].description} onClick={() => setLevel(side, id)}>{cpuProfiles[id].name}</button>)}
     </div>)}
-    {collects && agreed && <p className={`${styles.help} ${layout.help} ${layout.learning}`}><span>CPU学習用の匿名記録を送信中</span><button className={styles.textButton} onClick={() => agree(false)}>送るのをやめる</button></p>}
+    {collects && agreed && <p className={`${styles.help} ${layout.learning}`}><span>CPU学習用の匿名記録を送信中</span><button className={styles.textButton} onClick={() => agree(false)}>送るのをやめる</button></p>}
     {/* Which cards both decks may use; the selectors below only let a deck that fits be chosen. */}
     <OrnateFrame as="section" size="sm" faint className={`${styles.setupRules} ${layout.rulesInline}`} aria-label="対戦のルール">
       <RulePicker rules={rules} onChange={next => { setRules(next); setError(''); }} compact />
@@ -92,7 +92,7 @@ export function GameSetup({ modes, onStart }: {
       <span data-ui-title>{mode === 'watch' ? `${sideLabel(mode, side as Side)}のデッキ` : side === 0 ? 'あなたのデッキ' : '相手のデッキ'}</span>
       <DeckSelect choices={choices} chosen={chosen[side]} onChange={id => setSelected(previous => previous.map((value, index) => index === side ? id : value))} />
     </label>)}</OrnateFrame>
-    {!user ? <button className={`${styles.secondaryButton} ${layout.login}`} onClick={() => { signInWithGoogle().catch(() => setError('ログインできませんでした')); }}>Googleでログインして保存済みデッキを使う</button> : <p className={`${styles.help} ${layout.help}`}>{saved.loading ? 'デッキを読み込み中…' : `${saved.decks.length}件の保存済みデッキ`} · <Link href="/build">デッキを編集する</Link></p>}
+    {!user ? <button className={`${styles.secondaryButton} ${layout.login}`} onClick={() => { signInWithGoogle().catch(() => setError('ログインできませんでした')); }}>Googleでログインして保存済みデッキを使う</button> : <p className={`${styles.help}`}>{saved.loading ? 'デッキを読み込み中…' : `${saved.decks.length}件の保存済みデッキ`} · <Link href="/build">デッキを編集する</Link></p>}
     <UnusableDecks choices={choices} className={styles.ruleSettings} />
     {saved.error && <p role="alert" className={styles.error}>{saved.error}</p>}
     {error && <p role="alert" className={styles.error}>{error}</p>}

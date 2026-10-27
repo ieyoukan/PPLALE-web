@@ -9,7 +9,7 @@
 
 'use client';
 
-import React, { Suspense, useState, useEffect, useCallback } from 'react';
+import { Suspense, useState, useEffect, useCallback } from 'react';
 import { useForm } from 'react-hook-form';
 import { css } from 'styled-system/css';
 import { CardInfo, CardType, CardVersion, FruitType } from '@/types/card';

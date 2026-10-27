@@ -38,7 +38,6 @@
 .field { position: absolute; left: 23%; width: 55.5%; display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); gap: .45cqw; }
 .near .field { top: 51.5%; }
 .far .field { top: 29.1%; transform: rotate(180deg); }
-.fieldLabel { position: absolute; right: 0; top: -3cqw; font: italic 1.85cqw 'BoardHandwriting', 'Yu Kyokasho', 'Hiragino Mincho ProN', serif; letter-spacing: .2em; color: #52473d; }
 .fieldSlot {
   position: relative; box-sizing: border-box; width: 100%; height: auto; min-height: 0; aspect-ratio: 533 / 800; align-self: start;
   padding: 0; min-width: 0; border: .35cqw solid #86b9e8; border-radius: 0;
@@ -133,10 +132,6 @@
 .hiddenCard { display: block; position: absolute; width: 3cqw; height: 4.5cqw; top: calc(var(--hand-index) * 5px); left: 0; transform: rotate(calc(var(--hand-index) * 2deg)); background: url('/images/back-card.webp') center / 100% 100%; border: 1px solid #e8d8c1; border-radius: 2px; box-shadow: 1px 2px 3px #32212155; }
 .hiddenFace { position: absolute; inset: 0; border-radius: inherit; background: inherit; transform: rotate(180deg); }
 .opponentHand small { position: absolute; bottom: -1cqw; left: 0; font: .65cqw sans-serif; color: #f9e5c7; white-space: nowrap; }
-.die { display: grid; grid-template: repeat(3, 1fr) / repeat(3, 1fr); gap: .14cqw; width: 2.45cqw; height: 2.45cqw; padding: .42cqw; background: #fffcf0; border: 1px solid #dad2bd; border-radius: .4cqw; box-shadow: .12cqw .25cqw 0 #b6aa96, .22cqw .33cqw .3cqw #573d3844; }
-.die i { border-radius: 50%; }
-.pip { background: #846447; box-shadow: inset 0 1px 1px #3c292e88; }
-.rollingDie { animation: diceRoll .2s linear infinite; }
 .choiceThumb { position: relative; width: 28px; aspect-ratio: 533 / 800; display: block; }
 .handDock { position: relative; min-height: 145px; padding-top: 5px; overflow: visible; container-type: inline-size; }
 .hand { display: flex; justify-content: center; align-items: flex-end; height: 118px; padding-top: 8px; isolation: isolate; }
@@ -150,55 +145,10 @@
 .drawer { position: fixed; z-index: 100; right: 0; top: 34px; bottom: 0; width: min(360px, 92cqw); overflow: auto; padding: 25px 20px; color: #685441; background: #fff9edf7; border-left: 1px solid #cfbda0; box-shadow: -7px 0 22px #33202a33; }
 .drawer > h2 { margin: 15px 28px 18px 0; font-size: 19px; }
 .drawer > p { font-size: 12px; line-height: 1.8; margin-bottom: 14px; white-space: pre-wrap; }
-.close { position: absolute; top: 9px; right: 15px; font-size: 24px; color: #967b60; z-index: 10; }
 .inspectImage { position: relative; width: 180px; aspect-ratio: 533 / 800; margin: 15px auto; }
 
 .zoneCards { display: flex; flex-wrap: wrap; gap: 10px; }
 .zoneCards > button { position: relative; width: 90px; aspect-ratio: 533 / 800; }
-.logLine { border-bottom: 1px solid #dfd1bb; padding: 8px 0; }
-.dialogHeading { display: flex; align-items: center; justify-content: space-between; margin-bottom: 16px; }
-.dialogHeading h2 { font-size: 21px; margin-top: 4px; }
-.dialogHeading > button { font-size: 23px; color: #947960; }
-.help { font-size: 10px; color: #987f67; line-height: 1.8; margin: 10px 0; }
-.help a { text-decoration: underline; }
-.setupModes { display: flex; gap: 8px; margin: 18px 0; }
-.setupModes button { flex: 1; padding: 12px 8px; border: 1px solid #d9cab1; border-radius: 5px; background: #fffdf7; font-size: 12px; }
-.setupModes button[aria-pressed=true] { border-color: #a4bd98; background: #e9f1df; }
-.setupModes small { display: block; font-size: 9px; color: #a08d75; margin-top: 4px; }
-.setupModeLabel { flex: 0 0 auto; align-self: center; min-width: 4.5em; font-size: 16px; color: #7a5967; }
-.deckSelectors { display: flex; flex-direction: column; gap: 12px; margin: 18px 0; }
-/* The two decks as the two sides of the table (same pink check as the mat). */
-.deckTable { position: relative; display: grid; gap: 34px; margin: 18px 0; padding: 16px; border: 3px solid #e7c3e2; border-radius: 22px; background: #fffdeb repeating-conic-gradient(#f4b0bb33 0 25%, transparent 0 50%) 0 0 / 44px 44px; }
-.deckTable label { display: grid; gap: 6px; padding: 12px 14px; border: 2px solid #e7c3e2; border-radius: 16px; background: #fffdebf2; font-size: 18px; color: #6b5444; }
-.deckTable label span { display: flex; align-items: baseline; justify-content: space-between; font-weight: 700; }
-.deckTable label small { font-size: 14px; font-weight: 400; color: #6e5546; }
-.deckTable .deckFar { border-color: #c9b3e6; }
-.deckTable .deckNear { border-color: #f4b0bb; }
-.deckTable select { display: block; width: 100%; min-height: 52px; padding: 12px; border: 1px solid #d7c8af; border-radius: 14px; background: #fff; color: #6b5946; font-size: 18px; }
-.deckTable > i { position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%); padding: 2px 16px; border-radius: 999px; background: #826247; color: #fffdeb; font: italic 700 18px Georgia, serif; }
-/* The rules of the match (RulePicker), above the two decks they apply to. */
-.setupRules { margin: 18px 0; padding: 14px 16px 16px; border: 3px solid #b3d788; border-radius: 22px; background: #fff; color: #6b4a3a; }
-.setupRules h2 { margin-bottom: 10px; font-size: 20px; font-weight: 700; letter-spacing: .08em; }
-.setupRules h2 small { margin-left: 12px; font-size: 14px; font-weight: 400; letter-spacing: 0; color: #6e5546; }
-.deckSelectors label { font-size: 11px; }
-.deckSelectors select { display: block; width: 100%; margin-top: 6px; background: #fffcf4; border: 1px solid #d7c8af; border-radius: 3px; padding: 8px; color: #6b5946; font-size: 11px; }
-.secondaryButton { padding: 8px; border: 1px solid #c7b497; border-radius: 4px; font-size: 10px; }
-.ruleSettings { padding: 10px; margin: 14px 0; border: 1px solid #ddcfb7; border-radius: 4px; font-size: 10px; color: #685441; }
-.ruleSettings summary { cursor: pointer; }
-.ruleSettings p { white-space: pre-wrap; margin: 10px 0; line-height: 1.8; }
-.startButton { display: block; width: 100%; margin-top: 20px; padding: 12px; border: 1px solid #9bb18d; border-radius: 5px; background: #e1ecd3; color: #37532e; font-size: 13px; font-weight: 700; }
-.startButton span { float: right; }
-.startButton:disabled { opacity: .55; cursor: default; }
-/* Asked before the first match against さいきょう: its matches are sent for training. */
-.consentBackdrop { position: fixed; z-index: 200; inset: 0; border: 0; background: #30203588; backdrop-filter: blur(5px); }
-.consent { position: fixed; z-index: 201; top: 50%; left: 50%; transform: translate(-50%, -50%); box-sizing: border-box; width: min(560px, 92cqw); max-height: 90cqh; overflow: auto; padding: 28px; border-radius: 24px; background: #fff9f0; color: #685441; box-shadow: 0 12px 40px #33202a55; font-size: 16px; line-height: 1.8; }
-.consent h2 { margin-bottom: 14px; font-size: 22px; }
-.consent p { margin: 10px 0; }
-.consent ul { margin: 10px 0 10px 1.4em; list-style: disc; }
-.consent a, .textButton { text-decoration: underline; }
-.consent .secondaryButton { display: block; width: 100%; margin-top: 12px; }
-.textButton { font-size: inherit; color: inherit; }
-.error { padding: 7px; background: #fbe5dc; color: #ac655b; font-size: 10px; }
 .skillButton { display: flex; align-items: center; gap: 8px; width: 100%; padding: 12px 8px; border: 1px solid #d9c8ad; border-radius: 5px; background: #fffdf6; text-align: left; font-size: 11px; margin: 9px 0; }
 .skillButton b { box-sizing: border-box; display: grid; place-items: center; width: 76px; height: 76px; min-width: 76px; flex-shrink: 0; padding: 0; font-size: 22px; text-align: center; border-radius: 50%; background: #dfedcd; }
 .skillButton small { margin-left: auto; white-space: nowrap; font-size: 9px; color: #a28c76; }
@@ -257,7 +207,6 @@
 @media (prefers-reduced-motion: reduce) { .pop { animation: hitNumberFade 1.3s linear both; } }
 @keyframes deckPulse { 50% { filter: drop-shadow(0 0 3px #75c497); } }
 @keyframes targetPulse { 50% { box-shadow: 0 0 4px #7fc69266; } }
-@keyframes diceRoll { 0% { transform: rotate(-13deg) translateY(0); } 50% { transform: rotate(12deg) translateY(-7px); } 100% { transform: rotate(-13deg) translateY(0); } }
 @container stage (max-width: 900px) {
   .toolbar { flex-wrap: wrap; gap: 8px; padding: 6px 10px; }
   .drawer { top: 62px; }
@@ -265,7 +214,7 @@
 }
 @media (prefers-reduced-motion: reduce) {
   .handCard, .fieldSlot { transition: none; }
-  .targetable, .drawReady, .rollingDie { animation: none; }
+  .targetable, .drawReady { animation: none; }
   .flyingCard, .flightSpin, .lookReveal, .lookHide { animation-duration: .01s; }
 }
 
@@ -321,7 +270,6 @@
 .openHand { top: -36px; }
 .openHand .hiddenCard { pointer-events: auto; cursor: pointer; }
 .hiddenCard { width: 104px; height: 156px; top: 0; left: -52px; border: 2px solid #e5ceae; border-radius: 7px; transform-origin: 50% 5%; transform: translateX(calc(var(--hand-index) * var(--fan-step))) rotate(calc(var(--hand-index) * -7deg)) rotateX(-12deg); box-shadow: 4px 10px 12px #341e2866; transition: transform .4s cubic-bezier(.2,.8,.2,1); }
-.die { width: 54px; height: 54px; padding: 9px; gap: 4px; border-radius: 10px; }
 .handDock { position: fixed; z-index: 45; left: 50%; bottom: -105px; transform: translateX(-50%); width: min(850px, 90cqw); min-width: 0; min-height: 0; padding: 0; background: none; transition: bottom .35s cubic-bezier(.2,.8,.2,1), width .35s; pointer-events: none; }
 .hand { height: 210px; padding: 0 12px; overflow: visible; align-items: flex-end; perspective: 1000px; }
 .handCard { pointer-events: auto; touch-action: none; width: 140px; height: 210px; border-radius: 7px; border: 2px solid #dfc5a0; background: #634237; transform: translateY(var(--lift)) rotate(var(--angle)) rotateX(7deg); box-shadow: -5px 9px 8px #341c2866, inset 0 -3px #eedcba; transition: transform .25s, width .3s, height .3s, box-shadow .25s; }
@@ -349,14 +297,11 @@
 @container stage (max-height: 600px) { .revealComplete { bottom: 110px; } .revealComplete button { min-height: 44px; padding: 8px 20px; } .handCard[data-reveal-pending] .revealed { font-size: 12px; } }
 .errorToast { position: fixed; top: 18px; left: 50%; transform: translateX(-50%); z-index: 180; max-width: 80cqw; padding: 16px 24px; border-radius: 18px; background: #ffe6e2; color: #98464a; font-size: 18px; box-shadow: 0 5px 15px #5a353344; }
 .drawer { top: 0; width: min(560px, 100cqw); padding: 70px 28px 30px; border-radius: 28px 0 0 28px; background: #fff9f0; font-size: 18px; }
-.drawer > h2, .dialogHeading h2 { font-size: 26px; }
-.drawer > p, .help, .deckSelectors label, .ruleSettings, .testControls h3, .testControls b, .error { font-size: 18px; }
-.close, .dialogHeading > button { width: 48px; height: 48px; border-radius: 50%; background: #f0dccb; font-size: 30px; }
+.drawer > h2 { font-size: 26px; }
+.drawer > p, .testControls h3, .testControls b { font-size: 18px; }
 .inspectImage { width: min(100%, 360px); margin: 0 auto 22px; }
 .zoneCards > button { width: 150px; }
-.setupModes button, .deckSelectors select, .secondaryButton, .startButton, .testControls button { font-size: 18px; min-height: 52px; border-radius: 14px; padding: 12px; }
-.setupModes button { min-height: 70px; }
-.ruleSettings summary { min-height: 44px; }
+.testControls button { font-size: 18px; min-height: 52px; border-radius: 14px; padding: 12px; }
 .menuList { display: grid; gap: 16px; }
 .menuList button, .menuList a { min-height: 56px; text-align: center; padding: 14px; font-size: 20px; border-radius: 18px; background: #f1e4d4; }
 .analysis { display: grid; gap: 16px; line-height: 1.6; }
@@ -436,7 +381,7 @@
 .diceStage { position: relative; display: flex; flex-direction: column; align-items: center; gap: 36px; padding: 24px; color: #fff4d8; text-align: center; }
 .focusDie { display: flex; flex-direction: column; align-items: center; gap: 28px; padding: 24px; transition: opacity .3s, filter .3s; }
 .focusDie > span:first-child { font-size: 28px; font-weight: 700; }
-.diceResult, .diceTie { font-size: 32px; text-shadow: 0 3px 12px #160c21; }
+.diceTie { font-size: 32px; text-shadow: 0 3px 12px #160c21; }
 /* Laid over the die instead of under it, so nothing moves when it appears. */
 .diceTie { position: absolute; left: 50%; top: 50%; z-index: 1; transform: translate(-50%, -50%) rotate(-4deg); padding: 6px 26px; border: 2px solid #fffdeb; border-radius: 999px; background: #f4b0bbf2; color: #6b4a3a; font-size: clamp(26px, 4cqw, 40px); white-space: nowrap; text-shadow: none; box-shadow: 0 8px 20px #160c2188; pointer-events: none; }
 @container stage (max-width: 600px) { .diceStage { gap: 28px; padding: 16px; } .focusDie { padding: 10px; gap: 22px; } .focusDie > span:first-child { font-size: 24px; } }
@@ -478,7 +423,6 @@
 .cardSelectionActions { gap: 10px; }
 .inspection { inset: 8px; width: auto; padding: 0; border: 0; border-radius: 0; background: transparent; box-shadow: none; display: flex; align-items: center; justify-content: center; gap: 12px; overflow: visible; pointer-events: none; }
 .inspection > .inspectImage { width: auto; height: min(calc(100cqh - 16px), calc((100cqw - 248px) * 800 / 533)); margin: 0; flex-shrink: 0; box-shadow: 12px 22px 24px #36243588; pointer-events: auto; }
-.inspection > .close { pointer-events: auto; z-index: 2; }
 .inspectSide { display: flex; flex-direction: column; align-items: stretch; gap: 14px; max-width: 216px; pointer-events: none; }
 .inspectActions { max-width: 216px; padding: 16px; border-radius: 22px; background: #fff9f0f5; box-shadow: 0 7px 18px #38263855; font-size: 22px; pointer-events: auto; }
 .inspectActions > p { margin: 0; font-size: 22px; line-height: 1.5; }

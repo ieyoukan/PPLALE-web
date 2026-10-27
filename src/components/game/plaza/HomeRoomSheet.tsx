@@ -2,8 +2,8 @@
 
 import { useRef, useState } from 'react';
 import { readRoomSettings } from '@/lib/game/plazaSettings';
-import { OrnateFrame } from '../ornament/OrnateFrame';
-import { PlazaIcon } from './PlazaIcon';
+import { OrnateFrame } from '@/components/shared/ui/ornament/OrnateFrame';
+import { GameIcon } from '@/components/shared/ui/GameIcon';
 import { usePlaza } from './PlazaProvider';
 import { RoomDepartureNotice } from './RoomDepartureNotice';
 import { Sheet } from './Sheet';
@@ -29,14 +29,14 @@ export function HomeRoomSheet({ onClose, onDone }: { onClose: () => void; onDone
   };
   return <Sheet title="ホームへ移動しますか？" onClose={() => { if (!moving.current) onClose(); }}>
     <div className={styles.confirm}>
-      <PlazaIcon name="home" className={styles.homeIcon} />
+      <GameIcon name="home" className={styles.homeIcon} />
       <p>新しいホームルームを作って移動します。</p>
-      <span className={styles.visibility}><PlazaIcon name={visibilityInfo[visibility].icon} />{visibilityInfo[visibility].label}</span>
+      <span className={styles.visibility}><GameIcon name={visibilityInfo[visibility].icon} />{visibilityInfo[visibility].label}</span>
       <RoomDepartureNotice view={plaza.view} />
       {error && <p role="alert">{error}</p>}
       <div className={styles.actions}>
         <button type="button" className={styles.cancel} onClick={onClose} disabled={busy}>キャンセル</button>
-        <OrnateFrame as="button" size="line" className={styles.move} disabled={busy} onClick={() => void move()}><PlazaIcon name="home" /><span data-ui-title>{busy ? '移動中…' : '移動する'}</span></OrnateFrame>
+        <OrnateFrame as="button" size="line" className={styles.move} disabled={busy} onClick={() => void move()}><GameIcon name="home" /><span data-ui-title>{busy ? '移動中…' : '移動する'}</span></OrnateFrame>
       </div>
     </div>
   </Sheet>;

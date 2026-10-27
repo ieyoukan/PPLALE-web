@@ -5,7 +5,7 @@ import { DEFAULT_VISIBILITY, defaultRoomRules, isRoomVisibility, parseRoomRules 
 import type { RoomRules, RoomVisibility } from '@pplale/game-core/room';
 
 const KEY = 'pplale-room-settings-v1';
-export interface RoomSettings { rules: RoomRules; homeVisibility: RoomVisibility }
+interface RoomSettings { rules: RoomRules; homeVisibility: RoomVisibility }
 
 export function readRoomSettings(): RoomSettings {
   try {

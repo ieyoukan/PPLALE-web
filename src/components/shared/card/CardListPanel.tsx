@@ -3,7 +3,7 @@
 import React from 'react';
 import { CardInfo } from '@/types/card';
 import CardList from './CardList';
-import TabButtons, { TabDefinition } from '@/components/ui/TabButtons';
+import TabButtons, { TabDefinition } from '@/components/shared/ui/TabButtons';
 import { css } from 'styled-system/css';
 
 export type DeckCardType = 'yojo' | 'sweet' | 'playable';

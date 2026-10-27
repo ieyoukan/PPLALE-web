@@ -2,7 +2,6 @@
 
 import '@/app/panda.css';
 
-import React from 'react';
 import { siteTitleFont } from '@/app/fonts';
 import Link from 'next/link';
 import { css } from 'styled-system/css';

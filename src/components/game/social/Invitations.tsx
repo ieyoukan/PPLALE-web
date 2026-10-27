@@ -6,11 +6,11 @@ import { useEffect, useState } from 'react';
 import type { RoomInfo } from '@pplale/game-core/room';
 import { useAuth } from '@/lib/auth';
 import { readInvitations, roomServerUrl } from '@/lib/game/room/client';
-import { PlazaIcon } from '../plaza/PlazaIcon';
+import { GameIcon } from '@/components/shared/ui/GameIcon';
 import { usePlaza } from '../plaza/PlazaProvider';
 import { RoomCard } from './RoomCard';
-import { matchesRoomRules } from './RoomRuleFilters';
-import type { RoomRuleFilter } from './RoomRuleFilters';
+import { matchesRoomRules } from '@/lib/game/room/filters';
+import type { RoomRuleFilter } from '@/lib/game/room/filters';
 import styles from './Social.module.css';
 import own from './RoomCard.module.css';
 
@@ -29,7 +29,7 @@ export function Invitations({ filter }: { filter: RoomRuleFilter }) {
   const shown = rooms.filter(room => room.id !== here && matchesRoomRules(room, filter));
   if (!shown.length) return null;
   return <section className={own.invited} aria-label="招待が届いています">
-    <h3><PlazaIcon name="letter" />招待が届いています</h3>
+    <h3><GameIcon name="letter" />招待が届いています</h3>
     <div className={styles.tiles}>{shown.map(room => <RoomCard key={room.id} room={room} />)}</div>
   </section>;
 }

@@ -3,7 +3,7 @@
 import { useRef, useState } from 'react';
 import Image from 'next/image';
 import { useAuth } from '@/lib/auth';
-import { OrnateFrame } from '@/components/game/ornament/OrnateFrame';
+import { OrnateFrame } from '@/components/shared/ui/ornament/OrnateFrame';
 import styles from './GuestSignInPrompt.module.css';
 
 /** An optional invitation to keep playing together, shared by the menu and match results. */

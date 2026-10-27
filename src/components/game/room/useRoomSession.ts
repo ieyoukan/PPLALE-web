@@ -9,7 +9,7 @@ import type { Room } from './useRoom';
 import { appendRoomAssessment, readRoomAssessment, saveRoomAssessment } from './roomAssessment';
 import type { AssessedPoint } from '../board/assess';
 import type { AvatarIdentity } from '@/components/shared/player/Avatar';
-import { guestIcon, useProfiles } from '../plaza/useProfiles';
+import { guestIcon, useProfiles } from '@/components/shared/player/useProfiles';
 
 type Played = RoomView & { game: GameState };
 const played = (view: RoomView): view is Played => !!view.game;

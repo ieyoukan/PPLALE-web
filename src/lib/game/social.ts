@@ -12,7 +12,7 @@ export interface SocialPlayer { friendship: Friendship; profile: PlayerProfile; 
 /** How often a spectator repeats that they are still watching, and how old a claim may be before it is ignored. */
 export const WATCHING_BEAT = 60_000, WATCHING_STALE = 3 * 60_000;
 export const defaultProfile = (uid: string, name = 'プレイヤー'): PlayerProfile => ({ uid, displayName: name, comment: 'よろしくお願いします！', iconCardId: 'p_1', decks: [] });
-export const friendshipId = (a: string, b: string) => [a, b].sort().join('~');
+const friendshipId = (a: string, b: string) => [a, b].sort().join('~');
 async function store() {
   const [sdk, { db, auth }] = await Promise.all([import('firebase/firestore'), import('@/lib/firebase')]);
   await auth.authStateReady();
@@ -97,13 +97,6 @@ export async function readMyDecks(uid: string): Promise<PublicDeck[]> {
   const { sdk, db } = await store();
   const snapshot = await sdk.getDocs(sdk.collection(db, 'users', uid, 'decks'));
   return snapshot.docs.map(doc => deckOf(doc.id, doc.data())).sort((a, b) => (b.updatedAt?.getTime() ?? 0) - (a.updatedAt?.getTime() ?? 0));
-}
-/** Where a friend says they are: the room they recruit for and the one they watch. Readable only by their friends (otherwise empty). */
-export async function readFriendRooms(other: string): Promise<Pick<SocialPlayer, 'roomId' | 'watching'>> {
-  const { sdk, db } = await store();
-  const [recruitment, watching] = await Promise.all(['recruitments', 'watching'].map(kind => sdk.getDoc(sdk.doc(db, kind, other)).then(doc => doc.data(), () => undefined)));
-  const roomId = recruitment?.roomId, watched = watching?.roomId, at = watching?.updatedAt?.toMillis?.();
-  return { ...(typeof roomId === 'string' && /^\d{6}$/.test(roomId) && { roomId }), ...(typeof watched === 'string' && /^\d{6}$/.test(watched) && typeof at === 'number' && { watching: { roomId: watched, at } }) };
 }
 /**
  * The room this browser says the player is at, for each reason: watching a match, or being in a room

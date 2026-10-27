@@ -7,7 +7,7 @@ import { useSearchParams } from 'next/navigation';
 import { lethalPuzzles, puzzleDifficulties, puzzleFruits, readClearedPuzzles } from '@/lib/game/puzzles';
 import { puzzleHref, puzzleListHref } from '@/lib/game/sessionStore';
 import { ScreenSubtitle } from '@/components/shared/ui/ScreenSubtitle';
-import { OrnateFrame } from '../ornament/OrnateFrame';
+import { OrnateFrame } from '@/components/shared/ui/ornament/OrnateFrame';
 import { PUZZLE_TAGLINE } from './copy';
 import previews from '@/data/lethalPuzzlePreviews.json';
 import { PuzzleIcon } from './PuzzleIcon';

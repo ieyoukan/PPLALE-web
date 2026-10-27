@@ -65,7 +65,7 @@
 ### 枠・パネル
 
 - パネル・ダイアログ・席の札などの枠を、角丸の境界線と影だけのCSS（一般的なWebのカードUI）で作らない。
-- カード画像の枠を手本にしたオーナメント枠を使う：細い外線と太めの内線の二重線、四隅のつる草と葉、辺の中央の菱形の飾り。部品は `src/components/game/ornament/OrnateFrame.tsx`（SVG）で、新しい枠もここに追加・調整する。
+- カード画像の枠を手本にしたオーナメント枠を使う：細い外線と太めの内線の二重線、四隅のつる草と葉、辺の中央の菱形の飾り。部品は `src/components/shared/ui/ornament/OrnateFrame.tsx`（SVG）で、新しい枠もここに追加・調整する。
 - 角は四角を基本にする。枠の色は、淡い面ではココア（`--brand-cocoa-deep` 系）、暗い面（木目・夜空）ではクリーム。枠の中は淡い色の面にして、文字のコントラストを保つ。
 - ボタンは押せることが分かる形でよいが、枠と同じ場所で角丸の箱を重ねない。
 
@@ -98,15 +98,16 @@
 | カード拡大・回転・閉じる・フォーカス復帰 | `shared/card/CardDetail.tsx`。閲覧は `card`・`onClose`・`isInDeck={false}`、構築では追加・削除のコールバックを渡す |
 | デッキのカード配置 | `shared/deck/DeckCardLayout.tsx`。画像だけにも、`onCardClick` 付きの確認画面にも使える。配置座標は `src/lib/deckImageLayout.ts` が唯一の定義で、OGP・画像書き出しも同じものを使う |
 | 左寄せのサブタイトル | `shared/ui/ScreenSubtitle.tsx`。本文書体で表示し、人数などは `suffix` で添える |
-| ゲームの枠・大きい操作ボタン | `game/ornament/OrnateFrame.tsx`。模様のSVGを別の画面にコピーしない |
-| 対戦の丸い主要操作 | `game/ornament/RoundActionButton.tsx`。円形のカード装飾枠・静止した硬い光沢を共用し、色は `tone`、大きさは呼び出し元で指定する |
-| ランチパッドのキャラクター付き入口 | `game/plaza/CharacterDestination.tsx`。幅・高さ・ホバーを共通化。入口の順序・画像・操作は `LaunchpadHome.tsx` の `destinations` にまとめる |
+| ゲームの枠・大きい操作ボタン | `shared/ui/ornament/OrnateFrame.tsx`。模様のSVGを別の画面にコピーしない |
+| 対戦の丸い主要操作 | `shared/ui/ornament/RoundActionButton.tsx`。円形のカード装飾枠・静止した硬い光沢を共用し、色は `tone`、大きさは呼び出し元で指定する |
+| ランチパッドのキャラクター付き入口 | `game/launchpad/CharacterDestination.tsx`。幅・高さ・ホバーを共通化。入口の順序・画像・操作は `LaunchpadHome.tsx` の `destinations` にまとめる |
 | ルームのサムネイル | `game/plaza/RoomThumbnailImage.tsx`。URLのルール変換は `src/lib/game/roomThumbnail.ts`、描画とOGPは `src/lib/ogRoomImage.tsx` |
 | ルーム退出の影響表示 | `game/plaza/RoomDepartureNotice.tsx`。対戦中の敗北・オーナー不在・残る入室者の表示を、ホーム移動の確認とルーム作成で共用する |
 | プレイヤーの丸いアイコン | `shared/player/Avatar.tsx`。ルームの席・在室者・対戦中の名前で共用する。カードそのものの表示には使わない |
 | ゲストへのログイン案内 | `shared/auth/GuestSignInPrompt.tsx`。ランチパッドではコンパクト表示、対戦後はフレンド・デッキ共有への案内として共用する。対戦操作を遮らない |
 | フレンドへの招待 | `game/social/InviteFriendButton.tsx`。プロフィールと共有画面で送信・失敗・送信済みを共用。表示権限は `src/lib/game/room/invitations.ts`、実際の許可はサーバーで再確認する |
-| メニューの名前・アイコン・URLの対応 | `game/plaza/places.ts` と `PlazaIcon.tsx`。アイコンは意味ごとに既存のSVGを使う |
+| カード画像（現行・記録済み） | `shared/card/CardArtwork.tsx`。対戦履歴も同じ描画を使い、記録時のカタログを渡せる |
+| メニューの名前・アイコン・URLの対応 | `game/launchpad/places.ts` と `shared/ui/GameIcon.tsx`。アイコンは意味ごとに既存のSVGを使う |
 
 部品の利用例はカード構築の `components/deck/Deck.tsx`、ルームの `plaza/PlazaSheets.tsx`、図鑑の `home/CardGallery.tsx`。カード拡大は呼び出し元を `inert` にし、`returnFocusRef` で元のカードへ戻す。既存の画面をランチパッドへ追加するときはローカルの `Suspense` の内側に置き、盤面全体の描画を止めない。
 
@@ -114,7 +115,7 @@
 
 `src/app/fonts.ts` で見出し用・本文用のフォントを管理し、ルートレイアウトで全ページに読み込む。画面ごとに異なるフォント定義を追加しない。
 
-`pnpm run fonts:generate` が固定コミット・SHA-256検証済みのGoogle Fonts原本からWOFF2を生成する（`predev`・`prebuild`でも実行）。トップのTSXに含まれる文字を各ウェイト1ファイルにまとめ、ゲームメニューの文字も専用ファイルにまとめる。ゲーム用の抽出対象は `scripts/generate-site-fonts.mjs` に集約し、`game/plaza/`・`game/home/` の分割部品はディレクトリから読み取る。残りの収録文字は重複のない最大64文字ずつの追加サブセットに分ける。別ページ・ユーザー名などに必要な漢字も削除せず、ブラウザが必要なサブセットだけ取得する。書体・ウェイト・字形・文字幅は維持する。
+`pnpm run fonts:generate` が固定コミット・SHA-256検証済みのGoogle Fonts原本からWOFF2を生成する（`predev`・`prebuild`でも実行）。トップのTSXに含まれる文字を各ウェイト1ファイルにまとめ、ゲームメニューの文字も専用ファイルにまとめる。ゲーム用の抽出対象は `scripts/generate-site-fonts.mjs` に集約し、`game/plaza/`・`game/launchpad/`・`game/home/` の分割部品はディレクトリから読み取る。残りの収録文字は重複のない最大64文字ずつの追加サブセットに分ける。別ページ・ユーザー名などに必要な漢字も削除せず、ブラウザが必要なサブセットだけ取得する。書体・ウェイト・字形・文字幅は維持する。
 
 原本と生成キャッシュは `.next/cache/pplale-assets/site-fonts/`、配信用ファイルは `public/fonts/generated/`、生成CSSは `src/app/generated/site-fonts.css` に置き、Gitには含めない。`.next/cache` は `next build` でもVercel・CI・Dockerのビルドキャッシュでも保持されるため、2回目以降のビルドはサブセットを再生成しない。ライセンスは `public/fonts/*-OFL.txt` に保持する。初回生成にはネットワーク接続が必要。トップの文言変更は次の生成時に自動反映される。`pnpm run test:fonts` で文字の網羅性と字形・文字幅を検証する。
 

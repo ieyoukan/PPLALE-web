@@ -8,8 +8,8 @@ import { invitedVisibility } from '@pplale/game-core/room';
 import { useAuth } from '@/lib/auth';
 import { canInviteFriends, canShareRoomLink } from '@/lib/game/room/invitations';
 import { FriendInvites } from './FriendInvites';
-import { DiscordMark, PlazaIcon } from './PlazaIcon';
-import { OrnateFrame } from '../ornament/OrnateFrame';
+import { DiscordMark, GameIcon } from '@/components/shared/ui/GameIcon';
+import { OrnateFrame } from '@/components/shared/ui/ornament/OrnateFrame';
 import { Sheet } from './Sheet';
 import { invitation, plazaLink } from './share';
 import { usePlaza } from './PlazaProvider';
@@ -35,7 +35,7 @@ export function ShareSheet({ view, onClose }: { view: RoomView; onClose: () => v
       <small>{url}</small>
     </OrnateFrame>
     <div className={styles.sheetFoot}>
-      <button className={styles.softButton} onClick={() => setPosting(false)}><PlazaIcon name="back" />もどる</button>
+      <button className={styles.softButton} onClick={() => setPosting(false)}><GameIcon name="back" />もどる</button>
       <OrnateFrame as="a" size="line" className={styles.primaryButton} href={words.post} target="_blank" rel="noopener noreferrer" onClick={() => setPosting(false)}>
         <b className={styles.xMark}>𝕏</b><span data-ui-title>ポストする</span>
       </OrnateFrame>
@@ -45,16 +45,16 @@ export function ShareSheet({ view, onClose }: { view: RoomView; onClose: () => v
     {mayShare ? <>
       <OrnateFrame as="button" size="line" tone="cream" className={styles.discordButton} onClick={() => copy('discord', words.discord)}>
         <DiscordMark /><span><b data-ui-title>Discordに貼る</b><small>メッセージをコピーします</small></span>
-        {done === 'discord' && <span className={styles.copied}><PlazaIcon name="check" /></span>}
+        {done === 'discord' && <span className={styles.copied}><GameIcon name="check" /></span>}
       </OrnateFrame>
       <div className={styles.shareRow}>
-        <button className={styles.shareTile} onClick={() => copy('link', url)}><PlazaIcon name="link" /><span>リンク</span>{done === 'link' && <i className={styles.copiedDot}><PlazaIcon name="check" /></i>}</button>
+        <button className={styles.shareTile} onClick={() => copy('link', url)}><GameIcon name="link" /><span>リンク</span>{done === 'link' && <i className={styles.copiedDot}><GameIcon name="check" /></i>}</button>
         <button className={styles.shareTile} onClick={() => setPosting(true)}><b className={styles.xMark}>𝕏</b><span>ポスト</span></button>
-        {canShare && <button className={styles.shareTile} onClick={() => { navigator.share({ text: words.plain }).catch(() => {}); }}><PlazaIcon name="send" /><span>共有</span></button>}
+        {canShare && <button className={styles.shareTile} onClick={() => { navigator.share({ text: words.plain }).catch(() => {}); }}><GameIcon name="send" /><span>共有</span></button>}
       </div>
-      <p className={styles.shareNote}><PlazaIcon name={info.icon} />{plaza.visibility === 'friends' ? `${plaza.creator.name}のフレンドだけが入れます` : plaza.visibility === 'friendsPlus' ? 'ルームにいる人のフレンドが入れます' : invited ? 'このリンクを知っている人が入れます' : 'リンクを開いた人はだれでも入れます'}</p>
-      {invited && <button className={styles.textButton} onClick={() => { void send({ action: 'renewInvite' }).then(() => setDone('renewed')); }}><PlazaIcon name="refresh" />{done === 'renewed' ? '新しいリンクにしました（前のリンクは使えません）' : 'リンクを作り直す'}</button>}
-    </> : <p className={styles.shareNote}><PlazaIcon name="crown" />このルームに招待できるのはオーナーだけです。</p>}
+      <p className={styles.shareNote}><GameIcon name={info.icon} />{plaza.visibility === 'friends' ? `${plaza.creator.name}のフレンドだけが入れます` : plaza.visibility === 'friendsPlus' ? 'ルームにいる人のフレンドが入れます' : invited ? 'このリンクを知っている人が入れます' : 'リンクを開いた人はだれでも入れます'}</p>
+      {invited && <button className={styles.textButton} onClick={() => { void send({ action: 'renewInvite' }).then(() => setDone('renewed')); }}><GameIcon name="refresh" />{done === 'renewed' ? '新しいリンクにしました（前のリンクは使えません）' : 'リンクを作り直す'}</button>}
+    </> : <p className={styles.shareNote}><GameIcon name="crown" />このルームに招待できるのはオーナーだけです。</p>}
     {/* A friend invited by name comes in where that lets them in: an invited room, or one they may enter anyway (told by a notification). */}
     {user && canInviteFriends(plaza, user.uid) && <FriendInvites uid={user.uid} view={view} />}
     {done === 'コピーできませんでした' && <p className={styles.note} role="alert">{done}</p>}

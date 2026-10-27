@@ -1,0 +1,9 @@
+
+.ruleFilters { display: grid; gap: 10px; margin: 14px 0 18px; padding: 10px 0; border-block: 1px solid var(--brand-pink); color: var(--brand-cocoa-deep); }
+.ruleFilters strong { display: flex; align-items: center; gap: 6px; color: var(--brand-cocoa); font-size: 15px; }
+.ruleFilters strong small { margin-left: auto; color: var(--brand-cocoa-soft); font-size: 13px; }
+.ruleFilterControls { display: flex; flex-wrap: wrap; align-items: end; gap: 9px; }
+.ruleFilterControls label { display: grid; gap: 3px; color: var(--brand-cocoa-deep); font-size: 12px; font-weight: 700; }
+.ruleFilterControls select { min-height: 38px; padding: 5px 24px 5px 10px; border: 1px solid var(--brand-pink-edge); border-radius: 6px; background: var(--brand-cream); color: var(--brand-cocoa-deep); font-size: 14px; }
+.ruleFilterControls select:focus-visible, .clearRules:focus-visible { outline: 3px solid var(--brand-cocoa); outline-offset: 2px; }
+.clearRules { display: inline-flex; align-items: center; gap: 3px; min-height: 38px; padding: 6px 10px; border: 1px solid var(--brand-pink-edge); border-radius: 6px; background: var(--brand-blush); color: var(--brand-cocoa-deep); font-size: 13px; font-weight: 700; cursor: pointer; }

@@ -7,7 +7,7 @@ import { roomHref, watchHref } from '@/lib/game/sessionStore';
 import styles from './Room.module.css';
 
 /** The words an invitation is made of; the link opens the room's page, where the friend joins. */
-export function invitation(id: string, rules: RoomRules, origin: string) {
+function invitation(id: string, rules: RoomRules, origin: string) {
   const url = `${origin}${roomHref(id)}`;
   const lines = ['ぷぷりえーるのルームマッチ、対戦相手を募集中！', `ルームID：${id}`, describeRoomRules(rules)];
   return {

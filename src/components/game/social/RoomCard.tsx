@@ -4,11 +4,10 @@ import { fruitNames } from '@pplale/game-core/room';
 import type { RoomInfo } from '@pplale/game-core/room';
 import { roomHref, watchHref } from '@/lib/game/sessionStore';
 import { fruitArt, roomThumbnail } from '@/lib/game/roomThumbnail';
-import { PlazaIcon } from '../plaza/PlazaIcon';
+import { GameIcon } from '@/components/shared/ui/GameIcon';
 import { RoomThumbnailImage } from '../plaza/RoomThumbnailImage';
 import { usePlaza } from '../plaza/PlazaProvider';
 import { visibilityInfo } from '../plaza/visibility';
-import { Icon } from './Icon';
 import { placeLabel, placeOf } from './location';
 import styles from './Social.module.css';
 import own from './RoomCard.module.css';
@@ -26,10 +25,10 @@ export function RoomCard({ room, large }: { room: RoomInfo; large?: boolean }) {
   const card = <>
     <span className={styles.roomArt} aria-hidden="true"><RoomThumbnailImage rules={room.rules} sizes={large ? '420px' : '200px'} /></span>
     <span className={styles.roomBadge}>{placeLabel[place]}</span>
-    {href && <span className={styles.roomAction}>{plaza ? <PlazaIcon name="enter" /> : <Icon name={place === 'open' ? 'play' : 'eye'} />}{verb}</span>}
+    {href && <span className={styles.roomAction}>{plaza ? <GameIcon name="enter" /> : <GameIcon name={place === 'open' ? 'play' : 'eye'} />}{verb}</span>}
     <span className={styles.roomInfo}>
       {(large || plaza) && <b className={styles.roomHost}>{title}</b>}
-      {plaza ? <span className={own.people} title={visibilityInfo[plaza.visibility].label}><PlazaIcon name={visibilityInfo[plaza.visibility].icon} /><PlazaIcon name="people" />{plaza.members}</span> : <b>#{room.id}</b>}
+      {plaza ? <span className={own.people} title={visibilityInfo[plaza.visibility].label}><GameIcon name={visibilityInfo[plaza.visibility].icon} /><GameIcon name="people" />{plaza.members}</span> : <b>#{room.id}</b>}
       <span className={styles.fruitDots}>{fruits.map(fruit => <i key={fruit} title={fruitNames[fruit]} style={{ background: fruitArt[fruit].tone }} />)}</span>
     </span>
   </>;

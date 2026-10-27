@@ -5,12 +5,12 @@ import Link from 'next/link';
 import { GuestSignInPrompt } from '@/components/shared/auth/GuestSignInPrompt';
 import { CharacterDestination } from './CharacterDestination';
 import { useLaunchpad } from './LaunchpadContext';
-import { usePlaza } from './PlazaProvider';
-import { RoomThumbnailImage } from './RoomThumbnailImage';
-import { OrnateFrame } from '../ornament/OrnateFrame';
-import { PlazaIcon } from './PlazaIcon';
+import { usePlaza } from '@/components/game/plaza/PlazaProvider';
+import { RoomThumbnailImage } from '@/components/game/plaza/RoomThumbnailImage';
+import { OrnateFrame } from '@/components/shared/ui/ornament/OrnateFrame';
+import { GameIcon } from '@/components/shared/ui/GameIcon';
 import { sectionInfo } from './places';
-import { visibilityInfo } from './visibility';
+import { visibilityInfo } from '@/components/game/plaza/visibility';
 import styles from './LaunchpadHome.module.css';
 
 /** One ordered list owns each destination's behavior and illustration. */
@@ -35,14 +35,14 @@ export function LaunchpadHome({ onHome, onShare }: { onHome: () => void; onShare
           onClick={() => openAt({ section: target })} />)}</nav>
     </section>
     <div className={styles.quick} role="group" aria-label="ルームの操作">
-      <button onClick={onHome}><PlazaIcon name="home" /><span>ホーム</span></button>
-      <button disabled={!view?.plaza} onClick={onShare}><PlazaIcon name="letter" /><span>さそう</span></button>
+      <button onClick={onHome}><GameIcon name="home" /><span>ホーム</span></button>
+      <button disabled={!view?.plaza} onClick={onShare}><GameIcon name="letter" /><span>さそう</span></button>
     </div>
     <footer className={styles.foot}>
-      <button className={styles.moreButton} aria-expanded={more} aria-controls={moreId} onClick={() => setMore(value => !value)}><PlazaIcon name={more ? 'close' : 'grid'} />{more ? '閉じる' : 'もっと見る'}</button>
+      <button className={styles.moreButton} aria-expanded={more} aria-controls={moreId} onClick={() => setMore(value => !value)}><GameIcon name={more ? 'close' : 'grid'} />{more ? '閉じる' : 'もっと見る'}</button>
       {more && <nav id={moreId} className={styles.moreLinks} aria-label="その他の画面">
-        {(['editor', 'free'] as const).map(target => <button key={target} onClick={() => openAt({ section: target })}><PlazaIcon name={sectionInfo[target].icon} /><span>{sectionInfo[target].label}</span></button>)}
-        <Link href="/" prefetch={false}><PlazaIcon name="exit" /><span>サイトへ</span></Link>
+        {(['editor', 'free'] as const).map(target => <button key={target} onClick={() => openAt({ section: target })}><GameIcon name={sectionInfo[target].icon} /><span>{sectionInfo[target].label}</span></button>)}
+        <Link href="/" prefetch={false}><GameIcon name="exit" /><span>サイトへ</span></Link>
       </nav>}
     </footer>
   </div>;
@@ -52,13 +52,13 @@ function CurrentRoomBanner() {
   const { openAt } = useLaunchpad(), { view, stage } = usePlaza();
   const room = view?.plaza;
   if (!room || !view) return <OrnateFrame size="sm" className={styles.roomMain}>
-    <span className={styles.emptyRoomArt}><PlazaIcon name="home" /></span><span className={styles.roomText}><small>いまのルーム</small><b data-ui-title>ホーム</b><span>{stage.kind === 'entering' ? 'つないでいます…' : 'みんなで遊ぶ場所'}</span></span>
+    <span className={styles.emptyRoomArt}><GameIcon name="home" /></span><span className={styles.roomText}><small>いまのルーム</small><b data-ui-title>ホーム</b><span>{stage.kind === 'entering' ? 'つないでいます…' : 'みんなで遊ぶ場所'}</span></span>
   </OrnateFrame>;
   return <button className={styles.roomBanner} onClick={() => openAt({ section: 'instance' })} aria-label="いまのルームの詳細">
     <OrnateFrame size="sm" className={styles.roomMain}>
       <RoomThumbnailImage rules={room.nextRules ?? view.rules} className={styles.roomArt} sizes="160px" />
-      <span className={styles.roomText}><small>いまのルーム</small><b data-ui-title>{room.name}</b><span><PlazaIcon name={visibilityInfo[room.visibility].icon} />{visibilityInfo[room.visibility].label}<PlazaIcon name="people" />{room.members.length}</span></span>
-      <PlazaIcon name="pin" />
+      <span className={styles.roomText}><small>いまのルーム</small><b data-ui-title>{room.name}</b><span><GameIcon name={visibilityInfo[room.visibility].icon} />{visibilityInfo[room.visibility].label}<GameIcon name="people" />{room.members.length}</span></span>
+      <GameIcon name="pin" />
     </OrnateFrame>
   </button>;
 }

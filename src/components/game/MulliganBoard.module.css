@@ -2,8 +2,6 @@
 .stage { position: relative; min-width: 0; min-height: 0; touch-action: none; }
 .destinations { position: absolute; inset: 0 0 55%; display: grid; grid-auto-flow: column; grid-auto-columns: 1fr; gap: 18px; }
 .zone, .keep { position: relative; border: 4px solid; border-radius: 30px; box-shadow: 0 8px 0 #59425155, 0 15px 28px #35233655, inset 0 0 0 3px #fff9; transition: background .18s, box-shadow .18s; }
-.yojo { border-color: #d57991; color: #a54863; background: linear-gradient(160deg, #fff3e9ed, #f3bbccd9); }
-.sweet { border-color: #71b2cf; color: #397e9c; background: linear-gradient(160deg, #f5fffeed, #b6ddefd9); }
 .swap { border-color: #c79bb5; color: #9a5c80; background: linear-gradient(160deg, #fff6f2ed, #ecc9dcd9); }
 .zone h2, .keep h2 { position: absolute; top: 0; left: 0; right: 0; height: 48px; display: grid; place-items: center; margin: 0; font-size: clamp(24px, 2.6cqw, 38px); font-weight: 400; text-shadow: 0 1px 0 white; }
 .keep { position: absolute; inset: 51% 0 0; background: linear-gradient(160deg, #fffdf3ee, #f8e2dbea); border-color: #caa987; }

@@ -1,6 +1,5 @@
 'use client';
 
-import React from 'react';
 import { CardVersion, FruitType, SweetType } from '@/types/card';
 import { css } from 'styled-system/css';
 import { useI18n } from '@/i18n/LocaleProvider';

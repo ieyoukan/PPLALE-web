@@ -9,7 +9,7 @@ import { useAuth } from '@/lib/auth';
 import { BATTLE_PATH } from '@/lib/game/sessionStore';
 import { favoriteMatch, readMatchHistory, readMatchDetail } from '@/lib/game/room/client';
 import { HistoryDialog } from './HistoryDialog';
-import { RecordedCard } from './RecordedCard';
+import { CardArtwork } from '@/components/shared/card/CardArtwork';
 import styles from './History.module.css';
 
 export const matchReasons = { normal: '通常決着', resign: '投了', disconnect: '切断', leave: '退出', abandoned: '中断' };
@@ -96,7 +96,7 @@ function IdentityHistory() {
             <button className={styles.star} aria-label={`${foe.name}との対戦を${entry.favorite ? 'お気に入りから外す' : 'お気に入りにする'}`} aria-pressed={entry.favorite} disabled={busy !== null} onClick={() => void favorite(entry)}>
               <StarIcon />
             </button>
-            <div className={styles.avatar} aria-hidden="true"><RecordedCard id={foe.deck.playable} sizes="64px" /></div>
+            <div className={styles.avatar} aria-hidden="true"><CardArtwork id={foe.deck.playable} sizes="64px" /></div>
             <button className={styles.matchInfo} onClick={() => void openDetail(entry)} disabled={busy !== null} aria-label={`${foe.name}との対戦の詳細`}>
               <span className={styles.matchMode} data-mode={entry.mode}>{entry.mode === 'free' ? 'フリーマッチ' : 'ルームマッチ'}</span>
               <strong>{foe.name}</strong><span>{foe.playableName ?? foe.deck.name}</span>
@@ -124,7 +124,7 @@ export function MatchDetail({ recording, onClose }: { recording: MatchDetails; o
   return <HistoryDialog label="対戦の詳細" onClose={onClose}>
     <header className={styles.heading}><h2>対戦の詳細</h2><button onClick={onClose} aria-label="詳細を閉じる">×</button></header>
     <div className={styles.opponents}>{match.players.map((player, index) => <div key={index} className={styles.detailPlayer} data-winner={match.winner === index || undefined}>
-      <span className={styles.avatar} aria-hidden="true"><RecordedCard id={player.deck.playable} catalog={catalog} sizes="72px" /></span>
+      <span className={styles.avatar} aria-hidden="true"><CardArtwork id={player.deck.playable} catalog={catalog} sizes="72px" /></span>
       <span>{player.profileId ? <Link href={`/game/profile/?id=${encodeURIComponent(player.profileId)}`}>{player.name}</Link> : player.name}</span>
       {match.winner === index && <b className={styles.winnerLabel}>WIN</b>}
     </div>)}<span className={styles.versus} aria-hidden="true">vs</span></div>
@@ -140,6 +140,6 @@ export function MatchDetail({ recording, onClose }: { recording: MatchDetails; o
 export function RecordedDeck({ deck, catalog }: { deck: Deck; catalog: MatchDetails['catalog'] }) {
   return <div className={styles.deck}><h3>{deck.name}</h3>{[['プレイアブル', [deck.playable]], ['幼女', deck.yojo], ['お菓子', deck.sweet]].map(([label, ids]) => <section key={label as string}>
     <h4>{label} <small>{(ids as string[]).length}枚</small></h4><div className={styles.deckCards}>{countCards(ids as string[]).map(([id, count]) => <div key={id}>
-      <div className={styles.deckCard}><RecordedCard id={id} catalog={catalog} sizes="(max-width: 600px) 85px, 120px" /><b>×{count}</b></div><small>{catalog[id]?.name ?? id}</small>
+      <div className={styles.deckCard}><CardArtwork id={id} catalog={catalog} sizes="(max-width: 600px) 85px, 120px" /><b>×{count}</b></div><small>{catalog[id]?.name ?? id}</small>
     </div>)}</div></section>)}</div>;
 }

@@ -1,6 +1,6 @@
 import { Suspense } from 'react';
 import type { Metadata } from 'next';
-import { OpenInRoom } from '@/components/game/plaza/OpenInRoom';
+import { OpenInRoom } from '@/components/game/launchpad/OpenInRoom';
 import { profileOgVersion, readOgProfile } from '@/lib/ogProfileImage';
 
 export async function generateMetadata({ searchParams }: { searchParams: Promise<{ id?: string | string[] }> }): Promise<Metadata> {

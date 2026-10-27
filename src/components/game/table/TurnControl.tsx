@@ -4,7 +4,7 @@ import { availablePpMaximum, other } from '@pplale/game-core';
 import type { Side } from '@pplale/game-core';
 import { useBoardContext } from '../board/BoardContext';
 import { PpPanel } from '../BoardPieces';
-import { RoundActionButton } from '../ornament/RoundActionButton';
+import { RoundActionButton } from '@/components/shared/ui/ornament/RoundActionButton';
 import actionStyles from './TurnControl.module.css';
 import { TurnClock } from './TurnClock';
 import styles from '../BoardEmulator.module.css';

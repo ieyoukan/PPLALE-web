@@ -3,8 +3,8 @@
 import { useEffect, useRef, useState } from 'react';
 import { useAuth } from '@/lib/auth';
 import { defaultProfile, readProfile, saveProfile } from '@/lib/game/social';
-import { RecordedCard } from '../history/RecordedCard';
-import { Icon } from './Icon';
+import { CardArtwork } from '@/components/shared/card/CardArtwork';
+import { GameIcon } from '@/components/shared/ui/GameIcon';
 import { ProfileIconPicker } from './ProfileIconPicker';
 import { useOwnProfileOpen } from './ownProfile';
 import styles from './ProfileOnboarding.module.css';
@@ -60,12 +60,12 @@ function SetupDialog({ uid, failed, onRetry, onComplete, onSignOut }: { uid: str
     {failed ? <button className={styles.primary} onClick={onRetry}>もう一度読み込む</button> : <form onSubmit={event => { event.preventDefault(); void save(); }}>
       <fieldset disabled={busy}>
         <button type="button" className={styles.avatar} onClick={() => setChoosing(value => !value)} aria-label="カードのアイコンを選ぶ" aria-expanded={choosing}>
-          <RecordedCard id={profile.iconCardId} sizes="100px" eager /><span><Icon name="pen" />変更</span>
+          <CardArtwork id={profile.iconCardId} sizes="100px" eager /><span><GameIcon name="pen" />変更</span>
         </button>
         <label>なまえ<input ref={nameInput} required maxLength={12} autoComplete="nickname" placeholder="ニックネーム" value={profile.displayName} onChange={event => setProfile({ ...profile, displayName: event.target.value })} /></label>
         <label>ひとこと<input maxLength={80} value={profile.comment} placeholder="よろしくお願いします！" onChange={event => setProfile({ ...profile, comment: event.target.value })} /></label>
         {choosing && <ProfileIconPicker selected={profile.iconCardId} onSelect={iconCardId => { setProfile({ ...profile, iconCardId }); setChoosing(false); }} />}
-        <button className={styles.primary} disabled={busy || !profile.displayName.trim()} data-ui-title><Icon name="check" />{busy ? '保存中…' : '保存してはじめる'}</button>
+        <button className={styles.primary} disabled={busy || !profile.displayName.trim()} data-ui-title><GameIcon name="check" />{busy ? '保存中…' : '保存してはじめる'}</button>
       </fieldset>
     </form>}
     {error && <p role="alert">{error}</p>}

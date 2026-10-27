@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useRef, useEffect } from 'react';
+import { useRef, useEffect } from 'react';
 import { useSettings } from '@/app/SettingsProvider';
 import { useDarkMode } from '@/app/DarkModeProvider';
 import { usePathname } from 'next/navigation';

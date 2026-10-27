@@ -5,7 +5,7 @@ import { other } from '@pplale/game-core';
 import { useBoardContext } from '../board/BoardContext';
 import styles from '../BoardEmulator.module.css';
 import { NotificationSoundToggle } from '../notifications/GameNotifications';
-import { useLaunchpad } from '../plaza/Launchpad';
+import { useLaunchpad } from '@/components/game/launchpad/LaunchpadContext';
 
 /** In-match actions only. Choosing the mode, levels and decks belongs to the preparation page. */
 export function MenuPanel() {

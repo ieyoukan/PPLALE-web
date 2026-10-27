@@ -68,7 +68,6 @@
   .matchDeckInfo strong { font-size: 13px; }
   .matchDeckPreview { gap: 7px; padding: 8px; }
 }
-.watch { --tone: var(--brand-vanilla); }
 .enter { --tone: var(--brand-pink); }
 .create { --tone: var(--brand-peach); }
 /* The picture: the door's colour as a sky, lighter towards the floor. */
@@ -116,19 +115,7 @@
 .field input[type=text], .field select { width: 100%; min-height: 50px; padding: 10px 14px; border: 2px solid #d8cbbd; border-radius: 14px; background: #fffdf7; color: inherit; font-size: 18px; font-weight: 400; }
 .field select { color-scheme: light; }
 .field option { background: #fffdf7; color: #6b4a3a; }
-.turnLimit { display: grid; gap: 8px; color: var(--brand-cocoa-deep); font-weight: 700; }
-.turnLimit select { width: 100%; min-height: 48px; padding: 10px 14px; border: 2px solid var(--brand-pink-edge); border-radius: 14px; background: var(--brand-paper); color: inherit; font: inherit; color-scheme: light; }
-.turnLimit small { font-size: 13px; font-weight: 400; line-height: 1.7; }
 .idInput { max-width: 12em; font: 700 30px/1 ui-monospace, Menlo, monospace !important; letter-spacing: .28em; text-align: center; }
-
-.checks { display: grid; gap: 10px; padding: 14px; border: 2px solid #eadfce; border-radius: 16px; }
-.checks legend { padding: 0 8px; font-size: 16px; font-weight: 700; }
-.checkRow { display: flex; flex-wrap: wrap; gap: 10px; }
-.check { display: flex; align-items: center; gap: 10px; min-height: 48px; padding: 8px 16px 8px 12px; border: 2px solid #d8cbbd; border-radius: 999px; background: #fffdf7; font-size: 18px; cursor: pointer; }
-.check input { width: 22px; height: 22px; accent-color: #7da552; }
-.check:has(input:checked) { border-color: #7da552; background: #eef6e2; }
-.check:has(input:disabled) { color: #b3a596; background: #f4efe7; cursor: default; }
-.check small { font-size: 13px; }
 
 .primary, .secondary, .danger { min-height: 52px; padding: 12px 22px; border-radius: 999px; font-size: 18px; font-weight: 700; cursor: pointer; transition: transform .15s; }
 .primary { border: 2px solid #7da552; background: #b3d788; color: #37532e; }
@@ -148,7 +135,6 @@
 .server summary { cursor: pointer; }
 .server small { margin-left: 12px; color: #9a8676; font-size: 14px; }
 .dot { display: inline-block; width: 10px; height: 10px; margin-right: 8px; border-radius: 50%; background: #c9bcad; }
-.serverUp .dot { background: #6fae3c; box-shadow: none; }
 .serverDown { border-color: #e2b3ab; background: #fbe5dc; color: #a4483b; }
 .serverDown .dot { background: #d2604f; }
 .server dl { display: grid; gap: 6px; margin-top: 10px; padding-top: 10px; border-top: 1px solid #eadfce; font-size: 15px; }

@@ -5,7 +5,7 @@ import type { FormEvent } from 'react';
 import { MAX_ROOM_NAME_LENGTH } from '@pplale/game-core/room';
 import type { RoomView } from '@pplale/game-core/room';
 import { RulesSheet } from './PlazaSheets';
-import { PlazaIcon } from './PlazaIcon';
+import { GameIcon } from '@/components/shared/ui/GameIcon';
 import { usePlaza } from './PlazaProvider';
 import { RoomThumbnailImage } from './RoomThumbnailImage';
 import { ShareSheet } from './ShareSheet';
@@ -33,7 +33,7 @@ export function RoomNameSheet({ view, onClose }: { view: RoomView; onClose: () =
       <small>{Array.from(name).length} / {MAX_ROOM_NAME_LENGTH}</small>
       {error && <p className={styles.error} role="alert">{error}</p>}
       <button type="submit" className={styles.primary} disabled={busy || !name.trim() || name.trim() === view.plaza!.name}>
-        <PlazaIcon name="check" />{busy ? '保存中…' : 'この名前にする'}
+        <GameIcon name="check" />{busy ? '保存中…' : 'この名前にする'}
       </button>
     </form>
   </Sheet>;
@@ -55,15 +55,15 @@ export function RoomCreatedSheet({ view, onClose }: { view: RoomView; onClose: (
       <RoomThumbnailImage rules={room.nextRules ?? view.rules} alt="ルームのサムネイル" className={styles.thumbnail} sizes="(max-width: 700px) 90vw, 560px" priority />
       <div className={styles.identity}>
         <b data-ui-title>{room.name}</b><span>#{view.id}</span>
-        <small><PlazaIcon name={info.icon} />{info.label}</small>
+        <small><GameIcon name={info.icon} />{info.label}</small>
       </div>
       <div className={styles.actions}>
-        <button onClick={() => setPanel('name')}><PlazaIcon name="pen" />名前を変える</button>
-        <button onClick={() => setPanel('rules')}><PlazaIcon name="star" />ルールを変える</button>
-        <button onClick={() => setPanel('share')}><PlazaIcon name="link" />共有リンク</button>
+        <button onClick={() => setPanel('name')}><GameIcon name="pen" />名前を変える</button>
+        <button onClick={() => setPanel('rules')}><GameIcon name="star" />ルールを変える</button>
+        <button onClick={() => setPanel('share')}><GameIcon name="link" />共有リンク</button>
       </div>
       {error && <p className={styles.error} role="alert">{error}</p>}
-      <button className={styles.primary} onClick={onClose}><PlazaIcon name="door" />盤面へ</button>
+      <button className={styles.primary} onClick={onClose}><GameIcon name="door" />盤面へ</button>
     </div>
   </Sheet>;
 }

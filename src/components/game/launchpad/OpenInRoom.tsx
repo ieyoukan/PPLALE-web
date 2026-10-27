@@ -5,7 +5,7 @@
 import { useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { useLaunchpad } from './LaunchpadContext';
-import { plazaHref, usePlaza } from './PlazaProvider';
+import { plazaHref, usePlaza } from '@/components/game/plaza/PlazaProvider';
 import { placeOf } from './places';
 import type { Section } from './places';
 
