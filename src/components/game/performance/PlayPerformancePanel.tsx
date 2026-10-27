@@ -1,7 +1,6 @@
 'use client';
 
 import { useEffect, useState, useSyncExternalStore } from 'react';
-import Link from 'next/link';
 import { playKinds, summarizeByKind, summarizePlays } from '@pplale/game-core/performance';
 import type { ClientTiming, Percentiles, PlayPerformance, PlaySummary, ServerTiming } from '@pplale/game-core/performance';
 import { clearPlaySamples, performanceLog } from '@/lib/game/room/performanceLog';
@@ -42,7 +41,7 @@ export function PlayPerformancePanel() {
     const link=document.createElement('a');link.href=url;link.download='pplale-play-performance.json';link.click();setTimeout(()=>URL.revokeObjectURL(url),1000);
   };
   return <div className={styles.panel}>
-    <div className={styles.actions}><Link href="/game/battle/">バトルへ戻る</Link><button aria-pressed={tab==='local'} onClick={()=>setTab('local')}>この端末</button><button aria-pressed={tab==='shared'} onClick={()=>setTab('shared')}>全体</button></div>
+    <div className={styles.actions} role="group" aria-label="集計の範囲"><button aria-pressed={tab==='local'} onClick={()=>setTab('local')}>この端末</button><button aria-pressed={tab==='shared'} onClick={()=>setTab('shared')}>全体</button></div>
     <p>ルームで受け付けた操作から、応答・盤面表示までを自動計測します。p95は95%の操作が収まる時間です。</p>
     {tab==='local' ? <>
       <Summary summary={summarizePlays(samples)} byKind={summarizeByKind(samples)} />

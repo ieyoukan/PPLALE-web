@@ -11,7 +11,7 @@
 'use client';
 
 import React from 'react';
-import Card from '@/components/card/Card';
+import Card from '@/components/shared/card/Card';
 import { CardInfo } from '@/types/card';
 import { css } from 'styled-system/css';
 import { button } from 'styled-system/recipes';

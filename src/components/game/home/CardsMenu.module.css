@@ -1,8 +1,14 @@
-.tiles { display: grid; gap: clamp(12px, 2cqw, 20px); }
-.tile { display: grid; gap: 6px; padding: clamp(18px, 3cqw, 34px) clamp(18px, 3cqw, 30px); border: 3px solid #e7c3e2; border-radius: 20px; background: linear-gradient(90deg, #e7c3e2 0 14px, #fff 14px); color: #6b4a3a; box-shadow: 0 5px 0 #a8866755; transition: transform .2s, box-shadow .2s; }
-.tile:nth-child(2) { border-color: #b3d788; background: linear-gradient(90deg, #b3d788 0 14px, #fff 14px); }
-.tile b { font-size: clamp(24px, 3.4cqw, 36px); letter-spacing: .2em; }
-.tile span { font-size: 16px; }
-.soon { border-color: #d8cbbd; background: linear-gradient(90deg, #d8cbbd 0 14px, #f7f2ea 14px); color: #9a8676; }
-.tile:not(.soon):hover { transform: translateY(-3px); box-shadow: 0 8px 0 #a8866755; }
+/* Two doors, each a card in the ornament frame (large buttons are card style). */
+.tiles { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px; }
+.tile {
+  --pad: 26px 24px 24px; display: grid; justify-items: center; align-content: center; gap: 8px; min-height: 190px;
+  color: var(--brand-cocoa-deep); text-align: center; text-decoration: none; transition: transform .14s ease;
+}
+.tile[data-tone=gallery] { --frame-face: var(--brand-blush); }
+.tile[data-tone=build] { --frame-face: var(--brand-sage-wash); }
+.tile > svg { width: 40px; height: 40px; color: var(--brand-cocoa); }
+.tile b { font-size: 28px; color: var(--brand-cocoa); }
+.tile span { font-size: 14px; color: var(--brand-cocoa-soft); }
+.tile:focus-visible { outline: 3px solid var(--brand-cocoa); outline-offset: 3px; }
+@container stage (max-width: 600px) { .tiles { grid-template-columns: 1fr; } .tile { min-height: 120px; } }
 @media (prefers-reduced-motion: reduce) { .tile { transition: none; } }

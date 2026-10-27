@@ -1,0 +1,51 @@
+/* The launch screen: cream and blush of the logo, one card floating in the middle, a few stars. */
+.launch {
+  position: absolute; inset: 0; z-index: 40; display: grid; grid-template-rows: auto 1fr auto; justify-items: center; align-items: center;
+  padding: 34px 48px 30px; overflow: hidden; color: var(--brand-cocoa-deep);
+  background: radial-gradient(ellipse at 50% 58%, var(--brand-paper) 0 22%, transparent 62%), radial-gradient(circle at 12% 14%, var(--brand-vanilla-wash), transparent 40%),
+    radial-gradient(circle at 88% 82%, var(--brand-peach-wash), transparent 42%), linear-gradient(160deg, var(--brand-blush), var(--brand-cream) 55%, var(--brand-sage-wash));
+}
+.logo { width: 300px; height: auto; filter: none; animation: bob 4.2s ease-in-out infinite; }
+.roomPreview { --pad: 12px; position: absolute; top: 38px; right: 48px; z-index: 1; display: grid; gap: 4px; width: 200px; filter: none; }
+.roomPreview img { display: block; width: 100%; height: auto; aspect-ratio: 16 / 9; object-fit: cover; }
+.roomPreview span { overflow: hidden; padding: 0 3px; color: var(--brand-cocoa-deep); font-size: 13px; font-weight: 700; text-overflow: ellipsis; white-space: nowrap; }
+.feature { display: flex; align-items: center; gap: 44px; opacity: 0; transform: translateY(10px); transition: opacity .5s ease, transform .5s ease; }
+.feature[data-shown] { opacity: 1; transform: none; }
+.cardArt {
+  /* The card as printed: no ring, no rounding, upright; it floats up and down (docs/design-system.md). */
+  position: relative; width: 236px; aspect-ratio: 2 / 3; overflow: hidden; filter: none; animation: float 5s ease-in-out infinite;
+}
+.cardArt img { object-fit: contain; }
+.cardText { --pad: 30px 34px; display: grid; gap: 10px; width: 420px; filter: none; }
+.cardText h2 { font-size: 30px; line-height: 1.2; color: var(--brand-cocoa); }
+.cardText p { font-size: 17px; line-height: 1.65; }
+.chips { display: flex; gap: 6px; }
+.chips b { padding: 3px 12px; border-radius: 999px; background: var(--brand-blush); font-size: 13px; }
+.chips b + b { background: var(--brand-sage-wash); }
+.status { display: flex; align-items: center; gap: 12px; font-size: 16px; color: var(--brand-cocoa-soft); }
+.dots { display: flex; gap: 6px; }
+.dots i { width: 9px; height: 9px; border-radius: 50%; background: var(--brand-pink-edge); animation: hop 1.2s ease-in-out infinite; }
+.dots i:nth-child(2) { animation-delay: .15s; background: var(--brand-vanilla); }
+.dots i:nth-child(3) { animation-delay: .3s; background: var(--brand-sage); }
+.trouble { --pad: 22px 36px; display: grid; justify-items: center; gap: 12px; text-align: center; filter: none; }
+.stars { position: absolute; inset: 0; pointer-events: none; }
+.stars i {
+  position: absolute; width: 18px; aspect-ratio: 1;
+  background: var(--brand-vanilla); clip-path: polygon(50% 0, 61% 39%, 100% 50%, 61% 61%, 50% 100%, 39% 61%, 0 50%, 39% 39%);
+  opacity: 0; animation: twinkle 3.2s ease-in-out infinite;
+}
+.stars i:nth-child(3n) { width: 12px; background: var(--brand-peach); }
+.stars i:nth-child(4n) { width: 24px; background: var(--brand-paper); }
+@keyframes bob { 50% { transform: translateY(-6px); } }
+@keyframes float { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-10px); } }
+@keyframes hop { 0%, 60%, 100% { transform: none; } 30% { transform: translateY(-7px); } }
+/* Stars come near and go far (no turning). */
+@keyframes twinkle { 0%, 100% { opacity: 0; transform: scale(.4); } 50% { opacity: .9; transform: scale(1); } }
+@media (prefers-reduced-motion: reduce) {
+  .logo, .cardArt, .dots i, .stars i { animation: none; }
+  .stars i { opacity: .55; }
+}
+.troubleText { display: grid; gap: 4px; font-size: 20px; font-weight: 700; color: var(--brand-cocoa); }
+.troubleText small { font-size: 13px; font-weight: 500; color: var(--brand-cocoa-soft); }
+.troubleActions { display: flex; flex-wrap: wrap; justify-content: center; gap: 12px; }
+@media (max-width: 700px) { .launch { padding: 22px 18px; } .logo { width: 210px; } .roomPreview { top: 18px; right: 16px; width: 112px; } .feature { gap: 14px; } .cardArt { width: 120px; } .cardText { --pad: 18px 20px; width: min(55vw, 300px); } .cardText h2 { font-size: 19px; } .cardText p { font-size: 13px; } }

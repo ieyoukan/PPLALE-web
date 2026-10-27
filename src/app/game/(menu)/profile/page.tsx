@@ -1,6 +1,6 @@
 import { Suspense } from 'react';
 import type { Metadata } from 'next';
-import { ProfilePage } from '@/components/game/social/ProfilePage';
+import { OpenInRoom } from '@/components/game/plaza/OpenInRoom';
 import { profileOgVersion, readOgProfile } from '@/lib/ogProfileImage';
 
 export async function generateMetadata({ searchParams }: { searchParams: Promise<{ id?: string | string[] }> }): Promise<Metadata> {
@@ -19,4 +19,5 @@ export async function generateMetadata({ searchParams }: { searchParams: Promise
   };
 }
 
-export default function Page() { return <Suspense><ProfilePage /></Suspense>; }
+/** A shared profile keeps its preview (above); opened, it shows in the launchpad over the room. */
+export default function Page() { return <Suspense><OpenInRoom section="profile" /></Suspense>; }

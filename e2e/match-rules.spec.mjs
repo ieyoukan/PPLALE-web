@@ -11,7 +11,7 @@ const savedSetup = page => page.evaluate(() => JSON.parse(localStorage.getItem('
 test('the rule tiles decide which decks can be chosen, and the match keeps the rules', async ({ page }) => {
   const errors = [];
   page.on('pageerror', error => errors.push(error.message));
-  await page.goto(url);
+  await page.goto(new URL('cpu/', url).href);
   const tile = fruit => page.getByRole('checkbox', { name: new RegExp(fruitNames[fruit]) });
   const beta = page.getByRole('checkbox', { name: /拡張プレイアブル/ });
 
@@ -48,7 +48,7 @@ test('the rule tiles decide which decks can be chosen, and the match keeps the r
   }
 
   // The next match is prepared from the same rules.
-  await page.goto(url);
+  await page.goto(new URL('cpu/', url).href);
   await expect(tile('grape')).toBeChecked();
   await expect(tile('melon')).not.toBeChecked();
   expect(errors).toEqual([]);

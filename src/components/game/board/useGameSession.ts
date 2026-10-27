@@ -51,6 +51,8 @@ export interface RemoteSession {
   watching: boolean;
   /** A finished match played back from its recording (the 対戦履歴), not a room in progress. */
   recorded?: boolean;
+  /** At a plaza's table: everyone in the room is still there after the match; `menu` opens the room's menu. */
+  plaza?: { menu: () => void };
   names: [string, string];
   /** A command is on its way, or a change has not been shown yet: nothing new may be sent. */
   waiting: boolean;

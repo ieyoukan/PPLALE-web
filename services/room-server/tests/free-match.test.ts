@@ -27,7 +27,7 @@ test('free match pairs across instances, starts chosen decks and keeps hands pri
     const view = await socket.until(view => view.status === 'playing');
     assert.equal(view.mode, 'free');
     assert.deepEqual(view.rules, freeMatchRules);
-    assert.equal(view.players[0].name, alice.name);
+    assert.equal(view.players[0]!.name, alice.name);
     assert.equal(view.players[1]!.name, bob.name);
     assert.ok(view.game!.players[1].yojo.every(uid => view.game!.cards[uid].cardId === HIDDEN_CARD));
     assert.equal(await socket.act({ action: 'rematch' }), 'フリーマッチでは次の対戦相手を探してください');
@@ -118,5 +118,5 @@ test('free match disconnect is forfeited after one minute and the opponent is to
     const view = await socket.until(view => view.status === 'finished');
     assert.equal(view.resigned, 0);
     assert.equal(view.game!.winner, 1);
-    assert.equal(view.players[0].left, true);
+    assert.equal(view.players[0]!.left, true);
 });

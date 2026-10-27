@@ -10,8 +10,8 @@ for (const viewport of [{ width: 1280, height: 860 }, { width: 390, height: 844 
       initial.queue = [{ op: 'die', actor: 0 }];
       const game = run(initial, { type: 'adjust', actor: 0, resource: 'pp', delta: 0 }, true);
       game.pending.options.unshift({ id: 'roll', label: '使わずに振る' });
-      await page.goto('/game/');
-      await page.getByRole('navigation', { name: 'ゲームメニュー' }).waitFor();
+      // Any page of the site keeps the saved match: a plain file, so no room is made on the way.
+      await page.goto('/robots.txt');
       await page.evaluate(game => {
         localStorage.setItem('pplale-show-assessment', 'hidden');
         localStorage.setItem('pplale-game-session-v2', JSON.stringify({ game, mode: 'cpu', level: 'easy' }));

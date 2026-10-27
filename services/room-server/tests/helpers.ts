@@ -91,7 +91,7 @@ export async function seatedRoom(served: Served, other: Served = served, spectat
     const { id } = host.view;
     const guest = (await served.call<Seated>(`/rooms/${id}/join`, { name: 'げすと' })).data;
     const sockets: [Client, Client] = [await connect(served, id, host.token), await connect(other, id, guest.token)];
-    await Promise.all(sockets.map(socket => socket.until(view => !!view.players[1]?.online && view.players[0].online)));
+    await Promise.all(sockets.map(socket => socket.until(view => !!view.players[1]?.online && view.players[0]!.online)));
     return { id, host, guest, sockets };
 }
 

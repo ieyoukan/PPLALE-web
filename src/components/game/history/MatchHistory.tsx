@@ -2,7 +2,6 @@
 
 import { useCallback, useEffect, useRef, useState } from 'react';
 import Link from 'next/link';
-import Image from 'next/image';
 import { useRouter } from 'next/navigation';
 import type { HistoryEntry, HistoryPage, MatchDetails } from '@pplale/game-core/history';
 import type { Deck } from '@pplale/game-core';
@@ -29,7 +28,7 @@ export function MatchHistory() {
   const { user, loading } = useAuth();
   // Identity owns the entire subtree, including open dialogs and pending requests.
   // React discards it in the same render that receives the auth change.
-  if (loading) return <section className={styles.history} role="status">認証を確認しています…</section>;
+  if (loading) return <section className={styles.album} role="status">認証を確認しています…</section>;
   return <IdentityHistory key={user?.uid ?? 'guest'} />;
 }
 
@@ -79,12 +78,8 @@ function IdentityHistory() {
     finally { setBusy(null); }
   }
 
-  return <section className={styles.history} aria-label="対戦履歴">
-    <header className={`${styles.heading} ${styles.memoryHeading}`}>
-      <div className={styles.headingTitle}><span className={styles.memoryIcon}><MemoryIcon /></span><div><small>BATTLE MEMORIES</small><h2>対戦履歴</h2></div></div>
-      <Image className={styles.headingArt} src="/images/game/characters/friends.webp" alt="" width={144} height={121} />
-      <Link href={BATTLE_PATH} aria-label="対戦履歴を閉じる">×</Link>
-    </header>
+  // In the launchpad, whose heading (対戦履歴) and back button stand above it.
+  return <section className={styles.album} aria-label="対戦履歴">
     <div className={styles.tabs} role="tablist" aria-label="履歴の種類">
       <button id="history-all" role="tab" aria-selected={!favorites} aria-controls="history-list" onClick={() => setFavorites(false)}><span aria-hidden="true">◷</span> 一覧</button>
       <button id="history-favorites" role="tab" aria-label="★ お気に入り" aria-selected={favorites} aria-controls="history-list" onClick={() => setFavorites(true)}><StarIcon /> お気に入り</button>
@@ -116,10 +111,9 @@ function IdentityHistory() {
         })}
     </div>
     {page.cursor && <button className={styles.more} disabled={loading} onClick={() => void refresh(page.cursor!)}>{loading ? '読み込み中…' : 'もっと見る'}</button>}
-    <footer className={styles.footer}>
-      {!authLoading && !user && <button onClick={() => void signInWithGoogle().catch(() => setError('ログインできませんでした'))}>ログインして、この端末の履歴を引き継ぐ</button>}
-      <Link href={BATTLE_PATH}><span aria-hidden="true">‹</span> バトルへ戻る</Link>
-    </footer>
+    {!authLoading && !user && <footer className={styles.footer}>
+      <button onClick={() => void signInWithGoogle().catch(() => setError('ログインできませんでした'))}>ログインして、この端末の履歴を引き継ぐ</button>
+    </footer>}
     {detail && <MatchDetail recording={detail} onClose={() => setDetail(null)} />}
   </section>;
 }

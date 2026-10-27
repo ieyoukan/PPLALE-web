@@ -5,7 +5,7 @@ test('game menu loads small font subsets without fetching match assets', async (
   const assets = [], fonts = new Map();
   page.on('request', request => { if (request.url().includes('/game-assets/cards/')) assets.push(request.url()); });
   page.on('response', response => { if (response.url().includes('/fonts/generated/')) fonts.set(response.url(), response); });
-  await page.goto('/game/');
+  await page.goto('/game/cpu/');
   await expect(page.getByRole('button', { name: /対戦をはじめる/ })).toBeEnabled();
   await page.evaluate(() => document.fonts.ready);
   await page.waitForLoadState('networkidle');
@@ -21,11 +21,11 @@ test('CPU start waits for card downloads before saving or entering a match', asy
   const held = new Promise(resolve => { release = resolve; });
   let requested = 0;
   await page.route('**/game-assets/cards/**', async route => { requested++; await held; await route.continue(); });
-  await page.goto('/game/');
+  await page.goto('/game/cpu/');
   await page.getByRole('button', { name: /対戦をはじめる/ }).click();
   await expect.poll(() => requested).toBeGreaterThan(0);
   await expect(page.getByRole('progressbar', { name: '対戦データの準備' })).toBeVisible();
-  expect(new URL(page.url()).pathname).toBe('/game/');
+  expect(new URL(page.url()).pathname).toBe('/game/cpu/');
   expect(await page.evaluate(() => localStorage.getItem('pplale-game-session-v2'))).toBeNull();
   release();
   await expect(page).toHaveURL(/\/game\/play\//);
@@ -34,10 +34,10 @@ test('CPU start waits for card downloads before saving or entering a match', asy
 
 test('a failed download keeps the menu usable and can be retried', async ({ page }) => {
   await page.route('**/game-assets/cards/**', route => route.abort());
-  await page.goto('/game/');
+  await page.goto('/game/cpu/');
   await page.getByRole('button', { name: /対戦をはじめる/ }).click();
   await expect(page.getByRole('alert').filter({ hasText: '画像を準備できませんでした' })).toBeVisible();
-  expect(new URL(page.url()).pathname).toBe('/game/');
+  expect(new URL(page.url()).pathname).toBe('/game/cpu/');
   await page.unroute('**/game-assets/cards/**');
   await page.getByRole('button', { name: /対戦をはじめる/ }).click();
   await expect(page).toHaveURL(/\/game\/play\//);
@@ -47,7 +47,7 @@ test('restored play prepares first and reuses images when showing a card', async
   const errors = [];
   page.on('pageerror', error => errors.push(error.message));
   const game = arena({ me: { hand: ['y_9'] } });
-  await page.goto('/game/');
+  await page.goto('/game/cpu/');
   await page.evaluate(game => localStorage.setItem('pplale-game-session-v2', JSON.stringify({ game, mode:'hotseat', levels:['normal','normal'] })), game);
   await page.goto('/game/play/');
   await expect(page.locator('[data-table]')).toBeVisible();

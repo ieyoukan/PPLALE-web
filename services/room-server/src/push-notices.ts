@@ -3,8 +3,9 @@ import type { Side } from '@pplale/game-core';
 import type { Notice } from './push.ts';
 import type { Room } from './rooms.ts';
 
-const lobby = (id: string) => `/game/battle/room/?id=${id}`;
-const board = (id: string) => `/game/room/?id=${id}`;
+// Waiting, watching and playing are one page of the room.
+const lobby = (id: string) => `/game/room/${id}/`;
+const board = lobby;
 
 /** Who has to do something now in a room's match (the turn's player, or whoever must answer a choice), or null. */
 export function decider(room: Room): Side | null {
@@ -32,6 +33,18 @@ export const notices = {
     },
     friendAccepted(name: string): Notice {
         return { title: 'フレンドになったよ', body: `${name}が申請を承認したよ`, url: '/game/social/', tag: 'friend-accepted' };
+    },
+    /** Someone let the player into their room by name (an invitation, or the answer to asking). */
+    invited(name: string, roomId: string): Notice {
+        return { title: `${name}が招待してくれたよ`, body: 'タップしてルームへ行こう', url: lobby(roomId), tag: `invite-${roomId}` };
+    },
+    /** A friend of someone in the room asks to be let in. */
+    asked(name: string, roomId: string): Notice {
+        return { title: `${name}が入りたいって`, body: '盤面で招待するか選んでね', url: lobby(roomId), tag: `ask-${roomId}` };
+    },
+    /** Someone came to a room where the player was waiting alone. */
+    arrived(name: string, roomId: string): Notice {
+        return { title: `${name}が来たよ`, body: 'ルームで遊ぼう', url: lobby(roomId), tag: `room-${roomId}` };
     },
     recruit(name: string, roomId: string): Notice {
         return { title: `${name}がルームで待ってるよ`, body: 'タップして参加しよう', url: lobby(roomId), tag: `recruit-${roomId}` };

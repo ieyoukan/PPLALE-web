@@ -5,11 +5,12 @@ import { catalog as roomCatalog } from './catalog.ts';
 import { createHash, randomBytes, randomInt, randomUUID, timingSafeEqual } from 'node:crypto';
 import { z } from 'zod';
 import { applyCommand, decideMatch, newGame, other, sandboxRules, viewFor } from '@pplale/game-core';
-import type { Catalog, Deck, GameState, Side } from '@pplale/game-core';
+import type { Catalog, CpuLevel, Deck, GameState, Side } from '@pplale/game-core';
 import { MAX_NAME_LENGTH, parseRoomRules, roomDeckErrors } from '@pplale/game-core/room';
 import type { MatchEnd } from '@pplale/game-core/history';
 import type { LastCommand, RoomCommand, RoomInfo, RoomRules, RoomStatus, RoomTurnClock, RoomView } from '@pplale/game-core/room';
 import { syncTurnClock, turnTimeoutCommand } from './turn-clock.ts';
+import type { Plaza } from './plaza.ts';
 
 export interface Seat {
     /** Public profile id, populated only from verified authentication. */
@@ -23,6 +24,10 @@ export interface Seat {
     ready: boolean;
     /** Went away during or after a match; cleared by anything the seat does later. */
     left?: boolean;
+    /** In a plaza: the member sitting here (their token is the member's, so `tokenHash` is empty). */
+    member?: string;
+    /** The server plays this seat with the engine's CPU. */
+    cpu?: CpuLevel;
 }
 export interface Room {
     turnClock?: RoomTurnClock;
@@ -33,7 +38,10 @@ export interface Room {
     status: RoomStatus;
     match: number;
     rules: RoomRules;
-    seats: [Seat, Seat | null];
+    /** A two-seat room always has its first seat; in a plaza either may be empty. */
+    seats: [Seat | null, Seat | null];
+    /** The room as a place people gather in (plaza.ts). */
+    plaza?: Plaza;
     state: GameState | null;
     last: LastCommand | null;
     resigned: Side | null;
@@ -50,10 +58,10 @@ export class RoomError extends Error {
     }
 }
 
-const side = z.union([z.literal(0), z.literal(1)]);
+export const side = z.union([z.literal(0), z.literal(1)]);
 const uid = z.string().max(16);
 // `actor` is replaced by the sender's seat, whatever was sent.
-const command = z.discriminatedUnion('type', [
+export const command = z.discriminatedUnion('type', [
     z.object({ type: z.literal('roll'), actor: side }),
     z.object({ type: z.literal('initiative'), actor: side, order: z.enum(['first', 'second']) }),
     z.object({ type: z.literal('openingDraw'), actor: side, deck: z.enum(['yojo', 'sweet']) }),
@@ -69,7 +77,7 @@ const command = z.discriminatedUnion('type', [
     z.object({ type: z.literal('acorn'), actor: side, mode: z.enum(['draw', 'pp']) }),
 ]);
 const cardIds = z.array(z.string().max(16)).max(40);
-const deck = z.object({ name: z.string().max(60), yojo: cardIds, sweet: cardIds, playable: z.string().max(16) });
+export const deck = z.object({ name: z.string().max(60), yojo: cardIds, sweet: cardIds, playable: z.string().max(16) });
 const action = z.discriminatedUnion('action', [
     z.object({ action: z.literal('ready'), deck }),
     z.object({ action: z.literal('unready') }),
@@ -79,10 +87,10 @@ const action = z.discriminatedUnion('action', [
     z.object({ action: z.literal('leave') }),
 ]);
 
-const hash = (token: string) => createHash('sha256').update(token).digest('hex');
+export const hash = (token: string) => createHash('sha256').update(token).digest('hex');
 /** A name as it is shown to the other player: short, one line, never empty. */
-function playerName(value: unknown, fallback: string) {
-    const name = typeof value === 'string' ? Array.from(value.replace(/\p{C}/gu, '').trim()).slice(0, MAX_NAME_LENGTH).join('') : '';
+export function playerName(value: unknown, fallback: string, length = MAX_NAME_LENGTH) {
+    const name = typeof value === 'string' ? Array.from(value.replace(/\p{C}/gu, '').trim()).slice(0, length).join('') : '';
     return name || fallback;
 }
 function newSeat(name: string): { seat: Seat; token: string } {
@@ -93,12 +101,13 @@ function newSeat(name: string): { seat: Seat; token: string } {
 /** The seat `token` belongs to, or null. */
 export function seatOf(room: Room, token: unknown): Side | null {
     const given = Buffer.from(hash(typeof token === 'string' ? token : ''));
-    const index = room.seats.findIndex(seat => seat && timingSafeEqual(Buffer.from(seat.tokenHash), given));
+    // Plaza seats have no token of their own (and a CPU none at all).
+    const index = room.seats.findIndex(seat => seat?.tokenHash.length === given.length && timingSafeEqual(Buffer.from(seat.tokenHash), given));
     return index < 0 ? null : index as Side;
 }
 
-/** Who is connected right now: each seat, and how many are watching. */
-export interface Present { online: [boolean, boolean]; watching: number }
+/** Who is connected right now: each seat, how many are watching, and (in a plaza) which members. */
+export interface Present { online: [boolean, boolean]; watching: number; members?: string[] }
 
 /** What `seat` is told about the room, or (`'spectator'`) what someone watching is. */
 export function seatView(room: Room, seat: Side | 'spectator', { online, watching }: Present): RoomView {
@@ -114,7 +123,7 @@ export function seatView(room: Room, seat: Side | 'spectator', { online, watchin
     };
 }
 export const roomInfo = (room: Room): RoomInfo =>
-    ({ id: room.id, status: room.status, rules: room.rules, host: room.seats[0].name, ...(room.seats[0].profileId && { hostProfileId: room.seats[0].profileId }), open: room.status === 'lobby' && !room.seats[1], spectators: !!room.rules.spectators });
+    ({ id: room.id, status: room.status, rules: room.rules, host: room.seats[0]!.name, ...(room.seats[0]!.profileId && { hostProfileId: room.seats[0]!.profileId }), open: room.status === 'lobby' && !room.seats[1], spectators: !!room.rules.spectators });
 
 /** A new room with its host seated. `body`: `{ rules, name }` as sent. */
 export function createRoom(id: string, body: unknown): { room: Room; token: string } {
@@ -135,7 +144,7 @@ export function joinRoom(room: Room, body: unknown): string {
 }
 
 /** Random order of the list: card uids follow it, so they must not tell which card is which. */
-function mixed(ids: string[]) {
+export function mixed(ids: string[]) {
     const result = [...ids];
     for (let i = result.length - 1; i > 0; i--) {
         const j = randomInt(i + 1);
@@ -143,7 +152,7 @@ function mixed(ids: string[]) {
     }
     return result;
 }
-function startMatch(room: Room, catalog: Catalog) {
+export function startMatch(room: Room, catalog: Catalog) {
     const decks = room.seats.map(seat => ({ ...seat!.deck!, name: seat!.name, yojo: mixed(seat!.deck!.yojo), sweet: mixed(seat!.deck!.sweet) })) as [Deck, Deck];
     room.state = newGame(decks, catalog, { ...sandboxRules }, randomInt(2 ** 32));
     room.status = 'playing';
@@ -151,7 +160,7 @@ function startMatch(room: Room, catalog: Catalog) {
     room.match++;
     room.resigned = null;
 }
-function giveUp(room: Room, seat: Side, reason: MatchEnd = 'resign') {
+export function giveUp(room: Room, seat: Side, reason: MatchEnd = 'resign') {
     if (room.record) room.record.reason = reason;
     const state = room.state!;
     decideMatch(state, other(seat), 'resign');
@@ -259,7 +268,7 @@ export function act(room: Room, seat: Side, body: unknown, catalog: Catalog, now
             if (room.mode === 'free') throw new RoomError(409, 'フリーマッチでは次の対戦相手を探してください');
             if (room.status !== 'finished') throw new RoomError(409, '対戦が終わってから選べます');
             // Back to choosing decks; the next match starts when both are ready again.
-            room.status = room.seats[0].left ? 'closed' : 'lobby';
+            room.status = room.seats[0]!.left ? 'closed' : 'lobby';
             room.state = null;
             room.resigned = null;
             // A guest who left gives the seat to whoever comes next.
@@ -286,7 +295,7 @@ export function act(room: Room, seat: Side, body: unknown, catalog: Catalog, now
     return outcome;
 }
 
-function applyMatchCommand(room: Room, sent: RoomCommand, catalog: Catalog, notice?: string): Outcome {
+export function applyMatchCommand(room: Room, sent: RoomCommand, catalog: Catalog, notice?: string): Outcome {
     const state = room.state!;
     const cardId = sent.type === 'play' || sent.type === 'reveal' ? state.cards[sent.uid]?.cardId : undefined;
     const input = notice ? { ...state, log: [...state.log, notice].slice(-100) } : state;

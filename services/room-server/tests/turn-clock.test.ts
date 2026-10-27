@@ -82,7 +82,7 @@ test('only the opponent’s choice freezes the clock; repeated updates and resto
 
 test('an actual リンネ hand reaction pauses, then resumes exactly the time left', () => {
     const { room } = fixture(120, { field: [{ id: 'y_49' }] }, { field: [{ id: 'y_8' }], hand: ['y_33'] });
-    const [attacker] = room.state!.players[0].field, [target] = room.state!.players[1].field;
+    const [attacker] = room.state!.players[0]!.field, [target] = room.state!.players[1].field;
     send(room, 0, { type: 'attack', uid: attacker, target }, 31_000);
     assert.equal(room.state!.pending!.task.op, 'attackResponses');
     assert.equal(room.state!.pending!.task.actor, 1);
@@ -102,7 +102,7 @@ test('timeout completes mandatory own choices, ends the turn and gives the next 
     assert.throws(() => send(room, 0, { type: 'choose', option: 'sweet' }, 301_000), /制限時間/);
     assert.equal(expireTurn(room, catalog, 301_000)?.command, true);
     assert.equal(room.last!.command.type, 'choose');
-    assert.equal(room.state!.players[0].hand.length, 1);
+    assert.equal(room.state!.players[0]!.hand.length, 1);
     assert.equal(room.turnClock!.deadline, 301_000);
     expireTurn(room, catalog, 301_001);
     assert.equal(room.last!.command.type, 'end');
@@ -119,8 +119,8 @@ test('timeout respects hand-limit exclusions and optional choice completion', ()
     const turn = room.state!.turn;
     let steps = 0;
     while (room.state!.turn === turn && steps++ < 10) assert.ok(expireTurn(room, catalog, 121_000 + steps));
-    assert.equal(room.state!.players[0].hand.length, 9);
-    assert.equal(room.state!.players[0].exile.length, 2);
+    assert.equal(room.state!.players[0]!.hand.length, 9);
+    assert.equal(room.state!.players[0]!.exile.length, 2);
     assert.equal(room.state!.turn, turn + 1);
     const { room: optional } = fixture();
     optional.state!.pending = { task: { op: 'cardEffect', actor: 0 }, prompt: '', options: [{ id: 'secret-card', label: '' }, { id: 'done', label: '' }] };
@@ -147,11 +147,11 @@ test('a zero-time turn can still pause for the opponent, then automatically fini
 
 test('timeout cannot decline the automatic die skill, including a legacy waiting choice', () => {
     const { room } = fixture();
-    room.state!.players[0].exSkills = { dice: { uses: 1 } };
+    room.state!.players[0]!.exSkills = { dice: { uses: 1 } };
     room.state!.pending = { task: { op: 'die', actor: 0 }, prompt: '', options: [{ id: 'roll', label: '使わずに振る' }, { id: '6', label: '6' }] };
     assert.deepEqual(turnTimeoutCommand(room, 121_000), { type: 'choose', actor: 0, option: '6' });
     assert.ok(expireTurn(room, catalog, 121_000));
-    assert.equal(room.state!.players[0].exSkills!.dice!.uses, 0);
+    assert.equal(room.state!.players[0]!.exSkills!.dice!.uses, 0);
     assert.equal(room.state!.effectRoll!.value, 6);
 });
 

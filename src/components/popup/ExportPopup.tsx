@@ -9,7 +9,7 @@
 
 import React, { useState } from 'react';
 import { CardInfo } from '@/types/card';
-import Card from '@/components/card/Card';
+import Card from '@/components/shared/card/Card';
 import DeckImagePreview from '@/components/deck/DeckImagePreview';
 import { css } from 'styled-system/css';
 import { useI18n } from '@/i18n/LocaleProvider';

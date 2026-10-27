@@ -1,14 +1,19 @@
-import { Suspense } from 'react';
-import type { Metadata } from 'next';
-import { RoomLobby } from '@/components/game/room/RoomLobby';
-// The page an invitation links to (`?id=`): what a chat app shows for the link comes from here.
-export const metadata: Metadata = {
-    title: 'ぷぷりえーる ルームマッチ',
-    description: 'ぷぷりえーるのルームマッチに招待されました。リンクを開いて対戦に参加しよう。',
-    alternates: { canonical: '/game/battle/' },
-    robots: { index: false, follow: true },
-};
+'use client';
+
+// Links from before rooms had their own address (`/game/room/?id=`): on to the room's page.
+import { Suspense, useEffect } from 'react';
+import { useRouter, useSearchParams } from 'next/navigation';
+import { isRoomId } from '@pplale/game-core/room';
+import { HOME_PATH, roomHref } from '@/lib/game/sessionStore';
+
+function Forward() {
+  const params = useSearchParams(), router = useRouter();
+  useEffect(() => {
+    const id = params.get('id');
+    router.replace(isRoomId(id) ? `${roomHref(id)}${params.get('watch') === '1' ? '?watch=1' : ''}` : HOME_PATH);
+  }, [params, router]);
+  return null;
+}
 export default function Page() {
-    // The room id is read from the query string in the browser.
-    return <Suspense><RoomLobby /></Suspense>;
+  return <Suspense><Forward /></Suspense>;
 }

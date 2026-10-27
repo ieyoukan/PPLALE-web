@@ -1,5 +1,12 @@
 /* The whole screen behind the stage: the same wood as the table, also under notches and home bars. */
 .screen {
+  /* Game panels use the brand's paper palette even when the surrounding site uses dark mode. */
+  --colors-background-color: var(--brand-cream);
+  --colors-card-background: var(--brand-paper);
+  --colors-text-color: var(--brand-cocoa-deep);
+  --colors-text-light: var(--brand-cocoa-soft);
+  --colors-hover-back-color: var(--brand-blush);
+  color-scheme: light;
   position: fixed; inset: 0; overflow: hidden; background: #503528;
   /* No pinch zoom, pull-to-refresh, text selection or long-press menu on the table; drawers still scroll. */
   touch-action: none; overscroll-behavior: none;
@@ -8,7 +15,7 @@
 .screen input, .screen textarea { user-select: text; -webkit-user-select: text; }
 /* Menu lists and forms retain native scrolling; board dragging keeps its existing touch handling. */
 .menu { touch-action: manipulation; }
-.screen:has([data-result-screen]) { touch-action: manipulation; }
+.screen:has([data-plaza-sheet]), .screen:has([data-launchpad]), .screen:has([data-room-window]), .screen:has([data-result-screen]) { touch-action: manipulation; }
 /* The part of the screen the stage may use (viewport-fit=cover lets the wood reach the edges). */
 .safe {
   position: absolute; pointer-events: none;

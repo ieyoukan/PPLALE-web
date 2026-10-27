@@ -9,7 +9,7 @@ import type { PlayReport } from '@pplale/game-core/performance';
 import type { FreeMatchActivity } from '@pplale/game-core/room';
 import type { HistoryPage, MatchDetails, MatchRecording } from '@pplale/game-core/history';
 import type { Deck } from '@pplale/game-core';
-import type { ClientMessage, FreeMatchStatus, RoomAction, RoomInfo, RoomRules, RoomServerStats, RoomView, SeatKey, Seated, ServerMessage } from '@pplale/game-core/room';
+import type { ClientMessage, Entered, FreeMatchStatus, PlazaRequest, RoomAction, RoomInfo, ProfileLocation, RoomRules, RoomServerStats, RoomView, SeatKey, Seated, ServerMessage } from '@pplale/game-core/room';
 
 export const roomServerUrl = (process.env.NEXT_PUBLIC_ROOM_SERVER_URL ?? '').replace(/\/+$/, '') || null;
 
@@ -19,14 +19,15 @@ export class RoomRequestError extends Error {
 }
 const UNREACHABLE = 'ルームサーバーにつながりません。少し待ってからお試しください';
 
-async function call<T>(path: string, body?: unknown): Promise<T> {
+/** `signed`: a GET that says who asks too (a plaza only tells those who may enter it). */
+async function call<T>(path: string, body?: unknown, signed = false): Promise<T> {
   if (!roomServerUrl) throw new RoomRequestError(0, 'ルームサーバーが設定されていません');
-  const headers = body !== undefined ? { 'content-type': 'application/json', ...await historyHeaders() } : undefined;
+  const headers = body !== undefined ? { 'content-type': 'application/json', ...await historyHeaders() } : signed ? await historyHeaders() : undefined;
   let response: Response;
   try {
     response = await fetch(roomServerUrl + path, {
       method: body === undefined ? 'GET' : 'POST', cache: 'no-store', signal: AbortSignal.timeout(path.startsWith('/history/') ? 60_000 : 8000),
-      ...(body !== undefined && { headers, body: JSON.stringify(body) }),
+      ...(headers && { headers }), ...(body !== undefined && { body: JSON.stringify(body) }),
     });
   } catch { throw new RoomRequestError(0, UNREACHABLE); }
   const data = await response.json().catch(() => null) as (T & { error?: string }) | null;
@@ -42,7 +43,23 @@ export const favoriteMatch = (id: string, value: boolean) => call<{ ok: true }>(
 
 export const createRoom = (rules: RoomRules, name: string) => call<Seated>('/rooms', { rules, name });
 export const joinRoom = (id: string, name: string) => call<Seated>(`/rooms/${id}/join`, { name });
-export const readRoomInfo = (id: string) => call<RoomInfo>(`/rooms/${id}`);
+export const readRoomInfo = (id: string, invite?: string | null) => call<RoomInfo>(`/rooms/${id}${invite ? `?${new URLSearchParams({ invite })}` : ''}`, undefined, true);
+
+// ── Plazas: rooms people gather in (services/room-server/src/plaza.ts) ──
+export const createPlaza = (rules: RoomRules, name: string, plaza: PlazaRequest) => call<Entered>('/rooms', { rules, name, plaza });
+/** `invite`: the secret of the link this browser came by. `rejoin`: a member secret of this room whose moment away ran out. */
+export const enterPlaza = (id: string, name: string, { invite, rejoin }: { invite?: string | null; rejoin?: string | null } = {}) =>
+  call<Entered>(`/rooms/${id}/join`, { name, plaza: true, ...(invite && { invite }), ...(rejoin && { rejoin }) });
+/** What this player may know of these rooms (only the ones they may enter). */
+export const lookupRooms = (ids: string[]) => call<{ rooms: RoomInfo[] }>('/rooms/lookup', { ids });
+/** Lets a friend into the room by name and tells them (signed in; `member`: this browser's member secret of the room). */
+export const inviteFriend = (id: string, member: string, to: string) => call<{ ok: true }>(`/rooms/${id}/invite`, { member, to });
+/** Rooms that let this signed-in player in by name. */
+export const readInvitations = () => call<{ rooms: RoomInfo[] }>('/rooms/invited', {});
+/** A connected friend's profile location; private rooms return only their visibility. */
+export const readProfileLocation = (to: string) => call<ProfileLocation>('/rooms/location', { to });
+/** Asks to be let into the invited room a friend is in (nothing tells whether there is one). */
+export const askToEnter = (to: string) => call<{ ok: true }>('/rooms/ask', { to });
 /** How the server is doing: also the way to find out whether it can be reached at all. */
 export const readServerStats = () => call<RoomServerStats>('/stats');
 // Push notifications (signed-in players only; see src/lib/game/push.ts).
@@ -94,6 +111,44 @@ export function dropSeat(id: string) {
   writeSeats(rest);
 }
 
+// ── The plazas of this browser: the one it is in, and the secrets of those it entered ──
+const PLAZA_KEY = 'pplale-plaza-v1';
+const KEPT_PLAZAS = 8;
+/** `invite`: the latest invitation secret known for the room (to come back in, or to share). */
+export interface PlazaKey { token: string; invite?: string; at: number }
+interface Plazas { current: string | null; rooms: Record<string, PlazaKey> }
+function plazas(): Plazas {
+  try {
+    const saved = JSON.parse(localStorage.getItem(PLAZA_KEY) ?? 'null') as Plazas | null;
+    return saved && typeof saved === 'object' && saved.rooms ? saved : { current: null, rooms: {} };
+  } catch { return { current: null, rooms: {} }; }
+}
+function writePlazas(next: Plazas) {
+  const latest = Object.entries(next.rooms).sort((a, b) => b[1].at - a[1].at).slice(0, KEPT_PLAZAS);
+  try { localStorage.setItem(PLAZA_KEY, JSON.stringify({ current: next.current, rooms: Object.fromEntries(latest) })); } catch { /* The room is then kept for this page only. */ }
+}
+export const plazaKey = (id: string): PlazaKey | null => plazas().rooms[id] ?? null;
+/** The room this browser is in (to come back to on opening the game). */
+export const currentPlaza = (): (PlazaKey & { id: string }) | null => {
+  const saved = plazas(), id = saved.current;
+  return id && saved.rooms[id] ? { id, ...saved.rooms[id] } : null;
+};
+export function keepPlaza(id: string, key: Omit<PlazaKey, 'at'>, current = true) {
+  const saved = plazas();
+  writePlazas({ current: current ? id : saved.current, rooms: { ...saved.rooms, [id]: { ...saved.rooms[id], ...key, at: Date.now() } } });
+}
+/** Remembers the latest invitation secret seen in the room. */
+export function keepInvite(id: string, invite: string) {
+  const saved = plazas();
+  if (saved.rooms[id] && saved.rooms[id].invite !== invite) writePlazas({ ...saved, rooms: { ...saved.rooms, [id]: { ...saved.rooms[id], invite } } });
+}
+/** This browser is no longer in the room (it may keep the secret to make its successor). */
+export function leavePlaza(id: string, forget = true) {
+  const saved = plazas(), rooms = { ...saved.rooms };
+  if (forget) delete rooms[id];
+  writePlazas({ current: saved.current === id ? null : saved.current, rooms });
+}
+
 // ── The socket of a seat ──
 const RETRY_DELAYS = [500, 1000, 2000, 4000];
 const ACTION_TIMEOUT = 12_000;
@@ -110,7 +165,7 @@ export interface RoomConnection {
  * after every change, `onLink` whether the socket is up (it connects again by itself when it drops),
  * `onGone` is called once when the room or the seat no longer exists.
  */
-export function connectRoom(id: string, token: string | null, handlers: { onView: (view: RoomView) => void; onLink: (up: boolean) => void; onGone: (message: string) => void }): RoomConnection {
+export function connectRoom(id: string, token: string | null, handlers: { onView: (view: RoomView) => void; onLink: (up: boolean) => void; onGone: (message: string, closed?: boolean) => void }): RoomConnection {
   let socket: WebSocket | null = null, stopped = false, attempt = 0, n = 0;
   let match: number | undefined;
   let timer: ReturnType<typeof setTimeout> | undefined;
@@ -175,7 +230,7 @@ export function connectRoom(id: string, token: string | null, handlers: { onView
       } else {
         stopped = true;
         failWaiting();
-        handlers.onGone(message.error);
+        handlers.onGone(message.error, message.closed);
       }
     });
     next.addEventListener('close', () => {

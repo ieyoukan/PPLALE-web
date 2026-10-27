@@ -10,7 +10,7 @@ import { catalog } from '../src/catalog.ts';
 test('history: synchronous replication never acknowledges a write until the standby applies it', { skip: !process.env.TEST_HISTORY_STANDBY_DATABASE_URL }, async t => {
     const { backend, url, pool, onClose } = await fixture(t);
     const { room } = createRoom('123456', { rules: { fruits: ['strawberry'] } }); joinRoom(room, {});
-    room.seats[0].historyOwners = ['device:host']; room.seats[1]!.historyOwners = ['device:guest'];
+    room.seats[0]!.historyOwners = ['device:host']; room.seats[1]!.historyOwners = ['device:guest'];
     act(room, 0, { action: 'ready', deck }, catalog); act(room, 1, { action: 'ready', deck }, catalog);
     await backend.create(room, 3_600_000);
     act(room, 1, { action: 'resign' }, catalog); await store(backend, room);

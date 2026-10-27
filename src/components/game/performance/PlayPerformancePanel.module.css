@@ -1,13 +1,16 @@
-.panel { color:var(--brand-cocoa-deep); background:var(--brand-paper); border:1px solid var(--brand-pink-edge); border-radius:20px; padding:clamp(12px,3vw,28px); display:grid; gap:20px; }
+/* 通信計測 in the launchpad (its heading above): on the pad's paper, tables parted by fine rules. */
+.panel { color:var(--brand-cocoa-deep); display:grid; gap:20px; min-width:0; }
 .panel p { margin:0; line-height:1.8; }
-.panel h3 { margin:0 0 12px; }
-.actions { display:flex; gap:12px; align-items:center; flex-wrap:wrap; }
-.actions button, .actions a { color:var(--brand-cocoa-deep); background:var(--brand-cream); border:1px solid var(--brand-pink-edge); border-radius:12px; padding:10px 14px; cursor:pointer; }
-.actions button[aria-pressed=true] { background:var(--brand-vanilla); }
+.panel h3 { margin:0 0 12px; color:var(--brand-cocoa); }
+.actions { display:flex; gap:8px; align-items:center; flex-wrap:wrap; }
+/* Small buttons: squares, a little rounded. */
+.actions button { min-height:40px; color:var(--brand-cocoa-deep); background:var(--brand-paper); border:1px solid var(--brand-pink-edge); border-radius:6px; padding:8px 14px; font-weight:700; cursor:pointer; }
+.actions button:hover:not(:disabled) { background:var(--brand-vanilla-wash); }
+.actions button[aria-pressed=true] { border-color:var(--brand-cocoa); background:var(--brand-blush); box-shadow:inset 0 0 0 1px var(--brand-cocoa); }
 .actions button:disabled { opacity:.55; cursor:default; }
 .scroll { overflow:auto; max-width:100%; }
 .scroll table { border-collapse:collapse; width:100%; font-variant-numeric:tabular-nums; font-size:14px; }
-.scroll th, .scroll td { text-align:right; padding:10px; white-space:nowrap; border-bottom:1px solid var(--brand-blush); }
+.scroll th, .scroll td { text-align:right; padding:10px; white-space:nowrap; border-bottom:1px solid var(--brand-pink); }
 .scroll th:first-child, .scroll td:first-child { text-align:left; }
 .scroll thead { background:var(--brand-cream); }
 .panel details { line-height:1.8; }

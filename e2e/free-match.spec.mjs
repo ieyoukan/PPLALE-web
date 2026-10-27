@@ -27,7 +27,7 @@ test('free match: cancel, meet automatically, reload and find the next opponent'
     await first.getByRole('button', { name: 'このデッキで対戦相手を探す' }).click();
     await expect(first.getByText('対戦相手を探しています…', { exact: true })).toBeVisible();
     await second.getByRole('button', { name: 'このデッキで対戦相手を探す' }).click();
-    for (const page of [first, second]) await expect(page).toHaveURL(/\/game\/room\/\?id=\d{6}/, { timeout: 15000 });
+    for (const page of [first, second]) await expect(page).toHaveURL(/\/game\/room\/\d{6}\/$/, { timeout: 15000 });
     expect(new URL(first.url()).searchParams.get('id')).toBe(new URL(second.url()).searchParams.get('id'));
     await expect(first.getByRole('group', { name: '先攻・後攻のダイス' })).toBeVisible({ timeout: 20000 });
     await second.reload();

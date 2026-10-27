@@ -11,7 +11,8 @@ test('home prioritizes the logo and starts auth only when a game consumer appear
   expect(await page.evaluate(() => !!globalThis.pplaleAuth)).toBe(false);
 
   await page.getByRole('navigation', { name: 'メニュー', exact: true }).getByRole('link', { name: 'ゲームをプレイ', exact: true }).click();
-  await expect(page.getByRole('navigation', { name: 'ゲームメニュー', exact: true })).toBeVisible();
+  // The game opens on its launch screen, then the player's room.
+  await expect(page.locator('[data-game-stage]')).toBeVisible();
   await expect.poll(() => page.evaluate(() => !!globalThis.pplaleAuth)).toBe(true);
   await page.evaluate(() => { globalThis.__startedAuth = globalThis.pplaleAuth; });
   await page.goBack();

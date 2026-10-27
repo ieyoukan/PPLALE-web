@@ -42,14 +42,14 @@
 .orderChoice { display: grid; justify-items: center; gap: clamp(14px, 4cqh, 40px); color: #fffdeb; font-family: 'Yu Mincho', 'Hiragino Mincho ProN', 'Noto Serif JP', serif; }
 .orderChoice h2 { margin: 0; font-size: clamp(22px, 4cqw, 44px); font-weight: 700; letter-spacing: .08em; text-shadow: 0 3px 8px #000; }
 .orderOptions { display: flex; gap: clamp(16px, 5cqw, 64px); }
-/* Plates as cards: they lift under the pointer and the chosen one stays raised and lit. */
+/* Plates stay in place under the pointer; the chosen one stays raised and lit. */
 .orderOption { height: min(34cqh, 36cqw); aspect-ratio: 1 / 1.1; padding: 0; cursor: pointer; opacity: .82; animation: none; transition: transform .2s ease, box-shadow .2s ease, opacity .2s ease, filter .2s ease; }
 .orderOption strong { font-size: min(15cqh, 16cqw); }
-.orderOption:hover, .orderOption:focus-visible { opacity: 1; transform: translateY(-10px) scale(1.04); }
-.orderPicked, .orderPicked:hover { opacity: 1; transform: translateY(-14px) scale(1.07); box-shadow: 0 0 0 3px #a88667, 0 0 0 7px #ffef93, 0 0 34px 10px #ffef93, 0 20px 36px #000a; }
+.orderOption:hover, .orderOption:focus-visible { opacity: 1; }
+.orderPicked { opacity: 1; transform: translateY(-14px) scale(1.07); box-shadow: 0 0 0 3px #a88667, 0 0 0 7px #ffef93, 0 0 34px 10px #ffef93, 0 20px 36px #000a; }
 .orderOptions:has(.orderPicked) .orderOption:not(.orderPicked) { opacity: .5; filter: saturate(.6); }
 .orderDecide { min-width: clamp(160px, 22cqw, 260px); min-height: 56px; padding: 10px 28px; border: 3px solid #fffdeb; border-radius: 14px; background: #f4b0bb; color: #6b4a3a; font-family: inherit; font-size: clamp(18px, 2.4cqw, 26px); font-weight: 700; box-shadow: 0 5px 0 #a88667, 0 10px 20px #0008; cursor: pointer; transition: filter .2s, transform .2s, opacity .2s; }
-.orderDecide:enabled:hover { filter: brightness(1.1); transform: translateY(-2px); }
+.orderDecide:enabled:hover { filter: brightness(1.1); }
 .orderDecide:disabled { opacity: .45; filter: saturate(.4); cursor: default; }
 @container stage (max-height: 520px) { .orderOption { height: min(40cqh, 30cqw); } .orderDecide { min-height: 46px; } }
 
@@ -101,7 +101,7 @@
 .boardCode { grid-column: 1 / -1; display: grid; gap: 6px; font-size: clamp(13px, 1.5cqw, 17px); }
 .boardCode textarea { padding: 8px 10px; border: 1px solid #fffdeb55; border-radius: 12px; background: #0006; color: inherit; font: inherit; font-size: 13px; resize: none; }
 .plateButton { display: inline-flex; align-items: center; justify-content: center; min-height: 48px; padding: 8px clamp(16px, 2.6cqw, 34px); border: 3px solid #fffdeb; border-radius: 14px; background: #b3d788; color: #6b4a3a; font-size: clamp(15px, 1.8cqw, 21px); font-weight: 700; text-decoration: none; box-shadow: 0 4px 0 #a88667, 0 8px 16px #0008; transition: filter .2s, transform .2s; }
-.plateButton:hover { filter: brightness(1.06); transform: translateY(-2px); }
+.plateButton:hover { filter: brightness(1.06); }
 .primaryPlate { min-width: min(100%, 240px); background: #f4b0bb; }
 @keyframes resultArt { from { opacity: 0; transform: translateX(-60px) rotate(-8deg); } }
 

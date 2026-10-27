@@ -46,7 +46,7 @@ test('free match chimes once per event, survives navigation and stays silent on 
       await page.getByRole('button', { name: 'このデッキで対戦相手を探す' }).click();
     }
     for (const page of pages) {
-      await expect(page).toHaveURL(/\/game\/room\/\?id=\d{6}/);
+      await expect(page).toHaveURL(/\/game\/room\/\d{6}\/$/, { timeout: 15000 });
       await expect(page.getByRole('group', { name: '先攻・後攻のダイス' })).toBeVisible({ timeout: 20000 });
       await expect.poll(async () => (await chimes(page)).length).toBe(5);
       const notes = await chimes(page);
@@ -89,25 +89,26 @@ test('muted and unsupported audio never prevent matchmaking', async ({ browser }
   } finally { await Promise.all(contexts.map(context => context.close())); }
 });
 
-test('room players hear opponent arrival and start; spectators stay silent', async ({ browser }, info) => {
-  test.setTimeout(60000);
+test('room players hear someone sit across and the start; those watching stay silent', async ({ browser }, info) => {
+  test.setTimeout(90000);
   const contexts = await Promise.all([browser.newContext(), browser.newContext(), browser.newContext()]);
   try {
     for (const context of contexts) await probe(context);
     const [host, guest, watcher] = await Promise.all(contexts.map(context => context.newPage()));
-    await host.goto(`${base}/game/battle/`);
-    await host.getByRole('button', { name: /ルームを作る/ }).click();
-    await host.getByRole('checkbox', { name: '観戦を許可する' }).check();
-    await host.getByRole('button', { name: 'このルールでルームを作る' }).click();
-    await host.waitForURL(/battle\/room\/\?id=\d{6}/);
-    const lobby = host.url(), id = new URL(lobby).searchParams.get('id');
-    await watcher.goto(`${base}/game/room/?id=${id}&watch=1`);
-    await watcher.getByRole('heading', { name: '対戦が始まるのを待っています' }).click();
-    await guest.goto(lobby);
-    await guest.getByRole('button', { name: 'このルームに入る' }).click();
+    await host.goto(`${base}/game/`);
+    await host.waitForURL(/\/game\/room\/\d{6}\/$/, { timeout: 30000 });
+    const { id, invite } = await host.evaluate(() => {
+      const saved = JSON.parse(localStorage.getItem('pplale-plaza-v1'));
+      return { id: saved.current, invite: saved.rooms[saved.current].invite };
+    });
+    for (const page of [guest, watcher]) {
+      await page.goto(`${base}/game/room/${id}/?invite=${invite}`);
+      await page.waitForURL(`${base}/game/room/${id}/`);
+    }
+    await host.getByRole('button', { name: 'この席にすわる' }).last().click();
+    await guest.getByRole('button', { name: 'この席にすわる' }).click();
     for (const page of [host, guest]) await expect.poll(async () => (await chimes(page)).length).toBe(2);
-    await guest.getByRole('button', { name: 'このデッキで準備OK' }).click();
-    await host.getByRole('button', { name: 'このデッキで準備OK' }).click();
+    for (const page of [guest, host]) await page.getByRole('button', { name: 'じゅんびOK!' }).click();
     for (const page of [host, guest, watcher]) await expect(page.getByRole('group', { name: '先攻・後攻のダイス' })).toBeVisible({ timeout: 20000 });
     for (const page of [host, guest]) await expect.poll(async () => (await chimes(page)).length).toBe(5);
     expect(await chimes(watcher)).toHaveLength(0);
@@ -124,7 +125,7 @@ test('CPU match start chimes once and keeps the menu compact on mobile', async (
   try {
     await probe(context);
     const page = await context.newPage();
-    await page.goto(`${base}/game/`);
+    await page.goto(`${base}/game/cpu/`);
     const toggle = page.getByRole('button', { name: '通知音', exact: true });
     await expect(toggle).toBeInViewport();
     const login = page.getByRole('button', { name: 'ログイン', exact: true });

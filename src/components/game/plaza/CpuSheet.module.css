@@ -1,0 +1,7 @@
+.deck { display: flex; align-items: center; gap: 16px; width: 100%; margin-top: 20px; padding: 16px 22px; text-align: left; color: var(--brand-cocoa-deep); cursor: pointer; }
+.deck > svg { width: 30px; height: 30px; flex-shrink: 0; }
+.deck > svg:last-child { margin-left: auto; width: 22px; height: 22px; }
+.deck > span { display: grid; gap: 4px; }
+.deck small { font-size: 13px; }
+.deck b { font-size: 18px; overflow-wrap: anywhere; }
+.deck:hover { background: var(--brand-vanilla-wash); }

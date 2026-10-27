@@ -40,13 +40,25 @@ export async function homeCodePoints() {
 
 /** The menu must not download rare-kanji blocks for ordinary setup labels. */
 export async function gameMenuCodePoints() {
+  // These are menu-only directories: component extraction/addition must not leave stale file names.
+  const menus = await Promise.all(['src/components/game/plaza', 'src/components/game/home'].map(sourceFiles));
   return codePoints([
-    'src/components/game/home/GameMenu.tsx', 'src/components/game/GameLobby.tsx',
+    ...menus.flat(), 'src/components/game/GameLobby.tsx',
     'src/components/game/GameSetup.tsx', 'src/components/game/DeckSelect.tsx',
     'src/components/game/RulePicker.tsx', 'src/components/pwa/InstallPrompt.tsx',
+    'src/components/game/puzzles/copy.ts',
     'src/lib/game/deckSources.ts', 'src/lib/game/sessionStore.ts',
     'packages/game-core/src/rules.ts', 'packages/game-core/src/ai/profiles.ts',
   ]);
+}
+
+async function sourceFiles(directory) {
+  const entries = await readdir(path.join(root, directory), { withFileTypes: true });
+  const files = await Promise.all(entries.map(entry => {
+    const name = `${directory}/${entry.name}`;
+    return entry.isDirectory() ? sourceFiles(name) : /\.tsx?$/.test(entry.name) ? [name] : [];
+  }));
+  return files.flat();
 }
 
 /** Compact, exact ranges for the home characters. */

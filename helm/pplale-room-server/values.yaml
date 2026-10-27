@@ -42,7 +42,7 @@ requestsPerHour: 120
 # Cloudflare Tunnel から届く CF-Connecting-IP のみを信頼する。直接公開する場合は false。
 trustProxy: true
 # そのうち「ルームを作る」の回数 (Pod ごとに数える)。
-roomsPerHour: 10
+roomsPerHour: 30
 # 対戦が始まる前に、ホストがこれだけの時間つながっていなければルームを解散する
 # (ゲストなら席を空ける)。X や Discord に募集を貼りに行く間に切れても戻れるよう長めにする。
 lobbyGraceMinutes: 10

@@ -40,9 +40,9 @@ export interface PushStore {
     add(uid: string, value: Subscription): Promise<void>;
     remove(uid: string, endpoint: string): Promise<void>;
     list(uid: string): Promise<Subscription[]>;
-    /** The seat's page is hidden (true) or shown (false). */
-    setAway(room: string, seat: Side, away: boolean, ttl: number): Promise<void>;
-    away(room: string, seat: Side): Promise<boolean>;
+    /** The seat's (or plaza member's) page is hidden (true) or shown (false). */
+    setAway(room: string, seat: Side | string, away: boolean, ttl: number): Promise<void>;
+    away(room: string, seat: Side | string): Promise<boolean>;
     /** True the first time `key` is claimed within `ttl` ms. */
     once(key: string, ttl: number): Promise<boolean>;
     close(): Promise<void>;
@@ -69,7 +69,7 @@ export async function redisPushStore(url: string, prefix = 'pplale:push:'): Prom
     const client = createClient({ url });
     client.on('error', error => console.error('push redis', error instanceof Error ? error.message : error));
     await client.connect();
-    const subs = (uid: string) => `${prefix}sub:${uid}`, awayKey = (room: string, seat: Side) => `${prefix}away:${room}:${seat}`;
+    const subs = (uid: string) => `${prefix}sub:${uid}`, awayKey = (room: string, seat: Side | string) => `${prefix}away:${room}:${seat}`;
     async function read(uid: string): Promise<Saved[]> {
         const values = Object.values(await client.hGetAll(subs(uid)));
         return values.flatMap(value => { try { return [JSON.parse(value) as Saved]; } catch { return []; } });

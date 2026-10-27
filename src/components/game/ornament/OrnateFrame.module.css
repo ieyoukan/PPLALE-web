@@ -1,0 +1,44 @@
+/* The ornament frame (OrnateFrame.tsx). The corner pieces are 72 units (72px, or 40px small); the
+   face of the panel lies under the whole frame, and the content is padded inside the inner rule. */
+/* Defaults without weight (:where), so a panel's own class may set the padding (--pad) and colours. */
+:where(.frame) {
+  --corner: 72px; --pad: 30px;
+  --frame-ink: var(--brand-cocoa-deep); --frame-face: var(--brand-paper);
+  position: relative; isolation: isolate; padding: var(--pad); color: var(--brand-cocoa-deep);
+}
+:where(.frame[data-size=sm]) { --corner: 40px; --pad: 16px; }
+/* The thin frame of buttons: 14px corners, its one rule 6 units of 14 across. */
+:where(.frame[data-size=line]) { --corner: 14px; --pad: 8px 16px; }
+.frame[data-size=line] .top, .frame[data-size=line] .bottom { height: calc(var(--corner) * 6 / 14); }
+.frame[data-size=line] .left, .frame[data-size=line] .right { width: calc(var(--corner) * 6 / 14); }
+:where(.frame[data-tone=cream]) { --frame-ink: var(--brand-cream-line); --frame-face: #2b1a12b8; color: var(--brand-cream-on-dark); }
+:where(.frame[data-faint]) { --frame-ink: var(--brand-cocoa-soft); --frame-face: color-mix(in srgb, var(--brand-paper) 60%, transparent); }
+:where(.frame[data-bare]) { --frame-face: transparent; }
+.frame[data-bare]::before { content: none; }
+/* The face under the whole frame, as the cards print their frame on their own paper. */
+.frame::before { content: ''; position: absolute; inset: 0; z-index: -1; background: var(--frame-face); }
+.ornament { position: absolute; inset: 0; z-index: 1; color: var(--frame-ink); pointer-events: none; }
+.frame[data-faint] .ornament { opacity: .55; }
+.at { position: absolute; width: var(--corner); height: var(--corner); }
+.corner { display: block; width: 100%; height: 100%; overflow: visible; }
+.tl { top: 0; left: 0; }
+.tr { top: 0; right: 0; transform: scaleX(-1); }
+.bl { bottom: 0; left: 0; transform: scaleY(-1); }
+.br { bottom: 0; right: 0; transform: scale(-1); }
+/* The rules between the corners keep the corners' proportions (18 of 72 units across). */
+.rule { position: absolute; overflow: visible; }
+/* An svg is not stretched by left and right alone: its length is given. */
+.top, .bottom { left: var(--corner); width: calc(100% - 2 * var(--corner)); height: calc(var(--corner) * 18 / 72); }
+.left, .right { top: var(--corner); height: calc(100% - 2 * var(--corner)); width: calc(var(--corner) * 18 / 72); }
+.top { top: 0; }
+.bottom { bottom: 0; transform: scaleY(-1); }
+.left { left: 0; }
+.right { right: 0; transform: scaleX(-1); }
+.midAt { position: absolute; left: 50%; width: calc(var(--corner)); height: calc(var(--corner) * 26 / 72); margin-left: calc(var(--corner) / -2); }
+.mid { position: relative; display: block; width: 100%; height: 100%; }
+.midTop { top: 0; }
+.midBottom { bottom: 0; transform: scaleY(-1); }
+/* A face shows through behind the middle diamond, so the rules seem to pass behind it. */
+.midAt::before { content: ''; position: absolute; inset: 30% 37% 0; background: var(--frame-face); }
+/* Content above the ornament; without weight, so content placed by its own class (absolute) stays so. */
+:where(.frame > :not(.ornament)) { position: relative; z-index: 2; }

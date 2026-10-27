@@ -11,9 +11,10 @@ test('all 25 puzzles open from their fruit groups and keep the saved match intac
   const errors = [];
   page.on('pageerror', error => errors.push(error.message));
   await page.goto('/game/puzzles/');
-  await expect(page.getByRole('heading', { name: 'ロリの一手を極めるために', exact: true })).toBeVisible();
-  await expect(page.getByRole('link', { name: /リーサルパズル/ })).toHaveAttribute('aria-current', 'page');
-  expect(await page.locator('main').innerText()).not.toMatch(/[\u{1F300}-\u{1FAFF}]/u);
+  await expect(page).toHaveURL(/\/game\/room\/\d{6}\//);
+  await expect(page.getByText('ロリの一手を極めるために', { exact: true })).toBeVisible();
+  await expect(page.getByRole('tab', { name: 'リーサルパズル', exact: true })).toHaveAttribute('aria-selected', 'true');
+  expect(await page.getByRole('dialog', { name: 'ゲームメニュー' }).innerText()).not.toMatch(/[\u{1F300}-\u{1FAFF}]/u);
   for (const [fruit, label] of [['strawberry', 'イチゴ'], ['grape', 'ぶどう'], ['melon', 'メロン']]) {
     const group = problems.filter(problem => problem.fruit === fruit);
     await page.getByRole('navigation', { name: 'パズルのフルーツ' }).getByRole('link', { name: label, exact: true }).click();
@@ -39,8 +40,9 @@ test('all 25 puzzles open from their fruit groups and keep the saved match intac
     await expect(page.getByRole('button', { name: '相手の非公開手札', exact: true })).toHaveCount(0);
     await expect(page.getByRole('button', { name: '✎ 編集', exact: true })).toHaveCount(0);
     await page.getByRole('button', { name: '問題一覧へ', exact: true }).click();
-    await expect(page).toHaveURL(/\/game\/puzzles\//);
-    expect(new URL(page.url()).searchParams.get('fruit')).toBe(problem.fruit);
+    await expect(page).toHaveURL(/\/game\/room\/\d{6}\//);
+    const label = { strawberry: 'イチゴ', grape: 'ぶどう', melon: 'メロン' }[problem.fruit];
+    await expect(page.getByRole('navigation', { name: 'パズルのフルーツ' }).getByRole('link', { name: label, exact: true })).toHaveAttribute('aria-current', 'page');
     await expect(page.locator(`[data-puzzle-preview="${problem.id}"]`)).toBeVisible();
   }
   expect(await page.evaluate(() => localStorage.getItem('pplale-game-session-v2'))).toBe('existing match');
@@ -51,13 +53,17 @@ test('all 25 puzzles open from their fruit groups and keep the saved match intac
 });
 
 test('fruit selection survives reload and fits a phone screen', async ({ page }) => {
+  test.setTimeout(60000);
   await page.setViewportSize({ width: 390, height: 844 });
   await page.goto('/game/puzzles/');
+  await expect(page).toHaveURL(/\/game\/room\/\d{6}\//);
   await expect(page.locator('[data-puzzle-preview]')).toHaveCount(6);
   const fruits = page.getByRole('navigation', { name: 'パズルのフルーツ' });
   await fruits.getByRole('link', { name: 'メロン', exact: true }).click();
   await expect(page.locator('[data-puzzle-preview]')).toHaveCount(13);
   await page.reload();
+  await page.getByRole('button', { name: 'メニュー', exact: true }).click();
+  await page.getByRole('region', { name: 'クイックリンク' }).getByRole('button', { name: 'リーサルパズル', exact: true }).click();
   await expect(fruits.getByRole('link', { name: 'メロン', exact: true })).toHaveAttribute('aria-current', 'page');
   await expect(page.locator('[data-puzzle-preview]')).toHaveCount(13);
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(true);
@@ -124,6 +130,8 @@ test('winning records a clear and the next-problem link starts a fresh puzzle', 
   await page.getByRole('button', { name: '問題一覧へ', exact: true }).click();
   await expect(page.getByRole('link', { name: 'メロン初級① クリア済み', exact: true })).toBeVisible();
   await page.reload();
+  await page.getByRole('button', { name: 'メニュー', exact: true }).click();
+  await page.getByRole('region', { name: 'クイックリンク' }).getByRole('button', { name: 'リーサルパズル', exact: true }).click();
   await expect(page.getByRole('link', { name: 'メロン初級① クリア済み', exact: true })).toBeVisible();
   await page.screenshot({ path: '/tmp/pplale-puzzle-list.png' });
 });
@@ -132,7 +140,8 @@ test('an unknown problem provides a way back', async ({ page }) => {
   await page.goto('/game/puzzle/?id=unknown');
   await expect(page.getByText('このパズルは見つかりませんでした。')).toBeVisible();
   await page.getByRole('link', { name: '問題一覧へ' }).click();
-  await expect(page).toHaveURL(/\/game\/puzzles\//);
+  await expect(page).toHaveURL(/\/game\/puzzle\/\?id=unknown$/);
+  await expect(page.getByRole('dialog', { name: 'ゲームメニュー' }).getByText('ロリの一手を極めるために', { exact: true })).toBeVisible();
 });
 
 test('puzzle decks show grouped contents and inspection does not consume a pending draw', async ({ page }) => {

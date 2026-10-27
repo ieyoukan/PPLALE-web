@@ -1,18 +1,18 @@
 'use client';
 
 import { useEffect, useRef, useState } from 'react';
-import { usePathname, useSearchParams } from 'next/navigation';
 import { useAuth } from '@/lib/auth';
 import { defaultProfile, readProfile, saveProfile } from '@/lib/game/social';
 import { RecordedCard } from '../history/RecordedCard';
 import { Icon } from './Icon';
 import { ProfileIconPicker } from './ProfileIconPicker';
+import { useOwnProfileOpen } from './ownProfile';
 import styles from './ProfileOnboarding.module.css';
 
 /** Mounted only after auth has started and a player is signed in. Never infer a nickname from Google. */
 export default function ProfileOnboarding({ uid }: { uid: string }) {
   const { signOut } = useAuth();
-  const pathname = usePathname(), requested = useSearchParams().get('id');
+  const editingMyProfile = useOwnProfileOpen();
   const [status, setStatus] = useState<'checking' | 'ready' | 'missing' | 'error'>('checking');
   const [attempt, setAttempt] = useState(0);
   useEffect(() => {
@@ -23,7 +23,6 @@ export default function ProfileOnboarding({ uid }: { uid: string }) {
   }, [uid, attempt]);
 
   // The profile page already offers the same first-time editor, without a second form over it.
-  const editingMyProfile = pathname?.replace(/\/$/, '') === '/game/profile' && (!requested || requested === uid);
   if (status === 'checking' || status === 'ready' || editingMyProfile) return null;
   return <SetupDialog uid={uid} failed={status === 'error'} onRetry={() => { setStatus('checking'); setAttempt(value => value + 1); }} onComplete={() => setStatus('ready')} onSignOut={signOut} />;
 }

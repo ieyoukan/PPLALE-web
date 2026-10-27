@@ -6,49 +6,48 @@
 .battleActions > .secondary { justify-self: start; font-size: 14px; }
 .battleActions > .server { font-size: 13px; line-height: 1.7; }
 .doors { display: grid; gap: clamp(10px, 1.6cqw, 16px); }
-/* Each door: its picture on the left, its name beside it; together they fill the screen's height. */
-.door { --tone: #e7c3e2; display: grid; grid-template-columns: clamp(92px, 30%, 230px) minmax(0, 1fr); align-items: stretch; height: clamp(104px, calc((100cqh - 250px) / 4), 170px); padding: 0; overflow: hidden; border: 3px solid #a88667; border-radius: 18px; background: #fff; color: #6b4a3a; font: inherit; text-decoration: none; cursor: pointer; box-shadow: 0 6px 0 #a8866755, 0 0 0 4px #fffdeb inset; transition: transform .2s, box-shadow .2s, filter .2s; }
-.free { --tone: #b3d788; }
-.matchHeading { display: grid; gap: 8px; color: #6b4a3a; }
-.matchHeading h2 { font-size: clamp(24px, 3cqw, 30px); font-weight: 700; letter-spacing: .08em; }
-.matchHeading p { color: #8e7662; font-size: 15px; line-height: 1.7; }
+/* Each door: a card in the ornament frame, its picture on the left and its name beside it; together they fill the screen's height. */
+.door { --tone: var(--brand-pink); --pad: 12px 16px; display: grid; grid-template-columns: clamp(92px, 30%, 230px) minmax(0, 1fr); align-items: stretch; height: clamp(104px, calc((100cqh - 250px) / 4), 170px); border: 0; background: none; color: var(--brand-cocoa-deep); font: inherit; text-decoration: none; cursor: pointer; filter: none; transition: transform .15s ease, filter .15s ease; }
+.free { --tone: var(--brand-sage); }
+/* Under the launchpad's own heading (フリーマッチ): one line of what to do. */
+.matchIntro { color: var(--brand-cocoa-soft); font-size: 15px; line-height: 1.7; }
 .matchGrid { display: grid; grid-template-columns: minmax(0, .9fr) minmax(0, 1.1fr); align-items: start; gap: clamp(16px, 2.4cqw, 26px); min-width: 0; }
 .matchGrid > .companion { position: sticky; top: 24px; }
-.panel.matchPanel { min-width: 0; align-content: start; border-color: #dfcbb6; box-shadow: 0 5px 0 #cfbba555, inset 0 0 0 4px #fffaf0; }
+.matchPanel { --pad: 22px 24px; display: grid; gap: 14px; min-width: 0; align-content: start; color: var(--brand-cocoa-deep); }
 .matchPanel .field { font-size: 14px; }
 .matchPanel .field input, .matchPanel .field select { min-height: 46px; font-size: 16px; }
-.matchPanel .matchStart { display: flex; align-items: center; justify-content: center; gap: 8px; padding: 14px 12px; font-size: 16px; box-shadow: 0 4px 0 #729447, inset 0 2px 0 #ffffffb3; background: linear-gradient(#d8edb8, #b3d788); }
-.matchStart > span { font-size: 28px; line-height: 1; }
-.matchLogin { justify-self: center; padding: 8px 2px; color: #8b735f; font-size: 12px; text-decoration: underline; text-underline-offset: 4px; }
-.matchLogin:hover { color: #a44862; }
-.matchRules { padding-top: 12px; border-top: 1px dashed #e0cdb7; color: #927964; }
+.matchPanel .matchStart { display: flex; align-items: center; justify-content: center; gap: 8px; width: 100%; font-size: 18px; }
+.matchStart > span[aria-hidden] { font-size: 26px; line-height: 1; }
+.matchLogin { justify-self: center; padding: 8px 2px; border: 0; background: none; color: var(--brand-cocoa-soft); font-size: 13px; text-decoration: underline; text-underline-offset: 4px; cursor: pointer; }
+.matchLogin:hover { color: var(--brand-cocoa); }
+.matchRules { padding-top: 12px; border-top: 1px solid var(--brand-pink); color: var(--brand-cocoa-soft); }
 .matchRules summary { font-size: 12px; cursor: pointer; }
 .matchRules p { margin-top: 10px; font-size: 13px; line-height: 1.8; }
 .freeWaiting { display: grid; gap: 16px; text-align: center; }
 .freeWaiting > [role=status] { font-weight: 700; }
-.freeWaiting > [role=timer] { justify-self: center; padding: 6px 14px; border-radius: 999px; background: #f4eddf; font-variant-numeric: tabular-nums; }
+.freeWaiting > [role=timer] { justify-self: center; padding: 6px 14px; border-radius: 6px; background: var(--brand-vanilla-wash); font-variant-numeric: tabular-nums; }
 .searchSignal { display: flex; align-items: center; justify-content: center; gap: 7px; padding: 14px 0 0; }
-.searchSignal i { width: 9px; height: 9px; border-radius: 50%; background: #b3d788; animation: searchBreathe 1.8s ease-in-out infinite; }
-.searchSignal i:nth-child(2) { background: #f4b0bb; animation-delay: .2s; }
-.searchSignal i:nth-child(3) { background: #e7c3e2; animation-delay: .4s; }
+.searchSignal i { width: 9px; height: 9px; border-radius: 50%; background: var(--brand-sage); animation: searchBreathe 1.8s ease-in-out infinite; }
+.searchSignal i:nth-child(2) { background: var(--brand-pink); animation-delay: .2s; }
+.searchSignal i:nth-child(3) { background: var(--brand-peach); animation-delay: .4s; }
 @keyframes searchBreathe { 50% { opacity: .45; translate: 0 -4px; } }
 
 /* Keep the supplied full-body art intact, with space for the tallest poses. */
-.companion { position: relative; width: 100%; min-width: 0; height: clamp(420px, 67cqh, 620px); background: radial-gradient(ellipse at 50% 55%, #f9e4e0 0, #fff0dd88 42%, transparent 70%); user-select: none; }
-.companion::before { content: ''; position: absolute; bottom: 2%; left: 18%; width: 64%; height: 18px; border-radius: 50%; background: #c3a0831a; filter: blur(4px); }
-.companionTap { position: absolute; inset: 0; padding: 0; border: 0; border-radius: 28px; background: transparent; cursor: pointer; -webkit-tap-highlight-color: transparent; touch-action: manipulation; }
+.companion { position: relative; width: 100%; min-width: 0; height: clamp(420px, 67cqh, 620px); user-select: none; }
+.companion::before { content: ''; position: absolute; bottom: 2%; left: 18%; width: 64%; height: 18px; border-radius: 50%; background: var(--brand-shadow); filter: blur(4px); }
+.companionTap { position: absolute; inset: 0; padding: 0; border: 0; border-radius: 6px; background: transparent; cursor: pointer; -webkit-tap-highlight-color: transparent; touch-action: manipulation; }
 .companionTap:disabled { cursor: default; }
-.companionTap:focus-visible { outline: 2px dashed #c47e91; outline-offset: 3px; }
+.companionTap:focus-visible { outline: 2px dashed var(--brand-cocoa); outline-offset: 3px; }
 .companionTap:active { filter: brightness(1.035); }
 .companionCharacter { position: absolute; inset: 0; transform-origin: 50% 90%; }
 .companionCharacter[data-reacting] { animation: companionHop .65s ease-out; }
-.companionCharacter img { padding: 16px 8px 20px; object-fit: contain; transform-origin: 50% 90%; filter: drop-shadow(0 5px 2px #a97f671a); animation: companionBreathe 4.5s ease-in-out infinite; }
+.companionCharacter img { padding: 16px 8px 20px; object-fit: contain; transform-origin: 50% 90%; filter: none; animation: companionBreathe 4.5s ease-in-out infinite; }
 @keyframes companionBreathe { 50% { transform: translateY(-3px) scaleY(1.008); } }
 @keyframes companionHop { 25% { transform: translateY(-10px); } 65% { transform: translateY(-2px); } }
 
 .matchDeckPreview { display: flex; align-items: center; gap: 10px; min-width: 0; padding: 8px 10px; overflow: hidden; border: 1px solid #ebdac5; border-radius: 16px; background: linear-gradient(135deg, #fffaf0, #f7efe0); text-align: left; }
 .matchDeckArt { position: relative; flex: 0 0 112px; height: 105px; }
-.matchDeckCard { position: absolute; top: 9px; left: 3px; width: 57px; height: 85px; overflow: hidden; border: 2px solid #fff; border-radius: 5px; background: repeating-linear-gradient(45deg, #ffffff33 0 5px, transparent 5px 10px), #c9d9c1; box-shadow: 0 3px 7px #80674c33; transform: rotate(-12deg); }
+.matchDeckCard { position: absolute; top: 9px; left: 3px; width: 57px; height: 85px; overflow: hidden; border: 2px solid #fff; border-radius: 5px; background: repeating-linear-gradient(45deg, #ffffff33 0 5px, transparent 5px 10px), #c9d9c1; box-shadow: none; transform: rotate(-12deg); }
 .matchDeckCard:nth-child(2) { left: 52px; transform: rotate(12deg); }
 .matchDeckCard:nth-child(3) { top: 4px; left: 28px; transform: rotate(2deg); background-color: #edcbd4; }
 .matchDeckCard > b { display: grid; place-items: center; height: 100%; color: #fffaf0; font: 700 36px Georgia, serif; }
@@ -61,8 +60,7 @@
   .matchGrid { grid-template-columns: minmax(200px, .8fr) minmax(0, 1.2fr); }
 }
 @container stage (max-width: 520px) {
-  .matchHeading h2 { font-size: 24px; }
-  .matchHeading p { font-size: 13px; }
+  .matchIntro { font-size: 13px; }
   .matchDeckArt { flex-basis: 94px; height: 92px; }
   .matchDeckCard { width: 49px; height: 74px; }
   .matchDeckCard:nth-child(2) { left: 43px; }
@@ -70,20 +68,20 @@
   .matchDeckInfo strong { font-size: 13px; }
   .matchDeckPreview { gap: 7px; padding: 8px; }
 }
-.watch { --tone: #a9d6ee; }
-.enter { --tone: #e7c3e2; }
-.create { --tone: #f4b0bb; }
+.watch { --tone: var(--brand-vanilla); }
+.enter { --tone: var(--brand-pink); }
+.create { --tone: var(--brand-peach); }
 /* The picture: the door's colour as a sky, lighter towards the floor. */
-.doorArt { position: relative; min-width: 0; min-height: 0; background: radial-gradient(circle at 50% 78%, #fffdebcc 0 28%, transparent 62%), linear-gradient(180deg, var(--tone), color-mix(in srgb, var(--tone) 35%, #fffdeb)); }
+.doorArt { position: relative; min-width: 0; min-height: 0; background: radial-gradient(circle at 50% 78%, var(--brand-paper) 0 28%, transparent 62%), linear-gradient(180deg, var(--tone), color-mix(in srgb, var(--tone) 35%, var(--brand-paper))); }
 /* Fitted inside the picture, whatever its shape. */
-.doorArt img { padding: 8px 10px 4px; object-fit: contain; filter: drop-shadow(0 4px 0 #6b4a3a22); transition: transform .2s; }
-.door:hover .doorArt img { transform: translateY(-2px) rotate(-3deg); }
+.doorArt img { padding: 8px 10px 4px; object-fit: contain; transition: transform .2s; }
 /* The name beside it, behind a rule. */
-.doorPlate { display: grid; align-content: center; gap: 6px; margin: 12px 0; padding: 0 clamp(14px, 2.4cqw, 30px); border-left: 2px solid #a8866766; text-align: left; }
-.doorPlate b { font-size: clamp(22px, 3cqw, 36px); letter-spacing: .14em; white-space: nowrap; }
-.doorPlate small { font-size: clamp(13px, 1.5cqw, 16px); color: #9a8676; }
-.door:hover { transform: translateY(-3px); box-shadow: 0 9px 0 #a8866755, 0 0 0 4px #fffdeb inset; }
-.door[aria-expanded=true] { transform: translateY(-3px); border-color: #e0607a; box-shadow: 0 9px 0 #e0607a55, 0 0 0 4px #fffdeb inset, 0 0 0 4px #f4b0bb88; }
+.doorPlate { display: grid; align-content: center; gap: 6px; margin: 4px 0; padding: 0 clamp(14px, 2.4cqw, 30px); border-left: 1px solid var(--brand-pink-edge); text-align: left; }
+.doorPlate b { color: var(--brand-cocoa); font-size: clamp(22px, 3cqw, 34px); letter-spacing: .1em; white-space: nowrap; }
+.doorPlate small { font-size: clamp(13px, 1.5cqw, 16px); color: var(--brand-cocoa-soft); }
+.door:active { transform: translateY(2px); }
+/* The door whose form is open: a blush card in a deeper ink. */
+.door[aria-expanded=true] { --frame-face: var(--brand-blush); --frame-ink: var(--brand-cocoa); transform: translateY(-3px); }
 /* With one chosen, the others step back. */
 .doors[data-open] .door[aria-expanded=false] { filter: saturate(.55) brightness(.97); }
 /* Portrait phones: a complete standing guide above the actions. */
@@ -95,8 +93,8 @@
 /* Landscape phones: keep the guide beside the actions. */
 @container stage (max-height: 520px) {
   .entrance { grid-template-columns: minmax(170px, 1fr) minmax(0, 2.2fr); }
-  .door { height: clamp(64px, calc((100cqh - 160px) / 4), 100px); border-radius: 14px; }
-  .doorPlate { margin: 6px 0; gap: 2px; }
+  .door { height: clamp(64px, calc((100cqh - 160px) / 4), 100px); }
+  .doorPlate { margin: 2px 0; gap: 2px; }
   .doorPlate b { font-size: 20px; }
   .entrance > .companion { height: 300px; }
 }
@@ -108,7 +106,7 @@
 .formAnchor { scroll-margin-top: 12px; margin-bottom: calc(-1 * clamp(14px, 2cqw, 22px)); }
 /* A narrow phone: the name alone, a little smaller. */
 @container stage (max-width: 420px) { .doorPlate b { font-size: 20px; letter-spacing: .06em; } .doorPlate small { font-size: 12px; } }
-.panel { display: grid; gap: 14px; padding: clamp(16px, 2.4cqw, 26px); border: 3px solid #b3d788; border-radius: 20px; background: #fff; color: #6b4a3a; box-shadow: 0 5px 0 #a8866755; }
+.panel { display: grid; gap: 14px; padding: clamp(16px, 2.4cqw, 26px); border: 3px solid #b3d788; border-radius: 20px; background: #fff; color: #6b4a3a; box-shadow: none; }
 .panel h2 { font-size: clamp(20px, 2.6cqw, 26px); font-weight: 700; letter-spacing: .08em; }
 .panel p { font-size: 16px; line-height: 1.7; }
 .note { color: #9a8676; font-size: 14px !important; }
@@ -137,7 +135,6 @@
 .secondary { border: 2px solid #d8cbbd; background: #fffdf7; color: #6b4a3a; }
 .danger { border: 2px solid #e2b3ab; background: #fff; color: #a4483b; font-size: 16px; min-height: 44px; justify-self: start; }
 .primary:disabled, .secondary:disabled { opacity: .55; cursor: default; }
-.primary:not(:disabled):hover, .secondary:not(:disabled):hover { transform: translateY(-2px); }
 .row { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; }
 
 /* The room id is what gets read out or typed: large and spaced. */
@@ -151,7 +148,7 @@
 .server summary { cursor: pointer; }
 .server small { margin-left: 12px; color: #9a8676; font-size: 14px; }
 .dot { display: inline-block; width: 10px; height: 10px; margin-right: 8px; border-radius: 50%; background: #c9bcad; }
-.serverUp .dot { background: #6fae3c; box-shadow: 0 0 0 3px #b3d78866; }
+.serverUp .dot { background: #6fae3c; box-shadow: none; }
 .serverDown { border-color: #e2b3ab; background: #fbe5dc; color: #a4483b; }
 .serverDown .dot { background: #d2604f; }
 .server dl { display: grid; gap: 6px; margin-top: 10px; padding-top: 10px; border-top: 1px solid #eadfce; font-size: 15px; }
@@ -177,10 +174,43 @@
 @container stage (max-width: 520px) { .seats { grid-template-columns: minmax(0, 1fr); } }
 @media (prefers-reduced-motion: reduce) { .primary, .secondary { transition: none; } }
 
-.historyLinks { display:flex; justify-content:flex-end; flex-wrap:wrap; gap:10px; }
-.historyLink { justify-self: end; padding: 8px 16px; border: 2px solid #dfcbb6; border-radius: 999px; background: #fffaf0; color: #80604c; font-size: 14px; text-decoration: none; box-shadow: 0 3px 0 #cfbba544; }
-.historyLink:hover { background: #fbe7ed; }
+/* 対戦履歴 and 通信計測: small, with no frame of their own. */
+.historyLinks { display: flex; justify-content: flex-end; flex-wrap: wrap; gap: 4px; }
+.historyLink { display: inline-flex; align-items: center; gap: 6px; padding: 6px 10px; border-radius: 6px; color: var(--brand-cocoa); font-size: 14px; font-weight: 700; text-decoration: none; }
+.historyLink svg { width: 18px; height: 18px; }
+.historyLink:hover { background: var(--brand-blush); }
 
-.spectatorTools { position: fixed; left: 50%; bottom: 16px; transform: translateX(-50%); z-index: 35; display: flex; flex-wrap: wrap; justify-content: center; align-items: center; gap: 10px; max-width: calc(100cqw - 24px); padding: 10px 16px; border: 1px solid #d3bd86; border-radius: 18px; background: #142c37ee; color: #fff5de; box-shadow: 0 5px 24px #0005; font-size: 12px; }
+.spectatorTools { position: fixed; left: 50%; bottom: 16px; transform: translateX(-50%); z-index: 35; display: flex; flex-wrap: wrap; justify-content: center; align-items: center; gap: 10px; max-width: calc(100cqw - 24px); padding: 10px 16px; border: 1px solid #d3bd86; border-radius: 18px; background: #142c37ee; color: #fff5de; box-shadow: none; font-size: 12px; }
 .spectatorTools a { padding: 8px 12px; border-radius: 12px; background: #f4bcc8; color: #65433e; font-weight: 700; white-space: nowrap; }
 @container stage (max-width: 600px) { .spectatorTools { bottom: 8px; width: max-content; } }
+
+/* ── The バトル and フリーマッチ screens in the launchpad (.padScreen): on the pad's paper, with the
+   shared form pieces in its small square style; board pages keep theirs. ── */
+.padScreen .field { color: var(--brand-cocoa-deep); font-size: 15px; }
+.padScreen .field input[type=text], .padScreen .field select { border: 1px solid var(--brand-pink-edge); border-radius: 6px; background: var(--brand-paper); color: var(--brand-cocoa-deep); }
+.padScreen .field a { color: var(--brand-cocoa); font-size: 13px; font-weight: 400; text-underline-offset: 3px; }
+.padScreen .field option { background: var(--brand-paper); color: var(--brand-cocoa-deep); }
+.padScreen .note { color: var(--brand-cocoa-soft); }
+.padScreen .error, .padScreen .server { border-radius: 6px; }
+.padScreen .matchDeckPreview { border-color: var(--brand-pink); border-radius: 6px; background: var(--brand-cream); }
+.padScreen .matchDeckInfo > span, .padScreen .matchDeckInfo small { color: var(--brand-cocoa-soft); }
+/* A large action: a card of its own in the ornament frame (OrnateFrame as a button). */
+.cardButton {
+  --pad: 14px 28px; --frame-face: linear-gradient(var(--brand-sage-wash), var(--brand-sage));
+  min-height: 64px; border: 0; background: none; color: var(--brand-cocoa-deep); font-size: 18px; cursor: pointer;
+  filter: none; transition: transform .12s ease;
+}
+.cardButton:active:not(:disabled) { transform: translateY(2px); }
+.cardButton:disabled { opacity: .55; cursor: default; }
+/* Small buttons: a square, a little rounded. */
+.smallButton { justify-self: center; min-height: 44px; padding: 8px 18px; border: 1px solid var(--brand-pink-edge); border-radius: 6px; background: var(--brand-paper); color: var(--brand-cocoa-deep); font-size: 15px; font-weight: 700; cursor: pointer; }
+.smallButton:hover:not(:disabled) { background: var(--brand-blush); }
+.smallButton:disabled { opacity: .55; cursor: default; }
+/* A way elsewhere with no frame: an icon and a short name. */
+.textLink { display: inline-flex; align-items: center; gap: 6px; padding: 6px 10px; border-radius: 6px; color: var(--brand-cocoa); font-size: 14px; font-weight: 700; text-decoration: none; }
+.textLink svg { width: 18px; height: 18px; }
+.textLink:hover { background: var(--brand-blush); }
+/* The room id form under the doors. */
+.idForm { --pad: 20px 24px; display: grid; justify-items: start; gap: 14px; color: var(--brand-cocoa-deep); }
+.idForm h3 { color: var(--brand-cocoa); font-size: 18px; }
+@media (prefers-reduced-motion: reduce) { .cardButton { transition: none; } }

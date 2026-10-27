@@ -1,10 +1,14 @@
-// A room match between two browsers: create, invite, join, both ready, the opening, a turn, giving up.
+// Rooms between browsers: opening the game makes a room, its invitation link brings a friend in,
+// both sit at the table, play the opening, one gives up, and after the match one keeps the seat
+// and the other watches. The owner leaving lets someone else take the role. The CPU can be called
+// to an empty seat and plays its own moves.
 //
 // Needs a room server and a web app that talks to it; this only runs when PPLALE_ROOM_TEST_URL
 // names that web app, e.g.
 //   PORT=8099 pnpm run start --workspace=@pplale/room-server
 //   NEXT_PUBLIC_ROOM_SERVER_URL=http://localhost:8099 npx next dev -p 3100
 //   PPLALE_ROOM_TEST_URL=http://localhost:3100 npx playwright test room-match
+// (PPLALE_ROOM_SERVER_URL names the room server when it is not http://localhost:8099.)
 import { test, expect } from '@playwright/test';
 
 const base = process.env.PPLALE_ROOM_TEST_URL;
@@ -14,135 +18,171 @@ const errors = [];
 test.beforeEach(() => { errors.length = 0; });
 async function open(browser, name) {
   const context = await browser.newContext({ viewport: { width: 1280, height: 800 } });
+  await context.addInitScript(guest => { try { localStorage.setItem('pplale-guest-name-v2', guest); } catch {} }, name);
   const page = await context.newPage();
   page.on('pageerror', error => errors.push(`${name}: ${error.message}`));
   return page;
 }
-/** Dice in order (the host first) until someone may choose (a tie is thrown again); that one goes first. */
-async function decideOrder(host, guest) {
+/** The room this browser is in, and the invitation it knows (the owner of an invite room sees it). */
+const plazaOf = page => page.evaluate(() => {
+  const saved = JSON.parse(localStorage.getItem('pplale-plaza-v1'));
+  return { id: saved.current, invite: saved.rooms[saved.current]?.invite };
+});
+/** Dice in order (seat 0 first) until someone may choose (a tie is thrown again); that one goes first. */
+async function decideOrder(near, far) {
   let first;
   for (let round = 0; round < 8 && !first; round++) {
-    await host.getByRole('button', { name: 'あなたのサイコロを振る' }).click({ timeout: 20000 });
-    await guest.getByRole('button', { name: 'あなたのサイコロを振る' }).click({ timeout: 20000 });
-    first = await Promise.any([host, guest].map(page => page.getByRole('button', { name: '決定' }).waitFor({ timeout: 9000 }).then(() => page))).catch(() => undefined);
+    await near.getByRole('button', { name: 'あなたのサイコロを振る' }).click({ timeout: 20000 });
+    await far.getByRole('button', { name: 'あなたのサイコロを振る' }).click({ timeout: 20000 });
+    first = await Promise.any([near, far].map(page => page.getByRole('button', { name: '決定' }).waitFor({ timeout: 9000 }).then(() => page))).catch(() => undefined);
   }
   expect(first).toBeDefined();
   await first.getByRole('radio', { name: '先攻' }).click();
   await first.getByRole('button', { name: '決定' }).click();
-  return [first, first === host ? guest : host];
+  return [first, first === near ? far : near];
 }
-async function draw(page, count) {
-  for (let i = 0; i < count; i++) {
-    await page.locator('button[data-deck$="-yojo"]:not([disabled])').click({ timeout: 15000 });
-    await page.waitForTimeout(350);
-  }
-}
+const seats = page => page.getByRole('button', { name: 'この席にすわる' });
 
-test('two players meet in a room, play the opening and one gives up', async ({ browser }) => {
-  test.setTimeout(120000);
-  const host = await open(browser, 'host'), guest = await open(browser, 'guest');
+test('opening the game makes a room; its invitation brings a friend to the same table', async ({ browser }) => {
+  test.setTimeout(150000);
+  const alice = await open(browser, 'ありす'), bob = await open(browser, 'ぼぶ'), carol = await open(browser, 'きゃろる');
 
-  // The host makes a room; every fruit can be chosen, strawberry is the default.
-  await host.goto(`${base}/game/battle/`);
-  await expect(host.getByRole('link', { name: /フリーマッチ/ })).toBeVisible();
-  await host.getByRole('button', { name: /ルームを作る/ }).click();
-  await expect(host.getByRole('checkbox', { name: /いちご/ })).toBeChecked();
-  await expect(host.getByRole('checkbox', { name: /ぶどう/ })).toBeEnabled();
-  await expect(host.getByRole('checkbox', { name: /おれんじ/ })).toBeEnabled();
-  await expect(host.getByRole('checkbox', { name: /めろん/ })).toBeEnabled();
-  await expect(host.getByRole('checkbox', { name: /拡張プレイアブル/ })).not.toBeChecked();
-  const limit = host.getByRole('combobox', { name: '1ターンの制限時間' });
-  await expect(limit).toHaveValue('0');
-  await expect(limit.getByRole('option')).toHaveText(['無制限（OFF）', '2分', '3分', '5分']);
-  await limit.selectOption('120');
-  await host.getByPlaceholder('なまえ').fill('ほすと');
-  await host.getByRole('button', { name: 'このルールでルームを作る' }).click();
-  await host.waitForURL(/battle\/room\/\?id=\d{6}/);
-  await expect(host.getByText(/1ターン：2分/)).toBeVisible();
-  const id = new URL(host.url()).searchParams.get('id');
-  const post = await host.getByRole('link', { name: 'Xで募集' }).getAttribute('href');
-  expect(post).toContain('https://x.com/intent/post?');
-  expect(decodeURIComponent(post)).toContain(`ルームID：${id}`);
+  // Opening the game: the launch screen, then a room of the default kind (invite) at its own address.
+  await alice.goto(`${base}/game/`);
+  await alice.waitForURL(/\/game\/room\/\d{6}\/$/, { timeout: 30000 });
+  await expect(seats(alice)).toHaveCount(2);
+  await expect(alice.getByRole('button', { name: /のメニュー$/ })).toContainText('インバイト');
+  const { id, invite } = await plazaOf(alice);
+  expect(invite).toBeTruthy();
+  // Reloading comes back to the same room instead of making another.
+  await alice.goto(`${base}/game/`);
+  await alice.waitForURL(`${base}/game/room/${id}/`);
 
-  // The guest types the id, sees whose room it is, and joins.
-  await guest.goto(`${base}/game/battle/`);
-  await guest.getByRole('button', { name: /ルームへ入る/ }).click();
-  await guest.getByPlaceholder('000000').fill(id);
-  await guest.getByRole('button', { name: 'ルームを見る' }).click();
-  await expect(guest.getByRole('heading', { name: 'ほすとさんのルーム' })).toBeVisible();
-  await expect(guest.getByText(/1ターン：2分/)).toBeVisible();
-  await guest.getByPlaceholder('なまえ').fill('げすと');
-  await guest.getByRole('button', { name: 'このルームに入る' }).click();
-  await guest.getByRole('button', { name: 'このデッキで準備OK' }).click();
-  await expect(host.getByText('げすと', { exact: true })).toBeVisible();
-  await host.getByRole('button', { name: 'このデッキで準備OK' }).click();
-  await Promise.all([host, guest].map(page => page.waitForURL(/\/game\/room\/\?id=/)));
-  await expect(host.getByRole('timer', { name: 'ターン残り時間' })).toHaveCount(0);
+  // The invitation is pasted in Discord first.
+  await alice.getByRole('button', { name: 'さそう' }).click();
+  await expect(alice.getByRole('button', { name: /Discordに貼る/ })).toBeVisible();
+  await alice.keyboard.press('Escape');
+  await expect(alice.getByRole('button', { name: /Discordに貼る/ })).toHaveCount(0);
 
-  const [first, second] = await decideOrder(host, guest);
+  // Without the invitation the room cannot be found: that is said, then carol is back in a room of
+  // her own. With it, the friend comes straight in.
+  await carol.goto(`${base}/game/room/${id}/`);
+  await expect(carol.getByRole('status').filter({ hasText: '招待が必要です' })).toBeVisible();
+  await carol.waitForURL(url => /\/game\/room\/\d{6}\/$/.test(url.pathname) && !url.pathname.includes(id), { timeout: 30000 });
+  await bob.goto(`${base}/game/room/${id}/?invite=${invite}`);
+  await bob.waitForURL(`${base}/game/room/${id}/`);
+  await expect(bob.getByRole('complementary', { name: 'ルームにいる人' }).getByRole('listitem')).toHaveCount(2);
+  await expect(alice.getByRole('complementary', { name: 'ルームにいる人' })).toContainText('ぼぶ');
 
-  // Both draw their opening hands at the same time, then keep them.
-  await Promise.all([draw(first, 3), draw(second, 4)]);
-  await Promise.all([first, second].map(page => page.getByRole('button', { name: '交換せずに決定' }).click({ timeout: 15000 })));
-  for (const page of [first, second]) await expect(page.getByRole('timer', { name: 'ターン残り時間' })).toBeVisible({ timeout: 15000 });
+  // Both sit down and get ready: the match starts on the same page.
+  // Seats are in seat order (0 at the table's left end): bob takes seat 1, so alice (seat 0) throws first.
+  await seats(bob).last().click();
+  await expect(seats(alice)).toHaveCount(1);
+  await seats(alice).click();
+  for (const page of [alice, bob]) await page.getByRole('button', { name: 'じゅんびOK!' }).click();
+  for (const page of [alice, bob]) await expect(page.getByRole('group', { name: '先攻・後攻のダイス' })).toBeVisible({ timeout: 20000 });
+  expect(alice.url()).toBe(`${base}/game/room/${id}/`);
+  const [first] = await decideOrder(alice, bob);
+  await expect(first.locator('button[data-deck$="-yojo"]:not([disabled])')).toBeVisible({ timeout: 15000 });
 
-  // Each side sees its own hand and only the backs of the other's.
-  await expect(first.locator('[data-hand-list] [data-hand]')).toHaveCount(3, { timeout: 20000 });
-  const theirs = first.getByRole('group', { name: '相手の手札 4枚' });
-  await expect(theirs.locator('[data-hand]')).toHaveCount(4);
-  await expect(theirs.locator('img')).toHaveCount(0);
-  await expect(second.getByRole('button', { name: /相手の\s*ターン/ })).toBeDisabled();
+  // Giving up from the board's menu ends it for both.
+  await first.getByRole('button', { name: 'メニュー', exact: true }).click();
+  await first.getByRole('button', { name: '投了する' }).click();
+  await first.getByRole('button', { name: '投了する（負けになります）' }).click();
+  for (const page of [alice, bob]) await expect(page.getByRole('dialog', { name: '対戦結果' })).toBeVisible({ timeout: 20000 });
 
-  // A reload returns to the same seat.
-  await second.reload();
-  await expect(second.getByRole('timer', { name: 'ターン残り時間' })).toBeVisible({ timeout: 20000 });
-  await expect(second.locator('[data-hand-list] [data-hand]')).toHaveCount(4, { timeout: 20000 });
+  // After it: alice keeps her seat for the next match, bob gives up his and watches.
+  await alice.getByRole('button', { name: 'この席でもう一度' }).click();
+  await bob.getByRole('button', { name: '席を空けて観戦' }).click();
+  await expect(alice.getByRole('button', { name: 'じゅんびOK!' })).toBeVisible({ timeout: 15000 });
+  await expect(seats(bob)).toHaveCount(1);
 
-  // Giving up ends the match for both; "once more" takes both back to choosing decks.
-  await second.getByRole('button', { name: 'メニュー' }).click();
-  await second.getByRole('button', { name: '投了する', exact: true }).click();
-  await second.getByRole('button', { name: /投了する（/ }).click();
-  for (const page of [first, second]) await expect(page.getByRole('dialog', { name: '対戦結果' }).getByText(/が投了した/)).toBeVisible({ timeout: 20000 });
-  await first.getByRole('button', { name: /もう一度/ }).click();
-  for (const page of [first, second]) await expect(page.getByRole('button', { name: 'このデッキで準備OK' })).toBeVisible({ timeout: 20000 });
+  // The owner leaves for a new room: bob stays, the room has no owner, and he takes the role.
+  await alice.keyboard.press('Escape');
+  await alice.getByRole('region', { name: 'クイックリンク' }).getByRole('button', { name: 'ルーム', exact: true }).click();
+  const creation = alice.getByRole('dialog', { name: '新しいルームを作る' });
+  await expect(creation.getByRole('radio', { name: /^インバイト 招待/ })).toHaveAttribute('aria-checked', 'true');
+  await expect(creation.getByRole('radio')).toHaveCount(5);
+  await creation.getByRole('radio', { name: /パブリック/ }).click();
+  await creation.getByRole('button', { name: 'この公開範囲で作る' }).click();
+  await alice.waitForURL(url => /\/game\/room\/\d{6}\/$/.test(url.pathname) && !url.pathname.includes(id) && url.searchParams.get('created') === '1', { timeout: 30000 });
+  const created = alice.getByRole('dialog', { name: 'ルームを作りました' });
+  await expect(created).toContainText('パブリック');
+  await expect(created.getByRole('img', { name: 'ルームのサムネイル' })).toBeVisible();
+  await created.getByRole('button', { name: '名前を変える' }).click();
+  await alice.getByRole('textbox', { name: 'ルーム名' }).fill('パブリックで遊ぼう');
+  await alice.getByRole('button', { name: 'この名前にする' }).click();
+  await expect(created).toContainText('パブリックで遊ぼう');
+  await created.getByRole('button', { name: 'ルールを変える' }).click();
+  await expect(alice.getByRole('dialog', { name: 'ルールをかえる' })).toBeVisible();
+  await alice.getByRole('button', { name: 'このルールにする' }).click();
+  await created.getByRole('button', { name: '共有リンク' }).click();
+  await expect(alice.getByRole('dialog', { name: 'ルームにさそう' }).getByRole('button', { name: 'リンク' })).toBeVisible();
+  await alice.getByRole('dialog', { name: 'ルームにさそう' }).getByRole('button', { name: '閉じる' }).click();
+  await created.getByRole('button', { name: '盤面へ' }).click();
+  await alice.waitForURL(url => /\/game\/room\/\d{6}\/$/.test(url.pathname) && !url.pathname.includes(id) && !url.search);
+  await expect(bob.getByRole('complementary', { name: 'ルームにいる人' }).getByRole('listitem')).toHaveCount(1);
+  await bob.getByRole('button', { name: 'オーナーになる' }).click();
+  await expect(bob.getByText('あなたがオーナー')).toBeVisible();
   expect(errors).toEqual([]);
+  for (const page of [alice, bob, carol]) await page.context().close();
 });
 
-test('a room that allows it can be watched: the spectator sees both hands and cannot act', async ({ browser }) => {
+test('the CPU sits down in an empty seat and plays its own moves at the same table', async ({ browser }) => {
   test.setTimeout(120000);
-  const host = await open(browser, 'host'), guest = await open(browser, 'guest'), watcher = await open(browser, 'watcher');
-  await host.goto(`${base}/game/battle/`);
-  await host.getByRole('button', { name: /ルームを作る/ }).click();
-  await host.getByRole('checkbox', { name: '観戦を許可する' }).check();
-  await host.getByPlaceholder('なまえ').fill('ほすと');
-  await host.getByRole('button', { name: 'このルールでルームを作る' }).click();
-  await host.waitForURL(/battle\/room\/\?id=\d{6}/);
-  const id = new URL(host.url()).searchParams.get('id');
-  await expect(host.getByText(/観戦：あり/)).toBeVisible();
-
-  // Someone comes to watch before there is a match.
-  await watcher.goto(`${base}/game/battle/`);
-  await watcher.getByRole('button', { name: /観戦する/ }).click();
-  await watcher.getByPlaceholder('000000').fill(id);
-  await watcher.getByRole('button', { name: '観戦する', exact: true }).click();
-  await expect(watcher.getByRole('heading', { name: '対戦が始まるのを待っています' })).toBeVisible();
-  await expect(host.getByText('いま1人が観戦しています。')).toBeVisible();
-
-  await guest.goto(host.url());
-  await guest.getByPlaceholder('なまえ').fill('げすと');
-  await guest.getByRole('button', { name: 'このルームに入る' }).click();
-  await guest.getByRole('button', { name: 'このデッキで準備OK' }).click();
-  await host.getByRole('button', { name: 'このデッキで準備OK' }).click();
-  const [first, second] = await decideOrder(host, guest);
-  await Promise.all([draw(first, 3), draw(second, 4)]);
-
-  // The spectator sees the cards of both hands (the players only the backs of the other's), and has nothing to press.
-  await expect(watcher.locator('[data-table]')).toBeVisible();
-  await expect(watcher.locator('[data-hand-list] [data-hand] img').first()).toBeVisible({ timeout: 20000 });
-  await expect(watcher.locator('[role=group][aria-label^="相手の手札"] img').first()).toBeAttached();
-  await expect(first.locator('[role=group][aria-label^="相手の手札"] img')).toHaveCount(0);
-  await expect(watcher.getByRole('button', { name: '観戦中' })).toBeDisabled();
-  await expect(watcher.locator('button[data-deck]:not([disabled])[data-deck$="-yojo"]')).toHaveCount(0);
-  await expect(first.getByText('観戦 1人')).toBeVisible();
+  const alice = await open(browser, 'ありす');
+  await alice.goto(`${base}/game/`);
+  await alice.waitForURL(/\/game\/room\/\d{6}\/$/, { timeout: 30000 });
+  await seats(alice).last().click();
+  await alice.getByRole('button', { name: '対戦相手をえらぶ' }).click();
+  await alice.getByRole('dialog', { name: '対戦相手をえらぶ' }).getByRole('button', { name: '人をさそう' }).click();
+  await expect(alice.getByRole('dialog', { name: 'ルームにさそう' })).toBeVisible();
+  await alice.getByRole('dialog', { name: 'ルームにさそう' }).getByRole('button', { name: '閉じる' }).click();
+  await alice.getByRole('button', { name: '対戦相手をえらぶ' }).click();
+  await alice.getByRole('dialog', { name: '対戦相手をえらぶ' }).getByRole('button', { name: 'CPUと対戦' }).click();
+  await expect(alice.getByRole('dialog', { name: 'CPUをえらぶ' })).toBeVisible();
+  await alice.getByRole('button', { name: /ふつう/ }).click();
+  await expect(alice.getByRole('button', { name: /CPUのデッキをえらぶ/ })).toContainText('おまかせデッキ');
+  await alice.getByRole('button', { name: /CPUのデッキをえらぶ/ }).click();
+  const picker = alice.getByRole('dialog', { name: 'デッキをえらぶ' });
+  await picker.getByRole('button').filter({ hasText: 'いちごのおためしデッキ' }).click();
+  await expect(alice.getByRole('group', { name: 'デッキのカード' })).toBeVisible();
+  await alice.getByRole('button', { name: 'このデッキにする' }).click();
+  await alice.getByRole('button', { name: 'このCPUを呼ぶ' }).click();
+  await expect(alice.getByText('CPU・ふつう')).toBeVisible();
+  // Reconfigure the same CPU from its own seat, without removing it first.
+  await alice.getByRole('button', { name: /^CPUのデッキ:/ }).click();
+  await expect(alice.getByRole('button', { name: /CPUのデッキをえらぶ/ })).toContainText('いちごのおためしデッキ');
+  await alice.getByRole('button', { name: 'このCPUにする' }).click();
+  await alice.getByRole('button', { name: 'じゅんびOK!' }).click();
+  await expect(alice.locator('[data-table]')).toBeVisible({ timeout: 20000 });
+  // The CPU throws its die after ours; whoever wins chooses.
+  for (let round = 0; round < 8; round++) {
+    await alice.getByRole('button', { name: 'あなたのサイコロを振る' }).click({ timeout: 20000 });
+    const next = await Promise.race([
+      alice.getByRole('button', { name: '決定' }).waitFor({ timeout: 12000 }).then(() => 'choose'),
+      alice.locator('button[data-deck$="-yojo"]:not([disabled])').waitFor({ timeout: 12000 }).then(() => 'draw'),
+    ]).catch(() => 'again');
+    if (next === 'choose') { await alice.getByRole('radio', { name: '先攻' }).click(); await alice.getByRole('button', { name: '決定' }).click(); }
+    if (next !== 'again') break;
+  }
+  // The CPU draws its opening hand by itself.
+  await expect.poll(() => alice.locator('[aria-label^="相手の手札"]').getAttribute('aria-label'), { timeout: 20000 }).toMatch(/[1-9]枚/);
   expect(errors).toEqual([]);
+  await alice.context().close();
+});
+
+test('a link to an older two-seat room opens its lobby, where joining is the visitor\'s choice', async ({ browser }) => {
+  test.setTimeout(60000);
+  const server = process.env.PPLALE_ROOM_SERVER_URL ?? 'http://localhost:8099';
+  const made = await (await fetch(`${server}/rooms`, { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ rules: { fruits: ['strawberry'], extendedPlayable: false }, name: 'ほすと' }) })).json();
+  const visitor = await open(browser, 'げすと');
+  await visitor.goto(`${base}/game/battle/room/?id=${made.view.id}`);
+  await visitor.waitForURL(`${base}/game/room/${made.view.id}/?id=${made.view.id}`);
+  await expect(visitor.getByRole('button', { name: 'このルームに入る' })).toBeVisible({ timeout: 20000 });
+  // Nobody took the seat on the visitor's behalf.
+  const info = await (await fetch(`${server}/rooms/${made.view.id}`)).json();
+  expect(info.open).toBe(true);
+  expect(errors).toEqual([]);
+  await visitor.context().close();
 });

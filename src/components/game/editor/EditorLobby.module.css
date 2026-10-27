@@ -1,17 +1,30 @@
-.lobby { display: grid; gap: 22px; color: #6b4a3a; }
+/* The 盤面エディタ screen on the launchpad's paper: two card doors, saved boards as rows, a code box. */
+.lobby { display: grid; gap: 22px; color: var(--brand-cocoa-deep); }
 .lobby button { cursor: pointer; }
-.lobby h2 { margin-bottom: 8px; font-size: 19px; font-weight: 700; }
-.lead { font-size: 17px; line-height: 1.8; }
-.doors { display: flex; flex-wrap: wrap; gap: 14px; }
-.doors button, .saved li button:first-child { display: grid; gap: 4px; padding: 18px 26px; border: 2px solid #e7c3e2; border-radius: 18px; background: #fff; color: inherit; text-align: left; }
-.doors b { font-size: 21px; }
-.doors small, .saved small { font-size: 14px; }
-.doors .primary { border-color: #a88667; background: #b3d788; }
-.saved { display: grid; gap: 8px; padding: 0; list-style: none; }
-.saved li { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; }
-.saved li button:first-child { padding: 12px 18px; }
-.remove { padding: 8px 14px; border-radius: 12px; color: #ac655b; }
-.lobby textarea { display: block; width: 100%; margin-bottom: 10px; padding: 10px; border: 2px solid #e7c3e2; border-radius: 12px; background: #fff; color: inherit; font: inherit; }
-.lobby section > button { padding: 12px 22px; border: 2px solid #e7c3e2; border-radius: 14px; background: #fff; color: inherit; font-size: 17px; }
-.lobby section > button:disabled { opacity: .5; cursor: not-allowed; }
-.error { padding: 10px; border-radius: 10px; background: #fbe5dc; color: #ac655b; font-size: 16px; }
+.lobby h2 { margin-bottom: 8px; color: var(--brand-cocoa); font-size: 19px; }
+.lead { font-size: 16px; line-height: 1.8; }
+.doors { display: flex; flex-wrap: wrap; gap: 16px; }
+/* Large buttons: cards of their own in the ornament frame; the first choice is blush. */
+.door { --pad: 16px 30px; display: grid; gap: 4px; min-width: 220px; border: 0; background: none; color: var(--brand-cocoa-deep); text-align: left; filter: none; transition: transform .12s ease; }
+.door:active { transform: translateY(2px); }
+.door b { font-size: 21px; }
+.door small { color: var(--brand-cocoa-soft); font-size: 14px; }
+.primary { --frame-face: var(--brand-blush); }
+/* Saved boards: rows parted by a fine rule. */
+.saved { display: grid; margin: 0; padding: 0; list-style: none; }
+.saved li { display: flex; align-items: center; gap: 10px; border-bottom: 1px solid var(--brand-pink); }
+.saved li:first-child { border-top: 1px solid var(--brand-pink); }
+.open { display: grid; flex: 1; gap: 2px; min-width: 0; padding: 10px 8px; border: 0; background: none; color: inherit; text-align: left; }
+.open:hover { background: var(--brand-vanilla-wash); }
+.open b { font-size: 17px; }
+.open small { color: var(--brand-cocoa-soft); font-size: 13px; }
+.remove { flex: none; padding: 6px 12px; border: 1px solid var(--brand-pink-edge); border-radius: 6px; background: var(--brand-paper); color: var(--brand-cocoa-deep); font-size: 14px; }
+.remove:hover { background: var(--brand-peach-wash); }
+.lobby textarea { display: block; width: 100%; margin-bottom: 10px; padding: 10px; border: 1px solid var(--brand-pink-edge); border-radius: 6px; background: var(--brand-paper); color: inherit; font: inherit; }
+/* A small button: a square, a little rounded. */
+.small { padding: 8px 18px; border: 1px solid var(--brand-cocoa); border-radius: 6px; background: var(--brand-vanilla-wash); color: var(--brand-cocoa-deep); font-size: 16px; font-weight: 700; }
+.small:hover:not(:disabled) { background: var(--brand-vanilla); }
+.small:disabled { opacity: .5; cursor: not-allowed; }
+.lobby button:focus-visible, .lobby textarea:focus-visible { outline: 3px solid var(--brand-cocoa); outline-offset: 2px; }
+.error { margin: 0; padding: 8px 12px; border-left: 4px solid var(--brand-peach); background: var(--brand-peach-wash); color: var(--brand-cocoa-deep); font-size: 14px; }
+@media (prefers-reduced-motion: reduce) { .door { transition: none; } }

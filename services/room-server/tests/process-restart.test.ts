@@ -61,7 +61,7 @@ test('Redis: an actual server process can crash and both seats continue on repla
     const guest = await post(second, `/rooms/${id}/join`, { name: 'process-guest' });
     const a = await connect(first, id, host.token), b = await connect(second, id, guest.token);
     t.after(() => { a.socket.terminate(); b.socket.terminate(); });
-    await Promise.all([a, b].map(client => client.until(view => view.players[0].online && !!view.players[1]?.online)));
+    await Promise.all([a, b].map(client => client.until(view => view.players[0]!.online && !!view.players[1]?.online)));
     assert.equal(await a.act({ action: 'ready', deck }), undefined);
     assert.equal(await b.act({ action: 'ready', deck }), undefined);
     const before = (await a.until(view => view.status === 'playing')).game!;

@@ -81,12 +81,12 @@ export async function freeMatch(backend: Backend, catalog: Catalog, operation: '
                 const made = createRoom(roomId, { rules: { ...freeMatchRules, spectators: options.allowSpectators ?? true }, name: opponent[1].name });
                 joinRoom(made.room, { name: own.name });
                 made.room.mode = 'free';
-                made.room.seats[0].historyOwners = opponent[1].historyOwners;
+                made.room.seats[0]!.historyOwners = opponent[1].historyOwners;
                 made.room.seats[1]!.historyOwners = own.historyOwners;
                 for (const seat of made.room.seats) if (seat) seat.profileId = seat.historyOwners?.find(owner => owner.startsWith('user:'))?.slice(5);
                 // Each player's search secret also authenticates their seat. Only its hash is
                 // kept in Redis; either player can recover the seat by polling with that secret.
-                made.room.seats[0].tokenHash = opponent[0];
+                made.room.seats[0]!.tokenHash = opponent[0];
                 made.room.seats[1]!.tokenHash = id;
                 act(made.room, 0, { action: 'ready', deck: opponent[1].deck }, catalog);
                 act(made.room, 1, { action: 'ready', deck: own.deck }, catalog);

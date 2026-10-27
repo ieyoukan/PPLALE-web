@@ -37,19 +37,20 @@ export interface StoredSession {
 }
 
 const STORAGE_KEY = 'pplale-game-session-v2';
-/** Where the game opens and returns to: the CPU対決 tab (preparation against the CPU). */
+/** Where the game opens and returns to: the room this player is in (made on opening, if there is none). */
 export const HOME_PATH = '/game/';
-/** Matches between people: making or entering a room. */
+/** Preparing a match against the CPU in this browser (CPU対決). */
+export const CPU_PATH = '/game/cpu/';
+/** Free matches and the match history. */
 export const BATTLE_PATH = '/game/battle/';
-/** A room before its match (`?id=`): the page a shared link opens. */
-export const ROOM_PATH = '/game/battle/room/';
-/** The board of a room's match (`?id=`). */
-export const ROOM_PLAY_PATH = '/game/room/';
-export const roomHref = (path: typeof ROOM_PATH | typeof ROOM_PLAY_PATH, id: string) => `${path}?id=${id}`;
-/** The board of a room's match for someone watching it. */
-export const watchHref = (id: string) => `${ROOM_PLAY_PATH}?id=${id}&watch=1`;
+/** One room: waiting, watching and its matches are all this page, and it is the link that is shared. */
+export const ROOM_PATH = '/game/room/';
+export const roomHref = (id: string) => `${ROOM_PATH}${id}/`;
+/** A free match's board for someone watching it. */
+export const watchHref = (id: string) => `${ROOM_PATH}${id}/?watch=1`;
 export const CARDS_PATH = '/game/cards/';
 export const NOTIFICATIONS_PATH = '/game/notifications/';
+export const SETTINGS_PATH = '/game/settings/';
 /** 盤面エディタ: place cards freely, then play from there. */
 export const EDITOR_PATH = '/game/editor/';
 export const PUZZLES_PATH = '/game/puzzles/';

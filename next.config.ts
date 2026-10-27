@@ -38,7 +38,7 @@ const config: NextConfig = {
     optimizePackageImports: ['framer-motion'],
   },
   serverExternalPackages: ['@vercel/og', 'sharp'],
-  outputFileTracingIncludes: { '/about': ['./docs/game-rules.md'], '/api/og/**': ['./public/og-cards/**/*.png'], '/api/og/profile/**': ['./public/images/token/**/*.webp', './public/og-cards/profile-bg.jpg'] },
+  outputFileTracingIncludes: { '/about': ['./docs/game-rules.md'], '/api/og/**': ['./public/og-cards/**/*.png'], '/api/og/profile/**': ['./public/images/token/**/*.webp', './public/og-cards/profile-bg.jpg'], '/api/og/room/**': ['./public/images/game/logo.webp', './public/images/game/characters/friends.webp', './public/og-cards/profile-bg.jpg'] },
   // 本番環境用の設定
   assetPrefix: '',
   basePath: '',
@@ -87,6 +87,11 @@ const config: NextConfig = {
         headers: [{ key: 'Cache-Control', value: 'no-cache, no-store, must-revalidate' }],
       },
     ];
+  },
+  // Links to a room from before rooms had their own address (`?id=`): every room is /game/room/<id>/ now.
+  async redirects() {
+    const room = { type: 'query' as const, key: 'id', value: '(?<id>\\d{6})' };
+    return ['/game/room', '/game/battle/room'].map(source => ({ source, has: [room], destination: '/game/room/:id/', permanent: false }));
   },
   turbopack: {
     resolveAlias: {

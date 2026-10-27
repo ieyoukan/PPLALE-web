@@ -108,7 +108,7 @@ export class PostgresHistory implements HistoryRepository {
                 id: room.record.id, mode: room.mode ?? 'room', startedAt: room.record.startedAt, endedAt: 0,
                 players: room.seats.map(s => ({ name: s!.name, ...(s!.profileId && { profileId: s!.profileId }), deck: structuredClone(s!.deck!), playableName: catalog[s!.deck!.playable]?.name ?? s!.deck!.playable })) as MatchSummary['players'],
                 rules: room.rules, winner: null, reason: 'normal', turns: 0, points: [0, 0], firstPlayer: room.state.rules.firstPlayer,
-                frames: 0, complete: completeAllowed && room.state.revision === 0 && room.seats.every(seat => !!seat?.historyOwners?.length), engineVersion: capture.engineVersion,
+                frames: 0, complete: completeAllowed && room.state.revision === 0 && room.seats.every(seat => !!seat?.cpu || !!seat?.historyOwners?.length), engineVersion: capture.engineVersion,
             };
             current = (await client.query("INSERT INTO matches VALUES($1,$2,NULL,$3,$4,0,'',$5) RETURNING *", [meta.id, meta.startedAt, JSON.stringify(meta), capture.catalogId, sha(capture.catalogId + '\n' + JSON.stringify(meta) + '\n')])).rows[0];
             for (const seat of [0, 1] as const) for (let owner of room.seats[seat]?.historyOwners ?? []) {

@@ -1,0 +1,83 @@
+'use client';
+
+// The room this player is in, whatever it is doing: its table between matches, the board during
+// one (everyone not seated watches it, without the hidden cards), and the result of a finished
+// match until each person goes back to the table themselves. No loading screen: the match's cards
+// and code load in the background while the room is at its table, and if they are not quite there
+// when the match starts the table stays a moment longer. The new match's board then comes round from
+// the table's side view to this player's seat, seen from above.
+import { useCallback, useEffect, useMemo, useState } from 'react';
+import type { CSSProperties } from 'react';
+import Link from 'next/link';
+import type { GameState } from '@pplale/game-core';
+import type { RoomView } from '@pplale/game-core/room';
+import { roomMatchCardIds } from '@/lib/game/matchAssets';
+import { BoardTable } from '../BoardEmulator';
+import { useRoomSession } from '../room/useRoomSession';
+import boardStyles from '../BoardEmulator.module.css';
+import link from '../room/Room.module.css';
+import { PlazaIcon } from './PlazaIcon';
+import { PlazaTable } from './PlazaTable';
+import { usePlaza } from './PlazaProvider';
+import styles from './Plaza.module.css';
+
+type Played = RoomView & { game: GameState };
+
+export function PlazaRoom({ view, onMenu }: { view: RoomView; onMenu: () => void }) {
+  // A finished match stays on this screen (even once the table is back) until this person leaves it.
+  const [result, setResult] = useState<Played | null>(null);
+  const [dismissed, setDismissed] = useState<string | null>(null);
+  useEffect(() => {
+    if (view.game && view.status === 'finished') setResult(view as Played);
+    else if (view.status === 'playing') setResult(null);
+  }, [view]);
+  const current = view.game && (view.status === 'playing' || view.status === 'finished') ? view as Played : result;
+  const shown = current && !(current.status === 'finished' && current.matchId === dismissed) ? current : null;
+  const done = useCallback(() => setDismissed(shown?.matchId ?? null), [shown?.matchId]);
+  // Those in the room see its name on the tab (the shared link's title only says what the link may).
+  const name = view.plaza?.name;
+  useEffect(() => { if (name) document.title = `${name}｜ぷぷりえーる`; }, [name]);
+  const prepared = useMatchAssets(roomMatchCardIds((shown ?? view).rules));
+  if (!shown || !prepared) return <PlazaTable view={view} onMenu={onMenu} />;
+  // A new match, or sitting down or standing up, is another table.
+  return <PlazaMatch key={`${shown.match}:${shown.watching ? 'watch' : shown.seat}`} initial={shown} onDone={done} onMenu={onMenu} />;
+}
+
+/** Whether the cards and code of a match with these cards are loaded (or failed to: the board then loads them itself). */
+function useMatchAssets(ids: string[]) {
+  const key = ids.join('|');
+  const [ready, setReady] = useState('');
+  useEffect(() => {
+    const controller = new AbortController();
+    void import('@/lib/game/prepareMatch').then(({ prepareMatchAssets }) => prepareMatchAssets(key.split('|'), { signal: controller.signal }))
+      .catch(() => {}).then(() => { if (!controller.signal.aborted) setReady(key); });
+    return () => controller.abort();
+  }, [key]);
+  return ready === key;
+}
+
+function PlazaMatch({ initial, onDone, onMenu }: { initial: Played; onDone: () => void; onMenu: () => void }) {
+  const plaza = usePlaza(), { send, subscribe, linked, presented, view } = plaza;
+  const room = useMemo(() => ({ send, subscribe, linked, presented }), [send, subscribe, linked, presented]);
+  const seated = !initial.watching;
+  // After the match: a player who leaves the result gives up the seat; one who plays again keeps it.
+  const onLeave = useCallback(() => { if (seated) void send({ action: 'stand' }).catch(() => {}); onDone(); }, [seated, send, onDone]);
+  const rematch = useCallback(() => { void send({ action: 'rematch' }).catch(() => {}); onDone(); }, [send, onDone]);
+  const options = useMemo(() => ({ rematch, menu: onMenu }), [rematch, onMenu]);
+  const session = useRoomSession({ room, initial, seat: initial.seat, onLeave, plaza: options });
+  const people = view?.plaza?.members.filter(member => member.online).length ?? 0;
+  // The players of a finished match may watch it again (its recording is theirs).
+  const replay = view?.status === 'finished' && view.matchId === initial.matchId ? view.replayId : undefined;
+  // Only a match just starting comes round (not one opened again midway). From the table's side view,
+  // seat 0 is at the left end and seat 1 at the right: a quarter turn brings this seat to the front.
+  const intro = initial.game.phase === 'dice' ? { '--intro-turn': initial.seat === 1 && seated ? '-90deg' : '90deg' } as CSSProperties : undefined;
+  return <>
+    <div className={intro ? styles.boardIntro : undefined} style={{ display: 'contents', ...intro }}><BoardTable session={session} /></div>
+    {replay && <aside className={link.spectatorTools}><Link href={`/game/replay/?id=${replay}`}>リプレイを見る ▶</Link></aside>}
+    {/* On the board's right rail, where nothing of the match is: the room and the game's menu. */}
+    <button className={`${boardStyles.infoButton} ${styles.roomTool}`} aria-label={`ルーム（${people}人）`} onClick={onMenu}>
+      <PlazaIcon name="people" /><small>ルーム</small><b aria-hidden="true">{people}</b>
+    </button>
+    {!linked && <p className={`${link.badge} ${link.badgeDown}`} role="status">ルームサーバーに再接続しています…</p>}
+  </>;
+}

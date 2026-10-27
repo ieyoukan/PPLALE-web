@@ -4,7 +4,8 @@
 // can be replaced without ending a match.
 //
 //   pplale:room:{id}        hash   json (the room), v (its version), st (its status); expires when idle
-//   pplale:on:{id}:{spot}   zset   one member per open socket of a seat (0, 1) or of the spectators (2), scored with when it lapses
+//   pplale:on:{id}:{spot}   zset   one member per open socket of a seat (0, 1), of the spectators (2) or of a plaza's members (m: `{member}~{socket}`), scored with when it lapses
+//   pplale:claim:{key}      string taken by the first instance to claim it (one CPU move is decided once)
 //   pplale:pod:{pod}        string that instance's socket count; lapses when the instance is gone
 //   pplale:totals           hash   counters since the data began
 //   pplale:rooms            channel
@@ -25,13 +26,21 @@ export interface RoomEvent {
     room: Room;
     online: [boolean, boolean];
     watching: number;
+    /** In a plaza: the members connected now. */
+    members?: string[];
     /** That seat was given up: its sockets have no room any more. */
     dismiss?: Side;
+    /** In a plaza: these members are no longer in it. */
+    dismissMembers?: string[];
 }
 export type Totals = RoomServerStats['total'];
-/** Where a socket is in a room: a seat, or (2) among the spectators. */
-export type Spot = Side | 2;
+/** Where a socket is in a room: a seat, (2) among the spectators, or (m) a plaza's member wherever they are. */
+export type Spot = Side | 2 | 'm';
+/** One open socket. For a plaza member `member` is `{member id}~{socket}`, so that their sockets are counted together. */
 export interface Member { id: string; seat: Spot; member: string }
+/** The plaza member a socket entry belongs to. */
+export const memberOfEntry = (entry: string) => entry.slice(0, entry.indexOf('~'));
+const plazaMembers = (entries: string[]) => [...new Set(entries.map(memberOfEntry))];
 export interface Overview { rooms: Record<RoomStatus, number>; total: Totals; pods: number; connections: number }
 
 export interface Backend {
@@ -61,8 +70,10 @@ export interface Backend {
     /** A socket of the seat closed. True when the seat has none left (the player is gone). */
     leave(entry: Member): Promise<boolean>;
     online(id: string): Promise<[boolean, boolean]>;
-    /** All three presence sets in one backend round trip. */
-    presence(id: string): Promise<{ online: [boolean, boolean]; watching: number }>;
+    /** All presence sets in one backend round trip (`members`: a plaza's members connected now). */
+    presence(id: string): Promise<{ online: [boolean, boolean]; watching: number; members: string[] }>;
+    /** True for the first caller to claim `key` within `ttl` ms. */
+    claim(key: string, ttl: number): Promise<boolean>;
     /** Open sockets of spectators. */
     watching(id: string): Promise<number>;
     /** Says that these sockets are still open; one that is not refreshed lapses after `ttl`. */
@@ -109,13 +120,21 @@ redis.call('HSET', KEYS[1], 'v', ARGV[2], 'json', ARGV[3])
 redis.call('PEXPIRE', KEYS[1], 600000)
 return 1`;
 
+// KEYS[1] a presence set. ARGV: the socket's lapse time, the socket, its ttl. The set outlives its longest-lived socket.
+const MARK = `
+redis.call('ZADD', KEYS[1], ARGV[1], ARGV[2])
+if redis.call('PTTL', KEYS[1]) < tonumber(ARGV[3]) then redis.call('PEXPIRE', KEYS[1], ARGV[3]) end
+return 1`;
+
+// The seats and spectators are counted; a plaza's member entries are listed after the counts.
 const PRESENCE = `
-local counts = {}
+local result = {}
 for i, key in ipairs(KEYS) do
   redis.call('ZREMRANGEBYSCORE', key, '-inf', ARGV[1])
-  counts[i] = redis.call('ZCARD', key)
+  if i < 4 then result[i] = redis.call('ZCARD', key) end
 end
-return counts`;
+for _, entry in ipairs(redis.call('ZRANGE', KEYS[4], 0, -1)) do table.insert(result, entry) end
+return result`;
 
 export async function redisBackend(url: string, prefix = 'pplale:'): Promise<Backend> {
     const client = createClient({ url });
@@ -133,10 +152,14 @@ export async function redisBackend(url: string, prefix = 'pplale:'): Promise<Bac
         await client.zRemRangeByScore(seatKey(id, seat), '-inf', Date.now());
         return client.zCard(seatKey(id, seat));
     };
-    const mark = (entry: Member, ttl: number) => Promise.all([
-        client.zAdd(seatKey(entry.id, entry.seat), { score: Date.now() + ttl, value: entry.member }),
-        client.pExpire(seatKey(entry.id, entry.seat), Math.ceil(ttl)),
-    ]);
+    /** Open sockets of one plaza member. */
+    const memberSockets = async (id: string, entry: string) => {
+        await client.zRemRangeByScore(seatKey(id, 'm'), '-inf', Date.now());
+        const prefix = `${memberOfEntry(entry)}~`;
+        return (await client.zRange(seatKey(id, 'm'), 0, -1)).filter(value => value.startsWith(prefix)).length;
+    };
+    // A plaza's members share one key: a socket only ever lengthens its life, never cuts the others'.
+    const mark = (entry: Member, ttl: number) => client.eval(MARK, { keys: [seatKey(entry.id, entry.seat)], arguments: [String(Date.now() + ttl), entry.member, String(Math.ceil(ttl))] });
     async function keys(pattern: string) {
         const found: string[] = [];
         for await (const batch of client.scanIterator({ MATCH: pattern, COUNT: 500 })) found.push(...(Array.isArray(batch) ? batch : [batch]));
@@ -193,22 +216,23 @@ export async function redisBackend(url: string, prefix = 'pplale:'): Promise<Bac
             await subscriber.subscribe(channel, message => listener(JSON.parse(message) as RoomEvent));
         },
         async enter(entry, ttl) {
-            const before = await present(entry.id, entry.seat);
+            const before = entry.seat === 'm' ? await memberSockets(entry.id, entry.member) : await present(entry.id, entry.seat);
             await mark(entry, ttl);
             return before === 0;
         },
         async leave(entry) {
             await client.zRem(seatKey(entry.id, entry.seat), entry.member);
-            return await present(entry.id, entry.seat) === 0;
+            return (entry.seat === 'm' ? await memberSockets(entry.id, entry.member) : await present(entry.id, entry.seat)) === 0;
         },
         async online(id) {
             const [a, b] = await Promise.all([present(id, 0), present(id, 1)]);
             return [a > 0, b > 0];
         },
         async presence(id) {
-            const counts = await client.eval(PRESENCE, { keys: [0, 1, 2].map(seat => seatKey(id, seat as Spot)), arguments: [String(Date.now())] }) as number[];
-            return { online: [counts[0] > 0, counts[1] > 0], watching: counts[2] };
+            const counts = await client.eval(PRESENCE, { keys: ([0, 1, 2, 'm'] as Spot[]).map(seat => seatKey(id, seat)), arguments: [String(Date.now())] }) as (number | string)[];
+            return { online: [Number(counts[0]) > 0, Number(counts[1]) > 0], watching: Number(counts[2]), members: plazaMembers(counts.slice(3).map(String)) };
         },
+        async claim(key, ttl) { return await client.set(`${prefix}claim:${key}`, '1', { NX: true, PX: Math.ceil(ttl) }) === 'OK'; },
         watching: id => present(id, 2),
         async refresh(entries, ttl) { await Promise.all(entries.map(entry => mark(entry, ttl))); },
         async count(name) { await client.hIncrBy(totalsKey, name, 1); },
@@ -235,7 +259,7 @@ export async function redisBackend(url: string, prefix = 'pplale:'): Promise<Bac
 export function memoryBackend(): Backend {
     const rooms = new Map<string, { json: string; until: number }>();
     const seats = new Map<string, Map<string, number>>(), pods = new Map<string, { connections: number; until: number }>();
-    const listeners: ((event: RoomEvent) => void)[] = [], total = noTotals();
+    const listeners: ((event: RoomEvent) => void)[] = [], total = noTotals(), claims = new Map<string, number>();
     const pending = new Map<string, HistoryWrite>(), capable = new Map<string, number>(), audience = new Map<string, number>();
     let serial = 0;
     function record(room: Room, previous: Room | null, ttl: number, history?: HistoryCapture) {
@@ -250,6 +274,8 @@ export function memoryBackend(): Backend {
         return rooms.get(id);
     };
     const performanceSamples: PlaySample[] = [];
+    /** Another open socket of the same plaza member. */
+    const same = (found: Map<string, number>, entry: string) => [...found.keys()].some(other => memberOfEntry(other) === memberOfEntry(entry));
     const members = (id: string, seat: Spot) => {
         const key = `${id}:${seat}`, now = Date.now();
         let found = seats.get(key);
@@ -302,17 +328,23 @@ export function memoryBackend(): Backend {
         },
         async subscribe(listener) { listeners.push(listener); },
         async enter({ id, seat, member }, ttl) {
-            const found = members(id, seat), first = found.size === 0;
+            const found = members(id, seat), first = seat === 'm' ? !same(found, member) : found.size === 0;
             found.set(member, Date.now() + ttl);
             return first;
         },
         async leave({ id, seat, member }) {
             const found = members(id, seat);
             found.delete(member);
-            return found.size === 0;
+            return seat === 'm' ? !same(found, member) : found.size === 0;
         },
         async online(id) { return [members(id, 0).size > 0, members(id, 1).size > 0]; },
-        async presence(id) { return { online: [members(id, 0).size > 0, members(id, 1).size > 0], watching: members(id, 2).size }; },
+        async presence(id) { return { online: [members(id, 0).size > 0, members(id, 1).size > 0], watching: members(id, 2).size, members: plazaMembers([...members(id, 'm').keys()]) }; },
+        async claim(key, ttl) {
+            if ((claims.get(key) ?? 0) > Date.now()) return false;
+            claims.set(key, Date.now() + ttl);
+            if (claims.size > 4096) for (const [old, until] of claims) if (until <= Date.now()) claims.delete(old);
+            return true;
+        },
         async watching(id) { return members(id, 2).size; },
         async refresh(entries, ttl) { for (const { id, seat, member } of entries) members(id, seat).set(member, Date.now() + ttl); },
         async count(name) { total[name]++; },

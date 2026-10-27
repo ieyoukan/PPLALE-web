@@ -1,5 +1,5 @@
 import { createHash } from 'node:crypto';
-import { mkdir, readFile, readdir, stat, unlink, writeFile } from 'node:fs/promises';
+import { mkdir, readFile, readdir, unlink, writeFile } from 'node:fs/promises';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import sharp from 'sharp';
@@ -32,20 +32,4 @@ for (const filename of await readdir(output)) if (/\.(webp|avif)$/.test(filename
 const probe = await sharp({ create: { width: 1, height: 1, channels: 3, background: '#fff' } }).avif().toBuffer();
 await mkdir(path.join(root, 'src/lib/game/generated'), { recursive: true });
 await writeFile(path.join(root, 'src/lib/game/generated/card-assets.json'), `${JSON.stringify({ cards: assets, avifProbe: `data:image/avif;base64,${probe.toString('base64')}` })}\n`);
-// Keep the LCP background separate: the menu does not need the match catalog.
-const menuOutput = path.join(root, 'public/game-assets/menu');
-await mkdir(menuOutput, { recursive: true });
-const menuSource = await readFile(path.join(root, 'public/images/game/menu-bg.webp'));
-const menuHash = createHash('sha256').update('menu-1280-avif40-webp72-v1:').update(menuSource).digest('hex').slice(0, 16);
-const menu = {};
-for (const format of ['avif', 'webp']) {
-  const filename = `background-${menuHash}.${format}`;
-  try { await stat(path.join(menuOutput, filename)); } catch (error) {
-    if (error.code !== 'ENOENT') throw error;
-    const image = sharp(menuSource).resize({ width: 1280, withoutEnlargement: true });
-    await (format === 'avif' ? image.avif({ quality: 40, effort: 4 }) : image.webp({ quality: 72 })).toFile(path.join(menuOutput, filename));
-  }
-  menu[format] = `/game-assets/menu/${filename}`;
-}
-await writeFile(path.join(root, 'src/lib/game/generated/menu-assets.json'), `${JSON.stringify(menu)}\n`);
 console.log(`Game card assets: ${Object.keys(assets).length} (shared by board, hand and enlarged view)`);

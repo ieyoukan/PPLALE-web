@@ -5,6 +5,7 @@ import { other } from '@pplale/game-core';
 import { useBoardContext } from '../board/BoardContext';
 import styles from '../BoardEmulator.module.css';
 import { NotificationSoundToggle } from '../notifications/GameNotifications';
+import { useLaunchpad } from '../plaza/Launchpad';
 
 /** In-match actions only. Choosing the mode, levels and decks belongs to the preparation page. */
 export function MenuPanel() {
@@ -13,6 +14,7 @@ export function MenuPanel() {
   // Giving up ends the match for both players, so it is asked twice.
   const [resigning, setResigning] = useState(false);
   const close = (action: () => void) => () => { action(); setPanel(null); };
+  const launchpad = useLaunchpad();
   if (puzzle) return <>
     <h2>{puzzle.problem.title}</h2>
     <div className={styles.menuList}>
@@ -25,6 +27,8 @@ export function MenuPanel() {
   return <>
     <h2>{replaying ? 'リプレイ' : 'メニュー'}</h2>
     <div className={styles.menuList}>
+      {/* The game's menu: the room, friends and every other page, without leaving this match. */}
+      <button onClick={close(launchpad.open)}>ゲームメニュー</button>
       <NotificationSoundToggle />
       <button onClick={() => setPanel({ type: 'logs' })}>履歴</button>
       {replaying
@@ -46,7 +50,8 @@ export function MenuPanel() {
               <button onClick={() => setResigning(false)}>対戦を続ける</button>
             </>
             : <button className={styles.menuLeave} onClick={() => setResigning(true)}>投了する</button>
-          : <button className={styles.menuLeave} onClick={leave}>{remote?.recorded ? '対戦履歴へ戻る' : remote?.watching ? '観戦をやめる' : remote ? 'ルームを出る' : '対戦をやめる'}</button>}
+          : remote?.plaza ? <button className={styles.menuLeave} onClick={close(remote.plaza.menu)}>ルームのメニュー</button>
+            : <button className={styles.menuLeave} onClick={leave}>{remote?.recorded ? '対戦履歴へ戻る' : remote?.watching ? '観戦をやめる' : remote ? 'ルームを出る' : '対戦をやめる'}</button>}
     </div>
   </>;
 }

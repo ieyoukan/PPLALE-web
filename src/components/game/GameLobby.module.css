@@ -1,5 +1,7 @@
-/* Home fills the stage; an existing match never pushes the setup controls away. */
-.lobby { display: flex; flex: 1; flex-direction: column; min-width: 0; min-height: 0; gap: 6px; }
-.resume { flex: none; margin: 0; padding: 4px 10px; line-height: 1.4; border: 2px solid var(--brand-pink-edge); border-radius: 10px; background: var(--brand-blush); color: var(--brand-cocoa-deep); font-size: 14px; font-weight: 700; }
+/* The CPU screen fills the launchpad; an existing match never pushes the setup controls away. */
+.lobby { display: flex; flex: 1; flex-direction: column; min-width: 0; min-height: 0; gap: 10px; }
+/* A small button: a square, a little rounded. */
+.resume { flex: none; align-self: flex-start; display: inline-flex; align-items: center; gap: 8px; padding: 6px 14px; border: 1px solid var(--brand-cocoa); border-radius: 6px; background: var(--brand-vanilla-wash); color: var(--brand-cocoa-deep); font-size: 14px; font-weight: 700; text-decoration: none; }
+.resume:hover { background: var(--brand-vanilla); }
 .resume small { display: none; }
-.error { margin-top: 12px; padding: 10px; border-radius: 10px; background: #fbe5dc; color: #ac655b; font-size: 16px; }
+.error { margin: 0; padding: 8px 12px; border-left: 4px solid var(--brand-peach); background: var(--brand-peach-wash); color: var(--brand-cocoa-deep); font-size: 14px; }

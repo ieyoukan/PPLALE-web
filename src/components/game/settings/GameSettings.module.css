@@ -1,0 +1,12 @@
+/* Settings rows on the panel's own face, parted by a fine rule (no boxes of their own). */
+.settings { display: grid; gap: 4px; width: min(640px, 100%); margin: 0 auto; color: var(--brand-cocoa-deep); }
+.section { display: grid; justify-items: center; gap: 10px; padding: 16px 4px; border-bottom: 1px solid var(--brand-pink); }
+.section:last-child { border-bottom: 0; }
+.section h3 { display: flex; align-items: center; gap: 7px; margin: 0; color: var(--brand-cocoa); font-size: 18px; }
+.note { margin: -4px 0 0; color: var(--brand-cocoa-soft); font-size: 13px; text-align: center; }
+.visibilitySelect { width: min(320px, 100%); min-height: 44px; padding: 8px 12px; border: 1px solid var(--brand-pink-edge); border-radius: 6px; background: var(--brand-paper); color: var(--brand-cocoa-deep); font: inherit; cursor: pointer; }
+.visibilitySelect:focus-visible { outline: 3px solid var(--brand-cocoa); outline-offset: 2px; }
+.visibilitySelect:disabled { opacity: .5; cursor: default; }
+.links { display: flex; flex-wrap: wrap; justify-content: center; gap: 8px; }
+.link { display: inline-flex; align-items: center; gap: 7px; min-height: 40px; padding: 8px 18px; border: 1px solid var(--brand-pink-edge); border-radius: 6px; background: var(--brand-paper); color: var(--brand-cocoa-deep); font-size: 14px; font-weight: 700; text-decoration: none; cursor: pointer; }
+.link:hover { background: var(--brand-blush); }

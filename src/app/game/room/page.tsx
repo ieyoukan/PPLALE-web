@@ -1,17 +1,19 @@
-import { Suspense } from 'react';
-import type { Metadata } from 'next';
-import { gameViewport } from '@/components/game/stage/gameViewport';
-// The turn announcement is styled with Panda; its stylesheet is loaded per route, not globally.
-import '@/app/panda.css';
-import RoomBoard from '@/components/game/room/RoomBoard';
-export const metadata: Metadata = {
-    title: 'ぷぷりえーる ルームマッチ',
-    description: 'ぷぷりえーるのルームマッチの盤面。',
-    alternates: { canonical: '/game/battle/' },
-    robots: { index: false, follow: true },
-};
-export const viewport = gameViewport;
+'use client';
+
+// Links from before rooms had their own address (`/game/room/?id=`): on to the room's page.
+import { Suspense, useEffect } from 'react';
+import { useRouter, useSearchParams } from 'next/navigation';
+import { isRoomId } from '@pplale/game-core/room';
+import { HOME_PATH, roomHref } from '@/lib/game/sessionStore';
+
+function Forward() {
+  const params = useSearchParams(), router = useRouter();
+  useEffect(() => {
+    const id = params.get('id');
+    router.replace(isRoomId(id) ? `${roomHref(id)}${params.get('watch') === '1' ? '?watch=1' : ''}` : HOME_PATH);
+  }, [params, router]);
+  return null;
+}
 export default function Page() {
-    // The room id is read from the query string in the browser.
-    return <Suspense><RoomBoard /></Suspense>;
+  return <Suspense><Forward /></Suspense>;
 }

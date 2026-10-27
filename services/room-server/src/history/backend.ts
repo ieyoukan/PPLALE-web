@@ -6,6 +6,9 @@ import type { Room } from '../rooms.ts';
 import type { Backend } from '../backend.ts';
 import type { HistoryRepository, HistoryCapture } from './repository.ts';
 
+/** The same room, not another one made later under the same id (its first seat's secret, or its plaza's key). */
+const sameRoom = (a: Room, b: Room) => a.plaza || b.plaza ? a.plaza?.key === b.plaza?.key : a.seats[0]?.tokenHash === b.seats[0]?.tokenHash;
+
 /** Redis remains the common room authority for both old and new pods during rolling updates.
  * A Redis CAS atomically queues its archive write. Acknowledgement/publication waits for PG.
  * The queue has no TTL and survives a pod crash between the CAS and the archive commit.
@@ -49,7 +52,7 @@ export async function durableBackend(redis: Backend, history: HistoryRepository,
                 await drain();
                 const saved = await history.get(id);
                 // Repair Redis AOF rollback as well as a completely missing Redis room.
-                if (room && saved && saved.version > room.version && saved.seats[0].tokenHash === room.seats[0].tokenHash) {
+                if (room && saved && saved.version > room.version && sameRoom(saved, room)) {
                     await redis.replace(saved, room.version, 60_000);
                     continue;
                 }
