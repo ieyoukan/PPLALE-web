@@ -120,13 +120,12 @@ a.room:hover .roomAction { background: var(--brand-blush); }
 @media (prefers-reduced-motion: reduce) { .beat, .group[data-place=open] .roomBadge, .tile { animation: none; } }
 @container stage (max-width: 600px) { .groupBody { grid-template-columns: 1fr; } .room { grid-template-rows: 80px auto; } .roomAction { top: 42px; } .tiles { grid-template-columns: 1fr; } .tile { width: 100%; } }
 .group[data-place=sent], .tile[data-place=sent], .room[data-place=sent] { --place: #b39ad8; --glow: #b39ad855; }
-.headingLinks { display: flex; align-items: center; gap: 10px; }
+.headingLinks { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; max-width: 100%; }
 /* The bell: an icon with no frame. */
-.bell { position: relative; display: grid; place-items: center; width: 42px; height: 42px; border-radius: 6px; color: var(--brand-cocoa); font-size: 22px; transition: transform .15s; }
+.bell { display: inline-flex; flex-shrink: 0; align-items: center; justify-content: center; gap: 6px; min-width: 42px; height: 42px; padding: 0 6px; border-radius: 6px; color: var(--brand-cocoa); font-size: 22px; }
 .bell:hover { background: var(--brand-blush); }
-.bell .badge { position: absolute; top: -6px; right: -8px; min-width: 22px; height: 22px; padding: 0 6px; font-size: 12px; animation: bob 1.6s ease-in-out infinite; }
+.bell .badge { flex-shrink: 0; min-width: 22px; height: 22px; padding: 0 6px; font-size: 12px; }
 .empty .primary { gap: 6px; margin-top: 6px; }
-@media (prefers-reduced-motion: reduce) { .bell .badge { animation: none; } }
 .group[data-place=watching], .tile[data-place=watching], .room[data-place=watching] { --place: #4fb3a9; --glow: #4fb3a955; }
 /* Friends who are in no room: just their tiles, below the rooms. */
 .elsewhere { margin-top: 18px; padding-top: 18px; border-top: 1px solid var(--brand-pink); }
