@@ -10,6 +10,7 @@ import { fruitNames } from '@pplale/game-core';
 import type { Fruit } from '@pplale/game-core';
 import type { RoomInfo } from '@pplale/game-core/room';
 import { displayCards } from '@/lib/game/catalog';
+import { useAuth } from '@/lib/auth';
 import { RoomThumbnailImage } from './RoomThumbnailImage';
 import { OrnateFrame } from '../ornament/OrnateFrame';
 import styles from './LaunchScreen.module.css';
@@ -34,8 +35,23 @@ function someCard(): Shown | null {
 export function LaunchScreen({ status = 'ルームを準備しています', preview, children }: { status?: string; preview?: RoomInfo | null; children?: ReactNode }) {
   // Chosen in the browser after the first paint, so the page itself can be sent before scripts run.
   const [card, setCard] = useState<Shown | null>(null);
+  const { user, loading, signInWithGoogle } = useAuth();
+  const [signingIn, setSigningIn] = useState(false);
+  const [signInError, setSignInError] = useState('');
   useEffect(() => { setCard(someCard()); }, []);
-  return <section className={styles.launch} aria-busy={!children} aria-label="ぷぷりえーる">
+  const handleSignIn = async () => {
+    if (signingIn) return;
+    setSigningIn(true);
+    setSignInError('');
+    try {
+      await signInWithGoogle();
+    } catch {
+      setSignInError('ログインできませんでした');
+    } finally {
+      setSigningIn(false);
+    }
+  };
+  return <section className={styles.launch} aria-busy={!children && !!loading} aria-label="ぷぷりえーる">
     <span className={styles.stars} aria-hidden="true">{stars.map(([left, top, delay], index) => <i key={index} style={{ left: `${left}%`, top: `${top}%`, animationDelay: `${delay}s` }} />)}</span>
     <Image className={styles.logo} src="/images/game/logo.webp" alt="お菓子争奪戦争 ぷぷりえーる" width={462} height={227} priority />
     {preview?.plaza && <OrnateFrame size="sm" className={styles.roomPreview}>
@@ -51,6 +67,14 @@ export function LaunchScreen({ status = 'ルームを準備しています', pre
       </OrnateFrame>}
     </div>
     {children ? <OrnateFrame className={styles.trouble}>{children}</OrnateFrame>
-      : <p className={styles.status} role="status"><span className={styles.dots} aria-hidden="true"><i /><i /><i /></span><span>{status}</span></p>}
+      : !loading && !user ? (
+      <OrnateFrame className={styles.trouble}>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem', alignItems: 'center', textAlign: 'center' }}>
+          <p style={{ margin: 0 }}>ログインするとプロフィールを設定できるよ</p>
+          <button onClick={handleSignIn} disabled={signingIn}>{signingIn ? 'ログイン中…' : 'Googleでログイン'}</button>
+          {signInError && <p role="alert" style={{ margin: 0, color: 'var(--brand-cocoa)' }}>{signInError}</p>}
+        </div>
+      </OrnateFrame>
+    ) : <p className={styles.status} role="status"><span className={styles.dots} aria-hidden="true"><i /><i /><i /></span><span>{status}</span></p>}
   </section>;
 }

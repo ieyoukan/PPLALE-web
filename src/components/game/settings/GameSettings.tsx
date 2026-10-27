@@ -19,10 +19,32 @@ import styles from './GameSettings.module.css';
 const homeKinds: RoomVisibility[] = ['public', 'friendsPlus', 'friends', 'invitePlus', 'invite'];
 
 export function GameSettings({ volume = true, onLeave }: { volume?: boolean; onLeave?: () => void }) {
-  const { user, signInWithGoogle } = useAuth();
+  const { user, signInWithGoogle, signOut } = useAuth();
   const [home, setHome] = useState<RoomVisibility | null>(null);
+  const [busy, setBusy] = useState(false);
   useEffect(() => { setHome(readRoomSettings().homeVisibility); }, []);
   const choose = (kind: RoomVisibility) => { saveRoomSettings({ homeVisibility: kind }); setHome(kind); };
+  const handleSwitchAccount = async () => {
+    if (busy) return;
+    setBusy(true);
+    try {
+      await signOut();
+      await signInWithGoogle();
+    } catch {}
+    finally {
+      setBusy(false);
+    }
+  };
+  const handleSignOut = async () => {
+    if (busy) return;
+    setBusy(true);
+    try {
+      await signOut();
+    } catch {}
+    finally {
+      setBusy(false);
+    }
+  };
   return <div className={styles.settings}>
     <section className={styles.section} aria-labelledby="settings-home">
       <h3 id="settings-home" data-ui-title><PlazaIcon name="home" />ホームルームの公開範囲</h3>
@@ -40,8 +62,11 @@ export function GameSettings({ volume = true, onLeave }: { volume?: boolean; onL
     <section className={styles.section} aria-labelledby="settings-account">
       <h3 id="settings-account" data-ui-title><PlazaIcon name="star" />アカウント</h3>
       <div className={styles.links}>
-        {user ? <Link className={styles.link} href="/game/profile/" onClick={onLeave} prefetch={false}><PlazaIcon name="star" />プロフィール</Link>
-          : <button className={styles.link} onClick={() => void signInWithGoogle().catch(() => {})}><PlazaIcon name="heart" />ログイン</button>}
+        {user ? <>
+          <Link className={styles.link} href="/game/profile/" onClick={onLeave} prefetch={false}><PlazaIcon name="star" />プロフィール</Link>
+          <button className={styles.link} disabled={busy} onClick={() => void handleSwitchAccount()}><PlazaIcon name="heart" />アカウントを切り替える</button>
+          <button className={styles.link} disabled={busy} onClick={() => void handleSignOut()}><PlazaIcon name="exit" />ログアウト</button>
+        </> : <button className={styles.link} onClick={() => void signInWithGoogle().catch(() => {})}><PlazaIcon name="heart" />ログイン</button>}
         <Link className={styles.link} href="/" onClick={onLeave}><PlazaIcon name="exit" />サイトへ</Link>
       </div>
     </section>
