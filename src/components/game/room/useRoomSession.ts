@@ -8,6 +8,8 @@ import type { RoomCommand, RoomView } from '@pplale/game-core/room';
 import type { Room } from './useRoom';
 import { appendRoomAssessment, readRoomAssessment, saveRoomAssessment } from './roomAssessment';
 import type { AssessedPoint } from '../board/assess';
+import type { AvatarIdentity } from '@/components/shared/player/Avatar';
+import { guestIcon, useProfiles } from '../plaza/useProfiles';
 
 type Played = RoomView & { game: GameState };
 const played = (view: RoomView): view is Played => !!view.game;
@@ -72,10 +74,15 @@ export function useRoomSession({ room, initial, seat, onLeave, onFindNext, plaza
   const rematch = useCallback(() => plazaRematch ? plazaRematch() : initial.mode === 'free' ? (onFindNext ?? onLeave)() : ask('rematch'), [ask, initial.mode, onFindNext, onLeave, plazaRematch]);
 
   const names = useMemo<[string, string]>(() => [shown.players[0]?.name ?? '相手', shown.players[1]?.name ?? '相手'], [shown.players]);
+  const profiles = useProfiles(shown.players.map(player => player?.profileId));
+  const portraits = useMemo(() => ([0, 1] as const).map(side => {
+    const player = shown.players[side];
+    return { card: player?.profileId && profiles[player.profileId] ? profiles[player.profileId].iconCardId : guestIcon(player?.member ?? ''), cpu: !!player?.cpu };
+  }) as [AvatarIdentity, AvatarIdentity], [shown.players, profiles]);
   const { presented } = room;
   const plazaMenu = plaza?.menu;
-  const remote = useMemo(() => ({ seat, watching, assessment, turnClock, ownDeck: shown.ownDeck, matchRules: shown.rules, freeMatch: initial.mode === 'free', names, sending: !linked || sending, waiting: !linked || sending || queue.length > 0, failed, next, accept, resign, resigned: shown.resigned, leave: onLeave, presented, ...(plazaMenu && { plaza: { menu: plazaMenu } }) }),
-    [seat, watching, assessment, turnClock, shown.ownDeck, shown.rules, initial.mode, names, linked, sending, queue.length, failed, next, accept, resign, shown.resigned, onLeave, presented, plazaMenu]);
+  const remote = useMemo(() => ({ seat, watching, assessment, turnClock, ownDeck: shown.ownDeck, matchRules: shown.rules, freeMatch: initial.mode === 'free', names, portraits, sending: !linked || sending, waiting: !linked || sending || queue.length > 0, failed, next, accept, resign, resigned: shown.resigned, leave: onLeave, presented, ...(plazaMenu && { plaza: { menu: plazaMenu } }) }),
+    [seat, watching, assessment, turnClock, shown.ownDeck, shown.rules, initial.mode, names, portraits, linked, sending, queue.length, failed, next, accept, resign, shown.resigned, onLeave, presented, plazaMenu]);
   return {
     game: shown.game, error, history: [], commands: [], mode: 'room', levels: ['normal', 'normal'], ready: true, saveError: '',
     send, undo: nothing, canUndo: false, remote,

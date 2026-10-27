@@ -42,8 +42,8 @@ export async function homeCodePoints() {
 
 /** The menu must not download rare-kanji blocks for ordinary setup labels. */
 export async function gameMenuCodePoints() {
-  // These are menu-only directories: component extraction/addition must not leave stale file names.
-  const menus = await Promise.all(['src/components/game/plaza', 'src/components/game/home'].map(sourceFiles));
+  // Menu copy includes the shared account prompts; extraction/addition must not leave stale file names.
+  const menus = await Promise.all(['src/components/game/plaza', 'src/components/game/home', 'src/components/shared/auth'].map(sourceFiles));
   return codePoints([
     ...menus.flat(), 'src/components/game/GameLobby.tsx',
     'src/components/game/GameSetup.tsx', 'src/components/game/DeckSelect.tsx',

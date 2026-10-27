@@ -4,6 +4,8 @@ import type { Side, Zone } from '@pplale/game-core';
 import type { CSSProperties } from 'react';
 import { HAND_CARD_SIZES } from '@/lib/game/cardImages';
 import { GameCard } from './GameCard';
+import { Avatar } from '@/components/shared/player/Avatar';
+import type { AvatarIdentity } from '@/components/shared/player/Avatar';
 import styles from './BoardEmulator.module.css';
 import cue from './DrawCue.module.css';
 
@@ -64,9 +66,10 @@ export function Counter({ label, value, points, bonus = 0, temporaryBonus = 0, p
   </div>;
 }
 
-export function PpPanel({ side, name, order, current, maximum, own }: { side: number; name: string; order?: 'first' | 'second'; current: number; maximum: number; own: boolean }) {
+export function PpPanel({ side, name, portrait, order, current, maximum, own }: { side: number; name: string; portrait?: AvatarIdentity; order?: 'first' | 'second'; current: number; maximum: number; own: boolean }) {
   return <div data-pp={side} className={`${styles.ppPanel} ${own ? styles.ownPp : styles.opponentPp}`} role="group" aria-label={`${own ? '自分' : '相手'}のPP ${current} / ${maximum}`}>
     <div className={styles.ppPlayerName} title={name}>
+      {portrait && <Avatar {...portrait} size={24} />}
       <div className={styles.ppNameText}>{name}</div>
       {order && <small className={styles.ppOrder} data-order={order}>{order === 'first' ? '先攻' : '後攻'}</small>}
     </div>

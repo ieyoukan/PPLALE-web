@@ -5,6 +5,7 @@ import type { ReactNode } from 'react';
 import { cpuProfiles, encodePosition, matchTurns, other } from '@pplale/game-core';
 import type { Deck, Side } from '@pplale/game-core';
 import { displayCards } from '@/lib/game/catalog';
+import { GuestSignInPrompt } from '@/components/shared/auth/GuestSignInPrompt';
 import { useBoardContext } from '../board/BoardContext';
 import { GameCard } from '../GameCard';
 import { outcomeOf, reasonOf } from './outcome';
@@ -77,6 +78,7 @@ function Result({ outcome: { winner, kind } }: { outcome: Outcome }) {
           <textarea readOnly value={code} rows={2} onFocus={event => event.target.select()} />
         </label>}
       </div>
+      {!remote?.recorded && !remote?.watching && <GuestSignInPrompt />}
       <div className={styles.actions} role="group" aria-label="対戦後の操作">
         {canReplay && <button className={styles.plateButton} onClick={startReplay}>リプレイ</button>}
         {/* The game's own home (preparation, cards, battles), not the site's top page. */}

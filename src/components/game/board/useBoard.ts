@@ -51,6 +51,10 @@ export function useBoard(container: RefObject<HTMLDivElement | null>, session: B
   /** Public profile only. Loading/missing profiles must never fall back to a Google account name. */
   const localNames = useMemo<[string, string]>(() => [mode !== 'watch' && profile?.displayName || sideLabel(mode, 0), sideLabel(mode, 1)], [mode, profile]);
   const names = remote?.names ?? localNames;
+  const portraits = remote?.portraits ?? [
+    { card: profile?.iconCardId ?? actual.players[0].playable, cpu: mode === 'watch' },
+    { card: actual.players[1].playable, cpu: mode === 'watch' || mode === 'cpu' },
+  ];
   const home: Side = remote?.seat ?? (mode === 'watch' ? 1 : 0);
   const [view, setView] = useState<Side>(home);
   const [selected, setSelected] = useState<string | null>(null);
@@ -382,7 +386,7 @@ export function useBoard(container: RefObject<HTMLDivElement | null>, session: B
   }
 
   return {
-    game, mode, levels, view, me, panel, ready, busy, paused, names, remote, puzzle,
+    game, mode, levels, view, me, panel, ready, busy, paused, names, portraits, remote, puzzle,
     assessment, assessable, showAssessment, setShowAssessment,
     setup, canRematch, canReplay, replaying, timeline, seekReplay, position, editBoard: openEditor, editStartingBoard,
     editing, edit: editBoard, picking, setPicking, session,

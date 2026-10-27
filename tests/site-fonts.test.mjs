@@ -17,7 +17,7 @@ test('Unicode ranges are exact and compact at block boundaries', () => {
 
 test('menu font extraction covers the current split launchpad and its shared copy', async () => {
   const points = await gameMenuCodePoints();
-  for (const character of 'ソーシャルいまのルームプロフィールロリの一手を極めるために') {
+  for (const character of 'ソーシャルいまのルームプロフィールロリの一手を極めるためにフレンドとまた遊ぼうログイン共有') {
     assert.ok(points.has(character.codePointAt(0)), `menu character missing: ${character}`);
   }
 });

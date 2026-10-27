@@ -5,7 +5,7 @@ import type { PlazaMember, PlazaView } from '@pplale/game-core/room';
 import { useAuth } from '@/lib/auth';
 import type { SocialPlayer } from '@/lib/game/social';
 import { useSocial } from '../social/useSocial';
-import { Avatar } from './Avatar';
+import { Avatar } from '@/components/shared/player/Avatar';
 import { PlazaIcon } from './PlazaIcon';
 import { guestIcon, useProfiles } from './useProfiles';
 import styles from './InstanceMembers.module.css';

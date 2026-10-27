@@ -18,7 +18,7 @@ import { randomSeed } from '@/lib/game/match';
 import { useDeckChoices } from '../DeckSelect';
 import { useRoomPreparation } from '../room/useRoomPreparation';
 import { OrnateFrame } from '../ornament/OrnateFrame';
-import { Avatar } from './Avatar';
+import { Avatar } from '@/components/shared/player/Avatar';
 import { RecordedCard } from '../history/RecordedCard';
 import { BoardSurface } from './BoardSurface';
 import { DeckContentsSheet, DeckSheet, OpponentSheet, RulesSheet } from './PlazaSheets';
@@ -93,7 +93,7 @@ export function PlazaTable({ view, onMenu }: { view: RoomView; onMenu: () => voi
           <span className={styles.deckName}><small>デッキ</small><b>{chosen?.name ?? 'えらぶ'}</b></span>
         </OrnateFrame>
         {me.ready
-          ? <OrnateFrame as="button" size="line" className={`${styles.ready} ${styles.readyDone}`} disabled={busy} onClick={() => ask({ action: 'unready' })}><PlazaIcon name="check" /><span data-ui-title>じゅんびOK</span><small>タップでやめる</small></OrnateFrame>
+          ? <OrnateFrame as="button" size="line" className={`${styles.ready} ${styles.readyDone}`} disabled={busy} onClick={() => ask({ action: 'unready' })}><PlazaIcon name="check" /><span data-ui-title>じゅんびOK</span></OrnateFrame>
           : <OrnateFrame as="button" size="line" className={styles.ready} disabled={busy || !chosen} onClick={ready}><span data-ui-title>じゅんびOK!</span></OrnateFrame>}
       </div>}
       {self && <button className={styles.leaveSeat} disabled={busy} onClick={() => ask({ action: 'stand' })} aria-label="席を立つ"><PlazaIcon name="exit" /><span data-ui-title>席を立つ</span></button>}

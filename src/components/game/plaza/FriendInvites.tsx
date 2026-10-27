@@ -6,7 +6,7 @@ import type { RoomView } from '@pplale/game-core/room';
 import { InviteFriendButton } from '../social/InviteFriendButton';
 import { usePlaza } from './PlazaProvider';
 import { useSocial } from '../social/useSocial';
-import { Avatar } from './Avatar';
+import { Avatar } from '@/components/shared/player/Avatar';
 import { PlazaIcon } from './PlazaIcon';
 import styles from './Plaza.module.css';
 

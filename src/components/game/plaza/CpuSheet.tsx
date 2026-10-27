@@ -7,7 +7,7 @@ import type { RoomPlayer } from '@pplale/game-core/room';
 import { usableChoice } from '@/lib/game/deckSources';
 import type { DeckChoice } from '@/lib/game/deckSources';
 import { OrnateFrame } from '../ornament/OrnateFrame';
-import { Avatar } from './Avatar';
+import { Avatar } from '@/components/shared/player/Avatar';
 import { DeckSheet } from './PlazaSheets';
 import { PlazaIcon } from './PlazaIcon';
 import { Sheet } from './Sheet';

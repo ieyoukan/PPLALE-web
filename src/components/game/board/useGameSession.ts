@@ -10,6 +10,7 @@ import type { Levels, MatchSetup, Mode } from '@/lib/game/sessionStore';
 import type { RoomTurnClock } from '@pplale/game-core/room';
 import type { AssessedPoint } from './assess';
 import type { LethalPuzzle, PuzzleStatus } from '@/lib/game/puzzles';
+import type { AvatarIdentity } from '@/components/shared/player/Avatar';
 
 export { cpuSidesOf, sideLabel } from '@/lib/game/sessionStore';
 export type { Levels, Mode } from '@/lib/game/sessionStore';
@@ -54,6 +55,8 @@ export interface RemoteSession {
   /** At a plaza's table: everyone in the room is still there after the match; `menu` opens the room's menu. */
   plaza?: { menu: () => void };
   names: [string, string];
+  /** Same public profile / guest / CPU portraits as the seats at the room's table. */
+  portraits?: [AvatarIdentity, AvatarIdentity];
   /** A command is on its way, or a change has not been shown yet: nothing new may be sent. */
   waiting: boolean;
   /** This seat is submitting a command, or its connection is unavailable. */

@@ -2,6 +2,7 @@
 
 import { useId, useState } from 'react';
 import Link from 'next/link';
+import { GuestSignInPrompt } from '@/components/shared/auth/GuestSignInPrompt';
 import { CharacterDestination } from './CharacterDestination';
 import { useLaunchpad } from './LaunchpadContext';
 import { usePlaza } from './PlazaProvider';
@@ -27,6 +28,7 @@ export function LaunchpadHome({ onHome, onShare }: { onHome: () => void; onShare
   const moreId = useId();
   return <div className={styles.home}>
     <CurrentRoomBanner />
+    <GuestSignInPrompt compact />
     <section aria-label="クイックリンク">
       <nav className={styles.destinations} aria-label="ゲームの画面">{destinations.map(({ target, character, tone }) =>
         <CharacterDestination key={target} character={character} tone={tone} label={target === 'discover' ? 'ルーム' : sectionInfo[target].label}

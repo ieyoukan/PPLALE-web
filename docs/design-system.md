@@ -103,7 +103,8 @@
 | ランチパッドのキャラクター付き入口 | `game/plaza/CharacterDestination.tsx`。幅・高さ・ホバーを共通化。入口の順序・画像・操作は `LaunchpadHome.tsx` の `destinations` にまとめる |
 | ルームのサムネイル | `game/plaza/RoomThumbnailImage.tsx`。URLのルール変換は `src/lib/game/roomThumbnail.ts`、描画とOGPは `src/lib/ogRoomImage.tsx` |
 | ルーム退出の影響表示 | `game/plaza/RoomDepartureNotice.tsx`。対戦中の敗北・オーナー不在・残る入室者の表示を、ホーム移動の確認とルーム作成で共用する |
-| 在室者の丸いアイコン | `game/plaza/Avatar.tsx`。カードそのものの表示には使わない |
+| プレイヤーの丸いアイコン | `shared/player/Avatar.tsx`。ルームの席・在室者・対戦中の名前で共用する。カードそのものの表示には使わない |
+| ゲストへのログイン案内 | `shared/auth/GuestSignInPrompt.tsx`。ランチパッドではコンパクト表示、対戦後はフレンド・デッキ共有への案内として共用する。対戦操作を遮らない |
 | フレンドへの招待 | `game/social/InviteFriendButton.tsx`。プロフィールと共有画面で送信・失敗・送信済みを共用。表示権限は `src/lib/game/room/invitations.ts`、実際の許可はサーバーで再確認する |
 | メニューの名前・アイコン・URLの対応 | `game/plaza/places.ts` と `PlazaIcon.tsx`。アイコンは意味ごとに既存のSVGを使う |
 

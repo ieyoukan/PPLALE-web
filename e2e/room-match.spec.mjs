@@ -79,8 +79,22 @@ test('opening the game makes a room; its invitation brings a friend to the same 
   await seats(bob).last().click();
   await expect(seats(alice)).toHaveCount(1);
   await seats(alice).click();
-  for (const page of [alice, bob]) await page.getByRole('button', { name: 'じゅんびOK!' }).click();
+  const portrait = await alice.locator('[data-self] [data-player-avatar] img').getAttribute('alt');
+  const ready = alice.getByRole('button', { name: 'じゅんびOK!', exact: true });
+  const beforeReady = await ready.evaluate(element => ({ width: element.offsetWidth, height: element.offsetHeight }));
+  await ready.click();
+  const prepared = alice.getByRole('button', { name: 'じゅんびOK', exact: true });
+  await expect(prepared).toBeVisible();
+  const afterReady = await prepared.evaluate(element => ({ width: element.offsetWidth, height: element.offsetHeight }));
+  expect(afterReady).toEqual(beforeReady);
+  await expect(alice.getByText('タップでやめる', { exact: true })).toHaveCount(0);
+  await prepared.click();
+  await expect(ready).toBeVisible();
+  for (const page of [alice, bob]) await page.getByRole('button', { name: 'じゅんびOK!', exact: true }).click();
   for (const page of [alice, bob]) await expect(page.getByRole('group', { name: '先攻・後攻のダイス' })).toBeVisible({ timeout: 20000 });
+  await expect(alice.locator('[data-pp="0"] [data-player-avatar] img')).toHaveAttribute('alt', portrait);
+  await expect(alice.locator('[data-pp] [data-player-avatar]')).toHaveCount(2);
+  await alice.screenshot({ path: test.info().outputPath('match-player-icons.png') });
   expect(alice.url()).toBe(`${base}/game/room/${id}/`);
   const [first] = await decideOrder(alice, bob);
   await expect(first.locator('button[data-deck$="-yojo"]:not([disabled])')).toBeVisible({ timeout: 15000 });
@@ -90,6 +104,8 @@ test('opening the game makes a room; its invitation brings a friend to the same 
   await first.getByRole('button', { name: '投了する' }).click();
   await first.getByRole('button', { name: '投了する（負けになります）' }).click();
   for (const page of [alice, bob]) await expect(page.getByRole('dialog', { name: '対戦結果' })).toBeVisible({ timeout: 20000 });
+  for (const page of [alice, bob]) await expect(page.getByRole('dialog', { name: '対戦結果' }).getByRole('region', { name: 'ログインのおすすめ' }).getByRole('button', { name: 'Googleでログイン' })).toBeInViewport();
+  await alice.screenshot({ path: test.info().outputPath('result-guest-sign-in.png') });
 
   // After it: alice keeps her seat for the next match, bob gives up his and watches.
   await alice.getByRole('button', { name: 'この席でもう一度' }).click();
@@ -162,6 +178,7 @@ test('the CPU plays at the same table, with spectators joining before and during
   await expect(bob.getByRole('button', { name: 'じゅんびOK!', exact: true })).toHaveCount(0);
   await alice.getByRole('button', { name: 'じゅんびOK!' }).click();
   for (const page of [alice, bob]) await expect(page.locator('[data-table]')).toBeVisible({ timeout: 20000 });
+  await expect(alice.locator('[data-pp="0"] [data-player-avatar][data-cpu]')).toBeVisible();
   // The CPU throws its die after ours; whoever wins chooses.
   for (let round = 0; round < 8; round++) {
     await alice.getByRole('button', { name: 'あなたのサイコロを振る' }).click({ timeout: 20000 });
