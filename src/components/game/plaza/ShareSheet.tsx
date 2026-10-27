@@ -20,6 +20,7 @@ export function ShareSheet({ view, onClose }: { view: RoomView; onClose: () => v
   const plaza = view.plaza!, { send } = usePlaza(), { user } = useAuth();
   const [origin, setOrigin] = useState(''), [canShare, setCanShare] = useState(false);
   const [done, setDone] = useState<string>('');
+  const [posting, setPosting] = useState(false);
   useEffect(() => { setOrigin(window.location.origin); setCanShare(typeof navigator.share === 'function'); }, []);
   const invited = invitedVisibility(plaza.visibility), mayShare = canShareRoomLink(plaza);
   const url = plazaLink(origin, view), words = invitation(view, url);
@@ -27,6 +28,19 @@ export function ShareSheet({ view, onClose }: { view: RoomView; onClose: () => v
     navigator.clipboard.writeText(text).then(() => setDone(what), () => setDone('コピーできませんでした'));
   };
   const info = visibilityInfo[plaza.visibility];
+  // Posting asks first: what the post will say, then X opens with it (or back to the invitation).
+  if (posting) return <Sheet title="Xにポスト" onClose={() => setPosting(false)}>
+    <OrnateFrame size="sm" faint className={styles.postPreview}>
+      <p>{words.postText}</p>
+      <small>{url}</small>
+    </OrnateFrame>
+    <div className={styles.sheetFoot}>
+      <button className={styles.softButton} onClick={() => setPosting(false)}><PlazaIcon name="back" />もどる</button>
+      <OrnateFrame as="a" size="line" className={styles.primaryButton} href={words.post} target="_blank" rel="noopener noreferrer" onClick={() => setPosting(false)}>
+        <b className={styles.xMark}>𝕏</b><span data-ui-title>ポストする</span>
+      </OrnateFrame>
+    </div>
+  </Sheet>;
   return <Sheet title="ルームにさそう" onClose={onClose}>
     {mayShare ? <>
       <OrnateFrame as="button" size="line" tone="cream" className={styles.discordButton} onClick={() => copy('discord', words.discord)}>
@@ -35,7 +49,7 @@ export function ShareSheet({ view, onClose }: { view: RoomView; onClose: () => v
       </OrnateFrame>
       <div className={styles.shareRow}>
         <button className={styles.shareTile} onClick={() => copy('link', url)}><PlazaIcon name="link" /><span>リンク</span>{done === 'link' && <i className={styles.copiedDot}><PlazaIcon name="check" /></i>}</button>
-        <a className={styles.shareTile} href={words.post} target="_blank" rel="noopener noreferrer"><b className={styles.xMark}>𝕏</b><span>ポスト</span></a>
+        <button className={styles.shareTile} onClick={() => setPosting(true)}><b className={styles.xMark}>𝕏</b><span>ポスト</span></button>
         {canShare && <button className={styles.shareTile} onClick={() => { navigator.share({ text: words.plain }).catch(() => {}); }}><PlazaIcon name="send" /><span>共有</span></button>}
       </div>
       <p className={styles.shareNote}><PlazaIcon name={info.icon} />{plaza.visibility === 'friends' ? `${plaza.creator.name}のフレンドだけが入れます` : plaza.visibility === 'friendsPlus' ? 'ルームにいる人のフレンドが入れます' : invited ? 'このリンクを知っている人が入れます' : 'リンクを開いた人はだれでも入れます'}</p>

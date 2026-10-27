@@ -14,9 +14,12 @@ export function plazaLink(origin: string, view: RoomView) {
 /** The words of an invitation: Discord shows the link's card (the room's picture) below them. */
 export function invitation(view: RoomView, url: string) {
   const plaza = view.plaza!, rules = describeMatchRules(plaza.nextRules ?? view.rules);
+  const postText = `ぷぷりえーるであそぼう！「${plaza.name}」\n${rules}\n#ぷぷりえーる`;
   return {
+    /** What the post says (X adds the link after it). */
+    postText,
     discord: `**ぷぷりえーる**であそぼう！\n「${plaza.name}」（${visibilityInfo[plaza.visibility].label}）\n${rules}\n${url}`,
     plain: `ぷぷりえーるであそぼう！「${plaza.name}」\n${rules}\n${url}`,
-    post: `https://x.com/intent/post?${new URLSearchParams({ text: `ぷぷりえーるであそぼう！「${plaza.name}」\n${rules}\n#ぷぷりえーる`, url })}`,
+    post: `https://x.com/intent/post?${new URLSearchParams({ text: postText, url })}`,
   };
 }

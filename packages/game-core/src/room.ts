@@ -119,7 +119,7 @@ export interface RoomPlayer {
     online: boolean;
     /** Left the room during or after a match. */
     left?: boolean;
-    /** Only told to the seat itself. */
+    /** Own deck name, or the CPU’s selected deck name (never its hidden cards). */
     deck?: string;
     /** In a plaza: the member who sits here. */
     member?: string;
@@ -165,7 +165,8 @@ export type RoomAction =
     | { action: 'sit'; seat: Side }
     /** Frees the own seat and stays in the room (a match in progress is lost). */
     | { action: 'stand' }
-    | { action: 'cpu'; seat: Side; level: CpuLevel }
+    /** Calls or configures the CPU before a match. Without a deck the server makes one. */
+    | { action: 'cpu'; seat: Side; level: CpuLevel; deck?: Deck }
     | { action: 'dismissCpu' }
     /** Becomes the owner of a room that has none. */
     | { action: 'claim' }

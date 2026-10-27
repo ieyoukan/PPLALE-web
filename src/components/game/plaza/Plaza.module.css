@@ -211,6 +211,10 @@ a.person:hover { background: color-mix(in srgb, var(--brand-cream-on-dark) 10%, 
 .shareRow { display: flex; justify-content: center; gap: 12px; }
 .shareTile { position: relative; display: grid; justify-items: center; gap: 4px; width: 104px; padding: 12px 8px; font-size: 13px; font-weight: 700; text-decoration: none; }
 .shareTile svg, .xMark { font-size: 26px; line-height: 1; }
+/* What a post will say, before X opens with it. */
+.postPreview { --pad: 16px 20px; display: grid; gap: 8px; width: min(460px, 100%); margin: 0 auto; }
+.postPreview p { margin: 0; white-space: pre-wrap; overflow-wrap: anywhere; font-size: 15px; line-height: 1.7; }
+.postPreview small { overflow-wrap: anywhere; color: var(--brand-cocoa-soft); font-size: 12px; }
 .shareNote { display: flex; align-items: center; justify-content: center; gap: 8px; font-size: 14px; color: var(--brand-cocoa-soft); }
 .srOnly { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); }
 

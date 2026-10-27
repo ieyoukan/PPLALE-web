@@ -82,6 +82,19 @@ test('CPU responds after turn end and returns control with a manual draw', async
   page.on('pageerror', error => errors.push(error.message));
   const s = arena({ me: { hand: ['y_9'] }, foe: { hand: ['y_0'] } });
   await loadBoard(page, s, 'cpu');
+  // The ornament stays circular and its two-line label stays centered even on short screens.
+  const endTurn = page.getByRole('button', { name: /ターン\s*終了/ });
+  const originalViewport = page.viewportSize();
+  for (const size of [{ width: 1280, height: 800 }, { width: 980, height: 600 }, { width: 844, height: 390 }]) {
+    await page.setViewportSize(size);
+    await expect.poll(() => endTurn.evaluate(button => {
+      const frame = button.getBoundingClientRect(), label = button.querySelector('span').getBoundingClientRect();
+      return Math.max(Math.abs(frame.width - frame.height),
+        Math.abs(frame.x + frame.width / 2 - label.x - label.width / 2),
+        Math.abs(frame.y + frame.height / 2 - label.y - label.height / 2));
+    })).toBeLessThan(1);
+  }
+  await page.setViewportSize(originalViewport);
   await page.getByRole('button', { name: /ターン\s*終了/ }).click();
   await expect.poll(async () => (await savedGame(page)).turn, { timeout: 30000 }).toBeGreaterThanOrEqual(5);
   await expect.poll(async () => (await savedGame(page)).active).toBe(0);

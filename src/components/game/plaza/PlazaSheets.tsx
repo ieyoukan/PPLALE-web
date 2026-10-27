@@ -3,8 +3,6 @@
 // What a room asks for one choice at a time: the deck, the CPU's strength, the rules of the next match.
 import { useRef, useState } from 'react';
 import CardDetail from '@/components/shared/card/CardDetail';
-import { cpuLevels, cpuProfiles } from '@pplale/game-core';
-import type { CpuLevel } from '@pplale/game-core';
 import type { RoomRules, RoomView } from '@pplale/game-core/room';
 import { DECK_IMAGE_ASPECT } from '@/lib/deckImageLayout';
 import type { DeckChoice } from '@/lib/game/deckSources';
@@ -13,7 +11,6 @@ import { RulePicker } from '../RulePicker';
 import { DeckCardLayout } from '@/components/shared/deck/DeckCardLayout';
 import SavedDeckThumbnail from '@/components/deck/SavedDeckThumbnail';
 import { OrnateFrame } from '../ornament/OrnateFrame';
-import { Avatar } from './Avatar';
 import { PlazaIcon } from './PlazaIcon';
 import { Sheet } from './Sheet';
 import styles from './Plaza.module.css';
@@ -51,27 +48,13 @@ export function DeckContentsSheet({ choice, onClose, onAction, actionLabel }: { 
   const deck = choice.source === 'random' ? null : choice.deck(0);
   const card = expanded ? displayCards[expanded] : null;
   return <><div style={{ display: 'contents' }} inert={!!card}><Sheet title={choice.name} onClose={onClose} wide>
-    {!deck && <p className={styles.note}>おまかせデッキは、じゅんびOKを押したときにカードが決まります。</p>}
+    {!deck && <p className={styles.note}>おまかせデッキは、対戦の準備ができたときにカードが決まります。</p>}
     {deck && <DeckCardLayout deck={{ yojoDeckIds: deck.yojo, sweetDeckIds: deck.sweet, playableCardId: deck.playable }} label="デッキのカード" imageOf={id => displayCards[id]?.imageUrl} nameOf={id => displayCards[id]?.name ?? id} onCardClick={(id, event) => { trigger.current = event.currentTarget; setExpanded(id); }} />}
     {!!choice.errors.length && <p className={styles.note}>{choice.errors.join(' / ')}</p>}
     {onAction && <div className={styles.sheetFoot}><OrnateFrame as="button" size="line" className={styles.primaryButton} onClick={onAction}><PlazaIcon name="cards" /><span data-ui-title>{actionLabel}</span></OrnateFrame></div>}
   </Sheet></div>
     {card && <CardDetail card={card} onClose={() => setExpanded(null)} isInDeck={false} returnFocusRef={trigger} />}
   </>;
-}
-
-/** How strong the CPU that sits down is: one tile each, with as many stars. */
-export function CpuSheet({ onChoose, onClose }: { onChoose: (level: CpuLevel) => void; onClose: () => void }) {
-  return <Sheet title="CPUをえらぶ" onClose={onClose} wide>
-    <ul className={styles.cpuGrid}>{cpuLevels.map((level, index) => <li key={level}>
-      <OrnateFrame as="button" size="sm" className={styles.cpuTile} data-level={level} onClick={() => onChoose(level)}>
-        <Avatar cpu size={72} />
-        <b data-ui-title>{cpuProfiles[level].name}</b>
-        <span className={styles.stars} aria-label={`強さ${index + 1}`}>{cpuLevels.map((_, star) => <PlazaIcon key={star} name="star" className={star <= index ? styles.starOn : styles.starOff} />)}</span>
-      </OrnateFrame>
-    </li>)}</ul>
-    <p className={styles.note}>CPUのデッキは、このルームのルールに合うおまかせデッキです。</p>
-  </Sheet>;
 }
 
 /** The empty opponent seat offers a person or a CPU before choosing CPU strength. */

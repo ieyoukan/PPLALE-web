@@ -1,0 +1,26 @@
+.button {
+  --face: var(--brand-pink);
+  position: relative; isolation: isolate; display: grid; place-items: center;
+  box-sizing: border-box; width: 100%; aspect-ratio: 1; padding: 0; border: 0; border-radius: 50%;
+  background: var(--brand-vanilla); color: var(--brand-cocoa-deep);
+  font: inherit; font-weight: 700; line-height: 1.2; text-align: center;
+  cursor: pointer; touch-action: manipulation;
+  box-shadow: inset 0 2px 0 var(--brand-paper), inset 0 -2px 0 var(--brand-star-deep);
+}
+.button::before {
+  content: ''; position: absolute; inset: 9%; z-index: -1; border-radius: inherit;
+  border: 1px solid var(--brand-pink-edge);
+  /* A crisp light break gives an enamel face without moving reflections. */
+  background: linear-gradient(165deg, var(--brand-paper) 0%, var(--brand-blush) 30%, var(--face) 30.5%, var(--face) 68%, var(--brand-blush) 100%);
+  box-shadow: inset 0 2px 0 var(--brand-paper), inset 0 -3px 0 color-mix(in srgb, var(--brand-cocoa) 20%, transparent);
+}
+.button[data-tone='sage'] { --face: var(--brand-sage); }
+.button[data-tone='muted'] { --face: var(--brand-cream); background: var(--brand-pink); }
+.rim { position: absolute; inset: 0; width: 100%; height: 100%; fill: none; stroke: var(--brand-star-deep); stroke-width: 1.1; pointer-events: none; }
+.label { position: absolute; left: 50%; top: 50%; width: 76%; transform: translate(-50%, -50%); white-space: nowrap; text-align: center; line-height: 1.2; }
+.button:hover:not(:disabled)::before { filter: brightness(1.04); }
+.button:active:not(:disabled)::before { box-shadow: inset 0 2px 0 var(--brand-pink-edge); }
+.button:focus-visible { outline: 3px solid var(--brand-cocoa-deep); outline-offset: 4px; }
+.button:disabled { cursor: default; }
+.button:disabled::before { background: var(--brand-cream); box-shadow: none; }
+.button:disabled .rim { stroke: var(--brand-cocoa-soft); }

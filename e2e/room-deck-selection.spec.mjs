@@ -55,7 +55,7 @@ test('the seat opens deck thumbnails, previews a candidate and confirms it witho
   await expect(list).toBeVisible();
   await list.getByRole('button', { name: /おまかせデッキ/ }).click();
   const random = page.getByRole('dialog', { name: 'おまかせデッキ', exact: true });
-  await expect(random).toContainText('じゅんびOKを押したときにカードが決まります');
+  await expect(random).toContainText('対戦の準備ができたときにカードが決まります');
   await random.getByRole('button', { name: 'このデッキにする', exact: true }).click();
   await expect(page.getByRole('button', { name: 'デッキ: おまかせデッキ', exact: true })).toBeVisible();
   await expect(page).toHaveURL(roomURL);

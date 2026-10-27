@@ -6,7 +6,7 @@
 import { randomBytes, randomInt, randomUUID, timingSafeEqual } from 'node:crypto';
 import { z } from 'zod';
 import { actingSides, cpuLevels, cpuProfiles, randomDeck, viewFor } from '@pplale/game-core';
-import type { Catalog, CpuLevel, Side } from '@pplale/game-core';
+import type { Catalog, CpuLevel, Deck, Side } from '@pplale/game-core';
 import { DEFAULT_VISIBILITY, MAX_MEMBERS, MAX_ROOM_NAME_LENGTH, MEMBER_GRACE, invitedVisibility, isRoomVisibility, parseRoomRules, roomDeckErrors } from '@pplale/game-core/room';
 import type { RoomInfo, RoomRules, RoomView, RoomVisibility } from '@pplale/game-core/room';
 import type { MatchEnd } from '@pplale/game-core/history';
@@ -80,7 +80,7 @@ const action = z.discriminatedUnion('action', [
     z.object({ action: z.literal('leave') }),
     z.object({ action: z.literal('sit'), seat: side }),
     z.object({ action: z.literal('stand') }),
-    z.object({ action: z.literal('cpu'), seat: side, level }),
+    z.object({ action: z.literal('cpu'), seat: side, level, deck: deck.optional() }),
     z.object({ action: z.literal('dismissCpu') }),
     z.object({ action: z.literal('claim') }),
     z.object({ action: z.literal('rules'), rules: z.unknown() }),
@@ -200,10 +200,12 @@ export function notePresence(room: Room, online: ReadonlySet<string>, now: numbe
 }
 
 /** A seat for the CPU, with a deck made for the room's rules. */
-function cpuSeat(room: Room, cpu: CpuLevel, catalog: Catalog): Seat {
-    const made = randomDeck(room.rules, catalog, randomInt(2 ** 31));
+function cpuSeat(room: Room, cpu: CpuLevel, catalog: Catalog, chosen?: Deck): Seat {
+    const errors = chosen ? roomDeckErrors(chosen, room.rules, catalog) : [];
+    if (errors.length) throw new RoomError(400, errors.join(' / '));
+    const made = chosen ?? randomDeck(room.rules, catalog, randomInt(2 ** 31));
     if (!made) throw new RoomError(409, 'このルールではCPUのデッキを作れません');
-    return { tokenHash: '', name: `CPU・${cpuProfiles[cpu].name}`, deck: { ...made, name: 'おまかせデッキ' }, ready: true, cpu };
+    return { tokenHash: '', name: `CPU・${cpuProfiles[cpu].name}`, deck: chosen ?? { ...made, name: 'おまかせデッキ' }, ready: true, cpu };
 }
 
 /** Those seated are no longer ready (somebody new sits across, or the rules changed), except `keep`. */
@@ -364,9 +366,9 @@ export function actPlaza(room: Room, id: string, body: unknown, catalog: Catalog
             break;
         case 'cpu': {
             atTable();
-            if (room.seats[request.seat]) throw new RoomError(409, 'その席にはもう誰かが座っています');
-            if (room.seats.some(seat => seat?.cpu)) throw new RoomError(409, 'CPUはもう来ています');
-            room.seats[request.seat] = cpuSeat(room, request.level, catalog);
+            if (room.seats[request.seat] && !room.seats[request.seat]?.cpu) throw new RoomError(409, 'その席にはもう誰かが座っています');
+            if (room.seats.some((seat, index) => seat?.cpu && index !== request.seat)) throw new RoomError(409, 'CPUはもう来ています');
+            room.seats[request.seat] = cpuSeat(room, request.level, catalog, request.deck);
             // Whoever called the CPU keeps their readiness; anyone else seated is asked again.
             unready(room, id);
             if (room.seats.every(seat => seat?.ready)) {
@@ -452,7 +454,7 @@ export function plazaView(room: Room, id: string, online: ReadonlySet<string>, c
     const mine = seatOf(room, id), seated = mine !== null;
     const players = seats.map((seat, index) => seat && {
         name: seat.name, ...(seat.profileId && { profileId: seat.profileId }), ready: seat.ready, online: !!seat.cpu || online.has(seat.member!),
-        ...(seat.left && { left: true }), ...(index === mine && seat.deck && { deck: seat.deck.name }),
+        ...(seat.left && { left: true }), ...((index === mine || seat.cpu) && seat.deck && { deck: seat.deck.name }),
         ...(seat.member && { member: seat.member }), ...(seat.cpu && { cpu: seat.cpu }),
     }) as RoomView['players'];
     const shares = mayInvite(plaza, id);

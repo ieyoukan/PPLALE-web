@@ -4,12 +4,44 @@ import { HIDDEN_CARD } from '@pplale/game-core';
 import { MEMBER_GRACE, TWO_SEAT_ROOM } from '@pplale/game-core/room';
 import type { Entered, RoomInfo, RoomView, Seated } from '@pplale/game-core/room';
 import { catalog } from '../src/catalog.ts';
-import { actPlaza, admit, askToEnter, createPlaza, entryOf, formerOf, inviteByName, tidyPlaza } from '../src/plaza.ts';
+import { actPlaza, admit, askToEnter, createPlaza, entryOf, formerOf, inviteByName, plazaView, tidyPlaza } from '../src/plaza.ts';
 import { connect, deck, serve, shared } from './helpers.ts';
 import type { Client, Served } from './helpers.ts';
 
 const rules = { fruits: ['strawberry' as const], extendedPlayable: false };
 const make = (served: Served, visibility: string, name = 'ありす') => served.call<Entered>('/rooms', { rules, name, plaza: { name: 'おちゃかい', visibility } });
+
+test('plaza: CPU deck selection is validated, can be changed before play, and resets with rules', () => {
+    const { room } = createPlaza('123456', { rules, plaza: { visibility: 'public' } }, { name: 'ありす' });
+    const me = room.plaza!.owner!;
+    const act = (body: unknown) => actPlaza(room, me, body, catalog);
+    const chosen = { ...deck, name: 'CPU用デッキ' };
+    act({ action: 'cpu', seat: 1, level: 'normal', deck: chosen });
+    assert.deepEqual(room.seats[1]!.deck, chosen);
+    assert.equal(plazaView(room, me, new Set([me]), catalog).players[1]!.deck, chosen.name);
+    const previous = structuredClone(room);
+    assert.throws(() => act({ action: 'cpu', seat: 1, level: 'easy', deck: { ...chosen, yojo: [] } }));
+    assert.deepEqual(room, previous, 'an invalid replacement leaves the selected CPU intact');
+    act({ action: 'cpu', seat: 1, level: 'easy', deck: { ...chosen, name: '変更後' } });
+    assert.equal(room.seats[1]!.cpu, 'easy');
+    assert.equal(room.seats[1]!.deck!.name, '変更後');
+    assert.throws(() => act({ action: 'cpu', seat: 0, level: 'normal' }), /CPUはもう来ています/);
+    act({ action: 'rules', rules: { fruits: ['grape'], extendedPlayable: false } });
+    assert.equal(room.seats[1]!.deck!.name, 'おまかせデッキ');
+    act({ action: 'rules', rules });
+    const afterRules = structuredClone(room);
+    const grape = Object.values(catalog).find(card => card.type === 'yojo' && card.fruit === 'grape')!.id;
+    assert.throws(() => act({ action: 'cpu', seat: 1, level: 'normal', deck: { ...chosen, yojo: [grape, ...chosen.yojo.slice(1)] } }));
+    assert.deepEqual(room, afterRules, 'a deck outside the new rules is rejected');
+    act({ action: 'sit', seat: 0 });
+    assert.throws(() => act({ action: 'cpu', seat: 0, level: 'normal' }), /もう誰か/);
+    act({ action: 'rules', rules });
+    act({ action: 'ready', deck });
+    assert.equal(room.status, 'playing');
+    const playing = structuredClone(room);
+    assert.throws(() => act({ action: 'cpu', seat: 1, level: 'normal', deck: chosen }), /対戦が終わって/);
+    assert.deepEqual(room, playing, 'the playing deck cannot be replaced');
+});
 /** Waits until the member's view has a match whose revision passed `revision` (or satisfies `test`). */
 const until = (client: Client, test: (view: RoomView) => boolean) => client.until(test);
 

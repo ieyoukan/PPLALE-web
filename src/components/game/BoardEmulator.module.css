@@ -129,9 +129,6 @@
 .counterTarget .counterLabel { outline: 3px solid #72bb81; box-shadow: 0 0 12px #80c79e9c; border-radius: 2cqw; }
 .shieldIndicator { position: absolute; top: -.8cqw; left: 10%; font-size: .65cqw; color: #4e8a6a; }
 .turnControl { position: absolute; right: 0; top: 43%; width: 7%; display: flex; flex-direction: column; align-items: center; gap: 6px; pointer-events: auto; }
-.turnControl span { font-size: .6cqw; color: #fff1d9; white-space: nowrap; }
-.turnControl button { width: 5.6cqw; padding: .9cqw .2cqw; border-radius: 5px; border: 2px solid #dac69b; background: #e3edd6; color: var(--brand-cocoa-deep); font-size: .72cqw; box-shadow: none; }
-.turnControl button:disabled { opacity: .5; }
 .opponentHand { position: absolute; right: .8%; top: 14%; width: 4.5%; height: 15%; }
 .hiddenCard { display: block; position: absolute; width: 3cqw; height: 4.5cqw; top: calc(var(--hand-index) * 5px); left: 0; transform: rotate(calc(var(--hand-index) * 2deg)); background: url('/images/back-card.webp') center / 100% 100%; border: 1px solid #e8d8c1; border-radius: 2px; box-shadow: 1px 2px 3px #32212155; }
 .hiddenFace { position: absolute; inset: 0; border-radius: inherit; background: inherit; transform: rotate(180deg); }
@@ -316,10 +313,6 @@
 .thresholds > span { font-size: 24px; }
 .shieldIndicator { font-size: 18px; top: -24px; }
 .turnControl { right: .5%; top: 39%; width: 12%; gap: 12px; z-index: 22; }
-.turnControl button { display: flex; flex-direction: column; align-items: center; justify-content: center; width: clamp(104px, 10cqw, 156px); height: clamp(104px, 10cqw, 156px); padding: 6px; border-radius: 50%; border: 5px double #fff4ca; background: var(--brand-blush); color: var(--brand-cocoa-deep); font-size: clamp(22px, 2cqw, 30px); font-weight: 700; line-height: 1.15; text-shadow: none; box-shadow: none; transition: transform .15s, filter .15s; }
-.turnControl button > span { font-size: 26px; color: var(--brand-cocoa-deep); line-height: 1; }
-.turnControl button:not(:disabled):active { transform: translateY(5px); }
-.turnControl button:disabled { opacity: 1; filter: saturate(.45) brightness(.9); }
 .opponentHand { left: 50%; right: auto; top: -82px; width: 0; height: 165px; z-index: 18; perspective: 700px; }
 .openHand { top: -36px; }
 .openHand .hiddenCard { pointer-events: auto; cursor: pointer; }
@@ -399,8 +392,7 @@
 .counterLabel { height: 45%; }
 .counterValue { height: 28%; }
 .turnControl { position: fixed; right: 16px; top: 39%; width: auto; }
-.turnControl button { width: clamp(104px, 10cqw, 156px); height: clamp(104px, 10cqw, 156px); font-size: clamp(22px, 2cqw, 30px); }
-@container stage (max-height: 600px) { .turnControl { top: 30%; right: 12px; gap: 8px; } .turnControl button { width: 104px; height: 104px; } .near .zoneLabel, .far .zoneLabel { display: none; } .deckZone::before { content: attr(data-label); position: absolute; left: 0; right: 0; top: -22px; font-size: 18px; color: #62485d; white-space: nowrap; } .deckCount { right: 5%; bottom: 0; } }
+@container stage (max-height: 600px) { .turnControl { top: 30%; right: 12px; gap: 8px; } .near .zoneLabel, .far .zoneLabel { display: none; } .deckZone::before { content: attr(data-label); position: absolute; left: 0; right: 0; top: -22px; font-size: 18px; color: #62485d; white-space: nowrap; } .deckCount { right: 5%; bottom: 0; } }
 .occupied .cardImage { animation: placeCard .32s ease-out; }
 @keyframes placeCard { from { transform: translateY(-25px) scale(1.14) rotate(-4deg); filter: drop-shadow(10px 20px 10px #43234366); } to { transform: translateY(0) scale(1) rotate(0); } }
 @media (prefers-reduced-motion: reduce) { .occupied .cardImage { animation: none; } }
@@ -459,10 +451,7 @@
 .ppGems i { box-sizing: border-box; width: min(18px, calc((100% - (var(--pp-count) - 1) * 3px) / var(--pp-count))); aspect-ratio: 1; border: 2px solid #e8d5ad; border-radius: 50%; box-shadow: 0 2px 2px #061e29, inset 0 0 0 1px #173d35; transition: background .22s, filter .22s; }
 .availablePp { background: radial-gradient(circle at 35% 25%, #f4ffc0, #9bda59 40%, #357d44 85%); filter: drop-shadow(0 0 3px #b4f68599); }
 .spentPp { background: radial-gradient(circle at 35% 25%, #9aa499, #4e5c56 75%); }
-.turnControl .endTurnButton { width: clamp(136px, 11cqw, 172px); height: clamp(136px, 11cqw, 172px); border: 5px solid #f4dba4; font-size: clamp(24px, 2cqw, 30px); background: var(--brand-blush); box-shadow: none; }
-.turnControl .endTurnButton.enemyTurn { background: var(--brand-peach); text-shadow: none; }
-.turnControl .endTurnButton:disabled { filter: none; }
-@container stage (max-height: 600px) { .turnControl { top: 50%; gap: 5px; } .ppPanel { height: 72px; } .ownPp { height: 88px; gap: 5px; } .ppAmount b { font-size: 38px; } .turnControl .endTurnButton { width: 118px; height: 118px; font-size: 24px; } }
+@container stage (max-height: 600px) { .turnControl { top: 50%; gap: 5px; } .ppPanel { height: 72px; } .ownPp { height: 88px; gap: 5px; } .ppAmount b { font-size: 38px; } }
 
 /* PP uses the same floral mint label artwork as the turn counters. */
 .ppPanel { height: 94px; gap: 4px; background: none; color: #594b40; filter: drop-shadow(0 4px 3px #42363d44); }
@@ -556,7 +545,6 @@
 .addHand { align-self: flex-end; flex: none; width: 96px; height: 144px; margin: 0 0 70px 14px; border: 3px dashed #fffdeb; border-radius: 12px; background: #4d3a2c88; color: #fffdeb; font-size: 40px; pointer-events: auto; }
 .addFarHand { position: absolute; left: -28px; top: 236px; width: 56px; height: 48px; border: 3px dashed #fffdeb; border-radius: 14px; background: #4d3a2c88; color: #fffdeb; font-size: 28px; pointer-events: auto; }
 .addHand:hover, .addFarHand:hover { background: #4d3a2ccc; }
-.turnControl .playButton { background: var(--brand-sage); font-size: clamp(19px, 1.6cqw, 24px); }
 
 .picker { position: fixed; inset: 0; z-index: 140; display: grid; place-items: center; padding: 16px; background: #000a; backdrop-filter: blur(4px); }
 .pickerSheet { display: grid; grid-template-rows: auto auto 1fr; gap: 12px; width: min(1100px, 96cqw); max-height: 92cqh; padding: 18px; border-radius: 24px; background: #fff9f0; color: #6b4a3a; }
@@ -676,3 +664,8 @@
 @media (prefers-reduced-motion: reduce) { .fieldSlot[data-pressing] .cardImage { animation: none; } }
 .fullscreenIcon { width: 24px; height: 24px; fill: none; stroke: currentColor; stroke-width: 2.4; stroke-linecap: round; stroke-linejoin: round; }
 .fullscreenButton { position: absolute; z-index: 135; right: 16px; bottom: 14px; }
+
+/* The yojo and sweet decks: their count sits on top of the cards, at the stack's top edge, so the
+   cards piled on the deck never cover it (the stack is 45% wide, 12% from the right, 18% from the top). */
+.deckZone[data-deck$='-yojo'] .deckCount, .deckZone[data-deck$='-sweet'] .deckCount { top: 18%; right: auto; bottom: auto; left: 65.5%; z-index: 30; transform: translate(-50%, -50%); }
+.far .deckZone[data-deck$='-yojo'] .deckCount, .far .deckZone[data-deck$='-sweet'] .deckCount { transform: translate(-50%, -50%) rotate(180deg); }

@@ -142,7 +142,18 @@ test('the CPU sits down in an empty seat and plays its own moves at the same tab
   await alice.getByRole('dialog', { name: '対戦相手をえらぶ' }).getByRole('button', { name: 'CPUと対戦' }).click();
   await expect(alice.getByRole('dialog', { name: 'CPUをえらぶ' })).toBeVisible();
   await alice.getByRole('button', { name: /ふつう/ }).click();
+  await expect(alice.getByRole('button', { name: /CPUのデッキをえらぶ/ })).toContainText('おまかせデッキ');
+  await alice.getByRole('button', { name: /CPUのデッキをえらぶ/ }).click();
+  const picker = alice.getByRole('dialog', { name: 'デッキをえらぶ' });
+  await picker.getByRole('button').filter({ hasText: 'いちごのおためしデッキ' }).click();
+  await expect(alice.getByRole('group', { name: 'デッキのカード' })).toBeVisible();
+  await alice.getByRole('button', { name: 'このデッキにする' }).click();
+  await alice.getByRole('button', { name: 'このCPUを呼ぶ' }).click();
   await expect(alice.getByText('CPU・ふつう')).toBeVisible();
+  // Reconfigure the same CPU from its own seat, without removing it first.
+  await alice.getByRole('button', { name: /^CPUのデッキ:/ }).click();
+  await expect(alice.getByRole('button', { name: /CPUのデッキをえらぶ/ })).toContainText('いちごのおためしデッキ');
+  await alice.getByRole('button', { name: 'このCPUにする' }).click();
   await alice.getByRole('button', { name: 'じゅんびOK!' }).click();
   await expect(alice.locator('[data-table]')).toBeVisible({ timeout: 20000 });
   // The CPU throws its die after ours; whoever wins chooses.

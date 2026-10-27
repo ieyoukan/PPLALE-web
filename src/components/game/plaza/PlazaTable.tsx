@@ -21,7 +21,8 @@ import { OrnateFrame } from '../ornament/OrnateFrame';
 import { Avatar } from './Avatar';
 import { RecordedCard } from '../history/RecordedCard';
 import { BoardSurface } from './BoardSurface';
-import { CpuSheet, DeckContentsSheet, DeckSheet, OpponentSheet, RulesSheet } from './PlazaSheets';
+import { DeckContentsSheet, DeckSheet, OpponentSheet, RulesSheet } from './PlazaSheets';
+import { CpuSheet } from './CpuSheet';
 import { RoomNameSheet } from './RoomManagementSheets';
 import { RoomThumbnailImage } from './RoomThumbnailImage';
 import { ShareSheet } from './ShareSheet';
@@ -96,6 +97,9 @@ export function PlazaTable({ view, onMenu }: { view: RoomView; onMenu: () => voi
           : <OrnateFrame as="button" size="line" className={styles.ready} disabled={busy || !chosen} onClick={ready}><span data-ui-title>じゅんびOK!</span></OrnateFrame>}
       </div>}
       {self && <button className={styles.leaveSeat} disabled={busy} onClick={() => ask({ action: 'stand' })} aria-label="席を立つ"><PlazaIcon name="exit" /><span data-ui-title>席を立つ</span></button>}
+      {player.cpu && <div className={styles.seatActions}><OrnateFrame as="button" size="sm" className={styles.deckChip} disabled={busy} onClick={() => setOpen({ cpu: side })} aria-label={`CPUのデッキ: ${player.deck ?? 'おまかせデッキ'}`}>
+        <span className={styles.deckArt}><PlazaIcon name="cards" /></span><span className={styles.deckName}><small>CPUのデッキ</small><b>{player.deck ?? 'おまかせデッキ'}</b></span>
+      </OrnateFrame></div>}
       {player.cpu && <button className={styles.seatCorner} disabled={busy} onClick={() => ask({ action: 'dismissCpu' })} aria-label="CPUに帰ってもらう"><PlazaIcon name="close" /></button>}
     </div>;
   };
@@ -173,7 +177,10 @@ export function PlazaTable({ view, onMenu }: { view: RoomView; onMenu: () => voi
     {open === 'name' && <RoomNameSheet view={view} onClose={() => setOpen(null)} />}
     {open === 'share' && <ShareSheet view={view} onClose={() => setOpen(null)} />}
     {open && typeof open === 'object' && 'opponent' in open && <OpponentSheet onClose={() => setOpen(null)} onInvite={() => setOpen('share')} onCpu={() => setOpen({ cpu: open.opponent })} />}
-    {open && typeof open === 'object' && 'cpu' in open && <CpuSheet onClose={() => setOpen({ opponent: open.cpu })} onChoose={level => { const side = open.cpu; setOpen(null); ask({ action: 'cpu', seat: side, level }); }} />}
+    {open && typeof open === 'object' && 'cpu' in open && <CpuSheet choices={choices} loading={saved.loading} current={view.players[open.cpu] ?? undefined}
+      signIn={user ? undefined : () => { signInWithGoogle().catch(() => setError('ログインできませんでした')); }}
+      onClose={() => setOpen(view.players[open.cpu] ? null : { opponent: open.cpu })}
+      onChoose={(level, choice) => { const side = open.cpu; setOpen(null); ask({ action: 'cpu', seat: side, level, ...(choice.source !== 'random' && { deck: choice.deck(randomSeed()) }) }); }} />}
   </div>;
 }
 

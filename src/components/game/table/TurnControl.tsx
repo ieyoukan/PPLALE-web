@@ -4,6 +4,8 @@ import { availablePpMaximum, other } from '@pplale/game-core';
 import type { Side } from '@pplale/game-core';
 import { useBoardContext } from '../board/BoardContext';
 import { PpPanel } from '../BoardPieces';
+import { RoundActionButton } from '../ornament/RoundActionButton';
+import actionStyles from './TurnControl.module.css';
 import { TurnClock } from './TurnClock';
 import styles from '../BoardEmulator.module.css';
 
@@ -17,10 +19,10 @@ export function TurnControl() {
   return <div className={styles.turnControl}>
     <PpPanel side={other(view)} name={names[other(view)]} order={orderFor(other(view))} current={game.players[other(view)].pp} maximum={availablePpMaximum(game, other(view))} own={false} />
     {editing
-      ? <button className={`${styles.endTurnButton} ${styles.playButton}`} onClick={() => setPanel({ type: 'play' })}>この盤面で<br />遊ぶ</button>
-      : <button className={`${styles.endTurnButton} ${mine ? '' : styles.enemyTurn}`} disabled={!playEnabled} onClick={() => act({ type: 'end', actor: game.active })}>
+      ? <RoundActionButton tone="sage" className={`${actionStyles.action} ${actionStyles.play}`} onClick={() => setPanel({ type: 'play' })}>この盤面で<br />遊ぶ</RoundActionButton>
+      : <RoundActionButton tone={mine ? 'pink' : 'muted'} className={actionStyles.action} disabled={!playEnabled} onClick={() => act({ type: 'end', actor: game.active })}>
         {remote?.watching && !remote.recorded ? <>観戦中</> : mine ? <>ターン<br />終了</> : <>相手の<br />ターン</>}
-      </button>}
+      </RoundActionButton>}
     {remote?.turnClock && remote.turnClock.turn === game.turn && game.winner === null && <TurnClock clock={remote.turnClock} />}
     <PpPanel side={view} name={names[view]} order={orderFor(view)} current={me.pp} maximum={availablePpMaximum(game, view)} own />
   </div>;
