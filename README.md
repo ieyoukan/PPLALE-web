@@ -81,6 +81,7 @@ pnpm run cards:check
 OGP用カードPNG（`public/og-cards/{yojo,sweet,playable}/`）と一覧用WebP（`public/deck-thumbnails/`）はGit管理しない。
 `pnpm run build`・`pnpm run dev`・`pnpm run test:deck-images` の前に自動生成する。
 手動では `pnpm run cards:generate` を使う。元画像または生成スクリプトの更新時だけ作り直し、OGP用PNGは可逆圧縮する。
+生成物は内容ハッシュ付きで `.next/cache/pplale-assets/` に保存し、`public/` へハードリンクする。`.next/cache` は `next build` でもVercel・CI・Dockerのビルドキャッシュでも保持されるため、クリーンなチェックアウトでも変更のないカードは再生成しない。
 `caption.png` と `profile-bg.jpg` は引き続き同梱する。
 クリーンな環境でもテスト用ヘルパーの型を解決できるよう、本番ビルドとルームサーバーテストの前にgame-coreも自動でビルドする。
 

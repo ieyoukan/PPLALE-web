@@ -115,7 +115,7 @@
 
 `pnpm run fonts:generate` が固定コミット・SHA-256検証済みのGoogle Fonts原本からWOFF2を生成する（`predev`・`prebuild`でも実行）。トップのTSXに含まれる文字を各ウェイト1ファイルにまとめ、ゲームメニューの文字も専用ファイルにまとめる。ゲーム用の抽出対象は `scripts/generate-site-fonts.mjs` に集約し、`game/plaza/`・`game/home/` の分割部品はディレクトリから読み取る。残りの収録文字は重複のない最大64文字ずつの追加サブセットに分ける。別ページ・ユーザー名などに必要な漢字も削除せず、ブラウザが必要なサブセットだけ取得する。書体・ウェイト・字形・文字幅は維持する。
 
-原本と生成キャッシュは `.cache/site-fonts/`、配信用ファイルは `public/fonts/generated/`、生成CSSは `src/app/generated/site-fonts.css` に置き、Gitには含めない。ライセンスは `public/fonts/*-OFL.txt` に保持する。初回生成にはネットワーク接続が必要。トップの文言変更は次の生成時に自動反映される。`pnpm run test:fonts` で文字の網羅性と字形・文字幅を検証する。
+原本と生成キャッシュは `.next/cache/pplale-assets/site-fonts/`、配信用ファイルは `public/fonts/generated/`、生成CSSは `src/app/generated/site-fonts.css` に置き、Gitには含めない。`.next/cache` は `next build` でもVercel・CI・Dockerのビルドキャッシュでも保持されるため、2回目以降のビルドはサブセットを再生成しない。ライセンスは `public/fonts/*-OFL.txt` に保持する。初回生成にはネットワーク接続が必要。トップの文言変更は次の生成時に自動反映される。`pnpm run test:fonts` で文字の網羅性と字形・文字幅を検証する。
 
 - `h1`〜`h6`、`legend`、タブは共通の見出し書体を使う。
 - リンクやボタン内のメニュー名は `data-ui-title` で指定する。

@@ -5,9 +5,11 @@ import { fileURLToPath } from 'node:url';
 import { create } from 'fontkit';
 import subsetFont from 'subset-font';
 import ts from 'typescript';
+import { cacheRoot } from './lib/asset-cache.mjs';
 
 const root = fileURLToPath(new URL('../', import.meta.url));
-const cache = path.join(root, '.cache/site-fonts');
+// Stored under .next/cache, which is restored by Vercel, CI and Docker BuildKit caches.
+const cache = path.join(cacheRoot, 'site-fonts');
 const output = path.join(root, 'public/fonts/generated');
 const revision = '47d54ca1ebb14fd864695f1d39dc734f39017c33';
 export const FONT_SOURCES = [

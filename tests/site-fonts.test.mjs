@@ -1,12 +1,15 @@
 import assert from 'node:assert/strict';
 import { readFile } from 'node:fs/promises';
+import path from 'node:path';
 import { test } from 'node:test';
 import { gzipSync } from 'node:zlib';
 import { create } from 'fontkit';
+import { cacheRoot } from '../scripts/lib/asset-cache.mjs';
 import { gameMenuCodePoints, homeCodePoints, unicodeRanges } from '../scripts/generate-site-fonts.mjs';
 
 const root = new URL('../', import.meta.url);
-const manifest = JSON.parse(await readFile(new URL('.cache/site-fonts/manifest.json', root), 'utf8'));
+const fontCache = path.join(cacheRoot, 'site-fonts');
+const manifest = JSON.parse(await readFile(path.join(fontCache, 'manifest.json'), 'utf8'));
 
 test('Unicode ranges are exact and compact at block boundaries', () => {
   assert.equal(unicodeRanges([0x100, 0xFE, 0xFF, 0x100, 0x102]), 'U+FE-100,U+102');
@@ -21,7 +24,7 @@ test('menu font extraction covers the current split launchpad and its shared cop
 
 for (const font of manifest) {
   test(`${font.family} ${font.weight}: preserve all characters and glyphs across disjoint subsets`, async () => {
-    const source = create(await readFile(new URL(`.cache/site-fonts/${font.file}`, root)));
+    const source = create(await readFile(path.join(fontCache, font.file)));
     const homePoints = await homeCodePoints();
     const menuPoints = await gameMenuCodePoints();
     const advertised = new Set();

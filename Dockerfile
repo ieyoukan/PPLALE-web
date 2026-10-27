@@ -1,3 +1,4 @@
+# syntax=docker/dockerfile:1
 FROM node:26.12.1-alpine AS builder
 
 WORKDIR /app
@@ -17,7 +18,8 @@ COPY . .
 COPY .env.production .env
 
 # ビルド
-RUN pnpm run build
+# .next/cache をBuildKitのキャッシュに置き、カード画像を再生成せずに済むようにする。
+RUN --mount=type=cache,target=/app/.next/cache pnpm run build
 
 # 本番環境用のイメージ
 FROM node:26.12.1-alpine AS runner
