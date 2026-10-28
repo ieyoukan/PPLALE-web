@@ -15,11 +15,12 @@
 /* The checkbox covers its tile: a tap anywhere on it changes it, and it is still a checkbox to a keyboard or a screen reader. */
 .box { position: absolute; inset: 0; z-index: 1; width: 100%; height: 100%; margin: 0; opacity: 0; cursor: inherit; }
 /* The picture on the fruit's colour (which shows until the picture has loaded). */
-.art { position: relative; display: block; box-sizing: border-box; aspect-ratio: 16 / 9; overflow: hidden; border: 2px solid var(--brand-pink-edge); background: var(--tone); transition: border-color .2s, transform .2s; }
+.art { position: relative; display: block; box-sizing: border-box; aspect-ratio: 16 / 9; overflow: hidden; border: 1px solid var(--brand-control-edge); border-radius: var(--brand-control-radius); background: var(--tone); transition: border-color .2s, transform .2s; }
+.tile[data-fixed] .art, .tile[data-soon] .art { border-radius: var(--brand-panel-radius); }
 .art img { display: block; width: 100%; height: 100%; object-fit: cover; }
 /* A selected picture stays bright and readable; only its border and corner mark change. */
 .tile[data-on] .art { border-color: var(--brand-cocoa); }
-.mark { position: absolute; top: 5px; right: 5px; display: grid; place-items: center; width: 24px; height: 24px; border: 1px solid var(--brand-pink-edge); border-radius: 6px; background: var(--brand-paper); color: var(--brand-cocoa-deep); }
+.mark { position: absolute; top: 5px; right: 5px; display: grid; place-items: center; width: 24px; height: 24px; border: 1px solid var(--brand-pink-edge); border-radius: var(--brand-panel-radius); background: var(--brand-paper); color: var(--brand-cocoa-deep); }
 .mark svg { display: block; width: 18px; height: 18px; fill: none; stroke: currentColor; stroke-width: 3; stroke-linecap: round; stroke-linejoin: round; }
 /* Not playable yet: grey behind a cream veil with its label. */
 .tile[data-soon] .art { filter: grayscale(.8); }

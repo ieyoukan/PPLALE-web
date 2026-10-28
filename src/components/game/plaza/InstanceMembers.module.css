@@ -3,7 +3,7 @@
 .group h3 { display: flex; align-items: center; gap: 8px; margin: 0; color: var(--brand-cocoa-deep); font-size: 16px; }
 .group h3 small { color: var(--brand-cocoa-soft); font-size: 13px; }
 .members { display: grid; grid-template-columns: repeat(auto-fill, minmax(108px, 1fr)); gap: 8px; margin: 0; padding: 0; list-style: none; }
-.person { display: grid; justify-items: center; align-content: start; gap: 6px; height: 100%; padding: 10px 6px; border-radius: 6px; color: var(--brand-cocoa-deep); text-align: center; }
+.person { display: grid; justify-items: center; align-content: start; gap: 6px; height: 100%; padding: 10px 6px; border-radius: var(--brand-control-radius); color: var(--brand-cocoa-deep); text-align: center; }
 a.person:hover { background: var(--brand-blush); }
 .person b { max-width: 100%; overflow-wrap: anywhere; font-size: 14px; }
 .state { display: flex; justify-content: center; align-items: center; gap: 4px; color: var(--brand-cocoa-soft); font-size: 14px; }

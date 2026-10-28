@@ -9,14 +9,12 @@ for (const theme of ['light', 'dark']) test(`game labels and native selects stay
   await page.waitForURL(/\/game\/room\/\d{6}\/$/, { timeout: 30000 });
   await expect.poll(() => page.locator('html').evaluate(element => element.classList.contains('dark'))).toBe(theme === 'dark');
   await page.getByRole('button', { name: 'ルール', exact: true }).click();
-  const rules = page.getByRole('dialog', { name: 'ルールをかえる' });
+  const rules = page.getByRole('dialog', { name: 'ルームを編集' });
   const labels = await rules.locator('label, legend').evaluateAll(elements => elements.map(element => getComputedStyle(element).color));
   expect(labels.length).toBeGreaterThan(0);
   expect(labels.every(color => color === 'rgb(99, 71, 71)')).toBe(true);
-  await rules.getByRole('button', { name: '閉じる', exact: true }).click();
-  await page.getByRole('button', { name: 'ルーム名を変える', exact: true }).click();
   await expect(page.getByRole('textbox', { name: 'ルーム名', exact: true })).toHaveCSS('color', 'rgb(99, 71, 71)');
-  expect(await page.locator('label[for="plaza-room-name"]').evaluate(element => getComputedStyle(element).color)).toBe('rgb(120, 88, 88)');
+  expect(await rules.locator('label').filter({ has: page.getByRole('textbox', { name: 'ルーム名', exact: true }) }).evaluate(element => getComputedStyle(element).color)).toBe('rgb(99, 71, 71)');
   await page.keyboard.press('Escape');
   await page.getByRole('button', { name: 'メニュー', exact: true }).click();
   await page.getByRole('tab', { name: '設定', exact: true }).click();

@@ -1,6 +1,6 @@
 .browser { container: rooms / inline-size; display: flex; flex-direction: column; gap: 14px; height: 100%; min-height: 0; color: var(--brand-cocoa-deep); }
 .toolbar { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
-.iconButton, .filterButton { display: inline-flex; align-items: center; justify-content: center; gap: 6px; padding: 8px; min-height: 36px; border: 0; border-radius: 6px; background: transparent; color: inherit; font-size: 13px; }
+.iconButton, .filterButton { display: inline-flex; align-items: center; justify-content: center; gap: 6px; padding: 8px; min-height: 36px; border: 0; border-radius: var(--brand-control-radius); background: transparent; color: inherit; font-size: 13px; }
 .iconButton { width: 36px; }
 .iconButton svg { width: 20px; height: 20px; }
 .filterButton[aria-expanded=true], .iconButton:hover:not(:disabled), .filterButton:hover { background: var(--brand-blush); }
@@ -29,7 +29,7 @@
 .listHeading { display: flex; align-items: center; gap: 8px; font-size: 16px; }
 .listHeading > span { font-size: 13px; color: var(--brand-cocoa-soft); }
 .list { display: flex; flex-direction: column; gap: 4px; list-style: none; margin: 0; padding: 0 6px 0 0; overflow-y: auto; overscroll-behavior: contain; min-height: 0; scrollbar-color: var(--brand-pink-edge) var(--brand-cream); }
-.room { display: flex; align-items: center; gap: 10px; width: 100%; min-height: 94px; padding: 10px 8px; border: 1px solid transparent; border-radius: 6px; background: transparent; color: inherit; text-align: left; }
+.room { display: flex; align-items: center; gap: 10px; width: 100%; min-height: 94px; padding: 10px 8px; border: 1px solid transparent; border-radius: var(--brand-control-radius); background: transparent; color: inherit; text-align: left; }
 .room:hover { background: var(--brand-blush); }
 .room[aria-pressed=true] { border-color: var(--brand-cocoa); background: var(--brand-vanilla-wash); }
 .roomIcon { display: grid; place-items: center; flex-shrink: 0; width: 32px; height: 32px; background: var(--brand-sage-wash); border-radius: 50%; font-size: 22px; }

@@ -7,7 +7,7 @@ test.beforeAll(async () => {
   const { outputFiles } = await build({
     stdin: { contents: `import React from 'react'; import {createRoot} from 'react-dom/client';
       import {GuestSignInPrompt} from './src/components/shared/auth/GuestSignInPrompt';
-      createRoot(document.getElementById('root')).render(<GuestSignInPrompt compact={window.fixture.compact} />);`, loader: 'tsx', resolveDir: process.cwd() },
+      createRoot(document.getElementById('root')).render(<GuestSignInPrompt compact={window.fixture.compact} purpose={window.fixture.purpose} />);`, loader: 'tsx', resolveDir: process.cwd() },
     jsx: 'automatic', bundle: true, write: false, outdir: '.cache/guest-sign-in-fixture', format: 'iife', platform: 'browser',
     define: { 'process.env.NODE_ENV': '"production"' },
     plugins: [{ name: 'guest-auth', setup(builder) {
@@ -25,9 +25,9 @@ test.beforeAll(async () => {
   fixture = `<html lang="ja"><style>${brand}\n${css}\n*{box-sizing:border-box}body{margin:16px;background:var(--brand-cream);font-family:sans-serif}#root{max-width:620px}button{cursor:pointer}</style><body><div id="root"></div><script>${script.replaceAll('</script', '<\\/script')}</script></body></html>`;
 });
 
-async function mount(page, { compact = false, loading = false, signedIn = false } = {}) {
+async function mount(page, { compact = false, loading = false, signedIn = false, purpose = 'social' } = {}) {
   await page.addInitScript(options => {
-    window.fixture = { compact: options.compact, auth: { loading: options.loading, user: options.signedIn ? { uid: 'signed-in' } : null }, calls: 0,
+    window.fixture = { compact: options.compact, purpose: options.purpose, auth: { loading: options.loading, user: options.signedIn ? { uid: 'signed-in' } : null }, calls: 0,
       signIn() {
         this.calls++;
         return new Promise((resolve, reject) => {
@@ -39,10 +39,10 @@ async function mount(page, { compact = false, loading = false, signedIn = false 
         });
       },
     };
-  }, { compact, loading, signedIn });
+  }, { compact, loading, signedIn, purpose });
   await page.route('**/guest-sign-in-fixture', route => route.fulfill({ contentType: 'text/html', body: fixture }));
   await page.goto('/guest-sign-in-fixture');
-  return page.getByRole('region', { name: 'ログインのおすすめ' });
+  return page.getByRole('region', { name: purpose === 'profile' ? 'プロフィールにログイン' : 'ログインのおすすめ' });
 }
 
 for (const compact of [false, true]) for (const width of [1280, 390]) {
@@ -82,4 +82,18 @@ test('resolving guest authentication keeps the menu row the same height', async 
   await page.evaluate(() => { window.fixture.auth = { user: null, loading: false }; window.dispatchEvent(new Event('auth-change')); });
   await expect(prompt).toBeVisible();
   expect(await page.locator('#root').evaluate(element => element.offsetHeight)).toBe(before);
+});
+
+test('a guest profile asks for sign-in after entry, retries safely and never opens a popup by itself', async ({ page }) => {
+  const prompt = await mount(page, { purpose: 'profile' });
+  await expect(prompt).toContainText('プロフィールを使うにはログインしてください');
+  expect(await page.evaluate(() => window.fixture.calls)).toBe(0);
+  const signIn = prompt.getByRole('button', { name: 'Googleでログイン' });
+  await signIn.click();
+  expect(await page.evaluate(() => window.fixture.calls)).toBe(1);
+  await page.evaluate(() => window.fixture.finish(false));
+  await expect(prompt.getByRole('alert')).toBeVisible();
+  await signIn.click();
+  await page.evaluate(() => window.fixture.finish(true));
+  await expect(prompt).toHaveCount(0);
 });

@@ -7,7 +7,6 @@ import { OrnateFrame } from '@/components/shared/ui/ornament/OrnateFrame';
 import { GameIcon } from '@/components/shared/ui/GameIcon';
 import { usePlaza } from '../plaza/PlazaProvider';
 import { RulesSheet } from '../plaza/PlazaSheets';
-import { RoomNameSheet } from '../plaza/RoomManagementSheets';
 import { ShareSheet } from '../plaza/ShareSheet';
 import { HomeRoomSheet } from '../plaza/HomeRoomSheet';
 import { NewRoomSheet } from '../plaza/NewRoomSheet';
@@ -24,7 +23,6 @@ export function Launchpad({ stack, choose }: { stack: Place[]; choose: (section:
   const { close: onClose, expanded, setExpanded, place, back } = useLaunchpad();
   const plaza = usePlaza();
   const [panel, setPanel] = useState<RoomPanel | null>(null);
-  const [error, setError] = useState('');
   const box = useRef<HTMLDivElement>(null), panelRef = useRef<HTMLDivElement>(null), tabId = useId();
   const view = plaza.view;
   // The small pad is for quick actions; its expanded landing page finds public rooms.
@@ -75,7 +73,6 @@ export function Launchpad({ stack, choose }: { stack: Place[]; choose: (section:
         {tabRail}{head}
         <div ref={panelRef} className={styles.tabPanel} role="tabpanel" id={`${tabId}-panel`} aria-label={title} tabIndex={0}>
           <Suspense fallback={null}><LaunchpadScreens section={section} place={place} onPanel={setPanel} onClose={onClose} /></Suspense>
-          {error && <p className={styles.createError} role="alert">{error}</p>}
         </div>
       </OrnateFrame>
     </div>
@@ -83,10 +80,7 @@ export function Launchpad({ stack, choose }: { stack: Place[]; choose: (section:
       {panel === 'share' && view?.plaza && <ShareSheet view={view} onClose={() => setPanel(null)} />}
       {panel === 'new' && <NewRoomSheet onClose={() => setPanel(null)} onDone={onClose} />}
       {panel === 'home' && <HomeRoomSheet onClose={() => setPanel(null)} onDone={onClose} />}
-      {panel === 'name' && view?.plaza && <RoomNameSheet view={view} onClose={() => setPanel(null)} />}
-      {panel === 'rules' && view?.plaza && <RulesSheet view={view} onClose={() => setPanel(null)} onSave={rules => {
-        void plaza.send({ action: 'rules', rules }).then(() => { setError(''); setPanel(null); }, failure => { setError(failure instanceof Error ? failure.message : 'ルールを変えられませんでした'); setPanel(null); });
-      }} />}
+      {panel === 'rules' && view?.plaza && <RulesSheet view={view} onClose={() => setPanel(null)} />}
       <InstallPrompt />
     </span>
   </div>;

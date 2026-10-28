@@ -2,21 +2,23 @@
    Keep preserve-3d ancestors free of opacity, filters and overflow clipping. */
 .scene {
   --tilt: 58deg;
-  --desk-drop: 8px;
+  --desk-drop: 1px;
   --desk-depth: 22px;
   --leg-height: 164px;
   --floor-depth: calc(var(--desk-drop) + var(--desk-depth) + var(--leg-height));
-  --wood-grain: repeating-linear-gradient(1deg, #ffffff04 0 1px, transparent 1px 8px), repeating-linear-gradient(0deg, color-mix(in srgb, var(--brand-ink) 21%, transparent) 0 1px, transparent 1px 12px), linear-gradient(90deg, var(--brand-wood), var(--brand-wood-light) 28%, var(--brand-wood-light) 75%, var(--brand-wood));
+  --wood-grain: url('/images/game/wood-grain.svg');
   grid-area: mat; position: relative; z-index: 0; isolation: isolate; display: grid; place-items: center; min-height: 0;
   min-width: 0; grid-template: minmax(0, 1fr) / minmax(0, 1fr);
   container-type: size; perspective: 1500px; perspective-origin: 50% 30%;
 }
-.world {
+.world, .boardProjection {
   --long: min(138cqh, 104cqw);
   position: relative; width: var(--long); height: calc(var(--long) * 9 / 16);
-  transform-style: preserve-3d; transform: translateY(-56px) rotateX(var(--tilt)) rotateZ(90deg);
+  grid-area: 1 / 1; transform: translateY(-56px) rotateX(var(--tilt)) rotateZ(90deg);
   pointer-events: none;
 }
+.world { z-index: 0; transform-style: preserve-3d; }
+.boardProjection { z-index: 1; isolation: isolate; }
 .floor {
   position: absolute; inset: -240px -280px;
   transform: translateZ(calc(-1 * var(--floor-depth))) scale(10);
@@ -30,7 +32,7 @@
 }
 .solid { position: absolute; transform-style: preserve-3d; }
 .solid > span { position: absolute; display: block; }
-.top { inset: 0; background: var(--wood-grain); }
+.top { inset: 0; background: var(--brand-wood-light) var(--wood-grain) center / cover; }
 .front, .back { left: 0; width: 100%; height: var(--depth); transform-origin: top; transform: rotateX(-90deg); background: linear-gradient(var(--brand-wood-edge), var(--brand-wood-deep)); }
 .front { top: 100%; }
 .back { top: 0; }
@@ -38,7 +40,8 @@
 .left { left: 0; }
 .right { left: 100%; }
 .desk { --depth: var(--desk-depth); inset: -24px -34px; transform: translateZ(calc(-1 * var(--desk-drop))); }
-.desk > .top { border: 1px solid var(--brand-wood-edge); }
+.desk > .top { border: 1px solid var(--brand-wood-edge); box-shadow: inset 0 1px 2px color-mix(in srgb, var(--brand-cream) 25%, transparent); }
+.desk > .top::after { content: ''; position: absolute; inset: 23px calc(34px + (100% - 68px) * .06); box-shadow: 0 1px 3px 1px color-mix(in srgb, var(--brand-ink) 42%, transparent); }
 .leg {
   --depth: var(--leg-height); width: 28px; height: 28px;
   transform: translateZ(calc(-1 * (var(--desk-drop) + var(--desk-depth))));

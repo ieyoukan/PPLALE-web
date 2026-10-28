@@ -7,7 +7,7 @@
   position: relative; isolation: isolate; padding: var(--pad); color: var(--brand-cocoa-deep);
 }
 :where(.frame[data-size=sm]) { --corner: 40px; --pad: 16px; }
-/* The thin frame of buttons: 14px corners, its one rule 6 units of 14 across. */
+/* Compact action spacing; non-interactive line frames retain their thin ornament. */
 :where(.frame[data-size=line]) { --corner: 14px; --pad: 8px 16px; }
 .frame[data-size=line] .top, .frame[data-size=line] .bottom { height: calc(var(--corner) * 6 / 14); }
 .frame[data-size=line] .left, .frame[data-size=line] .right { width: calc(var(--corner) * 6 / 14); }
@@ -16,9 +16,14 @@
 :where(.frame[data-bare]) { --frame-face: transparent; }
 .frame[data-bare]::before { content: none; }
 /* The face under the whole frame, as the cards print their frame on their own paper. */
-.frame::before { content: ''; position: absolute; inset: 0; z-index: -1; background: var(--frame-face); }
-.ornament { position: absolute; inset: 0; z-index: 1; color: var(--frame-ink); pointer-events: none; }
+.frame { border-radius: var(--brand-panel-radius); }
+.frame::before { content: ''; position: absolute; inset: 0; z-index: -1; background: var(--frame-face); border-radius: inherit; }
+/* The action's radius is independent of its size; panels keep only a small corner break. */
+.frame[data-appearance=control] { border-radius: var(--brand-control-radius); }
+.frame[data-appearance=control]::before { border: 1px solid color-mix(in srgb, var(--frame-ink) 24%, var(--frame-face)); }
+.ornament { position: absolute; inset: 0; z-index: 1; color: color-mix(in srgb, var(--frame-ink) 40%, transparent); pointer-events: none; }
 .frame[data-faint] .ornament { opacity: .55; }
+.frame[data-interactive][data-appearance=panel] .ornament { opacity: 1; }
 .at { position: absolute; width: var(--corner); height: var(--corner); }
 .corner { display: block; width: 100%; height: 100%; overflow: visible; }
 .tl { top: 0; left: 0; }

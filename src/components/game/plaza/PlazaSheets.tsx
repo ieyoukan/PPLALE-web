@@ -2,6 +2,8 @@
 
 // What a room asks for one choice at a time: the deck, the CPU's strength, the rules of the next match.
 import { useRef, useState } from 'react';
+import { MAX_ROOM_NAME_LENGTH } from '@pplale/game-core/room';
+import { usePlaza } from './PlazaProvider';
 import CardDetail from '@/components/shared/card/CardDetail';
 import type { RoomRules, RoomView } from '@pplale/game-core/room';
 import { DECK_IMAGE_ASPECT } from '@/lib/deckImageLayout';
@@ -69,20 +71,37 @@ export function OpponentSheet({ onInvite, onCpu, onClose }: { onInvite: () => vo
 
 const TURNS = [undefined, 120, 180, 300] as const;
 /** The rules of the next match: the owner changes them, everyone else sees them. */
-export function RulesSheet({ view, onSave, onClose }: { view: RoomView; onSave: (rules: RoomRules) => void; onClose: () => void }) {
+export function RulesSheet({ view, onClose }: { view: RoomView; onClose: () => void }) {
+  const { send } = usePlaza();
+  const [name, setName] = useState(view.plaza!.name);
+  const [busy, setBusy] = useState(false), [error, setError] = useState('');
   const plaza = view.plaza!, mine = plaza.owner === plaza.me;
   const [rules, setRules] = useState<RoomRules>(plaza.nextRules ?? view.rules);
   const playing = view.status === 'playing';
-  return <Sheet title={mine ? 'ルールをかえる' : 'このルームのルール'} onClose={onClose} wide>
-    <div className={mine ? undefined : styles.readOnly} inert={!mine}>
+  const rulesChanged = JSON.stringify(rules) !== JSON.stringify(plaza.nextRules ?? view.rules);
+  const nameChanged = name.trim() !== plaza.name;
+  const save = async () => {
+    if (busy || !name.trim()) return;
+    setBusy(true); setError('');
+    try {
+      if (nameChanged) await send({ action: 'rename', name: name.trim() });
+      if (rulesChanged) await send({ action: 'rules', rules });
+      onClose();
+    } catch (failure) { setError(failure instanceof Error ? failure.message : '保存できませんでした'); }
+    finally { setBusy(false); }
+  };
+  return <Sheet title={mine ? 'ルームを編集' : 'このルームのルール'} onClose={onClose} wide>
+    {mine && <label className={styles.roomName}>ルーム名<input value={name} onChange={event => setName(Array.from(event.target.value).slice(0, MAX_ROOM_NAME_LENGTH).join(''))} disabled={busy} autoComplete="off" /></label>}
+    <div className={mine ? undefined : styles.readOnly} inert={!mine || busy}>
       <RulePicker rules={rules} onChange={next => setRules(current => ({ ...current, ...next }))} compact />
       <div className={styles.turnChoice} role="radiogroup" aria-label="1ターンの時間">
         <GameIcon name="timer" />
         {TURNS.map(seconds => <button key={seconds ?? 0} role="radio" aria-checked={rules.turnSeconds === seconds} onClick={() => setRules(current => ({ ...current, turnSeconds: seconds }))}>{seconds ? `${seconds / 60}分` : '∞'}</button>)}
       </div>
     </div>
+    {error && <p className={styles.note} role="alert">{error}</p>}
     <div className={styles.sheetFoot}>
-      {mine ? <OrnateFrame as="button" size="line" className={styles.primaryButton} onClick={() => onSave(rules)}><GameIcon name="check" /><span data-ui-title>{playing ? '次の対戦からこのルール' : 'このルールにする'}</span></OrnateFrame>
+      {mine ? <OrnateFrame as="button" size="line" className={styles.primaryButton} disabled={busy || !name.trim()} onClick={() => void save()}><GameIcon name="check" /><span data-ui-title>{busy ? '保存中…' : playing ? '保存（次の対戦から）' : '保存'}</span></OrnateFrame>
         : <span className={styles.note}>ルールを変えられるのはオーナーだけです。</span>}
     </div>
   </Sheet>;

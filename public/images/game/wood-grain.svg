@@ -1,0 +1,21 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="2048" height="512" viewBox="0 0 2048 512">
+  <!-- Fixed-seed, elongated grain: a cached material image, never a live scene filter. -->
+  <defs>
+    <filter id="grain" x="0" y="0" width="100%" height="100%">
+      <feTurbulence type="fractalNoise" baseFrequency=".003 .095" numOctaves="3" seed="24" stitchTiles="stitch"/>
+      <feColorMatrix type="saturate" values="0"/>
+      <feComponentTransfer>
+        <feFuncR type="table" tableValues=".20 .33 .49 .62"/>
+        <feFuncG type="table" tableValues=".11 .20 .32 .43"/>
+        <feFuncB type="table" tableValues=".065 .12 .21 .30"/>
+      </feComponentTransfer>
+    </filter>
+    <linearGradient id="light" x2="0" y2="1"><stop stop-color="#fff8f0" stop-opacity=".12"/><stop offset=".45" stop-color="#fff8f0" stop-opacity="0"/><stop offset="1" stop-color="#23140d" stop-opacity=".17"/></linearGradient>
+  </defs>
+  <path fill="#765339" d="M0 0h2048v512H0z"/>
+  <path filter="url(#grain)" d="M0 0h2048v512H0z"/>
+  <g fill="#fff8f0" opacity=".035"><path d="M0 0h2048v126H0zM0 256h2048v126H0z"/></g>
+  <g stroke="#23140d" stroke-opacity=".25"><path d="M0 127.5h2048M0 255.5h2048M0 383.5h2048"/></g>
+  <g stroke="#fff8f0" stroke-opacity=".09"><path d="M0 129h2048M0 257h2048M0 385h2048"/></g>
+  <path fill="url(#light)" d="M0 0h2048v512H0z"/>
+</svg>

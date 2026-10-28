@@ -16,7 +16,7 @@
 
 /* ── Small buttons: squares with corners only a little rounded (6px), or no frame at all ── */
 .round, .inviteButton, .claim, .softButton, .shareTile {
-  border: 1px solid var(--brand-pink-edge); border-radius: 6px; background: var(--brand-cream); color: var(--brand-cocoa-deep);
+  border: 1px solid var(--brand-control-edge); border-radius: var(--brand-control-radius); background: var(--brand-cream); color: var(--brand-cocoa-deep);
   box-shadow: none; transition: transform .12s ease;
 }
 :is(.round, .inviteButton, .claim, .softButton, .shareTile):active:not(:disabled) { transform: translateY(2px); box-shadow: none; }
@@ -38,19 +38,22 @@
 .inviteButton svg { font-size: 22px; }
 
 /* ── Left: everyone in the room ── */
-.people { --pad: 24px 16px; grid-area: people; min-height: 0; overflow: auto; }
-.people ul { display: grid; list-style: none; margin: 0; padding: 0; }
+.people { --pad: 26px 20px; grid-area: people; min-height: 0; min-width: 0; overflow: auto; }
+.people ul { display: grid; min-width: 0; list-style: none; margin: 0; padding: 0; }
+.people li { min-width: 0; }
 /* Rows on the panel's own face, parted by a fine rule, rather than boxes of their own. */
-.person { display: flex; align-items: center; gap: 10px; padding: 6px 4px; border-bottom: 1px solid color-mix(in srgb, var(--brand-cream-line) 20%, transparent); color: var(--brand-cream-on-dark); text-decoration: none; animation: popIn .35s cubic-bezier(.3, 1.6, .5, 1) both; }
+.person { display: grid; grid-template-columns: 42px minmax(0, 1fr) auto; align-items: center; gap: 6px; min-width: 0; padding: 8px 0; border-bottom: 1px solid color-mix(in srgb, var(--brand-cream-line) 20%, transparent); color: var(--brand-cream-on-dark); text-decoration: none; animation: popIn .35s cubic-bezier(.3, 1.6, .5, 1) both; }
 a.person:hover { background: color-mix(in srgb, var(--brand-cream-on-dark) 10%, transparent); }
 [data-away] > .person { opacity: .62; }
 .personName { display: grid; flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 15px; font-weight: 700; }
 .personName small { font-size: 11px; font-weight: 500; color: color-mix(in srgb, var(--brand-cream-line) 80%, transparent); }
-.personMarks { display: flex; gap: 4px; font-size: 17px; color: color-mix(in srgb, var(--brand-cream-line) 80%, transparent); }
+.personMarks { display: grid; justify-items: center; gap: 3px; width: 18px; font-size: 16px; color: color-mix(in srgb, var(--brand-cream-line) 80%, transparent); }
+.personMarks > span { display: flex; }
 .crown { color: var(--brand-vanilla); }
 
 /* Portraits: the profile's card, cropped to the face like the friends list. */
 /* Player identities use icons; deck previews remain whole cards. */
+.seatPortrait { display: inline-flex; line-height: 0; }
 
 /* Seat controls stay upright beside the shared room scene. */
 .seat {
@@ -70,9 +73,9 @@ a.person:hover { background: color-mix(in srgb, var(--brand-cream-on-dark) 10%, 
 .thinking i { width: 8px; height: 8px; border-radius: 50%; background: var(--brand-cocoa-soft); animation: hop 1.2s ease-in-out infinite; }
 .thinking i:nth-child(2) { animation-delay: .15s; }
 .thinking i:nth-child(3) { animation-delay: .3s; }
-.seatCorner { position: absolute; top: -12px; right: -12px; display: grid; place-items: center; width: 40px; height: 40px; border-radius: 6px; border: 2px solid var(--brand-paper); background: var(--brand-cocoa); color: var(--brand-cream); font-size: 20px; box-shadow: none; }
+.seatCorner { position: absolute; top: -12px; right: -12px; display: grid; place-items: center; width: 40px; height: 40px; border-radius: var(--brand-control-radius); border: 2px solid var(--brand-paper); background: var(--brand-cocoa); color: var(--brand-cream); font-size: 20px; box-shadow: none; }
 .seatEmpty { grid-template-columns: 1fr; filter: none; animation: none; }
-.sitButton { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 14px; width: 100%; height: 100%; padding: 0; border: 0; background: none; color: var(--brand-cocoa); text-align: center; }
+.sitButton { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 14px; width: 100%; padding: var(--pad); border: 0; background: none; color: var(--brand-cocoa); text-align: center; }
 .sitButton b { font-size: 24px; }
 /* A diamond like the cards' ornaments, calling from far to near. */
 .plus { display: grid; place-items: center; width: 80px; height: 80px; background: var(--brand-cocoa); color: var(--brand-cream); font-size: 36px; clip-path: polygon(50% 0, 100% 50%, 50% 100%, 0 50%); animation: beckon 1.8s ease-in-out infinite; }
@@ -101,7 +104,7 @@ a.person:hover { background: color-mix(in srgb, var(--brand-cream-on-dark) 10%, 
 .deckName small { font-size: 12px; color: var(--brand-cocoa-soft); }
 .deckName b { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 18px; }
 /* ── Large buttons: a card of their own, in the ornament frame (OrnateFrame as a button) ── */
-.ready, .primaryButton, .discordButton { border: 0; background: none; cursor: pointer; transition: transform .12s ease, filter .12s ease; }
+.ready, .primaryButton, .discordButton { border-radius: var(--brand-control-radius); border: 0; background: none; cursor: pointer; transition: transform .12s ease, filter .12s ease; }
 :is(.ready, .primaryButton, .discordButton):active:not(:disabled) { transform: translateY(2px); }
 .ready {
   --pad: 0 36px; --frame-face: var(--brand-blush);
@@ -116,8 +119,8 @@ a.person:hover { background: color-mix(in srgb, var(--brand-cream-on-dark) 10%, 
 /* ── Friends asking to come in ── */
 .requests { position: absolute; top: 88px; right: 18px; z-index: 5; display: grid; gap: 8px; }
 .request { --pad: 10px 12px 10px 18px; display: flex; align-items: center; gap: 10px; filter: none; animation: popIn .4s cubic-bezier(.3, 1.6, .5, 1) both; }
-.request button { display: grid; place-items: center; width: 38px; height: 38px; border: 0; border-radius: 6px; background: var(--brand-sage); color: var(--brand-cocoa-deep); font-size: 20px; }
-.request button + button { background: var(--brand-blush); }
+.request button { display: grid; place-items: center; width: 38px; height: 38px; border: 0; border-radius: var(--brand-control-radius); background: var(--brand-sage); color: var(--brand-cocoa-deep); font-size: 20px; }
+.request button + button { border-radius: var(--brand-control-radius); background: var(--brand-blush); }
 
 .toast { position: absolute; left: 50%; bottom: 128px; z-index: 6; transform: translateX(-50%); max-width: 70%; padding: 10px 22px; border-radius: 999px; background: var(--brand-cocoa-deep); color: var(--brand-cream); font-size: 15px; box-shadow: none; animation: popIn .3s ease both; }
 
@@ -132,18 +135,20 @@ a.person:hover { background: color-mix(in srgb, var(--brand-cream-on-dark) 10%, 
 .sheetFoot { display: flex; flex-wrap: wrap; align-items: center; justify-content: center; gap: 12px; }
 .softButton { display: inline-flex; align-items: center; gap: 6px; padding: 10px 18px; font-size: 15px; font-weight: 700; text-decoration: none; }
 .primaryButton { --pad: 16px 36px; --frame-face: var(--brand-blush); display: inline-flex; align-items: center; gap: 8px; color: var(--brand-cocoa-deep); font-size: 20px; filter: none; }
-.textButton { display: inline-flex; align-items: center; justify-content: center; gap: 6px; padding: 6px; border: 0; background: none; color: var(--brand-cocoa); font-size: 14px; text-decoration: underline; cursor: pointer; }
+.textButton { border-radius: var(--brand-control-radius); display: inline-flex; align-items: center; justify-content: center; gap: 6px; padding: 6px; border: 0; background: none; color: var(--brand-cocoa); font-size: 14px; text-decoration: underline; cursor: pointer; }
 .note { font-size: 14px; color: var(--brand-cocoa-soft); text-align: center; }
 .readOnly { pointer-events: none; opacity: .85; }
+.roomName { display: grid; gap: 6px; color: var(--brand-cocoa-deep); font-size: 15px; font-weight: 700; }
+.roomName input { width: 100%; padding: 10px 14px; border: 1px solid var(--brand-control-edge); border-radius: var(--brand-control-radius); background: var(--brand-paper); color: var(--brand-cocoa-deep); font: inherit; }
 .deckGrid, .cpuGrid { display: grid; gap: 12px; list-style: none; margin: 0; padding: 0; }
 .deckGrid { grid-template-columns: repeat(auto-fill, minmax(min(240px, 100%), 1fr)); }
 .cpuGrid { grid-template-columns: repeat(4, 1fr); }
 .opponentChoices { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; }
-.opponentChoices button { display: grid; justify-items: center; align-content: center; gap: 9px; min-height: 108px; border: 2px solid var(--brand-pink-edge); border-radius: 6px; background: var(--brand-paper); color: var(--brand-cocoa-deep); font-size: 17px; font-weight: 700; cursor: pointer; }
+.opponentChoices button { display: grid; justify-items: center; align-content: center; gap: 9px; min-height: 108px; border: 1px solid var(--brand-control-edge); border-radius: var(--brand-control-radius); background: var(--brand-paper); color: var(--brand-cocoa-deep); font-size: 17px; font-weight: 700; cursor: pointer; }
 .opponentChoices button:hover { background: var(--brand-blush); }
 .opponentChoices button:focus-visible { outline: 3px solid var(--brand-cocoa); outline-offset: 2px; }
 .opponentChoices svg { font-size: 36px; color: var(--brand-cocoa); }
-.deckTile, .cpuTile { --pad: 16px 10px 14px; display: grid; justify-items: center; gap: 6px; width: 100%; border: 0; background: none; color: var(--brand-cocoa-deep); cursor: pointer; transition: transform .12s ease; }
+.deckTile, .cpuTile { border-radius: var(--brand-control-radius); --pad: 16px 10px 14px; display: grid; justify-items: center; gap: 6px; width: 100%; border: 0; background: none; color: var(--brand-cocoa-deep); cursor: pointer; transition: transform .12s ease; }
 .deckTile[aria-pressed=true] { --frame-face: var(--brand-blush); }
 .deckTile:disabled { opacity: .45; cursor: default; }
 .deckTile b, .cpuTile b { font-size: 16px; }
@@ -163,10 +168,10 @@ a.person:hover { background: color-mix(in srgb, var(--brand-cream-on-dark) 10%, 
 .starOn { color: var(--brand-star); fill: var(--brand-vanilla); }
 .starOff { color: var(--brand-pink-edge); }
 .turnChoice { display: flex; align-items: center; justify-content: center; gap: 8px; margin-top: 10px; font-size: 22px; }
-.turnChoice button { min-width: 72px; padding: 8px 16px; border: 0; border-radius: 6px; background: var(--brand-paper); color: var(--brand-cocoa-deep); font-size: 17px; font-weight: 700; outline: 2px solid var(--brand-pink); cursor: pointer; }
-.turnChoice button[aria-checked=true] { background: var(--brand-cocoa); color: var(--brand-cream); box-shadow: none; }
+.turnChoice button { min-width: 72px; padding: 8px 16px; border: 0; border-radius: var(--brand-control-radius); background: var(--brand-paper); color: var(--brand-cocoa-deep); font-size: 17px; font-weight: 700; outline: 2px solid var(--brand-pink); cursor: pointer; }
+.turnChoice button[aria-checked=true] { border-radius: var(--brand-control-radius); background: var(--brand-cocoa); color: var(--brand-cream); box-shadow: none; }
 .discordButton { --pad: 22px 30px; --frame-face: var(--brand-cocoa-deep); position: relative; display: flex; align-items: center; justify-content: center; gap: 16px; width: 100%; color: var(--brand-cream); font-size: 34px; filter: none; text-align: left; }
-.discordButton span { display: grid; }
+.discordButton > span:not([aria-hidden]) { display: grid; }
 .discordButton b { font-size: 24px; }
 .discordButton small { font-size: 13px; opacity: .85; }
 .copied, .copiedDot { position: absolute; display: grid; place-items: center; border-radius: 50%; background: var(--brand-sage); color: var(--brand-cocoa-deep); animation: popIn .35s cubic-bezier(.3, 1.6, .5, 1) both; }
@@ -212,8 +217,8 @@ a.person:hover { background: color-mix(in srgb, var(--brand-cream-on-dark) 10%, 
 .friendInvites ul { display: grid; gap: 6px; max-height: 220px; overflow: auto; list-style: none; margin: 0; padding: 2px; }
 .friendInvites li { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; padding: 5px 4px; border-bottom: 1px solid var(--brand-pink); }
 .friendInvites li > span:not([data-player-avatar]) { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-weight: 700; }
-.friendInvites button { display: inline-flex; align-items: center; gap: 4px; padding: 6px 14px; border: 0; border-radius: 6px; background: var(--brand-pink); color: var(--brand-cocoa-deep); font-weight: 700; cursor: pointer; }
-.friendInvites button[data-state=sent] { background: var(--brand-sage-wash); cursor: default; }
+.friendInvites button { display: inline-flex; align-items: center; gap: 4px; padding: 6px 14px; border: 0; border-radius: var(--brand-control-radius); background: var(--brand-pink); color: var(--brand-cocoa-deep); font-weight: 700; cursor: pointer; }
+.friendInvites button[data-state=sent] { border-radius: var(--brand-control-radius); background: var(--brand-sage-wash); cursor: default; }
 .friendInvites li > [role=alert] { flex-basis: 100%; white-space: normal; font-size: 13px; }
 
 /* Preparation stays beside the player's identity; shared rules sit in the middle. */
@@ -236,7 +241,7 @@ a.person:hover { background: color-mix(in srgb, var(--brand-cream-on-dark) 10%, 
 .rulesCard .editHint { position: static; grid-column: 2; justify-self: center; padding: 0; background: none; color: var(--brand-cocoa-deep); }
 
 
-.leaveSeat { display: inline-flex; align-items: center; justify-content: center; gap: 5px; min-height: 36px; padding: 6px 10px; border: 1px solid var(--brand-pink-edge); border-radius: 6px; background: var(--brand-cream); color: var(--brand-cocoa-deep); font-size: 13px; }
+.leaveSeat { display: inline-flex; align-items: center; justify-content: center; gap: 5px; min-height: 36px; padding: 6px 10px; border: 1px solid var(--brand-pink-edge); border-radius: var(--brand-control-radius); background: var(--brand-cream); color: var(--brand-cocoa-deep); font-size: 13px; }
 .leaveSeat svg { width: 18px; height: 18px; }
 .leaveSeat:hover:not(:disabled) { background: var(--brand-blush); }
 

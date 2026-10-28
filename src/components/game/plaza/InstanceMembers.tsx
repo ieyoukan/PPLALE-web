@@ -1,11 +1,11 @@
 'use client';
 
-import Link from 'next/link';
 import type { PlazaMember, PlazaView } from '@pplale/game-core/room';
 import { useAuth } from '@/lib/auth';
 import type { SocialPlayer } from '@/lib/game/social';
 import { useSocial } from '../social/useSocial';
 import { Avatar } from '@/components/shared/player/Avatar';
+import { ProfileLink } from '@/components/shared/player/ProfileLink';
 import { GameIcon } from '@/components/shared/ui/GameIcon';
 import { guestIcon, useProfiles } from '@/components/shared/player/useProfiles';
 import styles from './InstanceMembers.module.css';
@@ -41,8 +41,7 @@ function Members({ room, friends = [], checking = false, error = '' }: { room: P
         </span>
       </>;
       return <li key={member.id} data-away={!member.online || undefined}>
-        {member.profileId ? <Link className={styles.person} prefetch={false} href={`/game/profile/?id=${encodeURIComponent(member.profileId)}`}>{content}</Link>
-          : <span className={styles.person}>{content}</span>}
+        <ProfileLink self={member.id === room.me} profileId={member.profileId} className={styles.person} label={member.id === room.me ? '自分のプロフィール' : `${member.name}のプロフィール`}>{content}</ProfileLink>
       </li>;
     })}</ul>
   </section>;

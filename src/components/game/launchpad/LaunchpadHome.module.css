@@ -16,7 +16,7 @@
 
 /* The room's own actions: a small row of frameless buttons under the links. */
 .quick { display: flex; flex-wrap: wrap; justify-content: center; gap: 6px; }
-.quick button { display: inline-flex; align-items: center; gap: 6px; min-height: 36px; padding: 6px 14px; border: 1px solid var(--brand-pink-edge); border-radius: 6px; background: var(--brand-paper); color: var(--brand-cocoa-deep); font-size: 14px; font-weight: 700; }
+.quick button { display: inline-flex; align-items: center; gap: 6px; min-height: 36px; padding: 6px 14px; border: 1px solid var(--brand-control-edge); border-radius: var(--brand-control-radius); background: var(--brand-paper); color: var(--brand-cocoa-deep); font-size: 14px; font-weight: 700; }
 .quick button:hover:not(:disabled) { background: var(--brand-blush); }
 .quick button:disabled { opacity: .48; cursor: default; }
 .quick svg { width: 18px; height: 18px; color: var(--brand-cocoa); }
@@ -27,6 +27,6 @@
 .moreLinks a:hover { background: var(--brand-blush); }
 .moreLinks svg { font-size: 18px; }
 
-.moreLinks button { display: flex; align-items: center; justify-content: center; gap: 5px; min-height: 38px; border: 0; background: transparent; font-size: 13px; font-weight: 700; }
+.moreLinks button { border-radius: var(--brand-control-radius); display: flex; align-items: center; justify-content: center; gap: 5px; min-height: 38px; border: 0; background: transparent; font-size: 13px; font-weight: 700; }
 .moreLinks button:hover { background: var(--brand-blush); }
 @media (max-width: 600px) { .roomMain { --pad: 8px 34px 8px 9px; min-height: 94px; gap: 8px; } .roomArt, .emptyRoomArt { width: 94px; height: 62px; } .roomText b { font-size: 16px; } .roomText > span { font-size: 11px; } .moreLinks { grid-template-columns: repeat(2, 1fr); } }

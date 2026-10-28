@@ -1,4 +1,4 @@
-.tile { display: grid; grid-template-rows: 94px 22px; justify-items: center; align-content: center; gap: 7px; min-width: 0; height: 148px; padding: 10px 4px; overflow: hidden; border: 1px solid var(--brand-pink-edge); background: var(--brand-vanilla-wash); color: var(--brand-cocoa-deep); text-align: center; cursor: pointer; }
+.tile { border-radius: var(--brand-control-radius); display: grid; grid-template-rows: 94px 22px; justify-items: center; align-content: center; gap: 7px; min-width: 0; height: 148px; padding: 10px 4px; overflow: hidden; border: 1px solid var(--brand-control-edge); background: var(--brand-vanilla-wash); color: var(--brand-cocoa-deep); text-align: center; cursor: pointer; }
 .tile[data-palette=sage] { background: var(--brand-sage-wash); }
 .tile[data-palette=pink] { background: var(--brand-blush); }
 .tile:hover { background: var(--brand-blush); }

@@ -24,8 +24,9 @@ export function ShareSheet({ view, onClose }: { view: RoomView; onClose: () => v
   useEffect(() => { setOrigin(window.location.origin); setCanShare(typeof navigator.share === 'function'); }, []);
   const invited = invitedVisibility(plaza.visibility), mayShare = canShareRoomLink(plaza);
   const url = plazaLink(origin, view), words = invitation(view, url);
-  const copy = (what: string, text: string) => {
-    navigator.clipboard.writeText(text).then(() => setDone(what), () => setDone('コピーできませんでした'));
+  const copy = async (what: string, text: string) => {
+    try { await navigator.clipboard.writeText(text); setDone(what); }
+    catch { setDone('コピーできませんでした'); }
   };
   const info = visibilityInfo[plaza.visibility];
   // Posting asks first: what the post will say, then X opens with it (or back to the invitation).

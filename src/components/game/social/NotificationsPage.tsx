@@ -3,7 +3,6 @@
 import { useState } from 'react';
 import Link from 'next/link';
 import { useAuth } from '@/lib/auth';
-import { PushToggle } from '@/components/pwa/PushToggle';
 import { OrnateFrame } from '@/components/shared/ui/ornament/OrnateFrame';
 import { FriendTile } from './FriendTile';
 import { GameIcon } from '@/components/shared/ui/GameIcon';
@@ -25,7 +24,7 @@ function Notifications({ uid }: { uid: string }) {
   let target = '';
   try { target = new URL(profileLink).searchParams.get('id') ?? ''; } catch { if (/^[\w-]{1,128}$/.test(profileLink)) target = profileLink; }
   return <section className={styles.panel} aria-label="通知">
-    <header className={styles.socialHeading}>{received.length > 0 && <span className={styles.badge} role="status" aria-label={`届いた申請 ${received.length}件`}>{received.length}</span>}<PushToggle /></header>
+    {received.length > 0 && <header className={styles.socialHeading}><span className={styles.badge} role="status" aria-label={`届いた申請 ${received.length}件`}>{received.length}</span></header>}
     {error && <p className={styles.error} role="alert">{error}</p>}
     <div className={styles.addFriend}><label><GameIcon name="add" /><input value={profileLink} onChange={event => setProfileLink(event.target.value)} placeholder="受け取ったプロフィールのリンク" aria-label="プロフィールのリンク" /></label>{target && <Link className={styles.primary} href={`/game/profile/?id=${encodeURIComponent(target)}`}>プロフィールを見る ›</Link>}</div>
     {!received.length && !sent.length && <div className={styles.empty} role="status"><GameIcon name="letter" /><p>{loading ? '読み込み中…' : '通知はありません'}</p></div>}

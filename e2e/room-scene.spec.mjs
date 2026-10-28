@@ -41,7 +41,7 @@ for (const viewport of [{ width: 1280, height: 800 }, { width: 844, height: 390 
       await seat.click({ trial: true });
     }
     await page.getByRole('button', { name: 'ルール', exact: true }).click();
-    await expect(page.getByRole('dialog', { name: 'ルールをかえる', exact: true })).toBeVisible();
+    await expect(page.getByRole('dialog', { name: 'ルームを編集', exact: true })).toBeVisible();
     await page.keyboard.press('Escape');
     await page.screenshot({ path: info.outputPath('starry-room.png') });
     const side = viewport.width === 1280 ? 0 : 1;

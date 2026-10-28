@@ -25,7 +25,7 @@ const SocialPage = dynamic(() => import('@/components/game/social/SocialPage').t
 const ProfilePage = dynamic(() => import('@/components/game/social/ProfilePage').then(module => module.ProfilePage));
 const PlayPerformancePanel = dynamic(() => import('@/components/game/performance/PlayPerformancePanel').then(module => module.PlayPerformancePanel));
 
-export type RoomPanel = 'share' | 'new' | 'home' | 'name' | 'rules';
+export type RoomPanel = 'share' | 'new' | 'home' | 'rules';
 
 export function LaunchpadScreens({ section, place, onPanel, onClose }: { section: Section; place: Place; onPanel: (panel: RoomPanel) => void; onClose: () => void }) {
   return {

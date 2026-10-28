@@ -7,6 +7,7 @@ import { useAuth } from '@/lib/auth';
 import { defaultProfile, readFriendship, readProfile, requestFriend, respondFriend, saveProfile } from '@/lib/game/social';
 import type { Friendship, PlayerProfile } from '@/lib/game/social';
 import { CardArtwork } from '@/components/shared/card/CardArtwork';
+import { GuestSignInPrompt } from '@/components/shared/auth/GuestSignInPrompt';
 import { OrnateFrame } from '@/components/shared/ui/ornament/OrnateFrame';
 import { GameIcon } from '@/components/shared/ui/GameIcon';
 import { InviteToRoom } from './InviteToRoom';
@@ -19,13 +20,13 @@ import styles from './Social.module.css';
 
 /** `id`: whose profile (the launchpad's place); without it, the address's `?id=`, or the player's own. */
 export function ProfilePage({ id }: { id?: string }) {
-  const { user, loading, signInWithGoogle } = useAuth();
+  const { user, loading } = useAuth();
   const params = useSearchParams();
   const requested = id ?? params.get('id'), uid = requested ?? user?.uid;
   useMarkOwnProfileOpen(!requested || requested === user?.uid);
   // A shared profile link (?id=) renders without waiting for the visitor's login check.
   if (!uid && loading) return <p role="status">読み込み中…</p>;
-  if (!uid) return <section className={`${styles.panel} ${styles.signIn}`}><GameIcon name="pen" className={styles.signInIcon} /><p>ログインして、カードのアイコンとひとことを設定しよう。</p><OrnateFrame as="button" size="line" className={styles.cardButton} onClick={() => void signInWithGoogle()}><GameIcon name="heart" /><span data-ui-title>ログイン</span></OrnateFrame></section>;
+  if (!uid) return <section className={styles.panel} aria-label="プロフィール"><GuestSignInPrompt purpose="profile" /></section>;
   return <Profile key={`${uid}:${uid === user?.uid}`} uid={uid} mine={uid === user?.uid} />;
 }
 function Profile({ uid, mine }: { uid: string; mine: boolean }) {

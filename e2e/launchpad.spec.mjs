@@ -31,12 +31,12 @@ test('five tabs switch in place, room actions and volume persist, and Escape res
   await expect(pad.getByRole('tab', { name: 'いまのルーム' })).toBeFocused();
   await expect(pad.getByRole('tabpanel')).toContainText('作成者');
   await expect(pad.getByRole('img', { name: 'ルームのサムネイル' })).toBeVisible();
-  await pad.getByRole('button', { name: 'ルーム名', exact: true }).click();
+  await pad.getByRole('button', { name: 'ルール', exact: true }).click();
   await page.getByRole('textbox', { name: 'ルーム名' }).fill('みんなのお菓子部屋');
-  await page.getByRole('button', { name: 'この名前にする' }).click();
+  await page.getByRole('button', { name: '保存' }).click();
   await expect(pad.getByRole('heading', { name: 'みんなのお菓子部屋' })).toBeVisible();
   await pad.getByRole('button', { name: 'ルール', exact: true }).click();
-  await expect(page.getByRole('dialog', { name: 'ルールをかえる' })).toBeVisible();
+  await expect(page.getByRole('dialog', { name: 'ルームを編集' })).toBeVisible();
   await page.keyboard.press('Escape');
   await expect(pad).toBeVisible();
   await pad.getByRole('button', { name: '共有リンク' }).click();

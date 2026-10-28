@@ -111,6 +111,7 @@ function refusalOf(failure: unknown): { reason: Refusal; message: string } {
 
 export function PlazaProvider({ children }: { children: ReactNode }) {
   const router = useRouter(), pathname = usePathname();
+  const { user, loading: authLoading } = useAuth();
   const { notify } = useGameNotifications();
   const [stage, setStage] = useState<PlazaStage>({ kind: 'idle' });
   const [view, setView] = useState<RoomView | null>(null);
@@ -356,8 +357,43 @@ export function PlazaProvider({ children }: { children: ReactNode }) {
     if (old) await quit(old);
   }), [quit, serial]);
 
+  // A room secret identifies a participant, not the browser's current Firebase account.
+  // Never keep showing/operating that participant after logout or an account switch.
+  const member = view?.plaza?.members.find(person => person.id === view.plaza?.me);
+  const identityMismatch = !authLoading && !!member && (member.profileId ?? null) !== (user?.uid ?? null);
+  const changingIdentity = useRef(false);
+  useEffect(() => {
+    if (!identityMismatch || changingIdentity.current) return;
+    changingIdentity.current = true;
+    void serial(async () => {
+      const old = held.current;
+      if (!old) return;
+      const invite = plazaKey(old.id)?.invite;
+      leaving.current.add(old.socket);
+      held.current = null;
+      setView(null); setId(null);
+      setStage({ kind: 'entering', to: old.id, full: true });
+      await quit(old);
+      try {
+        // Admission is checked again: a guest cannot inherit the old account's friends access.
+        const entered = await enterPlaza(old.id, guestName(), { invite });
+        keepPlaza(old.id, { token: entered.token, ...(invite && { invite }) }, false);
+        const opened = await open(old.id, entered.token);
+        if (!opened.ok) throw new RoomRequestError(opened.offline ? 0 : 404, opened.message);
+      } catch (failure) {
+        if (failure instanceof RoomRequestError && failure.status === 0) {
+          settle(old.id, failure);
+          return;
+        }
+        // Empty/closed rooms disappear; rooms unavailable to the new identity stay private.
+        const home = await make();
+        if (home) show(home);
+      }
+    }).finally(() => { changingIdentity.current = false; });
+  }, [identityMismatch, user?.uid, member?.id, serial, quit, open, make, settle, show]);
+
   const send = useCallback((action: RoomAction, inputAt?: number) =>
-    held.current?.socket.send(action, inputAt) ?? Promise.reject(new RoomRequestError(0, 'ルームに入っていません')), []);
+    !identityMismatch && held.current ? held.current.socket.send(action, inputAt) : Promise.reject(new RoomRequestError(0, 'ルームに入っていません')), [identityMismatch]);
   const subscribe = useCallback((listener: (view: RoomView) => void) => {
     listeners.current.add(listener);
     return () => { listeners.current.delete(listener); };
@@ -373,14 +409,14 @@ export function PlazaProvider({ children }: { children: ReactNode }) {
     router.replace(plazaHref(home));
   }, [launch, router]);
 
-  usePresence(id, view?.plaza && listedVisibility(view.plaza.visibility) ? view.id : null);
+  usePresence(identityMismatch ? null : id, !identityMismatch && view?.plaza && listedVisibility(view.plaza.visibility) ? view.id : null);
 
   // The rules the owner sets become the rules of the rooms this player makes next.
   const rulesKey = view?.plaza && view.plaza.owner === view.plaza.me ? JSON.stringify(view.plaza.nextRules ?? view.rules) : null;
   useEffect(() => { if (rulesKey) saveRoomSettings({ rules: JSON.parse(rulesKey) }); }, [rulesKey]);
 
-  const value = useMemo<PlazaContextValue>(() => ({ stage, id, view, linked, launch, enter, go, create, newHome, leave, send, subscribe, presented, settle: settleStage, goHome, legacy }),
-    [stage, id, view, linked, launch, enter, go, create, newHome, leave, send, subscribe, presented, settleStage, goHome, legacy]);
+  const value = useMemo<PlazaContextValue>(() => ({ stage, id, view: identityMismatch ? null : view, linked, launch, enter, go, create, newHome, leave, send, subscribe, presented, settle: settleStage, goHome, legacy }),
+    [stage, id, view, identityMismatch, linked, launch, enter, go, create, newHome, leave, send, subscribe, presented, settleStage, goHome, legacy]);
   return <Context.Provider value={value}>
     {children}
     {/* Moving between rooms: the current one stays on screen under a small sign. */}

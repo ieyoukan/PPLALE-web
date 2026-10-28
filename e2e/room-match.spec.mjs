@@ -126,13 +126,13 @@ test('opening the game makes a room; its invitation brings a friend to the same 
   const created = alice.getByRole('dialog', { name: 'ルームを作りました' });
   await expect(created).toContainText('パブリック');
   await expect(created.getByRole('img', { name: 'ルームのサムネイル' })).toBeVisible();
-  await created.getByRole('button', { name: '名前を変える' }).click();
+  await created.getByRole('button', { name: 'ルームを編集' }).click();
   await alice.getByRole('textbox', { name: 'ルーム名' }).fill('パブリックで遊ぼう');
-  await alice.getByRole('button', { name: 'この名前にする' }).click();
+  await alice.getByRole('button', { name: '保存' }).click();
   await expect(created).toContainText('パブリックで遊ぼう');
-  await created.getByRole('button', { name: 'ルールを変える' }).click();
-  await expect(alice.getByRole('dialog', { name: 'ルールをかえる' })).toBeVisible();
-  await alice.getByRole('button', { name: 'このルールにする' }).click();
+  await created.getByRole('button', { name: 'ルームを編集' }).click();
+  await expect(alice.getByRole('dialog', { name: 'ルームを編集' })).toBeVisible();
+  await alice.getByRole('button', { name: '保存' }).click();
   await created.getByRole('button', { name: '共有リンク' }).click();
   await expect(alice.getByRole('dialog', { name: 'ルームにさそう' }).getByRole('button', { name: 'リンク' })).toBeVisible();
   await alice.getByRole('dialog', { name: 'ルームにさそう' }).getByRole('button', { name: '閉じる' }).click();

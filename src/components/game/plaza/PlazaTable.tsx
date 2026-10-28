@@ -9,7 +9,6 @@
 import { useEffect, useRef, useState } from 'react';
 import type { ReactNode } from 'react';
 import { BoardSurfaceContext } from '../board/BoardSurfaceMount';
-import Link from 'next/link';
 import { cpuLevels } from '@pplale/game-core';
 import type { Side } from '@pplale/game-core';
 import type { RoomAction, RoomPlayer, RoomView } from '@pplale/game-core/room';
@@ -20,11 +19,11 @@ import { useDeckChoices } from '../DeckSelect';
 import { useRoomPreparation } from '../room/useRoomPreparation';
 import { OrnateFrame } from '@/components/shared/ui/ornament/OrnateFrame';
 import { Avatar } from '@/components/shared/player/Avatar';
+import { ProfileLink } from '@/components/shared/player/ProfileLink';
 import { CardArtwork } from '@/components/shared/card/CardArtwork';
 import { RoomScene } from './RoomScene';
 import { DeckContentsSheet, DeckSheet, OpponentSheet, RulesSheet } from './PlazaSheets';
 import { CpuSheet } from './CpuSheet';
-import { RoomNameSheet } from './RoomManagementSheets';
 import { RoomThumbnailImage } from './RoomThumbnailImage';
 import { ShareSheet } from './ShareSheet';
 import { GameIcon } from '@/components/shared/ui/GameIcon';
@@ -34,7 +33,7 @@ import { visibilityInfo } from './visibility';
 import styles from './Plaza.module.css';
 
 const DECK_KEY = 'pplale-plaza-deck-v1';
-type Open = null | 'deck' | 'deckContents' | 'rules' | 'share' | 'name' | { opponent: Side } | { cpu: Side };
+type Open = null | 'deck' | 'deckContents' | 'rules' | 'share' | { opponent: Side } | { cpu: Side };
 
 /** The deck this browser chose last, so the next match starts with it already chosen. */
 function useChosenDeck() {
@@ -81,18 +80,17 @@ export function PlazaTable({ view, onMenu, match }: { view: RoomView; onMenu: ()
   /** One seat on the mat: who sits there, or the way to sit there (or to call the CPU). */
   const seat = (side: Side) => {
     const player = view.players[side];
-    if (!player) return <OrnateFrame size="sm" faint className={`${styles.seat} ${styles.seatEmpty}`} key={`empty-${side}`}>
-      {mySeat === null
-        ? <button className={styles.sitButton} disabled={busy} onClick={() => ask({ action: 'sit', seat: side })} aria-label="この席にすわる">
-          <span className={styles.plus}><GameIcon name="plus" /></span><b data-ui-title>すわる</b>
-        </button>
-        : <button className={styles.sitButton} disabled={busy} onClick={() => setOpen({ opponent: side })} aria-label="対戦相手をえらぶ">
-          <span className={`${styles.plus} ${styles.plusSoft}`}><GameIcon name="people" /></span><b data-ui-title>相手をえらぶ</b>
-        </button>}
+    if (!player) return <OrnateFrame as="button" appearance="panel" size="sm" faint className={`${styles.seat} ${styles.seatEmpty} ${styles.sitButton}`} key={`empty-${side}`}
+      disabled={busy} onClick={() => mySeat === null ? ask({ action: 'sit', seat: side }) : setOpen({ opponent: side })}
+      aria-label={mySeat === null ? 'この席にすわる' : '対戦相手をえらぶ'}>
+      <span className={`${styles.plus} ${mySeat === null ? '' : styles.plusSoft}`}><GameIcon name={mySeat === null ? 'plus' : 'people'} /></span>
+      <b data-ui-title>{mySeat === null ? 'すわる' : '相手をえらぶ'}</b>
     </OrnateFrame>;
     const self = side === mySeat;
     return <div className={`${styles.seat} ${styles.playerSeat}`} data-ready={player.ready || undefined} data-self={self || undefined} key={`${player.member ?? player.cpu}-${side}`}>
-      <Avatar card={iconOf(player.member, player.profileId)} cpu={!!player.cpu} size={104} dim={!player.online} />
+      <ProfileLink self={self} profileId={player.profileId} className={styles.seatPortrait} label={self ? '自分のプロフィール' : `${player.name}のプロフィール`}>
+        <Avatar card={iconOf(player.member, player.profileId)} cpu={!!player.cpu} size={104} dim={!player.online} />
+      </ProfileLink>
       <span className={styles.seatName}><b data-ui-title>{player.name}</b>{self && <small>あなた</small>}</span>
       {!self && <SeatState player={player} />}
       {self && me && <div className={styles.seatActions}>
@@ -120,7 +118,6 @@ export function PlazaTable({ view, onMenu, match }: { view: RoomView; onMenu: ()
         <span className={styles.count}><GameIcon name="people" />{room.members.length}</span>
       </OrnateFrame>
       <div className={styles.topActions}>
-        {room.owner === room.me && <button className={styles.round} onClick={() => setOpen('name')} aria-label="ルーム名を変える"><GameIcon name="pen" /></button>}
         <button className={styles.inviteButton} onClick={() => setOpen('share')}><GameIcon name="letter" /><span data-ui-title>さそう</span></button>
         <button className={styles.round} onClick={onMenu} aria-label="メニュー"><GameIcon name="grid" /></button>
       </div>
@@ -128,14 +125,14 @@ export function PlazaTable({ view, onMenu, match }: { view: RoomView; onMenu: ()
 
     <OrnateFrame as="aside" tone="cream" className={styles.people} aria-label="ルームにいる人" inert={playing || !cameraReady}>
       <ul>{room.members.map(member => <li key={member.id} data-away={!member.online || undefined}>
-        <MemberLink profileId={member.profileId}>
+        <ProfileLink self={member.id === room.me} profileId={member.profileId} className={styles.person} label={member.id === room.me ? '自分のプロフィール' : `${member.name}のプロフィール`}>
           <Avatar card={iconOf(member.id, member.profileId)} size={42} dim={!member.online} />
           <span className={styles.personName}>{member.name}{member.id === room.me && <small>あなた</small>}</span>
           <span className={styles.personMarks}>
             {member.id === room.owner && <span className={styles.crown} role="img" aria-label="オーナー"><GameIcon name="crown" /></span>}
             {member.seat !== undefined ? <span role="img" aria-label="席にいる"><GameIcon name="seat" /></span> : <span role="img" aria-label="観戦"><GameIcon name="eye" /></span>}
           </span>
-        </MemberLink>
+        </ProfileLink>
       </li>)}</ul>
     </OrnateFrame>
 
@@ -171,8 +168,7 @@ export function PlazaTable({ view, onMenu, match }: { view: RoomView; onMenu: ()
     {open === 'deckContents' && chosen && <DeckContentsSheet choice={chosen} onClose={() => setOpen(null)} onAction={me && !me.ready ? () => setOpen('deck') : undefined} actionLabel="デッキを変更" />}
     {open === 'deck' && <DeckSheet choices={choices} chosen={chosen} onChoose={id => { choose(id); setOpen(null); }} onClose={() => setOpen(null)}
       signIn={user ? undefined : () => { signInWithGoogle().catch(() => setError('ログインできませんでした')); }} loading={saved.loading} />}
-    {open === 'rules' && <RulesSheet view={view} onClose={() => setOpen(null)} onSave={rules => { setOpen(null); ask({ action: 'rules', rules }); }} />}
-    {open === 'name' && <RoomNameSheet view={view} onClose={() => setOpen(null)} />}
+    {open === 'rules' && <RulesSheet view={view} onClose={() => setOpen(null)} />}
     {open === 'share' && <ShareSheet view={view} onClose={() => setOpen(null)} />}
     {open && typeof open === 'object' && 'opponent' in open && <OpponentSheet onClose={() => setOpen(null)} onInvite={() => setOpen('share')} onCpu={() => setOpen({ cpu: open.opponent })} />}
     {open && typeof open === 'object' && 'cpu' in open && <CpuSheet choices={choices} loading={saved.loading} current={view.players[open.cpu] ?? undefined}
@@ -198,8 +194,4 @@ function SeatState({ player }: { player: RoomPlayer }) {
 /** The deck's playable, or (おまかせ: made when the match starts) a pile of cards. */
 function PlayableArt({ id }: { id?: string }) {
   return id ? <span className={styles.deckPortrait}><CardArtwork id={id} sizes="60px" /></span> : <GameIcon name="cards" />;
-}
-
-function MemberLink({ profileId, children }: { profileId?: string; children: ReactNode }) {
-  return profileId ? <Link className={styles.person} href={`/game/profile/?id=${encodeURIComponent(profileId)}`} prefetch={false}>{children}</Link> : <span className={styles.person}>{children}</span>;
 }

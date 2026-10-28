@@ -347,3 +347,22 @@ test('plaza: one person on two devices is one member; one device leaving keeps t
     assert.equal(await onPc.closed, 4404);
     await served.close();
 });
+
+test('plaza: the creator owns every new visibility even when another member connects first', () => {
+    for (const visibility of ['public', 'friends', 'friendsPlus', 'invite', 'invitePlus']) {
+        const { room, token } = createPlaza('123456', { rules, plaza: { visibility } }, { name: '作成者', profileId: 'creator' });
+        const creator = room.plaza!.members[0];
+        const visitor = admit(room, { name: '先に接続した人', profileId: 'visitor' }).member;
+        const theirs = plazaView(room, visitor.id, new Set([visitor.id]), catalog);
+        const mine = plazaView(room, creator.id, new Set([visitor.id, creator.id]), catalog);
+        assert.equal(theirs.plaza!.owner, creator.id);
+        assert.equal(mine.plaza!.owner, mine.plaza!.me);
+        assert.equal(mine.plaza!.creator.profileId, 'creator');
+        assert.ok(token);
+        actPlaza(room, creator.id, { action: 'leave' }, catalog);
+        const guest = admit(room, { name: 'ゲスト' }).member;
+        assert.ok(!room.plaza!.members.some(member => member.id === creator.id));
+        assert.equal(plazaView(room, guest.id, new Set([guest.id, visitor.id]), catalog).plaza!.owner, null);
+        assert.equal(room.plaza!.creator.profileId, 'creator', 'a later identity never rewrites the historical creator');
+    }
+});

@@ -53,6 +53,7 @@ for (const { seat, viewport } of [
   show(true);
   await expect(page.locator('[data-room-camera="moving"]')).toBeVisible({ timeout: 20000 });
   await page.waitForTimeout(260);
+  expect(await page.evaluate(() => getComputedStyle(document.querySelector('[data-room-floor]').parentElement).transform === getComputedStyle(document.querySelector('[data-room-board-projection]')).transform)).toBe(true);
   await page.screenshot({ path: info.outputPath('camera-midway.png') });
   await expect(page.locator('[data-room-camera="match"]')).toBeVisible();
   await expect(page.locator('[data-room-scene] [data-table]')).toHaveCount(1);

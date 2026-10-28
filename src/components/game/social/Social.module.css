@@ -5,12 +5,12 @@
 .panel h3 { margin: 0; color: var(--brand-cocoa); font-size: 21px; }
 .panel button, .panel a { cursor: pointer; }
 .panel button:focus-visible, .panel a:focus-visible { outline: 3px solid var(--brand-cocoa); outline-offset: 3px; }
-.panel button:not([data-tone]) { display: inline-flex; align-items: center; justify-content: center; gap: 6px; min-height: 40px; padding: 8px 14px; border: 1px solid var(--brand-pink-edge); border-radius: 6px; background: var(--brand-paper); color: var(--brand-cocoa-deep); font-weight: 700; }
+.panel button:not([data-tone]) { display: inline-flex; align-items: center; justify-content: center; gap: 6px; min-height: 40px; padding: 8px 14px; border: 1px solid var(--brand-control-edge); border-radius: var(--brand-control-radius); background: var(--brand-paper); color: var(--brand-cocoa-deep); font-weight: 700; }
 .panel button:not([data-tone]):hover:not(:disabled) { background: var(--brand-blush); }
-.primary { display: inline-flex; align-items: center; justify-content: center; gap: 6px; min-height: 40px; padding: 8px 16px; border: 1px solid var(--brand-cocoa); border-radius: 6px; background: var(--brand-blush); color: var(--brand-cocoa-deep); font-weight: 700; text-decoration: none; }
-.panel .primary { border-color: var(--brand-cocoa); background: var(--brand-blush); }
+.primary { display: inline-flex; align-items: center; justify-content: center; gap: 6px; min-height: 40px; padding: 8px 16px; border: 1px solid var(--brand-cocoa); border-radius: var(--brand-control-radius); background: var(--brand-blush); color: var(--brand-cocoa-deep); font-weight: 700; text-decoration: none; }
+.panel .primary { border-radius: var(--brand-control-radius); border-color: var(--brand-cocoa); background: var(--brand-blush); }
 /* The main action: a card in the ornament frame (OrnateFrame as a button). */
-.cardButton { --pad: 14px 30px; --frame-face: var(--brand-blush); display: inline-flex; align-items: center; justify-content: center; gap: 8px; border: 0; background: none; color: var(--brand-cocoa-deep); font-size: 19px; filter: none; cursor: pointer; transition: transform .12s ease; }
+.cardButton { border-radius: var(--brand-control-radius); --pad: 14px 30px; --frame-face: var(--brand-blush); display: inline-flex; align-items: center; justify-content: center; gap: 8px; border: 0; background: none; color: var(--brand-cocoa-deep); font-size: 19px; filter: none; cursor: pointer; transition: transform .12s ease; }
 .cardButton:active:not(:disabled) { transform: translateY(2px); }
 .cardButton:disabled { opacity: .55; cursor: default; }
 .signIn { display: grid; justify-items: center; gap: 14px; padding: 36px 12px; text-align: center; }
@@ -38,7 +38,7 @@
 .iconPicker > div { display: grid; grid-template-columns: repeat(auto-fill,minmax(78px,1fr)); gap: 8px; max-height: 360px; overflow: auto; margin-top: 12px; }
 .panel .iconPicker button { display: grid; justify-items: center; align-content: start; gap: 6px; padding: 8px 4px; }
 .iconPicker .avatar { width: 54px; height: 54px; flex-basis: auto; }
-.panel .iconPicker button[aria-pressed=true] { border-color: var(--brand-cocoa); background: var(--brand-blush); }
+.panel .iconPicker button[aria-pressed=true] { border-radius: var(--brand-control-radius); border-color: var(--brand-cocoa); background: var(--brand-blush); }
 .iconPicker small { font-size: 10px; justify-self: center; }
 .empty { display: grid; place-items: center; gap: 8px; min-height: 180px; padding: 20px; text-align: center; font-size: 14px; color: var(--brand-cocoa-soft); }
 .empty > svg { font-size: 44px; color: var(--brand-cocoa); }
@@ -96,7 +96,7 @@ a.room:hover .roomAction { background: var(--brand-blush); }
 .tileText small > span:last-child { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .dot { flex: 0 0 8px; height: 8px; border-radius: 50%; background: var(--place); }
 .answer { position: relative; display: flex; gap: 6px; padding-right: 10px; }
-.panel .answer button { width: 38px; min-height: 38px; padding: 0; border: 0; border-radius: 6px; color: var(--brand-cocoa-deep); font-size: 17px; font-weight: 800; transition: transform .12s; }
+.panel .answer button { width: 38px; min-height: 38px; padding: 0; border: 0; border-radius: var(--brand-control-radius); color: var(--brand-cocoa-deep); font-size: 17px; font-weight: 800; transition: transform .12s; }
 .panel .accept { background: var(--brand-sage); }
 .panel .decline { background: #ece3dc; }
 
@@ -121,7 +121,7 @@ a.room:hover .roomAction { background: var(--brand-blush); }
 .elsewhere { margin-top: 18px; padding-top: 18px; border-top: 1px solid var(--brand-pink); }
 .watchMark { display: inline-grid; place-items: center; flex: none; color: var(--place); font-size: 13px; }
 .panel .answer button svg { font-size: 18px; }
-.friendChip { display: inline-flex; align-items: center; gap: 6px; min-height: 40px; padding: 8px 16px; border-radius: 6px; background: var(--brand-blush); color: var(--brand-cocoa-deep); font-weight: 700; }
+.friendChip { display: inline-flex; align-items: center; gap: 6px; min-height: 40px; padding: 8px 16px; border-radius: var(--brand-control-radius); background: var(--brand-blush); color: var(--brand-cocoa-deep); font-weight: 700; }
 .friendChip svg { fill: currentColor; }
 
 /* Profile: where a friend is now, and the decks they show. */
@@ -136,14 +136,14 @@ a.room:hover .roomAction { background: var(--brand-blush); }
 .roomLarge .roomInfo { font-size: 14px; }
 .roomHost { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .decks { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 12px; margin-bottom: 22px; }
-.deck, .panel .deckChooser button { position: relative; display: grid; gap: 6px; padding: 6px; border: 1px solid var(--brand-pink); border-radius: 6px; background: var(--brand-paper); color: var(--brand-cocoa-deep); text-align: left; text-decoration: none; transition: transform .15s; }
+.deck, .panel .deckChooser button { position: relative; display: grid; gap: 6px; padding: 6px; border: 1px solid var(--brand-pink); border-radius: var(--brand-control-radius); background: var(--brand-paper); color: var(--brand-cocoa-deep); text-align: left; text-decoration: none; transition: transform .15s; }
 .deck b, .deckChooser b { overflow: hidden; padding: 0 4px 2px; font-size: 13px; text-overflow: ellipsis; white-space: nowrap; }
 .deckChooser { min-width: 0; margin: 0; padding: 12px 0; border: 0; border-block: 1px solid var(--brand-pink); }
 .deckChooser legend { display: flex; gap: 8px; align-items: baseline; padding: 0 6px; font-size: 13px; }
 .deckChooser legend small { justify-self: auto; color: var(--brand-cocoa); font-weight: 700; opacity: 1; }
 .deckChooser > div { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 10px; max-height: 360px; overflow: auto; padding: 4px; }
 .panel .deckChooser button { min-height: 0; }
-.panel .deckChooser button[aria-pressed=true] { border-color: var(--brand-cocoa); background: var(--brand-blush); box-shadow: inset 0 0 0 1px var(--brand-cocoa); }
+.panel .deckChooser button[aria-pressed=true] { border-radius: var(--brand-control-radius); border-color: var(--brand-cocoa); background: var(--brand-blush); box-shadow: inset 0 0 0 1px var(--brand-cocoa); }
 .deckMark { position: absolute; top: 10px; right: 10px; display: grid; place-items: center; width: 26px; height: 26px; background: var(--brand-cocoa); color: var(--brand-cream); font-size: 15px; clip-path: polygon(50% 0, 100% 50%, 50% 100%, 0 50%); animation: pop .2s; }
 
 .friendConfirm { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; width: 100%; padding-top: 8px; }

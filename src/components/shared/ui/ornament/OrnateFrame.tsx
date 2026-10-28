@@ -82,7 +82,9 @@ type Props<T extends ElementType> = {
   as?: T;
   /** ink: cocoa lines on a light paper face. cream: cream lines on a dark see-through face. */
   tone?: 'ink' | 'cream';
-  /** sm: smaller corners and no middle ornaments, for plates and tiles. line: the thin frame of buttons. */
+  /** Keep a card-like frame on interactive places such as an empty seat. */
+  appearance?: 'panel' | 'control';
+  /** sm: compact panels/tiles. line: compact action padding. Interactive frames share one fixed radius. */
   size?: 'md' | 'sm' | 'line';
   /** Faint lines: a place that is still empty (a free seat). */
   faint?: boolean;
@@ -91,14 +93,16 @@ type Props<T extends ElementType> = {
   children?: ReactNode;
 } & Omit<ComponentPropsWithRef<T>, 'as' | 'children'>;
 
-export function OrnateFrame<T extends ElementType = 'div'>({ as, tone = 'ink', size = 'md', faint, bare, className, children, ...rest }: Props<T>) {
+export function OrnateFrame<T extends ElementType = 'div'>({ as, tone = 'ink', appearance, size = 'md', faint, bare, className, children, ...rest }: Props<T>) {
   const Tag = (as ?? 'div') as ElementType;
-  return <Tag className={`${styles.frame} ${className ?? ''}`} data-tone={tone} data-size={size} data-faint={faint || undefined} data-bare={bare || undefined} {...rest}>
-    <span className={styles.ornament} aria-hidden="true">
+  const interactive = as === 'button' || as === 'a' || 'href' in rest || rest.role === 'button';
+  const look = appearance ?? (interactive ? 'control' : 'panel');
+  return <Tag className={`${styles.frame} ${className ?? ''}`} data-interactive={interactive || undefined} data-appearance={look} data-tone={tone} data-size={size} data-faint={faint || undefined} data-bare={bare || undefined} {...rest}>
+    {look === 'panel' && <span className={styles.ornament} aria-hidden="true">
       {(['tl', 'tr', 'bl', 'br'] as const).map(at => <span key={at} className={`${styles.at} ${styles[at]}`}>{size === 'line' ? <ThinCorner /> : <Corner />}</span>)}
       {(['top', 'bottom', 'left', 'right'] as const).map(side => size === 'line' ? <ThinRule key={side} side={side} /> : <Rule key={side} side={side} />)}
       {size === 'md' && <><span className={`${styles.midAt} ${styles.midTop}`}><Mid /></span><span className={`${styles.midAt} ${styles.midBottom}`}><Mid /></span></>}
-    </span>
+    </span>}
     {children}
   </Tag>;
 }

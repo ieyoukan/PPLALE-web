@@ -2,7 +2,7 @@
 .newRoom { display: grid; justify-items: center; gap: 14px; text-align: center; }
 .createPrompt { width: min(620px, 100%); text-align: left; color: var(--brand-cocoa); font-size: 16px; font-weight: 700; }
 .creationKinds { --pad: 14px 18px; display: grid; width: min(620px, 100%); }
-.creationKind { display: grid; grid-template-columns: 54px minmax(0, 1fr) 24px; align-items: center; gap: 14px; width: 100%; min-height: 72px; padding: 9px 18px; border: 0; border-bottom: 1px solid var(--brand-pink); background: var(--brand-paper); color: var(--brand-cocoa-deep); text-align: left; cursor: pointer; transition: background .15s, transform .15s; }
+.creationKind { border-radius: var(--brand-control-radius); display: grid; grid-template-columns: 54px minmax(0, 1fr) 24px; align-items: center; gap: 14px; width: 100%; min-height: 72px; padding: 9px 18px; border: 0; border-bottom: 1px solid var(--brand-pink); background: var(--brand-paper); color: var(--brand-cocoa-deep); text-align: left; cursor: pointer; transition: background .15s, transform .15s; }
 .creationKind:last-child { border-bottom: 0; }
 .creationKind:hover:not(:disabled), .creationKind[aria-checked=true] { background: var(--brand-blush); }
 .creationKind:disabled { opacity: .55; cursor: default; }
@@ -14,6 +14,6 @@
 .creationText small { color: var(--brand-cocoa-soft); font-size: 13px; }
 .creationCheck { color: var(--brand-cocoa); font-size: 22px; }
 .createError { color: var(--brand-cocoa-deep); font-size: 14px; font-weight: 700; }
-.makeButton { display: inline-flex; align-items: center; gap: 8px; padding: 14px 40px; border: 3px solid var(--brand-pink-edge); border-radius: 999px; background: var(--brand-blush); color: var(--brand-cocoa-deep); font-size: 22px; box-shadow: none; cursor: pointer; }
+.makeButton { display: inline-flex; align-items: center; gap: 8px; padding: 14px 40px; border: 1px solid var(--brand-control-edge); border-radius: var(--brand-control-radius); background: var(--brand-blush); color: var(--brand-cocoa-deep); font-size: 22px; box-shadow: none; cursor: pointer; }
 @media (prefers-reduced-motion: reduce) { .creationKind { transition: none; } }
 @container stage (max-width: 600px) { .creationKind { grid-template-columns: 44px minmax(0, 1fr) 20px; gap: 9px; padding: 9px 12px; } .creationIcon { width: 40px; height: 40px; font-size: 22px; } .creationText b { font-size: 16px; } .creationText small { font-size: 12px; } }
