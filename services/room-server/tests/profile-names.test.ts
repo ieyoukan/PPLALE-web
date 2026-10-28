@@ -135,3 +135,16 @@ test('public names: HTTP intake verifies identity and overrides aliases; HTTP an
     const bad = await served.call('/rooms', { name: '勝手な名前', rules: { fruits: ['strawberry'] } }, { authorization: 'Bearer invalid' });
     assert.equal(bad.status, 401);
 });
+
+test('public names: expiry serves the last verified name while revalidating and after a transient failure', async () => {
+    let now = 1, fail = false, resolve!: (name: string) => void;
+    const resolver = profileNames(() => fail ? Promise.reject(new Error('offline')) : new Promise<string>(done => { resolve = done; }), () => now);
+    const first = resolver.load('uid'); resolve('確認済みの公開名'); await first;
+    now += 60_001;
+    assert.equal(resolver.name({ name: '保存済みの旧名', profileId: 'uid' }), '確認済みの公開名');
+    resolve('更新後の公開名'); await resolver.load('uid');
+    assert.equal(resolver.name({ name: '保存済みの旧名', profileId: 'uid' }), '更新後の公開名');
+    now += 60_001; fail = true;
+    await resolver.load('uid');
+    assert.equal(resolver.name({ name: '保存済みの旧名', profileId: 'uid' }), '更新後の公開名');
+});

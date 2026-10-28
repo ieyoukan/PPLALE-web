@@ -101,3 +101,9 @@ Next.js本体の機能判定付き互換コードは引き続き含まれるた�
 元の画面構成とは異なり、準備画面にあみののカード画像はないため、過去の「あみの画像2.5KiB」とは比較しない。過去のJS削減率やLighthouseのスコアも今回の値から再計算しない。ローカルのLCPはJSONに保存しているが、本番の通信条件での速さを示す値ではない。
 
 実測値・ブラウザの版・自動判定保留の要素は [実測JSON](performance-2026-10-16.json)、再実行方法は [検証記録](../verification.md) を参照。
+
+## サイコロの静止中の描画（2026-10-28）
+
+`openingDieScene.ts` は値・回転状態が変わらずリサイズもないとき、WebGL描画とメッシュの接地計算を繰り返さない。回転中は従来どおり描き、止まった時点とリサイズで描き直す。Three.jsが廃止した `PCFSoftShadowMap` は、実際の代替先と同じ `PCFShadowMap` を明示する。`e2e/display-and-die-regressions.spec.mjs` で静止中の描画回数と回転時の再開を検証する。
+
+通知音の `AudioContext` は [Chromeの自動再生ポリシー](https://developer.chrome.com/blog/autoplay/#web_audio) に合わせ、有効なユーザー操作中だけ生成・再開する。疑似イベントや操作前の呼び出しでは生成しない。

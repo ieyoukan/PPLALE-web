@@ -83,7 +83,8 @@ export function swapStats(s: GameState, uid: string, catalog: Catalog) {
 export function hit(s: GameState, uid: string, amount: number, byEffect = true) {
     touch(s, uid);
     const card = s.cards[uid];
-    if (!card || amount <= 0) return;
+    // A zero-strength attack is still a hit; a zero-damage effect is not.
+    if (!card || amount < 0 || amount === 0 && byEffect) return;
     if (byEffect && card.keywords.includes('effectImmune')) {
         recordEffectBlock(s, uid, 'damage');
         return;

@@ -17,7 +17,8 @@ export async function readPublicName(uid: string): Promise<string> {
     const project = process.env.FIREBASE_PROJECT_ID ?? 'pplale-6cca0';
     const origin = process.env.FIRESTORE_EMULATOR_HOST ? `http://${process.env.FIRESTORE_EMULATOR_HOST}` : 'https://firestore.googleapis.com';
     const response = await fetch(`${origin}/v1/projects/${encodeURIComponent(project)}/databases/(default)/documents/profiles/${encodeURIComponent(uid)}?mask.fieldPaths=displayName`, { signal: AbortSignal.timeout(1500) });
-    if (!response.ok) return FALLBACK;
+    if (response.status === 404) return FALLBACK;
+    if (!response.ok) throw new Error('公開プロフィールを取得できませんでした');
     const data = await response.json() as { fields?: { displayName?: { stringValue?: unknown } } };
     return clean(data.fields?.displayName?.stringValue);
 }
@@ -32,9 +33,14 @@ export function profileNames(read = readPublicName, now = Date.now) {
         if (!task) {
             // A public list cannot open an unbounded number of outbound requests.
             if (pending.size >= 8) return;
-            task = read(uid).then(clean, () => FALLBACK).then(name => {
+            task = read(uid).then(clean).then(name => {
                 if (cache.size >= 2000) cache.delete(cache.keys().next().value!);
                 cache.set(uid, { name, until: now() + 60_000 });
+            }).catch(() => {
+                const previous = cache.get(uid);
+                if (!previous && cache.size >= 2000) cache.delete(cache.keys().next().value!);
+                // Keep the last verified public name during transient failures, never the room's stored name.
+                cache.set(uid, { name: previous?.name ?? FALLBACK, until: now() + 5_000 });
             }).finally(() => pending.delete(uid));
             pending.set(uid, task);
         }
@@ -44,7 +50,7 @@ export function profileNames(read = readPublicName, now = Date.now) {
         if (!player.profileId) return player.name;
         void load(player.profileId);
         const value = cache.get(player.profileId);
-        return value && value.until > now() ? value.name : FALLBACK;
+        return value?.name ?? FALLBACK;
     }
     const players = <T extends Player | null>(list: T[]) => list.map(player => player ? { ...player, name: name(player) } : player) as T[];
     function state(game: GameState, identities: (Player | null)[], aliases: Map<string, string> = new Map()) {

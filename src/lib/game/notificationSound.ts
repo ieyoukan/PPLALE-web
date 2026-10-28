@@ -9,6 +9,7 @@ export class NotificationSound {
 
   /** Browsers require creation/resume inside a click, tap or keyboard gesture. */
   unlock() {
+    if (typeof navigator !== 'undefined' && navigator.userActivation?.isActive === false) return;
     try {
       if (!this.context || this.context.state === 'closed') {
         this.context = new AudioContext();

@@ -39,7 +39,7 @@ export function createOpeningDieScene(
   const renderer = new THREE.WebGLRenderer({ alpha: true, antialias: true });
   renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
   renderer.shadowMap.enabled = true;
-  renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+  renderer.shadowMap.type = THREE.PCFShadowMap;
   renderer.outputColorSpace = THREE.SRGBColorSpace;
   renderer.toneMapping = THREE.ACESFilmicToneMapping;
   renderer.toneMappingExposure = 1;
@@ -85,7 +85,10 @@ export function createOpeningDieScene(
   floor.position.y = -.008;
   floor.receiveShadow = true;
   scene.add(floor);
+  let needsRender = true;
+  let lastValue: number | null | undefined;
   const resize = () => {
+    needsRender = true;
     const width = host.clientWidth || 300, height = host.clientHeight || 340;
     renderer.setSize(width, height, false);
     const aspect = width / height;
@@ -110,6 +113,11 @@ export function createOpeningDieScene(
   die.quaternion.copy(orientation(read().value ?? 1));
   function render(now: number) {
     const state = read();
+    // Polling the state is cheap; re-rendering static shadows and every mesh vertex is not.
+    if (!needsRender && !state.rolling && !wasRolling && state.value === lastValue) {
+      frame = requestAnimationFrame(render);
+      return;
+    }
     const target = orientation(state.value ?? 1);
     if (state.rolling && !wasRolling) {
       began = now;
@@ -139,6 +147,8 @@ export function createOpeningDieScene(
     }
     die.position.y = support + height;
     wasRolling = state.rolling;
+    lastValue = state.value;
+    needsRender = false;
     renderer.render(scene, camera);
     if (!presented) {
       presented = true;

@@ -35,8 +35,8 @@ export function GameNotifications({ children }: { children: ReactNode }) {
   }, []);
   useEffect(() => {
     load();
-    const unlock = () => {
-      if (!enabledRef.current) return;
+    const unlock = (event: Event) => {
+      if (!event.isTrusted || !enabledRef.current) return;
       sound.current ??= new NotificationSound();
       sound.current.setVolume(volumeRef.current);
       sound.current.unlock();
@@ -53,11 +53,11 @@ export function GameNotifications({ children }: { children: ReactNode }) {
       setEnabled(enabledRef.current);
       if (!enabledRef.current) sound.current?.mute();
     };
-    window.addEventListener('pointerdown', unlock, { capture: true, passive: true });
+    window.addEventListener('click', unlock, { capture: true, passive: true });
     window.addEventListener('keydown', unlock, { capture: true });
     window.addEventListener('storage', sync);
     return () => {
-      window.removeEventListener('pointerdown', unlock, true);
+      window.removeEventListener('click', unlock, true);
       window.removeEventListener('keydown', unlock, true);
       window.removeEventListener('storage', sync);
       sound.current?.close(); sound.current = null;

@@ -160,3 +160,24 @@ test('zero attack still eats, spends an action, and obeys summoning sickness and
   assert.equal(s.cards[uid].exhausted, true);
   assert.equal(canAttack(s, 0, uid, target, catalog), false);
 });
+
+for (const targetId of ['y_3', 'y_106']) test(`zero-strength attacks remove ${targetId}'s barrier without dealing damage`, () => {
+  let s = arena({ me: { field: ['y_9', 'y_9'] }, foe: { field: [targetId] } });
+  const [attacker, next] = field(s), target = field(s, 1)[0];
+  s.cards[attacker].attackBonus = -catalog.y_9.attack;
+  s.cards[target].shield = true;
+  assert.equal(canAttack(s, 0, attacker, target, catalog), true);
+  s = run(s, { type: 'attack', actor: 0, uid: attacker, target });
+  assert.equal(s.cards[target].shield, false);
+  assert.equal(s.cards[target].damage, 0);
+  s = run(s, { type: 'attack', actor: 0, uid: next, target });
+  assert.ok(s.cards[target].damage > 0);
+});
+
+test('zero-damage effects do not consume a unit barrier', async () => {
+  const { hit } = await import('../dist/core/cards.js');
+  const s = arena({ me: { field: ['y_3'] } }), uid = field(s)[0];
+  s.cards[uid].shield = true;
+  hit(s, uid, 0);
+  assert.equal(s.cards[uid].shield, true);
+});
