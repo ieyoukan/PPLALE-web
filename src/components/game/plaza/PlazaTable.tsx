@@ -20,7 +20,7 @@ import { useRoomPreparation } from '../room/useRoomPreparation';
 import { OrnateFrame } from '@/components/shared/ui/ornament/OrnateFrame';
 import { Avatar } from '@/components/shared/player/Avatar';
 import { CardArtwork } from '@/components/shared/card/CardArtwork';
-import { BoardSurface } from './BoardSurface';
+import { RoomScene } from './RoomScene';
 import { DeckContentsSheet, DeckSheet, OpponentSheet, RulesSheet } from './PlazaSheets';
 import { CpuSheet } from './CpuSheet';
 import { RoomNameSheet } from './RoomManagementSheets';
@@ -131,18 +131,7 @@ export function PlazaTable({ view, onMenu }: { view: RoomView; onMenu: () => voi
       </li>)}</ul>
     </OrnateFrame>
 
-    <div className={styles.mat}>
-      {/* The board with seat 0's half nearest, turned a quarter so seat 0 is at the left end and seat 1 at the right. */}
-      <div className={styles.tableTop}>
-        <span className={styles.floorShadow} aria-hidden="true" />
-        <BoardSurface className={styles.surface} />
-        <span className={styles.light} aria-hidden="true" />
-      </div>
-        {([0, 1] as const).map(side => <div key={side} className={styles.spot} data-seat={side}>
-          <span className={styles.shadow} aria-hidden="true" />
-          <div className={styles.stand}>{seat(side)}</div>
-        </div>)}
-    </div>
+    <RoomScene seats={[seat(0), seat(1)]} />
 
     <aside className={styles.side}>
       <OrnateFrame as="button" size="sm" className={styles.rulesCard} onClick={() => setOpen('rules')} aria-label="ルール">

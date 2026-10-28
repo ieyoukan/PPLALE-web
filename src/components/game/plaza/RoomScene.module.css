@@ -1,0 +1,56 @@
+/* Geometry is in the board's local coordinates: +Z is above the tabletop.
+   Keep preserve-3d ancestors free of opacity, filters and overflow clipping. */
+.scene {
+  --tilt: 58deg;
+  --desk-drop: 8px;
+  --desk-depth: 22px;
+  --leg-height: 124px;
+  --floor-depth: calc(var(--desk-drop) + var(--desk-depth) + var(--leg-height));
+  --wood-grain: repeating-linear-gradient(1deg, #ffffff04 0 1px, transparent 1px 8px), repeating-linear-gradient(0deg, color-mix(in srgb, var(--brand-ink) 21%, transparent) 0 1px, transparent 1px 12px), linear-gradient(90deg, var(--brand-wood), var(--brand-wood-light) 28%, var(--brand-wood-light) 75%, var(--brand-wood));
+  grid-area: mat; position: relative; display: grid; place-items: center; min-height: 0;
+  container-type: size; perspective: 1500px; perspective-origin: 50% 30%;
+}
+.world {
+  --long: min(138cqh, 104cqw);
+  position: relative; width: var(--long); height: calc(var(--long) * 9 / 16);
+  transform-style: preserve-3d; transform: translateY(-36px) rotateX(var(--tilt)) rotateZ(90deg);
+  pointer-events: none;
+}
+.floor {
+  position: absolute; inset: -240px -280px;
+  transform: translateZ(calc(-1 * var(--floor-depth)));
+  border: 1px solid color-mix(in srgb, var(--brand-room-floor-edge) 38%, transparent);
+  background: linear-gradient(90deg, color-mix(in srgb, var(--brand-room-floor) 27%, transparent), color-mix(in srgb, var(--brand-room-floor) 40%, transparent));
+}
+.floorShadow {
+  position: absolute; inset: -50px -80px;
+  transform: translateZ(calc(1px - var(--floor-depth)));
+  background: radial-gradient(closest-side, color-mix(in srgb, var(--brand-ink) 56%, transparent), color-mix(in srgb, var(--brand-ink) 26%, transparent) 62%, transparent);
+}
+.solid { position: absolute; transform-style: preserve-3d; }
+.solid > span { position: absolute; display: block; }
+.top { inset: 0; background: var(--wood-grain); }
+.front, .back { left: 0; width: 100%; height: var(--depth); transform-origin: top; transform: rotateX(-90deg); background: linear-gradient(var(--brand-wood-edge), var(--brand-wood-deep)); }
+.front { top: 100%; }
+.back { top: 0; }
+.left, .right { top: 0; width: var(--depth); height: 100%; transform-origin: left; transform: rotateY(90deg); background: linear-gradient(90deg, var(--brand-wood), var(--brand-wood-deep)); }
+.left { left: 0; }
+.right { left: 100%; }
+.desk { --depth: var(--desk-depth); inset: -24px -34px; transform: translateZ(calc(-1 * var(--desk-drop))); }
+.desk > .top { border: 1px solid var(--brand-wood-edge); }
+.leg {
+  --depth: var(--leg-height); width: 28px; height: 28px;
+  transform: translateZ(calc(-1 * (var(--desk-drop) + var(--desk-depth))));
+}
+.leg[data-corner^='n'] { top: -6px; }
+.leg[data-corner^='s'] { bottom: -6px; }
+.leg[data-corner$='w'] { left: -12px; }
+.leg[data-corner$='e'] { right: -12px; }
+.leg > .front, .leg > .back { background: linear-gradient(var(--brand-wood), var(--brand-wood-deep)); }
+.leg > .left, .leg > .right { background: linear-gradient(90deg, var(--brand-wood-light), var(--brand-wood)); }
+.leg::after { content: ''; position: absolute; inset: -18px; transform: translateZ(calc(1px - var(--leg-height))); background: radial-gradient(closest-side, color-mix(in srgb, var(--brand-ink) 48%, transparent), transparent); }
+.world > .surface { position: absolute; inset: 0; width: 100%; height: 100%; min-height: 0; margin: 0; aspect-ratio: auto; perspective: none; }
+.light { position: absolute; inset: 0 6%; background: linear-gradient(90deg, color-mix(in srgb, var(--brand-cream) 18%, transparent), transparent 60%, color-mix(in srgb, var(--brand-ink) 9%, transparent)); }
+/* Screen-aligned controls, as before: the board never intercepts the seat buttons. */
+.seatSlot { position: absolute; top: 48%; left: 2%; width: 214px; transform: translateY(-50%); z-index: 2; }
+.seatSlot[data-seat='1'] { left: auto; right: 2%; }

@@ -1,4 +1,4 @@
-/* The whole screen behind the stage: the same wood as the table, also under notches and home bars. */
+/* The user-supplied sky continues behind the stage, notches and home bars. */
 .screen {
   /* Game panels use the brand's paper palette even when the surrounding site uses dark mode. */
   --colors-background-color: var(--brand-cream);
@@ -7,7 +7,7 @@
   --colors-text-light: var(--brand-cocoa-soft);
   --colors-hover-back-color: var(--brand-blush);
   color-scheme: light;
-  position: fixed; inset: 0; overflow: hidden; background: #503528;
+  position: fixed; inset: 0; overflow: hidden; background: var(--brand-room-night) url('/images/game/room-stars.webp') center / cover;
   /* No pinch zoom, pull-to-refresh, text selection or long-press menu on the table; drawers still scroll. */
   touch-action: none; overscroll-behavior: none;
   user-select: none; -webkit-user-select: none; -webkit-touch-callout: none;
@@ -16,7 +16,7 @@
 /* Menu lists and forms retain native scrolling; board dragging keeps its existing touch handling. */
 .menu { touch-action: manipulation; }
 .screen:has([data-plaza-sheet]), .screen:has([data-launchpad]), .screen:has([data-room-window]), .screen:has([data-result-screen]) { touch-action: manipulation; }
-/* The part of the screen the stage may use (viewport-fit=cover lets the wood reach the edges). */
+/* The part of the screen the stage may use (viewport-fit=cover lets the sky reach the edges). */
 .safe {
   position: absolute; pointer-events: none;
   inset: env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left);

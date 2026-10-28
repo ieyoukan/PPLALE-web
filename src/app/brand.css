@@ -27,6 +27,10 @@
   --brand-wood-deep: #4f3424;
   --brand-cream-on-dark: #fff3d6;
   --brand-cream-line: #f6e9d2;
+  /* User-supplied starry room and its translucent neutral floor. */
+  --brand-room-night: #010614;
+  --brand-room-floor: #b8bdc5;
+  --brand-room-floor-edge: #e0e3e8;
   /* The darkest brown, for shadows and veils (always with transparency). */
   --brand-ink: #2b170c;
   --brand-gingham: linear-gradient(#fff8f040, #fff8f040), url("/images/check-pattern.png");
