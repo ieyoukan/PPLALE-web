@@ -7,6 +7,8 @@
 .table button, .table a { cursor: pointer; -webkit-tap-highlight-color: transparent; }
 .table button:disabled { cursor: default; }
 .table :focus-visible, .sheet :focus-visible { outline: 3px solid var(--brand-vanilla); outline-offset: 3px; }
+/* Room geometry may extend beyond its grid cell; controls stay above the floor. */
+.top, .people, .side { position: relative; z-index: 1; }
 
 /* ── Small buttons: squares with corners only a little rounded (6px), or no frame at all ── */
 .round, .inviteButton, .claim, .softButton, .shareTile {
