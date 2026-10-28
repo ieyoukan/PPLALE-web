@@ -110,7 +110,7 @@ test('plaza: a public room is entered by anyone; seats are taken from the table 
     assert.ok(played.ownDeck);
     // Seats are not taken during a match.
     assert.equal(await alice.act({ action: 'sit', seat: 0 }), '対戦が終わってから選べます');
-    // Play until the opening hands are drawn, then the spectator sees neither hand.
+    // Play until the opening hands are drawn, then the spectator sees both hands.
     const command = async (client: Client, seat: 0 | 1, sent: object) => {
         const error = await client.act({ action: 'command', command: { ...sent, actor: seat } as never, revision: client.latest().game!.revision });
         const revision = client.latest().game!.revision;
@@ -127,7 +127,12 @@ test('plaza: a public room is entered by anyone; seats are taken from the table 
         for (let draw = 0; draw < 8 && client.latest().game!.phase === 'opening' && client.latest().game!.openingRemaining[seat] > 0; draw++) await command(client, seat, { type: 'openingDraw', deck: draw % 2 ? 'sweet' : 'yojo' });
     }
     const spectator = await until(alice, view => !!view.game && view.game.players.every(player => player.hand.length > 0));
-    for (const player of spectator.game!.players) for (const uid of player.hand) assert.equal(spectator.game!.cards[uid].cardId, HIDDEN_CARD);
+    for (const player of spectator.game!.players) for (const uid of player.hand) assert.notEqual(spectator.game!.cards[uid].cardId, HIDDEN_CARD);
+    for (const side of [0, 1] as const) {
+        for (const uid of spectator.game!.players[side].yojo) assert.equal(spectator.game!.cards[uid].cardId, HIDDEN_CARD);
+        const player = (side === 0 ? b : c).latest().game!;
+        for (const uid of player.players[side === 0 ? 1 : 0].hand) assert.equal(player.cards[uid].cardId, HIDDEN_CARD);
+    }
     // Standing up during a match loses it and the seat stays named until the table is back.
     assert.equal(await b.act({ action: 'stand' }), undefined);
     const ended = await until(c, view => view.status === 'finished');

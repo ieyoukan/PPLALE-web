@@ -96,7 +96,6 @@ a.person:hover { background: color-mix(in srgb, var(--brand-cream-on-dark) 10%, 
 .claim svg { color: var(--brand-star-deep); font-size: 22px; }
 
 /* ── Bottom: the deck and getting ready ── */
-.actions { grid-area: actions; position: relative; display: flex; align-items: center; justify-content: center; gap: 18px; }
 .deckChip { --pad: 10px 24px 10px 18px; display: flex; align-items: center; gap: 12px; min-height: 84px; max-width: 320px; border: 0; background: none; color: var(--brand-cocoa-deep); text-align: left; filter: none; }
 .deckChip:disabled { opacity: .75; }
 .deckArt { display: grid; place-items: center; flex: none; width: 42px; height: 62px; font-size: 30px; color: var(--brand-cocoa); }
@@ -113,8 +112,6 @@ a.person:hover { background: color-mix(in srgb, var(--brand-cream-on-dark) 10%, 
 .ready:active:not(:disabled) { animation: none; }
 .ready:disabled { filter: saturate(.6); opacity: .8; animation: none; }
 .readyDone { --frame-face: var(--brand-sage); --frame-ink: var(--brand-leaf-deep); grid-auto-flow: column; gap: 10px; animation: none; }
-.hint { --pad: 14px 30px; display: flex; align-items: center; gap: 10px; font-weight: 700; font-size: 18px; filter: none; animation: bob 2.2s ease-in-out infinite; }
-.hint svg { font-size: 24px; color: var(--brand-cocoa); }
 
 /* ── Friends asking to come in ── */
 .requests { position: absolute; top: 88px; right: 18px; z-index: 5; display: grid; gap: 8px; }
@@ -203,12 +200,11 @@ a.person:hover { background: color-mix(in srgb, var(--brand-cream-on-dark) 10%, 
 @keyframes popIn { from { opacity: 0; transform: scale(.6); } }
 @keyframes seatIn { from { opacity: 0; transform: translateY(14px) scale(.92); } }
 @keyframes beckon { 0%, 100% { transform: scale(1); } 50% { transform: scale(1.07); } }
-@keyframes bob { 50% { transform: translateY(-5px); } }
 @keyframes hop { 0%, 60%, 100% { transform: none; } 30% { transform: translateY(-6px); } }
 @keyframes fade { from { opacity: 0; } }
 @keyframes rise { from { opacity: 0; transform: translateY(30px) scale(.97); } }
 @media (prefers-reduced-motion: reduce) {
-  .person, .seat, .plus, .claim svg, .ready, .hint, .thinking i, .request, .toast, .sheetBackdrop, .sheet, .copied, .copiedDot, .veil, .veilDots span { animation: none; }
+  .person, .seat, .plus, .claim svg, .ready, .thinking i, .request, .toast, .sheetBackdrop, .sheet, .copied, .copiedDot, .veil, .veilDots span { animation: none; }
 }
 
 /* ── Inviting friends by name (in the share sheet) ── */
@@ -233,7 +229,6 @@ a.person:hover { background: color-mix(in srgb, var(--brand-cream-on-dark) 10%, 
 .side { align-items: center; justify-content: center; gap: 3px; }
 .rulesCard { --pad: 10px 22px; width: min(340px, 100%); grid-template-columns: 116px minmax(0, 1fr); gap: 4px 12px; align-items: center; }
 .ruleChips { flex-direction: column; }
-.actions { position: absolute; left: 220px; right: 18px; bottom: 128px; pointer-events: none; }
 
 .playerSeat { position: relative; padding: 12px; }
 .playerSeat .seatName b { color: var(--brand-cream); }

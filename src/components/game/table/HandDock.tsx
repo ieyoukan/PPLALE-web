@@ -24,7 +24,7 @@ export function HandDock() {
   return <div className={styles.handDock}>
     <div className={styles.hand} data-hand-list>{[...concealed, ...revealed].map((uid, index) => {
       const card = game.cards[uid], face = displayCards[card.cardId], preview = draft.includes(uid), grouped = inRevealedGroup(uid);
-      // Room spectators receive hidden IDs for both hands; never look up their costs or allow selection.
+      // Respect the supplied view: a hidden identity has no picture or inspection action.
       const hidden = !face;
       const groupIndex = grouped ? index - concealed.length : index;
       const offset = groupIndex - ((grouped ? revealed.length : concealed.length) - 1) / 2;

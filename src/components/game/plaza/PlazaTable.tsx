@@ -74,7 +74,6 @@ export function PlazaTable({ view, onMenu, match }: { view: RoomView; onMenu: ()
   const me = mySeat === null ? null : view.players[mySeat]!;
   const ready = () => { if (chosen) ask({ action: 'ready', deck: chosen.deck(randomSeed()) }); };
   const owner = room.members.find(member => member.id === room.owner);
-  const empty = ([0, 1] as const).filter(side => !view.players[side]);
   const info = visibilityInfo[room.visibility];
 
   /** One seat on the mat: who sits there, or the way to sit there (or to call the CPU). */
@@ -151,10 +150,6 @@ export function PlazaTable({ view, onMenu, match }: { view: RoomView; onMenu: ()
       {owner ? <span className={styles.ownerChip}><GameIcon name="crown" />{owner.id === room.me ? 'あなたがオーナー' : owner.name}</span>
         : <button className={styles.claim} disabled={busy} onClick={() => ask({ action: 'claim' })}><GameIcon name="crown" /><span data-ui-title>オーナーになる</span></button>}
     </aside>
-
-    {!me && empty.length === 0 && <footer className={styles.actions}>
-      <OrnateFrame as="p" size="sm" className={styles.hint}><GameIcon name="eye" /><span>席があくのを待っています</span></OrnateFrame>
-    </footer>}
 
     {!!room.requests?.length && <div className={styles.requests} role="region" aria-label="入りたい人">{room.requests.map(request => <OrnateFrame size="sm" key={request.profileId} className={styles.request}>
       <GameIcon name="letter" /><span><b>{request.name}</b>が入りたいって</span>

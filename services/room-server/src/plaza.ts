@@ -462,7 +462,7 @@ export function plazaView(room: Room, id: string, online: ReadonlySet<string>, c
         id: room.id, version, seat: mine ?? 0, ...(!seated && { watching: true as const }), reportsAway: true,
         spectators: plaza.members.filter(member => online.has(member.id) && !seats.some(seat => seat?.member === member.id)).length,
         ...(mine !== null && seats[mine]!.deck && { ownDeck: seats[mine]!.deck! }),
-        status, match, ...(record && { matchId: record.id }), rules, players, game: state && viewFor(state, mine ?? 'audience'), last, resigned,
+        status, match, ...(record && { matchId: record.id }), rules, players, game: state && viewFor(state, mine ?? 'spectator'), last, resigned,
         assessment: publicAssessment(room, catalog),
         ...(status === 'finished' && record && seated && { replayId: record.id }),
         ...(turnClock && { turnClock, serverNow: Date.now() }),

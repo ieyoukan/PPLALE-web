@@ -22,7 +22,7 @@ export function PlayerSide({ side }: { side: Side }) {
   // In a room either seat may be this screen's; elsewhere side 0 is the player.
   const who = (mode === 'room' ? near : side === 0) ? 'あなた' : '相手';
   const sandbox = editing || mode === 'hotseat' && game.phase === 'playing' && !game.pending && !busy;
-  // Face-up layouts still respect server redaction: room spectators cannot see unrevealed hands.
+  // Face-up layouts still respect redaction; only identities supplied by the server are visible.
   const open = mode === 'watch' || mode === 'puzzle' || !!remote?.watching || editing;
   const leaderTarget = !!attacker && side !== view && board.canStrike(attacker, 'leader');
   const concealed = player.hand.filter(uid => !game.cards[uid].revealed);

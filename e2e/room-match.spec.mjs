@@ -191,13 +191,14 @@ test('the CPU plays at the same table, with spectators joining before and during
   }
   // The CPU draws its opening hand by itself.
   await expect.poll(() => alice.locator('[aria-label^="相手の手札"]').getAttribute('aria-label'), { timeout: 20000 }).toMatch(/[1-9]枚/);
-  // A late visitor joins the running match without taking a seat or seeing either private hand.
+  // A late visitor joins the running match without taking a seat, and can inspect both hands.
   const carol = await open(browser, '途中から観戦するきゃろる');
   await carol.goto(`${base}/game/room/${id}/?invite=${invite}`);
   for (const page of [bob, carol]) {
     await expect(page.locator('[data-table]')).toBeVisible({ timeout: 20000 });
-    await expect(page.locator('[data-hand-list] [data-hand]').first()).toBeDisabled();
-    await expect(page.locator('[data-hand-list] [data-hand] img')).toHaveCount(0);
+    await expect(page.locator('[data-hand-list] [data-hand]').first()).toBeEnabled();
+    await expect(page.locator('[data-hand-list] [data-hand] img').first()).toBeVisible();
+    await expect(page.locator('[aria-label^="相手の手札"] [data-hand] img').first()).toBeVisible();
     await expect(page.getByRole('button', { name: '観戦中', exact: true })).toBeDisabled();
   }
   await alice.keyboard.press('Escape');

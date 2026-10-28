@@ -1,7 +1,7 @@
 'use client';
 
 // The room this player is in, whatever it is doing: its table between matches, the board during
-// one (everyone not seated watches it, without the hidden cards), and the result of a finished
+// one (everyone not seated watches it, with both hands visible), and the result of a finished
 // match until each person goes back to the table themselves. No loading screen: the match's cards
 // and code load in the background while the room is at its table, and if they are not quite there
 // when the match starts the table stays a moment longer. The new match's board then comes round from

@@ -132,21 +132,33 @@ export async function publishPresence(roomId: string | null) {
 export function watchSocial(uid: string, receive: (players: SocialPlayer[]) => void, fail: () => void): () => void {
   let cancelled = false, stop: (() => void) | undefined;
   const profiles = new Map<string, PlayerProfile>(), rooms = new Map<string, string>(), watching = new Map<string, { roomId: string; at: number }>();
+  const pendingProfiles = new Set<string>();
   const subscriptions = new Map<string, (() => void)[]>();
   let friendships: Friendship[] = [];
-  const emit = () => { if (!cancelled) receive(friendships.map(friendship => { const other = friendship.members.find(member => member !== uid)!; return { friendship, profile: profiles.get(other) ?? defaultProfile(other), roomId: rooms.get(other), watching: watching.get(other) }; })); };
+  const emit = () => { if (!cancelled && (profiles.size > 0 || pendingProfiles.size === 0)) receive(friendships.flatMap(friendship => {
+    const other = friendship.members.find(member => member !== uid)!, profile = profiles.get(other);
+    // Presence can arrive first. Do not invent a "プレイヤー" row while its actual profile is loading.
+    return profile ? [{ friendship, profile, roomId: rooms.get(other), watching: watching.get(other) }] : [];
+  })); };
   void store().then(({ sdk, db }) => {
     if (cancelled) return;
     stop = sdk.onSnapshot(sdk.query(sdk.collection(db, 'friendships'), sdk.where('members', 'array-contains', uid), sdk.limit(100)), { includeMetadataChanges: true }, snapshot => {
       const confirmed = new Set(snapshot.docs.filter(doc => !doc.metadata.hasPendingWrites).map(doc => doc.id));
       friendships = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Friendship));
       const kept = new Set(friendships.map(friendship => friendship.members.find(member => member !== uid)!));
-      for (const [other, stops] of subscriptions) if (!kept.has(other)) { stops.forEach(stop => stop()); subscriptions.delete(other); profiles.delete(other); rooms.delete(other); watching.delete(other); }
+      for (const [other, stops] of subscriptions) if (!kept.has(other)) { stops.forEach(stop => stop()); subscriptions.delete(other); profiles.delete(other); pendingProfiles.delete(other); rooms.delete(other); watching.delete(other); }
+      for (const other of kept) if (!subscriptions.has(other)) pendingProfiles.add(other);
       for (const friendship of friendships) {
         const other = friendship.members.find(member => member !== uid)!;
         // An accepted relation needs an additional, rule-protected recruitment listener.
         const existing = subscriptions.get(other) ?? [];
-        if (!existing.length) existing.push(sdk.onSnapshot(sdk.doc(db, 'profiles', other), doc => { profiles.set(other, profileOf(other, doc.data())); emit(); }, fail));
+        if (!existing.length) existing.push(sdk.onSnapshot(sdk.doc(db, 'profiles', other), doc => {
+          const data = doc.data();
+          pendingProfiles.delete(other);
+          if (typeof data?.displayName === 'string' && data.displayName.trim()) profiles.set(other, profileOf(other, data));
+          else profiles.delete(other);
+          emit();
+        }, () => { pendingProfiles.delete(other); fail(); emit(); }));
         if (friendship.status === 'accepted' && confirmed.has(friendship.id) && existing.length === 1) existing.push(sdk.onSnapshot(sdk.doc(db, 'recruitments', other), doc => { const roomId = doc.data()?.roomId; if (typeof roomId === 'string' && /^\d{6}$/.test(roomId)) rooms.set(other, roomId); else rooms.delete(other); emit(); }, () => { rooms.delete(other); emit(); }));
         if (friendship.status === 'accepted' && confirmed.has(friendship.id) && existing.length === 2) existing.push(sdk.onSnapshot(sdk.doc(db, 'watching', other), doc => {
           const data = doc.data(), roomId = data?.roomId, at = data?.updatedAt?.toMillis?.();
