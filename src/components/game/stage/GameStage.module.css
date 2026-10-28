@@ -22,8 +22,9 @@
   inset: env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left);
 }
 /* Fixed-size stage, scaled (and on a portrait screen turned) by GameStage. Viewport units of the match
-   screens are written as cqw / cqh of this container, and their screen-size rules as @container stage. */
-.stage { position: absolute; left: 0; top: 0; width: 1280px; visibility: hidden; overflow: hidden; transform-origin: 0 0; container: stage / size; }
+   screens are written as cqw / cqh of this container, and their screen-size rules as @container stage.
+   clip prevents focusing a partly exposed hand card from scrolling this fixed camera. */
+.stage { position: absolute; left: 0; top: 0; width: 1280px; visibility: hidden; overflow: clip; transform-origin: 0 0; container: stage / size; }
 
 /* Match fitStage before hydration, so the menu can paint without waiting for JS.
    Older browsers retain the measured JS layout. Keep the same aspect bounds,

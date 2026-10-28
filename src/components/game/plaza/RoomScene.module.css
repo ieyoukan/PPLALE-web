@@ -8,6 +8,7 @@
   --floor-depth: calc(var(--desk-drop) + var(--desk-depth) + var(--leg-height));
   --wood-grain: repeating-linear-gradient(1deg, #ffffff04 0 1px, transparent 1px 8px), repeating-linear-gradient(0deg, color-mix(in srgb, var(--brand-ink) 21%, transparent) 0 1px, transparent 1px 12px), linear-gradient(90deg, var(--brand-wood), var(--brand-wood-light) 28%, var(--brand-wood-light) 75%, var(--brand-wood));
   grid-area: mat; position: relative; z-index: 0; isolation: isolate; display: grid; place-items: center; min-height: 0;
+  min-width: 0; grid-template: minmax(0, 1fr) / minmax(0, 1fr);
   container-type: size; perspective: 1500px; perspective-origin: 50% 30%;
 }
 .world {
@@ -49,8 +50,12 @@
 .leg > .front, .leg > .back { background: linear-gradient(var(--brand-wood), var(--brand-wood-deep)); }
 .leg > .left, .leg > .right { background: linear-gradient(90deg, var(--brand-wood-light), var(--brand-wood)); }
 .leg::after { content: ''; position: absolute; inset: -18px; transform: translateZ(calc(1px - var(--leg-height))); background: radial-gradient(closest-side, color-mix(in srgb, var(--brand-ink) 48%, transparent), transparent); }
-.world > .surface { position: absolute; inset: 0; width: 100%; height: 100%; min-height: 0; margin: 0; aspect-ratio: auto; perspective: none; }
-.light { position: absolute; inset: 0 6%; background: linear-gradient(90deg, color-mix(in srgb, var(--brand-cream) 18%, transparent), transparent 60%, color-mix(in srgb, var(--brand-ink) 9%, transparent)); }
+.surfaceMount { position: absolute; inset: 0; isolation: isolate; transform: translateZ(0); }
+.surfaceMount[data-viewer='1'] { transform: rotateZ(180deg); }
+.scene[data-active] .surfaceMount { pointer-events: auto; }
+.surfaceMount > .surface { position: absolute; inset: 0; width: 100%; height: 100%; min-height: 0; margin: 0; aspect-ratio: auto; perspective: none; }
+.light { position: absolute; inset: 0 6%; pointer-events: none; background: linear-gradient(90deg, color-mix(in srgb, var(--brand-cream) 18%, transparent), transparent 60%, color-mix(in srgb, var(--brand-ink) 9%, transparent)); }
 /* Screen-aligned controls, as before: the board never intercepts the seat buttons. */
 .seatSlot { position: absolute; top: 48%; left: 2%; width: 214px; transform: translateY(-50%); z-index: 2; }
 .seatSlot[data-seat='1'] { left: auto; right: 2%; }
+.scene[data-active] .seatSlot { visibility: hidden; }

@@ -5,6 +5,9 @@
 .emulator button { cursor: pointer; }
 .emulator label { color: inherit; }
 .emulator button:disabled { cursor: default; }
+.emulator[data-in-scene] { display: contents; background: none; }
+.emulator[data-scene-ready='false'] > * { visibility: hidden; }
+.table.sceneTable { width: 100%; height: 100%; min-height: 0; margin: 0; font-family: Arial, 'Hiragino Kaku Gothic ProN', sans-serif; font-size: 18px; color: #423730; }
 .emulator button:focus-visible, .emulator a:focus-visible { outline: 2px solid #866399; outline-offset: 3px; }
 .toolbar {
   display: flex; align-items: center; gap: 18px; min-height: 34px; padding: 5px 15px;

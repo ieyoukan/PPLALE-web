@@ -6,8 +6,9 @@
 // The table stands in the room in 3D with the match's board lying on it, seen from its side: a seat
 // at each end. Upright seat controls sit above it. When the match starts the board comes round, the player's seat to
 // the front, and is looked down on from above.
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import type { ReactNode } from 'react';
+import { BoardSurfaceContext } from '../board/BoardSurfaceMount';
 import Link from 'next/link';
 import { cpuLevels } from '@pplale/game-core';
 import type { Side } from '@pplale/game-core';
@@ -43,7 +44,13 @@ function useChosenDeck() {
   return [selected, choose] as const;
 }
 
-export function PlazaTable({ view, onMenu }: { view: RoomView; onMenu: () => void }) {
+export function PlazaTable({ view, onMenu, match }: { view: RoomView; onMenu: () => void; match?: {
+  viewer: Side; animate: boolean; content: ReactNode;
+} }) {
+  const root = useRef<HTMLDivElement>(null);
+  const [target, setTarget] = useState<HTMLDivElement | null>(null);
+  const [cameraReady, setCameraReady] = useState(true);
+  const playing = !!match;
   const plaza = usePlaza(), room = view.plaza!;
   const { user, signInWithGoogle } = useAuth();
   const mine = view.players.findIndex(player => player?.member === room.me);
@@ -51,6 +58,7 @@ export function PlazaTable({ view, onMenu }: { view: RoomView; onMenu: () => voi
   const profiles = useProfiles([...room.members.map(member => member.profileId), ...view.players.map(player => player?.profileId)]);
   const iconOf = (member?: string, profileId?: string) => profileId && profiles[profileId] ? profiles[profileId].iconCardId : guestIcon(member ?? '');
   const [open, setOpen] = useState<Open>(null);
+  useEffect(() => { if (playing) setOpen(null); }, [playing]);
   const [busy, setBusy] = useState(false), [error, setError] = useState('');
   const ask = (action: RoomAction | (() => Promise<void>)) => {
     setBusy(true); setError('');
@@ -104,8 +112,8 @@ export function PlazaTable({ view, onMenu }: { view: RoomView; onMenu: () => voi
     </div>;
   };
 
-  return <div className={styles.table}>
-    <header className={styles.top}>
+  return <div ref={root} className={styles.table} data-room-view data-playing={playing || undefined} data-camera-ready={cameraReady}>
+    <header className={styles.top} inert={playing || !cameraReady}>
       <OrnateFrame as="button" size="sm" className={styles.roomPlate} onClick={onMenu} aria-label={`${room.name}（${info.label}）のメニュー`}>
         <span className={styles.roomBadge} data-visibility={room.visibility}><GameIcon name={info.icon} />{info.plus && <i>＋</i>}</span>
         <span className={styles.roomTitle}><b data-ui-title>{room.name}</b><small>{info.label}・{room.creator.name}</small></span>
@@ -118,7 +126,7 @@ export function PlazaTable({ view, onMenu }: { view: RoomView; onMenu: () => voi
       </div>
     </header>
 
-    <OrnateFrame as="aside" tone="cream" className={styles.people} aria-label="ルームにいる人">
+    <OrnateFrame as="aside" tone="cream" className={styles.people} aria-label="ルームにいる人" inert={playing || !cameraReady}>
       <ul>{room.members.map(member => <li key={member.id} data-away={!member.online || undefined}>
         <MemberLink profileId={member.profileId}>
           <Avatar card={iconOf(member.id, member.profileId)} size={42} dim={!member.online} />
@@ -131,9 +139,10 @@ export function PlazaTable({ view, onMenu }: { view: RoomView; onMenu: () => voi
       </li>)}</ul>
     </OrnateFrame>
 
-    <RoomScene seats={[seat(0), seat(1)]} />
+    <RoomScene seats={[seat(0), seat(1)]} root={root} active={playing} viewer={match?.viewer ?? 0} animate={match?.animate ?? true}
+      ready={cameraReady} onReady={setCameraReady} onSurface={setTarget} />
 
-    <aside className={styles.side}>
+    <aside className={styles.side} inert={playing || !cameraReady}>
       <OrnateFrame as="button" size="sm" className={styles.rulesCard} onClick={() => setOpen('rules')} aria-label="ルール">
         <RoomThumbnailImage rules={view.rules} alt="ルームのルール" className={styles.rulesThumbnail} sizes="180px" />
         <span className={styles.ruleChips}>
@@ -170,6 +179,7 @@ export function PlazaTable({ view, onMenu }: { view: RoomView; onMenu: () => voi
       signIn={user ? undefined : () => { signInWithGoogle().catch(() => setError('ログインできませんでした')); }}
       onClose={() => setOpen(view.players[open.cpu] ? null : { opponent: open.cpu })}
       onChoose={(level, choice) => { const side = open.cpu; setOpen(null); ask({ action: 'cpu', seat: side, level, ...(choice.source !== 'random' && { deck: choice.deck(randomSeed()) }) }); }} />}
+    {match && target && <BoardSurfaceContext.Provider value={{ target, root, controlsReady: cameraReady }}>{match.content}</BoardSurfaceContext.Provider>}
   </div>;
 }
 

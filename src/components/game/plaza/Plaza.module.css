@@ -10,6 +10,10 @@
 /* Room geometry may extend beyond its grid cell; controls stay above the floor. */
 .top, .people, .side { position: relative; z-index: 1; }
 
+/* Lobby controls keep their grid space while the persistent room camera moves to the board. */
+.table[data-playing] > :is(.top, .people, .side, .requests, .toast, .sheetBackdrop),
+.table[data-camera-ready='false'] > :is(.top, .people, .side) { visibility: hidden; pointer-events: none; }
+
 /* ── Small buttons: squares with corners only a little rounded (6px), or no frame at all ── */
 .round, .inviteButton, .claim, .softButton, .shareTile {
   border: 1px solid var(--brand-pink-edge); border-radius: 6px; background: var(--brand-cream); color: var(--brand-cocoa-deep);
@@ -194,20 +198,11 @@ a.person:hover { background: color-mix(in srgb, var(--brand-cream-on-dark) 10%, 
 @keyframes popIn { from { opacity: 0; transform: scale(.6); } }
 @keyframes seatIn { from { opacity: 0; transform: translateY(14px) scale(.92); } }
 @keyframes beckon { 0%, 100% { transform: scale(1); } 50% { transform: scale(1.07); } }
-/* The match's board comes round from the table's side view to its player, looked down on from above;
-   the rest of the screen appears once it has settled. */
-.boardIntro [data-table] { animation: boardRound 1.4s cubic-bezier(.5, 0, .2, 1) both; transform-origin: 50% 50%; }
-.boardIntro [data-readable] > :not(:has([data-table])) { animation: fade .45s ease 1.2s both; }
-/* The board's viewport would cut off the board while it is tilted: only then, nothing is cut off. */
-.boardIntro :has(> [data-table]) { animation: unclipped 1.4s; }
-@keyframes unclipped { from, to { overflow: visible; } }
-@keyframes boardRound { from { transform: perspective(1500px) rotateX(58deg) rotateZ(var(--intro-turn, 90deg)) scale(.62); } to { transform: perspective(1500px) rotateX(0deg) rotateZ(0deg) scale(1); } }
 @keyframes bob { 50% { transform: translateY(-5px); } }
 @keyframes hop { 0%, 60%, 100% { transform: none; } 30% { transform: translateY(-6px); } }
 @keyframes fade { from { opacity: 0; } }
 @keyframes rise { from { opacity: 0; transform: translateY(30px) scale(.97); } }
 @media (prefers-reduced-motion: reduce) {
-  .boardIntro [data-table], .boardIntro [data-readable] > :not(:has([data-table])) { animation: none; }
   .person, .seat, .plus, .claim svg, .ready, .hint, .thinking i, .request, .toast, .sheetBackdrop, .sheet, .copied, .copiedDot, .veil, .veilDots span { animation: none; }
 }
 

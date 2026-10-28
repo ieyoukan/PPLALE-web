@@ -2,8 +2,10 @@
 
 // Layout of the game screen. Rules live in @pplale/game-core, interaction state in board/useBoard,
 // each visible region in table/ and the drawers in panels/.
-import { Suspense, useEffect, useRef } from 'react';
+import { Suspense, useContext, useEffect, useRef } from 'react';
+import { createPortal } from 'react-dom';
 import type { CSSProperties } from 'react';
+import { BoardSurfaceContext } from './board/BoardSurfaceMount';
 import Image from 'next/image';
 import dynamic from 'next/dynamic';
 import { useRouter } from 'next/navigation';
@@ -50,8 +52,9 @@ export default function BoardEmulator() {
 
 /** The game screen for any match (inside a GameStage): `session` says where it lives and who plays it. */
 export function BoardTable({ session }: { session: BoardSession }) {
+  const surface = useContext(BoardSurfaceContext);
   const container = useRef<HTMLDivElement>(null);
-  const board = useBoard(container, session);
+  const board = useBoard(surface?.root ?? container, session);
   const { game, me, view, mode, paused, attacker, selected, drag, mulligan, ready, panel, error, replaying, remote, editing, animations, setup, puzzle, setPanel, setPaused, setAttacker } = board;
   // The saved match is still loading (or missing, and the preparation page is opening).
   if (!ready) return <div data-readable className={styles.emulator} aria-busy="true" />;
@@ -59,9 +62,18 @@ export function BoardTable({ session }: { session: BoardSession }) {
   // have 閉じる beside them, where the buttons of a chosen hand card are.
   const drawerOpen = !!panel && panel.type !== 'inspect' && panel.type !== 'skills';
   const { timing } = animations;
+  const timingStyle = { '--draw-duration': `${timing.draw}ms`, '--strike-duration': `${timing.strike}ms`, '--announcement-duration': `${timing.announce}ms`, '--ping-duration': `${timing.ping}ms` } as CSSProperties;
+  const table = <div className={`${styles.table} ${surface ? styles.sceneTable : ''}`} data-table data-readable={surface ? '' : undefined} style={timingStyle}>
+    <div className={styles.mat}><div className={styles.logoLayer} aria-hidden="true">
+      {Array.from({ length: 8 }, (_, index) => <Image key={index} src="/images/game/cafe-logo.svg" alt="" width={1568} height={882}
+        unoptimized loading="eager" fetchPriority={index === 0 ? 'high' : 'auto'} className={styles.matLogo} />)}
+    </div></div>
+    <PlayerSide side={0} />
+    <PlayerSide side={1} />
+  </div>;
   return <BoardContext.Provider value={board}>
-    <div data-readable data-puzzle={puzzle?.problem.id} data-puzzle-revision={puzzle ? game.revision : undefined} className={styles.emulator} ref={container}
-      style={{ '--draw-duration': `${timing.draw}ms`, '--strike-duration': `${timing.strike}ms`, '--announcement-duration': `${timing.announce}ms`, '--ping-duration': `${timing.ping}ms` } as CSSProperties}
+    <div data-readable data-puzzle={puzzle?.problem.id} data-puzzle-revision={puzzle ? game.revision : undefined} data-in-scene={surface ? '' : undefined} data-scene-ready={surface?.controlsReady} inert={surface && !surface.controlsReady} className={styles.emulator} ref={container}
+      style={timingStyle}
       // Escape closes what is open on the table first; with nothing open it is left to the game's menu.
       onKeyDown={event => { if (event.key === 'Escape' && (panel || selected || attacker)) { board.clearSelection(); event.preventDefault(); } }}
       onPointerMove={drag.move} onPointerUp={drag.release} onPointerCancel={drag.cancel}>
@@ -82,16 +94,7 @@ export function BoardTable({ session }: { session: BoardSession }) {
       <EditBar />
       <PuzzleControls />
       {replaying && <ReplayBar />}
-      <div className={`${styles.tableViewport} ${styles.withTurnControl}`}>
-        <div className={styles.table} data-table>
-          <div className={styles.mat}><div className={styles.logoLayer} aria-hidden="true">
-            {Array.from({ length: 8 }, (_, index) => index).map(index => <Image key={index} src="/images/game/cafe-logo.svg" alt="" width={1568} height={882}
-              unoptimized loading="eager" fetchPriority={index === 0 ? 'high' : 'auto'} className={styles.matLogo} />)}
-          </div></div>
-          <PlayerSide side={0} />
-          <PlayerSide side={1} />
-        </div>
-      </div>
+      {surface ? createPortal(table, surface.target) : <div className={`${styles.tableViewport} ${styles.withTurnControl}`}>{table}</div>}
       <TurnControl />
       <AssessmentBar />
       <DiceStage />
