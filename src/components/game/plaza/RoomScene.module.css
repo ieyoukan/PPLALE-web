@@ -40,7 +40,8 @@
 .left { left: 0; }
 .right { left: 100%; }
 .desk { --depth: var(--desk-depth); inset: -24px -34px; transform: translateZ(calc(-1 * var(--desk-drop))); }
-.desk > .top { border: 1px solid var(--brand-wood-edge); box-shadow: inset 0 1px 2px color-mix(in srgb, var(--brand-cream) 25%, transparent); }
+/* Cache just the textured top during the camera flight; keep the SVG at its full quality. */
+.desk > .top { transform: translateZ(0); will-change: transform; border: 1px solid var(--brand-wood-edge); box-shadow: inset 0 1px 2px color-mix(in srgb, var(--brand-cream) 25%, transparent); }
 .desk > .top::after { content: ''; position: absolute; inset: 23px calc(34px + (100% - 68px) * .06); box-shadow: 0 1px 3px 1px color-mix(in srgb, var(--brand-ink) 42%, transparent); }
 .leg {
   --depth: var(--leg-height); width: 28px; height: 28px;

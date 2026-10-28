@@ -32,7 +32,7 @@ test('every live card has immutable, correctly sized AVIF and WebP assets', asyn
 
 test('room preparation depends only on public rules and includes generated tokens', async () => {
   const bundle = await build({ entryPoints: [new URL('src/lib/game/matchAssets.ts', root).pathname], bundle: true, format: 'esm', platform: 'node', write: false });
-  const { roomMatchCardIds, localMatchCardIds } = await import(`data:text/javascript;base64,${Buffer.from(bundle.outputFiles[0].text).toString('base64')}`);
+  const { roomMatchCardIds, localMatchCardIds, revealedMatchCardIds } = await import(`data:text/javascript;base64,${Buffer.from(bundle.outputFiles[0].text).toString('base64')}`);
   const rules = { fruits: ['strawberry'], extendedPlayable: false };
   const ids = roomMatchCardIds(rules);
   for (const card of source) {
@@ -42,4 +42,5 @@ test('room preparation depends only on public rules and includes generated token
   assert.equal(new Set(ids).size, ids.length);
   assert.ok(ids.length < source.length);
   assert.ok(localMatchCardIds([], rules).every(id => cards[id]));
+  assert.deepEqual(revealedMatchCardIds({ cards: { own: { cardId: ids[0] }, duplicate: { cardId: ids[0] }, hidden: { cardId: 'hidden' }, unknown: { cardId: 'missing' } } }), [ids[0]]);
 });

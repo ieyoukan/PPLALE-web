@@ -16,7 +16,6 @@ import { useAuth } from '@/lib/auth';
 import { usableChoice } from '@/lib/game/deckSources';
 import { randomSeed } from '@/lib/game/match';
 import { useDeckChoices } from '../DeckSelect';
-import { useRoomPreparation } from '../room/useRoomPreparation';
 import { OrnateFrame } from '@/components/shared/ui/ornament/OrnateFrame';
 import { Avatar } from '@/components/shared/player/Avatar';
 import { ProfileLink } from '@/components/shared/player/ProfileLink';
@@ -69,8 +68,6 @@ export function PlazaTable({ view, onMenu, match }: { view: RoomView; onMenu: ()
   const [selected, choose] = useChosenDeck();
   const { choices, saved } = useDeckChoices(view.rules, 'このルーム');
   const chosen = usableChoice(choices, selected);
-  // The match's cards and code load in the background meanwhile; getting ready does not wait for them.
-  useRoomPreparation(chosen && chosen.source !== 'random' ? chosen.deck(0) : null, view.rules);
   const me = mySeat === null ? null : view.players[mySeat]!;
   const ready = () => { if (chosen) ask({ action: 'ready', deck: chosen.deck(randomSeed()) }); };
   const owner = room.members.find(member => member.id === room.owner);

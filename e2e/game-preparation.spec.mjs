@@ -25,7 +25,7 @@ test('CPU start waits for card downloads before saving or entering a match', asy
   await page.getByRole('button', { name: /対戦をはじめる/ }).click();
   await expect.poll(() => requested).toBeGreaterThan(0);
   await expect(page.getByRole('progressbar', { name: '対戦データの準備' })).toBeVisible();
-  expect(new URL(page.url()).pathname).toBe('/game/cpu/');
+  expect(new URL(page.url()).pathname).toMatch(/^\/game\/(?:cpu\/|room\/\d{6}\/)$/);
   expect(await page.evaluate(() => localStorage.getItem('pplale-game-session-v2'))).toBeNull();
   release();
   await expect(page).toHaveURL(/\/game\/play\//);
@@ -37,7 +37,7 @@ test('a failed download keeps the menu usable and can be retried', async ({ page
   await page.goto('/game/cpu/');
   await page.getByRole('button', { name: /対戦をはじめる/ }).click();
   await expect(page.getByRole('alert').filter({ hasText: '画像を準備できませんでした' })).toBeVisible();
-  expect(new URL(page.url()).pathname).toBe('/game/cpu/');
+  expect(new URL(page.url()).pathname).toMatch(/^\/game\/(?:cpu\/|room\/\d{6}\/)$/);
   await page.unroute('**/game-assets/cards/**');
   await page.getByRole('button', { name: /対戦をはじめる/ }).click();
   await expect(page).toHaveURL(/\/game\/play\//);

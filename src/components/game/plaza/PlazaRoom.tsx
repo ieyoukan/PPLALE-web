@@ -6,11 +6,11 @@
 // and code load in the background while the room is at its table, and if they are not quite there
 // when the match starts the table stays a moment longer. The new match's board then comes round from
 // the table's side view to this player's seat, seen from above.
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useEffectEvent, useMemo, useState } from 'react';
 import Link from 'next/link';
 import type { GameState } from '@pplale/game-core';
 import type { RoomView } from '@pplale/game-core/room';
-import { roomMatchCardIds } from '@/lib/game/matchAssets';
+import { revealedMatchCardIds, roomMatchCardIds } from '@/lib/game/matchAssets';
 import { BoardTable } from '../BoardEmulator';
 import { useRoomSession } from '../room/useRoomSession';
 import boardStyles from '../BoardEmulator.module.css';
@@ -38,7 +38,7 @@ export function PlazaRoom({ view, onMenu }: { view: RoomView; onMenu: () => void
   // Those in the room see its name on the tab (the shared link's title only says what the link may).
   const name = view.plaza?.name;
   useEffect(() => { if (name) document.title = `${name}｜ぷぷりえーる`; }, [name]);
-  const prepared = useMatchAssets(roomMatchCardIds((shown ?? view).rules));
+  const prepared = useMatchAssets(roomMatchCardIds((shown ?? view).rules), shown);
   // The room and its geometry remain mounted through play, results, rematches and spectating.
   return <PlazaTable view={view} onMenu={onMenu} match={shown && prepared ? {
     viewer: shown.watching ? 0 : shown.seat, animate: visitedLobby,
@@ -46,17 +46,26 @@ export function PlazaRoom({ view, onMenu }: { view: RoomView; onMenu: () => void
   } : undefined} />;
 }
 
-/** Whether the cards and code of a match with these cards are loaded (or failed to: the board then loads them itself). */
-function useMatchAssets(ids: string[]) {
-  const key = ids.join('|');
+/** Download the pool while waiting; decode the first revealed cards before the camera moves.
+ * Later draws do not restart this gate or unmount the live board. */
+function useMatchAssets(ids: string[], initial: Played | null) {
+  const pool = ids.join('|');
+  const key = initial ? `${initial.id}:${initial.match}:${initial.watching ? 'watch' : initial.seat}:${pool}` : '';
+  const firstCards = useEffectEvent(() => initial ? revealedMatchCardIds(initial.game) : []);
   const [ready, setReady] = useState('');
   useEffect(() => {
     const controller = new AbortController();
-    void import('@/lib/game/prepareMatch').then(({ prepareMatchAssets }) => prepareMatchAssets(key.split('|'), { signal: controller.signal }))
+    void import('@/lib/game/prepareMatch').then(({ prepareMatchAssets }) => prepareMatchAssets(pool.split('|'), { signal: controller.signal, decode: false })).catch(() => {});
+    return () => controller.abort();
+  }, [pool]);
+  useEffect(() => {
+    if (!key) return;
+    const controller = new AbortController(), cards = firstCards();
+    void import('@/lib/game/prepareMatch').then(({ prepareMatchAssets }) => prepareMatchAssets(cards, { signal: controller.signal }))
       .catch(() => {}).then(() => { if (!controller.signal.aborted) setReady(key); });
     return () => controller.abort();
   }, [key]);
-  return ready === key;
+  return !key || ready === key;
 }
 
 function PlazaMatch({ initial, onDone, onMenu }: { initial: Played; onDone: () => void; onMenu: () => void }) {

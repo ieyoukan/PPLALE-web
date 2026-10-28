@@ -178,6 +178,7 @@ test('the CPU plays at the same table, with spectators joining before and during
   await expect(bob.getByRole('button', { name: 'じゅんびOK!', exact: true })).toHaveCount(0);
   await alice.getByRole('button', { name: 'じゅんびOK!' }).click();
   for (const page of [alice, bob]) await expect(page.locator('[data-table]')).toBeVisible({ timeout: 20000 });
+  await expect(alice.locator('[data-room-camera="match"]')).toBeVisible({ timeout: 20000 });
   await expect(alice.locator('[data-pp="0"] [data-player-avatar][data-cpu]')).toBeVisible();
   // The CPU throws its die after ours; whoever wins chooses.
   for (let round = 0; round < 8; round++) {
@@ -191,6 +192,9 @@ test('the CPU plays at the same table, with spectators joining before and during
   }
   // The CPU draws its opening hand by itself.
   await expect.poll(() => alice.locator('[aria-label^="相手の手札"]').getAttribute('aria-label'), { timeout: 20000 }).toMatch(/[1-9]枚/);
+  // Give both sides a hand before checking both spectators' face-up layouts.
+  await alice.locator('button[data-deck$="-yojo"]:not([disabled])').click();
+  await expect(alice.locator('[data-hand-list] [data-hand]').first()).toBeVisible({ timeout: 20000 });
   // A late visitor joins the running match without taking a seat, and can inspect both hands.
   const carol = await open(browser, '途中から観戦するきゃろる');
   await carol.goto(`${base}/game/room/${id}/?invite=${invite}`);

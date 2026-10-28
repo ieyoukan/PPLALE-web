@@ -4,6 +4,7 @@
 // and field as the board (BoardEmulator's own pieces and styles), empty, with seat 0's half nearest.
 // Only to be looked at: the room's table tilts it in 3D, and the match's board takes over at the start.
 import Image from 'next/image';
+import { memo } from 'react';
 import { sandboxRules } from '@pplale/game-core';
 import type { Side } from '@pplale/game-core';
 import { Counter, DeckStack } from '../BoardPieces';
@@ -13,7 +14,7 @@ import board from '../BoardEmulator.module.css';
 const zones: [ZoneKind, string][] = [['yojo', board.deckYojo], ['sweet', board.deckSweet], ['nap', board.napZone], ['exile', board.exileZone]];
 const nothing = () => {};
 
-export function BoardSurface({ className }: { className?: string }) {
+export const BoardSurface = memo(function BoardSurface({ className }: { className?: string }) {
   return <div className={`${board.table} ${className ?? ''}`} aria-hidden="true" inert>
     <div className={board.mat}><div className={board.logoLayer}>
       {Array.from({ length: 8 }, (_, index) => <Image key={index} src="/images/game/cafe-logo.svg" alt="" width={1568} height={882} unoptimized className={board.matLogo} />)}
@@ -26,4 +27,4 @@ export function BoardSurface({ className }: { className?: string }) {
       <div className={board.field}>{Array.from({ length: 7 }, (_, slot) => <span key={slot} className={board.fieldSlot} />)}</div>
     </section>)}
   </div>;
-}
+});

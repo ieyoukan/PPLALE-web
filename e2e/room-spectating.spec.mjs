@@ -31,7 +31,7 @@ async function spectator(page, game) {
   const view = state => ({ id, version: ++version, seat: 0, watching: true, status: state ? 'playing' : 'lobby', match: 1,
     rules: { fruits: ['strawberry'], extendedPlayable: false, spectators: true }, spectators: 1, last: null, resigned: null,
     players: [{ name: '対戦している人', member: 'player', ready: !!state, online: true }, { name: 'CPU・ふつう', cpu: 'normal', ready: true, online: true }],
-    game: state ? viewFor(state, 'audience') : null,
+    game: state ? viewFor(state, 'spectator') : null,
     plaza: { name: 'CPUとあそぶルーム', visibility: 'public', creator: { name: '対戦している人' }, owner: 'player', me: 'watcher',
       members: [{ id: 'player', name: '対戦している人', online: true, seat: 0 }, { id: 'watcher', name: '観戦する人', online: true }] },
   });
@@ -45,16 +45,17 @@ async function spectator(page, game) {
 }
 
 for (const phase of ['opening', 'mulligan', 'playing']) {
-  test(`a CPU room can be watched during ${phase} without exposing either hand`, async ({ page }) => {
+  test(`a CPU room can be watched during ${phase} with both hands visible`, async ({ page }) => {
     const errors = []; page.on('pageerror', error => errors.push(error.message));
     const { actions } = await spectator(page, states[phase]);
     await expect(page.locator('[data-table]')).toBeVisible();
     await expect(page.locator('[data-hand-list] [data-hand]')).toHaveCount(states[phase].players[0].hand.length);
     for (const card of await page.locator('[data-hand-list] [data-hand]').all()) {
-      await expect(card).toBeDisabled();
-      await expect(card.getByRole('img')).toHaveCount(0);
+      await expect(card).toBeEnabled();
+      await expect(card.getByRole('img')).toBeVisible();
     }
-    await expect(page.getByRole('button', { name: '相手の非公開手札', exact: true })).toHaveCount(states[phase].players[1].hand.length);
+    await expect(page.locator('[aria-label^="相手の手札"] [data-hand] img')).toHaveCount(states[phase].players[1].hand.length);
+    await expect(page.getByRole('button', { name: '相手の非公開手札', exact: true })).toHaveCount(0);
     await expect(page.getByRole('button', { name: '自分のデッキ', exact: true })).toHaveCount(0);
     await expect(page.getByRole('button', { name: '観戦中', exact: true })).toBeDisabled();
     if (phase === 'playing') await page.screenshot({ path: test.info().outputPath('room-spectating.png') });
@@ -64,23 +65,22 @@ for (const phase of ['opening', 'mulligan', 'playing']) {
   });
 }
 
-test('a spectator stays in a preparing CPU room as it starts, and can inspect only publicly revealed cards', async ({ page }) => {
+test('a spectator stays in a preparing CPU room as it starts, and can inspect either hand', async ({ page }) => {
   const errors = []; page.on('pageerror', error => errors.push(error.message));
   const { update, actions } = await spectator(page, null);
   await expect(page.getByText('CPU・ふつう', { exact: true })).toBeVisible();
+  await expect(page.getByText('席があくのを待っています', { exact: true })).toHaveCount(0);
   await expect(page.getByRole('button', { name: 'じゅんびOK!', exact: true })).toHaveCount(0);
   for (const phase of ['opening', 'mulligan', 'playing']) {
     update(states[phase]);
     await expect(page.locator('[data-table]')).toBeVisible();
     await expect(page.locator('[data-hand-list] [data-hand]')).toHaveCount(states[phase].players[0].hand.length);
   }
-  const revealed = structuredClone(states.playing);
+  const revealed = states.playing;
   const uid = revealed.players[0].hand[0], other = revealed.players[1].hand[0];
-  revealed.cards[uid].revealed = true; revealed.cards[other].revealed = true; revealed.revision++;
-  update(revealed);
   const near = page.locator(`[data-hand-list] [data-hand="${uid}"]`);
   await expect(near.getByRole('img')).toHaveAttribute('alt', catalog[revealed.cards[uid].cardId].name);
-  await expect(page.getByRole('button', { name: `相手の公開手札 ${catalog[revealed.cards[other].cardId].name}`, exact: true })).toBeEnabled();
+  await expect(page.getByRole('button', { name: `相手の手札 ${catalog[revealed.cards[other].cardId].name}`, exact: true })).toBeEnabled();
   await near.click();
   await expect(page.getByRole('complementary', { name: 'カード情報' }).getByRole('img', { name: catalog[revealed.cards[uid].cardId].name, exact: true })).toBeVisible();
   await expect(page.getByRole('button', { name: '場に出す', exact: true })).toHaveCount(0);

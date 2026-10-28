@@ -1,0 +1,282 @@
+{
+  "measuredAt": "2026-10-28T12:05:59.336Z",
+  "sourceCommit": "679c6b9dd4d3a6ff0522d132e2cde60f6bc14c8a",
+  "includesUncommittedChanges": true,
+  "conditions": {
+    "origin": "http://localhost:3001",
+    "build": "next start",
+    "cpuSlowdown": 4,
+    "deviceScaleFactor": 1,
+    "networkThrottling": "none",
+    "freshBrowserPerRun": true,
+    "serviceWorkers": "blocked",
+    "roomTransport": "mocked with the same public game state",
+    "caution": "Local headless Chromium. Frame callbacks are not presented FPS; raster milliseconds sum work across threads and are not elapsed time."
+  },
+  "runs": [
+    {
+      "viewport": {
+        "width": 1280,
+        "height": 800
+      },
+      "run": 1,
+      "initial": {
+        "jsGzipBytes": 556480,
+        "jsFiles": 28,
+        "resourceBytes": 3464142,
+        "resourceCount": 117,
+        "domElements": 462
+      },
+      "camera": {
+        "callbacks": 54,
+        "p95IntervalMs": 66.70000000000027,
+        "maxIntervalMs": 200.0999999999999,
+        "mainThreadMs": 445.8750000000002,
+        "events": {
+          "UpdateLayoutTree": {
+            "count": 24,
+            "ms": 57.389
+          },
+          "Layout": {
+            "count": 16,
+            "ms": 110.69600000000001
+          },
+          "Paint": {
+            "count": 49,
+            "ms": 59.73600000000001
+          },
+          "ImageDecodeTask": {
+            "count": 24,
+            "ms": 92.47300000000001
+          },
+          "RasterTask": {
+            "count": 345,
+            "ms": 733.1949999999995
+          }
+        }
+      },
+      "startupMainThreadMs": 1881.29,
+      "errors": []
+    },
+    {
+      "viewport": {
+        "width": 1280,
+        "height": 800
+      },
+      "run": 2,
+      "initial": {
+        "jsGzipBytes": 556480,
+        "jsFiles": 28,
+        "resourceBytes": 4412212,
+        "resourceCount": 139,
+        "domElements": 462
+      },
+      "camera": {
+        "callbacks": 51,
+        "p95IntervalMs": 100,
+        "maxIntervalMs": 166.69999999999982,
+        "mainThreadMs": 421.2100000000001,
+        "events": {
+          "UpdateLayoutTree": {
+            "count": 25,
+            "ms": 47.377
+          },
+          "Layout": {
+            "count": 15,
+            "ms": 93.93400000000001
+          },
+          "Paint": {
+            "count": 49,
+            "ms": 45.13300000000002
+          },
+          "ImageDecodeTask": {
+            "count": 24,
+            "ms": 40.11899999999999
+          },
+          "RasterTask": {
+            "count": 344,
+            "ms": 879.1049999999999
+          }
+        }
+      },
+      "startupMainThreadMs": 1408.148,
+      "errors": []
+    },
+    {
+      "viewport": {
+        "width": 1280,
+        "height": 800
+      },
+      "run": 3,
+      "initial": {
+        "jsGzipBytes": 556480,
+        "jsFiles": 28,
+        "resourceBytes": 4411821,
+        "resourceCount": 139,
+        "domElements": 462
+      },
+      "camera": {
+        "callbacks": 53,
+        "p95IntervalMs": 66.70000000000027,
+        "maxIntervalMs": 200,
+        "mainThreadMs": 432.91999999999996,
+        "events": {
+          "UpdateLayoutTree": {
+            "count": 24,
+            "ms": 54.568
+          },
+          "Layout": {
+            "count": 15,
+            "ms": 95.77600000000004
+          },
+          "Paint": {
+            "count": 49,
+            "ms": 53.90899999999999
+          },
+          "ImageDecodeTask": {
+            "count": 23,
+            "ms": 61.101
+          },
+          "RasterTask": {
+            "count": 334,
+            "ms": 748.8510000000002
+          }
+        }
+      },
+      "startupMainThreadMs": 1500.601,
+      "errors": []
+    },
+    {
+      "viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "run": 1,
+      "initial": {
+        "jsGzipBytes": 556480,
+        "jsFiles": 28,
+        "resourceBytes": 4480401,
+        "resourceCount": 143,
+        "domElements": 462
+      },
+      "camera": {
+        "callbacks": 71,
+        "p95IntervalMs": 50,
+        "maxIntervalMs": 183.29999999999973,
+        "mainThreadMs": 485.959,
+        "events": {
+          "UpdateLayoutTree": {
+            "count": 40,
+            "ms": 53.673
+          },
+          "Layout": {
+            "count": 15,
+            "ms": 95.67099999999999
+          },
+          "Paint": {
+            "count": 50,
+            "ms": 51.287
+          },
+          "ImageDecodeTask": {
+            "count": 19,
+            "ms": 35.819
+          },
+          "RasterTask": {
+            "count": 239,
+            "ms": 743.4889999999999
+          }
+        }
+      },
+      "startupMainThreadMs": 1411.574,
+      "errors": []
+    },
+    {
+      "viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "run": 2,
+      "initial": {
+        "jsGzipBytes": 556480,
+        "jsFiles": 28,
+        "resourceBytes": 4423438,
+        "resourceCount": 140,
+        "domElements": 462
+      },
+      "camera": {
+        "callbacks": 76,
+        "p95IntervalMs": 33.40000000000009,
+        "maxIntervalMs": 166.69999999999982,
+        "mainThreadMs": 448.34799999999996,
+        "events": {
+          "UpdateLayoutTree": {
+            "count": 43,
+            "ms": 58.852000000000004
+          },
+          "Layout": {
+            "count": 15,
+            "ms": 98.274
+          },
+          "Paint": {
+            "count": 50,
+            "ms": 52.93600000000002
+          },
+          "ImageDecodeTask": {
+            "count": 19,
+            "ms": 25.852
+          },
+          "RasterTask": {
+            "count": 260,
+            "ms": 655.4480000000001
+          }
+        }
+      },
+      "startupMainThreadMs": 1374.757,
+      "errors": []
+    },
+    {
+      "viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "run": 3,
+      "initial": {
+        "jsGzipBytes": 556480,
+        "jsFiles": 28,
+        "resourceBytes": 4423255,
+        "resourceCount": 140,
+        "domElements": 462
+      },
+      "camera": {
+        "callbacks": 61,
+        "p95IntervalMs": 33.40000000000009,
+        "maxIntervalMs": 216.5999999999999,
+        "mainThreadMs": 645.5979999999998,
+        "events": {
+          "UpdateLayoutTree": {
+            "count": 32,
+            "ms": 67.184
+          },
+          "Layout": {
+            "count": 15,
+            "ms": 107.94700000000002
+          },
+          "Paint": {
+            "count": 53,
+            "ms": 94.06099999999996
+          },
+          "ImageDecodeTask": {
+            "count": 22,
+            "ms": 235.077
+          },
+          "RasterTask": {
+            "count": 239,
+            "ms": 1121.8749999999998
+          }
+        }
+      },
+      "startupMainThreadMs": 1417.12,
+      "errors": []
+    }
+  ]
+}

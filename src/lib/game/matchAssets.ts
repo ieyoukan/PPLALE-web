@@ -1,4 +1,4 @@
-import type { Deck, MatchRules } from '@pplale/game-core';
+import type { Deck, GameState, MatchRules } from '@pplale/game-core';
 import { displayCards } from './catalog';
 import cardAssets from './generated/card-assets.json';
 import tokenYojo from '@/data/tokenYojo.json';
@@ -17,6 +17,11 @@ export function prepareGameCardFormat() {
 }
 export const gameCardSource = (id: string) => gameCardAssets[id]?.[avif ? 'avif' : 'webp'];
 const tokens = [...tokenYojo.tokenYojo, ...token.token].map(card => card.id);
+
+/** Only identities already revealed by the server; hidden cards never require a decoded picture. */
+export function revealedMatchCardIds(state: GameState) {
+  return [...new Set(Object.values(state.cards).map(card => card.cardId).filter(id => !!gameCardAssets[id]))];
+}
 
 /** CPU decks are known. Generated cards can be drawn by either side's effects. */
 export function localMatchCardIds(decks: Deck[], rules?: MatchRules) {

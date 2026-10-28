@@ -13,12 +13,12 @@ function prepareCode() {
   return boardCode;
 }
 
-export async function prepareMatchAssets(ids: string[], { cpu = false, master = false, progress, signal }: {
-  cpu?: boolean; master?: boolean; progress?: (value: AssetProgress) => void; signal?: AbortSignal;
+export async function prepareMatchAssets(ids: string[], { cpu = false, master = false, progress, signal, decode = true }: {
+  cpu?: boolean; master?: boolean; progress?: (value: AssetProgress) => void; signal?: AbortSignal; decode?: boolean;
 } = {}) {
   signal?.throwIfAborted();
   await Promise.all([
-    warmRoomCards(ids, signal, progress),
+    warmRoomCards(ids, signal, progress, decode),
     prepareCode().then(async () => {
       await document.fonts.load('400 20px BoardHandwriting', '0123456789PPお菓子ポイント引く');
       if (cpu) {

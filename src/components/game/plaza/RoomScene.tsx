@@ -1,6 +1,6 @@
 'use client';
 
-import type { ReactNode, RefObject } from 'react';
+import { memo, type ReactNode, type RefObject } from 'react';
 import type { Side } from '@pplale/game-core';
 import { BoardSurface } from './BoardSurface';
 import { useRoomCamera } from './useRoomCamera';
@@ -15,10 +15,7 @@ export function RoomScene({ seats, root, active, viewer, animate, ready, onReady
   const { scene, world, projection } = useRoomCamera({ root, active, viewer, animate, onReady });
   return <div ref={scene} className={styles.scene} data-room-scene data-active={active || undefined}>
     <div ref={world} className={styles.world} aria-hidden="true" inert>
-      <div className={styles.floor} data-room-floor />
-      <div className={styles.floorShadow} />
-      {['nw', 'ne', 'sw', 'se'].map(corner => <Solid key={corner} className={styles.leg} corner={corner} />)}
-      <Solid className={styles.desk} />
+      <RoomGeometry />
     </div>
     {/* Separate 3D contexts share the same camera: hardware-dependent face sorting must never
         put a wooden face over the board. Seat controls remain on the next screen layer. */}
@@ -31,6 +28,16 @@ export function RoomScene({ seats, root, active, viewer, animate, ready, onReady
     {seats.map((seat, side) => <div key={side} className={styles.seatSlot} data-seat={side} inert={active || !ready}>{seat}</div>)}
   </div>;
 }
+
+/** Static geometry follows the camera through inherited CSS, without reconciling every room view. */
+const RoomGeometry = memo(function RoomGeometry() {
+  return <>
+    <div className={styles.floor} data-room-floor />
+    <div className={styles.floorShadow} />
+    {['nw', 'ne', 'sw', 'se'].map(corner => <Solid key={corner} className={styles.leg} corner={corner} />)}
+    <Solid className={styles.desk} />
+  </>;
+});
 
 /** All faces extend down from the top plane; table legs and tabletop use the same geometry. */
 function Solid({ className, corner }: { className: string; corner?: string }) {

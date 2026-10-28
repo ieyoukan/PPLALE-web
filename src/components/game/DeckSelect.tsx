@@ -34,7 +34,9 @@ function useSavedDecks() {
 /** Every deck there is for a match with these rules (`where` names them in the reasons), and how the saved ones are doing. */
 export function useDeckChoices(rules: MatchRules, where?: string) {
   const saved = useSavedDecks();
-  const choices = useMemo(() => deckChoices(rules, { saved: saved.decks, where }), [rules, saved.decks, where]);
+  // Socket views contain fresh objects even when the deck rules have not changed.
+  const key = JSON.stringify({ fruits: rules.fruits, extendedPlayable: rules.extendedPlayable });
+  const choices = useMemo(() => deckChoices(JSON.parse(key) as MatchRules, { saved: saved.decks, where }), [key, saved.decks, where]);
   return { choices, saved };
 }
 

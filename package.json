@@ -45,7 +45,7 @@
     "test:fonts": "node --test tests/site-fonts.test.mjs",
     "game:assets": "node scripts/generate-game-assets.mjs",
     "pretest:game-assets": "pnpm run game:assets",
-    "test:game-assets": "node --test tests/game-assets.test.mjs",
+    "test:game-assets": "node --test tests/game-assets.test.mjs tests/room-warm-assets.test.mjs",
     "check:ui": "node --test tests/ui-structure.test.mjs && node scripts/check-ui-structure.mjs",
     "test:room-images": "node --test tests/room-thumbnail.test.mjs",
     "pretest:room-images": "pnpm run fonts:generate && pnpm run cards:og-images"

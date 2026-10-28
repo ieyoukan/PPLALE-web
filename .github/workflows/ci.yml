@@ -42,6 +42,9 @@ jobs:
       - name: Generate and verify game assets
         run: pnpm run test:game-assets
 
+      - name: Check profile loading order
+        run: node --test tests/social-profile-loading.test.mjs
+
       - name: Check game opening and draw flow
         run: pnpm run test:game
 
