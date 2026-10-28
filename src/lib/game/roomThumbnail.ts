@@ -23,12 +23,23 @@ export const fruitIllustrations: Record<Fruit, string> = {
 };
 
 export interface RoomThumbnail { fruits: Fruit[]; extended: boolean; turn: 120 | 180 | 300 | null }
+/** Pale fruit colours belong to the rule artwork, independently of the surrounding menu theme. */
+const posterPalettes: Record<Fruit, { background: string; band: string }> = {
+  strawberry: { background: '#f7dfe2', band: '#efbdc9' },
+  grape: { background: '#e9e0f2', band: '#d4c0e5' },
+  melon: { background: '#e5edda', band: '#cadcb3' },
+  orange: { background: '#f6dfcc', band: '#efc49f' },
+};
+export function roomThumbnailTheme(thumbnail: Pick<RoomThumbnail, 'fruits'>) {
+  const fruit = fruits.filter(fruit => thumbnail.fruits.includes(fruit)).at(-1) ?? 'strawberry';
+  return { fruit, ...posterPalettes[fruit] };
+}
 export const roomThumbnail = (rules: Pick<RoomRules, 'fruits' | 'extendedPlayable' | 'turnSeconds'>): RoomThumbnail =>
   ({ fruits: fruits.filter(fruit => rules.fruits.includes(fruit)), extended: !!rules.extendedPlayable, turn: rules.turnSeconds ?? null });
 
 /** The share image's address for these rules: `?f=` fruits (how many, in order), `x` extended, `t` seconds. */
 export const thumbnailPath = ({ fruits: shown, extended, turn }: RoomThumbnail) =>
-  `/api/og/room/?${new URLSearchParams({ f: String(Math.max(1, shown.length)), x: extended ? '1' : '0', t: String(turn ?? 0), v: 'r4' })}`;
+  `/api/og/room/?${new URLSearchParams({ f: String(Math.max(1, shown.length)), x: extended ? '1' : '0', t: String(turn ?? 0), v: 'r5' })}`;
 export function parseThumbnail(query: URLSearchParams): RoomThumbnail {
   const count = Math.min(fruits.length, Math.max(1, Number(query.get('f')) || 1)), seconds = Number(query.get('t'));
   return { fruits: fruits.slice(0, count), extended: query.get('x') === '1', turn: seconds === 120 || seconds === 180 || seconds === 300 ? seconds : null };
