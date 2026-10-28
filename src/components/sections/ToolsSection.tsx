@@ -3,7 +3,7 @@ import Link from 'next/link';
 import styles from './ToolsSection.module.css';
 
 const destinations = [
-  { href: '/build', title: 'デッキをつくる', description: '推しのカードで、とっておき。', image: 'home-mint.webp', color: 'mint' },
+  { href: '/build', title: 'デッキをつくる', description: '推しのデッキを作ろう', image: 'home-mint.webp', color: 'mint' },
   { href: '/deck/2pick', title: '2Pickであそぶ', description: '選ぶたび、わくわく。', image: 'home-yellow.webp', color: 'yellow' },
   { href: '/tournament', title: '大会をチェック', description: 'みんなで、お菓子争奪戦！', image: 'home-pink.webp', color: 'pink' },
   { href: '/deck-view', title: 'デッキを画像に', description: 'お気に入りをシェアしよう。', image: 'home-purple.webp', color: 'peach' },
@@ -30,7 +30,7 @@ export default function ToolsSection() {
           <div className={styles.battleCaption}>
             <div>
               <h3>ブラウザで対戦</h3>
-              <p>ひとりで練習も、友達との対戦も。</p>
+              <p>推しの幼女で勝利をつかめ！</p>
             </div>
             <span className={styles.playButton} aria-hidden="true">あそぶ <span>→</span></span>
           </div>
