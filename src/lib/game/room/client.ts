@@ -162,7 +162,7 @@ export interface RoomConnection {
  * after every change, `onLink` whether the socket is up (it connects again by itself when it drops),
  * `onGone` is called once when the room or the seat no longer exists.
  */
-export function connectRoom(id: string, token: string | null, handlers: { onView: (view: RoomView) => void; onLink: (up: boolean) => void; onGone: (message: string, closed?: boolean) => void }): RoomConnection {
+export function connectRoom(id: string, token: string | null, handlers: { onView: (view: RoomView) => void; onLink: (up: boolean) => void; onGone: (message: string, closed?: boolean) => void; onChat?: (message: Extract<ServerMessage, { type: 'chat' }>) => void }): RoomConnection {
   let socket: WebSocket | null = null, stopped = false, attempt = 0, n = 0;
   let match: number | undefined;
   let timer: ReturnType<typeof setTimeout> | undefined;
@@ -198,7 +198,7 @@ export function connectRoom(id: string, token: string | null, handlers: { onView
   function open() {
     if (stopped || !roomServerUrl) return;
     const next = socket = new WebSocket(`${roomServerUrl.replace(/^http/, 'ws')}/rooms/${id}/socket`);
-    next.addEventListener('open', () => next.send(JSON.stringify((token === null ? { type: 'hello', watch: true } : { type: 'hello', token }) satisfies ClientMessage)));
+    next.addEventListener('open', () => next.send(JSON.stringify({ ...(token === null ? { type: 'hello' as const, watch: true as const } : { type: 'hello' as const, token }), ...(handlers.onChat && { chat: true as const }) } satisfies ClientMessage)));
     next.addEventListener('message', event => {
       if (stopped || socket !== next) return;
       const message = JSON.parse(String(event.data)) as ServerMessage;
@@ -210,6 +210,8 @@ export function connectRoom(id: string, token: string | null, handlers: { onView
         if (!reportsAway && message.view.reportsAway) { reportsAway = true; reportAway(); }
         handlers.onLink(true);
         handlers.onView(message.view);
+      } else if (message.type === 'chat') {
+        handlers.onChat?.(message);
       } else if (message.type === 'result') {
         const asked = waiting.get(message.n);
         waiting.delete(message.n);

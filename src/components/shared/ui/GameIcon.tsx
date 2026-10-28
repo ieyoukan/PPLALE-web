@@ -1,5 +1,6 @@
 /** One line-icon vocabulary for game screens and shared UI. */
 const paths = {
+  chat: 'M5 4h14a2 2 0 0 1 2 2v10a2 2 0 0 1-2 2h-9l-6 3v-3H5a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2zM7 9h10M7 13h6',
   play: 'M8 5.5v13l10-6.5z',
   more: 'M6 12h.01M12 12h.01M18 12h.01',
   add: 'M10 18s-6-3.8-6-8.5A3.5 3.5 0 0 1 10 7a3.5 3.5 0 0 1 6 2M18 13v6M15 16h6',

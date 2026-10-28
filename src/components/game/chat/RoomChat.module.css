@@ -1,0 +1,23 @@
+.chat { position: absolute; left: 24px; bottom: 18px; z-index: 320; color: var(--brand-cocoa-deep); font-family: var(--font-site-body), sans-serif; pointer-events: auto; }
+.chat button { display: inline-flex; align-items: center; justify-content: center; gap: 8px; border: 1px solid var(--brand-control-edge); border-radius: var(--brand-control-radius); background: var(--brand-cream); color: var(--brand-cocoa-deep); cursor: pointer; }
+.chat button:hover { background: var(--brand-blush); }
+.chat button:disabled { opacity: .55; cursor: default; }
+.chat button:focus-visible, .composer textarea:focus-visible { outline: 2px solid var(--brand-cocoa); outline-offset: 2px; }
+.chat svg { flex: none; width: 23px; height: 23px; }
+.toggle { min-height: 44px; padding: 8px 14px; font-size: 17px; }
+.toggle kbd { padding: 1px 5px; border: 1px solid var(--brand-control-edge); border-radius: 3px; font: inherit; font-size: 12px; }
+.panel { --pad: 18px; position: absolute; bottom: 54px; left: 0; width: 360px; height: 440px; max-height: calc(100cqh - 110px); display: flex; flex-direction: column; gap: 12px; background: var(--brand-paper); }
+.header { display: flex; align-items: center; justify-content: space-between; flex: none; gap: 12px; }
+.header h2 { font-size: 20px; margin: 0; }
+.header button { width: 34px; height: 34px; }
+.log { flex: 1; min-height: 0; overflow-y: auto; overflow-x: hidden; overscroll-behavior: contain; touch-action: pan-y; user-select: text; scrollbar-width: thin; }
+.empty { color: var(--brand-cocoa-soft); text-align: center; margin: 40px 0; font-size: 15px; }
+.message { display: flex; align-items: flex-start; gap: 8px; margin: 0 0 14px; }
+.content { flex: 1; min-width: 0; }
+.byline { display: flex; align-items: baseline; min-width: 0; gap: 8px; }
+.byline strong { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 14px; }
+.byline time { flex: none; color: var(--brand-cocoa-soft); font-size: 11px; }
+.content p { margin: 3px 0 0; font-size: 16px; line-height: 1.55; white-space: pre-wrap; overflow-wrap: anywhere; }
+.composer { display: grid; grid-template-columns: minmax(0, 1fr) 42px; gap: 8px; flex: none; }
+.composer textarea { min-width: 0; width: 100%; resize: none; padding: 8px 10px; border: 1px solid var(--brand-control-edge); border-radius: var(--brand-control-radius); background: var(--brand-cream); color: var(--brand-cocoa-deep); font: inherit; font-size: 16px; line-height: 1.4; user-select: text; touch-action: manipulation; }
+.error { grid-column: 1 / -1; margin: 0; font-size: 13px; overflow-wrap: anywhere; }

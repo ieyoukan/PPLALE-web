@@ -38,7 +38,7 @@
 .inviteButton svg { font-size: 22px; }
 
 /* ── Left: everyone in the room ── */
-.people { --pad: 26px 20px; grid-area: people; min-height: 0; min-width: 0; overflow: auto; }
+.people { --pad: 26px 20px 72px; grid-area: people; min-height: 0; min-width: 0; overflow: auto; }
 .people ul { display: grid; min-width: 0; list-style: none; margin: 0; padding: 0; }
 .people li { min-width: 0; }
 /* Rows on the panel's own face, parted by a fine rule, rather than boxes of their own. */

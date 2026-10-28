@@ -88,7 +88,7 @@ const HIDDEN = 'ルームが見つからないか、招待が必要です';
 const CLOSED = 'このルームは閉じました';
 const LEFT = 'ルームから出ました';
 
-type Attached = WebSocket & { alive?: boolean; entry?: Member };
+type Attached = WebSocket & { alive?: boolean; entry?: Member; chatEnabled?: boolean; chatInitialized?: boolean };
 /** The members connected now, as the views and tidying take them. */
 const onlineMembers = (present: Pick<Present, 'members'>) => new Set(present.members ?? []);
 /** The signed-in account among a request's verified owners, if any. */
@@ -135,19 +135,20 @@ export function createRoomServer({ config, backend, catalog, history, push = pus
         const seat = cpuToAct(room);
         if (stopping || seat === null || !sockets.has(room.id) || !room.state) return;
         const state = room.state, pace = state.phase === 'opening' || state.phase === 'mulligan' ? CPU_OPENING_PACE : handReactionOps.includes(state.pending?.task.op ?? '') ? cpuReactionPace() : CPU_PACE;
-        const timer = setTimeout(() => { cpuTimers.delete(room.id); void playCpuMove(room.id, room.version, seat); }, pace);
+        const expected = { match: room.match, revision: state.revision };
+        const timer = setTimeout(() => { cpuTimers.delete(room.id); void playCpuMove(room.id, seat, expected); }, pace);
         timer.unref();
         cpuTimers.set(room.id, { version: room.version, timer });
     }
-    async function playCpuMove(id: string, version: number, seat: Side) {
+    async function playCpuMove(id: string, seat: Side, expected: { match: number; revision: number }) {
         try {
             // Longer than a move takes to decide (cpu.ts gives up after 15 seconds), short enough to retry soon.
-            if (!await backend.claim(`cpu:${id}:${version}`, 20_000)) return;
+            if (!await backend.claim(`cpu:${id}:${expected.match}:${expected.revision}:${seat}`, 20_000)) return;
             const room = await backend.get(id);
             if (!room) return;
-            // Something else changed the room meanwhile (perhaps without a view going out): look again.
-            if (room.version !== version || cpuToAct(room) !== seat) { scheduleCpu(room); return; }
-            const level = room.seats[seat]!.cpu!, expected = { match: room.match, revision: room.state!.revision };
+            // Chat changes the room version but never invalidates or postpones a CPU move.
+            if (room.match !== expected.match || room.state?.revision !== expected.revision || cpuToAct(room) !== seat) { scheduleCpu(room); return; }
+            const level = room.seats[seat]!.cpu!;
             const state = room.state!;
             const thought = await thinker.think(state, level, seat);
             if (stopping) return;
@@ -241,7 +242,8 @@ export function createRoomServer({ config, backend, catalog, history, push = pus
         }
         // A reader that stops receiving must not accumulate an unlimited send queue.
         if (socket.bufferedAmount > 256 * 1024) return socket.terminate();
-        socket.send(JSON.stringify(message.type === 'view' ? { ...message, view: names.view(message.view) } : message));
+        socket.send(JSON.stringify(message.type === 'view' ? { ...message, view: names.view(message.view) } : message.type === 'chat' ? { ...message, messages: names.chat(message.messages) } : message));
+        if (message.type === 'view' && message.view.plaza?.chat) (socket as Attached).chatInitialized = true;
     };
 
     /** Changes the room: `change` edits it (or throws RoomError). Tried again when another request got in first. */
@@ -303,9 +305,16 @@ export function createRoomServer({ config, backend, catalog, history, push = pus
         }
     }
     /** Sends each seat's view (and the spectators' and members' views) to the sockets held here. */
-    function deliver({ room, online, watching, members }: Pick<RoomEvent, 'room' | 'online' | 'watching' | 'members'>) {
-        scheduleTurn(room);
+    function deliver({ room, online, watching, members, chat }: Pick<RoomEvent, 'room' | 'online' | 'watching' | 'members' | 'chat'>) {
         const pair = sockets.get(room.id);
+        if (chat && room.plaza) {
+            if (pair) for (const socket of pair[3]) {
+                if (socket.chatEnabled && socket.entry && room.plaza.members.some(member => member.id === memberOfEntry(socket.entry!.member)))
+                    tell(socket, { type: 'chat', id: room.id, version: room.version, messages: room.plaza.chat ?? [] });
+            }
+            return;
+        }
+        scheduleTurn(room);
         if (!pair) return;
         told.set(room.id, key({ online, watching, members }));
         if (room.plaza) {
@@ -314,8 +323,9 @@ export function createRoomServer({ config, backend, catalog, history, push = pus
             for (const socket of Array.from(pair[3])) {
                 const member = socket.entry && memberOfEntry(socket.entry.member);
                 if (!member || !room.plaza.members.some(other => other.id === member)) continue;
-                let message = views.get(member);
-                if (!message) views.set(member, message = { type: 'view', view: plazaView(room, member, here, catalog) });
+                const history = !!socket.chatEnabled && !socket.chatInitialized, cacheKey = `${member}:${history}`;
+                let message = views.get(cacheKey);
+                if (!message) views.set(cacheKey, message = { type: 'view', view: plazaView(room, member, here, catalog, history) });
                 tell(socket, message);
             }
             return;
@@ -327,17 +337,17 @@ export function createRoomServer({ config, backend, catalog, history, push = pus
         }
     }
     /** After a change: the sockets here get their views, and the other instances are told to send theirs. */
-    async function announce(room: Room, vacated?: Side, timing?: CommandTiming, removed?: string[]) {
+    async function announce(room: Room, vacated?: Side, timing?: CommandTiming, removed?: string[], chat?: true) {
         let at = performance.now();
         const now = await present(room.id);
         if (timing) timing.presence += performance.now() - at;
         at = performance.now();
-        deliver({ room, ...now });
+        deliver({ room, ...now, ...(chat && { chat }) });
         if (room.plaza && room.status === 'closed') dismissMembers(room.id, null, true);
         else if (removed?.length) dismissMembers(room.id, removed);
         if (timing) timing.deliver += performance.now() - at;
         at = performance.now();
-        await backend.publish({ from: pod, room, ...now, ...(vacated !== undefined && { dismiss: vacated }), ...(removed?.length && { dismissMembers: removed }) });
+        await backend.publish({ from: pod, room: chat ? { ...room, last: null } : room, ...now, ...(chat && { chat }), ...(vacated !== undefined && { dismiss: vacated }), ...(removed?.length && { dismissMembers: removed }) });
         if (timing) timing.publish += performance.now() - at;
     }
     const ready = backend.subscribe(event => {
@@ -945,7 +955,7 @@ export function createRoomServer({ config, backend, catalog, history, push = pus
                 }
                 // Whoever leaves is told the result before their sockets are ended.
                 if (outcome.removed?.includes(member)) tell(socket, { type: 'result', n });
-                await announce(room, undefined, timing, outcome.removed);
+                await announce(room, undefined, timing, outcome.removed, outcome.chat);
                 timing.total = performance.now() - received;
                 if (!outcome.removed?.includes(member)) tell(socket, { type: 'result', n, ...(measured && { timing: measured, revision: room.state?.revision }) });
                 if (outcome.command) latency.record(timing);
@@ -1003,6 +1013,7 @@ export function createRoomServer({ config, backend, catalog, history, push = pus
             try { message = JSON.parse(String(data)) as ClientMessage; } catch { return socket.close(4400); }
             if (message?.type === 'hello' && !helloStarted) {
                 helloStarted = true;
+                socket.chatEnabled = message.chat === true;
                 return next(() => message.watch ? watch() : hello(message.token));
             }
             if (message?.type === 'performance') {

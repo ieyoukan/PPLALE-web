@@ -70,7 +70,7 @@ export function profileNames(read = readPublicName, now = Date.now) {
     }
     function view(value: RoomView): RoomView {
         return { ...value, players: players(value.players) as RoomView['players'], ...(value.game && { game: state(value.game, value.players) }),
-            ...(value.plaza && { plaza: { ...value.plaza, creator: { ...value.plaza.creator, name: name(value.plaza.creator) }, members: players(value.plaza.members) } }) };
+            ...(value.plaza && { plaza: { ...value.plaza, creator: { ...value.plaza.creator, name: name(value.plaza.creator) }, members: players(value.plaza.members), ...(value.plaza.chat && { chat: players(value.plaza.chat) }) } }) };
     }
     const entry = (value: HistoryEntry): HistoryEntry => ({ ...value, players: players(value.players) as HistoryEntry['players'] });
     async function warm(list: (Player | null)[]) {
@@ -113,5 +113,5 @@ export function profileNames(read = readPublicName, now = Date.now) {
         }
         return value;
     }
-    return { load, name, view, response };
+    return { load, name, view, response, chat: players };
 }

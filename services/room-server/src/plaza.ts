@@ -7,7 +7,8 @@ import { randomBytes, randomInt, randomUUID, timingSafeEqual } from 'node:crypto
 import { z } from 'zod';
 import { actingSides, cpuLevels, cpuProfiles, randomDeck, viewFor } from '@pplale/game-core';
 import type { Catalog, CpuLevel, Deck, Side } from '@pplale/game-core';
-import { DEFAULT_VISIBILITY, MAX_MEMBERS, MAX_ROOM_NAME_LENGTH, MEMBER_GRACE, invitedVisibility, isRoomVisibility, parseRoomRules, roomDeckErrors } from '@pplale/game-core/room';
+import { DEFAULT_VISIBILITY, MAX_MEMBERS, MAX_ROOM_NAME_LENGTH, MAX_ROOM_CHAT_LENGTH, MAX_ROOM_CHAT_MESSAGES, MEMBER_GRACE, invitedVisibility, isRoomVisibility, parseRoomRules, roomDeckErrors } from '@pplale/game-core/room';
+import type { RoomChatMessage } from '@pplale/game-core/room';
 import type { RoomInfo, RoomRules, RoomView, RoomVisibility } from '@pplale/game-core/room';
 import type { MatchEnd } from '@pplale/game-core/history';
 import { publicAssessment } from './public-matches.ts';
@@ -24,6 +25,7 @@ export interface PlazaMember {
     profileId?: string;
     /** Verified account and/or hashed device owner; never exposed in a view. */
     historyOwners?: string[];
+    lastChatAt?: number;
     /** Since when (ms) none of the member's sockets is open; absent while one is. */
     away?: number;
 }
@@ -37,6 +39,7 @@ export interface Plaza {
     /** The member who may change the rules; null while nobody is. */
     owner: string | null;
     members: PlazaMember[];
+    chat?: RoomChatMessage[];
     /** The secret of the invitation link (invite and invitePlus). Renewing it ends the old link. */
     invite?: string;
     /** Signed-in people let in by name: invited friends, and requests that were accepted. */
@@ -57,6 +60,7 @@ export interface Visitor { profileId?: string; historyOwners?: string[]; name: s
 
 /** What a plaza request did besides changing the room. */
 export interface PlazaOutcome extends Outcome {
+    chat?: true;
     /** Members no longer in the room: their sockets have no room any more. */
     removed?: string[];
     /** Someone was let in by name: they are told. */
@@ -85,6 +89,7 @@ const action = z.discriminatedUnion('action', [
     z.object({ action: z.literal('claim') }),
     z.object({ action: z.literal('rules'), rules: z.unknown() }),
     z.object({ action: z.literal('rename'), name: z.string() }),
+    z.object({ action: z.literal('chat'), text: z.string().max(MAX_ROOM_CHAT_LENGTH * 2), messageId: z.string().uuid() }),
     z.object({ action: z.literal('renewInvite') }),
     z.object({ action: z.literal('answer'), profileId, accept: z.boolean() }),
 ]);
@@ -309,6 +314,21 @@ export function actPlaza(room: Room, id: string, body: unknown, catalog: Catalog
         toTable(room, catalog);
     };
     switch (request.action) {
+        case 'chat': {
+            const text = request.text.replace(/\r\n?/g, '\n').replace(/[\u0000-\u0008\u000b\u000c\u000e-\u001f\u007f]/g, '').trim();
+            if (!text) throw new RoomError(400, 'メッセージを入力してください');
+            if (Array.from(text).length > MAX_ROOM_CHAT_LENGTH) throw new RoomError(400, `メッセージは${MAX_ROOM_CHAT_LENGTH}文字までです`);
+            const messageId = `${id}:${request.messageId}`, previous = plaza.chat?.find(message => message.id === messageId);
+            if (previous) {
+                if (previous.text !== text) throw new RoomError(409, '送信済みのメッセージです');
+            } else {
+                if (me.lastChatAt !== undefined && now - me.lastChatAt < 1000) throw new RoomError(429, '少し待ってから送信してください');
+                me.lastChatAt = now;
+                plaza.chat = [...plaza.chat ?? [], { id: messageId, member: id, name: me.name, ...(me.profileId && { profileId: me.profileId }), text, sentAt: now }].slice(-MAX_ROOM_CHAT_MESSAGES);
+            }
+            outcome.chat = true;
+            return outcome; // Conversation never touches the match, its last command or turn clock.
+        }
         case 'ready': {
             const own = seated();
             if (room.status !== 'lobby') throw new RoomError(409, room.status === 'finished' ? '「もう一度」を選んでから準備してください' : '対戦中はデッキを変えられません');
@@ -449,7 +469,7 @@ export function askToEnter(room: Room, visitor: Required<Pick<Visitor, 'profileI
 }
 
 /** What member `id` is told about the room. Those not seated watch the match without its hidden cards. */
-export function plazaView(room: Room, id: string, online: ReadonlySet<string>, catalog: Catalog): RoomView {
+export function plazaView(room: Room, id: string, online: ReadonlySet<string>, catalog: Catalog, chatHistory = true): RoomView {
     const plaza = room.plaza!, { version, status, match, rules, last, resigned, seats, state, record, turnClock } = room;
     const mine = seatOf(room, id), seated = mine !== null;
     const players = seats.map((seat, index) => seat && {
@@ -468,6 +488,7 @@ export function plazaView(room: Room, id: string, online: ReadonlySet<string>, c
         ...(turnClock && { turnClock, serverNow: Date.now() }),
         plaza: {
             name: plaza.name, visibility: plaza.visibility, creator: plaza.creator, owner: plaza.owner, me: id,
+            chatEnabled: true, ...(chatHistory && { chat: plaza.chat ?? [] }),
             members: plaza.members.map(member => {
                 const seat = seats.findIndex(taken => taken?.member === member.id);
                 return { id: member.id, name: member.name, ...(member.profileId && { profileId: member.profileId }), online: online.has(member.id), ...(seat >= 0 && { seat: seat as Side }) };

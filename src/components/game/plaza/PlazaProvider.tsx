@@ -9,7 +9,7 @@ import { createContext, useCallback, useContext, useEffect, useMemo, useRef, use
 import type { ReactNode } from 'react';
 import { usePathname, useRouter } from 'next/navigation';
 import { TWO_SEAT_ROOM, listedVisibility } from '@pplale/game-core/room';
-import type { RoomAction, RoomView, RoomVisibility } from '@pplale/game-core/room';
+import type { RoomAction, RoomChatMessage, RoomView, RoomVisibility } from '@pplale/game-core/room';
 import { useAuth } from '@/lib/auth';
 import { WATCHING_BEAT, publishPresence } from '@/lib/game/social';
 import { RoomRequestError, connectRoom, createPlaza, currentPlaza, enterPlaza, keepInvite, keepPlaza, keepSeat, leavePlaza, plazaKey } from '@/lib/game/room/client';
@@ -41,6 +41,7 @@ interface PlazaContextValue {
   id: string | null;
   view: RoomView | null;
   linked: boolean;
+  chat: RoomChatMessage[];
   /** Opening the game: back to the room this browser is in, or a new one. Resolves with its id. */
   launch(): Promise<string | null>;
   /** Enters a room (by a link: `invite`). Resolves with its id, or null when refused (`stage` says why). */
@@ -118,6 +119,8 @@ export function PlazaProvider({ children }: { children: ReactNode }) {
   const [id, setId] = useState<string | null>(null);
   const [linked, setLinked] = useState(true);
   const [legacy, setLegacy] = useState<string | null>(null);
+  const [chat, setChat] = useState<RoomChatMessage[]>([]);
+  const chatVersion = useRef(0);
   const held = useRef<Held | null>(null);
   const version = useRef(0);
   const listeners = useRef(new Set<(view: RoomView) => void>());
@@ -133,9 +136,15 @@ export function PlazaProvider({ children }: { children: ReactNode }) {
     return next;
   }, []);
 
+  const takeChat = useCallback((messages: RoomChatMessage[], revision: number) => {
+    if (revision <= chatVersion.current) return;
+    chatVersion.current = revision;
+    setChat(previous => previous.length === messages.length && previous.every((message, index) => message.id === messages[index].id && message.name === messages[index].name) ? previous : messages);
+  }, []);
   const take = useCallback((socket: RoomConnection, next: RoomView) => {
     if (held.current?.socket !== socket || next.version <= version.current) return;
     version.current = next.version;
+    if (next.plaza?.chat) takeChat(next.plaza.chat, next.version);
     if (next.plaza?.invite) keepInvite(next.id, next.plaza.invite);
     // The same chimes as before a match of two: someone sat down across, and the match began.
     const across = next.watching ? null : next.players[next.seat === 0 ? 1 : 0];
@@ -143,7 +152,7 @@ export function PlazaProvider({ children }: { children: ReactNode }) {
     if (next.status === 'playing' && !next.watching) notify('started', `${next.id}:${next.match}`);
     setView(next);
     listeners.current.forEach(listener => listener(next));
-  }, [notify]);
+  }, [notify, takeChat]);
 
   /** Leaves a room for good (after another one let the player in, or on purpose). */
   const quit = useCallback(async (old: Held) => {
@@ -158,6 +167,7 @@ export function PlazaProvider({ children }: { children: ReactNode }) {
     const old = held.current;
     held.current = next;
     version.current = 0;
+    chatVersion.current = 0; setChat([]);
     setId(next.id);
     setLinked(true);
     setStage({ kind: 'in' });
@@ -177,6 +187,7 @@ export function PlazaProvider({ children }: { children: ReactNode }) {
         take(socket, next);
       },
       onLink(up) { if (held.current?.socket === socket) setLinked(up); },
+      onChat(message) { if (held.current?.socket === socket && message.id === roomId) takeChat(message.messages, message.version); },
       onGone(message, closed) {
         if (!settled) { settled = true; clearTimeout(timer); socket.close(); return resolve({ ok: false, message, closed: !!closed }); }
         if (held.current?.socket === socket && !leaving.current.has(socket)) lostRef.current({ id: roomId, token, socket }, message, !!closed);
@@ -188,7 +199,7 @@ export function PlazaProvider({ children }: { children: ReactNode }) {
       socket.close();
       resolve({ ok: false, message: UNREACHABLE, closed: false, offline: true });
     }, PATIENCE);
-  }), [adopt, take]);
+  }), [adopt, take, takeChat]);
 
   /** Moves to the room's page when the player is looking at a room. */
   const show = useCallback((roomId: string) => {
@@ -415,8 +426,8 @@ export function PlazaProvider({ children }: { children: ReactNode }) {
   const rulesKey = view?.plaza && view.plaza.owner === view.plaza.me ? JSON.stringify(view.plaza.nextRules ?? view.rules) : null;
   useEffect(() => { if (rulesKey) saveRoomSettings({ rules: JSON.parse(rulesKey) }); }, [rulesKey]);
 
-  const value = useMemo<PlazaContextValue>(() => ({ stage, id, view: identityMismatch ? null : view, linked, launch, enter, go, create, newHome, leave, send, subscribe, presented, settle: settleStage, goHome, legacy }),
-    [stage, id, view, identityMismatch, linked, launch, enter, go, create, newHome, leave, send, subscribe, presented, settleStage, goHome, legacy]);
+  const value = useMemo<PlazaContextValue>(() => ({ stage, id, view: identityMismatch ? null : view, linked, chat: identityMismatch ? [] : chat, launch, enter, go, create, newHome, leave, send, subscribe, presented, settle: settleStage, goHome, legacy }),
+    [stage, id, view, identityMismatch, linked, chat, launch, enter, go, create, newHome, leave, send, subscribe, presented, settleStage, goHome, legacy]);
   return <Context.Provider value={value}>
     {children}
     {/* Moving between rooms: the current one stays on screen under a small sign. */}

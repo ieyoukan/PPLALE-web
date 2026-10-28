@@ -6,6 +6,7 @@ import { InstallPrompt } from '@/components/pwa/InstallPrompt';
 import { OrnateFrame } from '@/components/shared/ui/ornament/OrnateFrame';
 import { GameIcon } from '@/components/shared/ui/GameIcon';
 import { usePlaza } from '../plaza/PlazaProvider';
+import { useRoomChatOpen } from '../chat/RoomChat';
 import { RulesSheet } from '../plaza/PlazaSheets';
 import { ShareSheet } from '../plaza/ShareSheet';
 import { HomeRoomSheet } from '../plaza/HomeRoomSheet';
@@ -22,6 +23,7 @@ const tabLabel = (section: Section) => section === 'home' ? 'ホーム' : sectio
 export function Launchpad({ stack, choose }: { stack: Place[]; choose: (section: Section) => void }) {
   const { close: onClose, expanded, setExpanded, place, back } = useLaunchpad();
   const plaza = usePlaza();
+  const chatOpen = useRoomChatOpen();
   const [panel, setPanel] = useState<RoomPanel | null>(null);
   const box = useRef<HTMLDivElement>(null), panelRef = useRef<HTMLDivElement>(null), tabId = useId();
   const view = plaza.view;
@@ -58,7 +60,7 @@ export function Launchpad({ stack, choose }: { stack: Place[]; choose: (section:
     }}>{rail.map(item => <button key={item} id={`${tabId}-${item}`} type="button" role="tab" aria-label={item === 'home' ? 'ランチパッドホーム' : sectionInfo[item].label} aria-selected={current === item} aria-controls={`${tabId}-panel`} tabIndex={current === item || (!current && item === 'home') ? 0 : -1} title={sectionInfo[item].label} onClick={() => choose(item)}><GameIcon name={sectionInfo[item].icon} /><span data-ui-title>{tabLabel(item)}</span></button>)}</nav>;
 
   return <div className={styles.backdrop} onClick={onClose} data-launchpad>
-    <div ref={box} tabIndex={-1} inert={!!panel} className={expanded ? styles.expanded : styles.dialog} role="dialog" aria-modal="true" aria-label="ゲームメニュー" data-launchpad onClick={event => event.stopPropagation()} onKeyDown={event => {
+    <div ref={box} tabIndex={-1} inert={!!panel} className={expanded ? styles.expanded : styles.dialog} role="dialog" aria-modal={chatOpen ? undefined : true} aria-label="ゲームメニュー" data-launchpad onClick={event => event.stopPropagation()} onKeyDown={event => {
       event.stopPropagation();
       const typing = (event.target as HTMLElement).closest('input:not([type=range]), textarea, select, [contenteditable=true]');
       if (event.key === 'Escape' && !panel && !typing && !event.nativeEvent.isComposing && !event.defaultPrevented) { event.preventDefault(); onClose(); }

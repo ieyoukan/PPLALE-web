@@ -17,6 +17,8 @@
 
 メッセージと盤面の型は `packages/game-core/src/room.ts`（Web アプリと共有）。
 
+インスタンス型ルームのチャットは在室者全員（ゲスト・観戦者を含む）が送信できる。対応するクライアントは`hello`に`chat: true`を付け、`{ action: 'chat', text, messageId: UUID }`を通常の`action`で送る。返信は`{ type: 'chat', id, version, messages }`と送信者への`result`で、ゲームの`view`は送らない。初回・再接続時だけ`plaza.chat`に最新50件を含め、その後は`plaza.chatEnabled: true`で対応を示す。300コードポイント、各メンバー1秒に1回。再試行は同一ID・同一本文で重複を防ぐ。発言者はサーバー側で確定し、対戦状態・時計・リプレイは変更しない。別Podへも既存のルーム配信に`chat: true`を付けて伝え、対応を表明していない旧ブラウザには新しいメッセージ種別を送らない。履歴はルーム状態にだけ保存し、別インスタンスへ引き継がない。UIの仕様は[ルーム設計](../../docs/social-rooms-design.md#ルーム内チャット2026-10-28)に集約する。
+
 ## API
 
 | | |

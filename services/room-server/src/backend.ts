@@ -21,6 +21,8 @@ import type { PlaySample } from '@pplale/game-core/performance';
 
 /** A room changed. Every instance sends the views to the sockets it holds. */
 export interface RoomEvent {
+    /** Chat-only update: do not send or re-animate the match. */
+    chat?: true;
     /** The instance that made the change (it has already told its own sockets). */
     from: string;
     room: Room;

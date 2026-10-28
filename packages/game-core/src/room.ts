@@ -174,6 +174,8 @@ export type RoomAction =
     | { action: 'rules'; rules: RoomRules }
     /** The owner changes the room's displayed name; its creator and visibility stay fixed. */
     | { action: 'rename'; name: string }
+    /** Plain text to the people in this plaza. The client id makes retries idempotent. */
+    | { action: 'chat'; text: string; messageId: string }
     /** A new invitation link; the previous one stops working. */
     | { action: 'renewInvite' }
     /** Answers a friend who asked to be let in. */
@@ -198,6 +200,16 @@ export const invitedVisibility = (visibility: RoomVisibility) => visibility === 
 export const MAX_ROOM_NAME_LENGTH = 16;
 /** People in one room at once, seated or not. */
 export const MAX_MEMBERS = 16;
+export const MAX_ROOM_CHAT_LENGTH = 300;
+export const MAX_ROOM_CHAT_MESSAGES = 50;
+export interface RoomChatMessage {
+    id: string;
+    member: string;
+    name: string;
+    profileId?: string;
+    text: string;
+    sentAt: number;
+}
 /** A member whose last connection closed this long ago is no longer in the room (ms). */
 export const MEMBER_GRACE = 120_000;
 
@@ -221,6 +233,9 @@ export interface PlazaView {
     /** The member this view is for. */
     me: string;
     members: PlazaMember[];
+    /** Present on servers supporting chat. Retained only in this room, outside match recordings. */
+    chat?: RoomChatMessage[];
+    chatEnabled?: true;
     /** The rules of the next match, when the owner changed them during this one. */
     nextRules?: RoomRules;
     /** The secret of the invitation link, only for those who may share it. */
@@ -258,7 +273,7 @@ export interface Entered {
  */
 export type ClientMessage =
     /** `token`: a seat's, or a plaza member's. */
-    | { type: 'hello'; token?: string; watch?: true }
+    | { type: 'hello'; token?: string; watch?: true; chat?: true }
     | { type: 'action'; n: number; action: RoomAction }
     | { type: 'performance'; reports: PlayReport[] }
     /** The seat's page was hidden (another app, screen off) or shown again: while hidden, the player is told of their turn by a push notification. Only sent when the view has `reportsAway`. */
@@ -269,6 +284,7 @@ export type ClientMessage =
  */
 export type ServerMessage =
     | { type: 'view'; view: RoomView }
+    | { type: 'chat'; id: string; version: number; messages: RoomChatMessage[] }
     | { type: 'result'; n: number; error?: string; revision?: number; timing?: ServerTiming }
     /** `closed`: a plaza closed while this member was away; they may make its successor (`PlazaRequest.from`). */
     | { type: 'gone'; error: string; closed?: true };
