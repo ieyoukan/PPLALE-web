@@ -101,8 +101,13 @@ test('opening the game makes a room; its invitation brings a friend to the same 
 
   // Giving up from the board's menu ends it for both.
   await first.getByRole('button', { name: 'メニュー', exact: true }).click();
-  await first.getByRole('button', { name: '投了する' }).click();
-  await first.getByRole('button', { name: '投了する（負けになります）' }).click();
+  await first.getByRole('button', { name: '投降する', exact: true }).click();
+  const surrender = first.getByRole('dialog', { name: '投降しますか？' });
+  await expect(surrender).toContainText('投降するとあなたの負けになります。');
+  await surrender.getByRole('button', { name: '対戦を続ける' }).click();
+  await expect(surrender).not.toBeVisible();
+  await first.getByRole('button', { name: '投降する', exact: true }).click();
+  await surrender.getByRole('button', { name: '投降する', exact: true }).click();
   for (const page of [alice, bob]) await expect(page.getByRole('dialog', { name: '対戦結果' })).toBeVisible({ timeout: 20000 });
   for (const page of [alice, bob]) await expect(page.getByRole('dialog', { name: '対戦結果' }).getByRole('region', { name: 'ログインのおすすめ' }).getByRole('button', { name: 'Googleでログイン' })).toBeInViewport();
   await alice.screenshot({ path: test.info().outputPath('result-guest-sign-in.png') });
@@ -211,13 +216,26 @@ test('the CPU plays at the same table, with spectators joining before and during
   await expect(home).toContainText('対戦中の試合は負けになります');
   await home.getByRole('button', { name: 'キャンセル', exact: true }).click();
   await expect(alice).toHaveURL(`${base}/game/room/${id}/`);
-  await alice.getByRole('dialog', { name: 'ゲームメニュー' }).getByRole('button', { name: 'ホーム', exact: true }).click();
-  await home.getByRole('button', { name: '移動する', exact: true }).click();
-  await alice.waitForURL(target => /^\/game\/room\/\d{6}\/$/.test(target.pathname) && !target.pathname.includes(id));
-  for (const page of [bob, carol]) {
-    await expect(page).toHaveURL(`${base}/game/room/${id}/`);
-    await expect(page.getByRole('dialog', { name: '対戦結果', exact: true })).toBeVisible({ timeout: 20000 });
+  await alice.keyboard.press('Escape');
+  await alice.getByRole('button', { name: 'メニュー', exact: true }).click();
+  await expect(alice.getByRole('button', { name: '投降する', exact: true })).toHaveCount(0);
+  await alice.getByRole('button', { name: '対戦を中断する', exact: true }).click();
+  const interrupt = alice.getByRole('dialog', { name: '対戦を中断しますか？' });
+  await expect(interrupt).toContainText('リプレイは保存しません。');
+  await expect(interrupt.getByRole('button', { name: '対戦を続ける' })).toBeFocused();
+  await alice.keyboard.press('Escape');
+  await expect(interrupt).not.toBeVisible();
+  await expect(alice.locator('[data-table]')).toBeVisible();
+  await alice.getByRole('button', { name: '対戦を中断する', exact: true }).click();
+  await alice.screenshot({ path: test.info().outputPath('cpu-interrupt-confirmation.png') });
+  await interrupt.getByRole('button', { name: '中断する', exact: true }).click();
+  for (const page of [alice, bob, carol]) {
+    await expect(page.locator('[data-table]')).not.toBeVisible({ timeout: 20000 });
+    await expect(page.getByRole('dialog', { name: '対戦結果', exact: true })).toHaveCount(0);
+    await expect(page.getByText('CPU・ふつう', { exact: true })).toBeVisible();
   }
+  await expect(alice).toHaveURL(`${base}/game/room/${id}/`);
+  await expect(alice.getByRole('button', { name: 'じゅんびOK!', exact: true })).toBeVisible();
   expect(errors).toEqual([]);
   for (const page of [alice, bob, carol]) await page.context().close();
 });

@@ -5,7 +5,7 @@
 // Like rooms.ts nothing here knows about sockets: a request changes the room or throws RoomError.
 import { randomBytes, randomInt, randomUUID, timingSafeEqual } from 'node:crypto';
 import { z } from 'zod';
-import { actingSides, cpuLevels, cpuProfiles, randomDeck, viewFor } from '@pplale/game-core';
+import { other, actingSides, cpuLevels, cpuProfiles, randomDeck, viewFor } from '@pplale/game-core';
 import type { Catalog, CpuLevel, Deck, Side } from '@pplale/game-core';
 import { DEFAULT_VISIBILITY, MAX_MEMBERS, MAX_ROOM_NAME_LENGTH, MAX_ROOM_CHAT_LENGTH, MAX_ROOM_CHAT_MESSAGES, MEMBER_GRACE, invitedVisibility, isRoomVisibility, parseRoomRules, roomDeckErrors } from '@pplale/game-core/room';
 import type { RoomChatMessage } from '@pplale/game-core/room';
@@ -82,6 +82,7 @@ const action = z.discriminatedUnion('action', [
     z.object({ action: z.literal('unready') }),
     z.object({ action: z.literal('command'), command, revision: z.number().int() }),
     z.object({ action: z.literal('resign') }),
+    z.object({ action: z.literal('abort'), match: z.number().int().nonnegative() }),
     z.object({ action: z.literal('rematch') }),
     z.object({ action: z.literal('leave') }),
     z.object({ action: z.literal('sit'), seat: side }),
@@ -384,6 +385,17 @@ export function actPlaza(room: Room, id: string, body: unknown, catalog: Catalog
             Object.assign(outcome, applyMatchCommand(room, sent, catalog));
             break;
         }
+        case 'abort':
+            seated();
+            if (request.match !== room.match) throw new RoomError(409, '試合が切り替わりました。もう一度確認してください');
+            if (room.status !== 'playing' || !room.state) throw new RoomError(409, '対戦中ではありません');
+            if (!room.seats[other(mine!)]?.cpu) throw new RoomError(403, '中断できるのはCPUとの対戦だけです');
+            room.discardedMatch = room.record?.id;
+            delete room.record;
+            // Reuse preparation cleanup, without deciding a winner or announcing a finished match.
+            room.status = 'finished';
+            toTable(room, catalog);
+            break;
         case 'resign':
             seated();
             if (room.status !== 'playing' || !room.state) throw new RoomError(409, '対戦中ではありません');

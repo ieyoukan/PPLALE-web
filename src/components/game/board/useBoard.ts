@@ -21,7 +21,7 @@ import { useOpeningDice } from './useOpeningDice';
 import { enterLandscape } from '../stage/stageSpace';
 
 export type Panel =
-  | { type: 'menu' } | { type: 'deck' } | { type: 'counts' } | { type: 'logs' } | { type: 'analysis' }
+  | { type: 'endMatch' } | { type: 'menu' } | { type: 'deck' } | { type: 'counts' } | { type: 'logs' } | { type: 'analysis' }
   | { type: 'inspect'; uid: string } | { type: 'skills'; side: Side } | { type: 'zone'; side: Side; kind: 'nap' | 'exile' | 'yojo' | 'sweet' }
   // 盤面エディタ (edit mode)
   | { type: 'editUnit'; uid: string } | { type: 'editHand'; uid: string } | { type: 'editPile'; side: Side; kind: ZoneKind }

@@ -14,6 +14,7 @@ const PlayPanel = dynamic(() => import('./EditPanels').then(module => module.Pla
 const AnalysisPanel = dynamic(() => import('./AnalysisPanel').then(module => module.AnalysisPanel));
 const InspectPanel = dynamic(() => import('./InspectPanel').then(module => module.InspectPanel));
 const LogPanel = dynamic(() => import('./LogPanel').then(module => module.LogPanel));
+const EndMatchDialog = dynamic(() => import('./EndMatchDialog').then(module => module.EndMatchDialog));
 const MenuPanel = dynamic(() => import('./MenuPanel').then(module => module.MenuPanel));
 const SkillPanel = dynamic(() => import('./SkillPanel').then(module => module.SkillPanel));
 const ZonePanel = dynamic(() => import('./ZonePanel').then(module => module.ZonePanel));
@@ -36,6 +37,7 @@ export function SidePanel() {
   if (drawer && drawer !== last) setLast(drawer);
   const modal = panel?.type === 'skills';
   return <>
+    {panel?.type === 'endMatch' && <Suspense fallback={null}><EndMatchDialog /></Suspense>}
     <aside className={`${styles.drawer} ${styles.slideDrawer} ${drawer ? styles.drawerOpen : ''}`} inert={!drawer} aria-label="メニュー">
       <Suspense fallback={null}>
       {last?.type === 'menu' && <MenuPanel />}

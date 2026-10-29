@@ -95,7 +95,12 @@ export class PostgresHistory implements HistoryRepository {
     }
     private async archive(client: PoolClient, room: Room, previous: Room | null, capture: SnapshotCapture | null, completeAllowed: boolean) {
         if (previous?.record && previous.state && (room.record?.id !== previous.record.id || !room.state)) {
-            await this.append(client, previous, previous.state, 'abandoned');
+            if (room.discardedMatch === previous.record.id && previous.status === 'playing' && previous.seats.some(seat => seat?.cpu)) {
+                // All three deletes and the lobby snapshot commit together. Retries are idempotent.
+                await client.query('DELETE FROM frames WHERE match=$1', [previous.record.id]);
+                await client.query('DELETE FROM members WHERE match=$1', [previous.record.id]);
+                await client.query('DELETE FROM matches WHERE id=$1', [previous.record.id]);
+            } else await this.append(client, previous, previous.state, 'abandoned');
         }
         if (!room.record || !room.state) return;
         if (previous?.record?.id === room.record.id && JSON.stringify(previous.state) === JSON.stringify(room.state)) return;

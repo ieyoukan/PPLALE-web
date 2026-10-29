@@ -4,6 +4,7 @@ import { createHash } from 'node:crypto';
 import { applyCommand, legalMoves } from '@pplale/game-core';
 import type { HistoryPage, MatchRecording } from '@pplale/game-core/history';
 import type { Seated } from '@pplale/game-core/room';
+import { createPlaza, actPlaza } from '../src/plaza.ts';
 import { catalog } from '../src/catalog.ts';
 import { createRoom, joinRoom, act, tidy } from '../src/rooms.ts';
 import { durableBackend } from '../src/history/backend.ts';
@@ -269,4 +270,31 @@ historyTest('history: reconnect repairs a Redis AOF rollback using the acknowled
     assert.equal((await backend.get(room.id))!.state!.revision, 1);
     assert.equal((await history.get(room.id))!.state!.revision, 1);
     assert.equal((await redis.historyPending()).length, 0);
+});
+
+
+historyTest('history: CPU interruption deletes its unfinished replay and preserves earlier and subsequent matches', async t => {
+    const { backend, history, pool } = await fixture(t);
+    const { room } = createPlaza('345678', { rules: { fruits: ['strawberry'], extendedPlayable: false }, plaza: { visibility: 'public' } }, { name: 'あなた', historyOwners: ['device:host'] });
+    const me = room.plaza!.owner!, act = (body: unknown) => actPlaza(room, me, body, catalog);
+    act({ action: 'sit', seat: 0 }); act({ action: 'cpu', seat: 1, level: 'easy' }); act({ action: 'ready', deck });
+    await backend.create(room, 3_600_000);
+    act({ action: 'resign' }); await store(backend, room);
+    const completed = room.record!.id;
+    act({ action: 'rematch' }); act({ action: 'ready', deck }); await store(backend, room);
+    const discarded = room.record!.id;
+    assert.ok(Number((await pool.query('SELECT count(*) FROM frames WHERE match=$1', [discarded])).rows[0].count) > 0);
+    act({ action: 'abort', match: room.match }); await store(backend, room);
+    // Repeating a lobby snapshot must not resurrect a replay or delete a finished match.
+    await store(backend, room);
+    for (const table of ['matches', 'frames', 'members']) {
+        const column = table === 'matches' ? 'id' : 'match';
+        assert.equal(Number((await pool.query(`SELECT count(*) FROM ${table} WHERE ${column}=$1`, [discarded])).rows[0].count), 0);
+    }
+    assert.equal(await history.recording(['device:host'], discarded), null);
+    assert.equal(await history.detail(['device:host'], discarded), null);
+    assert.ok(await history.recording(['device:host'], completed));
+    assert.equal((await backend.get(room.id))!.status, 'lobby');
+    act({ action: 'ready', deck }); await store(backend, room); act({ action: 'resign' }); await store(backend, room);
+    assert.ok(await history.recording(['device:host'], room.record!.id));
 });

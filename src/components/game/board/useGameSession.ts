@@ -66,7 +66,9 @@ export interface RemoteSession {
   next: Incoming | null;
   /** Puts `next` on the table. */
   accept: () => void;
-  resign: () => void;
+  resign: () => void | Promise<void>;
+  /** Only a seated human facing a CPU can discard the match and its replay. */
+  abort?: () => Promise<void>;
   /** The seat that gave up this match. */
   resigned: Side | null;
   leave: () => void;

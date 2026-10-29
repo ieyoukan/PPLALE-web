@@ -104,6 +104,7 @@
 | カード拡大・回転・閉じる・フォーカス復帰 | `shared/card/CardDetail.tsx`。閲覧は `card`・`onClose`・`isInDeck={false}`、構築では追加・削除のコールバックを渡す |
 | デッキのカード配置 | `shared/deck/DeckCardLayout.tsx`。画像だけにも、`onCardClick` 付きの確認画面にも使える。配置座標は `src/lib/deckImageLayout.ts` が唯一の定義で、OGP・画像書き出しも同じものを使う |
 | 左寄せのサブタイトル | `shared/ui/ScreenSubtitle.tsx`。本文書体で表示し、人数などは `suffix` で添える |
+| 操作の確認モーダル | `shared/ui/ConfirmDialog.tsx`。ネイティブの `dialog` と共通オーナメント枠を使い、初期フォーカスはキャンセル、送信中は二重操作を止め、失敗を同じモーダル内に表示する。画面固有の文言と処理は呼び出し元で渡す |
 | ゲームの枠・操作ボタン | `shared/ui/ornament/OrnateFrame.tsx`。模様のSVGを別の画面にコピーしない |
 | 対戦の丸い主要操作 | `shared/ui/ornament/RoundActionButton.tsx`。円形のカード装飾枠・静止した硬い光沢を共用し、色は `tone`、大きさは呼び出し元で指定する |
 | ランチパッドのキャラクター付き入口 | `game/launchpad/CharacterDestination.tsx`。幅・高さ・ホバーを共通化。入口の順序・画像・操作は `LaunchpadHome.tsx` の `destinations` にまとめる |

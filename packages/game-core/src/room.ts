@@ -143,6 +143,8 @@ export type RoomAction =
     | { action: 'unready' }
     | { action: 'command'; command: RoomCommand; revision: number }
     | { action: 'resign' }
+    /** Ends only the seated player's CPU match without a result or replay; stays at the table. */
+    | { action: 'abort'; match: number }
     /** In a plaza: keep the seat for the next match (two-seat rooms: back to choosing decks together). */
     | { action: 'rematch' }
     /** Gives up the room (a match in progress is lost). */

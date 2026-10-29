@@ -66,10 +66,18 @@ export function useRoomSession({ room, initial, seat, onLeave, plaza }: {
       })
       .finally(() => { inFlight.current = false; setSending(false); });
   }, [request, revision, watching, linked]);
-  const ask = useCallback((action: 'resign' | 'rematch') => {
+  const ask = useCallback((action: 'rematch') => {
     request({ action }).catch((failure: unknown) => setError(failure instanceof Error ? failure.message : '操作を送れませんでした'));
   }, [request]);
-  const resign = useCallback(() => ask('resign'), [ask]);
+  const endMatch = useCallback(async (action: 'resign' | 'abort') => {
+    if (inFlight.current) throw new Error('操作を送信しています。少しお待ちください');
+    inFlight.current = true; setSending(true);
+    try { await request(action === 'abort' ? { action, match: initial.match } : { action }); setError(''); }
+    finally { inFlight.current = false; setSending(false); }
+  }, [request, initial.match]);
+  const resign = useCallback(() => endMatch('resign'), [endMatch]);
+  const abortCpu = useCallback(() => endMatch('abort'), [endMatch]);
+  const abort = !watching && initial.plaza && initial.players[seat === 0 ? 1 : 0]?.cpu ? abortCpu : undefined;
   const plazaRematch = plaza?.rematch;
   const rematch = useCallback(() => plazaRematch ? plazaRematch() : initial.mode === 'free' ? onLeave() : ask('rematch'), [ask, initial.mode, onLeave, plazaRematch]);
 
@@ -81,8 +89,8 @@ export function useRoomSession({ room, initial, seat, onLeave, plaza }: {
   }) as [AvatarIdentity, AvatarIdentity], [shown.players, profiles]);
   const { presented } = room;
   const plazaMenu = plaza?.menu;
-  const remote = useMemo(() => ({ seat, watching, assessment, turnClock, ownDeck: shown.ownDeck, matchRules: shown.rules, freeMatch: initial.mode === 'free', names, portraits, sending: !linked || sending, waiting: !linked || sending || queue.length > 0, failed, next, accept, resign, resigned: shown.resigned, leave: onLeave, presented, ...(plazaMenu && { plaza: { menu: plazaMenu } }) }),
-    [seat, watching, assessment, turnClock, shown.ownDeck, shown.rules, initial.mode, names, portraits, linked, sending, queue.length, failed, next, accept, resign, shown.resigned, onLeave, presented, plazaMenu]);
+  const remote = useMemo(() => ({ seat, watching, assessment, turnClock, ownDeck: shown.ownDeck, matchRules: shown.rules, freeMatch: initial.mode === 'free', names, portraits, sending: !linked || sending, waiting: !linked || sending || queue.length > 0, failed, next, accept, resign, abort, resigned: shown.resigned, leave: onLeave, presented, ...(plazaMenu && { plaza: { menu: plazaMenu } }) }),
+    [seat, watching, assessment, turnClock, shown.ownDeck, shown.rules, initial.mode, names, portraits, linked, sending, queue.length, failed, next, accept, resign, abort, shown.resigned, onLeave, presented, plazaMenu]);
   return {
     game: shown.game, error, history: [], commands: [], mode: 'room', levels: ['normal', 'normal'], ready: true, saveError: '',
     send, undo: nothing, canUndo: false, remote,

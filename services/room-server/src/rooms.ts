@@ -31,6 +31,8 @@ export interface Seat {
 }
 export interface Room {
     turnClock?: RoomTurnClock;
+    /** The last explicitly interrupted CPU recording to discard from the history archive. */
+    discardedMatch?: string;
     record?: { id: string; startedAt: number; reason?: MatchEnd };
     id: string;
     mode?: 'free';
