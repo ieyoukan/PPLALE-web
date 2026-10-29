@@ -136,14 +136,9 @@ export function PlazaTable({ view, onMenu, match }: { view: RoomView; onMenu: ()
       ready={cameraReady} onReady={setCameraReady} onSurface={setTarget} />
 
     <aside className={styles.side} inert={playing || !cameraReady}>
-      <OrnateFrame as="button" size="sm" className={styles.rulesCard} onClick={() => setOpen('rules')} aria-label="ルール">
-        <RoomThumbnailImage rules={view.rules} alt="ルームのルール" className={styles.rulesThumbnail} sizes="180px" />
-        <span className={styles.ruleChips}>
-          <span><GameIcon name="star" />{view.rules.extendedPlayable ? '拡張' : '通常'}</span>
-          <span><GameIcon name="timer" />{view.rules.turnSeconds ? `${view.rules.turnSeconds / 60}分` : '∞'}</span>
-        </span>
-        {room.owner === room.me && <small className={styles.editHint}><GameIcon name="pen" />ルールをかえる</small>}
-      </OrnateFrame>
+      <button className={styles.rulesCard} onClick={() => setOpen('rules')} aria-label="ルール">
+        <RoomThumbnailImage rules={view.rules} alt="ルームのルール" className={styles.rulesThumbnail} sizes="360px" />
+      </button>
       {owner ? <span className={styles.ownerChip}><GameIcon name="crown" />{owner.id === room.me ? 'あなたがオーナー' : owner.name}</span>
         : <button className={styles.claim} disabled={busy || room.canClaimOwner === false} title={room.canClaimOwner === false ? 'ログイン中の人が先にオーナーを引き継げます' : undefined} onClick={() => ask({ action: 'claim' })}><GameIcon name="crown" /><span data-ui-title>オーナーになる</span></button>}
     </aside>
