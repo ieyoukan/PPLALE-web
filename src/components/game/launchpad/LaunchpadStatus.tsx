@@ -9,7 +9,7 @@ import { usePlaza } from '../plaza/PlazaProvider';
 import { useLaunchpad } from './LaunchpadContext';
 import styles from './LaunchpadStatus.module.css';
 
-/** Stays above every tab, including profiles and the expanded menu. */
+/** Stays above every tab of the compact pad, including profiles. */
 export function LaunchpadStatus() {
   const { user, loading } = useAuth(), profile = useMyProfile();
   const { view } = usePlaza(), { openAt } = useLaunchpad();

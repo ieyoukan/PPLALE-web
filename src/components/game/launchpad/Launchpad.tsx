@@ -73,7 +73,7 @@ export function Launchpad({ stack, choose }: { stack: Place[]; choose: (section:
       }
     }}>
       <OrnateFrame className={styles.pad} data-section={section}>
-        <LaunchpadStatus />{tabRail}{head}
+        {!expanded && <LaunchpadStatus />}{tabRail}{head}
         <div ref={panelRef} className={styles.tabPanel} role="tabpanel" id={`${tabId}-panel`} aria-label={title} tabIndex={0}>
           <Suspense fallback={null}><LaunchpadScreens section={section} place={place} onPanel={setPanel} onClose={onClose} /></Suspense>
         </div>

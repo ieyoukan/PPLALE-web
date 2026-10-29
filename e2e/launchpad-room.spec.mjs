@@ -110,7 +110,7 @@ for (const viewport of [{ width: 1280, height: 800 }, { width: 844, height: 390 
     for (const name of tabs.map(name => name === 'ランチパッドホーム' ? 'いまのぷぷりえーる' : name)) {
       await pad.getByRole('tab', { name, exact: true }).click();
       expect(await bounds()).toEqual(large);
-      await expect(identity).toBeInViewport(); await expect(clock).toBeInViewport();
+      await expect(identity).toHaveCount(0); await expect(clock).toHaveCount(0);
     }
     await pad.getByRole('button', { name: 'ランチパッドに縮小' }).click();
     expect(await bounds()).toEqual(small);
@@ -118,6 +118,9 @@ for (const viewport of [{ width: 1280, height: 800 }, { width: 844, height: 390 
     await page.screenshot({ path: info.outputPath('launchpad-fixed-portrait.png') });
     await identity.click();
     await expect(pad.getByRole('button', { name: 'Googleでログイン', exact: true })).toBeVisible();
+    // Opening a profile expands the pad, so the compact status row is absent there too.
+    await expect(identity).toHaveCount(0); await expect(clock).toHaveCount(0);
+    await pad.getByRole('button', { name: 'ランチパッドに縮小' }).click();
     await expect(identity).toBeInViewport(); await expect(clock).toBeInViewport();
   });
 }
