@@ -1,16 +1,15 @@
-// What every instance of the server shares, kept in Redis: the rooms, who is connected, the
-// counters, and the channel on which an instance tells the others that a room changed. The
-// instances themselves hold nothing but their sockets, so any of them can serve any room and one
-// can be replaced without ending a match.
+// Redisでルーム・接続状況・集計を共有し、更新を各サーバーへ通知する。
+// 各サーバーは自分の接続だけを持ち、再起動してもほかのサーバーが同じルームを処理できる。
 //
-//   pplale:room:{id}        hash   json (the room), v (its version), st (its status); expires when idle
-//   pplale:on:{id}:{spot}   zset   one member per open socket of a seat (0, 1), of the spectators (2) or of a plaza's members (m: `{member}~{socket}`), scored with when it lapses
-//   pplale:claim:{key}      string taken by the first instance to claim it (one CPU move is decided once)
-//   pplale:pod:{pod}        string that instance's socket count; lapses when the instance is gone
-//   pplale:totals           hash   counters since the data began
-//   pplale:rooms            channel
+//   pplale:room:{id}       hash    ルームJSON・更新番号・状態。無人のまま期限を過ぎると失効。
+//   pplale:on:{id}:{spot}  zset    席・観戦・メンバーの接続。スコアは接続期限。
+//     spot: 席は0・1、観戦は2、メンバーはm（値はmember~socket）。
+//   pplale:claim:{key}     string  CPUの1手などを、最初の1台だけが実行するためのロック。
+//   pplale:pod:{pod}       string  各サーバーの接続数。停止後に失効。
+//   pplale:totals          hash    起動をまたいで保持する累計。
+//   pplale:rooms           channel 更新通知。
 //
-// Without Redis (development, tests) the same is kept in the process by `memoryBackend`.
+// Redis未設定時は、開発・テスト用にmemoryBackendが同じ情報をプロセス内で管理する。
 import { createClient } from 'redis';
 import type { HistoryCapture, HistoryWrite } from './history/repository.ts';
 import type { Side } from '@pplale/game-core';

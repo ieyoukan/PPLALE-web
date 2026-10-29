@@ -1,12 +1,11 @@
-// Web Push: telling players what happened while the game is not on their screen (their turn, an
-// opponent in their room, a friend's request). A signed-in player's browsers register their push
-// subscription here; only this server sends, with its VAPID key, so the key stays in the cluster.
+// ゲームを見ていない人へ、手番・相手の入室・フレンド申請などをWeb Pushで伝える。
+// ログイン済みのブラウザが購読を登録し、VAPID秘密鍵は送信するサーバーだけに置く。
 //
-//   pplale:push:sub:{uid}           hash    endpoint → subscription (json); lapses unless a browser registers again
-//   pplale:push:away:{room}:{seat}  string  that seat's page is hidden; lapses with the room
-//   pplale:push:once:{key}          string  that notice was sent (keeps it from being sent twice)
+//   pplale:push:sub:{uid}          hash    通知先と購読情報。再登録されなければ失効。
+//   pplale:push:away:{room}:{seat} string  席の画面が非表示か。ルームとともに失効。
+//   pplale:push:once:{key}         string  同じ通知の重複送信を防ぐ記録。
 //
-// Without Redis (development, tests) the same is kept in the process.
+// Redis未設定時は、開発・テスト用にプロセス内で管理する。
 import { createClient } from 'redis';
 import webpush from 'web-push';
 import { z } from 'zod';

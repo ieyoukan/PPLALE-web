@@ -1,4 +1,4 @@
-// Storage primitives stay independent of card schemas and Zod.
+// 保存処理の共通部品。カードのスキーマやZodには依存させない。
 export function parseBooleanFromStorage(value: string | null, fallback: boolean): boolean {
   if (value === null) return fallback;
 

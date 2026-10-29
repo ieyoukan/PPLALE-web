@@ -1,5 +1,4 @@
-// Entry point for CPU players. A level (ai/levels/*) only picks one legal move; this file decides
-// who acts, hides what the CPU cannot know, and double-checks the choice against the real state.
+// CPU判断の入口。手番と非公開情報を整理して各難易度へ渡し、選ばれた手を実際の盤面で再検証する。
 import { applyCommand } from '../commands/index.ts';
 import { random } from '../core/rng.ts';
 import type { Catalog, Command, GameState, Side } from '../model.ts';

@@ -1,7 +1,6 @@
 'use client';
 
-// `/game/`: opening the game. Back to the room this browser is in, or into a new one, behind the
-// launch screen; the address then becomes that room's own link.
+// ゲームの起動入口。保存されたルームへ復帰するか新規作成し、そのルームのURLへ移動する。
 import { useEffect, useState } from 'react';
 import type { RoomInfo, RoomRules } from '@pplale/game-core/room';
 import { currentPlaza, readRoomInfo } from '@/lib/game/room/client';

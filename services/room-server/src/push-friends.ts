@@ -1,6 +1,4 @@
-// What a friend notice needs to be true before it is sent, read from Firestore as the player who
-// asks for it (their ID token goes with the request, so the security rules decide what they may
-// see: only their own friendships and recruitment). No service account is used.
+// 依頼者のIDトークンでフレンド関係と募集を読み、通知の条件を確認する。Service Accountで権限を迂回しない。
 
 const ID = /^[\w-]{1,128}$/;
 type Fields = Record<string, { stringValue?: string; arrayValue?: { values?: { stringValue?: string }[] } }>;

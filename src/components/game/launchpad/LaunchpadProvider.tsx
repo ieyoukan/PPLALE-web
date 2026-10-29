@@ -1,6 +1,6 @@
 'use client';
 
-// Owns menu visibility and navigation while the room connection remains in the game layout.
+// ルーム接続を維持したまま、メニューの開閉と表示する画面を管理する。
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import type { ReactNode } from 'react';
 import { usePathname } from 'next/navigation';

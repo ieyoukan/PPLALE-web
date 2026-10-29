@@ -1,7 +1,6 @@
 'use client';
 
-// Layout of the game screen. Rules live in @pplale/game-core, interaction state in board/useBoard,
-// each visible region in table/ and the drawers in panels/.
+// 盤面の配置を組み立てる。ルールはgame-core、操作状態はboard/useBoard、表示はtable/、補助画面はpanels/で管理する。
 import { Suspense, useContext, useEffect, useRef } from 'react';
 import { createPortal } from 'react-dom';
 import type { CSSProperties } from 'react';

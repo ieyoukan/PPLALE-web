@@ -1,7 +1,6 @@
 'use client';
 
-// A two-seat room before its match: who is here, the rules, inviting, choosing a deck. A link to
-// one opens this, so someone without a seat is first asked to join.
+// 旧2席ルームの準備画面。ルール・招待・デッキを表示し、席がない人には入室の意思を確認する。
 import { useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';

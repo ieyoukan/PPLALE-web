@@ -1,4 +1,4 @@
-/** Diagnostic durations only. No room, player, card, command arguments or device IDs. */
+// 処理時間だけを記録する。ルーム・人物・カード・操作引数・端末の識別情報は含めない。
 export const playKinds = ['roll', 'initiative', 'openingDraw', 'mulligan', 'keep', 'draw', 'play', 'attack', 'choose', 'skill', 'exSkill', 'acorn', 'reveal', 'end'] as const;
 export type PlayKind = typeof playKinds[number];
 export const serverStages = ['queue', 'read', 'apply', 'store', 'presence', 'deliver', 'publish', 'total'] as const;
@@ -8,7 +8,7 @@ export type ClientTiming = Partial<Record<typeof clientStages[number], number>>;
 export type PlayOutcome = 'ok' | 'rejected' | 'timeout' | 'disconnected' | 'unpresented';
 export interface PlaySample extends ClientTiming {
     kind: PlayKind;
-    /** Rounded to a minute; not a match/event log. */
+    /** 分単位に丸めた時刻。対戦や操作の履歴として使わない。 */
     at: number;
     outcome: PlayOutcome;
     background: boolean;
@@ -27,7 +27,7 @@ export interface PlaySummary {
 export interface PlayPerformance {
     capacity: number;
     retentionHours: number;
-    /** Shared across pods when Redis is enabled. Best effort, not an authoritative log. */
+    /** Redis使用時はPod間で共有する。診断用の参考値で、操作履歴の正本ではない。 */
     scope: 'shared' | 'process';
     summary: PlaySummary;
     byKind: Partial<Record<PlayKind, PlaySummary>>;
@@ -42,14 +42,14 @@ export function parseServerTiming(value: unknown): ServerTiming | undefined {
     return Object.fromEntries(serverStages.map(stage => [stage, roundedMs(item[stage] as number)])) as ServerTiming;
 }
 
-/** Explicit allowlist: never persist extra fields from a client report. */
+/** 許可した項目だけを保存し、クライアントが追加した情報を混ぜない。 */
 export function parsePlayReport(value: unknown): PlayReport | null {
     if (!value || typeof value !== 'object') return null;
     const item = value as Record<string, unknown>;
     if (!Number.isSafeInteger(item.n) || (item.n as number) < 0 || typeof item.background !== 'boolean') return null;
     if (!clientStages.every(stage => duration(item[stage]))) return null;
     const report = Object.fromEntries(clientStages.map(stage => [stage, roundedMs(item[stage] as number)])) as Required<ClientTiming>;
-    // Durations share one monotonic browser clock. Allow a little rounding error.
+    // 所要時間はブラウザの単調増加時計で測る。丸め誤差だけを許容する。
     if (Math.abs(report.inputToPaint - report.inputToSend - report.sendToView - report.viewToPaint) > 2 || report.sendToView > report.roundTrip + 2) return null;
     return { n: item.n as number, background: item.background, ...report };
 }

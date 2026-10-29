@@ -1,4 +1,4 @@
-// Commands during a turn: play, attack, skills, choices and ending the turn.
+// ターン中の操作。カード使用・攻撃・スキル・選択肢への回答・ターン終了を扱う。
 import { canPlay } from '../view.ts';
 import { scriptFor } from '../cards/registry.ts';
 import { costOf, increasePp } from '../core/cards.ts';

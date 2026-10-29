@@ -1,7 +1,6 @@
 'use client';
 
-// Push notifications in the browser: the subscription of this browser, registered with the room
-// server (services/room-server/src/push.ts), which sends them. Only signed-in players can have them.
+// ブラウザのPush購読をルームサーバーへ登録する。通知の送信と秘密鍵の管理はサーバー側で行う。
 import { isIos, isStandalone } from '@/lib/pwa';
 import { pushFriend, pushRecruit, readPushKey, registerPush, roomServerUrl, unregisterPush } from './room/client';
 

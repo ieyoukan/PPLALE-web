@@ -1,7 +1,6 @@
 'use client';
 
-// Inviting people: friends meet in Discord, so pasting there comes first. The link carries the
-// invitation secret only where the player may hand it out; in a friends' room the link is enough.
+// 招待リンクの共有画面。招待権限がある場合だけ秘密をリンクへ含め、フレンド制では入室権限を別途確認する。
 import { useEffect, useState } from 'react';
 import type { RoomView } from '@pplale/game-core/room';
 import { invitedVisibility } from '@pplale/game-core/room';

@@ -1,4 +1,4 @@
-// Settings from the environment (see the Helm chart's values.yaml for what each one means).
+// 環境変数から設定を読む。各項目の意味はHelmチャートのvalues.yamlを参照。
 import os from 'node:os';
 import path from 'node:path';
 

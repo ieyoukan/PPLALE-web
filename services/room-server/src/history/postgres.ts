@@ -1,4 +1,4 @@
-// Redis owns live rooms. PostgreSQL durably archives the Redis transactional outbox.
+// 進行中のルームはRedisが正本。Redisが確定した保存待ちの記録をPostgreSQLへ永続化する。
 import { Pool, type PoolClient, type QueryResultRow } from 'pg';
 import { createHash } from 'node:crypto';
 import { gzipSync, gunzipSync } from 'node:zlib';

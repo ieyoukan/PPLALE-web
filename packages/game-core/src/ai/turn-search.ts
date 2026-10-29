@@ -1,4 +1,4 @@
-// Bounded beam search over a whole own turn, followed by the opponent's whole reply.
+// 自分のターンと相手の応答を、計算量に上限のあるビーム探索で読む。
 import { applyCommand } from '../commands/index.ts';
 import { canAttack } from '../core/combat.ts';
 import type { Catalog, Command, GameState, Side } from '../model.ts';

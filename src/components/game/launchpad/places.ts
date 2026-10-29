@@ -1,6 +1,4 @@
-// Every screen of the game outside the board opens inside the launchpad, over the room, without the
-// address changing. The old addresses (`/game/cards/`, `/game/profile/?id=` …) still work: a link to
-// one opens its section in the launchpad, and opening one from outside goes to the room first.
+// 画面名・アイコン・旧URL・親画面の対応をここに集約する。ゲーム内の画面切り替えではルームのURLを変えない。
 import { BATTLE_PATH, CARDS_PATH, CARD_GALLERY_PATH, CPU_PATH, EDITOR_PATH, NOTIFICATIONS_PATH, PUZZLES_PATH, SETTINGS_PATH } from '@/lib/game/sessionStore';
 import type { GameIconName } from '@/components/shared/ui/GameIcon';
 

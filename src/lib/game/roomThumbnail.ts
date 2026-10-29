@@ -1,7 +1,4 @@
-// What a room's picture shows, chosen from its rules only: the fruits its decks may use (an
-// environment, so their number names them), whether extended playables are allowed, and the time
-// per turn. The share image (OGP, /api/og/room/) and the room cards in the game use the same choice,
-// and nothing about who is in the room or its secret goes into it.
+// ルールだけからルーム画像の内容を決める。同じルールなら同じ画像を使い、ルーム名や招待の秘密を画像へ含めない。
 import { fruits } from '@pplale/game-core';
 import type { Fruit } from '@pplale/game-core';
 import type { RoomRules } from '@pplale/game-core/room';

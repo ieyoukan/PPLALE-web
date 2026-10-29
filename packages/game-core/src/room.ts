@@ -1,30 +1,27 @@
 import type { RoomChatStampId } from './chatStamps.ts';
 export { ROOM_CHAT_STAMPS } from './chatStamps.ts';
 export type { RoomChatStampId } from './chatStamps.ts';
-// Matches between two players over a network (ルームマッチ): the rules a room is made with and
-// what the browser and the room server (services/room-server) say to each other. The server keeps
-// the match; a browser only ever gets its own seat's view of it (redact.ts).
+// ルームのルールと、ブラウザ・サーバー間で共有する型。
+// ブラウザとルームサーバーの通信形式を定義する。
+// サーバーが完全な状態を持ち、閲覧者に許可した情報だけを返す。
 import type { Catalog, Command, Deck, GameState, Side } from './model.ts';
 import type { CpuLevel } from './ai/types.ts';
 import { defaultMatchRules, deckRuleErrors, describeMatchRules, parseMatchRules } from './rules.ts';
 import type { MatchRules } from './rules.ts';
 import type { PlayPerformance, PlayReport, ServerTiming } from './performance.ts';
 
-// ── The rules of a room: which cards its decks may use (rules.ts), and whether others may watch ──
+// ルームのルール：使用できるカードと観戦の可否。
 export { describeMatchRules, fruitNames, fruits, playableNow } from './rules.ts';
 export type { Fruit, MatchRules } from './rules.ts';
 
 export interface RoomRules extends MatchRules {
-    /** Per turn, in seconds. Omitted means unlimited; opening preparation is not timed. */
+    /** 1ターンの秒数。省略時は無制限。開始準備は時間制限の対象外。 */
     turnSeconds?: 120 | 180 | 300;
-    /**
-     * Whether others may watch. In a room match a spectator sees both hands, so it trusts
-     * its players not to watch their own match; both players are told, and how many are watching.
-     */
+    /** 観戦の許可。通常ルームの観戦者には両手札を見せ、対戦者には観戦人数を知らせる。 */
     spectators?: boolean;
 }
 export const defaultRoomRules: RoomRules = { ...defaultMatchRules, spectators: false };
-/** The usable part of anything sent as rules, or null when no fruit is left. */
+/** 受信した値から有効なルールだけを取り出す。使用可能なフルーツがなければnull。 */
 export function parseRoomRules(value: unknown): RoomRules | null {
     const rules = parseMatchRules(value);
     const seconds = (value as RoomRules | null)?.turnSeconds;
@@ -32,91 +29,91 @@ export function parseRoomRules(value: unknown): RoomRules | null {
         ...((seconds === 120 || seconds === 180 || seconds === 300) && { turnSeconds: seconds }) };
 }
 
-/** Why the deck cannot be used in a room with these rules (empty when it can). */
+/** このルールでデッキを使えない理由。使用可能なら空配列。 */
 export const roomDeckErrors = (deck: Deck, rules: RoomRules, catalog: Catalog): string[] => deckRuleErrors(deck, rules, catalog, 'このルーム');
 
-/** One line for the lobby and for sharing, e.g. 「フルーツ：いちご ／ 拡張プレイアブル：なし ／ 観戦：なし」. */
+/** 準備画面と共有文で使うルールの要約。 */
 export const describeRoomRules = (rules: RoomRules) => `${describeMatchRules(rules)} ／ 観戦：${rules.spectators ? 'あり' : 'なし'} ／ 1ターン：${rules.turnSeconds ? `${rules.turnSeconds / 60}分` : '無制限'}`;
 
-/** The server's clock. During the opponent's choices the deadline is null and remainingMs is frozen. */
+/** サーバーのターン時計。相手の選択待ちではdeadlineをnullにし、remainingMsを固定する。 */
 export interface RoomTurnClock {
     turn: number;
     side: Side;
     remainingMs: number;
     deadline: number | null;
-    /** Used to write the time-expiry notice only once per turn. */
+    /** 同じターンの時間切れ通知を重複させないための記録。 */
     expired?: true;
 }
 
-// ── What a seat is told ──
-/** lobby: choosing decks (in a plaza: no match on the table). playing / finished: a match. closed: the room is gone (its host left, or everyone did). */
+// 各席・観戦者へ返す情報。
+/** lobbyは準備、playingは対戦中、finishedは対戦終了、closedはルーム閉鎖。 */
 export type RoomStatus = 'lobby' | 'playing' | 'finished' | 'closed';
 
-/** A command the other side may see: never a test command, and always from the sender's own seat. */
+/** 相手にも公開できる操作。検証用操作は含めず、操作者は送信者の席に限定する。 */
 export type RoomCommand = Exclude<Command, { type: 'adjust' | 'draw' }>;
 
-/** The command that led to `game`, so the other side can show it happening. */
+/** 今回の盤面になった原因の操作。相手側で演出するときに使う。 */
 export interface LastCommand {
     command: RoomCommand;
-    /** The card a `play` / `reveal` showed, which the other side's previous view did not know. */
+    /** 直前まで相手が知らなかった、使用・公開されたカード。 */
     cardId?: string;
 }
 
-/** A room as one seat (or a spectator) sees it. `game` hides what they may not know (`viewFor`). */
+/** 席または観戦者向けのルーム状態。非公開領域はviewForで隠してから送る。 */
 export interface RoomView {
     turnClock?: RoomTurnClock;
-    /** Sampled when this view is sent, so countdowns do not depend on the browser's wall clock. */
+    /** 送信時のサーバー時刻。ブラウザの時計に依存せず残り時間を表示する。 */
     serverNow?: number;
     id: string;
     mode?: 'free';
-    /** Grows with every change of the room; an older view never replaces a newer one. */
+    /** ルーム変更ごとに増える番号。古い通知で新しい状態を上書きしない。 */
     version: number;
-    /** The seat this view is for. A spectator's is 0: the side shown near. */
+    /** この表示の対象席。観戦者は手前側として0を使う。 */
     seat: Side;
-    /** Set on a spectator's view: nothing can be done with it. Free matches hide both hands. */
+    /** 観戦者の表示は操作不可。旧フリーマッチの対戦中は両者の手札を隠す。 */
     watching?: true;
-    /** The server takes `away` messages (older servers close a socket that sends one). */
+    /** サーバーがaway通知に対応している印。非対応の旧サーバーには送らない。 */
     reportsAway?: true;
-    /** People watching right now. */
+    /** 現在の観戦人数。 */
     spectators: number;
-    /** Available after the match is durably saved. */
+    /** 対戦記録の永続化が済んだ後だけ返す。 */
     replayId?: string;
-    /** The same public-position estimate for players and spectators; excludes unrevealed hands. */
+    /** 未公開手札を除いた盤面評価。対戦者・観戦者で同じ値を使う。 */
     assessment?: { win: number; method: 'public-position-value-v1' };
     status: RoomStatus;
-    /** Counts the matches played in this room; a new number means a new match. */
+    /** このルームの試合番号。番号が変われば別の対戦。 */
     match: number;
-    /** Stable identity for the current match, including reconnects and room-id reuse. */
+    /** 再接続やルームIDの再利用に影響されない、試合固有のID。 */
     matchId?: string;
     rules: RoomRules;
-    /** Index = seat. Null: nobody sits there (in a two-seat room only the second, until someone joins). */
+    /** 添字は席番号。nullは空席。旧2席ルームでは、入室前の相手席だけが空になる。 */
     players: [RoomPlayer | null, RoomPlayer | null];
-    /** The room as a place people gather in (rooms made by the game's launcher); absent for free matches and older rooms. */
+    /** 集まって遊ぶルームの在室情報。旧2席ルームとフリーマッチでは省略する。 */
     plaza?: PlazaView;
-    /** Original deck list, only sent to its owner; never includes shuffle order. */
+    /** 本人だけに返す元のデッキ一覧。シャッフル後の山札順は含めない。 */
     ownDeck?: Deck;
     game: GameState | null;
     last: LastCommand | null;
-    /** The seat that gave up the current match. */
+    /** 現在の対戦で投降した席。 */
     resigned: Side | null;
 }
 export interface RoomPlayer {
     name: string;
     profileId?: string;
     ready: boolean;
-    /** Connected to the server right now. */
+    /** 現在サーバーへ接続しているか。 */
     online: boolean;
-    /** Left the room during or after a match. */
+    /** 対戦中または終了後にルームから退出したか。 */
     left?: boolean;
-    /** Own deck name, or the CPU’s selected deck name (never its hidden cards). */
+    /** 自分またはCPUの選択済みデッキ名。未公開のカード内容は含めない。 */
     deck?: string;
-    /** In a plaza: the member who sits here. */
+    /** この席に座っているルームメンバー。 */
     member?: string;
-    /** The server plays this seat. */
+    /** この席はサーバーのCPUが操作する。 */
     cpu?: CpuLevel;
 }
 
-/** What someone without a seat may know (the page a shared link opens). */
+/** 未入室者向けの情報。共有リンクの入室前表示に使う。 */
 export interface RoomInfo {
     id: string;
     rules: RoomRules;
@@ -124,15 +121,15 @@ export interface RoomInfo {
     hostProfileId?: string;
     hostOnline?: boolean;
     status?: RoomStatus;
-    /** A seat is free and no match has started. */
+    /** 対戦が始まっておらず、空席がある。 */
     open: boolean;
-    /** The room may be watched. */
+    /** 観戦できるルーム。 */
     spectators: boolean;
-    /** A plaza, as far as the asker may know it (only asked about when they may enter it). */
+    /** 入室を許可された人へ返す、ルームの事前情報。 */
     plaza?: PlazaInfo;
 }
 
-/** A seat and the secret that acts for it (kept in that player's browser only). */
+/** 席と、その席を操作する秘密のトークン。本人のブラウザだけで保持する。 */
 export interface SeatKey {
     seat: Side;
     token: string;
@@ -146,50 +143,46 @@ export type RoomAction =
     | { action: 'unready' }
     | { action: 'command'; command: RoomCommand; revision: number }
     | { action: 'resign' }
-    /** Ends only the seated player's CPU match without a result or replay; stays at the table. */
+    /** 着席者がCPU戦を中断する。勝敗やリプレイを作らず、同じルームの準備へ戻る。 */
     | { action: 'abort'; match: number }
-    /** In a plaza: keep the seat for the next match (two-seat rooms: back to choosing decks together). */
+    /** 席を維持して次の対戦を準備する。旧2席ルームでもデッキ選択へ戻る。 */
     | { action: 'rematch' }
-    /** Gives up the room (a match in progress is lost). */
+    /** ルームを退出する。対戦中なら敗北になる。 */
     | { action: 'leave' }
-    // ── A plaza only ──
+    // 集まって遊ぶルーム専用の操作。
     | { action: 'sit'; seat: Side }
-    /** Frees the own seat and stays in the room (a match in progress is lost). */
+    /** 自分の席を空けて観戦へ移る。対戦中なら敗北になる。 */
     | { action: 'stand' }
-    /** Calls or configures the CPU before a match. Without a deck the server makes one. */
+    /** 対戦前にCPUを呼ぶ・設定し直す。デッキを省略するとサーバーが用意する。 */
     | { action: 'cpu'; seat: Side; level: CpuLevel; deck?: Deck }
     | { action: 'dismissCpu' }
-    /** Becomes the owner of a room that has none. */
+    /** オーナー不在のルームを引き継ぐ。 */
     | { action: 'claim' }
-    /** The owner sets the rules of the next match. */
+    /** オーナーが次の試合のルールを設定する。 */
     | { action: 'rules'; rules: RoomRules }
-    /** The owner changes the room's displayed name; its creator and visibility stay fixed. */
+    /** オーナーがルーム名を変更する。作成者と公開範囲は変更しない。 */
     | { action: 'rename'; name: string }
-    /** Plain text or a registered stamp to the people in this plaza. The client id makes retries idempotent. */
+    /** 文字または登録済みスタンプを送る。送信IDを使い、再試行しても重複させない。 */
     | ({ action: 'chat'; messageId: string } & ({ text: string; stamp?: never } | { stamp: RoomChatStampId; text?: never }))
-    /** A new invitation link; the previous one stops working. */
+    /** 招待リンクを更新し、古いリンクを失効させる。 */
     | { action: 'renewInvite' }
-    /** Answers a friend who asked to be let in. */
+    /** フレンドからの入室リクエストへ回答する。 */
     | { action: 'answer'; profileId: string; accept: boolean };
 
-// ── A plaza: a room people gather in, with one table of two seats ──
-/**
- * Who may come in, chosen when the room is made and never changed:
- * public: anyone. friends: friends of its creator. friendsPlus: friends of its creator or of anyone in it.
- * invite: those its owner invites (a shared invitation link counts). invitePlus: those anyone in it invites.
- */
+// 2つの席と、着席せずに滞在する人を持つルーム。
+/** 作成時に固定する公開範囲。publicは誰でも、friendsは作成者のフレンド、friendsPlusは作成者または在室者のフレンド。inviteはオーナー、invitePlusは在室者が招待できる。 */
 export type RoomVisibility = 'public' | 'friends' | 'friendsPlus' | 'invite' | 'invitePlus';
 export const roomVisibilities: readonly RoomVisibility[] = ['public', 'friends', 'friendsPlus', 'invite', 'invitePlus'];
-/** What a new room uses until the player chooses otherwise. */
+/** 別の種類を選ぶまで、新しいルームに使う公開範囲。 */
 export const DEFAULT_VISIBILITY: RoomVisibility = 'invite';
-/** The answer to entering a two-seat room as a room to gather in: nobody is seated; its lobby lets the visitor choose. */
+/** 旧2席ルームへの入室回答。自動で着席させず、準備画面で本人に選んでもらう。 */
 export const TWO_SEAT_ROOM = 'このルームは2人用です';
 export const isRoomVisibility = (value: unknown): value is RoomVisibility => roomVisibilities.includes(value as RoomVisibility);
-/** Rooms friends can find (and see their friends in); the others are only reached by an invitation. */
+/** フレンドから所在を確認できる公開範囲。非公開ルームは招待から入る。 */
 export const listedVisibility = (visibility: RoomVisibility) => visibility === 'public' || visibility === 'friends' || visibility === 'friendsPlus';
 export const invitedVisibility = (visibility: RoomVisibility) => visibility === 'invite' || visibility === 'invitePlus';
 export const MAX_ROOM_NAME_LENGTH = 16;
-/** People in one room at once, seated or not. */
+/** 着席・観戦を含めたルームの同時在室人数。 */
 export const MAX_MEMBERS = 16;
 export const MAX_ROOM_CHAT_LENGTH = 300;
 export const MAX_ROOM_CHAT_MESSAGES = 50;
@@ -198,87 +191,81 @@ export interface RoomChatMessage {
     member: string;
     name: string;
     profileId?: string;
-    /** Plain text, or the server-owned fallback label for a stamp (older clients). */
+    /** 本文。スタンプの場合は、旧クライアント向けにサーバーが決めた代替文。 */
     text: string;
     stamp?: RoomChatStampId;
     sentAt: number;
 }
-/** A member whose last connection closed this long ago is no longer in the room (ms). */
+/** 最後の接続が切れてから、在室メンバーを保持する猶予時間（ミリ秒）。 */
 export const MEMBER_GRACE = 120_000;
 
-/** Someone in a plaza: seated, waiting or watching. */
+/** 着席・待機・観戦を含むルームのメンバー。 */
 export interface PlazaMember {
     id: string;
     name: string;
     profileId?: string;
-    /** Connected right now (a member away for a moment stays in the room for MEMBER_GRACE). */
+    /** 現在の接続状態。一時切断中もMEMBER_GRACEの間は在室扱いにする。 */
     online: boolean;
     seat?: Side;
 }
-/** What a member is told about the plaza besides the table. */
+/** 盤面以外に、在室メンバーへ返すルームの情報。 */
 export interface PlazaView {
     name: string;
     visibility: RoomVisibility;
-    /** Who made the room; never changes, even after they left. */
+    /** ルーム作成者。退出やオーナー交代でも変更しない。 */
     creator: { name: string; profileId?: string };
-    /** The member who may change the rules now; null while nobody is. */
+    /** 現在ルールを変更できるメンバー。未引き継ぎの間はnull。 */
     owner: string | null;
-    /** Signed-in participants have priority over guests when the room is unowned. */
+    /** オーナー不在時、接続中のログイン済みメンバーをゲストより優先する。 */
     canClaimOwner?: boolean;
-    /** The member this view is for. */
+    /** この表示の対象メンバー。 */
     me: string;
     members: PlazaMember[];
-    /** Present on servers supporting chat. Retained only in this room, outside match recordings. */
+    /** チャット対応サーバーで返す履歴。このルーム内だけに保持し、対戦記録には含めない。 */
     chat?: RoomChatMessage[];
     chatEnabled?: true;
-    /** Fixed-catalog stamp messages are supported by this server. */
+    /** 登録済みスタンプの送信に対応するサーバー。 */
     chatStamps?: true;
-    /** The rules of the next match, when the owner changed them during this one. */
+    /** 対戦中に変更された、次の試合用のルール。 */
     nextRules?: RoomRules;
-    /** The secret of the invitation link, only for those who may share it. */
+    /** 招待リンクの秘密。共有できるメンバーだけに返す。 */
     invite?: string;
-    /** Signed-in friends asking to be let in, only for those who may let them. */
+    /** 入室リクエスト。承認できるメンバーだけに返す。 */
     requests?: { profileId: string; name: string }[];
 }
-/** What someone who may enter a plaza is told before entering it. */
+/** 入室可能な人に見せる、入室前のルーム情報。 */
 export interface PlazaInfo {
     name: string;
     visibility: RoomVisibility;
     creator: { name: string; profileId?: string };
-    /** People in the room, seated or not. */
+    /** 着席していない人も含めた在室人数。 */
     members: number;
-    /** Seats taken (by people or the CPU). */
+    /** 人間またはCPUが使っている席の数。 */
     seated: number;
 }
-/** A plaza to make: its initial name and fixed visibility, and (after a closed room) the room it takes over from. */
+/** ルーム作成時の名前・公開範囲。閉じたルームから戻る場合は、引き継ぎ元も指定できる。 */
 export interface PlazaRequest {
     name: string;
     visibility: RoomVisibility;
-    /** The member token of a closed room this browser was in: its successor is entered instead of making another. */
+    /** 閉じたルームのメンバートークン。再接続者が別々の後継ルームを作らないために使う。 */
     from?: { id: string; token: string };
 }
-/** The answer to making or entering a plaza: the member's secret and their first view. */
+/** 作成・入室の結果。メンバーの秘密と、最初の表示状態を返す。 */
 export interface Entered {
     token: string;
     view: RoomView;
 }
 
-// ── The socket of a seat (`/rooms/{id}/socket`) ──
-/**
- * `hello` comes first: with the seat's token, or `watch` to look on without a seat.
- * `n` numbers an action so its `result` can be told apart.
- */
+// 席のWebSocket接続（/rooms/{id}/socket）。
+/** 最初にhelloでトークンまたは観戦を指定する。操作番号nにより、要求とresultを対応させる。 */
 export type ClientMessage =
-    /** `token`: a seat's, or a plaza member's. */
+    /** 席またはルームメンバーのトークン。 */
     | { type: 'hello'; token?: string; watch?: true; chat?: true }
     | { type: 'action'; n: number; action: RoomAction }
     | { type: 'performance'; reports: PlayReport[] }
-    /** The seat's page was hidden (another app, screen off) or shown again: while hidden, the player is told of their turn by a push notification. Only sent when the view has `reportsAway`. */
+    /** 画面の表示・非表示を通知する。非表示中の手番はPushで伝える。reportsAway対応サーバーへだけ送る。 */
     | { type: 'away'; away: boolean };
-/**
- * `view`: the seat's view, now and after every change. `result`: what became of action `n`
- * (`error` when it was refused; its view was already sent). `gone`: no such room or seat (any more).
- */
+/** viewは表示状態、resultは操作番号nの成否、goneはルーム・メンバーの消失。成功した操作のviewはresultより先に届く。 */
 export type ServerMessage =
     | { type: 'view'; view: RoomView }
     | { type: 'chat'; id: string; version: number; messages: RoomChatMessage[] }
@@ -286,23 +273,23 @@ export type ServerMessage =
     /** `closed`: a plaza closed while this member was away; they may make its successor (`PlazaRequest.from`). */
     | { type: 'gone'; error: string; closed?: true };
 
-/** How the room server is doing (`GET /stats`): shown on the バトル tab and useful when something is off. */
+/** サーバーの稼働情報（GET /stats）。通信計測や障害調査で使う。 */
 export interface RoomServerStats {
-    /** Of the instance that answered. */
+    /** 回答したサーバーインスタンス。 */
     version: string;
-    /** Seconds since that instance started. */
+    /** そのインスタンスの起動からの秒数。 */
     uptime: number;
-    /** Where the rooms are kept: `redis`, or `memory` (one instance without Redis; development). */
+    /** ルームの保存先。redisは共有保存、memoryは開発用の単一プロセス保存。 */
     backend: 'redis' | 'memory';
-    /** Instances running now. */
+    /** 現在稼働しているサーバーインスタンス数。 */
     pods: number;
-    /** Rooms by what they are doing now. */
+    /** 状態ごとのルーム数。 */
     rooms: Record<RoomStatus, number>;
-    /** Open sockets on all instances (about the players looking at a room now). */
+    /** 全インスタンスの接続数。現在ルームを開いている人の目安。 */
     connections: number;
-    /** Since the data began (they outlast the instances). */
+    /** サーバーを再起動しても残る累計。 */
     total: { roomsCreated: number; matchesStarted: number; matchesFinished: number; commands: number };
-    /** Last 256 successful commands on this pod; not a network round-trip measurement. */
+    /** このPodで直近に成功した256操作の処理時間。通信の往復時間とは別。 */
     latency?: RoomLatency;
     performance?: PlayPerformance;
 }
@@ -317,5 +304,5 @@ export const ROOM_ID_LENGTH = 6;
 export const isRoomId = (value: unknown): value is string => typeof value === 'string' && /^\d{6}$/.test(value);
 export const MAX_NAME_LENGTH = 12;
 
-/** A profile's current location, shared only with the player and accepted friends. Private rooms expose no identity. */
+/** 本人と承認済みフレンドへ返す現在地。非公開ルームの識別情報は返さない。 */
 export type ProfileLocation = { kind: 'offline' } | { kind: 'private'; visibility: RoomVisibility } | { kind: 'room'; room: RoomInfo };

@@ -1,8 +1,6 @@
 'use client';
 
-// Choosing a deck for a match, shared by the preparation of a CPU match and a room's lobby. What
-// can be chosen comes from the deck sources (lib/game/deckSources.ts): a deck the rules of the
-// match do not allow is listed but cannot be chosen, and its reason is given below the selector.
+// CPU戦とルームで共用するデッキ選択。候補と使用できない理由はlib/game/deckSources.tsから取得する。
 import { useEffect, useMemo, useState } from 'react';
 import type { MatchRules } from '@pplale/game-core';
 import { useAuth } from '@/lib/auth';

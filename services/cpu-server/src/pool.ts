@@ -1,4 +1,4 @@
-// Worker threads for the two slow parts of a training run: self-play and the comparison matches.
+// 自己対戦と比較対戦をWorkerへ分配し、学習の重い処理を分離する。
 import { Worker } from 'node:worker_threads';
 import type { ValueModel } from '@pplale/game-core';
 

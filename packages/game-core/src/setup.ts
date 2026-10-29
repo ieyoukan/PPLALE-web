@@ -1,4 +1,4 @@
-// Deck validation and creating a new match.
+// デッキを検証し、新しい対戦の初期状態を作る。
 import { note, spawnCard } from './core/cards.ts';
 import { shuffled } from './core/rng.ts';
 import { sides } from './model.ts';

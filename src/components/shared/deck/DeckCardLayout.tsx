@@ -5,7 +5,7 @@ import { DECK_IMAGE_WIDTH, DECK_IMAGE_HEIGHT, DECK_IMAGE_ASPECT, deckImageLayout
 import type { DeckImageCards } from '@/lib/deckImageLayout';
 import styles from './DeckCardLayout.module.css';
 
-/** The same card layout at any size; optionally add native buttons for inspecting individual cards. */
+/** 大きさにかかわらず同じカード配置を使う。指定した場合だけ、各カードを拡大するボタンにする。 */
 export function DeckCardLayout({ deck, label, imageOf, nameOf, onCardClick }: {
   deck: DeckImageCards;
   label: string;

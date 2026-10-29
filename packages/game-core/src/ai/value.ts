@@ -1,5 +1,4 @@
-// A learned position value: a small network trained on match outcomes (scripts/value.mjs).
-// It scores a state like `evaluatePlan`, so the turn search can use either.
+// 対戦結果から学習した小さなネットワークで盤面を評価する。探索側では手作業の評価と同じ形で利用できる。
 import { attackOf, costOf, hpOf, maxPp } from '../core/cards.ts';
 import { other } from '../model.ts';
 import type { Catalog, GameState, Keyword, Side } from '../model.ts';

@@ -1,4 +1,4 @@
-// The card catalog, read from the web app's card data (copied into the image next to the engine).
+// Webアプリと共通のカードデータを読み込む。配布イメージではエンジンの隣に配置する。
 import { readFileSync } from 'node:fs';
 import type { Catalog } from '@pplale/game-core';
 

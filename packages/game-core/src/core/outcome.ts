@@ -1,5 +1,4 @@
-// How a match ends. Every way of ending one goes through `decideMatch`, so the winner and the
-// reason are always set together and the result screen can say why.
+// 勝者と決着理由を同時に確定する。すべての決着をdecideMatchへ集約する。
 import { other } from '../model.ts';
 import type { GameState, Side, WinReason } from '../model.ts';
 

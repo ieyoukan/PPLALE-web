@@ -1,7 +1,4 @@
-// The value of a single move (DouZero's idea): how likely its player is to win the match after
-// playing it here, judged from the position, what the move changes and what it is (which card,
-// which target). Trained on self-play outcomes (scripts/policy.mjs); the turn search uses it to
-// decide which moves to read first.
+// 行動とその前後の盤面から勝ちやすさを推定し、探索する手の順序を決める。係数は自己対戦結果から学習する。
 import type { Catalog, Command, GameState, Side } from '../model.ts';
 import { other } from '../model.ts';
 import { attackOf, hpOf } from '../core/cards.ts';

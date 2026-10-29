@@ -1,8 +1,6 @@
 'use client';
 
-// `/game/room/<id>/`: the one link of a room. Opening it enters the room (behind the launch screen
-// when the game was not open yet) and shows it; a free match or an older two-seat room under that
-// id is shown the way it always was.
+// ルームの共有URLから入室して表示する。旧2席ルームは互換用の画面へ振り分ける。
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';

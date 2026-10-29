@@ -1,4 +1,4 @@
-// What a side cannot know is replaced by a random but consistent guess before a CPU sees the state.
+// CPUに渡す前に、非公開情報を矛盾のないランダムな推測へ置き換える。
 import { shuffled } from '../core/rng.ts';
 import { cloneState } from '../core/state.ts';
 import { other } from '../model.ts';

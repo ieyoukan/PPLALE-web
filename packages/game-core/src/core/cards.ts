@@ -1,4 +1,4 @@
-// Card instances and their current values (attack, HP, cost, keywords).
+// 対戦中のカードと、現在の攻撃力・HP・コスト・能力を管理する。
 import { MAX_PP } from '../model.ts';
 import { scriptFor, scriptOf } from '../cards/registry.ts';
 import type { Catalog, GameState, Instance, Keyword, Side } from '../model.ts';

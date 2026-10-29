@@ -1,6 +1,6 @@
 'use client';
 
-// Player names used only by legacy two-seat lobbies. New instances resolve identity at admission.
+// 旧2席ルームの名前入力。新しいルームの名前は、入室時に本人のプロフィールから決める。
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { useAuth } from '@/lib/auth';

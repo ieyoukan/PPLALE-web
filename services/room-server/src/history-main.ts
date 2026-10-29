@@ -1,4 +1,4 @@
-// Private ClusterIP RPC service. Backups run in a separate Kubernetes CronJob, never here.
+// クラスタ内部専用の履歴API。バックアップは独立したCronJobで行い、APIの処理へ混ぜない。
 import { createServer } from 'node:http';
 import { PostgresHistory } from './history/postgres.ts';
 

@@ -1,4 +1,4 @@
-/** One line-icon vocabulary for game screens and shared UI. */
+// ゲームと共通UIで使うSVGアイコンの定義。
 const paths = {
   smile: 'M12 21a9 9 0 1 0 0-18 9 9 0 0 0 0 18zM8 9h.01M16 9h.01M7.5 13.5a4.8 4.8 0 0 0 9 0',
   chat: 'M5 4h14a2 2 0 0 1 2 2v10a2 2 0 0 1-2 2h-9l-6 3v-3H5a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2zM7 9h10M7 13h6',

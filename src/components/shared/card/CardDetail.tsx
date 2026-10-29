@@ -20,7 +20,7 @@ interface CardDetailProps {
   returnFocusRef?: RefObject<HTMLElement | null>;
 }
 
-/** Shared card inspection: a viewport portal, pointer tilt, front/back faces and optional deck actions. */
+/** 共通のカード拡大表示。画面全体への配置・回転・表裏の切り替えと、構築用の任意の操作を扱う。 */
 export default function CardDetail({ card, onClose, canAddToDeck, onAddToDeck, isInDeck, handleCardRemove, returnFocusRef }: CardDetailProps) {
   const { locale, t } = useI18n();
   const cardRef = useRef<HTMLDivElement>(null), overlayRef = useRef<HTMLDivElement>(null);

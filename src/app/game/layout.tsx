@@ -4,7 +4,7 @@ import { LaunchpadProvider } from '@/components/game/launchpad/LaunchpadProvider
 import { PlazaProvider } from '@/components/game/plaza/PlazaProvider';
 import { GameStage } from '@/components/game/stage/GameStage';
 import { gameViewport } from '@/components/game/stage/gameViewport';
-import { RoomChatProvider } from '@/components/game/chat/RoomChat';
+import { RoomChatProvider } from '@/components/game/chat/RoomChatProvider';
 
 export const viewport = gameViewport;
 

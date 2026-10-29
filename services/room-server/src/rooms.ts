@@ -1,7 +1,7 @@
 import { publicAssessment } from './public-assessment.ts';
 import { catalog as roomCatalog } from './catalog.ts';
-// Everything a room can do, on the room as the server keeps it (both decks and the full match).
-// Nothing here knows about sockets or where rooms are kept: a request changes the room or throws RoomError.
+// ルームの完全な状態に対する操作。
+// 接続や保存先には依存せず、要求に応じて状態を変更する。
 import { createHash, randomBytes, randomInt, randomUUID, timingSafeEqual } from 'node:crypto';
 import { z } from 'zod';
 import { applyCommand, decideMatch, newGame, other, sandboxRules, viewFor } from '@pplale/game-core';
@@ -13,25 +13,25 @@ import { syncTurnClock, turnTimeoutCommand } from './turn-clock.ts';
 import type { Plaza } from './plaza.ts';
 
 export interface Seat {
-    /** Public profile id, populated only from verified authentication. */
+    /** 検証済みの認証情報からだけ設定する公開プロフィールID。 */
     profileId?: string;
-    /** Verified account and/or hashed device owner; never exposed in a RoomView. */
+    /** 認証済みアカウントと端末の履歴所有者。RoomViewへ含めない。 */
     historyOwners?: string[];
-    /** SHA-256 of the seat's secret; the secret itself is only in that player's browser. */
+    /** 座席トークンのSHA-256。元の秘密は本人のブラウザだけで保持する。 */
     tokenHash: string;
     name: string;
     deck: Deck | null;
     ready: boolean;
-    /** Went away during or after a match; cleared by anything the seat does later. */
+    /** 対戦中または終了後に退出した席。本人が操作すると解除する。 */
     left?: boolean;
-    /** In a plaza: the member sitting here (their token is the member's, so `tokenHash` is empty). */
+    /** ルームの席に座るメンバー。メンバー自身のトークンを使い、座席用のtokenHashは空にする。 */
     member?: string;
-    /** The server plays this seat with the engine's CPU. */
+    /** この席はサーバーのCPUが操作する。 */
     cpu?: CpuLevel;
 }
 export interface Room {
     turnClock?: RoomTurnClock;
-    /** The last explicitly interrupted CPU recording to discard from the history archive. */
+    /** 明示的に中断したCPU戦の記録ID。履歴からこの試合だけを破棄する。 */
     discardedMatch?: string;
     record?: { id: string; startedAt: number; reason?: MatchEnd };
     id: string;
@@ -40,18 +40,18 @@ export interface Room {
     status: RoomStatus;
     match: number;
     rules: RoomRules;
-    /** A two-seat room always has its first seat; in a plaza either may be empty. */
+    /** 旧2席ルームは先攻側の席を必ず持つ。通常ルームは両席とも空にできる。 */
     seats: [Seat | null, Seat | null];
-    /** The room as a place people gather in (plaza.ts). */
+    /** 集まって遊ぶルームの在室情報。 */
     plaza?: Plaza;
     state: GameState | null;
     last: LastCommand | null;
     resigned: Side | null;
-    /** Since when (ms) each seat has had no connection; null while connected. Absent in older rooms. */
+    /** 各席の切断開始時刻。接続中はnull。古いルームでは省略される。 */
     away?: [number | null, number | null];
 }
 
-/** A request that cannot be done; `status` is the HTTP status and `message` is shown to the player. */
+/** 許可できない要求。statusはHTTP状態、messageはユーザー向けの理由。 */
 export class RoomError extends Error {
     status: number;
     constructor(status: number, message: string) {
@@ -62,7 +62,7 @@ export class RoomError extends Error {
 
 export const side = z.union([z.literal(0), z.literal(1)]);
 const uid = z.string().max(16);
-// `actor` is replaced by the sender's seat, whatever was sent.
+// 受信したactorは信用せず、送信者の席で置き換える。
 export const command = z.discriminatedUnion('type', [
     z.object({ type: z.literal('roll'), actor: side }),
     z.object({ type: z.literal('initiative'), actor: side, order: z.enum(['first', 'second']) }),
@@ -90,7 +90,7 @@ const action = z.discriminatedUnion('action', [
 ]);
 
 export const hash = (token: string) => createHash('sha256').update(token).digest('hex');
-/** A name as it is shown to the other player: short, one line, never empty. */
+/** 相手に見せる名前。短い1行に整え、空にはしない。 */
 export function playerName(value: unknown, fallback: string, length = MAX_NAME_LENGTH) {
     const name = typeof value === 'string' ? Array.from(value.replace(/\p{C}/gu, '').trim()).slice(0, length).join('') : '';
     return name || fallback;
@@ -100,18 +100,18 @@ function newSeat(name: string): { seat: Seat; token: string } {
     return { seat: { tokenHash: hash(token), name, deck: null, ready: false }, token };
 }
 
-/** The seat `token` belongs to, or null. */
+/** トークンが対応する席。該当しなければnull。 */
 export function seatOf(room: Room, token: unknown): Side | null {
     const given = Buffer.from(hash(typeof token === 'string' ? token : ''));
-    // Plaza seats have no token of their own (and a CPU none at all).
+    // 通常ルームはメンバーのトークンを使う。CPUも座席固有の秘密は持たない。
     const index = room.seats.findIndex(seat => seat?.tokenHash.length === given.length && timingSafeEqual(Buffer.from(seat.tokenHash), given));
     return index < 0 ? null : index as Side;
 }
 
-/** Who is connected right now: each seat, how many are watching, and (in a plaza) which members. */
+/** 現在の接続状況。席・観戦人数・ルームメンバーを区別する。 */
 export interface Present { online: [boolean, boolean]; watching: number; members?: string[] }
 
-/** What `seat` is told about the room, or (`'spectator'`) what someone watching is. */
+/** 席または観戦者向けのルーム表示。 */
 export function seatView(room: Room, seat: Side | 'spectator', { online, watching }: Present): RoomView {
     const { id, mode, version, status, match, rules, last, resigned, seats, state, record, turnClock } = room;
     const players = seats.map((s, index) => s && { name: s.name, ...(s.profileId && { profileId: s.profileId }), ready: s.ready, online: online[index], ...(s.left && { left: true }), ...(index === seat && s.deck && { deck: s.deck.name }) }) as RoomView['players'];
@@ -127,7 +127,7 @@ export function seatView(room: Room, seat: Side | 'spectator', { online, watchin
 export const roomInfo = (room: Room): RoomInfo =>
     ({ id: room.id, status: room.status, rules: room.rules, host: room.seats[0]!.name, ...(room.seats[0]!.profileId && { hostProfileId: room.seats[0]!.profileId }), open: room.status === 'lobby' && !room.seats[1], spectators: !!room.rules.spectators });
 
-/** A new room with its host seated. `body`: `{ rules, name }` as sent. */
+/** 作成者が着席した旧形式のルームを作る。 */
 export function createRoom(id: string, body: unknown): { room: Room; token: string } {
     const input = body as { rules?: unknown; name?: unknown } | null;
     const rules = parseRoomRules(input?.rules);
@@ -136,7 +136,7 @@ export function createRoom(id: string, body: unknown): { room: Room; token: stri
     return { room: { id, version: 1, status: 'lobby', match: 0, rules, seats: [seat, null], state: null, last: null, resigned: null }, token };
 }
 
-/** Seats a guest. `body`: `{ name }` as sent. Returns the guest's secret. */
+/** 来訪者を着席させ、その席の秘密を返す。 */
 export function joinRoom(room: Room, body: unknown): string {
     if (room.status === 'closed') throw new RoomError(410, 'このルームは解散しました');
     if (room.status !== 'lobby' || room.seats[1]) throw new RoomError(409, 'このルームは満員です');
@@ -145,7 +145,7 @@ export function joinRoom(room: Room, body: unknown): string {
     return token;
 }
 
-/** Random order of the list: card uids follow it, so they must not tell which card is which. */
+/** カードのuidから種類を推測されないよう、作成前に順番を混ぜる。 */
 export function mixed(ids: string[]) {
     const result = [...ids];
     for (let i = result.length - 1; i > 0; i--) {
@@ -174,18 +174,14 @@ export function giveUp(room: Room, seat: Side, reason: MatchEnd = 'resign') {
     room.resigned = seat;
 }
 
-/** How long a room may go unattended (ms). */
+/** 誰も見ていないルームを保持する時間（ミリ秒）。 */
 export interface Patience {
-    /** Before a match: the host away this long closes the room, the guest away this long frees the seat. */
+    /** 準備中の猶予。ホスト不在なら閉鎖、相手不在ならその席を空ける。 */
     lobby: number;
-    /** During or after a match: both players away this long closes the room. */
+    /** 対戦中・終了後に両者が不在になってから閉じるまでの時間。 */
     match: number;
 }
-/**
- * Looks after a room nobody may be looking at: notes since when each seat has been away
- * (`online`: connected right now) and closes the room or frees the guest's seat once that is too
- * long. Returns what it did, or null when the room stays exactly as it was.
- */
+/** 接続状態から各席の不在時間を更新し、期限を過ぎたルームや席を片付ける。変更がなければnull。 */
 export function tidy(room: Room, online: [boolean, boolean], now: number, patience: Patience): 'closed' | 'vacated' | 'away' | 'finished' | null {
     if (room.status === 'closed') return null;
     const before = room.away ?? [null, null];
@@ -193,7 +189,7 @@ export function tidy(room: Room, online: [boolean, boolean], now: number, patien
     const changed = away.some((since, index) => since !== before[index]);
     room.away = away;
     const longer = (index: Side, limit: number) => away[index] !== null && now - away[index]! >= limit;
-    // Random opponents must not have to wait indefinitely for someone who closed the page.
+    // ページを閉じた相手を、もう一方がいつまでも待ち続けないようにする。
     if (room.mode === 'free' && room.status === 'playing') {
         const absent = ([0, 1] as const).find(seat => longer(seat, 60_000));
         if (absent !== undefined) {
@@ -219,16 +215,16 @@ export function tidy(room: Room, online: [boolean, boolean], now: number, patien
     return changed ? 'away' : null;
 }
 
-/** What a request did besides changing the room, for the server's counters and sockets. */
+/** 状態変更に加え、サーバーの集計や接続管理で必要になる情報。 */
 export interface Outcome {
     started?: true;
     finished?: true;
     command?: true;
-    /** The guest's seat was given up: its sockets have no room any more. */
+    /** 相手の席が解放されたため、その接続を閉じる。 */
     vacated?: true;
 }
 
-/** One request of `seat` (as sent). Changes the room or throws RoomError and leaves it as it was. */
+/** 席からの要求を検証して反映する。拒否する場合はRoomErrorを返す。 */
 export function act(room: Room, seat: Side, body: unknown, catalog: Catalog, now = Date.now()): Outcome {
     const parsed = action.safeParse(body);
     if (!parsed.success) throw new RoomError(400, 'リクエストの形式が正しくありません');
@@ -255,8 +251,8 @@ export function act(room: Room, seat: Side, body: unknown, catalog: Catalog, now
             if (room.status !== 'playing' || !room.state) throw new RoomError(409, '対戦中ではありません');
             if (turnTimeoutCommand(room, now)) throw new RoomError(409, '制限時間になりました。ターンを終了しています');
             const state = room.state, sent = { ...request.command, actor: seat } as RoomCommand;
-            // During the turns only one side acts, so a command made on an older view is a mistake.
-            // The opening draws and the mulligan are done by both sides at once.
+            // 通常ターンでは、古い盤面から作った操作を拒否する。
+            // 初期ドローと手札交換は両者が同時に操作できる。
             if (state.phase === 'playing' && request.revision !== state.revision) throw new RoomError(409, '盤面が更新されました。もう一度操作してください');
             Object.assign(outcome, applyMatchCommand(room, sent, catalog));
             break;
@@ -269,11 +265,11 @@ export function act(room: Room, seat: Side, body: unknown, catalog: Catalog, now
         case 'rematch':
             if (room.mode === 'free') throw new RoomError(409, 'フリーマッチでは次の対戦相手を探してください');
             if (room.status !== 'finished') throw new RoomError(409, '対戦が終わってから選べます');
-            // Back to choosing decks; the next match starts when both are ready again.
+            // デッキ選択へ戻り、両者の準備がそろったら次の試合を開始する。
             room.status = room.seats[0]!.left ? 'closed' : 'lobby';
             room.state = null;
             room.resigned = null;
-            // A guest who left gives the seat to whoever comes next.
+            // 退出した相手の席は、次の参加者へ解放する。
             if (room.seats[1]?.left) room.seats[1] = null;
             for (const s of room.seats) if (s) s.ready = false;
             break;
@@ -291,7 +287,7 @@ export function act(room: Room, seat: Side, body: unknown, catalog: Catalog, now
             break;
     }
     if (request.action !== 'leave') own.left = false;
-    // What the previous command showed belongs to the previous version only.
+    // 直前の操作で公開した情報は、その更新だけに付ける。
     if (!outcome.command) room.last = null;
     syncTurnClock(room, now);
     return outcome;
@@ -309,7 +305,7 @@ export function applyMatchCommand(room: Room, sent: RoomCommand, catalog: Catalo
     return { command: true, ...(room.status === 'finished' && { finished: true }) };
 }
 
-/** Compare-and-set this alongside the room, exactly like a player's command. */
+/** プレイヤーの操作と同じく、ルームの更新と同時にCASで確定する。 */
 export function expireTurn(room: Room, catalog: Catalog, now = Date.now()): Outcome | null {
     const command = turnTimeoutCommand(room, now);
     if (!command) return null;

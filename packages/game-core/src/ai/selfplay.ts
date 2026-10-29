@@ -1,4 +1,4 @@
-// CPU-vs-CPU matches: level comparisons now, training data for a learned CPU (③) later.
+// CPU同士の自己対戦。難易度の比較と学習用の対戦記録に使う。
 import { applyCommand } from '../commands/index.ts';
 import { cpuCommand } from './index.ts';
 import { actingSides } from './moves.ts';

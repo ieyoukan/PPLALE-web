@@ -1,6 +1,6 @@
 export type GameNotice = 'matched' | 'started';
 
-/** One audio context for the game. No downloads, audio loop, or work on the match's critical path. */
+// ゲーム内の通知音を1つのAudioContextで管理する。対戦の主要処理で音源の取得や繰り返し再生を行わない。
 export class NotificationSound {
   private context: AudioContext | null = null;
   private output: GainNode | null = null;

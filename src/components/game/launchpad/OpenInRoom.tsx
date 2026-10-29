@@ -1,7 +1,6 @@
 'use client';
 
-// An old address of one of the game's screens (`/game/cards/`, a shared `/game/profile/?id=` …),
-// opened from outside the game: on to the room, with the launchpad open on that screen.
+// ゲーム外から旧形式の画面URLを開いたとき、ルームへ移って指定画面をランチパッドで開く。
 import { useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { useLaunchpad } from './LaunchpadContext';

@@ -1,7 +1,6 @@
 'use client';
 
-// The installed app (PWA): the service worker (public/sw.js), the browser's install prompt and
-// whether this page already runs as the installed app.
+// Service Worker・インストール案内・アプリとしての起動状態をブラウザで管理する。
 
 type InstallPrompt = Event & { prompt: () => Promise<void>; userChoice: Promise<{ outcome: 'accepted' | 'dismissed' }> };
 

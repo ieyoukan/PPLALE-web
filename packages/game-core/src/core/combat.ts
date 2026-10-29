@@ -1,4 +1,4 @@
-// Attacks between units and on the opponent's sweets.
+// 幼女同士の攻撃と、相手のお菓子への攻撃を処理する。
 import { other } from '../model.ts';
 import type { Catalog, GameState, Side } from '../model.ts';
 import { scriptFor } from '../cards/registry.ts';

@@ -1,6 +1,4 @@
-// Deciding whether one CPU is stronger than another from matches between them: a sequential test
-// (SPRT, as chess engines are tested), so a clear result stops early and an even one is not
-// mistaken for progress. Shared by the CPU server and the local experiments.
+// CPU同士の対戦結果を逐次検定（SPRT）で比較する。差が明確なら早く打ち切り、互角を改善と誤認しない。
 
 export interface CompareRule {
     /** Win rate that counts as stronger (the alternative). Equal strength (0.5) is the null. */

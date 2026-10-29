@@ -1,6 +1,4 @@
-// The rules of a match: which cards its decks may use. A room is made with them (room.ts), and a
-// match against the CPU is prepared with them; a deck source (saved decks, the trial decks, a random
-// deck, later a 2pick draft) only offers decks that fit.
+// デッキに使用できるカードのルール。ルーム・CPU戦・保存済みデッキ・おためしデッキで同じ判定を使う。
 import type { Catalog, Deck } from './model.ts';
 import { implementedFruits } from './cards/registry.ts';
 import { random, shuffled } from './core/rng.ts';

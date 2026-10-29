@@ -28,6 +28,25 @@ CPUの単独対戦・リプレイ・エディタ ──> BoardEmulator
 | ルームサーバー | Redis 設定時はルームを Redis に持ち、Command を検証して実行し、各プレイヤーに盤面を WebSocket で送る。Vercel ではなく自宅クラスタで動く別プロセス | `services/room-server`, `helm/pplale-room-server`, `packages/game-core/src/room.ts` |
 | CPU サーバー | 「さいきょう」との対戦記録を集めて学習し続け、モデルを配る。Vercel ではなく自宅クラスタで動く別プロセス | `services/cpu-server`, `helm/pplale-cpu-server` |
 
+### コードの追い方とコメント
+
+各ファイルの冒頭には責務を日本語で短く書く。公開型では、値の単位・公開範囲・再接続時の扱いなど、型だけでは分からない条件を補う。コードを読み上げるだけのコメントは増やさず、再送しない理由や秘密を公開しない理由を残す。識別子は意味を追える英語を使い、短い省略名や多段の三項演算子に処理を詰め込まない。
+
+| 変更したい内容 | 最初に読む場所 |
+| --- | --- |
+| ルームAPIの呼び出し | `src/lib/game/room/client.ts`。既存の呼び出し元が使う入口を維持する |
+| HTTPの認証・タイムアウト・エラー | `src/lib/game/room/request.ts` |
+| 在室・座席情報の端末保存 | `src/lib/game/room/roomSession.ts` |
+| WebSocketの受信・再接続・応答待ち | `src/lib/game/room/connection.ts` |
+| ルーム間の移動と本人の切り替え | `src/components/game/plaza/PlazaProvider.tsx` |
+| チャットを表示する条件と開閉状態 | `src/components/game/chat/RoomChatProvider.tsx` |
+| チャットの配置・キー・スクロール | `src/components/game/chat/RoomChatPanel.tsx` |
+| 発言表示・入力・スタンプ一覧 | `src/components/game/chat/ChatMessages.tsx`・`src/components/game/chat/ChatComposer.tsx`・`src/components/game/chat/ChatStampPicker.tsx` |
+| チャット送信・再送・未読 | `src/components/game/chat/useChatSender.ts`・`src/components/game/chat/useUnreadMessages.ts` |
+| サーバー側の発言検証・頻度・履歴 | `services/room-server/src/chat.ts` |
+
+画面は操作と描画、サーバーは権限と確定状態、game-coreはルールと共有型を担当する。同じ表示や判定を別の画面に複製しない。学習済み係数・自動生成データは生成元から更新し、可読性の整理で値を変えない。
+
 ### 分離する価値
 
 - ゲーム本体は React / Next.js / Firebase / DOM に依存しない。UI の更新やホスティングを変えてもルールを持ち運べる。

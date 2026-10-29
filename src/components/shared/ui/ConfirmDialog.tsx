@@ -4,7 +4,7 @@ import { useEffect, useId, useRef, useState } from 'react';
 import { OrnateFrame } from './ornament/OrnateFrame';
 import styles from './ConfirmDialog.module.css';
 
-/** Native modal: the board stays visible, while focus and pointer input stay in the confirmation. */
+/** 盤面を残した確認モーダル。フォーカスと操作をダイアログ内に限定する。 */
 export function ConfirmDialog({ title, description, confirmLabel, cancelLabel = 'キャンセル', onConfirm, onCancel, onDone, disabled = false }: {
   title: string; description: string; confirmLabel: string; cancelLabel?: string;
   onConfirm: () => void | Promise<void>; onCancel: () => void; onDone: () => void; disabled?: boolean;

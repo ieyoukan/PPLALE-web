@@ -1,4 +1,4 @@
-// The notifications of the game, by what happened. Short, like the game's own messages.
+// ゲーム内の出来事に対応する、短い通知文を定義する。
 import type { Side } from '@pplale/game-core';
 import type { Notice } from './push.ts';
 import type { Room } from './rooms.ts';

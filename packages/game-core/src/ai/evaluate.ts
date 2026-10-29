@@ -1,4 +1,4 @@
-// A board score from one side's point of view, for strategies that compare resulting states.
+// 指定した側から見た盤面の評価値を返す。
 import { attackOf, hpOf, immobilized, maxPp } from '../core/cards.ts';
 import { other } from '../model.ts';
 import type { Catalog, GameState, Side } from '../model.ts';

@@ -1,6 +1,6 @@
 'use client';
 
-// What a room asks for one choice at a time: the deck, the CPU's strength, the rules of the next match.
+// デッキ・CPU・次の試合のルールなど、ルームで選択する画面をまとめる。
 import { useRef, useState } from 'react';
 import { MAX_ROOM_NAME_LENGTH } from '@pplale/game-core/room';
 import { usePlaza } from './PlazaProvider';

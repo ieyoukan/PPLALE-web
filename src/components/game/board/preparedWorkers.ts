@@ -8,7 +8,7 @@ export function createGameWorker(kind: Kind) {
     : new Worker(new URL('./assess.worker.ts', import.meta.url), { type: 'module' });
 }
 
-/** Wait for imports inside the worker, then pass that same worker to the board. */
+// Worker内の準備完了を待ち、準備済みの同じWorkerを盤面へ渡す。
 export async function prepareGameWorker(kind: Kind): Promise<void> {
   const cached = prepared.get(kind);
   if (cached) return cached.ready;

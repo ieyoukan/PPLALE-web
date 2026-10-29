@@ -1,8 +1,6 @@
 'use client';
 
-// Asking a friend to be let into the room they are in. Their room is not shown (it may be one only
-// invited people know of), so the request goes to the friend; those who may invite in that room see
-// it on their table and choose. Nothing says whether the friend is in a room at all.
+// フレンドへ入室をリクエストする。非公開ルームの存在や詳細は明かさず、招待できる人が承認する。
 import { useState } from 'react';
 import { askToEnter } from '@/lib/game/room/client';
 import { GameIcon } from '@/components/shared/ui/GameIcon';

@@ -1,4 +1,4 @@
-// Moving cards between deck, hand, field and nap, and the triggers those moves cause.
+// 山札・手札・場・お昼寝場所などの移動と、それに伴う誘発効果を処理する。
 import { scriptFor, scriptOf } from '../cards/registry.ts';
 import { cardContext, effects } from '../effects/context.ts';
 import { activePassive } from '../playables/skills.ts';

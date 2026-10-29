@@ -1,4 +1,4 @@
-// Generic effect steps shared by many cards. Card-only steps are declared next to the card.
+// 複数のカードで使う共通の効果処理。特定のカードだけの効果はそのカードの近くで定義する。
 import { finishTurn } from '../commands/phases.ts';
 import { scriptFor } from '../cards/registry.ts';
 import type { OpTable } from '../cards/types.ts';

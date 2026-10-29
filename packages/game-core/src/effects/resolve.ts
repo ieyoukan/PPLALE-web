@@ -1,4 +1,4 @@
-// Runs queued steps in order until one waits for a choice.
+// 待機中の効果を順に実行し、プレイヤーの選択が必要になったら停止する。
 import { allScripts } from '../cards/registry.ts';
 import type { OpDef } from '../cards/types.ts';
 import { settle } from '../core/zones.ts';

@@ -1,6 +1,4 @@
-// Keeps learning: whenever enough new matches arrived, runs train-job.ts as its own process, so
-// the API stays responsive while it works. Checked when a match arrives and on a timer (a run
-// that was busy when the last match came in is followed by the next one).
+// 新しい対戦記録が十分に集まったら、別プロセスで学習する。APIを止めず、受信時と定期実行時に次の学習を判断する。
 import { spawn } from 'node:child_process';
 import type { ChildProcess } from 'node:child_process';
 import { fileURLToPath } from 'node:url';

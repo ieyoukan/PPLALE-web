@@ -1,11 +1,6 @@
 'use client';
 
-// The room this player is in, whatever it is doing: its table between matches, the board during
-// one (everyone not seated watches it, with both hands visible), and the result of a finished
-// match until each person goes back to the table themselves. No loading screen: the match's cards
-// and code load in the background while the room is at its table, and if they are not quite there
-// when the match starts the table stays a moment longer. The new match's board then comes round from
-// the table's side view to this player's seat, seen from above.
+// 同じルーム内で準備・対戦・観戦・結果を切り替える。机と床は維持し、カードと対戦コードは準備中に先読みする。
 import { useCallback, useEffect, useEffectEvent, useMemo, useState } from 'react';
 import Link from 'next/link';
 import type { GameState } from '@pplale/game-core';

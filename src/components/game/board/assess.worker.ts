@@ -1,5 +1,4 @@
-// Assesses the positions of a match off the main thread, one per task so a newer request
-// (the match went on) replaces the old one without waiting for it to finish.
+// 盤面評価を別スレッドで行う。評価を小分けにし、対戦が進んだら新しい依頼を優先する。
 import { assessMatch, assessPositions } from './assess';
 import type { AssessedPoint, AssessRequest, AssessResponse, PositionsRequest } from './assess';
 import { syncAssessment } from './assessmentCache';

@@ -1,4 +1,4 @@
-// One CPU decision, in the worker or (without one) on the main thread.
+// CPUの1手を計算する。Workerが使えない環境ではメインスレッドで実行する。
 import { cpuCommand, createMaster, createValueEvaluator, parseValueModel } from '@pplale/game-core/ai';
 import type { Command, CpuLevel, CpuStrategy, GameState, Side } from '@pplale/game-core';
 import { gameCatalog } from '@/lib/game/catalog';

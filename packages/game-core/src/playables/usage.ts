@@ -1,5 +1,4 @@
-// Using a playable's skill: whether it can be used now, and paying for it. Shared by the `skill`
-// command (the owner's turn) and the reaction step (the opponent's turn, effects/expandedOps.ts).
+// プレイアブルのスキル使用可否と支払い。自分のターンの操作と相手ターンの誘発で共用する。
 import { scriptFor } from '../cards/registry.ts';
 import { note } from '../core/cards.ts';
 import { markAction } from '../core/stall.ts';

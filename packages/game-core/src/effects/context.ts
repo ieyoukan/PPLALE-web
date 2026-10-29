@@ -1,5 +1,4 @@
-// The API a card or skill script uses. Scripts only touch the game through this object, so the
-// list below is the complete vocabulary of effects.
+// カードとスキルが利用する効果API。効果スクリプトはこの窓口を通してゲーム状態を変更する。
 import { touch } from '../core/movement.ts';
 import { decideMatch } from '../core/outcome.ts';
 import { addKeyword, availablePpMaximum, buff, gainPp, giveEvasion, hit, immobilize, increasePp, isRealSweet, note, spawnCard, swapStats } from '../core/cards.ts';

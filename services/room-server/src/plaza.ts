@@ -1,75 +1,72 @@
-// A plaza: a room people gather in. The game's launcher makes one for every player, and a shared
-// link brings friends into it. Its members come and go; its two seats are taken and given up by them
-// (or by the CPU); one match at a time is played at its table and everyone else in the room watches.
-// Who may come in is fixed when it is made; the owner may rename it. When nobody is left it closes.
-// Like rooms.ts nothing here knows about sockets: a request changes the room or throws RoomError.
+// ルームの入退室・席・オーナー・ルールを管理する。接続や保存には依存せず、要求に応じて状態を変更する。
 import { randomBytes, randomInt, randomUUID, timingSafeEqual } from 'node:crypto';
 import { z } from 'zod';
 import { other, actingSides, cpuLevels, cpuProfiles, randomDeck, viewFor } from '@pplale/game-core';
 import type { Catalog, CpuLevel, Deck, Side } from '@pplale/game-core';
-import { ROOM_CHAT_STAMPS, DEFAULT_VISIBILITY, MAX_MEMBERS, MAX_ROOM_NAME_LENGTH, MAX_ROOM_CHAT_LENGTH, MAX_ROOM_CHAT_MESSAGES, MEMBER_GRACE, invitedVisibility, isRoomVisibility, parseRoomRules, roomDeckErrors } from '@pplale/game-core/room';
+import { DEFAULT_VISIBILITY, MAX_MEMBERS, MAX_ROOM_NAME_LENGTH, MEMBER_GRACE, invitedVisibility, isRoomVisibility, parseRoomRules, roomDeckErrors } from '@pplale/game-core/room';
 import type { RoomChatMessage } from '@pplale/game-core/room';
 import type { RoomInfo, RoomRules, RoomView, RoomVisibility } from '@pplale/game-core/room';
 import type { MatchEnd } from '@pplale/game-core/history';
 import { publicAssessment } from './public-assessment.ts';
 import { RoomError, applyMatchCommand, command, deck, giveUp, hash, playerName, side, startMatch } from './rooms.ts';
 import type { Outcome, Room, Seat } from './rooms.ts';
+import { appendChatMessage, chatActionSchema } from './chat.ts';
 import { syncTurnClock, turnTimeoutCommand } from './turn-clock.ts';
 
 export interface PlazaMember {
     id: string;
-    /** SHA-256 of the member's secrets, one per browser that entered as them (newest last). */
+    /** 本人として入った各ブラウザのトークンのSHA-256。新しいものを末尾に置く。 */
     tokens: string[];
     name: string;
-    /** Public profile id, populated only from verified authentication. */
+    /** 検証済みの認証情報からだけ設定する公開プロフィールID。 */
     profileId?: string;
-    /** Verified account and/or hashed device owner; never exposed in a view. */
+    /** 認証済みアカウントと端末の履歴所有者。表示用の情報へ含めない。 */
     historyOwners?: string[];
     lastChatAt?: number;
-    /** Since when (ms) none of the member's sockets is open; absent while one is. */
+    /** すべての接続が切れた時刻。接続中は設定しない。 */
     away?: number;
 }
 export interface Plaza {
-    /** Tells this room from another one made later under the same id. */
+    /** 同じルームIDが後から再利用されても、別のルームとして区別するためのキー。 */
     key: string;
     name: string;
     visibility: RoomVisibility;
-    /** Who made the room, as they were then. Never changes. */
+    /** 作成時点の作成者。後から変更しない。 */
     creator: { name: string; profileId?: string };
-    /** The member who may change the rules; null while nobody is. */
+    /** ルールを変更できる現在のメンバー。不在時はnull。 */
     owner: string | null;
-    /** A disconnected owner's proof; cleared on an explicit leave or the next ownership claim. */
+    /** 切断したオーナーの証明。明示的な退出や次の権限取得で破棄する。 */
     formerOwner?: { tokens: string[]; profileId?: string };
     members: PlazaMember[];
     chat?: RoomChatMessage[];
-    /** The secret of the invitation link (invite and invitePlus). Renewing it ends the old link. */
+    /** 招待リンクの秘密。更新すると古いリンクは失効する。 */
     invite?: string;
-    /** Signed-in people let in by name: invited friends, and requests that were accepted. */
+    /** 招待または入室リクエストの承認により、名前で入室を許可したユーザー。 */
     allowed: string[];
-    /** Signed-in friends of a member asking to be let in. */
+    /** 入室をリクエストした、在室者のフレンド。 */
     requests: { profileId: string; name: string; at: number }[];
-    /** The rules of the next match, set while one is on. */
+    /** 対戦中に設定された、次の試合のルール。 */
     nextRules?: RoomRules;
-    /** The closed room this one took over from, and the one that took over after this one closed. */
+    /** 引き継ぎ元と、このルームが閉じた後の引き継ぎ先。 */
     predecessor?: string;
     successor?: string;
-    /** Secrets (hashed) of members whose moment away ran out: they may come back in, or make the successor. */
+    /** 切断猶予が過ぎたメンバーのトークンのハッシュ。再入室と後継作成の証明に使う。 */
     former?: string[];
 }
 
-/** Who is asking: their verified profile id (if signed in), history owners and shown name. */
+/** 入室を求める本人の検証済みプロフィールID・履歴所有者・表示名。 */
 export interface Visitor { profileId?: string; historyOwners?: string[]; name: string }
 
-/** What a plaza request did besides changing the room. */
+/** ルームの変更に加え、接続・通知などで必要になる処理。 */
 export interface PlazaOutcome extends Outcome {
     chat?: true;
-    /** Members no longer in the room: their sockets have no room any more. */
+    /** 在室扱いでなくなったメンバー。この人の接続を閉じる。 */
     removed?: string[];
-    /** Someone was let in by name: they are told. */
+    /** 名前で入室を許可した相手。通知先として使う。 */
     invited?: string;
-    /** The room closed (nobody is left). */
+    /** 最後の人が退出し、ルームが閉じた。 */
     closed?: true;
-    /** Nobody is left, but a match just ended in this change: it is recorded first, then `closeEmpty` closes the room. */
+    /** 最後の退出と同時に試合が終わった場合。結果を保存してからcloseEmptyで閉じる。 */
     emptied?: true;
 }
 
@@ -92,12 +89,12 @@ const action = z.discriminatedUnion('action', [
     z.object({ action: z.literal('claim') }),
     z.object({ action: z.literal('rules'), rules: z.unknown() }),
     z.object({ action: z.literal('rename'), name: z.string() }),
-    z.object({ action: z.literal('chat'), text: z.string().max(MAX_ROOM_CHAT_LENGTH * 2).optional(), stamp: z.enum(ROOM_CHAT_STAMPS.map(item => item.id)).optional(), messageId: z.string().uuid() }).refine(value => (value.text === undefined) !== (value.stamp === undefined)),
+    chatActionSchema,
     z.object({ action: z.literal('renewInvite') }),
     z.object({ action: z.literal('answer'), profileId, accept: z.boolean() }),
 ]);
 
-/** A room's name as it is shown: short, one line, never empty. */
+/** 表示用のルーム名。短い1行に整え、空にはしない。 */
 export const roomName = (value: unknown, fallback: string) => playerName(value, fallback, MAX_ROOM_NAME_LENGTH);
 
 function newMember(visitor: Visitor, now: number): { member: PlazaMember; token: string } {
@@ -105,21 +102,18 @@ function newMember(visitor: Visitor, now: number): { member: PlazaMember; token:
     return { token, member: {
         id: randomUUID().slice(0, 8), tokens: [hash(token)], name: visitor.name,
         ...(visitor.profileId && { profileId: visitor.profileId }), ...(visitor.historyOwners?.length && { historyOwners: visitor.historyOwners }),
-        // Not connected yet: the time to open the room counts like a moment away.
+        // 接続を開くまでの時間も、切断猶予に含める。
         away: now,
     } };
 }
 
-/**
- * A new plaza with its creator in it (not seated) as its owner. `body`: `{ rules, plaza: { name, visibility } }` as sent.
- * Without a usable visibility (or a guest's friends' room) it is an invited room, never a public one by mistake.
- */
+/** 作成者をオーナーとして入室させる。公開範囲が不正な場合は、誤って公開せずインバイトにする。 */
 export function createPlaza(id: string, body: unknown, visitor: Visitor, now = Date.now()): { room: Room; token: string } {
     const input = body as { rules?: unknown; plaza?: { name?: unknown; visibility?: unknown } } | null;
     const rules = parseRoomRules(input?.rules);
     if (!rules) throw new RoomError(400, '使えるフルーツを1つ以上選んでください');
     const asked = isRoomVisibility(input?.plaza?.visibility) ? input.plaza.visibility : DEFAULT_VISIBILITY;
-    // A guest has no friends: their friends' room would let nobody in, so it is an invited one instead (never public).
+    // ゲストのフレンド制ルームは誰も入れなくなるため、インバイトとして作る。
     const visibility = !visitor.profileId && (asked === 'friends' || asked === 'friendsPlus') ? DEFAULT_VISIBILITY : asked;
     const { member, token } = newMember(visitor, now);
     const plaza: Plaza = {
@@ -131,27 +125,27 @@ export function createPlaza(id: string, body: unknown, visitor: Visitor, now = D
     return { room: { id, version: 1, status: 'lobby', match: 0, rules: { ...rules, spectators: true }, seats: [null, null], state: null, last: null, resigned: null, plaza }, token };
 }
 
-/** The member `token` belongs to, or null. */
+/** トークンが対応するメンバー。該当しなければnull。 */
 export function memberOf(room: Room, token: unknown): PlazaMember | null {
     if (typeof token !== 'string' || !room.plaza) return null;
     const given = Buffer.from(hash(token));
     return room.plaza.members.find(member => member.tokens.some(saved => saved.length === given.length && timingSafeEqual(Buffer.from(saved), given))) ?? null;
 }
 
-/** Whether `token` was a member's who was away too long (not one who left on purpose). */
+/** 切断猶予が過ぎたメンバーの証明か。明示的に退出した人の証明は使えない。 */
 export function formerOf(room: Room, token: unknown): boolean {
     if (typeof token !== 'string' || !room.plaza?.former) return false;
     const given = Buffer.from(hash(token));
     return room.plaza.former.some(saved => saved.length === given.length && timingSafeEqual(Buffer.from(saved), given));
 }
 
-/** A room secret identifies its existing member only while the verified account still matches. */
+/** 現在の認証アカウントが一致する場合だけ、既存メンバーのトークンを再利用できる。 */
 export function rejoiningMember(room: Room, visitor: Visitor, token: unknown): PlazaMember | null {
     const member = memberOf(room, token);
     return member && member.profileId === visitor.profileId ? member : null;
 }
 
-/** Guests can take an unowned room when no signed-in participant is currently present. */
+/** 接続中のログイン済み参加者がいない場合、ゲストもオーナーを引き継げる。 */
 function mayClaim(plaza: Plaza, member: PlazaMember, online?: ReadonlySet<string>) {
     return !!member.profileId || !plaza.members.some(other => other.profileId && (online ? online.has(other.id) : other.away === undefined));
 }
@@ -169,13 +163,10 @@ function restoreOwner(plaza: Plaza, member: PlazaMember, visitor: Visitor, rejoi
 const sameSecret = (saved: string | undefined, given: unknown) =>
     !!saved && typeof given === 'string' && given.length === saved.length && timingSafeEqual(Buffer.from(saved), Buffer.from(given));
 
-/**
- * Whether `visitor` may come in: yes, no, or only as a friend of one of `friendsOf` (the server asks
- * Firestore). `invite`: the secret of the link they came by, if any.
- */
+/** 入室の可否、または確認が必要なフレンド関係を返す。実際の関係はサーバー側で確認する。 */
 export function entryOf(room: Room, visitor: Pick<Visitor, 'profileId'>, invite: unknown): 'yes' | 'no' | { friendsOf: string[] } {
     const plaza = room.plaza!, uid = visitor.profileId;
-    // Being let in by name only opens invited rooms: a friends' room stays its creator's (and members') friends'.
+    // 名前による招待は非公開ルームの許可に使う。フレンド制の入室条件は緩めない。
     if (uid && (plaza.creator.profileId === uid || plaza.members.some(member => member.profileId === uid) || invitedVisibility(plaza.visibility) && plaza.allowed.includes(uid))) return 'yes';
     switch (plaza.visibility) {
         case 'public': return 'yes';
@@ -188,10 +179,7 @@ export function entryOf(room: Room, visitor: Pick<Visitor, 'profileId'>, invite:
     }
 }
 
-/**
- * Brings `visitor` into the room (they may come in: see `entryOf`). A signed-in person who is in it
- * already (another device) stays one member with one more secret. Returns their secret.
- */
+/** 許可済みの本人を入室させる。同じアカウントの別端末でも同じメンバーにまとめ、トークンだけを追加する。 */
 export function admit(room: Room, visitor: Visitor, now = Date.now(), rejoin?: unknown): { token: string; member: PlazaMember } {
     const plaza = room.plaza!;
     if (room.status === 'closed') throw new RoomError(410, 'このルームは閉じました');
@@ -211,7 +199,7 @@ export function admit(room: Room, visitor: Visitor, now = Date.now(), rejoin?: u
     return { token, member };
 }
 
-/** A closed plaza's successor: the same name, rules and visibility, with a new creator and owner. */
+/** 同じ名前・ルール・公開範囲の後継ルームを作る。新しい作成者とオーナーは今回の本人。 */
 export function succeed(closed: Room, id: string, visitor: Visitor, now = Date.now()) {
     const old = closed.plaza!;
     const made = createPlaza(id, { rules: closed.plaza!.nextRules ?? closed.rules, plaza: { name: old.name, visibility: old.visibility } }, visitor, now);
@@ -219,7 +207,7 @@ export function succeed(closed: Room, id: string, visitor: Visitor, now = Date.n
     return made;
 }
 
-/** The online members, and since when the others are away. True when anything changed. */
+/** 接続状態と切断開始時刻を更新する。変更があればtrue。 */
 export function notePresence(room: Room, online: ReadonlySet<string>, now: number): boolean {
     if (!room.plaza || room.status === 'closed') return false;
     let changed = false;
@@ -230,7 +218,7 @@ export function notePresence(room: Room, online: ReadonlySet<string>, now: numbe
     return changed;
 }
 
-/** A seat for the CPU, with a deck made for the room's rules. */
+/** ルームのルールに合ったデッキを持つCPU席を作る。 */
 function cpuSeat(room: Room, cpu: CpuLevel, catalog: Catalog, chosen?: Deck): Seat {
     const errors = chosen ? roomDeckErrors(chosen, room.rules, catalog) : [];
     if (errors.length) throw new RoomError(400, errors.join(' / '));
@@ -239,19 +227,19 @@ function cpuSeat(room: Room, cpu: CpuLevel, catalog: Catalog, chosen?: Deck): Se
     return { tokenHash: '', name: `CPU・${cpuProfiles[cpu].name}`, deck: chosen ?? { ...made, name: 'おまかせデッキ' }, ready: true, cpu };
 }
 
-/** Those seated are no longer ready (somebody new sits across, or the rules changed), except `keep`. */
+/** keep以外の人の準備完了を解除する。相手の交代やルール変更時に使う。 */
 function unready(room: Room, keep?: string) {
     for (const seat of room.seats) if (seat && !seat.cpu && seat.member !== keep) seat.ready = false;
 }
 
-/** The rules changed while seated: a CPU gets a deck for the new ones. */
+/** ルール変更時には、CPUのデッキも新しい条件に合わせる。 */
 function rulesChanged(room: Room, rules: RoomRules, catalog: Catalog) {
     room.rules = { ...rules, spectators: true };
     unready(room);
     room.seats = room.seats.map(seat => seat?.cpu ? cpuSeat(room, seat.cpu, catalog) : seat) as Room['seats'];
 }
 
-/** After a match: back to the table. Those who left free their seats, the next rules apply. */
+/** 対戦後に準備へ戻す。退出済みの席を空け、次のルールを適用する。 */
 function toTable(room: Room, catalog: Catalog) {
     if (room.status !== 'finished') return;
     room.status = 'lobby';
@@ -265,18 +253,18 @@ function toTable(room: Room, catalog: Catalog) {
     if (next) rulesChanged(room, next, catalog);
 }
 
-/** `seat` is given up (its member stands or leaves): a match in progress is lost, a finished one keeps its name. */
+/** 席を離れる。対戦中なら敗北とし、終了済みの対戦者名は残す。 */
 function vacate(room: Room, seat: Side, reason: MatchEnd, outcome: PlazaOutcome) {
     if (room.status === 'playing') {
         giveUp(room, seat, reason);
         outcome.finished = true;
         room.seats[seat]!.left = true;
     } else if (room.status === 'finished') room.seats[seat]!.left = true;
-    // Whoever sits down next asks the other seat again (see `sit`).
+    // 次の着席時に、相手側の準備を確認し直す。
     else room.seats[seat] = null;
 }
 
-/** The member is no longer in the room. The last one to go closes it. */
+/** メンバーを退出させる。最後の人ならルームを閉じる。 */
 function remove(room: Room, id: string, reason: MatchEnd, outcome: PlazaOutcome) {
     const plaza = room.plaza!, gone = plaza.members.find(member => member.id === id);
     plaza.members = plaza.members.filter(member => member.id !== id);
@@ -289,15 +277,15 @@ function remove(room: Room, id: string, reason: MatchEnd, outcome: PlazaOutcome)
     const seat = seatOf(room, id);
     if (seat !== null) vacate(room, seat, reason, outcome);
     (outcome.removed ??= []).push(id);
-    // A CPU does not keep a room open. A match this just lost is kept for one more change, so the
-    // history records how it ended (and who won) rather than a match abandoned.
+    // CPUだけではルームを存続させない。退出による決着は、もう1回の更新まで残す。
+    // 勝者と退出理由を保存してから閉じ、中断扱いの記録にしないため。
     if (!plaza.members.length) {
         if (outcome.finished) outcome.emptied = true;
         else closeEmpty(room, outcome);
     }
 }
 
-/** Closes a plaza nobody is in. True when it did. */
+/** 誰もいないルームを閉じる。閉じた場合はtrue。 */
 export function closeEmpty(room: Room, outcome: PlazaOutcome = {}): boolean {
     if (!room.plaza || room.plaza.members.length || room.status === 'closed') return false;
     room.status = 'closed';
@@ -307,7 +295,7 @@ export function closeEmpty(room: Room, outcome: PlazaOutcome = {}): boolean {
     return true;
 }
 
-/** Members away for longer than MEMBER_GRACE are no longer in the room; null when nothing changed. */
+/** 切断猶予を過ぎたメンバーを除く。変更がなければnull。 */
 export function tidyPlaza(room: Room, online: ReadonlySet<string>, now: number): PlazaOutcome | null {
     if (!room.plaza || room.status === 'closed') return null;
     const empty: PlazaOutcome = {};
@@ -318,16 +306,16 @@ export function tidyPlaza(room: Room, online: ReadonlySet<string>, now: number):
     return outcome.removed || changed ? outcome : null;
 }
 
-/** The seat member `id` sits in, or null. */
+/** メンバーが座っている席。着席していなければnull。 */
 function seatOf(room: Room, id: string): Side | null {
     const seat = room.seats.findIndex(taken => taken?.member === id);
     return seat < 0 ? null : seat as Side;
 }
 
-/** Whether `member` may hand out invitations: the owner of an invite room, anyone in the others. */
+/** 招待を発行できるか。インバイトはオーナー、それ以外は在室者に許可する。 */
 const mayInvite = (plaza: Plaza, member: string) => plaza.visibility !== 'invite' || plaza.owner === member;
 
-/** One request of member `id` (as sent). Changes the room or throws RoomError and leaves it as it was. */
+/** メンバーの要求を検証して反映する。通信・保存・通知の実行は呼び出し側へ任せる。 */
 export function actPlaza(room: Room, id: string, body: unknown, catalog: Catalog, now = Date.now()): PlazaOutcome {
     const parsed = action.safeParse(body);
     if (!parsed.success) throw new RoomError(400, 'リクエストの形式が正しくありません');
@@ -344,22 +332,9 @@ export function actPlaza(room: Room, id: string, body: unknown, catalog: Catalog
         toTable(room, catalog);
     };
     switch (request.action) {
-        case 'chat': {
-            const stamp = request.stamp && ROOM_CHAT_STAMPS.find(item => item.id === request.stamp);
-            const text = stamp ? `スタンプ：${stamp.label}` : (request.text ?? '').replace(/\r\n?/g, '\n').replace(/[\u0000-\u0008\u000b\u000c\u000e-\u001f\u007f]/g, '').trim();
-            if (!text) throw new RoomError(400, 'メッセージを入力してください');
-            if (Array.from(text).length > MAX_ROOM_CHAT_LENGTH) throw new RoomError(400, `メッセージは${MAX_ROOM_CHAT_LENGTH}文字までです`);
-            const messageId = `${id}:${request.messageId}`, previous = plaza.chat?.find(message => message.id === messageId);
-            if (previous) {
-                if (previous.text !== text || previous.stamp !== request.stamp) throw new RoomError(409, '送信済みのメッセージです');
-            } else {
-                if (me.lastChatAt !== undefined && now - me.lastChatAt < 1000) throw new RoomError(429, '少し待ってから送信してください');
-                me.lastChatAt = now;
-                plaza.chat = [...plaza.chat ?? [], { id: messageId, member: id, name: me.name, ...(me.profileId && { profileId: me.profileId }), text, ...(request.stamp && { stamp: request.stamp }), sentAt: now }].slice(-MAX_ROOM_CHAT_MESSAGES);
-            }
-            outcome.chat = true;
-            return outcome; // Conversation never touches the match, its last command or turn clock.
-        }
+        case 'chat':
+            appendChatMessage(plaza, me, request, now);
+            return { chat: true };
         case 'ready': {
             const own = seated();
             if (room.status !== 'lobby') throw new RoomError(409, room.status === 'finished' ? '「もう一度」を選んでから準備してください' : '対戦中はデッキを変えられません');
@@ -393,7 +368,7 @@ export function actPlaza(room: Room, id: string, body: unknown, catalog: Catalog
             if (!room.seats[other(mine!)]?.cpu) throw new RoomError(403, '中断できるのはCPUとの対戦だけです');
             room.discardedMatch = room.record?.id;
             delete room.record;
-            // Reuse preparation cleanup, without deciding a winner or announcing a finished match.
+            // 勝敗や終了通知は作らず、準備に戻す処理だけを再利用する。
             room.status = 'finished';
             toTable(room, catalog);
             break;
@@ -404,7 +379,7 @@ export function actPlaza(room: Room, id: string, body: unknown, catalog: Catalog
             outcome.finished = true;
             break;
         case 'rematch':
-            // Keeps the seat: back at the table for the next match (the deck is chosen again).
+            // 席を維持して準備へ戻る。次の対戦ではデッキを選び直せる。
             seated();
             atTable();
             break;
@@ -431,7 +406,7 @@ export function actPlaza(room: Room, id: string, body: unknown, catalog: Catalog
             if (room.seats[request.seat] && !room.seats[request.seat]?.cpu) throw new RoomError(409, 'その席にはもう誰かが座っています');
             if (room.seats.some((seat, index) => seat?.cpu && index !== request.seat)) throw new RoomError(409, 'CPUはもう来ています');
             room.seats[request.seat] = cpuSeat(room, request.level, catalog, request.deck);
-            // Whoever called the CPU keeps their readiness; anyone else seated is asked again.
+            // CPUを呼んだ本人の準備は維持し、ほかの着席者には確認し直してもらう。
             unready(room, id);
             if (room.seats.every(seat => seat?.ready)) {
                 startMatch(room, catalog);
@@ -488,11 +463,7 @@ export function actPlaza(room: Room, id: string, body: unknown, catalog: Catalog
     return outcome;
 }
 
-/**
- * Member `id` invites a signed-in friend by name (the server checked the friendship). In an invited
- * room they are let in by name; in the others they may come in already (`entryOf`), so they are only
- * told: in a friends' room only its creator's friends may, so only the creator invites there.
- */
+/** サーバーで関係を確認済みのフレンドを招待する。フレンド制の入室条件は緩めず、元から入れる場合は通知だけを送る。 */
 export function inviteByName(room: Room, id: string, profileId: string): PlazaOutcome {
     const plaza = room.plaza!;
     if (room.status === 'closed' || !plaza.members.some(member => member.id === id)) throw new RoomError(404, 'ルームが見つかりません');
@@ -504,7 +475,7 @@ export function inviteByName(room: Room, id: string, profileId: string): PlazaOu
     return { invited: profileId };
 }
 
-/** A friend of a member asks to be let in. False when they may come in already or the room is not asked like this. */
+/** フレンドの入室リクエスト。すでに入室可能、または対象外ならfalse。 */
 export function askToEnter(room: Room, visitor: Required<Pick<Visitor, 'profileId'>> & Visitor, now = Date.now()): boolean {
     const plaza = room.plaza;
     if (!plaza || room.status === 'closed' || !invitedVisibility(plaza.visibility) || entryOf(room, visitor, null) === 'yes') return false;
@@ -512,7 +483,7 @@ export function askToEnter(room: Room, visitor: Required<Pick<Visitor, 'profileI
     return true;
 }
 
-/** What member `id` is told about the room. Those not seated watch the match without its hidden cards. */
+/** 在室メンバー向けの表示。着席していない人は観戦用の情報を受け取る。 */
 export function plazaView(room: Room, id: string, online: ReadonlySet<string>, catalog: Catalog, chatHistory = true): RoomView {
     const plaza = room.plaza!, { version, status, match, rules, last, resigned, seats, state, record, turnClock } = room;
     const mine = seatOf(room, id), seated = mine !== null;
@@ -545,7 +516,7 @@ export function plazaView(room: Room, id: string, online: ReadonlySet<string>, c
     };
 }
 
-/** What someone who may enter the room is told before they do. */
+/** 入室可能な人へ返す事前情報。 */
 export function plazaInfo(room: Room): RoomInfo {
     const plaza = room.plaza!;
     return {
@@ -555,7 +526,7 @@ export function plazaInfo(room: Room): RoomInfo {
     };
 }
 
-/** The CPU seat that has to act now, or null. */
+/** 今行動すべきCPUの席。なければnull。 */
 export function cpuToAct(room: Room): Side | null {
     const state = room.state;
     if (!room.plaza || room.status !== 'playing' || !state || state.winner !== null) return null;
@@ -563,7 +534,7 @@ export function cpuToAct(room: Room): Side | null {
     return seat >= 0 && actingSides(state).includes(seat as Side) ? seat as Side : null;
 }
 
-/** The CPU's command, decided on the position at `revision` of match `match`, if that is still the position. */
+/** 計算時の試合番号と盤面更新番号が一致する場合だけ、CPUの手を反映する。 */
 export function playCpu(room: Room, seat: Side, sent: Parameters<typeof applyMatchCommand>[1], expected: { match: number; revision: number }, catalog: Catalog, now = Date.now()): Outcome {
     if (room.match !== expected.match || room.state?.revision !== expected.revision || cpuToAct(room) !== seat) throw new RoomError(409, 'stale');
     const outcome = applyMatchCommand(room, { ...sent, actor: seat }, catalog);

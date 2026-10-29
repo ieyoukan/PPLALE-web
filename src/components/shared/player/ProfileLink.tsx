@@ -1,8 +1,7 @@
 import Link from 'next/link';
 import type { ReactNode } from 'react';
 
-/** Self always has an entry point, including guests: the own profile handles sign-in.
- * Other guests have no public profile, so their portrait remains plain content. */
+/** 自分はゲストでもプロフィールを開ける。ほかのゲストには公開プロフィールのリンクを作らない。 */
 export function ProfileLink({ self, profileId, className, label, children }: {
   self?: boolean; profileId?: string; className?: string; label?: string; children: ReactNode;
 }) {

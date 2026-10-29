@@ -6,18 +6,15 @@ import type { Room } from '../rooms.ts';
 import type { Backend } from '../backend.ts';
 import type { HistoryRepository, HistoryCapture } from './repository.ts';
 
-/** The same room, not another one made later under the same id (its first seat's secret, or its plaza's key). */
+/** ルームIDが同じでも、作成時のキーが異なれば別のルームとして扱う。 */
 const sameRoom = (a: Room, b: Room) => a.plaza || b.plaza ? a.plaza?.key === b.plaza?.key : a.seats[0]?.tokenHash === b.seats[0]?.tokenHash;
 
-/** Redis remains the common room authority for both old and new pods during rolling updates.
- * A Redis CAS atomically queues its archive write. Acknowledgement/publication waits for PG.
- * The queue has no TTL and survives a pod crash between the CAS and the archive commit.
- */
+/** 更新中もRedisをルームの正本にする。CASと履歴の保存待ち登録を同時に行い、PostgreSQL保存後に応答・公開する。保存待ちデータはPodの停止でも消さない。 */
 export async function durableBackend(redis: Backend, history: HistoryRepository, engine: { catalog: Catalog; version: string; archiveImages?: boolean }): Promise<Backend> {
     const catalogId = await history.registerCatalog(engine.archiveImages === false ? engine.catalog : await archiveCatalog(engine.catalog, history));
     const capture = async (room?: Room): Promise<HistoryCapture> => ({
         snapshot: room?.state ? captureState(room.state, engine.catalog, catalogId, engine.version) : null,
-        // A pre-feature pod can mutate a room without recording it. Never label these matches complete.
+        // 旧Podで受理した操作は記録が欠けるため、完全なリプレイと表示しない。
         completeAllowed: await redis.historyReady(),
     });
     let draining: Promise<void> | undefined;
@@ -48,10 +45,10 @@ export async function durableBackend(redis: Backend, history: HistoryRepository,
         async get(id) {
             for (let attempt = 0; attempt < 6; attempt++) {
                 const room = await redis.get(id);
-                // This particular Redis snapshot must be archived before a reader sees it.
+                // このRedisの状態を履歴へ保存してから、読み取り側へ返す。
                 await drain();
                 const saved = await history.get(id);
-                // Repair Redis AOF rollback as well as a completely missing Redis room.
+                // Redisの消失と、AOFの巻き戻りの両方を、確認済みの履歴から復旧する。
                 if (room && saved && saved.version > room.version && sameRoom(saved, room)) {
                     await redis.replace(saved, room.version, 60_000);
                     continue;

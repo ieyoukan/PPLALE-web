@@ -1,6 +1,6 @@
 'use client';
 
-// Links from before rooms had their own address (`/game/room/?id=`): on to the room's page.
+// 旧形式の共有URLを、現在のルームURLへ転送する。
 import { Suspense, useEffect } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { isRoomId } from '@pplale/game-core/room';

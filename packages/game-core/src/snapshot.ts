@@ -1,4 +1,4 @@
-// Restoring a saved match: validate the shape, check card references, migrate older formats.
+// 保存した対戦を復元する。形式とカード参照を検証し、古い保存形式を移行する。
 import { z } from 'zod';
 import { deckLabel, exSkillIds, keywords } from './model.ts';
 import type { Catalog, ExSkillId, GameState, Task, TaskOp } from './model.ts';

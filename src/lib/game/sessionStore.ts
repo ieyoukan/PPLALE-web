@@ -1,5 +1,4 @@
-// The match in progress, kept in this browser. The preparation page writes it, the board reads
-// and updates it; both go through here so the format lives in one place.
+// 対戦途中の保存形式をここに集約する。準備画面が書き込み、盤面が読み込んで更新する。
 import { parseMatchRules, turnOf } from '@pplale/game-core';
 import type { Command, CpuLevel, Deck, GameState, MatchRules, Position, Rules, Side } from '@pplale/game-core';
 

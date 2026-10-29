@@ -1,7 +1,6 @@
 'use client';
 
-// Inviting a friend by name: they are let into this room (even an invited one) and told by a push
-// notification and on their friends screen. Only signed-in players have friends.
+// フレンドを名前で招待し、入室許可と通知を送る。フレンド機能にはログインが必要。
 import type { RoomView } from '@pplale/game-core/room';
 import { InviteFriendButton } from '../social/InviteFriendButton';
 import { usePlaza } from './PlazaProvider';

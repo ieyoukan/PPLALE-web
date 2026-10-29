@@ -1,4 +1,4 @@
-// Legal moves: every command the engine accepts for a side right now, with its result.
+// 今その側が実行できる合法手と、実行後の状態を列挙する。
 import { applyCommand } from '../commands/index.ts';
 import { costOf, immobilized } from '../core/cards.ts';
 import { canAttack } from '../core/combat.ts';

@@ -1,6 +1,4 @@
-// What one player may know about a match played over a network. The server keeps the full state
-// and sends each side only this: still a GameState, so the board draws it unchanged, but with
-// everything that side cannot see blanked out.
+// サーバーの完全な対戦状態から、その閲覧者に見せてよい情報だけを残す。画面側は同じGameStateとして描画できる。
 import { other, sides } from './model.ts';
 import type { Choice, GameState, Instance, Side, Task } from './model.ts';
 import { refreshDiceChoice } from './effects/diceChoice.ts';

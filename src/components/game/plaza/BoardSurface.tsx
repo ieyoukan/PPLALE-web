@@ -1,8 +1,6 @@
 'use client';
 
-// The board of the match as it lies on the table before anyone plays: the same mat, piles, counters
-// and field as the board (BoardEmulator's own pieces and styles), empty, with seat 0's half nearest.
-// Only to be looked at: the room's table tilts it in 3D, and the match's board takes over at the start.
+// 対戦前の机に置く盤面。対戦と同じ部品を使って空の状態を描き、対戦開始時に実際の盤面へ引き継ぐ。
 import Image from 'next/image';
 import { memo } from 'react';
 import { sandboxRules } from '@pplale/game-core';

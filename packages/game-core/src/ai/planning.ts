@@ -1,4 +1,4 @@
-// Evaluation for multi-action plans. Hand/deck values are estimates, never deck-top predictions.
+// 複数の行動を組み合わせる探索用の評価。手札や山札の値は推定し、山札の順番は参照しない。
 import { scriptOf } from '../cards/registry.ts';
 import { attackOf, costOf, hpOf, immobilized, isRealSweet, maxPp } from '../core/cards.ts';
 import { other } from '../model.ts';

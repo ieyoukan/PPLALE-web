@@ -1,6 +1,4 @@
-// Where the deck of a match comes from. The preparation of a CPU match and a room's lobby both ask
-// here which decks fit the rules of the match (and why the others do not), so a new source added to
-// `deckSources` shows up in both. Planned: 'draft' (2pick) — decks drafted in this browser for the rules.
+// CPU戦とルームのデッキ候補を集約する。使用可否は共通ルールで判定し、使用できない理由も返す。
 import { deckRuleErrors, randomDeck } from '@pplale/game-core';
 import type { Deck, MatchRules } from '@pplale/game-core';
 import { demoDeck, gameCatalog } from './catalog';

@@ -1,4 +1,4 @@
-// Capture presentation with the SAME engine/catalog that accepted the action, including during rollouts.
+// 操作を受理した時点のエンジンとカード定義で表示情報を記録する。更新中も別バージョンで計算し直さない。
 import { attackOf, hpOf, costOf, availablePpMaximum } from '@pplale/game-core';
 import { createValueEvaluator, valueModel } from '@pplale/game-core/ai';
 import type { Catalog, GameState, Side } from '@pplale/game-core';

@@ -1,7 +1,6 @@
 'use client';
 
-// Rooms that let this player in by name: a friend invited them, or answered their asking. Asked
-// for while the screen is shown; nothing is shown without any.
+// 名前で招待されたルームを表示する。画面を開いている間だけ取得し、招待がなければ表示しない。
 import { useEffect, useState } from 'react';
 import type { RoomInfo } from '@pplale/game-core/room';
 import { useAuth } from '@/lib/auth';

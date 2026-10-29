@@ -1,4 +1,4 @@
-// A guest's secret stays on this device. The server stores only its hash, never this key.
+// ゲストの履歴用の秘密は端末だけに保存し、サーバーにはハッシュだけを保存する。
 export async function historyHeaders(): Promise<Record<string, string>> {
   const keyName = 'pplale-history-key-v1';
   let key: string;

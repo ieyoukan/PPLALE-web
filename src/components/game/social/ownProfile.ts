@@ -1,7 +1,6 @@
 'use client';
 
-// Whether the player's own profile is open (in the launchpad): the first-time setup dialog then
-// leaves the editor to it rather than asking over it.
+// 自分のプロフィールを開いているかを共有し、初回設定の案内が編集画面へ重ならないようにする。
 import { useEffect, useSyncExternalStore } from 'react';
 
 let open = 0;

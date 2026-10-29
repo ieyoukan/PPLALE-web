@@ -1,4 +1,4 @@
-/** Stable room-chat identifiers. Asset URLs and arbitrary uploads are never accepted from clients. */
+// チャットのスタンプIDと表示名の正本。外部URLや任意の画像アップロードは受け付けない。
 export const ROOM_CHAT_STAMPS = [
     { id: 'ageru', label: 'あげる' }, { id: 'choudai', label: 'ちょうだい' },
     { id: 'garuru', label: 'がーるーる' }, { id: 'golden', label: 'ごーるでん' },

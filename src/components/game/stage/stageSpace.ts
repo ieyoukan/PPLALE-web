@@ -1,9 +1,6 @@
 'use client';
 
-// The game is laid out once, on a stage of fixed height (STAGE_HEIGHT), and that stage is scaled to
-// the screen. A portrait screen gets the stage turned a quarter (the player turns the phone), so the
-// table is always landscape. Pointer coordinates and getBoundingClientRect() are in screen pixels;
-// anything placed on the stage by script converts them here first.
+// 画面座標とゲーム内のステージ座標を変換する。縦向きの端末ではステージが90度回るため、ポインターや配置の座標をそのまま流用しない。
 
 /** Height of the stage in CSS pixels. The width follows the screen within MIN/MAX_ASPECT. */
 export const STAGE_HEIGHT = 720;

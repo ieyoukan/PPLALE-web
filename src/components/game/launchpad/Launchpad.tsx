@@ -1,12 +1,12 @@
 'use client';
 
-// The menu shell: tabs, focus handling and room sheets. Navigation state lives in the provider.
+// タブ・フォーカス・ルーム操作の枠を表示する。画面遷移の状態はProviderが管理する。
 import { Suspense, useEffect, useId, useRef, useState } from 'react';
 import { InstallPrompt } from '@/components/pwa/InstallPrompt';
 import { OrnateFrame } from '@/components/shared/ui/ornament/OrnateFrame';
 import { GameIcon } from '@/components/shared/ui/GameIcon';
 import { usePlaza } from '../plaza/PlazaProvider';
-import { useRoomChatOpen } from '../chat/RoomChat';
+import { useRoomChatOpen } from '../chat/RoomChatProvider';
 import { RulesSheet } from '../plaza/PlazaSheets';
 import { ShareSheet } from '../plaza/ShareSheet';
 import { HomeRoomSheet } from '../plaza/HomeRoomSheet';

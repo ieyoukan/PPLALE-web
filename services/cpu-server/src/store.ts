@@ -1,7 +1,4 @@
-// Everything the server keeps, as files under one directory (a volume in the cluster):
-//   reports/<day>.jsonl   one verified match record per line
-//   models/<version>.json published models; current.json names the one in use
-//   training.json         what the training runs did
+// 保存先は1つのディレクトリへ集約する。reports/は検証済み記録、models/は公開モデル、training.jsonは学習の実行記録。
 import { createHash } from 'node:crypto';
 import { appendFileSync, mkdirSync, readdirSync, readFileSync, renameSync, writeFileSync } from 'node:fs';
 import path from 'node:path';

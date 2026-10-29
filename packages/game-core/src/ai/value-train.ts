@@ -1,6 +1,4 @@
-// Training of the learned value (ai/value.ts): sampling positions and fitting the network.
-// Only computation lives here; files and worker threads belong to the callers
-// (scripts/value.mjs and the CPU server).
+// 対戦中の盤面を抽出して評価モデルを学習する。ファイル操作やWorker管理は呼び出し側で行う。
 import type { Catalog, Deck, GameState } from '../model.ts';
 import { defaultWeights } from './evaluate.ts';
 import { winProbability } from './assess.ts';

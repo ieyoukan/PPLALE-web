@@ -1,4 +1,4 @@
-// Manual test operations for the same-device sandbox. Rejected unless `allowAdjust` is set.
+// 同じ端末での検証用操作。allowAdjustが有効な場合だけ許可する。
 import { maxPp } from '../core/cards.ts';
 import { heal, losePoints } from '../core/points.ts';
 import { draw } from '../core/zones.ts';

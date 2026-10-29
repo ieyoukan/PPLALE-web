@@ -1,4 +1,4 @@
-/** Shared geometry for OGP, downloadable deck images, thumbnails and interactive deck views. */
+// OGP・保存画像・サムネイル・デッキ確認で共用するカードの配置座標。
 export const DECK_IMAGE_WIDTH = 1200;
 export const DECK_IMAGE_HEIGHT = 630;
 export const DECK_IMAGE_ASPECT = `${DECK_IMAGE_WIDTH} / ${DECK_IMAGE_HEIGHT}`;

@@ -1,4 +1,4 @@
-// Read-only helpers that tell a UI where to show things. No React / DOM here.
+// 画面に必要な読み取り専用の補助処理。ReactやDOMには依存させない。
 import { scriptFor, scriptOf } from './cards/registry.ts';
 import { canAttack } from './core/combat.ts';
 import { fruitsOf } from './core/protection.ts';

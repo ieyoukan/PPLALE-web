@@ -1,4 +1,4 @@
-// Types shared by every layer. No logic other than tiny pure helpers lives here.
+// 各層で共有するデータ型。処理は小さな純粋関数だけに留める。
 
 export type Side = 0 | 1;
 export type DeckKind = 'yojo' | 'sweet';
@@ -14,11 +14,11 @@ export interface ExSkillState { uses: number; lastTurn?: number; usedThisTurn?: 
 /** A skill taken from the other playable (レンテ): `index` is its place in `skillsFor(playable)`. */
 export interface ExtraSkill { playable: string; index: number; uses: number }
 
-/** Printed card data passed in from the app (no images). */
+/** アプリから渡すカードの原典データ。画像は含めない。 */
 export interface Definition {
     id: string;
     name: string;
-    /** `gimmick` is a token played from hand that is neither a unit nor a sweet. */
+    /** gimmickは、幼女でもお菓子でもない、手札から使うトークン。 */
     type: 'yojo' | 'sweet' | 'playable' | 'gimmick';
     fruit: string;
     cost: number;
@@ -45,28 +45,28 @@ export interface Rules {
     turnDraw: DeckKind;
 }
 export const MAX_PP = 12;
-// Test setup values; turn flow and PP/hand limits follow the rulebook.
+// 初期配置の検証用設定。ターン進行・PP・手札上限はルールに従う。
 export const sandboxRules: Rules = {
     initialPoints: 12, initialYojo: 3, initialSweet: 0, firstPlayer: 0,
     turnDraw: 'yojo',
 };
 
-/** One physical card in a match. `uid` is unique per match, `cardId` points to the catalog. */
+/** 対戦中の1枚のカード。uidは対戦内の識別子、cardIdはカード定義の参照先。 */
 export interface Instance {
     uid: string;
     cardId: string;
     attackBonus: number;
     hpBonus: number;
     damage: number;
-    /** Permanent cost change while in hand. */
+    /** 手札にある間、継続するコスト補正。 */
     costDelta: number;
-    /** Cost change until the owner's turn ends. */
+    /** 持ち主のターン終了までのコスト補正。 */
     temporaryCost: number;
     keywords: Keyword[];
     /** うぃまるの「1度だけ受けたダメージを0にする」 */
     shield: boolean;
     slot: number | null;
-    /** Game turn it entered the field. */
+    /** 場に出たターンの内部番号。 */
     entered: number;
     exhausted: boolean;
     /** Game turn it last ate sweets (for りくす). */
@@ -86,11 +86,11 @@ export interface Instance {
     immobileUntil?: number;
     /** Actions taken this turn, for units that may act more than once a turn (ふろんとさん). */
     actions?: number;
-    /** Fruit types held only until the end of a game turn (レンス): type → last turn. */
+    /** ターン終了まで保持するフルーツ属性（レンス）。属性と有効な最終ターンの対応。 */
     timedFruits?: Record<string, number>;
-    /** The zone the card was last seen in: a move other than hand → field resets what effects gave it (core/movement.ts). */
+    /** 最後に確認した領域。手札→場以外の移動では、効果による補正をリセットする。 */
     zone?: CardZone;
-    /** Whose deck the card goes back to, when not its holder's: a sweet given by すいーつあーん returns to the giver. */
+    /** 持ち主以外の山札へ戻す場合の返却先。すいーつあーんで渡したお菓子は渡した側へ戻る。 */
     owner?: Side;
 }
 export type CardZone = 'yojo' | 'sweet' | 'hand' | 'field' | 'nap' | 'exile';
@@ -106,22 +106,22 @@ export interface Player {
     playable: string;
     points: number;
     maxPoints: number;
-    /** This side's own turns so far: the "nターン目" players count, and its base max PP. */
+    /** この側のターン数。画面の「nターン目」と基本の最大PPに使う。 */
     turns: number;
     pp: number;
     ppBonus: number;
-    /** Extra current PP granted on the second player's fifth turn. Does not change max PP. */
+    /** 後攻5ターン目の現在PPへの加算。最大PPは変えない。 */
     turnPpBonus: number;
     nextPpDebt: number;
-    /** Sweet-point thresholds (10, 5) whose one-time draw opportunity has already been offered. */
+    /** 一度だけのドロー機会を案内済みのお菓子ポイント（10・5）。 */
     milestones: number[];
-    /** Card ids played from hand this game, oldest first. */
+    /** この対戦で手札から使ったカードID。使用した順に保持する。 */
     played: string[];
     /** ふわふわパンケーキ */
     shield: boolean;
-    /** Pending おいしくなる呪文 casts. The next real sweet is multiplied by 1 + this. */
+    /** 待機中のおいしくなる呪文の回数。次の実体のお菓子を「1＋この回数」倍にする。 */
     sweetBoost: number;
-    /** Remaining uses per skill, indexed like `skillsFor(playable)`. A skill without a use limit stays at 0. */
+    /** スキルごとの残り使用回数。並びはskillsForと同じ。回数制限がないスキルは0のまま。 */
     skills: number[];
     lastBorrow: number;
     skillHistory?: number[];
@@ -131,13 +131,13 @@ export interface Player {
     mochidaLeft?: number;
     skipDraw?: number;
     strawberryOnlyUntil?: number;
-    /** MP of a playable that has it (しゅれい); see `playableMp` for the starting and largest amount. */
+    /** MPを持つプレイアブルの現在値（しゅれい）。初期値と上限はplayableMpを参照。 */
     mp?: number;
-    /** +N/+N for every unit that enters this side's field, for the rest of the game (ビデカメ). */
+    /** 以後この側の場に出る幼女への、対戦中持続する+N/+N補正（ビデカメ）。 */
     entryBuff?: number;
-    /** 幼女 discarded from this hand straight to the nap this game (しゅみあ). */
+    /** この対戦で手札から直接お昼寝場所へ捨てた幼女の数（しゅみあ）。 */
     discardedYojo?: number;
-    /** Skills taken from the opponent (レンテ). The `skill` command reaches them with the indices after the playable's own. */
+    /** 相手から得たスキル（レンテ）。元のスキルに続く添字でskill操作から利用する。 */
     extraSkills?: ExtraSkill[];
     /**
      * Fruit types given 「このゲーム中」 (ソーダ) to every 幼女 in this side's field, hand, 幼女デッキ and nap:
@@ -146,32 +146,26 @@ export interface Player {
     lastingFruits?: string[];
 }
 
-/**
- * Names of queued effect steps. Generic ones live in effects/ops.ts; card-specific ones are
- * declared next to their card (cards/*.ts) or skill (playables/*.ts).
- */
+/** 待機する効果の名前。共通処理はeffects/ops.ts、個別処理は各カード・スキルの実装で定義する。 */
 export type TaskOp =
-    // generic, see effects/ops.ts
+    // 共通の効果。実装はeffects/ops.ts。
     | 'damage' | 'allDamage' | 'randomDamage' | 'buff' | 'allBuff' | 'keyword' | 'destroy' | 'copy' | 'stealUnit'
     | 'heal' | 'reduce' | 'steal' | 'pp' | 'summon' | 'addHand' | 'draw' | 'discard' | 'handCost' | 'enterAuras' | 'trimHand' | 'finishTurn'
     | 'immobilize' | 'skillReaction'
-    // card / skill specific
+    // カード・スキル固有の効果。
     | 'searchRole' | 'diceDiscard' | 'shurei' | 'doughnut' | 'float' | 'floatSearch' | 'pocky' | 'pockyEnemy' | 'gift'
     | 'bonusDamage' | 'punish'
     | 'cardEffect' | 'die' | 'avoidEffect' | 'attackStart' | 'attackHooks' | 'defendHooks' | 'attackResponses' | 'combat' | 'eatResponse'
     | 'endEffects' | 'beginTurn' | 'turnDraw' | 'turnDrawResponse' | 'exile' | 'bounce'
     | 'swapStats' | 'healHooks' | 'attackEnd' | 'playResponse' | 'playedAtZero';
-/** Why a draw happens; also the tag that keeps a hand-cost change temporary. */
+/** ドローの理由。手札の一時的なコスト補正の識別にも使う。 */
 export type TaskTag = 'opening' | 'turn' | 'threshold' | 'acorn' | 'temporary';
 
-/**
- * A queued effect step. It is plain JSON so a match can be saved while an effect waits for a choice.
- * `target` is empty until the player picks; the step is then re-run with the chosen option id.
- */
+/** 保存可能なJSON形式の効果手順。選択待ちではtargetを空にし、回答後に選ばれたIDを入れて再開する。 */
 export interface Task {
     op: TaskOp;
     actor: Side;
-    /** Card uid that caused the step; its script receives follow-up hooks such as `onDrawn`. */
+    /** 効果の発生元のカードuid。ドロー後などの追加処理を元のスクリプトへ返す。 */
     source?: string;
     target?: string;
     amount?: number;
@@ -179,9 +173,9 @@ export interface Task {
     keyword?: Keyword;
     cardId?: string;
     scope?: 'friendly' | 'enemy' | 'any';
-    /** Ids already handled by earlier repeats of the same step. */
+    /** 同じ効果の繰り返しで、すでに処理した対象のID。 */
     ids?: string[];
-    /** Fixed candidate list for multi-target steps. */
+    /** 複数対象の処理中に変えない候補一覧。 */
     candidates?: string[];
     count?: number;
     multiplier?: number;
@@ -215,9 +209,9 @@ export type WinReason = 'points' | 'stall' | 'special' | 'defeat' | 'resign';
 export type Phase = 'dice' | 'initiative' | 'opening' | 'mulligan' | 'playing';
 export interface GameState {
     version: 1;
-    /** Marks saves using taunt for selected effects, guard for attacks, and mandatory steal healing. */
+    /** 対象効果への挑発・攻撃へのかばう・奪取時の回復について、新しい裁定を使う保存形式。 */
     effectTauntRules?: true;
-    /** Marks saves using the latest turn, hand-limit and deck-exhaustion rules. */
+    /** 最新のターン進行・手札上限・山札切れの裁定を使う保存形式。 */
     turnRules?: true;
     phase: Phase;
     openingRemaining: [number, number];
@@ -228,17 +222,14 @@ export interface GameState {
     serial: number;
     revision: number;
     active: Side;
-    /**
-     * Identifies the current turn for rules like "entered this turn" / "ate last turn". It ticks for
-     * both sides, so it is not a number players use: show `turnOf` / `matchTurns` instead.
-     */
+    /** 両者のターンごとに進む内部番号。画面にはこの値ではなくturnOfまたはmatchTurnsを使う。 */
     turn: number;
     players: [Player, Player];
     cards: Record<string, Instance>;
     queue: Task[];
     pending: Choice | null;
     winner: Side | 'draw' | null;
-    /** Why the match ended; set with `winner` (core/outcome.ts). Absent in older saves. */
+    /** 勝者と同時に設定する決着理由。古い保存データでは省略される。 */
     winReason?: WinReason;
     log: string[];
     /**
@@ -246,9 +237,9 @@ export interface GameState {
      * turns in a row ended without one. Absent in older saves (treated as no idle turns).
      */
     stall?: { acted: boolean; idleTurns: number };
-    /** Effect immunity outcomes from one command, for presentation; never changes legality. */
+    /** 1操作で発生した効果無効の表示情報。操作の合法判定には使わない。 */
     effectBlocks?: { revision: number; events: { uid: string; kind: 'damage' | 'destroy' }[] };
-    /** A die a card rolled during one command (ぎってぃ), for presentation. */
+    /** カード効果で振った1操作分のダイス。演出用（ぎってぃ）。 */
     effectRoll?: { revision: number; side: Side; value: number; cardId?: string };
 }
 
@@ -266,7 +257,7 @@ export type Command =
     | { type: 'exSkill'; actor: Side; skill: ExSkillId }
     | { type: 'acorn'; actor: Side; mode: 'draw' | 'pp' }
     | { type: 'reveal'; actor: Side; uid: string }
-    // Sandbox (test) operations, accepted only with `allowAdjust`.
+    // 検証用操作。allowAdjustが有効な場合だけ許可する。
     | { type: 'adjust'; actor: Side; resource: 'points' | 'pp' | 'ppBonus' | 'damage'; delta: number; uid?: string }
     | { type: 'draw'; actor: Side; deck: DeckKind };
 export interface Result {
@@ -277,12 +268,12 @@ export interface Result {
 export const other = (side: Side): Side => side === 0 ? 1 : 0;
 export const sides: readonly Side[] = [0, 1];
 export const deckLabel = (kind: DeckKind) => kind === 'yojo' ? '幼女' : 'お菓子';
-/** Thrown for an illegal command; applyCommand turns it into `Result.error` and keeps the old state. */
+/** 不正な操作の例外。applyCommandがResult.errorへ変換し、変更前の状態を維持する。 */
 export class RuleError extends Error {}
 
 type TurnCounts = Pick<GameState, 'active' | 'rules'> & { players: readonly Pick<Player, 'turns'>[] };
-/** The current turn as players count it: 先攻 / 後攻 and that side's own turn number. */
+/** 画面に表示する現在の先攻・後攻と、その側のターン数。 */
 export const turnOf = (s: TurnCounts): { order: 'first' | 'second'; number: number } =>
     ({ order: s.active === s.rules.firstPlayer ? 'first' : 'second', number: s.players[s.active].turns });
-/** Length of a match in turns per side (the first player's count; the second has the same or one less). */
+/** 先攻側のターン数を基準にした対戦の長さ。後攻側は同じか1少ない。 */
 export const matchTurns = (s: Pick<TurnCounts, 'players'>): number => Math.max(...s.players.map(p => p.turns));

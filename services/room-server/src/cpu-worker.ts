@@ -1,4 +1,4 @@
-// Decides a CPU move for cpu.ts, away from the thread that serves the rooms.
+// ルームを処理するスレッドを止めずに、CPUの1手を別スレッドで計算する。
 import { parentPort } from 'node:worker_threads';
 import { cpuCommand } from '@pplale/game-core';
 import type { CpuLevel, GameState, Side } from '@pplale/game-core';

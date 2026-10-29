@@ -1,5 +1,4 @@
-// A match record sent by the game: checked by replaying it with the engine, so only matches that
-// can really be played are stored. Nothing in it identifies the player.
+// ゲームから受け取った対戦記録をエンジンで再現し、実際に成立する対戦だけを保存する。個人の識別情報は含めない。
 import { createHash } from 'node:crypto';
 import { applyCommand, matchTurns, newGame, sandboxRules } from '@pplale/game-core';
 import type { Catalog, Command, Deck, ExSkillId, GameState, Side } from '@pplale/game-core';

@@ -1,8 +1,6 @@
 'use client';
 
-// The screen between opening the game (or a shared link) and the room: the logo and one card,
-// chosen once, with what it does in the card's own words. No bar or percentage: it goes away as
-// soon as the room is ready. While a room is being looked for there is nothing else to do.
+// 入室までの起動画面。ロゴとランダムなカードを表示し、準備が済めば待ち時間を足さずに消す。
 import { useEffect, useState } from 'react';
 import type { ReactNode } from 'react';
 import Image from 'next/image';

@@ -1,8 +1,6 @@
 'use client';
 
-// A two-seat room (free matches, and rooms made before rooms became places): the board of its
-// match for its players and (`watch`) for spectators, and its lobby before a match. The table
-// itself is the same one the matches in this browser use, playing on what the server sends.
+// 旧2席ルームの準備・対戦・観戦を表示する。盤面は共通部品で描き、進行はサーバーの状態に従う。
 import { useCallback } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';

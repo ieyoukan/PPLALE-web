@@ -1,4 +1,4 @@
-// dice → initiative → opening → mulligan → playing, and the start of each turn.
+// 開始準備の各段階とターン開始を進める。順序はdice→initiative→opening→mulligan→playing。
 import { availablePpMaximum, expireTimed, note } from '../core/cards.ts';
 import { settleStall } from '../core/stall.ts';
 import { resolveQueue } from '../effects/resolve.ts';

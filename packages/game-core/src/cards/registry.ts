@@ -1,4 +1,4 @@
-// Card id → script. To add a card set, write a file like strawberryYojo.ts and spread it here.
+// カードIDと効果スクリプトの対応。カードを追加するときは、各フルーツの実装をここに登録する。
 import { strawberrySweets } from './strawberrySweets.ts';
 import { strawberryYojo } from './strawberryYojo.ts';
 import { tokens } from './tokens.ts';

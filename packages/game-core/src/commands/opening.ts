@@ -1,4 +1,4 @@
-// Before the first turn: dice, choosing first/second, opening draws and the mulligan.
+// 最初のターンまでの処理。ダイス・先後選択・初期ドロー・手札交換を扱う。
 import { note } from '../core/cards.ts';
 import { rollDie, shuffled } from '../core/rng.ts';
 import { draw } from '../core/zones.ts';
