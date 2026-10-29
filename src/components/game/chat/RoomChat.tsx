@@ -76,11 +76,11 @@ function RoomChat({ open, onOpen, onClose }: { open: boolean; onOpen(): void; on
         </div>)}
       </div>
       <form className={styles.composer} onSubmit={event => { event.preventDefault(); void submit(); }}>
-        <textarea ref={input} aria-label="メッセージ" placeholder={ready ? '' : linked ? '接続中…' : '再接続中…'} rows={2} maxLength={MAX_ROOM_CHAT_LENGTH * 2} value={draft} readOnly={sending} onChange={event => setDraft(Array.from(event.target.value).slice(0, MAX_ROOM_CHAT_LENGTH).join(''))} onKeyDown={event => {
+        <textarea ref={input} aria-label="メッセージ" placeholder={ready ? '文字入力' : linked ? '接続中…' : '再接続中…'} rows={1} wrap="off" maxLength={MAX_ROOM_CHAT_LENGTH * 2} value={draft} readOnly={sending} onChange={event => setDraft(Array.from(event.target.value).slice(0, MAX_ROOM_CHAT_LENGTH).join(''))} onKeyDown={event => {
           if (event.key !== 'Enter' || event.shiftKey || event.nativeEvent.isComposing || event.keyCode === 229) return;
           event.preventDefault(); void submit();
         }} />
-        <button type="submit" disabled={!ready || !draft.trim() || sending} aria-label="メッセージを送信"><GameIcon name="send" /></button>
+        <button type="submit" disabled={!ready || !draft.trim() || sending} aria-label="メッセージを送信">送信</button>
         {error && <p className={styles.error} role="alert">{error}</p>}
       </form>
     </OrnateFrame>}

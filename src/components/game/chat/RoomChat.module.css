@@ -12,11 +12,18 @@
 .panel { --pad: 18px; --frame-face: color-mix(in srgb, var(--brand-paper) 85%, transparent); position: absolute; bottom: 54px; left: 0; width: 360px; height: 440px; max-height: calc(100cqh - 110px); display: flex; flex-direction: column; gap: 12px; }
 .log { flex: 1; min-height: 0; overflow-y: auto; overflow-x: hidden; overscroll-behavior: contain; touch-action: pan-y; user-select: text; scrollbar-width: thin; }
 .message { display: flex; align-items: flex-start; gap: 10px; margin: 0 0 16px; }
-.content { flex: 1; min-width: 0; }
-.byline { display: flex; align-items: baseline; min-width: 0; gap: 8px; }
+.message[data-own] { flex-direction: row-reverse; }
+.content { display: flex; flex-direction: column; align-items: flex-start; flex: 0 1 auto; min-width: 0; max-width: calc(100% - 58px); }
+.message[data-own] .content { align-items: flex-end; }
+.byline { display: flex; align-items: baseline; min-width: 0; max-width: 100%; gap: 8px; }
 .byline strong { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 14px; }
 .byline time { flex: none; color: var(--brand-cocoa-soft); font-size: 11px; }
-.content p { margin: 3px 0 0; font-size: 16px; line-height: 1.55; white-space: pre-wrap; overflow-wrap: anywhere; }
-.composer { display: grid; grid-template-columns: minmax(0, 1fr) 42px; gap: 8px; flex: none; }
-.composer textarea { min-width: 0; width: 100%; resize: none; padding: 8px 10px; border: 1px solid var(--brand-control-edge); border-radius: var(--brand-control-radius); background: transparent; color: var(--brand-cocoa-deep); font: inherit; font-size: 16px; line-height: 1.4; user-select: text; touch-action: manipulation; }
+.content p { --bubble-face: var(--brand-cream); position: relative; max-width: 100%; margin: 5px 0 0; padding: 8px 12px; border: 1px solid var(--brand-control-edge); border-radius: 16px; background: var(--bubble-face); font-size: 16px; line-height: 1.55; white-space: pre-wrap; overflow-wrap: anywhere; }
+.content p::before { content: ''; position: absolute; top: 12px; left: -5px; width: 8px; height: 8px; border-left: 1px solid var(--brand-control-edge); border-bottom: 1px solid var(--brand-control-edge); background: var(--bubble-face); transform: rotate(45deg); }
+.message[data-own] .content p { --bubble-face: var(--brand-blush); }
+.message[data-own] .content p::before { left: auto; right: -5px; border: 0; border-top: 1px solid var(--brand-control-edge); border-right: 1px solid var(--brand-control-edge); }
+.composer { display: grid; grid-template-columns: minmax(0, 1fr) auto; align-items: start; gap: 8px; flex: none; }
+.composer textarea { box-sizing: border-box; min-width: 0; width: 100%; height: 40px; resize: none; padding: 8px 14px; border: 1px solid var(--brand-control-edge); border-radius: 999px; background: transparent; color: var(--brand-cocoa-deep); font: inherit; font-size: 16px; line-height: 22px; user-select: text; touch-action: manipulation; scrollbar-width: none; }
+.composer textarea::placeholder { color: var(--brand-cocoa-soft); opacity: 1; }
+.composer button { min-width: 56px; height: 40px; padding: 0 12px; border-radius: 999px; font: inherit; font-size: 15px; font-weight: 700; }
 .error { grid-column: 1 / -1; margin: 0; font-size: 13px; overflow-wrap: anywhere; }

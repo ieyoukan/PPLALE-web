@@ -110,6 +110,9 @@ for (const width of [1280, 390]) test(`chat handles IME, failed retries, long te
   await page.setViewportSize({ width, height: 844 });
   const { actions, send, view } = await fixture(page);
   await chatButton(page).click();
+  await expect(input(page)).toHaveAttribute('placeholder', '文字入力');
+  expect(await input(page).evaluate(element => element.offsetHeight)).toBeLessThanOrEqual(44);
+  await expect(page.getByRole('button', { name: 'メッセージを送信', exact: true })).toHaveText('送信');
   await input(page).fill('日本語の変換中');
   await input(page).dispatchEvent('keydown', { key: 'Enter', code: 'Enter', isComposing: true });
   expect(actions.filter(request => request.type === 'action')).toHaveLength(0);
@@ -122,7 +125,7 @@ for (const width of [1280, 390]) test(`chat handles IME, failed retries, long te
   expect(retries).toHaveLength(2); expect(retries[0].action.messageId).toBe(retries[1].action.messageId);
   await expect(log(page).locator('img[src="x"]')).toHaveCount(0);
   await input(page).fill('🍓'.repeat(301)); await expect(input(page)).toHaveValue('🍓'.repeat(300));
-  const messages = Array.from({ length: 50 }, (_, i) => ({ id: `message-${i}`, member: 'other', name: 'とても長い名前'.repeat(10), text: i === 49 ? 'a'.repeat(300) : `会話${i}`, sentAt: Date.now() + i }));
+  const messages = Array.from({ length: 50 }, (_, i) => ({ id: `message-${i}`, member: i % 2 ? 'other' : 'me', name: 'とても長い名前'.repeat(10), text: i === 49 ? 'a'.repeat(300) : `会話${i}`, sentAt: Date.now() + i }));
   send({ type: 'chat', id: view.id, version: 100, messages });
   await expect(log(page).locator('strong')).toHaveCount(50);
   send({ type: 'chat', id: view.id, version: 99, messages: [] });
@@ -133,6 +136,13 @@ for (const width of [1280, 390]) test(`chat handles IME, failed retries, long te
   const sizes = await log(page).evaluate(element => ({ width: element.clientWidth, contentWidth: element.scrollWidth, height: element.clientHeight, contentHeight: element.scrollHeight }));
   expect(sizes.contentHeight).toBeGreaterThan(sizes.height); expect(sizes.contentWidth).toBeLessThanOrEqual(sizes.width + 1);
   await log(page).evaluate(element => { element.scrollTop = 0; });
+  const sides = await log(page).evaluate(element => [...element.querySelectorAll('[data-player-avatar]')].slice(0, 2).map(avatar => {
+    const bubble = avatar.parentElement.querySelector('p');
+    // Logical positions stay comparable when the game stage rotates on portrait phones.
+    return { avatar: avatar.offsetLeft, bubble: bubble.offsetLeft };
+  }));
+  expect(sides[0].avatar).toBeGreaterThan(sides[0].bubble);
+  expect(sides[1].avatar).toBeLessThan(sides[1].bubble);
   const bounds = await page.getByRole('region', { name: 'いまのルームの会話' }).boundingBox();
   expect(bounds.x).toBeGreaterThanOrEqual(0); expect(bounds.y).toBeGreaterThanOrEqual(0);
   expect(bounds.x + bounds.width).toBeLessThanOrEqual(width + 1);
