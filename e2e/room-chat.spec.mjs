@@ -203,7 +203,13 @@ for (const width of [1280, 390]) test(`stamp picker sends allowlisted artwork, r
   await toggle.click();
   const picker = page.getByRole('region', { name: 'スタンプ一覧' });
   await expect(picker.getByRole('button')).toHaveCount(12);
+  const choices = picker.getByRole('group', { name: 'スタンプの選択' });
+  const frame = picker.locator(':scope > [aria-hidden="true"]');
+  const frameBefore = await frame.boundingBox();
   await picker.getByRole('button', { name: 'わぁを送信' }).scrollIntoViewIfNeeded();
+  expect(await choices.evaluate(element => element.scrollTop)).toBeGreaterThan(0);
+  expect(await picker.evaluate(element => element.scrollTop)).toBe(0);
+  expect(await frame.boundingBox()).toEqual(frameBefore);
   await picker.getByRole('img', { name: 'わぁ', exact: true }).evaluate(img => img.decode());
   await picker.getByRole('button', { name: 'あげるを送信' }).click();
   await expect(page.locator('[data-room-chat]').getByRole('alert')).toContainText('送信できませんでした');

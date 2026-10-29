@@ -22,8 +22,8 @@ export function ChatComposer({ inputRef, draft, error, sending, ready, linked, s
   const placeholder = ready ? 'タップして入力' : linked ? '接続中…' : '再接続中…';
 
   return <form className={styles.composer} onSubmit={event => { event.preventDefault(); void onSubmit(); }}>
-    <button type="button" className={styles.stampToggle} disabled={!stampsReady || sending} aria-label="スタンプ" aria-expanded={stampsOpen} onClick={onToggleStamps}>
-      <GameIcon name="smile" />
+    <button type="button" className={styles.stampToggle} disabled={!stampsReady || sending} aria-label="スタンプ" title="スタンプ" aria-expanded={stampsOpen} onClick={onToggleStamps}>
+      <GameIcon name="sticker" />
     </button>
     <textarea ref={inputRef} aria-label="メッセージ" placeholder={placeholder} rows={1} wrap="off" maxLength={MAX_ROOM_CHAT_LENGTH * 2}
       value={draft} readOnly={sending}

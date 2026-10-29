@@ -28,6 +28,8 @@
 .error { grid-column: 1 / -1; margin: 0; font-size: 13px; overflow-wrap: anywhere; }
 
 .composer .stampToggle { min-width: 36px; width: 36px; padding: 0; border-radius: var(--brand-control-radius); }
-.stamps { --pad: 14px; position: absolute; bottom: 68px; left: 18px; right: 18px; z-index: 2; display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; max-height: min(280px, calc(100cqh - 200px)); overflow-y: auto; overscroll-behavior: contain; }
+.stamps { --pad: 14px; position: absolute; bottom: 68px; left: 18px; right: 18px; z-index: 2; display: flex; flex-direction: column; max-height: min(280px, calc(100cqh - 200px)); }
+/* 飾り枠は固定し、中のスタンプだけをスクロールする。 */
+.stampList { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; min-height: 0; overflow-y: auto; overscroll-behavior: contain; touch-action: pan-y; scrollbar-width: thin; }
 .stamps button { --chat-stamp-size: 100%; min-width: 0; padding: 2px; aspect-ratio: 1; border-color: transparent; }
 .stamps button:hover:not(:disabled) { background: var(--brand-blush); }
