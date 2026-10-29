@@ -3,15 +3,11 @@
 .chat button:hover { background: var(--brand-blush); }
 .chat button:disabled { opacity: .55; cursor: default; }
 .chat button:focus-visible, .composer textarea:focus-visible { outline: 2px solid var(--brand-cocoa); outline-offset: 2px; }
-.chat svg { flex: none; width: 23px; height: 23px; }
+.chat button svg { flex: none; width: 23px; height: 23px; }
 .toggle { min-height: 44px; padding: 8px 14px; font-size: 17px; }
 .toggle kbd { padding: 1px 5px; border: 1px solid var(--brand-control-edge); border-radius: 3px; font: inherit; font-size: 12px; }
-.panel { --pad: 18px; position: absolute; bottom: 54px; left: 0; width: 360px; height: 440px; max-height: calc(100cqh - 110px); display: flex; flex-direction: column; gap: 12px; background: var(--brand-paper); }
-.header { display: flex; align-items: center; justify-content: space-between; flex: none; gap: 12px; }
-.header h2 { font-size: 20px; margin: 0; }
-.header button { width: 34px; height: 34px; }
+.panel { --pad: 18px; --frame-face: color-mix(in srgb, var(--brand-paper) 85%, transparent); position: absolute; bottom: 54px; left: 0; width: 360px; height: 440px; max-height: calc(100cqh - 110px); display: flex; flex-direction: column; gap: 12px; }
 .log { flex: 1; min-height: 0; overflow-y: auto; overflow-x: hidden; overscroll-behavior: contain; touch-action: pan-y; user-select: text; scrollbar-width: thin; }
-.empty { color: var(--brand-cocoa-soft); text-align: center; margin: 40px 0; font-size: 15px; }
 .message { display: flex; align-items: flex-start; gap: 8px; margin: 0 0 14px; }
 .content { flex: 1; min-width: 0; }
 .byline { display: flex; align-items: baseline; min-width: 0; gap: 8px; }

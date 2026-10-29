@@ -66,12 +66,10 @@ function RoomChat({ open, onOpen, onClose }: { open: boolean; onOpen(): void; on
   };
 
   return <aside className={styles.chat} aria-label="ルーム内チャット" data-room-chat>
-    {open && <OrnateFrame as="section" size="sm" className={styles.panel} id={panelId} aria-label="いまのルームの会話">
-      <header className={styles.header}><h2 data-ui-title>ルームチャット</h2><button type="button" onClick={close} aria-label="チャットを閉じる"><GameIcon name="close" /></button></header>
+    {open && <OrnateFrame as="section" appearance="panel" size="sm" className={styles.panel} id={panelId} aria-label="いまのルームの会話">
       <div ref={log} role="log" aria-label="チャットのメッセージ" aria-live="polite" aria-relevant="additions" className={styles.log} onScroll={event => {
         const box = event.currentTarget; nearEnd.current = box.scrollHeight - box.scrollTop - box.clientHeight < 48;
       }}>
-        {!chat.length && <p className={styles.empty}>いまのルームのみんなと話そう</p>}
         {chat.map(message => <div key={message.id} className={styles.message} data-own={message.member === view?.plaza?.me || undefined}>
           <Avatar card={message.profileId ? profiles[message.profileId]?.iconCardId : guestIcon(message.member)} size={32} />
           <div className={styles.content}><div className={styles.byline}><strong title={message.name}>{message.name}</strong><time dateTime={new Date(message.sentAt).toISOString()}>{new Date(message.sentAt).toLocaleTimeString('ja-JP', { hour: '2-digit', minute: '2-digit' })}</time></div><p>{message.text}</p></div>

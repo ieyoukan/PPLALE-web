@@ -36,7 +36,7 @@ test('two browsers chat before and during a match, from the menu, and after reco
     await chatButton(friend).click();
     await expect(log(friend)).toContainText('準備中のこんにちは🍓');
     await expect(input(page)).toHaveValue('');
-    await friend.getByRole('button', { name: 'チャットを閉じる' }).click();
+    await chatButton(friend).click();
     await page.keyboard.press('Escape');
     await page.getByRole('button', { name: 'この席にすわる', exact: true }).first().click();
     await friend.getByRole('button', { name: 'この席にすわる', exact: true }).last().click();
@@ -67,7 +67,7 @@ test('two browsers chat before and during a match, from the menu, and after reco
     await page.getByRole('dialog', { name: 'ホームへ移動しますか？' }).getByRole('button', { name: '移動する', exact: true }).click();
     await expect(page).not.toHaveURL(roomURL);
     await chatButton(page).click();
-    await expect(log(page)).toHaveText('いまのルームのみんなと話そう');
+    await expect(log(page)).toBeEmpty();
     await expect(input(page)).toHaveValue('');
     await expect(log(friend)).toContainText('メニューからも話せる');
     expect(errors).toEqual([]);
