@@ -3,10 +3,10 @@ import type { Metadata } from 'next';
 import { OpenInRoom } from '@/components/game/launchpad/OpenInRoom';
 
 export const metadata: Metadata = {
-    title: 'ぷぷりえーる バトル',
-    description: 'フリーマッチで対戦相手を探したり、ルームマッチに友だちを招待したりして、ぷぷりえーるで対戦しよう。',
+    title: 'ぷぷりえーる ルーム',
+    description: 'ルームを探して、フレンドとの対戦や観戦を楽しもう。',
     alternates: { canonical: '/game/battle/' },
 };
 
 /** Opens in the launchpad, over the room (places.ts). */
-export default function Page() { return <Suspense><OpenInRoom section="battle" /></Suspense>; }
+export default function Page() { return <Suspense><OpenInRoom section="discover" /></Suspense>; }

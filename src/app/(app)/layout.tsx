@@ -3,6 +3,8 @@ import AppShell from './AppShell';
 import { LocaleProvider } from '@/i18n/LocaleProvider';
 import { getRequestLocale } from '@/i18n/server';
 import type { Metadata } from 'next';
+import DarkModeProvider from '@/components/site/DarkModeProvider';
+import { SettingsProvider } from './SettingsProvider';
 
 export async function generateMetadata(): Promise<Metadata> {
   const locale = await getRequestLocale();
@@ -36,10 +38,10 @@ export default async function AppLayout({ children }: { children: React.ReactNod
   const locale = await getRequestLocale();
 
   return (
-    <LocaleProvider initialLocale={locale}>
+    <DarkModeProvider><SettingsProvider><LocaleProvider initialLocale={locale}>
       <div lang={locale}>
         <AppShell>{children}</AppShell>
       </div>
-    </LocaleProvider>
+    </LocaleProvider></SettingsProvider></DarkModeProvider>
   );
 }

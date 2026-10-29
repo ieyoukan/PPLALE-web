@@ -26,9 +26,6 @@
 | `POST /rooms` | `{ rules: { fruits, extendedPlayable, spectators }, name }` → `{ seat: 0, token, view }` |
 | `GET /rooms/{id}` | `{ id, rules, host, open, spectators }`。なければ 404 |
 | `POST /rooms/{id}/join` | `{ name }` → `{ seat: 1, token, view }`。満員 409 / 解散済み 410 |
-| `POST /free-match/start` | `{ token, name, deck }` → `{ status: "waiting" }` または `{ status: "matched", roomId, key: { seat, token } }` |
-| `POST /free-match/status` | `{ token }` → 待機中 / マッチ成立 / キャンセル済み。待機の有効期限を更新する |
-| `POST /free-match/cancel` | `{ token }` → `{ status: "cancelled" }`。先にマッチが成立した場合は成立済みの席を返す |
 | `WS /rooms/{id}/socket` | 上の流れ。`action` は `ready` `unready` `command` `resign` `rematch` `leave`。観戦は `hello` に `watch: true` |
 | `POST /rooms`（`plaza` 付き） | 集まれるルームを作る → `{ token, view }`。`plaza.from` で閉じたルームの後継に入る |
 | `POST /rooms/location` | `{ to }` → 自分・承認済みフレンドの現在地。接続なしは `offline`、入室不可は `private`＋公開範囲のみ、入室権限がある場合はインバイト系も含めて `room`＋ルーム情報（招待トークンなし） |
@@ -75,19 +72,13 @@ WebSocket を閉じるコード: `4404` ルームか席がない・観戦でき�
 - 時間切れは投了ではなく自動ターン終了。未完了の自分の選択は「発動しない・追加コストを払わない・完了」を優先し、必須の対象や手札上限の除外は先頭の候補を自動選択する。相手の選択は代行しない。
 - 締め切りと停止中の残り時間をルームと一緒に保存する。各Podは締め切りに1回だけ起き、通常と同じコマンド・CAS・履歴保存を通す。重複実行はCASで防ぐ。Podの入れ替え後は既存の定期保守で復帰する。ブラウザはサーバー時刻を基準に表示だけ更新し、毎秒の通信・Redis書き込みは行わない。
 
-## フリーマッチ
+## 廃止したフリーマッチ
 
-- `/game/battle/free/` で名前とデッキを選び、相手を探す。ランクなし、`freeMatchRules`（現在実装済みの最新環境・使える拡張プレイアブルあり・観戦なし）で待機列を1つに集める。
-- ブラウザは検索ごとに32バイトの秘密を生成する（小文字の16進数64文字）。サーバーが保存するのはそのSHA-256だけ。マッチが成立すると同じ秘密がそのプレイヤーの席のトークンになる。相手には秘密もハッシュも渡さない。
-- 約3秒ごとの `status` で待機を更新する。30秒更新されなかった人はマッチの対象から外す。キャンセル済みの印は30秒残し、遅れて届いた `start` が再登録しないようにする。画面を離れるときもキャンセルを送る。
-- 待っている人を先着順で組み合わせ、2人のデッキを検証して対戦を開始する。待機列と新しいルームをRedisのLuaで一度に保存するので、別々のPodが同時に処理しても重複しない。リクエストの再送では同じ席が返る。
-- 待機列は `pplale:free-match` のhash（`v`, `json`）。待機中は名前・デッキ・秘密のハッシュ・期限、成立後はルームID・席・期限だけを持つ。成立した席の案内は10分残し、期限切れは次の更新で削除する。hash自体も最後の更新から10分で消える。
-- 新しい検索は `REQUESTS_PER_HOUR` に数える。同じ検索の再送、待機更新、登録済みの検索のキャンセルは数えない。待機列の保存件数は `MAX_ROOMS * 4`、対戦用ルームは既存の `MAX_ROOMS` で制限する。
-- 対戦中の切断が1分以上続いた側は自動で投了する（通常のルームマッチには適用しない）。対戦後は同じ相手とのルーム内再戦ではなく「次の相手を探す」でデッキ選択に戻る。
+2026-10-29に自動マッチングの画面・待機列・検索／キャンセル処理・成立通知を削除した。`/free-match/*` は旧クライアントに410を返し、新規対戦はルームの席で行う。旧画面 `/game/battle/free/` は `/game/` へ戻す。過去の `mode: free` の対戦履歴・リプレイと、既存の2席ルームを読み取る互換性は残す。Redis上の旧待機列は更新せず、従来のTTLで自然に失効する。
 
 ## プッシュ通知（`src/push.ts`）
 
-- ゲームの画面を見ていない間に、手番・相手の選択待ち・ルームへの入室・フリーマッチの成立・フレンド申請と承認・フレンドの募集を Web Push で知らせる。表示は `public/sw.js`、文言は `src/push-notices.ts`。
+- ゲームの画面を見ていない間に、手番・相手の選択待ち・ルームへの入室・フレンド申請と承認・フレンドの募集を Web Push で知らせる。表示は `public/sw.js`、文言は `src/push-notices.ts`。
 - 送るのはこのサーバーだけ（VAPID 秘密鍵はクラスタの Secret）。`VAPID_PUBLIC_KEY` と `VAPID_PRIVATE_KEY` がなければ何も送らず、`/push/key` が `null` を返すのでゲーム側にベルも出ない。
 - 通知先はログインしたプレイヤーごとに最大8台、最後の登録から60日。ブラウザは訪問ごとに登録し直し、サーバーの鍵が変わっていれば購読し直す。404/410 が返った通知先は消す。通知先の URL はブラウザのプッシュサービス（FCM・Apple・Mozilla・Windows）だけを受け付ける。
 - 席のブラウザは、ページが隠れた・戻ったときに `{ type: "away", away }` を送る（view に `reportsAway` があるときだけ）。席の接続がないか隠れているときだけ通知する。スマホでは画面を消す・別アプリに切り替えると隠れる。
@@ -102,7 +93,6 @@ pplale:claim:{key}      string  最初に取った1台だけが処理する印�
 pplale:pod:{pod}        string  その Pod の接続数。Pod が止まると消える
 pplale:totals           hash    累計（作ったルーム、始まった対戦、終わった対戦、操作）
 pplale:rooms            channel ルームが変わったことを Pod どうしで知らせる
-pplale:free-match       hash    フリーマッチの待機列と成立済みの席の案内（v, json）。最後の更新から10分で消える
 pplale:push:sub:{uid}   hash    通知先（endpoint → 購読の json）。最後の登録から60日で消える
 pplale:push:away:{id}:{seat}  string  その席のページが隠れている。ROOM_IDLE_HOURS で消える
 pplale:push:once:{key}  string  同じ通知を二度送らないための印
@@ -174,7 +164,7 @@ REDIS_URL=redis://localhost:6379 npm run test:room-server
 ```
 
 2つのブラウザで実際に対戦させる e2e は `e2e/room-match.spec.mjs`（冒頭に動かし方）。
-フリーマッチの検索・キャンセル・対戦開始・再読み込み・次の相手の検索は `e2e/free-match.spec.mjs`。同じサーバー設定で `PPLALE_ROOM_TEST_URL=http://localhost:3100 npx playwright test free-match` を実行する。
+起動時のルーム表示・機能の入口・旧フリーマッチURLの転送は `e2e/launchpad-navigation.spec.mjs`、旧APIの410応答は `tests/retired-matchmaking.test.ts` で確認する。
 
 コンテナ（リポジトリのルートから）:
 
@@ -267,7 +257,7 @@ docker run --rm -p 8080:8080 -e REDIS_URL=redis://host.docker.internal:6379 ppla
 - **観戦者には両方の手札が見える。** 観戦を許可したルームでは、対戦している本人が別のブラウザで観戦すれば相手の手札を見られる。防ぐ仕組みはなく、観戦の可否と人数を2人に見せているだけ。既定は観戦なしで、ルームを作る人が選ぶ。観戦は1ルーム30人まで。
 - **ルームIDは6けたの数字。** 空いているルームには ID を当てれば入れる（2人そろえば入れない）。回数の制限で総当たりを抑えているだけなので、知らない人に入られて困る用途には向かない。
 - **切断した相手を待つ時間に上限はない。** 相手の接続が切れたことは画面に出る。戻らないときは自分が投了するかルームを出る。
-- 上の切断待ちはルームマッチの場合。フリーマッチでは切断が1分以上続くと自動投了になる。
+- 上の切断待ちはルームマッチの場合。廃止前のフリーマッチの既存ルームに限り、従来どおり切断1分で自動投了になる。
 
 
 ## 公開時の軽量な防御

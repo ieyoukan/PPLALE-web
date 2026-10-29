@@ -4,8 +4,6 @@ import { siteBodyFont, siteTitleFont } from "./fonts";
 import "./reset.css";
 import "./globals.css";
 import "./brand.css";
-import DarkModeProvider from './DarkModeProvider';
-import { SettingsProvider } from './SettingsProvider';
 import { AuthProvider } from '@/lib/auth';
 import { SpeedInsights } from "@vercel/speed-insights/next"
 import { PwaSetup } from '@/components/pwa/PwaSetup';
@@ -90,10 +88,12 @@ export default function RootLayout({
           dangerouslySetInnerHTML={{
             __html: `(() => {
               try {
+                const path = window.location.pathname;
+                const fixedLight = path === '/' || path === '/game' || path.startsWith('/game/');
+                if (fixedLight) { document.documentElement.classList.remove('dark'); return; }
                 const mode = localStorage.getItem('themeMode');
                 const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
-                const isTopPage = window.location.pathname === '/';
-                const isDark = !isTopPage && (mode === 'dark' || (mode !== 'light' && prefersDark));
+                const isDark = mode === 'dark' || (mode !== 'light' && prefersDark);
                 document.documentElement.classList.toggle('dark', isDark);
               } catch {}
             })();`,
@@ -107,15 +107,9 @@ export default function RootLayout({
         suppressHydrationWarning
       >
         <AuthProvider>
-          <DarkModeProvider>
-            <SettingsProvider>
-              <main>
-                {children}
-              </main>
-              {isVercel && <SpeedInsights />}
-              <PwaSetup />
-            </SettingsProvider>
-          </DarkModeProvider>
+          <main>{children}</main>
+          {isVercel && <SpeedInsights />}
+          <PwaSetup />
         </AuthProvider>
       </body>
     </html>

@@ -6,7 +6,7 @@ import type { GameIconName } from '@/components/shared/ui/GameIcon';
 
 /** The launchpad's own tabs, then the game's screens. */
 export type Section = 'home' | 'notifications' | 'instance' | 'volume' | 'settings'
-  | 'discover' | 'cpu' | 'battle' | 'free' | 'history' | 'puzzles' | 'cards' | 'zukan' | 'editor' | 'social' | 'profile' | 'performance';
+  | 'discover' | 'cpu' | 'history' | 'puzzles' | 'cards' | 'zukan' | 'editor' | 'social' | 'profile' | 'performance';
 /** A section and its selected profile or puzzle fruit, without changing the room address. */
 export interface Place { section: Section; id?: string; fruit?: string }
 
@@ -18,8 +18,6 @@ export const sectionInfo: Record<Section, { label: string; icon: GameIconName }>
   volume: { label: '音量', icon: 'volume' },
   settings: { label: '設定', icon: 'gear' },
   cpu: { label: 'CPU対決', icon: 'cpu' },
-  battle: { label: 'バトル', icon: 'sword' },
-  free: { label: 'フリーマッチ', icon: 'sword' },
   history: { label: '対戦履歴', icon: 'history' },
   puzzles: { label: 'リーサルパズル', icon: 'puzzle' },
   cards: { label: 'カード', icon: 'cards' },
@@ -31,7 +29,7 @@ export const sectionInfo: Record<Section, { label: string; icon: GameIconName }>
 };
 
 const paths: [string, Section][] = [
-  [CPU_PATH, 'cpu'], [`${BATTLE_PATH}free/`, 'free'], [`${BATTLE_PATH}history/`, 'history'], [BATTLE_PATH, 'battle'],
+  [CPU_PATH, 'cpu'], [`${BATTLE_PATH}history/`, 'history'], [BATTLE_PATH, 'discover'],
   [PUZZLES_PATH, 'puzzles'], [CARD_GALLERY_PATH, 'zukan'], [CARDS_PATH, 'cards'], [EDITOR_PATH, 'editor'],
   ['/game/social/', 'social'], ['/game/profile/', 'profile'], [NOTIFICATIONS_PATH, 'notifications'], [SETTINGS_PATH, 'settings'],
   ['/game/performance/', 'performance'],
@@ -55,4 +53,4 @@ export const samePlace = (a: Place, b: Place) => a.section === b.section && a.id
 export const padTabs: Section[] = ['home', 'notifications', 'instance', 'volume', 'settings'];
 export const screens: Section[] = ['discover', 'social', 'cards', 'puzzles', 'history', 'editor'];
 /** Screens opened from another keep their parent selected in the rail. */
-export const parentSection: Partial<Record<Section, Section>> = { zukan: 'cards', profile: 'social', free: 'history', performance: 'history' };
+export const parentSection: Partial<Record<Section, Section>> = { zukan: 'cards', profile: 'social', performance: 'settings' };

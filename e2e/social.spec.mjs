@@ -59,15 +59,3 @@ test('profiles, private friend requests, recruitment join/watch and removal work
     expect(errors).toEqual([]);
   } finally { await contextA.close().catch(() => {}); await contextB.close().catch(() => {}); }
 });
-
-test('public lounge shows players and links to live spectators and finished replays', async ({ page }) => {
-  await page.setViewportSize({ width: 375, height: 900 });
-  const players = [{ name: 'ありす', playable: 'p_0' }, { name: 'ぼぶ', playable: 'p_1' }];
-  await page.route('http://localhost:8099/free-match/live', route => route.fulfill({ json: { waiting: [{ name: '待っている人', playable: 'p_2' }], matches: [{ id: '123456', players, startedAt: Date.now(), turn: 5, watching: 2, status: 'playing' }, { id: '654321', players, startedAt: Date.now(), turn: 10, watching: 0, status: 'finished', replayId: 'aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa' }] } }));
-  await page.goto(`${base}/game/battle/free/`);
-  const lounge = page.getByRole('region', { name: 'いま遊んでいるプレイヤー' });
-  await expect(lounge).toContainText('待っている人');
-  await expect(lounge.getByRole('link', { name: '観戦する ›' })).toHaveAttribute('href', '/game/room/123456/?watch=1');
-  await expect(lounge.getByRole('link', { name: 'リプレイ ▶' })).toHaveAttribute('href', '/game/replay/?id=aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa');
-  expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(375);
-});

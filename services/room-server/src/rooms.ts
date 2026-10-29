@@ -1,4 +1,4 @@
-import { publicAssessment } from './public-matches.ts';
+import { publicAssessment } from './public-assessment.ts';
 import { catalog as roomCatalog } from './catalog.ts';
 // Everything a room can do, on the room as the server keeps it (both decks and the full match).
 // Nothing here knows about sockets or where rooms are kept: a request changes the room or throws RoomError.

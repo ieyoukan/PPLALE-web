@@ -4,14 +4,19 @@ import { OrnateFrame } from '@/components/shared/ui/ornament/OrnateFrame';
 import { GameIcon } from '@/components/shared/ui/GameIcon';
 import styles from './CardsMenu.module.css';
 
-/** The カード screen: where to look at cards and where to build a deck, one card-like door each. */
+const destinations = [
+  { href: CARD_GALLERY_PATH, label: '図鑑', note: 'すべてのカードを見る', icon: 'cards', tone: 'gallery' },
+  { href: '/build', label: 'デッキ構築', note: '保存したデッキ・新しく作る', icon: 'pen', tone: 'build', external: true },
+  { href: '/deck/2pick', label: '2Pick構築', note: '2枚から選んでデッキを作る', icon: 'cards', tone: 'gallery', external: true },
+  { href: '/deck-view', label: 'デッキ画像', note: 'デッキコードから画像を作る', icon: 'grid', tone: 'build', external: true },
+] as const;
+
+/** Site tools open alongside the game so their room connection stays alive. */
 export function CardsMenu() {
-  return <div className={styles.tiles}>
-    <OrnateFrame as={Link} size="sm" href={CARD_GALLERY_PATH} className={styles.tile} data-tone="gallery">
-      <GameIcon name="cards" /><b data-ui-title>図鑑</b><span>幼女・お菓子・プレイアブル・トークンを見る</span>
-    </OrnateFrame>
-    <OrnateFrame as={Link} size="sm" href="/build" className={styles.tile} data-tone="build">
-      <GameIcon name="pen" /><b data-ui-title>デッキ構築</b><span>デッキを作って保存する（デッキ構築ページへ）</span>
-    </OrnateFrame>
-  </div>;
+  return <div className={styles.tiles}>{destinations.map(destination => {
+    const external = 'external' in destination && destination.external;
+    return <OrnateFrame key={destination.href} as={Link} size="sm" href={destination.href} prefetch={external ? false : undefined} className={styles.tile} data-tone={destination.tone} target={external ? '_blank' : undefined} rel={external ? 'noopener noreferrer' : undefined}>
+      <GameIcon name={destination.icon} /><b data-ui-title>{destination.label}</b><span>{destination.note}{external && <small>別タブで開く <GameIcon name="expand" /></small>}</span>
+    </OrnateFrame>;
+  })}</div>;
 }

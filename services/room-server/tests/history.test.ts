@@ -95,22 +95,6 @@ historyTest('history: automatic disconnect is captured even with no browser wait
     assert.deepEqual(recording.frames.at(-1)!.state, JSON.parse(JSON.stringify(room.state)));
 });
 
-historyTest('history: free matchmaking queue and both recordings commit atomically under concurrent requests', async t => {
-    const { history, backend } = await fixture(t);
-    const { freeMatch } = await import('../src/matchmaking.ts');
-    const options = { maxRooms: 100, roomTtl: 3_600_000, mayStart: () => true };
-    await freeMatch(backend, catalog, 'start', { token: 'a'.repeat(64), name: 'A', deck }, { ...options, owners: ['device:host'] });
-    const results = await Promise.all(['b', 'c'].map(letter => freeMatch(backend, catalog, 'start', { token: letter.repeat(64), name: letter, deck }, { ...options, owners: [`device:${letter}`] })));
-    assert.equal(results.filter(result => result.status.status === 'matched').length, 1);
-    const ids = await backend.ids(); assert.equal(ids.length, 1);
-    const room = (await history.get(ids[0]))!;
-    assert.ok(room.record);
-    act(room, 0, { action: 'resign' }, catalog); await store(backend, room);
-    const page = await history.list(['device:host']);
-    assert.equal(page.entries.length, 1); assert.equal(page.entries[0].mode, 'free');
-    assert.equal((await history.recording(['device:host'], room.record!.id))!.frames.length, 2);
-});
-
 historyTest('history: pagination and favorite filtering never delete older recordings', async t => {
     const { history, backend } = await fixture(t);
     for (let index = 0; index < 34; index++) {
@@ -165,9 +149,6 @@ historyTest('history: old and new pods share new rooms and the free queue throug
     const fresh = ready('654321'); await backend.create(fresh, 3_600_000);
     act(fresh, 0, { action: 'resign' }, catalog); await store(backend, fresh);
     assert.equal((await history.recording(['device:host'], fresh.record!.id))!.match.complete, true);
-    const queue = { version: 1, entries: {} };
-    assert.equal(await backend.replaceFreeMatchQueue(queue, 0), true);
-    assert.deepEqual(await redis.freeMatchQueue(), queue);
 });
 
 historyTest('history: expiry, room id reuse and rematch never replace a previous recording', async t => {

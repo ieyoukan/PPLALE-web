@@ -1,6 +1,5 @@
 'use client';
 
-import { useId, useState } from 'react';
 import Link from 'next/link';
 import { GuestSignInPrompt } from '@/components/shared/auth/GuestSignInPrompt';
 import { CharacterDestination } from './CharacterDestination';
@@ -20,12 +19,11 @@ const destinations = [
   { target: 'cards', character: 'home-mint', tone: 'pink' },
   { target: 'puzzles', character: 'home-rabbit', tone: 'vanilla' },
   { target: 'history', character: 'home-yellow', tone: 'vanilla' },
+  { target: 'editor', character: 'pink-friend', tone: 'pink' },
 ] as const;
 
 export function LaunchpadHome({ onHome, onShare }: { onHome: () => void; onShare: () => void }) {
   const { openAt } = useLaunchpad(), { view } = usePlaza();
-  const [more, setMore] = useState(false);
-  const moreId = useId();
   return <div className={styles.home}>
     <CurrentRoomBanner />
     <GuestSignInPrompt compact />
@@ -39,11 +37,10 @@ export function LaunchpadHome({ onHome, onShare }: { onHome: () => void; onShare
       <button disabled={!view?.plaza} onClick={onShare}><GameIcon name="letter" /><span>さそう</span></button>
     </div>
     <footer className={styles.foot}>
-      <button className={styles.moreButton} aria-expanded={more} aria-controls={moreId} onClick={() => setMore(value => !value)}><GameIcon name={more ? 'close' : 'grid'} />{more ? '閉じる' : 'もっと見る'}</button>
-      {more && <nav id={moreId} className={styles.moreLinks} aria-label="その他の画面">
-        {(['editor', 'free'] as const).map(target => <button key={target} onClick={() => openAt({ section: target })}><GameIcon name={sectionInfo[target].icon} /><span>{sectionInfo[target].label}</span></button>)}
+      <nav className={styles.moreLinks} aria-label="その他の画面">
+        {(['profile', 'performance'] as const).map(target => <button key={target} onClick={() => openAt({ section: target })}><GameIcon name={sectionInfo[target].icon} /><span>{sectionInfo[target].label}</span></button>)}
         <Link href="/" prefetch={false}><GameIcon name="exit" /><span>サイトへ</span></Link>
-      </nav>}
+      </nav>
     </footer>
   </div>;
 }

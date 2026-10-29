@@ -30,7 +30,7 @@ test('home creates a room after social, and the current room scrolls to all its 
   await expect(page.getByText('空いている席をタップして、対戦にさんか', { exact: true })).toHaveCount(0);
   const links = pad.getByRole('region', { name: 'クイックリンク' });
   await expect(links.getByRole('heading')).toHaveCount(0);
-  await expect(links.getByRole('button')).toHaveText(['ソーシャル', 'ルーム', 'カード', 'リーサルパズル', '対戦履歴']);
+  await expect(links.getByRole('button')).toHaveText(['ソーシャル', 'ルーム', 'カード', 'リーサルパズル', '対戦履歴', '盤面エディタ']);
   const sizes = await links.getByRole('button').evaluateAll(buttons => buttons.map(button => ({ width: button.offsetWidth, height: button.offsetHeight })));
   for (const size of sizes) expect(size).toEqual(sizes[0]);
   await page.screenshot({ path: info.outputPath('launchpad-home.png') });
@@ -105,7 +105,7 @@ for (const viewport of [{ width: 1280, height: 800 }, { width: 844, height: 390 
     }
     await pad.getByRole('button', { name: 'ランチパッドに縮小' }).click();
     expect(await bounds()).toEqual(small);
-    await expect(pad.getByRole('button', { name: 'もっと見る', exact: true })).toBeInViewport();
+    await expect(pad.getByRole('button', { name: 'プロフィール', exact: true })).toBeInViewport();
     await page.screenshot({ path: info.outputPath('launchpad-fixed-portrait.png') });
   });
 }

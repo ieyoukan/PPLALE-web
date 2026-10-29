@@ -41,6 +41,6 @@ export function RoomShare({ id, rules }: { id: string; rules: RoomRules }) {
       {rules.spectators && <button className={styles.secondary} onClick={() => copy('観戦用のリンクをコピーしました', invite.watch)}>観戦リンクをコピー</button>}
       {canShare && <button className={styles.secondary} onClick={() => { navigator.share({ text: invite.plain }).catch(() => {}); }}>共有…</button>}
     </div>
-    <p className={styles.note} role="status">{copied || 'リンクを開くか、「ルームへ入る」でIDを入力すると参加できます。'}</p>
+    <p className={styles.note} role="status">{copied || 'リンクを開くか、ルーム一覧の「IDで入る」から参加できます。'}</p>
   </>;
 }

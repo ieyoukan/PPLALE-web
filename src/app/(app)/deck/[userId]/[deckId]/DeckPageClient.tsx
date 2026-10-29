@@ -8,7 +8,7 @@ import { getCardCatalog } from '@/data/catalog';
 import ExportPopup from '@/components/popup/ExportPopup';
 import ImportPopup from '@/components/popup/ImportPopup';
 import ShareButtons from '@/components/ui/ShareButtons';
-import { useSettings } from '@/app/SettingsProvider';
+import { useSettings } from '@/app/(app)/SettingsProvider';
 import DeckList from '@/components/deck/DeckList';
 import TabButtons from '@/components/shared/ui/TabButtons';
 import CardList from '@/components/shared/card/CardList';

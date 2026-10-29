@@ -1,8 +1,8 @@
 'use client';
 
 import { useRef, useEffect } from 'react';
-import { useSettings } from '@/app/SettingsProvider';
-import { useDarkMode } from '@/app/DarkModeProvider';
+import { useSettings } from '@/app/(app)/SettingsProvider';
+import { useDarkMode } from '@/components/site/DarkModeProvider';
 import { usePathname } from 'next/navigation';
 import { css } from 'styled-system/css';
 import { button, iconButton } from 'styled-system/recipes';

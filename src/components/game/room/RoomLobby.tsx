@@ -12,7 +12,7 @@ import { describeRoomRules } from '@pplale/game-core/room';
 import type { RoomView } from '@pplale/game-core/room';
 import { BATTLE_PATH, watchHref } from '@/lib/game/sessionStore';
 import { DeckSelect, UnusableDecks, useDeckChoices } from '../DeckSelect';
-import { NameField, usePlayerName } from './RoomEntrance';
+import { NameField, usePlayerName } from './PlayerNameField';
 import { RecruitmentButton } from '../social/RecruitmentButton';
 import { RoomShare } from './RoomShare';
 import type { Room } from './useRoom';
@@ -27,7 +27,7 @@ export function RoomLobby({ room }: { room: Room }) {
   // A match is on (or just over): the same page shows its board.
   const onBoard = stage === 'seated' && (view?.status === 'playing' || view?.status === 'finished');
 
-  const back = <Link href={BATTLE_PATH} className={styles.secondary}>バトルへ戻る</Link>;
+  const back = <Link href={BATTLE_PATH} className={styles.secondary}>ルームを探す</Link>;
   if (stage === 'gone' || view?.status === 'closed') return <section className={styles.panel}>
     <h2>{stage === 'gone' ? 'ルームが見つかりません' : 'このルームは解散しました'}</h2>
     <p>ルームIDをもう一度確かめるか、新しいルームを作ってください。</p>

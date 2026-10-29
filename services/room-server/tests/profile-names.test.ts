@@ -27,7 +27,7 @@ test('public names: existing rooms, state, logs and host use the current profile
     assert.deepEqual(await resolver.response({ host: '旧アカウント名', hostProfileId: 'verified-uid' }), { host: '現在の公開名', hostProfileId: 'verified-uid' });
 });
 
-test('public names: old public replays, lists and free-match activity resolve by UID without modifying the archive', async () => {
+test('public names: old public replays and lists resolve by UID without modifying the archive', async () => {
     let current = '新しい公開名', now = 1, reads = 0;
     const resolver = profileNames(async () => { reads++; return current; }, () => now);
     const game = arena(); game.players[0]!.name = '旧名[.*]'; game.players[1].name = 'ゲスト';
@@ -42,7 +42,6 @@ test('public names: old public replays, lists and free-match activity resolve by
     assert.equal(output.publicNamesResolved, true);
     assert.deepEqual(recording, original);
     await resolver.response({ entries: [match] });
-    await resolver.response({ waiting: match.players, matches: [match] });
     assert.equal(reads, 1);
     now += 60_001; current = '変更後の公開名';
     const changed = await resolver.response(recording) as MatchRecording;

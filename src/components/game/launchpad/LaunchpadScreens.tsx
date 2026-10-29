@@ -13,8 +13,6 @@ import styles from './Launchpad.module.css';
 
 // The game's screens, loaded when first opened.
 const GameLobby = dynamic(() => import('@/components/game/GameLobby'));
-const RoomEntrance = dynamic(() => import('@/components/game/room/RoomEntrance').then(module => module.RoomEntrance));
-const FreeMatch = dynamic(() => import('@/components/game/room/FreeMatch').then(module => module.FreeMatch));
 const MatchHistory = dynamic(() => import('@/components/game/history/MatchHistory').then(module => module.MatchHistory));
 const PuzzleLobby = dynamic(() => import('@/components/game/puzzles/PuzzleLobby'));
 const CardsMenu = dynamic(() => import('@/components/game/home/CardsMenu').then(module => module.CardsMenu));
@@ -36,8 +34,6 @@ export function LaunchpadScreens({ section, place, onPanel, onClose }: { section
     volume: <div className={styles.preferences}><GameIcon name="volume" className={styles.preferenceIcon} /><NotificationVolumeControl /></div>,
     settings: <GameSettings volume={false} />,
     cpu: <GameLobby />,
-    battle: <RoomEntrance />,
-    free: <FreeMatch />,
     history: <MatchHistory />,
     puzzles: <PuzzleLobby fruitId={place.fruit} />,
     cards: <CardsMenu />,

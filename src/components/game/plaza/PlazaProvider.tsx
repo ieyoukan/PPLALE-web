@@ -96,7 +96,6 @@ const RETRY_LONGEST = 15_000;
 /** How long the player reads that the room was gone before the new one opens. */
 const GONE_NOTICE = 2_500;
 const OUT_OF_REACH = 'ルームサーバーにつながりません。つなぎ直しています…';
-const ROOM_GONE = 'ルームが見つかりませんでした。新しいルームを作ります';
 const pause = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
 const UNREACHABLE = 'ルームサーバーにつながりません';
 type Opened = { ok: true } | { ok: false; message: string; closed: boolean; offline?: true };
@@ -254,8 +253,7 @@ export function PlazaProvider({ children }: { children: ReactNode }) {
   /** The room was gone (the server forgot it, or it expired): said, then a new room of the player's settings. */
   const remake = useCallback(async (roomId: string | null, full: boolean) => {
     if (roomId) leavePlaza(roomId);
-    setStage({ kind: 'entering', to: null, full, notice: ROOM_GONE });
-    await pause(GONE_NOTICE);
+    setStage({ kind: 'entering', to: null, full });
     return make();
   }, [make]);
 
@@ -292,7 +290,7 @@ export function PlazaProvider({ children }: { children: ReactNode }) {
         const back = await reconnect(saved.id, saved.token, saved.invite, true);
         if (back && 'in' in back) return back.in;
         if (back && 'closed' in back) return make({ id: saved.id, token: saved.token });
-        // The room this browser was in is gone: said, then a new one.
+        // An expired home is an ordinary launch: enter a fresh room without an extra notice.
         return remake(saved.id, true);
       }
       return make();
@@ -431,6 +429,6 @@ export function PlazaProvider({ children }: { children: ReactNode }) {
   return <Context.Provider value={value}>
     {children}
     {/* Moving between rooms: the current one stays on screen under a small sign. */}
-    {stage.kind === 'entering' && (!stage.full || stage.notice) && <div className={styles.veil} role="status" aria-live="polite"><OrnateFrame as="span" size="sm" className={styles.veilSign}><span className={styles.veilDots} aria-hidden="true"><span /><span /><span /></span>{stage.notice ?? (stage.to ? 'ルームへ移動中' : 'ルームを準備中')}</OrnateFrame></div>}
+    {stage.kind === 'entering' && (!stage.full || stage.notice) && <div className={styles.veil} role="status" aria-live="polite"><OrnateFrame as="span" size="sm" className={styles.veilSign}><span className={styles.veilDots} aria-hidden="true"><span /><span /><span /></span>{stage.notice ?? 'ルームに接続中'}</OrnateFrame></div>}
   </Context.Provider>;
 }

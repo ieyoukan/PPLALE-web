@@ -1,5 +1,4 @@
 import { burstLimit, clientAddress, HttpError, limiter, readJson } from '../../shared/http.mts';
-import { freeMatchActivity } from './public-matches.ts';
 import { profileNames } from './profile-names.ts';
 // The room server: rooms are made and entered over HTTP, and each seated player keeps a socket
 // open, sends its requests through it and is sent its view of the room whenever anything changes.
@@ -49,7 +48,6 @@ import { handReactionOps } from '@pplale/game-core';
 
 import { historyOwners, seatOwners } from './history/identity.ts';
 import type { HistoryRepository } from './history/repository.ts';
-import { freeMatch } from './matchmaking.ts';
 import { commandTiming, roomLatency } from './latency.ts';
 import { playPerformance } from './play-performance.ts';
 import { isPlayKind, parsePlayReport, parseServerTiming } from '@pplale/game-core/performance';
@@ -103,10 +101,6 @@ export function createRoomServer({ config, backend, catalog, history, push = pus
     const names = profileNames();
     const allowed = limiter(requestsPerHour), mayCreate = limiter(roomsPerHour);
     const patience = { lobby: lobbyGraceMinutes * 60_000, match: abandonMinutes * 60_000 };
-    let activityCache: { until: number; value: Awaited<ReturnType<typeof freeMatchActivity>> } | undefined;
-    let activityLoading: Promise<Awaited<ReturnType<typeof freeMatchActivity>>> | undefined;
-    const activityAllowed = limiter(requestsPerHour * 4);
-    // The friends screen asks every 15–30 seconds while it is shown, perhaps from several devices at home.
     const lookupAllowed = limiter(requestsPerHour * 8);
     const started = Date.now();
     const latency = roomLatency();
@@ -616,14 +610,7 @@ export function createRoomServer({ config, backend, catalog, history, push = pus
             }
             if (route === 'GET /healthz') return send(response, 200, { ok: true });
             if (route === 'GET /readyz') return await backend.ping() ? send(response, 200, { ok: true }) : send(response, 503, { ok: false });
-            if (route === 'GET /free-match/live') {
-                if (!activityAllowed(address(request))) throw new RoomError(429, '少し待ってからお試しください');
-                if (!activityCache || activityCache.until <= Date.now()) {
-                    activityLoading ??= freeMatchActivity(backend).then(value => { activityCache = { value, until: Date.now() + 3000 }; return value; }).finally(() => { activityLoading = undefined; });
-                    return send(response, 200, await activityLoading);
-                }
-                return send(response, 200, activityCache.value);
-            }
+            if (path.startsWith('/free-match/')) throw new RoomError(410, 'フリーマッチは終了しました。ルームで対戦できます');
             if (route === 'GET /stats') return send(response, 200, await stats());
             const image = request.method === 'GET' ? /^\/history\/assets\/([\da-f]{64})$/.exec(path) : null;
             if (image && history) {
@@ -656,29 +643,6 @@ export function createRoomServer({ config, backend, catalog, history, push = pus
             }
             if (request.method === 'GET' && path === '/push/key') return send(response, 200, { publicKey: push.publicKey });
             if (request.method === 'POST' && path.startsWith('/push/')) return send(response, 200, await pushRequest(request, path));
-            const freeOperation = request.method === 'POST' ? /^\/free-match\/(start|status|cancel)$/.exec(path)?.[1] as 'start' | 'status' | 'cancel' | undefined : undefined;
-            if (freeOperation) {
-                const owners = freeOperation === 'start' ? await historyOwners(request) : undefined;
-                if (history && freeOperation === 'start' && !owners?.length) throw new RoomError(426, '画面を更新してから、もう一度お試しください');
-                let body = await readJson(request, MAX_BODY);
-                const profileId = owners?.find(owner => owner.startsWith('user:'))?.slice(5);
-                if (profileId) {
-                    await names.load(profileId, true);
-                    if (body && typeof body === 'object') body = { ...body, name: names.name({ name: '', profileId }) };
-                }
-                const result = await freeMatch(backend, catalog, freeOperation, body, {
-                    maxRooms, roomTtl: idleHours * HOUR, allowSpectators: await backend.audienceReady(), mayStart: () => allowed(address(request)),
-                    owners: owners && seatOwners(owners),
-                });
-                if (result.created) {
-                    // The player who was waiting (seat 0) may have put the phone away meanwhile.
-                    push.later(result.created.seats[0]!.profileId, notices.freeMatched(result.created.seats[1]?.name ?? '相手'));
-                    overview = undefined;
-                    await backend.count('roomsCreated');
-                    await backend.count('matchesStarted');
-                }
-                return send(response, 200, result.status);
-            }
             if (route !== 'POST /rooms' && !id) return send(response, 404, { error: 'not found' });
             if (request.method === 'POST' && !tail && (id === 'lookup' || id === 'browse' || id === 'ask' || id === 'invited' || id === 'location')) {
                 if (!(id === 'ask' ? allowed : lookupAllowed)(address(request))) throw new RoomError(429, '少し待ってからお試しください');
@@ -1066,7 +1030,6 @@ export function createRoomServer({ config, backend, catalog, history, push = pus
         beating = true;
         try {
             const entries = Array.from(wss.clients as Set<Attached>).flatMap(socket => socket.entry ? [socket.entry] : []);
-            await backend.audienceCapable(pod, presenceTtl);
             await Promise.all([backend.refresh(entries, presenceTtl), backend.beat(pod, connections(), presenceTtl)]);
             for (const id of Array.from(sockets.keys())) {
                 const room = await backend.get(id);

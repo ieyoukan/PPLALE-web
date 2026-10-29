@@ -82,8 +82,8 @@ function Result({ outcome: { winner, kind } }: { outcome: Outcome }) {
       <div className={styles.actions} role="group" aria-label="対戦後の操作">
         {canReplay && <button className={styles.plateButton} onClick={startReplay}>リプレイ</button>}
         {/* The game's own home (preparation, cards, battles), not the site's top page. */}
-        <button className={styles.plateButton} onClick={leave}>{remote?.plaza ? remote.watching ? 'テーブルへ' : '席を空けて観戦' : remote?.recorded ? '対戦履歴へ戻る' : remote?.watching ? '観戦をやめる' : remote?.freeMatch ? 'バトルへ戻る' : remote ? 'ルームを出る' : 'ホーム'}</button>
-        {canRematch && <button className={`${styles.plateButton} ${styles.primaryPlate}`} onClick={rematch}>{remote?.plaza ? 'この席でもう一度' : remote?.freeMatch ? '次の相手を探す' : remote ? 'もう一度（デッキ選択へ）' : position ? '同じ盤面でもう一度' : '再戦する'}</button>}
+        <button className={styles.plateButton} onClick={leave}>{remote?.plaza ? remote.watching ? 'テーブルへ' : '席を空けて観戦' : remote?.recorded ? '対戦履歴へ戻る' : remote?.watching ? '観戦をやめる' : remote?.freeMatch ? 'ルームへ戻る' : remote ? 'ルームを出る' : 'ホーム'}</button>
+        {canRematch && !remote?.freeMatch && <button className={`${styles.plateButton} ${styles.primaryPlate}`} onClick={rematch}>{remote?.plaza ? 'この席でもう一度' : remote ? 'もう一度（デッキ選択へ）' : position ? '同じ盤面でもう一度' : '再戦する'}</button>}
       </div>
     </div>
     {analysisOpen && <ResultSheet title="形勢の詳細" onClose={() => setAnalysisOpen(false)}><AssessmentGraph side={featured} /></ResultSheet>}

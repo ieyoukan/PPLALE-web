@@ -38,7 +38,7 @@ export default function RoomBoard({ id, watch = false }: { id: string; watch?: b
   const trouble = !linked ? 'ルームサーバーに再接続しています…' : away.length && view.status === 'playing' ? `${away.join('・')}の接続が切れています（戻るのを待っています）` : null;
   return <MatchAssetGate ids={roomMatchCardIds(view.rules)}>
     {watch && <aside className={link.spectatorTools} aria-label="観戦メニュー">
-      <Link href={`${BATTLE_PATH}free/`}>観戦を終了</Link>
+      <Link href={BATTLE_PATH}>観戦を終了</Link>
       {view.status === 'finished' && view.replayId && <Link href={`/game/replay/?id=${view.replayId}`}>リプレイを見る ▶</Link>}
     </aside>}
     {!watch && view.status === 'finished' && view.replayId && <aside className={link.spectatorTools}><Link href={`/game/replay/?id=${view.replayId}`}>リプレイを見る ▶</Link></aside>}
@@ -53,8 +53,7 @@ function Table({ room, initial, seat }: { room: Room; initial: Played; seat: Sid
   const router = useRouter();
   const { leave } = room;
   const onLeave = useCallback(() => { void leave().then(() => router.push(BATTLE_PATH)); }, [leave, router]);
-  const onFindNext = useCallback(() => { void leave().then(() => router.push(`${BATTLE_PATH}free/`)); }, [leave, router]);
-  const session = useRoomSession({ room, initial, seat, onLeave, onFindNext });
+  const session = useRoomSession({ room, initial, seat, onLeave });
   return <BoardTable session={session} />;
 }
 

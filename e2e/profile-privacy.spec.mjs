@@ -30,32 +30,20 @@ for (const viewport of [{ width: 1280, height: 860 }, { width: 390, height: 844 
       await expect(page.getByRole('status')).toContainText('保存しました');
       expect(await page.evaluate(() => window.__privateLeaks)).toEqual([]);
 
-      await page.route('http://localhost:8099/stats', route => route.fulfill({ json: { version: 'test', backend: 'memory', rooms: {}, total: {}, pods: 1, connections: 0 } }));
       let sent;
       await page.route('http://localhost:8099/rooms', route => {
         sent = route.request().postDataJSON();
-        return route.fulfill({ status: 503, json: { error: 'テストではルームを作りません' } });
+        return route.continue();
       });
-      await page.goto(`${base}/game/battle/`);
-      await page.getByRole('button', { name: /ルームを作る/ }).click();
-      await expect(page.getByPlaceholder('なまえ')).toHaveValue(nickname);
-      await page.getByRole('button', { name: 'このルールでルームを作る', exact: true }).click();
-      await expect.poll(() => sent?.name).toBe(nickname);
-      expect(Object.keys(sent).sort()).toEqual(['name', 'rules']);
+      await page.getByRole('button', { name: 'メニューを閉じる', exact: true }).click();
+      await page.getByRole('button', { name: 'メニュー', exact: true }).click();
+      const menu = page.getByRole('dialog', { name: 'ゲームメニュー', exact: true });
+      await menu.getByRole('button', { name: 'ルーム', exact: true }).click();
+      await menu.getByRole('button', { name: 'ルームを作る', exact: true }).click();
+      await page.getByRole('dialog', { name: '新しいルームを作る' }).getByRole('button', { name: 'この公開範囲で作る' }).click();
+      await expect.poll(() => sent?.plaza?.visibility).toBe('invite');
       expect(JSON.stringify(sent)).not.toContain(privateName);
       expect(JSON.stringify(sent)).not.toContain(privateEmail);
-      await expect(page.getByPlaceholder('なまえ')).toHaveAttribute('readonly', '');
-      await page.goto(`${base}/game/battle/free/`);
-      await expect(page.getByPlaceholder('なまえ')).toHaveValue(nickname);
-      let search;
-      await page.route('http://localhost:8099/free-match/*', route => {
-        if (route.request().url().endsWith('/start')) search = route.request().postDataJSON();
-        return route.fulfill({ json: { status: route.request().url().endsWith('/cancel') ? 'cancelled' : 'waiting' } });
-      });
-      await page.getByRole('button', { name: /このデッキで対戦相手を探す/ }).click();
-      await expect.poll(() => search?.name).toBe(nickname);
-      expect(Object.keys(search).sort()).toEqual(['deck', 'name', 'token']);
-      expect(JSON.stringify(search)).not.toContain(privateName);
       expect(await page.evaluate(() => window.__privateLeaks)).toEqual([]);
 
       const game = arena(); game.winner = 0; game.players[1].points = 0;
@@ -85,11 +73,10 @@ test('switching accounts keeps match names scoped to each public profile', async
   await page.getByLabel('なまえ', { exact: true }).fill('アカウントAの公開名');
   await page.getByRole('button', { name: 'プロフィールを保存', exact: true }).click();
   await expect(page.getByRole('status')).toContainText('保存しました');
-  await page.goto(`${base}/game/battle/free/`);
-  await expect(page.getByPlaceholder('なまえ')).toHaveValue('アカウントAの公開名');
-  await expect(page.getByPlaceholder('なまえ')).toHaveAttribute('readonly', '');
+  await page.goto(`${base}/game/profile/`);
+  await expect(page.getByLabel('なまえ', { exact: true })).toHaveValue('アカウントAの公開名');
   await signInFixture(page, base, b);
-  await page.goto(`${base}/game/battle/free/`);
+  await page.goto(`${base}/game/profile/`);
   const setup = page.getByRole('dialog', { name: 'はじめまして！' });
   await expect(setup).toBeVisible();
   await expect(setup.getByLabel('なまえ', { exact: true })).toHaveValue('');
@@ -98,7 +85,7 @@ test('switching accounts keeps match names scoped to each public profile', async
   await setup.getByLabel('なまえ', { exact: true }).fill('アカウントBの公開名');
   await setup.getByRole('button', { name: '保存してはじめる' }).click();
   await expect(setup).toHaveCount(0);
-  await expect(page.getByPlaceholder('なまえ')).toHaveValue('アカウントBの公開名');
+  await expect(page.getByLabel('なまえ', { exact: true })).toHaveValue('アカウントBの公開名');
 });
 
 test('shared decks show the current profile name to visitors and update when the profile is renamed', async ({ page, browser }) => {
@@ -129,8 +116,10 @@ test('shared decks show the current profile name to visitors and update when the
   } finally { await visitor.close(); }
 });
 
-test('guests can still choose a match name independently of signed-in profiles', async ({ page }) => {
-  await page.goto(`${base}/game/battle/free/`);
+test('guests can still choose a legacy lobby name independently of signed-in profiles', async ({ page, request }) => {
+  const made = await request.post('http://localhost:8099/rooms', { data: { name: 'ほすと', rules: { fruits: ['strawberry'] } } });
+  const { view } = await made.json();
+  await page.goto(`${base}/game/room/${view.id}/`);
   const name = page.getByPlaceholder('なまえ');
   await expect(name).toBeEditable();
   await name.fill('ゲストのなまえ');

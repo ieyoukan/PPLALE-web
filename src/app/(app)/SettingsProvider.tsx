@@ -15,19 +15,21 @@ const SettingsContext = createContext<SettingsContextType | undefined>(undefined
 export function SettingsProvider({ children }: { children: React.ReactNode }) {
   const [showSettings, setShowSettings] = useState(false);
   const [isTwoCardLimit, setIsTwoCardLimit] = useState(true);
+  const [restored, setRestored] = useState(false);
 
   useEffect(() => {
     const savedTwoCardLimit = localStorage.getItem('isTwoCardLimit');
     setIsTwoCardLimit(parseBooleanFromStorage(savedTwoCardLimit, true));
+    setRestored(true);
   }, []);
 
   useEffect(() => {
-    localStorage.setItem('isTwoCardLimit', JSON.stringify(isTwoCardLimit));
-  }, [isTwoCardLimit]);
+    if (restored) localStorage.setItem('isTwoCardLimit', JSON.stringify(isTwoCardLimit));
+  }, [isTwoCardLimit, restored]);
 
   return (
-    <SettingsContext.Provider value={{ 
-      showSettings, 
+    <SettingsContext.Provider value={{
+      showSettings,
       setShowSettings,
       isTwoCardLimit,
       setIsTwoCardLimit
@@ -43,4 +45,4 @@ export function useSettings() {
     throw new Error('useSettings must be used within a SettingsProvider');
   }
   return context;
-} 
+}

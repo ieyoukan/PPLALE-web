@@ -3,7 +3,7 @@
 // the match; a browser only ever gets its own seat's view of it (redact.ts).
 import type { Catalog, Command, Deck, GameState, Side } from './model.ts';
 import type { CpuLevel } from './ai/types.ts';
-import { defaultMatchRules, deckRuleErrors, describeMatchRules, parseMatchRules, playableNow } from './rules.ts';
+import { defaultMatchRules, deckRuleErrors, describeMatchRules, parseMatchRules } from './rules.ts';
 import type { MatchRules } from './rules.ts';
 import type { PlayPerformance, PlayReport, ServerTiming } from './performance.ts';
 
@@ -21,20 +21,6 @@ export interface RoomRules extends MatchRules {
     spectators?: boolean;
 }
 export const defaultRoomRules: RoomRules = { ...defaultMatchRules, spectators: false };
-/** One public queue; live spectators cannot expose either unrevealed hand. */
-export const freeMatchRules: RoomRules = { ...playableNow, spectators: true };
-
-export type FreeMatchStatus =
-    | { status: 'waiting' }
-    | { status: 'cancelled' }
-    | { status: 'matched'; roomId: string; key: SeatKey };
-
-/** Only public names/icons and room ids; never decks, tokens, queue keys or history owners. */
-export interface FreeMatchActivity {
-    waiting: { name: string; playable: string; profileId?: string }[];
-    matches: { id: string; players: [{ name: string; playable: string; profileId?: string }, { name: string; playable: string; profileId?: string }]; startedAt: number; turn: number; watching: number; status: 'playing' | 'finished'; replayId?: string }[];
-}
-
 /** The usable part of anything sent as rules, or null when no fruit is left. */
 export function parseRoomRules(value: unknown): RoomRules | null {
     const rules = parseMatchRules(value);

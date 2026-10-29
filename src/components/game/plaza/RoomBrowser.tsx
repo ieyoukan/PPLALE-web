@@ -15,6 +15,7 @@ import { GameIcon } from '@/components/shared/ui/GameIcon';
 import { usePlaza } from './PlazaProvider';
 import { RoomThumbnailImage } from './RoomThumbnailImage';
 import { visibilityInfo } from './visibility';
+import { RoomIdEntry } from './RoomIdEntry';
 import styles from './RoomBrowser.module.css';
 
 /** Keep the current public room's live information; private rooms belong in Social. */
@@ -37,6 +38,7 @@ export function RoomBrowser({ onCreate, onEntered }: { onCreate: () => void; onE
   const [revision, setRevision] = useState(0), [busy, setBusy] = useState(false);
   const [filters, setFilters] = useState<RoomRuleFilter>(allRoomRules);
   const [filtering, setFiltering] = useState(false);
+  const [byId, setById] = useState(false);
   useEffect(() => {
     let active = true, pending = false;
     const refresh = async () => {
@@ -72,9 +74,11 @@ export function RoomBrowser({ onCreate, onEntered }: { onCreate: () => void; onE
       <ScreenSubtitle>パブリックルーム</ScreenSubtitle>
       <button type="button" className={styles.iconButton} aria-label="ルーム一覧を更新" onClick={() => { setLoading(true); setRevision(value => value + 1); }} disabled={loading}><GameIcon name="refresh" /></button>
       <button type="button" className={styles.filterButton} aria-expanded={filtering} onClick={() => setFiltering(value => !value)}><GameIcon name="rules" /><span>絞り込み</span></button>
+      <button type="button" className={styles.filterButton} aria-expanded={byId} onClick={() => setById(value => !value)}><GameIcon name="enter" /><span>IDで入る</span></button>
       <OrnateFrame as="button" size="line" className={styles.createButton} onClick={onCreate}><GameIcon name="plus" /><span data-ui-title>ルームを作る</span></OrnateFrame>
     </div>
     {filtering && <RoomRuleFilters value={filters} onChange={setFilters} />}
+    {byId && <RoomIdEntry onEntered={onEntered} />}
     {error && <p className={styles.error} role="alert">{error}</p>}
     <div className={styles.layout}>
       {chosen ? <OrnateFrame as="section" size="sm" className={styles.detail} aria-label="選択したルーム">

@@ -14,7 +14,7 @@ import { useForm } from 'react-hook-form';
 import { css } from 'styled-system/css';
 import { CardInfo, CardType, CardVersion, FruitType } from '@/types/card';
 import { getCardCatalog } from '@/data/catalog';
-import { useSettings } from "@/app/SettingsProvider";
+import { useSettings } from "@/app/(app)/SettingsProvider";
 import { useAuth } from '@/lib/auth';
 import { doc, setDoc, getDoc } from 'firebase/firestore';
 import { db } from '@/lib/firebase';

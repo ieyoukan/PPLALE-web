@@ -67,12 +67,6 @@ export async function durableBackend(redis: Backend, history: HistoryRepository,
             if (changed) await drain();
             return changed;
         },
-        async replaceFreeMatchQueue(queue, expected, room, ttl) {
-            await drain();
-            const changed = await redis.replaceFreeMatchQueue(queue, expected, room, ttl, room ? await capture(room) : undefined);
-            if (changed) await drain();
-            return changed;
-        },
         async beat(pod, connections, ttl) {
             await redis.historyCapable(pod, ttl);
             await redis.beat(pod, connections, ttl);

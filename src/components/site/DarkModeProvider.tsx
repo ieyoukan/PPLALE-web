@@ -32,9 +32,14 @@ export default function DarkModeProvider({ children }: { children: React.ReactNo
   const pathname = usePathname();
   const [themeMode, setThemeMode] = useState<ThemeMode>('system');
   const [isDarkMode, setIsDarkMode] = useState(false);
+  const [restored, setRestored] = useState(false);
+
+  // The site owns its theme. Returning to the game or landing page restores their fixed palette.
+  useEffect(() => () => applyDarkClass(false), []);
 
   useEffect(() => {
     const storedMode = localStorage.getItem(THEME_MODE_KEY);
+    setRestored(true);
     if (storedMode === 'light' || storedMode === 'dark' || storedMode === 'system') {
       setThemeMode(storedMode);
       return;
@@ -45,6 +50,7 @@ export default function DarkModeProvider({ children }: { children: React.ReactNo
   }, []);
 
   useEffect(() => {
+    if (!restored) return;
     const mediaQuery = window.matchMedia(DARK_MEDIA_QUERY);
 
     const sync = () => {
@@ -68,7 +74,7 @@ export default function DarkModeProvider({ children }: { children: React.ReactNo
     return () => {
       mediaQuery.removeEventListener('change', onSystemThemeChange);
     };
-  }, [themeMode, pathname]);
+  }, [themeMode, pathname, restored]);
 
   const toggleDarkMode = () => {
     setThemeMode(prev => (resolveIsDarkMode(prev) ? 'light' : 'dark'));

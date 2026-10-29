@@ -16,7 +16,6 @@ import type { HistoryCapture, HistoryWrite } from './history/repository.ts';
 import type { Side } from '@pplale/game-core';
 import type { RoomServerStats, RoomStatus } from '@pplale/game-core/room';
 import type { Room } from './rooms.ts';
-import type { FreeMatchQueue } from './matchmaking.ts';
 import type { PlaySample } from '@pplale/game-core/performance';
 
 /** A room changed. Every instance sends the views to the sockets it holds. */
@@ -56,15 +55,10 @@ export interface Backend {
     ids(): Promise<string[]>;
     /** Stores the room if it is still at version `expected`; false when someone else changed it first. */
     replace(room: Room, expected: number, ttl: number, history?: HistoryCapture): Promise<boolean>;
-    freeMatchQueue(): Promise<FreeMatchQueue>;
-    /** Commits the queue and, when paired, the new room together. Neither can be stored alone. */
-    replaceFreeMatchQueue(queue: FreeMatchQueue, expected: number, room?: Room, roomTtl?: number, history?: HistoryCapture): Promise<boolean>;
     historyPending(): Promise<HistoryWrite[]>;
     historyAck(id: string): Promise<void>;
     historyCapable(pod: string, ttl: number): Promise<void>;
     historyReady(): Promise<boolean>;
-    audienceCapable(pod: string, ttl: number): Promise<void>;
-    audienceReady(): Promise<boolean>;
     publish(event: RoomEvent): Promise<void>;
     subscribe(listener: (event: RoomEvent) => void): Promise<void>;
     /** A socket of the seat opened. True when the seat had none (the player just came). */
@@ -104,22 +98,6 @@ redis.call('PEXPIRE', KEYS[1], ARGV[5])
 if ARGV[6] ~= '' then
   redis.call('XADD', KEYS[2], '*', 'room', ARGV[3], 'previous', previous, 'capture', ARGV[6], 'expires', ARGV[7])
 end
-return 1`;
-
-// The version check, room-id reservation and both writes must be one Redis operation.
-const STORE_FREE_MATCH = `
-local current = redis.call('HGET', KEYS[1], 'v') or '0'
-if current ~= ARGV[1] then return 0 end
-if ARGV[4] ~= '' then
-  if redis.call('EXISTS', KEYS[2]) == 1 then return 0 end
-  redis.call('HSET', KEYS[2], 'v', '1', 'json', ARGV[4], 'st', 'playing')
-  redis.call('PEXPIRE', KEYS[2], ARGV[5])
-  if ARGV[6] ~= '' then
-    redis.call('XADD', KEYS[3], '*', 'room', ARGV[4], 'previous', 'null', 'capture', ARGV[6], 'expires', ARGV[7])
-  end
-end
-redis.call('HSET', KEYS[1], 'v', ARGV[2], 'json', ARGV[3])
-redis.call('PEXPIRE', KEYS[1], 600000)
 return 1`;
 
 // KEYS[1] a presence set. ARGV: the socket's lapse time, the socket, its ttl. The set outlives its longest-lived socket.
@@ -183,16 +161,6 @@ export async function redisBackend(url: string, prefix = 'pplale:'): Promise<Bac
         },
         async ids() { return (await keys(roomKey('*'))).map(key => key.slice(roomKey('').length)); },
         replace: (room, expected, ttl, history) => store(room, String(expected), ttl, history),
-        async freeMatchQueue() {
-            const json = await client.hGet(`${prefix}free-match`, 'json');
-            return json ? JSON.parse(json) as FreeMatchQueue : { version: 0, entries: {} };
-        },
-        async replaceFreeMatchQueue(queue, expected, room, roomTtl, history) {
-            return await client.eval(STORE_FREE_MATCH, {
-                keys: [`${prefix}free-match`, roomKey(room?.id ?? 'unused'), outbox],
-                arguments: [String(expected), String(queue.version), JSON.stringify(queue), room ? JSON.stringify(room) : '', String(Math.ceil(roomTtl ?? 1)), history ? JSON.stringify(history) : '', String(Date.now() + (roomTtl ?? 1))],
-            }) === 1;
-        },
         async historyPending() {
             return ((await client.xRange(outbox, '-', '+', { COUNT: 100 })) ?? []).map(({ id, message }) => {
                 const capture = JSON.parse(message.capture) as HistoryCapture;
@@ -201,11 +169,6 @@ export async function redisBackend(url: string, prefix = 'pplale:'): Promise<Bac
         },
         async historyAck(id) { await client.xDel(outbox, id); },
         async historyCapable(pod, ttl) { await client.set(`${prefix}history-capable:${pod}`, '1', { PX: Math.ceil(ttl) }); },
-        async audienceCapable(pod, ttl) { await client.set(`${prefix}audience-capable:${pod}`, '1', { PX: Math.ceil(ttl) }); },
-        async audienceReady() {
-            const pods = await keys(podKey('*'));
-            return (await Promise.all(pods.map(key => client.exists(`${prefix}audience-capable:${key.slice(podKey('').length)}`)))).every(Boolean);
-        },
         async historyReady() {
             const pods = await keys(podKey('*'));
             return (await Promise.all(pods.map(key => client.exists(`${prefix}history-capable:${key.slice(podKey('').length)}`)))).every(Boolean);
@@ -262,14 +225,13 @@ export function memoryBackend(): Backend {
     const rooms = new Map<string, { json: string; until: number }>();
     const seats = new Map<string, Map<string, number>>(), pods = new Map<string, { connections: number; until: number }>();
     const listeners: ((event: RoomEvent) => void)[] = [], total = noTotals(), claims = new Map<string, number>();
-    const pending = new Map<string, HistoryWrite>(), capable = new Map<string, number>(), audience = new Map<string, number>();
+    const pending = new Map<string, HistoryWrite>(), capable = new Map<string, number>();
     let serial = 0;
     function record(room: Room, previous: Room | null, ttl: number, history?: HistoryCapture) {
         if (!history) return;
         const id = `${Date.now()}-${++serial}`;
         pending.set(id, structuredClone({ id, room, previous, expires: Date.now() + ttl, capture: history.snapshot, completeAllowed: history.completeAllowed }));
     }
-    let freeQueue: { json: string; until: number } | undefined;
     const live = (id: string) => {
         const kept = rooms.get(id);
         if (kept && kept.until <= Date.now()) rooms.delete(id);
@@ -307,22 +269,9 @@ export function memoryBackend(): Backend {
             rooms.set(room.id, { json: JSON.stringify(room), until: Date.now() + ttl });
             return true;
         },
-        async freeMatchQueue() {
-            return freeQueue && freeQueue.until > Date.now() ? JSON.parse(freeQueue.json) as FreeMatchQueue : { version: 0, entries: {} };
-        },
-        async replaceFreeMatchQueue(queue, expected, room, roomTtl, history) {
-            const current = freeQueue && freeQueue.until > Date.now() ? (JSON.parse(freeQueue.json) as FreeMatchQueue).version : 0;
-            if (current !== expected || room && live(room.id)) return false;
-            if (room) record(room, null, roomTtl ?? 1, history);
-            if (room) rooms.set(room.id, { json: JSON.stringify(room), until: Date.now() + (roomTtl ?? 1) });
-            freeQueue = { json: JSON.stringify(queue), until: Date.now() + 600_000 };
-            return true;
-        },
         async historyPending() { return structuredClone([...pending.values()].slice(0, 100)); },
         async historyAck(id) { pending.delete(id); },
         async historyCapable(pod, ttl) { capable.set(pod, Date.now() + ttl); },
-        async audienceCapable(pod, ttl) { audience.set(pod, Date.now() + ttl); },
-        async audienceReady() { return [...pods].every(([id, pod]) => pod.until <= Date.now() || (audience.get(id) ?? 0) > Date.now()); },
         async historyReady() { return [...pods].every(([id, pod]) => pod.until <= Date.now() || (capable.get(id) ?? 0) > Date.now()); },
         async publish(event) {
             const copy = JSON.stringify(event);

@@ -30,8 +30,8 @@ function reducer(table: Table, action: Played | 'accept'): Table {
  * A room's match as the board plays it. Nothing is decided here: a command goes to the server, and
  * the view it (or the other side's command) leads to waits in a queue until the board has shown it.
  */
-export function useRoomSession({ room, initial, seat, onLeave, onFindNext, plaza }: {
-  room: Pick<Room, 'send' | 'subscribe' | 'linked' | 'presented'>; initial: Played; seat: Side; onLeave: () => void; onFindNext?: () => void;
+export function useRoomSession({ room, initial, seat, onLeave, plaza }: {
+  room: Pick<Room, 'send' | 'subscribe' | 'linked' | 'presented'>; initial: Played; seat: Side; onLeave: () => void;
   /** A match at a plaza's table: after it, the seat is kept for the next one (`rematch`) or given up (`onLeave`). */
   plaza?: { rematch: () => void; menu: () => void };
 }): BoardSession {
@@ -71,7 +71,7 @@ export function useRoomSession({ room, initial, seat, onLeave, onFindNext, plaza
   }, [request]);
   const resign = useCallback(() => ask('resign'), [ask]);
   const plazaRematch = plaza?.rematch;
-  const rematch = useCallback(() => plazaRematch ? plazaRematch() : initial.mode === 'free' ? (onFindNext ?? onLeave)() : ask('rematch'), [ask, initial.mode, onFindNext, onLeave, plazaRematch]);
+  const rematch = useCallback(() => plazaRematch ? plazaRematch() : initial.mode === 'free' ? onLeave() : ask('rematch'), [ask, initial.mode, onLeave, plazaRematch]);
 
   const names = useMemo<[string, string]>(() => [shown.players[0]?.name ?? '相手', shown.players[1]?.name ?? '相手'], [shown.players]);
   const profiles = useProfiles(shown.players.map(player => player?.profileId));

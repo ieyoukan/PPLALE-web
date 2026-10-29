@@ -8,9 +8,9 @@ import type { ReactNode } from 'react';
 import Image from 'next/image';
 import { fruitNames } from '@pplale/game-core';
 import type { Fruit } from '@pplale/game-core';
-import type { RoomInfo } from '@pplale/game-core/room';
+import { defaultRoomRules } from '@pplale/game-core/room';
+import type { RoomRules } from '@pplale/game-core/room';
 import { displayCards } from '@/lib/game/catalog';
-import { useAuth } from '@/lib/auth';
 import { RoomThumbnailImage } from './RoomThumbnailImage';
 import { OrnateFrame } from '@/components/shared/ui/ornament/OrnateFrame';
 import styles from './LaunchScreen.module.css';
@@ -31,32 +31,17 @@ function someCard(): Shown | null {
   return cards.length ? cards[Math.floor(Math.random() * cards.length)] : null;
 }
 
-/** `status`: what is happening, for screen readers (and below the card). `children`: what to do when it failed. */
-export function LaunchScreen({ status = 'ルームを準備しています', preview, children }: { status?: string; preview?: RoomInfo | null; children?: ReactNode }) {
+/** `status`: what is happening, for screen readers. `children`: what to do when it failed. */
+export function LaunchScreen({ status = 'ルームに接続しています', preview, home = false, homeRules = defaultRoomRules, children }: { status?: string; preview?: { rules: RoomRules; plaza?: { name: string } } | null; home?: boolean; homeRules?: RoomRules; children?: ReactNode }) {
   // Chosen in the browser after the first paint, so the page itself can be sent before scripts run.
   const [card, setCard] = useState<Shown | null>(null);
-  const { user, loading, signInWithGoogle } = useAuth();
-  const [signingIn, setSigningIn] = useState(false);
-  const [signInError, setSignInError] = useState('');
   useEffect(() => { setCard(someCard()); }, []);
-  const handleSignIn = async () => {
-    if (signingIn) return;
-    setSigningIn(true);
-    setSignInError('');
-    try {
-      await signInWithGoogle();
-    } catch {
-      setSignInError('ログインできませんでした');
-    } finally {
-      setSigningIn(false);
-    }
-  };
-  return <section className={styles.launch} aria-busy={!children && !!loading} aria-label="ぷぷりえーる">
+  return <section className={styles.launch} aria-busy={!children} aria-label="ぷぷりえーる">
     <span className={styles.stars} aria-hidden="true">{stars.map(([left, top, delay], index) => <i key={index} style={{ left: `${left}%`, top: `${top}%`, animationDelay: `${delay}s` }} />)}</span>
     <Image className={styles.logo} src="/images/game/logo.webp" alt="お菓子争奪戦争 ぷぷりえーる" width={462} height={227} priority />
-    {preview?.plaza && <OrnateFrame size="sm" className={styles.roomPreview}>
-      <RoomThumbnailImage rules={preview.rules} alt="" sizes="240px" />
-      <span>{preview.plaza.name}</span>
+    {(preview?.plaza || home) && <OrnateFrame size="sm" className={styles.roomPreview}>
+      <RoomThumbnailImage rules={preview?.rules ?? homeRules} alt="ルームのサムネイル" sizes="240px" />
+      <span>{preview?.plaza?.name ?? 'あなたのルーム'}</span>
     </OrnateFrame>}
     <div className={styles.feature} data-shown={card ? '' : undefined}>
       <span className={styles.cardArt}>{card && <Image src={card.image} alt="" fill sizes="240px" priority />}</span>
@@ -67,14 +52,6 @@ export function LaunchScreen({ status = 'ルームを準備しています', pre
       </OrnateFrame>}
     </div>
     {children ? <OrnateFrame className={styles.trouble}>{children}</OrnateFrame>
-      : !loading && !user ? (
-      <OrnateFrame className={styles.trouble}>
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem', alignItems: 'center', textAlign: 'center' }}>
-          <p style={{ margin: 0 }}>ログインするとプロフィールを設定できるよ</p>
-          <button onClick={handleSignIn} disabled={signingIn}>{signingIn ? 'ログイン中…' : 'Googleでログイン'}</button>
-          {signInError && <p role="alert" style={{ margin: 0, color: 'var(--brand-cocoa)' }}>{signInError}</p>}
-        </div>
-      </OrnateFrame>
-    ) : <p className={styles.status} role="status"><span className={styles.dots} aria-hidden="true"><i /><i /><i /></span><span>{status}</span></p>}
+      : <p className={styles.status} role="status" aria-label={status}><span className={styles.dots} aria-hidden="true"><i /><i /><i /></span></p>}
   </section>;
 }

@@ -19,7 +19,7 @@ test('five tabs switch in place, room actions and volume persist, and Escape res
   const rail = await pad.getByRole('tablist').boundingBox(), panelBox = await pad.getByRole('tabpanel').boundingBox();
   expect(rail.x + rail.width).toBeLessThanOrEqual(panelBox.x);
   await expect(pad.getByRole('tab', { name: 'ランチパッドホーム' })).toHaveAttribute('aria-selected', 'true');
-  await expect(pad.getByRole('region', { name: 'クイックリンク' }).getByRole('button')).toHaveCount(5);
+  await expect(pad.getByRole('region', { name: 'クイックリンク' }).getByRole('button')).toHaveCount(6);
   await expect(pad.getByRole('group', { name: 'ルームの操作' }).getByRole('button')).toHaveCount(2);
   await expect(pad.getByRole('button', { name: 'CPUを呼ぶ' })).toHaveCount(0);
 

@@ -25,9 +25,7 @@ export const notices = {
     joined(room: Room): Notice {
         return { title: 'ルームに相手が来たよ', body: `${room.seats[1]?.name ?? '相手'}が入ったよ。デッキを選んで始めよう`, url: lobby(room.id), tag: `room-${room.id}` };
     },
-    freeMatched(opponent: string): Notice {
-        return { title: '対戦相手が見つかったよ', body: `${opponent}と対戦しよう`, url: '/game/battle/free/', tag: 'free-match' };
-    },
+
     friendRequest(name: string): Notice {
         return { title: 'フレンド申請が届いたよ', body: `${name}から`, url: '/game/notifications/', tag: 'friend-request' };
     },

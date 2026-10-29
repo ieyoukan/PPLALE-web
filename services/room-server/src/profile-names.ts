@@ -106,11 +106,6 @@ export function profileNames(read = readPublicName, now = Date.now) {
             return { ...body, match: entry(recording.match), publicNamesResolved: true,
                 frames: recording.frames.map(frame => ({ ...frame, state: state(frame.state, recording.match.players, aliases) })) };
         }
-        if (Array.isArray(body.waiting) && Array.isArray(body.matches)) {
-            const waiting = body.waiting as Player[], matches = body.matches as { players: Player[] }[];
-            await warm([...waiting, ...matches.flatMap(match => match.players)]);
-            return { ...body, waiting: players(waiting), matches: matches.map(match => ({ ...match, players: players(match.players) })) };
-        }
         return value;
     }
     return { load, name, view, response, chat: players };

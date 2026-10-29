@@ -7,7 +7,7 @@ for (const theme of ['light', 'dark']) test(`game labels and native selects stay
   await page.addInitScript(value => localStorage.setItem('themeMode', value), theme);
   await page.goto(`${base}/game/`);
   await page.waitForURL(/\/game\/room\/\d{6}\/$/, { timeout: 30000 });
-  await expect.poll(() => page.locator('html').evaluate(element => element.classList.contains('dark'))).toBe(theme === 'dark');
+  await expect.poll(() => page.locator('html').evaluate(element => element.classList.contains('dark'))).toBe(false);
   await page.getByRole('button', { name: 'ルール', exact: true }).click();
   const rules = page.getByRole('dialog', { name: 'ルームを編集' });
   const labels = await rules.locator('label, legend').evaluateAll(elements => elements.map(element => getComputedStyle(element).color));
@@ -22,5 +22,5 @@ for (const theme of ['light', 'dark']) test(`game labels and native selects stay
   await expect(select).toHaveCSS('color', 'rgb(99, 71, 71)');
   await expect(select.getByRole('option').first()).toHaveCSS('color', 'rgb(123, 94, 88)');
   await expect(select.getByRole('option').first()).toHaveCSS('background-color', 'rgb(255, 248, 240)');
-  await expect.poll(() => page.locator('html').evaluate(element => element.classList.contains('dark'))).toBe(theme === 'dark');
+  await expect.poll(() => page.locator('html').evaluate(element => element.classList.contains('dark'))).toBe(false);
 });

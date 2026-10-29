@@ -11,7 +11,7 @@ import { DEFAULT_VISIBILITY, MAX_MEMBERS, MAX_ROOM_NAME_LENGTH, MAX_ROOM_CHAT_LE
 import type { RoomChatMessage } from '@pplale/game-core/room';
 import type { RoomInfo, RoomRules, RoomView, RoomVisibility } from '@pplale/game-core/room';
 import type { MatchEnd } from '@pplale/game-core/history';
-import { publicAssessment } from './public-matches.ts';
+import { publicAssessment } from './public-assessment.ts';
 import { RoomError, applyMatchCommand, command, deck, giveUp, hash, playerName, side, startMatch } from './rooms.ts';
 import type { Outcome, Room, Seat } from './rooms.ts';
 import { syncTurnClock, turnTimeoutCommand } from './turn-clock.ts';

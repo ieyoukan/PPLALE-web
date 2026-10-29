@@ -27,24 +27,26 @@ async function probe(context, { muted = false, unsupported = false } = {}) {
 
 const chimes = page => page.evaluate(() => window.__chimes);
 
-test('free match chimes once per event, survives navigation and stays silent on reconnect', async ({ browser }) => {
+async function seatPair(pages) {
+  for (const [index, page] of pages.entries()) await page.addInitScript(name => localStorage.setItem('pplale-guest-name-v2', name), `通知確認${index}`);
+  await pages[0].goto(`${base}/game/`);
+  await pages[0].waitForURL(/\/game\/room\/\d{6}\/$/);
+  const invite = await pages[0].evaluate(() => { const saved = JSON.parse(localStorage.getItem('pplale-plaza-v1')); return saved.rooms[saved.current].invite; });
+  await pages[1].goto(`${pages[0].url()}?invite=${invite}`);
+  await pages[0].getByRole('button', { name: 'この席にすわる', exact: true }).first().click();
+  await pages[1].getByRole('button', { name: 'この席にすわる', exact: true }).last().click();
+  for (const page of pages) await page.getByRole('button', { name: 'じゅんびOK!', exact: true }).click();
+}
+
+test('room match chimes once per event, survives navigation and stays silent on reconnect', async ({ browser }) => {
   test.setTimeout(60000);
   const contexts = await Promise.all([browser.newContext(), browser.newContext({ viewport: { width: 390, height: 844 } })]);
   const errors = [];
   try {
     for (const context of contexts) await probe(context);
     const pages = await Promise.all(contexts.map(context => context.newPage()));
-    let activityRequests = 0;
-    for (const [index, page] of pages.entries()) {
-      page.on('pageerror', error => errors.push(error.message));
-      page.on('request', request => { if (request.url().endsWith('/free-match/live')) activityRequests++; });
-      await page.goto(`${base}/game/battle/`);
-      await expect(page.getByRole('region', { name: 'いま遊んでいるプレイヤー' })).toHaveCount(0);
-      await page.getByRole('link', { name: /フリーマッチ 対戦相手を自動で探す/ }).click();
-      await page.getByPlaceholder('なまえ').fill(`通知確認${index}`);
-      await expect(page.getByRole('button', { name: '通知音', exact: true })).toHaveAttribute('aria-pressed', 'true');
-      await page.getByRole('button', { name: 'このデッキで対戦相手を探す' }).click();
-    }
+    for (const page of pages) page.on('pageerror', error => errors.push(error.message));
+    await seatPair(pages);
     for (const page of pages) {
       await expect(page).toHaveURL(/\/game\/room\/\d{6}\/$/, { timeout: 15000 });
       await expect(page.getByRole('group', { name: '先攻・後攻のダイス' })).toBeVisible({ timeout: 20000 });
@@ -67,21 +69,17 @@ test('free match chimes once per event, survives navigation and stays silent on 
     await expect(pages[0].getByRole('button', { name: '通知音', exact: true })).toBeVisible({ timeout: 20000 });
     await expect(pages[0].getByRole('button', { name: '通知音', exact: true })).toHaveAttribute('aria-pressed', 'false');
     expect(await chimes(pages[0])).toHaveLength(0);
-    expect(activityRequests).toBe(0);
     expect(errors).toEqual([]);
   } finally { await Promise.all(contexts.map(context => context.close())); }
 });
 
-test('muted and unsupported audio never prevent matchmaking', async ({ browser }) => {
+test('muted and unsupported audio never prevent room play', async ({ browser }) => {
   test.setTimeout(60000);
   const contexts = await Promise.all([browser.newContext(), browser.newContext()]);
   try {
     await probe(contexts[0], { muted: true }); await probe(contexts[1], { unsupported: true });
     const pages = await Promise.all(contexts.map(context => context.newPage()));
-    for (const page of pages) {
-      await page.goto(`${base}/game/battle/free/`);
-      await page.getByRole('button', { name: 'このデッキで対戦相手を探す' }).click();
-    }
+    await seatPair(pages);
     for (const page of pages) {
       await expect(page.getByRole('group', { name: '先攻・後攻のダイス' })).toBeVisible({ timeout: 20000 });
       expect(await chimes(page)).toHaveLength(0);
@@ -125,15 +123,24 @@ test('CPU match start chimes once and keeps the menu compact on mobile', async (
   try {
     await probe(context);
     const page = await context.newPage();
-    await page.goto(`${base}/game/cpu/`);
-    const toggle = page.getByRole('button', { name: '通知音', exact: true });
-    await expect(toggle).toBeInViewport();
-    const login = page.getByRole('button', { name: 'ログイン', exact: true });
+    await page.goto(`${base}/game/`);
+    await page.waitForURL(/\/game\/room\/\d{6}\/$/);
+    await page.getByRole('button', { name: 'メニュー', exact: true }).click();
+    const menu = page.getByRole('dialog', { name: 'ゲームメニュー', exact: true });
+    const login = menu.getByRole('button', { name: 'Googleでログイン', exact: true });
     await expect(login).toBeInViewport();
     expect((await login.boundingBox()).height).toBeLessThan(50);
-    expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
+    await menu.getByRole('tab', { name: '音量', exact: true }).click();
+    await expect(menu.getByRole('button', { name: '通知音', exact: true })).toBeInViewport();
     await page.screenshot({ path: info.outputPath('notification-menu-mobile.png') });
-    await page.getByRole('button', { name: '対戦をはじめる', exact: false }).click();
+    await menu.getByRole('button', { name: 'メニューを閉じる', exact: true }).click();
+    await page.getByRole('button', { name: 'この席にすわる', exact: true }).first().click();
+    await page.getByRole('button', { name: '対戦相手をえらぶ', exact: true }).click();
+    await page.getByRole('button', { name: 'CPUと対戦', exact: true }).click();
+    const cpu = page.getByRole('dialog', { name: 'CPUをえらぶ', exact: true });
+    await cpu.getByRole('button', { name: /よわい/ }).click();
+    await cpu.getByRole('button', { name: 'このCPUを呼ぶ', exact: true }).click();
+    await page.getByRole('button', { name: 'じゅんびOK!', exact: true }).click();
     await expect(page.getByRole('group', { name: '先攻・後攻のダイス' })).toBeVisible({ timeout: 20000 });
     await expect.poll(async () => (await chimes(page)).length).toBe(3);
     await page.reload();

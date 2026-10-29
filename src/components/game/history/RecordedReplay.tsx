@@ -39,7 +39,7 @@ function IdentityReplay({ id, step }: { id: string | null; step: number }) {
 
 function Player({ recording, initialStep }: { recording: MatchRecording; initialStep: number }) {
   const router = useRouter();
-  const back = recording.match.watching ? '/game/battle/free/' : '/game/battle/history/';
+  const back = '/game/battle/history/';
   const onLeave = useCallback(() => router.push(back), [router, back]);
   const session = useRecordedSession({ recording, initialStep, onLeave });
   return <BoardTable session={session} />;

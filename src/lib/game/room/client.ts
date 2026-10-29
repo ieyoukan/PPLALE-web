@@ -7,8 +7,7 @@ import { recordPlaySample } from './performanceLog';
 import { isPlayKind } from '@pplale/game-core/performance';
 import type { PlayReport } from '@pplale/game-core/performance';
 import type { HistoryPage, MatchDetails, MatchRecording } from '@pplale/game-core/history';
-import type { Deck } from '@pplale/game-core';
-import type { ClientMessage, Entered, FreeMatchStatus, PlazaRequest, RoomAction, RoomInfo, ProfileLocation, RoomRules, RoomServerStats, RoomView, SeatKey, Seated, ServerMessage } from '@pplale/game-core/room';
+import type { ClientMessage, Entered, PlazaRequest, RoomAction, RoomInfo, ProfileLocation, RoomRules, RoomServerStats, RoomView, SeatKey, Seated, ServerMessage } from '@pplale/game-core/room';
 
 export const roomServerUrl = (process.env.NEXT_PUBLIC_ROOM_SERVER_URL ?? '').replace(/\/+$/, '') || null;
 
@@ -69,17 +68,6 @@ export const registerPush = (subscription: PushSubscriptionJSON) => call<{ ok: t
 export const unregisterPush = (endpoint: string) => call<{ ok: true }>('/push/unsubscribe', { endpoint });
 export const pushFriend = (to: string, kind: 'request' | 'accepted') => call<{ ok: true }>('/push/friend', { to, kind });
 export const pushRecruit = (roomId: string) => call<{ ok: true }>('/push/recruit', { roomId });
-
-export const startFreeMatch = (token: string, name: string, deck: Deck) => call<FreeMatchStatus>('/free-match/start', { token, name, deck });
-export const pollFreeMatch = (token: string) => call<FreeMatchStatus>('/free-match/status', { token });
-export const cancelFreeMatch = (token: string) => call<FreeMatchStatus>('/free-match/cancel', { token });
-/** Also works while navigating away or closing the page. A lost request expires after 30 seconds. */
-export function abandonFreeMatch(token: string) {
-  if (!roomServerUrl) return;
-  void fetch(`${roomServerUrl}/free-match/cancel`, {
-    method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ token }), keepalive: true,
-  }).catch(() => {});
-}
 
 // ── The seats of this browser ──
 const SEATS_KEY = 'pplale-room-seats-v2';

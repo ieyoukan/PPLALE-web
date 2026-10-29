@@ -16,6 +16,14 @@ test('two browsers chat before and during a match, from the menu, and after reco
   await page.goto(`${base}/game/`);
   await page.waitForURL(/\/game\/room\/\d{6}\/$/);
   const roomURL = page.url();
+  let lastSentAt = 0;
+  const say = async text => {
+    // Respect the server's one-message-per-second limit even on a warm production build.
+    const remaining = 1050 - (Date.now() - lastSentAt);
+    if (remaining > 0) await page.waitForTimeout(remaining);
+    await input(page).fill(text); await input(page).press('Enter');
+    await expect(input(page)).toHaveValue(''); lastSentAt = Date.now();
+  };
   const invite = await page.evaluate(() => { const saved = JSON.parse(localStorage.getItem('pplale-plaza-v1')); return saved.rooms[saved.current].invite; });
   const context = await browser.newContext({ reducedMotion: 'reduce' });
   try {
@@ -24,7 +32,7 @@ test('two browsers chat before and during a match, from the menu, and after reco
     await expect(chatButton(friend)).toBeVisible();
     await page.keyboard.press('t');
     await expect(input(page)).toBeFocused();
-    await input(page).fill('準備中のこんにちは🍓'); await input(page).press('Enter');
+    await say('準備中のこんにちは🍓');
     await chatButton(friend).click();
     await expect(log(friend)).toContainText('準備中のこんにちは🍓');
     await expect(input(page)).toHaveValue('');
@@ -35,7 +43,7 @@ test('two browsers chat before and during a match, from the menu, and after reco
     await page.getByRole('button', { name: 'じゅんびOK!', exact: true }).click();
     await friend.getByRole('button', { name: 'じゅんびOK!', exact: true }).click();
     await expect(page.getByRole('group', { name: '先攻・後攻のダイス' })).toBeVisible();
-    await page.keyboard.press('t'); await input(page).fill('対戦中でも会話できる'); await input(page).press('Enter');
+    await page.keyboard.press('t'); await say('対戦中でも会話できる');
     await friend.keyboard.press('t'); await expect(log(friend)).toContainText('対戦中でも会話できる');
     await page.keyboard.press('Escape');
     await page.getByRole('button', { name: 'メニュー', exact: true }).click();
@@ -46,7 +54,7 @@ test('two browsers chat before and during a match, from the menu, and after reco
     await page.keyboard.press('t');
     await expect(input(page)).toBeFocused();
     await expect(menu).toBeVisible();
-    await input(page).fill('メニューからも話せる'); await input(page).press('Enter');
+    await say('メニューからも話せる');
     await expect(log(friend)).toContainText('メニューからも話せる');
     await page.screenshot({ path: info.outputPath('menu-and-chat.png') });
     await page.keyboard.press('Escape'); await expect(menu).toBeVisible(); await expect(input(page)).toHaveCount(0);
