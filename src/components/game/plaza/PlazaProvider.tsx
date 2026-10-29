@@ -230,7 +230,7 @@ export function PlazaProvider({ children }: { children: ReactNode }) {
     if (opened.ok) return { in: roomId };
     if (opened.offline) return { offline: opened.message };
     if (opened.closed) return { closed: true };
-    // Away for longer than the room waits: come back in as a new member (without the owner's role).
+    // Expired membership is admitted again; the server restores unclaimed ownership from this proof.
     try {
       const entered = await enterPlaza(roomId, guestName(), { rejoin: token, invite });
       keepPlaza(roomId, { token: entered.token }, false);

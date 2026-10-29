@@ -92,6 +92,8 @@ a.person:hover { background: color-mix(in srgb, var(--brand-cream-on-dark) 10%, 
 .ownerChip { display: flex; align-items: center; justify-content: center; gap: 6px; padding: 4px; color: var(--brand-cream-on-dark); font-size: 14px; font-weight: 700; }
 .ownerChip svg { color: var(--brand-vanilla); }
 .claim { display: flex; align-items: center; justify-content: center; gap: 8px; padding: 12px; font-size: 18px; }
+.claim:disabled { opacity: .5; }
+.claim:disabled svg { animation: none; }
 .claim svg { animation: beckon 1.6s ease-in-out infinite; }
 .claim svg { color: var(--brand-star-deep); font-size: 22px; }
 

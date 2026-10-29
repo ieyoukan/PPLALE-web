@@ -145,7 +145,7 @@ export function PlazaTable({ view, onMenu, match }: { view: RoomView; onMenu: ()
         {room.owner === room.me && <small className={styles.editHint}><GameIcon name="pen" />ルールをかえる</small>}
       </OrnateFrame>
       {owner ? <span className={styles.ownerChip}><GameIcon name="crown" />{owner.id === room.me ? 'あなたがオーナー' : owner.name}</span>
-        : <button className={styles.claim} disabled={busy} onClick={() => ask({ action: 'claim' })}><GameIcon name="crown" /><span data-ui-title>オーナーになる</span></button>}
+        : <button className={styles.claim} disabled={busy || room.canClaimOwner === false} title={room.canClaimOwner === false ? 'ログイン中の人が先にオーナーを引き継げます' : undefined} onClick={() => ask({ action: 'claim' })}><GameIcon name="crown" /><span data-ui-title>オーナーになる</span></button>}
     </aside>
 
     {!!room.requests?.length && <div className={styles.requests} role="region" aria-label="入りたい人">{room.requests.map(request => <OrnateFrame size="sm" key={request.profileId} className={styles.request}>

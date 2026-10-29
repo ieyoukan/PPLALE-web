@@ -38,6 +38,8 @@ export interface Plaza {
     creator: { name: string; profileId?: string };
     /** The member who may change the rules; null while nobody is. */
     owner: string | null;
+    /** A disconnected owner's proof; cleared on an explicit leave or the next ownership claim. */
+    formerOwner?: { tokens: string[]; profileId?: string };
     members: PlazaMember[];
     chat?: RoomChatMessage[];
     /** The secret of the invitation link (invite and invitePlus). Renewing it ends the old link. */
@@ -142,6 +144,27 @@ export function formerOf(room: Room, token: unknown): boolean {
     return room.plaza.former.some(saved => saved.length === given.length && timingSafeEqual(Buffer.from(saved), given));
 }
 
+/** A room secret identifies its existing member only while the verified account still matches. */
+export function rejoiningMember(room: Room, visitor: Visitor, token: unknown): PlazaMember | null {
+    const member = memberOf(room, token);
+    return member && member.profileId === visitor.profileId ? member : null;
+}
+
+/** Guests can take an unowned room when no signed-in participant is currently present. */
+function mayClaim(plaza: Plaza, member: PlazaMember, online?: ReadonlySet<string>) {
+    return !!member.profileId || !plaza.members.some(other => other.profileId && (online ? online.has(other.id) : other.away === undefined));
+}
+
+function restoreOwner(plaza: Plaza, member: PlazaMember, visitor: Visitor, rejoin: unknown) {
+    const previous = plaza.formerOwner;
+    if (plaza.owner !== null || !previous || previous.profileId !== visitor.profileId || typeof rejoin !== 'string') return;
+    const given = Buffer.from(hash(rejoin));
+    if (previous.tokens.some(saved => saved.length === given.length && timingSafeEqual(Buffer.from(saved), given))) {
+        plaza.owner = member.id;
+        delete plaza.formerOwner;
+    }
+}
+
 const sameSecret = (saved: string | undefined, given: unknown) =>
     !!saved && typeof given === 'string' && given.length === saved.length && timingSafeEqual(Buffer.from(saved), Buffer.from(given));
 
@@ -168,19 +191,21 @@ export function entryOf(room: Room, visitor: Pick<Visitor, 'profileId'>, invite:
  * Brings `visitor` into the room (they may come in: see `entryOf`). A signed-in person who is in it
  * already (another device) stays one member with one more secret. Returns their secret.
  */
-export function admit(room: Room, visitor: Visitor, now = Date.now()): { token: string; member: PlazaMember } {
+export function admit(room: Room, visitor: Visitor, now = Date.now(), rejoin?: unknown): { token: string; member: PlazaMember } {
     const plaza = room.plaza!;
     if (room.status === 'closed') throw new RoomError(410, 'このルームは閉じました');
-    const same = visitor.profileId ? plaza.members.find(member => member.profileId === visitor.profileId) : undefined;
+    const same = rejoiningMember(room, visitor, rejoin) ?? (visitor.profileId ? plaza.members.find(member => member.profileId === visitor.profileId) : undefined);
     if (same) {
         const token = randomBytes(32).toString('base64url');
         same.tokens = [...same.tokens, hash(token)].slice(-MAX_TOKENS);
         same.name = visitor.name;
+        restoreOwner(plaza, same, visitor, rejoin);
         return { token, member: same };
     }
     if (plaza.members.length >= MAX_MEMBERS) throw new RoomError(409, 'このルームはいっぱいです');
     const { member, token } = newMember(visitor, now);
     plaza.members.push(member);
+    restoreOwner(plaza, member, visitor, rejoin);
     if (visitor.profileId) plaza.requests = plaza.requests.filter(request => request.profileId !== visitor.profileId);
     return { token, member };
 }
@@ -255,7 +280,11 @@ function remove(room: Room, id: string, reason: MatchEnd, outcome: PlazaOutcome)
     const plaza = room.plaza!, gone = plaza.members.find(member => member.id === id);
     plaza.members = plaza.members.filter(member => member.id !== id);
     if (gone && reason === 'disconnect') plaza.former = [...plaza.former ?? [], ...gone.tokens].slice(-MAX_FORMER);
-    if (plaza.owner === id) plaza.owner = null;
+    if (plaza.owner === id) {
+        if (reason === 'disconnect' && gone) plaza.formerOwner = { tokens: [...gone.tokens], ...(gone.profileId && { profileId: gone.profileId }) };
+        else delete plaza.formerOwner;
+        plaza.owner = null;
+    }
     const seat = seatOf(room, id);
     if (seat !== null) vacate(room, seat, reason, outcome);
     (outcome.removed ??= []).push(id);
@@ -406,7 +435,9 @@ export function actPlaza(room: Room, id: string, body: unknown, catalog: Catalog
         }
         case 'claim':
             if (plaza.owner !== null) throw new RoomError(409, 'ほかの人がオーナーになりました');
+            if (!mayClaim(plaza, me)) throw new RoomError(403, 'ログイン中の人が先にオーナーを引き継げます');
             plaza.owner = id;
+            delete plaza.formerOwner;
             break;
         case 'rules': {
             if (plaza.owner !== id) throw new RoomError(403, 'ルールを変えられるのはオーナーだけです');
@@ -488,6 +519,7 @@ export function plazaView(room: Room, id: string, online: ReadonlySet<string>, c
         ...(turnClock && { turnClock, serverNow: Date.now() }),
         plaza: {
             name: plaza.name, visibility: plaza.visibility, creator: plaza.creator, owner: plaza.owner, me: id,
+            canClaimOwner: plaza.owner === null && !!plaza.members.find(member => member.id === id && mayClaim(plaza, member, online)),
             chatEnabled: true, ...(chatHistory && { chat: plaza.chat ?? [] }),
             members: plaza.members.map(member => {
                 const seat = seats.findIndex(taken => taken?.member === member.id);

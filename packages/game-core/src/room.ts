@@ -214,8 +214,10 @@ export interface PlazaView {
     visibility: RoomVisibility;
     /** Who made the room; never changes, even after they left. */
     creator: { name: string; profileId?: string };
-    /** The member who may change the rules now; null while nobody is (anyone in the room may become it). */
+    /** The member who may change the rules now; null while nobody is. */
     owner: string | null;
+    /** Signed-in participants have priority over guests when the room is unowned. */
+    canClaimOwner?: boolean;
     /** The member this view is for. */
     me: string;
     members: PlazaMember[];

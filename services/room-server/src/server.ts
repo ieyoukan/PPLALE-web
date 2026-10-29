@@ -41,7 +41,7 @@ import type { Backend, Member, Overview, RoomEvent, Spot } from './backend.ts';
 import type { Config } from './config.ts';
 import { RoomError, act, createRoom, expireTurn, joinRoom, playerName, roomInfo, seatOf, seatView, tidy } from './rooms.ts';
 import type { Present, Room } from './rooms.ts';
-import { actPlaza, admit, askToEnter, closeEmpty, cpuToAct, createPlaza, entryOf, formerOf, inviteByName, memberOf, notePresence, playCpu, plazaInfo, plazaView, succeed, tidyPlaza } from './plaza.ts';
+import { actPlaza, admit, askToEnter, closeEmpty, cpuToAct, createPlaza, entryOf, formerOf, inviteByName, memberOf, notePresence, playCpu, plazaInfo, plazaView, rejoiningMember, succeed, tidyPlaza } from './plaza.ts';
 import type { PlazaOutcome, Visitor } from './plaza.ts';
 import { cpuThinker } from './cpu.ts';
 import { handReactionOps } from '@pplale/game-core';
@@ -693,11 +693,11 @@ export function createRoomServer({ config, backend, catalog, history, push = pus
                 const owners = await historyOwners(request);
                 if (history && !owners.length) throw new RoomError(426, '画面を更新してから、もう一度お試しください');
                 const visitor = await visitorOf(owners, body?.name);
-                // A member whose moment away ran out comes back in (the owner's role is not given back).
-                if (!formerOf(existing, body?.rejoin) && !await mayEnter(existing, visitor, idToken(request), body?.invite)) throw new RoomError(404, HIDDEN);
+                // Existing secrets preserve membership; expired ones may restore an unclaimed owner's role.
+                if (!rejoiningMember(existing, visitor, body?.rejoin) && !formerOf(existing, body?.rejoin) && !await mayEnter(existing, visitor, idToken(request), body?.invite)) throw new RoomError(404, HIDDEN);
                 // Only those who may enter learn that it closed.
                 if (existing.status === 'closed') throw new RoomError(410, CLOSED);
-                const { room, result } = await update(id, target => admit(target, visitor));
+                const { room, result } = await update(id, target => admit(target, visitor, Date.now(), body?.rejoin));
                 await announce(room);
                 // Someone waiting alone (perhaps in Discord, sharing the link) learns that a friend came.
                 if (room.plaza!.members.length === 2) for (const member of room.plaza!.members) if (member.id !== result.member.id) tellMember(room, member.id, notices.arrived(visitor.name, room.id));
@@ -809,13 +809,18 @@ export function createRoomServer({ config, backend, catalog, history, push = pus
         } catch { socket.destroy(); }
     });
     /** The other side learns that a player came or went (the room gets a new version for it). */
-    async function presenceChanged(id: string) {
+    async function presenceChanged(id: string, joiningMember?: string) {
         try {
             const now = await present(id);
-            const { room } = await update(id, target => { target.last = null; notePresence(target, onlineMembers(now), Date.now()); });
+            const { room } = await update(id, target => {
+                if (joiningMember && (target.status === 'closed' || !target.plaza?.members.some(member => member.id === joiningMember))) throw new RoomError(404, LEFT);
+                target.last = null; notePresence(target, onlineMembers(now), Date.now());
+            });
             await announce(room);
+            return true;
         } catch (error) {
-            if (!(error instanceof RoomError)) throw error;
+            if (!(error instanceof RoomError) || joiningMember && error.status !== 404) throw error;
+            return false;
         }
     }
     function attach(socket: Attached, id: string, ip: string) {
@@ -851,7 +856,13 @@ export function createRoomServer({ config, backend, catalog, history, push = pus
             if (mine.length >= 4) return socket.close(4408);
             socket.entry = { id, seat: 'm', member: `${member.id}~${pod}:${++serial}` };
             socketsOf(id)[3].add(socket);
-            if (await backend.enter(socket.entry, presenceTtl) || member.away !== undefined) await presenceChanged(id);
+            if (await backend.enter(socket.entry, presenceTtl) || member.away !== undefined) {
+                if (!await presenceChanged(id, member.id)) {
+                    const latest = await backend.get(id), closed = latest?.status === 'closed' && formerOf(latest, token);
+                    tell(socket, { type: 'gone', error: latest?.status === 'closed' ? CLOSED : LEFT, ...(closed && { closed: true as const }) });
+                    return socket.close(4404);
+                }
+            }
             else {
                 const now = await present(id);
                 if (!told.has(id)) told.set(id, key(now));
