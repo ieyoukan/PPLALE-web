@@ -10,9 +10,11 @@ playwright-report
 public/og-cards
 public/deck-thumbnails
 public/game-assets/cards
+public/game-assets/chat
 public/fonts/generated
 src/app/generated
 src/lib/game/generated/card-assets.json
+src/lib/game/generated/chat-stamps.json
 .env*
 !.env.production
 firestore-debug.log

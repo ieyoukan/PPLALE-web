@@ -197,7 +197,10 @@ for (const width of [1280, 390]) test(`chat handles IME, failed retries, long te
 
 for (const width of [1280, 390]) test(`stamp picker sends allowlisted artwork, retries safely, preserves a draft and receives unread stamps (${width}px)`, async ({ page }, info) => {
   await page.setViewportSize({ width, height: 844 });
+  const stampRequests = new Set();
+  page.on('request', request => { if (/\/game-assets\/chat\/stamps-/.test(request.url())) stampRequests.add(request.url()); });
   const { actions, view, send } = await fixture(page);
+  expect(stampRequests.size).toBe(0);
   await chatButton(page).click(); await input(page).fill('書きかけの文字');
   const toggle = page.getByRole('button', { name: 'スタンプ', exact: true });
   await toggle.click();
@@ -210,7 +213,19 @@ for (const width of [1280, 390]) test(`stamp picker sends allowlisted artwork, r
   expect(await choices.evaluate(element => element.scrollTop)).toBeGreaterThan(0);
   expect(await picker.evaluate(element => element.scrollTop)).toBe(0);
   expect(await frame.boundingBox()).toEqual(frameBefore);
-  await picker.getByRole('img', { name: 'わぁ', exact: true }).evaluate(img => img.decode());
+  const artwork = picker.getByRole('img', { name: 'わぁ', exact: true });
+  const sheetURLs = await artwork.evaluate(element => {
+    const urls = [...getComputedStyle(element).backgroundImage.matchAll(/url\("([^"]+)"\)/g)].map(match => match[1]);
+    return urls;
+  });
+  await expect.poll(() => stampRequests.size).toBe(1);
+  expect(sheetURLs).toContain([...stampRequests][0]);
+  // CSS背景でも原画の代わりにシートが描けていることを確認する。
+  await expect.poll(() => page.evaluate(url => performance.getEntriesByName(url).some(entry => entry.responseEnd > 0), [...stampRequests][0])).toBe(true);
+  expect(await artwork.evaluate(element => element.tagName)).toBe('SPAN');
+  expect(await artwork.getAttribute('draggable')).toBe('false');
+  expect(await artwork.evaluate(element => !element.dispatchEvent(new MouseEvent('contextmenu', { bubbles: true, cancelable: true })))).toBe(true);
+  expect((await page.request.get(`${base}/images/chat/stamps/waa.webp`)).status()).toBe(404);
   await picker.getByRole('button', { name: 'あげるを送信' }).click();
   await expect(page.locator('[data-room-chat]').getByRole('alert')).toContainText('送信できませんでした');
   await expect(picker).toBeVisible();
@@ -229,6 +244,7 @@ for (const width of [1280, 390]) test(`stamp picker sends allowlisted artwork, r
   await expect(page.locator('[data-room-chat] [role="status"]')).toHaveText('1');
   await chatButton(page).click();
   await expect(log(page).getByRole('img', { name: 'おやすみ', exact: true })).toBeVisible();
+  expect(stampRequests.size).toBe(1);
 });
 
 

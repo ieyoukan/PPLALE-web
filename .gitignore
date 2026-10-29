@@ -30,6 +30,7 @@ node_modules
 /src/app/generated/site-fonts.css
 /public/game-assets/
 /src/lib/game/generated/card-assets.json
+/src/lib/game/generated/chat-stamps.json
 
 # production
 /build

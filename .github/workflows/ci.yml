@@ -32,7 +32,7 @@ jobs:
         uses: actions/cache@v4
         with:
           path: .next/cache
-          key: card-images-${{ runner.os }}-${{ hashFiles('public/images/**', 'src/data/*.json', 'src/data/en/*.json', 'scripts/generate-*.mjs', 'scripts/lib/*.mjs') }}
+          key: card-images-${{ runner.os }}-${{ hashFiles('public/images/**', 'src/assets/**', 'src/data/*.json', 'src/data/en/*.json', 'scripts/generate-*.mjs', 'scripts/lib/*.mjs') }}
           restore-keys: |
             card-images-${{ runner.os }}-
 
