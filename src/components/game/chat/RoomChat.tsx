@@ -30,6 +30,20 @@ function RoomChat({ open, onOpen, onClose }: { open: boolean; onOpen(): void; on
   const input = useRef<HTMLTextAreaElement>(null), log = useRef<HTMLDivElement>(null);
   const previousFocus = useRef<HTMLElement | null>(null), nearEnd = useRef(true), busy = useRef(false);
   const pending = useRef<{ text: string; messageId: string } | null>(null), panelId = useId();
+  // Initial/replayed history is already known. Only newly received messages from others count.
+  const observed = useRef(new Set(chat.map(message => message.id)));
+  const [unread, setUnread] = useState(0);
+  const me = view?.plaza?.me, unreadId = `${panelId}-unread`;
+  useEffect(() => {
+    const fresh = chat.filter(message => !observed.current.has(message.id) && message.member !== me).length;
+    observed.current = new Set(chat.map(message => message.id));
+    setUnread(previous => open && !document.hidden ? 0 : previous + fresh);
+  }, [chat, me, open]);
+  useEffect(() => {
+    const visible = () => { if (open && !document.hidden) setUnread(0); };
+    document.addEventListener('visibilitychange', visible);
+    return () => document.removeEventListener('visibilitychange', visible);
+  }, [open]);
   const profiles = useProfiles(open ? chat.map(message => message.profileId) : []);
   const ready = linked && !!view?.plaza?.chatEnabled;
   const show = () => { previousFocus.current = document.activeElement as HTMLElement | null; onOpen(); };
@@ -84,6 +98,6 @@ function RoomChat({ open, onOpen, onClose }: { open: boolean; onOpen(): void; on
         {error && <p className={styles.error} role="alert">{error}</p>}
       </form>
     </OrnateFrame>}
-    <button type="button" className={styles.toggle} onClick={open ? close : show} aria-expanded={open} aria-controls={open ? panelId : undefined} aria-keyshortcuts="T" aria-label="ルームチャット" title="チャット（T）"><GameIcon name="chat" /></button>
+    <button type="button" className={styles.toggle} onClick={open ? close : show} aria-expanded={open} aria-controls={open ? panelId : undefined} aria-keyshortcuts="T" aria-label="ルームチャット" aria-describedby={unread ? unreadId : undefined} title="チャット（T）"><GameIcon name="chat" />{unread > 0 && <span id={unreadId} className={styles.badge} role="status" aria-label={`未読${unread}件`}>{unread > 99 ? '99+' : unread}</span>}</button>
   </aside>;
 }

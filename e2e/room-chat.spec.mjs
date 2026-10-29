@@ -87,11 +87,11 @@ function playing() {
   return game;
 }
 
-async function fixture(page) {
+async function fixture(page, history = []) {
   const id = '123459', actions = []; let socket, fail = true;
   const view = { id, version: 1, status: 'lobby', match: 0, seat: 0, watching: true, spectators: 1,
     rules: { fruits: ['strawberry'], extendedPlayable: false, spectators: true }, players: [null, null], game: null, last: null, resigned: null,
-    plaza: { name: 'チャットのルーム', visibility: 'public', me: 'me', owner: 'me', creator: { name: 'あなた' }, chatEnabled: true, chat: [], members: [{ id: 'me', name: 'あなた', online: true }] } };
+    plaza: { name: 'チャットのルーム', visibility: 'public', me: 'me', owner: 'me', creator: { name: 'あなた' }, chatEnabled: true, chat: history, members: [{ id: 'me', name: 'あなた', online: true }] } };
   await page.addInitScript(id => localStorage.setItem('pplale-plaza-v1', JSON.stringify({ current: id, rooms: { [id]: { token: 'test', at: Date.now() } } })), id);
   await page.routeWebSocket(/\/rooms\/123459\/socket/, ws => { socket = ws; ws.onMessage(bytes => {
     const request = JSON.parse(String(bytes)); actions.push(request);
@@ -105,6 +105,41 @@ async function fixture(page) {
   await page.goto(`${base}/game/room/${id}/`); await hideDevTools(page); await expect(chatButton(page)).toBeVisible();
   return { actions, send: message => socket.send(JSON.stringify(message)), view };
 }
+
+test('unread chat counts only new messages from others and clears when read', async ({ page }, info) => {
+  const message = (id, member = 'other') => ({ id, member, name: member === 'me' ? 'あなた' : 'フレンド', text: `メッセージ${id}`, sentAt: Date.now() });
+  const history = [message('history')];
+  const { send, view } = await fixture(page, history);
+  const badge = page.locator('[data-room-chat] [role="status"]');
+  await expect(badge).toHaveCount(0); // Initial history is not new mail.
+  let version = 1, messages = [...history];
+  const receive = next => { messages = next; send({ type: 'chat', id: view.id, version: ++version, messages }); };
+  receive([...messages, message('own', 'me')]);
+  await expect(badge).toHaveCount(0);
+  receive([...messages, message('new-1')]);
+  await expect(badge).toHaveText('1'); await expect(chatButton(page)).toHaveAccessibleDescription('未読1件');
+  receive([...messages]); // A reconnect snapshot must not count the same messages twice.
+  await expect(badge).toHaveText('1');
+  receive([...messages, message('new-2')]); await expect(badge).toHaveText('2');
+  send({ type: 'chat', id: view.id, version: version - 1, messages: [] });
+  await expect(badge).toHaveText('2');
+  const fill = await chatButton(page).evaluate(button => getComputedStyle(button).backgroundColor);
+  expect(fill).not.toBe('rgba(0, 0, 0, 0)'); expect(fill).toMatch(/0\.85/);
+  await page.screenshot({ path: info.outputPath('chat-unread-badge.png') });
+  await chatButton(page).click(); await expect(badge).toHaveCount(0);
+  receive([...messages, message('read-while-open')]);
+  await expect(log(page)).toContainText('メッセージread-while-open'); await expect(badge).toHaveCount(0);
+  await page.evaluate(() => { Object.defineProperty(document, 'hidden', { configurable: true, value: true }); document.dispatchEvent(new Event('visibilitychange')); });
+  receive([...messages, message('while-hidden')]); await expect(badge).toHaveText('1');
+  await page.evaluate(() => { delete document.hidden; document.dispatchEvent(new Event('visibilitychange')); });
+  await expect(badge).toHaveCount(0);
+  await page.keyboard.press('Escape');
+  receive(Array.from({ length: 50 }, (_, i) => message(`batch-a-${i}`))); await expect(badge).toHaveText('50');
+  receive(Array.from({ length: 50 }, (_, i) => message(`batch-b-${i}`))); await expect(badge).toHaveText('99+');
+  await expect(chatButton(page)).toHaveAccessibleDescription('未読100件');
+  await page.reload(); await hideDevTools(page); await expect(chatButton(page)).toBeVisible();
+  await expect(badge).toHaveCount(0);
+});
 
 for (const width of [1280, 390]) test(`chat handles IME, failed retries, long text, scrolling and out-of-order play updates (${width}px)`, async ({ page }, info) => {
   await page.setViewportSize({ width, height: 844 });
