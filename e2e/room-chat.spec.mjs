@@ -9,12 +9,15 @@ test.use({ reducedMotion: 'reduce' });
 const chatButton = page => page.getByRole('button', { name: 'ルームチャット', exact: true });
 const input = page => page.getByRole('textbox', { name: 'メッセージ', exact: true });
 const log = page => page.getByRole('log', { name: 'チャットのメッセージ' });
+// Next's development badge sits over the game's lower-left controls; it is absent in production.
+const hideDevTools = page => page.addStyleTag({ content: 'nextjs-portal { display: none; }' });
 
 test('two browsers chat before and during a match, from the menu, and after reconnecting', async ({ page, browser }, info) => {
   test.setTimeout(90000);
   const errors = []; page.on('pageerror', error => errors.push(error.message));
   await page.goto(`${base}/game/`);
   await page.waitForURL(/\/game\/room\/\d{6}\/$/);
+  await hideDevTools(page);
   const roomURL = page.url();
   let lastSentAt = 0;
   const say = async text => {
@@ -29,6 +32,7 @@ test('two browsers chat before and during a match, from the menu, and after reco
   try {
     const friend = await context.newPage();
     await friend.goto(`${roomURL}?invite=${invite}`);
+    await hideDevTools(friend);
     await expect(chatButton(friend)).toBeVisible();
     await page.keyboard.press('t');
     await expect(input(page)).toBeFocused();
@@ -58,7 +62,7 @@ test('two browsers chat before and during a match, from the menu, and after reco
     await expect(log(friend)).toContainText('メニューからも話せる');
     await page.screenshot({ path: info.outputPath('menu-and-chat.png') });
     await page.keyboard.press('Escape'); await expect(menu).toBeVisible(); await expect(input(page)).toHaveCount(0);
-    await friend.reload(); await chatButton(friend).click();
+    await friend.reload(); await hideDevTools(friend); await chatButton(friend).click();
     await expect(log(friend)).toContainText('準備中のこんにちは🍓');
     await expect(log(friend)).toContainText('メニューからも話せる');
     await menu.getByRole('button', { name: 'ランチパッドに縮小' }).click();
@@ -98,7 +102,7 @@ async function fixture(page) {
     ws.send(JSON.stringify({ type: 'chat', id, version: ++view.version, messages: view.plaza.chat }));
     ws.send(JSON.stringify({ type: 'result', n: request.n }));
   }); });
-  await page.goto(`${base}/game/room/${id}/`); await expect(chatButton(page)).toBeVisible();
+  await page.goto(`${base}/game/room/${id}/`); await hideDevTools(page); await expect(chatButton(page)).toBeVisible();
   return { actions, send: message => socket.send(JSON.stringify(message)), view };
 }
 

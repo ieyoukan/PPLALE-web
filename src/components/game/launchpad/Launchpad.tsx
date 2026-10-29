@@ -59,7 +59,7 @@ export function Launchpad({ stack, choose }: { stack: Place[]; choose: (section:
       event.currentTarget.querySelectorAll<HTMLButtonElement>('[role=tab]')[next]?.focus();
     }}>{rail.map(item => <button key={item} id={`${tabId}-${item}`} type="button" role="tab" aria-label={item === 'home' ? 'ランチパッドホーム' : sectionInfo[item].label} aria-selected={current === item} aria-controls={`${tabId}-panel`} tabIndex={current === item || (!current && item === 'home') ? 0 : -1} title={sectionInfo[item].label} onClick={() => choose(item)}><GameIcon name={sectionInfo[item].icon} /><span data-ui-title>{tabLabel(item)}</span></button>)}</nav>;
 
-  return <div className={styles.backdrop} onClick={onClose} data-launchpad>
+  return <div className={styles.backdrop} onClick={onClose} data-launchpad data-launchpad-expanded={expanded || undefined}>
     <div ref={box} tabIndex={-1} inert={!!panel} className={expanded ? styles.expanded : styles.dialog} role="dialog" aria-modal={chatOpen ? undefined : true} aria-label="ゲームメニュー" data-launchpad onClick={event => event.stopPropagation()} onKeyDown={event => {
       event.stopPropagation();
       const typing = (event.target as HTMLElement).closest('input:not([type=range]), textarea, select, [contenteditable=true]');

@@ -71,12 +71,12 @@ function RoomChat({ open, onOpen, onClose }: { open: boolean; onOpen(): void; on
         const box = event.currentTarget; nearEnd.current = box.scrollHeight - box.scrollTop - box.clientHeight < 48;
       }}>
         {chat.map(message => <div key={message.id} className={styles.message} data-own={message.member === view?.plaza?.me || undefined}>
-          <Avatar card={message.profileId ? profiles[message.profileId]?.iconCardId : guestIcon(message.member)} size={32} />
+          <Avatar card={message.profileId ? profiles[message.profileId]?.iconCardId : guestIcon(message.member)} size={48} />
           <div className={styles.content}><div className={styles.byline}><strong title={message.name}>{message.name}</strong><time dateTime={new Date(message.sentAt).toISOString()}>{new Date(message.sentAt).toLocaleTimeString('ja-JP', { hour: '2-digit', minute: '2-digit' })}</time></div><p>{message.text}</p></div>
         </div>)}
       </div>
       <form className={styles.composer} onSubmit={event => { event.preventDefault(); void submit(); }}>
-        <textarea ref={input} aria-label="メッセージ" placeholder={ready ? 'メッセージを入力' : linked ? 'チャットを準備しています' : '再接続しています…'} rows={2} maxLength={MAX_ROOM_CHAT_LENGTH * 2} value={draft} readOnly={sending} onChange={event => setDraft(Array.from(event.target.value).slice(0, MAX_ROOM_CHAT_LENGTH).join(''))} onKeyDown={event => {
+        <textarea ref={input} aria-label="メッセージ" placeholder={ready ? '' : linked ? '接続中…' : '再接続中…'} rows={2} maxLength={MAX_ROOM_CHAT_LENGTH * 2} value={draft} readOnly={sending} onChange={event => setDraft(Array.from(event.target.value).slice(0, MAX_ROOM_CHAT_LENGTH).join(''))} onKeyDown={event => {
           if (event.key !== 'Enter' || event.shiftKey || event.nativeEvent.isComposing || event.keyCode === 229) return;
           event.preventDefault(); void submit();
         }} />
@@ -84,6 +84,6 @@ function RoomChat({ open, onOpen, onClose }: { open: boolean; onOpen(): void; on
         {error && <p className={styles.error} role="alert">{error}</p>}
       </form>
     </OrnateFrame>}
-    <button type="button" className={styles.toggle} onClick={open ? close : show} aria-expanded={open} aria-controls={open ? panelId : undefined} aria-keyshortcuts="T" aria-label="ルームチャット"><GameIcon name="chat" /><span data-ui-title>チャット</span><kbd>T</kbd></button>
+    <button type="button" className={styles.toggle} onClick={open ? close : show} aria-expanded={open} aria-controls={open ? panelId : undefined} aria-keyshortcuts="T" aria-label="ルームチャット" title="チャット（T）"><GameIcon name="chat" /></button>
   </aside>;
 }

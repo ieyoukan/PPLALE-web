@@ -1,19 +1,22 @@
-.chat { position: absolute; left: 24px; bottom: 18px; z-index: 320; color: var(--brand-cocoa-deep); font-family: var(--font-site-body), sans-serif; pointer-events: auto; }
-.chat button { display: inline-flex; align-items: center; justify-content: center; gap: 8px; border: 1px solid var(--brand-control-edge); border-radius: var(--brand-control-radius); background: var(--brand-cream); color: var(--brand-cocoa-deep); cursor: pointer; }
-.chat button:hover { background: var(--brand-blush); }
+.chat { --chat-toggle-ink: var(--brand-cream-on-dark); --chat-toggle-edge: color-mix(in srgb, var(--brand-cream-on-dark) 45%, transparent); position: absolute; left: 24px; bottom: 18px; z-index: 320; color: var(--brand-cocoa-deep); font-family: var(--font-site-body), sans-serif; pointer-events: auto; }
+/* The room is dark; the expanded menu's paper reaches behind this same icon. */
+:global([data-launchpad-expanded]) ~ .chat { --chat-toggle-ink: var(--brand-cocoa-deep); --chat-toggle-edge: var(--brand-control-edge); }
+.chat button { display: inline-flex; align-items: center; justify-content: center; border: 1px solid var(--brand-control-edge); border-radius: var(--brand-control-radius); background: transparent; color: var(--brand-cocoa-deep); cursor: pointer; }
+.chat button:hover:not(:disabled) { border-color: var(--brand-cocoa-soft); }
 .chat button:disabled { opacity: .55; cursor: default; }
-.chat button:focus-visible, .composer textarea:focus-visible { outline: 2px solid var(--brand-cocoa); outline-offset: 2px; }
+.chat button:focus-visible, .composer textarea:focus-visible { outline: none; border-color: var(--brand-cocoa); }
 .chat button svg { flex: none; width: 23px; height: 23px; }
-.toggle { min-height: 44px; padding: 8px 14px; font-size: 17px; }
-.toggle kbd { padding: 1px 5px; border: 1px solid var(--brand-control-edge); border-radius: 3px; font: inherit; font-size: 12px; }
+.toggle { width: 44px; height: 44px; padding: 0; }
+.chat .toggle { color: var(--chat-toggle-ink); border-color: var(--chat-toggle-edge); }
+.chat .toggle:is(:hover, :focus-visible) { border-color: currentColor; }
 .panel { --pad: 18px; --frame-face: color-mix(in srgb, var(--brand-paper) 85%, transparent); position: absolute; bottom: 54px; left: 0; width: 360px; height: 440px; max-height: calc(100cqh - 110px); display: flex; flex-direction: column; gap: 12px; }
 .log { flex: 1; min-height: 0; overflow-y: auto; overflow-x: hidden; overscroll-behavior: contain; touch-action: pan-y; user-select: text; scrollbar-width: thin; }
-.message { display: flex; align-items: flex-start; gap: 8px; margin: 0 0 14px; }
+.message { display: flex; align-items: flex-start; gap: 10px; margin: 0 0 16px; }
 .content { flex: 1; min-width: 0; }
 .byline { display: flex; align-items: baseline; min-width: 0; gap: 8px; }
 .byline strong { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 14px; }
 .byline time { flex: none; color: var(--brand-cocoa-soft); font-size: 11px; }
 .content p { margin: 3px 0 0; font-size: 16px; line-height: 1.55; white-space: pre-wrap; overflow-wrap: anywhere; }
 .composer { display: grid; grid-template-columns: minmax(0, 1fr) 42px; gap: 8px; flex: none; }
-.composer textarea { min-width: 0; width: 100%; resize: none; padding: 8px 10px; border: 1px solid var(--brand-control-edge); border-radius: var(--brand-control-radius); background: var(--brand-cream); color: var(--brand-cocoa-deep); font: inherit; font-size: 16px; line-height: 1.4; user-select: text; touch-action: manipulation; }
+.composer textarea { min-width: 0; width: 100%; resize: none; padding: 8px 10px; border: 1px solid var(--brand-control-edge); border-radius: var(--brand-control-radius); background: transparent; color: var(--brand-cocoa-deep); font: inherit; font-size: 16px; line-height: 1.4; user-select: text; touch-action: manipulation; }
 .error { grid-column: 1 / -1; margin: 0; font-size: 13px; overflow-wrap: anywhere; }
