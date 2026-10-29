@@ -59,11 +59,13 @@ export function GameSettings({ volume = true, onLeave }: { volume?: boolean; onL
     </section>
     {volume && <section className={styles.section}><NotificationVolumeControl /></section>}
     {user && <section className={styles.section} aria-labelledby="settings-push"><h3 id="settings-push" data-ui-title><GameIcon name="bell" />ブラウザの通知</h3><PushToggle /></section>}
+    <section className={styles.section} aria-label="通信">
+      <Link className={styles.link} href="/game/performance/" onClick={onLeave} prefetch={false}><GameIcon name="history" />通信計測</Link>
+    </section>
     <section className={styles.section} aria-labelledby="settings-account">
       <h3 id="settings-account" data-ui-title><GameIcon name="star" />アカウント</h3>
       <div className={styles.links}>
         {user ? <>
-          <Link className={styles.link} href="/game/profile/" onClick={onLeave} prefetch={false}><GameIcon name="star" />プロフィール</Link>
           <button className={styles.link} disabled={busy} onClick={() => void handleSwitchAccount()}><GameIcon name="heart" />アカウントを切り替える</button>
           <button className={styles.link} disabled={busy} onClick={() => void handleSignOut()}><GameIcon name="exit" />ログアウト</button>
         </> : <button className={styles.link} onClick={() => void signInWithGoogle().catch(() => {})}><GameIcon name="heart" />ログイン</button>}

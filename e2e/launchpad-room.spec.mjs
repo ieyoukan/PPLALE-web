@@ -88,6 +88,12 @@ for (const viewport of [{ width: 1280, height: 800 }, { width: 844, height: 390 
     await page.addStyleTag({ content: 'nextjs-portal { display: none; }' });
     // Layout dimensions stay in stage coordinates even when the phone turns the game sideways.
     const bounds = () => pad.evaluate(element => ({ width: element.offsetWidth, height: element.offsetHeight, x: element.offsetLeft, y: element.offsetTop }));
+    const identity = pad.getByRole('button', { name: '自分のプロフィール', exact: true });
+    const clock = pad.getByLabel('現在の時刻');
+    await expect(identity).toContainText('あなた');
+    await expect(clock).toHaveText(/^\d{2}:\d{2}$/);
+    const status = pad.getByLabel('プレイヤーと時計');
+    const top = await status.evaluate(el => el.offsetTop);
     const small = await bounds();
     expect(small.height).toBeGreaterThan(small.width);
     const tabs = ['通知', 'いまのルーム', '音量', '設定', 'ランチパッドホーム'];
@@ -95,6 +101,8 @@ for (const viewport of [{ width: 1280, height: 800 }, { width: 844, height: 390 
       await pad.getByRole('tab', { name, exact: true }).click();
       await expect(pad.getByRole('tab', { name, exact: true })).toHaveAttribute('aria-selected', 'true');
       expect(await bounds()).toEqual(small);
+      await expect(identity).toBeInViewport(); await expect(clock).toBeInViewport();
+      expect(await status.evaluate(el => el.offsetTop)).toBe(top);
     }
     await pad.getByRole('button', { name: 'ゲームメニューを拡大' }).click();
     const large = await bounds();
@@ -102,11 +110,15 @@ for (const viewport of [{ width: 1280, height: 800 }, { width: 844, height: 390 
     for (const name of tabs.map(name => name === 'ランチパッドホーム' ? 'いまのぷぷりえーる' : name)) {
       await pad.getByRole('tab', { name, exact: true }).click();
       expect(await bounds()).toEqual(large);
+      await expect(identity).toBeInViewport(); await expect(clock).toBeInViewport();
     }
     await pad.getByRole('button', { name: 'ランチパッドに縮小' }).click();
     expect(await bounds()).toEqual(small);
-    await expect(pad.getByRole('button', { name: 'プロフィール', exact: true })).toBeInViewport();
+    await expect(pad.getByRole('button', { name: '自分のプロフィール', exact: true })).toBeInViewport();
     await page.screenshot({ path: info.outputPath('launchpad-fixed-portrait.png') });
+    await identity.click();
+    await expect(pad.getByRole('button', { name: 'Googleでログイン', exact: true })).toBeVisible();
+    await expect(identity).toBeInViewport(); await expect(clock).toBeInViewport();
   });
 }
 

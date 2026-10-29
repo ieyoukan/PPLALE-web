@@ -19,11 +19,9 @@
 .quick button:disabled { opacity: .48; cursor: default; }
 .quick svg { width: 18px; height: 18px; color: var(--brand-cocoa); }
 .foot { display: grid; justify-items: center; padding-top: 2px; border-top: 1px solid var(--brand-pink); }
-.moreLinks { display: grid; grid-template-columns: repeat(3, 1fr); gap: 5px; width: 100%; padding: 6px 0 0; }
+.moreLinks { display: grid; justify-content: center; width: 100%; padding: 6px 0 0; }
 .moreLinks a { display: flex; align-items: center; justify-content: center; gap: 5px; min-height: 38px; color: var(--brand-cocoa-deep); font-size: 13px; font-weight: 700; }
 .moreLinks a:hover { background: var(--brand-blush); }
 .moreLinks svg { font-size: 18px; }
 
-.moreLinks button { border-radius: var(--brand-control-radius); display: flex; align-items: center; justify-content: center; gap: 5px; min-height: 38px; border: 0; background: transparent; font-size: 13px; font-weight: 700; }
-.moreLinks button:hover { background: var(--brand-blush); }
-@media (max-width: 600px) { .roomMain { --pad: 8px 34px 8px 9px; min-height: 94px; gap: 8px; } .roomArt, .emptyRoomArt { width: 94px; height: 62px; } .roomText b { font-size: 16px; } .roomText > span { font-size: 11px; } .moreLinks { grid-template-columns: repeat(3, 1fr); } }
+@media (max-width: 600px) { .roomMain { --pad: 8px 34px 8px 9px; min-height: 94px; gap: 8px; } .roomArt, .emptyRoomArt { width: 94px; height: 62px; } .roomText b { font-size: 16px; } .roomText > span { font-size: 11px; } }

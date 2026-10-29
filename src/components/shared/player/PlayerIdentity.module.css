@@ -1,0 +1,5 @@
+.identity { display: flex; align-items: center; gap: 9px; min-width: 0; }
+.text { display: grid; gap: 2px; min-width: 0; text-align: left; }
+.text b, .text small { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.text b { color: var(--brand-cocoa-deep); font-size: 15px; }
+.text small { color: var(--brand-cocoa-soft); font-size: 12px; }

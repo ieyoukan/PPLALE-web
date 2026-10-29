@@ -38,7 +38,6 @@ export function LaunchpadHome({ onHome, onShare }: { onHome: () => void; onShare
     </div>
     <footer className={styles.foot}>
       <nav className={styles.moreLinks} aria-label="その他の画面">
-        {(['profile', 'performance'] as const).map(target => <button key={target} onClick={() => openAt({ section: target })}><GameIcon name={sectionInfo[target].icon} /><span>{sectionInfo[target].label}</span></button>)}
         <Link href="/" prefetch={false}><GameIcon name="exit" /><span>サイトへ</span></Link>
       </nav>
     </footer>

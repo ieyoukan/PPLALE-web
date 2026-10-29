@@ -12,6 +12,7 @@ import { ShareSheet } from '../plaza/ShareSheet';
 import { HomeRoomSheet } from '../plaza/HomeRoomSheet';
 import { NewRoomSheet } from '../plaza/NewRoomSheet';
 import { useLaunchpad } from './LaunchpadContext';
+import { LaunchpadStatus } from './LaunchpadStatus';
 import { LaunchpadScreens } from './LaunchpadScreens';
 import type { RoomPanel } from './LaunchpadScreens';
 import { padTabs, screens, parentSection, sectionInfo } from './places';
@@ -72,7 +73,7 @@ export function Launchpad({ stack, choose }: { stack: Place[]; choose: (section:
       }
     }}>
       <OrnateFrame className={styles.pad} data-section={section}>
-        {tabRail}{head}
+        <LaunchpadStatus />{tabRail}{head}
         <div ref={panelRef} className={styles.tabPanel} role="tabpanel" id={`${tabId}-panel`} aria-label={title} tabIndex={0}>
           <Suspense fallback={null}><LaunchpadScreens section={section} place={place} onPanel={setPanel} onClose={onClose} /></Suspense>
         </div>
