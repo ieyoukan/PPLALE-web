@@ -220,12 +220,17 @@ export function connectRoom(id: string, token: string | null, handlers: { onView
         handlers.onGone(message.error, message.closed);
       }
     });
-    next.addEventListener('close', () => {
+    next.addEventListener('close', event => {
       if (stopped || socket !== next) return;
       socket = null;
       reportsAway = false;
       failWaiting();
       handlers.onLink(false);
+      // A terminal membership rejection may arrive as only a close frame (e.g. a proxy lost `gone`).
+      if (event.code === 4403 || event.code === 4404) {
+        stopped = true; document.removeEventListener('visibilitychange', reportAway);
+        handlers.onGone(event.reason || 'このルームに再入室します'); return;
+      }
       timer = setTimeout(open, RETRY_DELAYS[Math.min(attempt++, RETRY_DELAYS.length - 1)]);
     });
   }

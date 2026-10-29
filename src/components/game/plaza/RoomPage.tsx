@@ -48,14 +48,14 @@ export function RoomPage({ id }: { id: string }) {
   useEffect(() => {
     if (kind !== 'plaza') return;
     // The invitation's secret is kept by this browser; the address bar shows the plain link.
-    void enter(id, invite).then(entered => { if (entered && (invite || watch)) router.replace(plazaHref(id)); });
+    void enter(id, invite).then(entered => { if (entered && (entered !== id || invite || watch)) router.replace(plazaHref(entered)); });
   }, [kind, id, invite, watch, enter, router]);
 
   if (legacy) return <RoomBoard id={id} watch={watch && !seatFor(id)} />;
   if (kind === null) return <LaunchScreen status="ルームに入っています" />;
   if (current === id && view) return <><PlazaRoom view={view} onMenu={launchpad.open} />
     {created && view.plaza && view.plaza.owner === view.plaza.me && <RoomCreatedSheet view={view} onClose={() => router.replace(plazaHref(id))} />}</>;
-  if (stage.kind === 'refused' && stage.to === id) return <LaunchScreen><Refused reason={stage.reason} message={stage.message} id={id} /></LaunchScreen>;
+  if (stage.kind === 'refused' && (stage.to === id || stage.to === null)) return <LaunchScreen><Refused reason={stage.reason} message={stage.message} id={id} /></LaunchScreen>;
   return <LaunchScreen status="ルームに入っています" preview={preview} />;
 }
 

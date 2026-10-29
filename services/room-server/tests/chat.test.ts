@@ -92,3 +92,20 @@ test('chat: conversation does not invalidate and restart the pending CPU decisio
     await alice.until(view => view.game!.phase !== 'dice' || view.game!.dice!.rolls[1] !== null);
     assert.equal(claims.length, 1, 'the same pending decision runs once despite the newer chat version');
 });
+
+
+test('chat stamps: fixed catalog, server fallback, shared limits, retries and member permissions', () => {
+    const { room } = createPlaza('123456', { rules, plaza: { visibility: 'public' } }, { name: 'ありす' });
+    const owner = room.plaza!.owner!, body = { action: 'chat', stamp: 'ageru', messageId: randomUUID() };
+    const act = (value: unknown, now = 0, id = owner) => actPlaza(room, id, value, catalog, now);
+    assert.deepEqual(act(body), { chat: true });
+    const sent = room.plaza!.chat![0];
+    assert.equal(sent.stamp, 'ageru'); assert.equal(sent.text, 'スタンプ：あげる');
+    act(body, 1); assert.equal(room.plaza!.chat!.length, 1);
+    assert.throws(() => act({ ...body, stamp: 'oyasumi' }, 2), /送信済み/);
+    assert.throws(() => act(message('文字も連投できない'), 999), /少し待って/);
+    for (const invalid of [{ ...body, stamp: 'https://bad/image.png' }, { ...body, stamp: '../private' }, { ...body, text: '二重指定' }, { action: 'chat', messageId: randomUUID() }]) assert.throws(() => act(invalid, 1000), /形式/);
+    assert.throws(() => act(body, 1000, 'outsider'), /ルームが見つかりません/);
+    assert.equal(plazaView(room, owner, new Set([owner]), catalog).plaza!.chatStamps, true);
+    assert.equal(plazaView(room, owner, new Set([owner]), catalog).plaza!.chat![0].stamp, 'ageru');
+});

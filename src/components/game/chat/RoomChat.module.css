@@ -21,8 +21,13 @@
 .content p::before { content: ''; position: absolute; top: 12px; left: -5px; width: 8px; height: 8px; border-left: 1px solid var(--brand-control-edge); border-bottom: 1px solid var(--brand-control-edge); background: var(--bubble-face); transform: rotate(45deg); }
 .message[data-own] .content p { --bubble-face: var(--brand-blush); }
 .message[data-own] .content p::before { left: auto; right: -5px; border: 0; border-top: 1px solid var(--brand-control-edge); border-right: 1px solid var(--brand-control-edge); }
-.composer { display: grid; grid-template-columns: minmax(0, 1fr) auto; align-items: start; gap: 8px; flex: none; }
+.composer { display: grid; grid-template-columns: 36px minmax(0, 1fr) auto; align-items: start; gap: 8px; flex: none; }
 .composer textarea { box-sizing: border-box; min-width: 0; width: 100%; height: 40px; resize: none; padding: 8px 14px; border: 1px solid var(--brand-control-edge); border-radius: 999px; background: transparent; color: var(--brand-cocoa-deep); font: inherit; font-size: 16px; line-height: 22px; user-select: text; touch-action: manipulation; scrollbar-width: none; }
 .composer textarea::placeholder { color: var(--brand-cocoa-soft); opacity: 1; }
 .composer button { min-width: 56px; height: 40px; padding: 0 12px; border-radius: 999px; font: inherit; font-size: 15px; font-weight: 700; }
 .error { grid-column: 1 / -1; margin: 0; font-size: 13px; overflow-wrap: anywhere; }
+
+.composer .stampToggle { min-width: 36px; width: 36px; padding: 0; border-radius: var(--brand-control-radius); }
+.stamps { --pad: 14px; position: absolute; bottom: 68px; left: 18px; right: 18px; z-index: 2; display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; max-height: min(280px, calc(100cqh - 200px)); overflow-y: auto; overscroll-behavior: contain; }
+.stamps button { --chat-stamp-size: 100%; min-width: 0; padding: 2px; aspect-ratio: 1; border-color: transparent; }
+.stamps button:hover:not(:disabled) { background: var(--brand-blush); }

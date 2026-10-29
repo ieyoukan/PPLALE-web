@@ -40,6 +40,12 @@ test('two browsers chat before and during a match, from the menu, and after reco
     await chatButton(friend).click();
     await expect(log(friend)).toContainText('準備中のこんにちは🍓');
     await expect(input(page)).toHaveValue('');
+    const remaining = 1050 - (Date.now() - lastSentAt);
+    if (remaining > 0) await page.waitForTimeout(remaining);
+    await page.getByRole('button', { name: 'スタンプ', exact: true }).click();
+    await page.getByRole('region', { name: 'スタンプ一覧' }).getByRole('button', { name: 'あげるを送信' }).click();
+    await expect(log(page).getByRole('img', { name: 'あげる', exact: true })).toBeVisible(); lastSentAt = Date.now();
+    await expect(log(friend).getByRole('img', { name: 'あげる', exact: true })).toBeVisible();
     await chatButton(friend).click();
     await page.keyboard.press('Escape');
     await page.getByRole('button', { name: 'この席にすわる', exact: true }).first().click();
@@ -87,22 +93,23 @@ function playing() {
   return game;
 }
 
-async function fixture(page, history = []) {
+async function fixture(page, history = [], hold = false) {
   const id = '123459', actions = []; let socket, fail = true;
   const view = { id, version: 1, status: 'lobby', match: 0, seat: 0, watching: true, spectators: 1,
     rules: { fruits: ['strawberry'], extendedPlayable: false, spectators: true }, players: [null, null], game: null, last: null, resigned: null,
-    plaza: { name: 'チャットのルーム', visibility: 'public', me: 'me', owner: 'me', creator: { name: 'あなた' }, chatEnabled: true, chat: history, members: [{ id: 'me', name: 'あなた', online: true }] } };
+    plaza: { name: 'チャットのルーム', visibility: 'public', me: 'me', owner: 'me', creator: { name: 'あなた' }, chatEnabled: true, chatStamps: true, chat: history, members: [{ id: 'me', name: 'あなた', online: true }] } };
   await page.addInitScript(id => localStorage.setItem('pplale-plaza-v1', JSON.stringify({ current: id, rooms: { [id]: { token: 'test', at: Date.now() } } })), id);
   await page.routeWebSocket(/\/rooms\/123459\/socket/, ws => { socket = ws; ws.onMessage(bytes => {
     const request = JSON.parse(String(bytes)); actions.push(request);
-    if (request.type === 'hello') ws.send(JSON.stringify({ type: 'view', view }));
+    if (request.type === 'hello' && !hold) ws.send(JSON.stringify({ type: 'view', view }));
     if (request.type !== 'action') return;
     if (fail) { fail = false; ws.send(JSON.stringify({ type: 'result', n: request.n, error: '送信できませんでした' })); return; }
-    view.plaza.chat.push({ id: request.action.messageId, member: 'me', name: 'あなた', text: request.action.text, sentAt: Date.now() });
+    view.plaza.chat.push({ id: request.action.messageId, member: 'me', name: 'あなた', text: request.action.text ?? 'スタンプ：あげる', ...(request.action.stamp && { stamp: request.action.stamp }), sentAt: Date.now() });
     ws.send(JSON.stringify({ type: 'chat', id, version: ++view.version, messages: view.plaza.chat }));
     ws.send(JSON.stringify({ type: 'result', n: request.n }));
   }); });
-  await page.goto(`${base}/game/room/${id}/`); await hideDevTools(page); await expect(chatButton(page)).toBeVisible();
+  await page.goto(`${base}/game/room/${id}/`); await hideDevTools(page);
+  if (hold) await expect.poll(() => !!socket).toBe(true); else await expect(chatButton(page)).toBeVisible();
   return { actions, send: message => socket.send(JSON.stringify(message)), view };
 }
 
@@ -145,7 +152,7 @@ for (const width of [1280, 390]) test(`chat handles IME, failed retries, long te
   await page.setViewportSize({ width, height: 844 });
   const { actions, send, view } = await fixture(page);
   await chatButton(page).click();
-  await expect(input(page)).toHaveAttribute('placeholder', '文字入力');
+  await expect(input(page)).toHaveAttribute('placeholder', 'タップして入力');
   expect(await input(page).evaluate(element => element.offsetHeight)).toBeLessThanOrEqual(44);
   await expect(page.getByRole('button', { name: 'メッセージを送信', exact: true })).toHaveText('送信');
   await input(page).fill('日本語の変換中');
@@ -185,4 +192,43 @@ for (const width of [1280, 390]) test(`chat handles IME, failed retries, long te
   send({ type: 'view', view: { ...view, version: 4, plaza: { ...view.plaza, chatEnabled: undefined } } });
   await expect(page.getByRole('button', { name: 'メッセージを送信', exact: true })).toBeDisabled();
   await page.keyboard.press('Escape'); await expect(input(page)).toHaveCount(0);
+});
+
+
+for (const width of [1280, 390]) test(`stamp picker sends allowlisted artwork, retries safely, preserves a draft and receives unread stamps (${width}px)`, async ({ page }, info) => {
+  await page.setViewportSize({ width, height: 844 });
+  const { actions, view, send } = await fixture(page);
+  await chatButton(page).click(); await input(page).fill('書きかけの文字');
+  const toggle = page.getByRole('button', { name: 'スタンプ', exact: true });
+  await toggle.click();
+  const picker = page.getByRole('region', { name: 'スタンプ一覧' });
+  await expect(picker.getByRole('button')).toHaveCount(12);
+  await picker.getByRole('button', { name: 'わぁを送信' }).scrollIntoViewIfNeeded();
+  await picker.getByRole('img', { name: 'わぁ', exact: true }).evaluate(img => img.decode());
+  await picker.getByRole('button', { name: 'あげるを送信' }).click();
+  await expect(page.locator('[data-room-chat]').getByRole('alert')).toContainText('送信できませんでした');
+  await expect(picker).toBeVisible();
+  await picker.getByRole('button', { name: 'あげるを送信' }).click();
+  await expect(picker).toHaveCount(0); await expect(input(page)).toHaveValue('書きかけの文字');
+  await expect(log(page).getByRole('img', { name: 'あげる', exact: true })).toBeVisible();
+  const retries = actions.filter(request => request.action?.stamp);
+  expect(retries).toHaveLength(2); expect(retries[0].action.messageId).toBe(retries[1].action.messageId);
+  expect(retries[0].action.text).toBeUndefined();
+  await toggle.click(); await page.keyboard.press('Escape');
+  await expect(picker).toHaveCount(0); await expect(input(page)).toBeVisible();
+  await page.screenshot({ path: info.outputPath('chat-stamp-message.png') });
+  await toggle.click(); await page.screenshot({ path: info.outputPath('chat-stamp-picker.png') });
+  await page.keyboard.press('Escape'); await page.keyboard.press('Escape');
+  send({ type: 'chat', id: view.id, version: 100, messages: [...view.plaza.chat, { id: 'received-stamp', member: 'other', name: 'フレンド', text: 'スタンプ：おやすみ', stamp: 'oyasumi', sentAt: Date.now() }] });
+  await expect(page.locator('[data-room-chat] [role="status"]')).toHaveText('1');
+  await chatButton(page).click();
+  await expect(log(page).getByRole('img', { name: 'おやすみ', exact: true })).toBeVisible();
+});
+
+
+test('chat icon appears only after the room socket admits the player', async ({ page }) => {
+  const { send, view } = await fixture(page, [], true);
+  await expect(chatButton(page)).toHaveCount(0);
+  await page.keyboard.press('t'); await expect(input(page)).toHaveCount(0);
+  send({ type: 'view', view }); await expect(chatButton(page)).toBeVisible();
 });

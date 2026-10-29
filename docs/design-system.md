@@ -112,6 +112,7 @@
 | ルームのサムネイル | `game/plaza/RoomThumbnailImage.tsx`。URLのルール変換は `src/lib/game/roomThumbnail.ts`、描画とOGPは `src/lib/ogRoomImage.tsx` |
 | ルーム退出の影響表示 | `game/plaza/RoomDepartureNotice.tsx`。対戦中の敗北・オーナー不在・残る入室者の表示を、ホーム移動の確認とルーム作成で共用する |
 | プレイヤーの丸いアイコン | `shared/player/Avatar.tsx`。ルームの席・在室者・対戦中の名前で共用する。カードそのものの表示には使わない |
+| チャットのスタンプ画像 | `shared/chat/ChatStamp.tsx`。選択一覧と発言で同じ登録済み画像を使う。原画の透明部分と縦横比を保ち、画像自体に枠・影を追加しない |
 | アイコン・名前・称号のまとまり | `shared/player/PlayerIdentity.tsx`。丸い `Avatar` と公開ユーザー名、任意の称号を表示し、長い文字は省略する。称号がない場合は行を増やさない。クリック操作やデータ取得は呼び出し元で管理する |
 | プロフィールへの入口 | `shared/player/ProfileLink.tsx`。自分はゲストでも `/game/profile/`、他人は公開プロフィールIDがあるときだけリンクにする |
 | ゲストへのログイン案内 | `shared/auth/GuestSignInPrompt.tsx`。ランチパッドではコンパクト表示、対戦後はフレンド・デッキ共有への案内として共用する。対戦操作を遮らない。自分のプロフィールでは `purpose="profile"` でログインを要求し、ボタンを押すまで認証ポップアップは開かない |

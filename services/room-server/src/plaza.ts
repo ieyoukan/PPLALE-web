@@ -7,7 +7,7 @@ import { randomBytes, randomInt, randomUUID, timingSafeEqual } from 'node:crypto
 import { z } from 'zod';
 import { other, actingSides, cpuLevels, cpuProfiles, randomDeck, viewFor } from '@pplale/game-core';
 import type { Catalog, CpuLevel, Deck, Side } from '@pplale/game-core';
-import { DEFAULT_VISIBILITY, MAX_MEMBERS, MAX_ROOM_NAME_LENGTH, MAX_ROOM_CHAT_LENGTH, MAX_ROOM_CHAT_MESSAGES, MEMBER_GRACE, invitedVisibility, isRoomVisibility, parseRoomRules, roomDeckErrors } from '@pplale/game-core/room';
+import { ROOM_CHAT_STAMPS, DEFAULT_VISIBILITY, MAX_MEMBERS, MAX_ROOM_NAME_LENGTH, MAX_ROOM_CHAT_LENGTH, MAX_ROOM_CHAT_MESSAGES, MEMBER_GRACE, invitedVisibility, isRoomVisibility, parseRoomRules, roomDeckErrors } from '@pplale/game-core/room';
 import type { RoomChatMessage } from '@pplale/game-core/room';
 import type { RoomInfo, RoomRules, RoomView, RoomVisibility } from '@pplale/game-core/room';
 import type { MatchEnd } from '@pplale/game-core/history';
@@ -92,7 +92,7 @@ const action = z.discriminatedUnion('action', [
     z.object({ action: z.literal('claim') }),
     z.object({ action: z.literal('rules'), rules: z.unknown() }),
     z.object({ action: z.literal('rename'), name: z.string() }),
-    z.object({ action: z.literal('chat'), text: z.string().max(MAX_ROOM_CHAT_LENGTH * 2), messageId: z.string().uuid() }),
+    z.object({ action: z.literal('chat'), text: z.string().max(MAX_ROOM_CHAT_LENGTH * 2).optional(), stamp: z.enum(ROOM_CHAT_STAMPS.map(item => item.id)).optional(), messageId: z.string().uuid() }).refine(value => (value.text === undefined) !== (value.stamp === undefined)),
     z.object({ action: z.literal('renewInvite') }),
     z.object({ action: z.literal('answer'), profileId, accept: z.boolean() }),
 ]);
@@ -345,16 +345,17 @@ export function actPlaza(room: Room, id: string, body: unknown, catalog: Catalog
     };
     switch (request.action) {
         case 'chat': {
-            const text = request.text.replace(/\r\n?/g, '\n').replace(/[\u0000-\u0008\u000b\u000c\u000e-\u001f\u007f]/g, '').trim();
+            const stamp = request.stamp && ROOM_CHAT_STAMPS.find(item => item.id === request.stamp);
+            const text = stamp ? `スタンプ：${stamp.label}` : (request.text ?? '').replace(/\r\n?/g, '\n').replace(/[\u0000-\u0008\u000b\u000c\u000e-\u001f\u007f]/g, '').trim();
             if (!text) throw new RoomError(400, 'メッセージを入力してください');
             if (Array.from(text).length > MAX_ROOM_CHAT_LENGTH) throw new RoomError(400, `メッセージは${MAX_ROOM_CHAT_LENGTH}文字までです`);
             const messageId = `${id}:${request.messageId}`, previous = plaza.chat?.find(message => message.id === messageId);
             if (previous) {
-                if (previous.text !== text) throw new RoomError(409, '送信済みのメッセージです');
+                if (previous.text !== text || previous.stamp !== request.stamp) throw new RoomError(409, '送信済みのメッセージです');
             } else {
                 if (me.lastChatAt !== undefined && now - me.lastChatAt < 1000) throw new RoomError(429, '少し待ってから送信してください');
                 me.lastChatAt = now;
-                plaza.chat = [...plaza.chat ?? [], { id: messageId, member: id, name: me.name, ...(me.profileId && { profileId: me.profileId }), text, sentAt: now }].slice(-MAX_ROOM_CHAT_MESSAGES);
+                plaza.chat = [...plaza.chat ?? [], { id: messageId, member: id, name: me.name, ...(me.profileId && { profileId: me.profileId }), text, ...(request.stamp && { stamp: request.stamp }), sentAt: now }].slice(-MAX_ROOM_CHAT_MESSAGES);
             }
             outcome.chat = true;
             return outcome; // Conversation never touches the match, its last command or turn clock.
@@ -532,7 +533,7 @@ export function plazaView(room: Room, id: string, online: ReadonlySet<string>, c
         plaza: {
             name: plaza.name, visibility: plaza.visibility, creator: plaza.creator, owner: plaza.owner, me: id,
             canClaimOwner: plaza.owner === null && !!plaza.members.find(member => member.id === id && mayClaim(plaza, member, online)),
-            chatEnabled: true, ...(chatHistory && { chat: plaza.chat ?? [] }),
+            chatEnabled: true, chatStamps: true, ...(chatHistory && { chat: plaza.chat ?? [] }),
             members: plaza.members.map(member => {
                 const seat = seats.findIndex(taken => taken?.member === member.id);
                 return { id: member.id, name: member.name, ...(member.profileId && { profileId: member.profileId }), online: online.has(member.id), ...(seat >= 0 && { seat: seat as Side }) };

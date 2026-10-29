@@ -1,3 +1,6 @@
+import type { RoomChatStampId } from './chatStamps.ts';
+export { ROOM_CHAT_STAMPS } from './chatStamps.ts';
+export type { RoomChatStampId } from './chatStamps.ts';
 // Matches between two players over a network (ルームマッチ): the rules a room is made with and
 // what the browser and the room server (services/room-server) say to each other. The server keeps
 // the match; a browser only ever gets its own seat's view of it (redact.ts).
@@ -162,8 +165,8 @@ export type RoomAction =
     | { action: 'rules'; rules: RoomRules }
     /** The owner changes the room's displayed name; its creator and visibility stay fixed. */
     | { action: 'rename'; name: string }
-    /** Plain text to the people in this plaza. The client id makes retries idempotent. */
-    | { action: 'chat'; text: string; messageId: string }
+    /** Plain text or a registered stamp to the people in this plaza. The client id makes retries idempotent. */
+    | ({ action: 'chat'; messageId: string } & ({ text: string; stamp?: never } | { stamp: RoomChatStampId; text?: never }))
     /** A new invitation link; the previous one stops working. */
     | { action: 'renewInvite' }
     /** Answers a friend who asked to be let in. */
@@ -195,7 +198,9 @@ export interface RoomChatMessage {
     member: string;
     name: string;
     profileId?: string;
+    /** Plain text, or the server-owned fallback label for a stamp (older clients). */
     text: string;
+    stamp?: RoomChatStampId;
     sentAt: number;
 }
 /** A member whose last connection closed this long ago is no longer in the room (ms). */
@@ -226,6 +231,8 @@ export interface PlazaView {
     /** Present on servers supporting chat. Retained only in this room, outside match recordings. */
     chat?: RoomChatMessage[];
     chatEnabled?: true;
+    /** Fixed-catalog stamp messages are supported by this server. */
+    chatStamps?: true;
     /** The rules of the next match, when the owner changed them during this one. */
     nextRules?: RoomRules;
     /** The secret of the invitation link, only for those who may share it. */

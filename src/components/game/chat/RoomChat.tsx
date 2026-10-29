@@ -2,22 +2,26 @@
 
 // Lives beside the launchpad in the game layout: changing screens never leaves the conversation.
 import { createContext, useContext, useEffect, useId, useRef, useState } from 'react';
+import { usePathname } from 'next/navigation';
 import type { ReactNode } from 'react';
-import { MAX_ROOM_CHAT_LENGTH } from '@pplale/game-core/room';
+import { ROOM_CHAT_STAMPS, MAX_ROOM_CHAT_LENGTH } from '@pplale/game-core/room';
+import { ChatStamp } from '@/components/shared/chat/ChatStamp';
+import type { RoomChatStampId } from '@pplale/game-core/room';
 import { Avatar } from '@/components/shared/player/Avatar';
 import { guestIcon, useProfiles } from '@/components/shared/player/useProfiles';
 import { GameIcon } from '@/components/shared/ui/GameIcon';
 import { OrnateFrame } from '@/components/shared/ui/ornament/OrnateFrame';
-import { usePlaza } from '../plaza/PlazaProvider';
+import { isPlazaPath, plazaHref, usePlaza } from '../plaza/PlazaProvider';
 import styles from './RoomChat.module.css';
 
 const Context = createContext(false);
 export const useRoomChatOpen = () => useContext(Context);
 
 export function RoomChatProvider({ children }: { children: ReactNode }) {
-  const { id, view } = usePlaza();
+  const { id, view, stage } = usePlaza(), pathname = usePathname();
+  const arriving = pathname === '/game' || pathname === '/game/' || (isPlazaPath(pathname) && pathname !== plazaHref(id ?? ''));
   const [opened, setOpened] = useState<string | null>(null);
-  const available = !!id && !!view?.plaza, open = available && opened === id;
+  const available = !arriving && stage.kind === 'in' && !!id && view?.id === id && view.status !== 'closed' && !!view.plaza?.members.some(member => member.id === view.plaza?.me), open = available && opened === id;
   return <Context.Provider value={open}>
     {children}
     {available && <RoomChat key={id} open={open} onOpen={() => setOpened(id)} onClose={() => setOpened(null)} />}
@@ -29,7 +33,9 @@ function RoomChat({ open, onOpen, onClose }: { open: boolean; onOpen(): void; on
   const [draft, setDraft] = useState(''), [error, setError] = useState(''), [sending, setSending] = useState(false);
   const input = useRef<HTMLTextAreaElement>(null), log = useRef<HTMLDivElement>(null);
   const previousFocus = useRef<HTMLElement | null>(null), nearEnd = useRef(true), busy = useRef(false);
-  const pending = useRef<{ text: string; messageId: string } | null>(null), panelId = useId();
+  type Content = { text: string; stamp?: never } | { stamp: RoomChatStampId; text?: never };
+  const pending = useRef<(Content & { messageId: string }) | null>(null), panelId = useId();
+  const [stampsOpen, setStampsOpen] = useState(false);
   // Initial/replayed history is already known. Only newly received messages from others count.
   const observed = useRef(new Set(chat.map(message => message.id)));
   const [unread, setUnread] = useState(0);
@@ -45,7 +51,7 @@ function RoomChat({ open, onOpen, onClose }: { open: boolean; onOpen(): void; on
     return () => document.removeEventListener('visibilitychange', visible);
   }, [open]);
   const profiles = useProfiles(open ? chat.map(message => message.profileId) : []);
-  const ready = linked && !!view?.plaza?.chatEnabled;
+  const ready = linked && !!view?.plaza?.chatEnabled, stampsReady = ready && !!view?.plaza?.chatStamps;
   const show = () => { previousFocus.current = document.activeElement as HTMLElement | null; onOpen(); };
   const close = () => { onClose(); if (previousFocus.current?.isConnected) previousFocus.current.focus(); };
 
@@ -53,7 +59,7 @@ function RoomChat({ open, onOpen, onClose }: { open: boolean; onOpen(): void; on
   useEffect(() => {
     const key = (event: KeyboardEvent) => {
       if (event.defaultPrevented || event.isComposing || event.repeat || event.ctrlKey || event.altKey || event.metaKey) return;
-      if (event.key === 'Escape' && open) { event.preventDefault(); event.stopPropagation(); close(); return; }
+      if (event.key === 'Escape' && open) { event.preventDefault(); event.stopPropagation(); if (stampsOpen) setStampsOpen(false); else close(); return; }
       const target = event.target as HTMLElement | null;
       if (event.key.toLowerCase() !== 't' || target?.closest('input, textarea, select, [contenteditable="true"], [role="textbox"]')) return;
       event.preventDefault();
@@ -67,14 +73,13 @@ function RoomChat({ open, onOpen, onClose }: { open: boolean; onOpen(): void; on
     if (open && nearEnd.current && log.current) log.current.scrollTop = log.current.scrollHeight;
   }, [chat, open]);
 
-  const submit = async () => {
-    const text = draft.trim();
-    if (!text || busy.current || !ready) return;
+  const submit = async (content: Content = { text: draft.trim() }) => {
+    if ((!content.stamp && !content.text?.trim()) || busy.current || !ready || (content.stamp && !stampsReady)) return;
     busy.current = true; setSending(true); setError('');
-    if (pending.current?.text !== text) pending.current = { text, messageId: crypto.randomUUID() };
+    if (!pending.current || pending.current.text !== content.text || pending.current.stamp !== content.stamp) pending.current = { ...content, messageId: crypto.randomUUID() };
     try {
       await send({ action: 'chat', ...pending.current });
-      pending.current = null; setDraft(''); nearEnd.current = true;
+      pending.current = null; if (content.stamp) setStampsOpen(false); else setDraft(''); nearEnd.current = true;
     } catch (failure) { setError(failure instanceof Error ? failure.message : '送信できませんでした'); }
     finally { busy.current = false; setSending(false); }
   };
@@ -86,11 +91,13 @@ function RoomChat({ open, onOpen, onClose }: { open: boolean; onOpen(): void; on
       }}>
         {chat.map(message => <div key={message.id} className={styles.message} data-own={message.member === view?.plaza?.me || undefined}>
           <Avatar card={message.profileId ? profiles[message.profileId]?.iconCardId : guestIcon(message.member)} size={48} />
-          <div className={styles.content}><div className={styles.byline}><strong title={message.name}>{message.name}</strong><time dateTime={new Date(message.sentAt).toISOString()}>{new Date(message.sentAt).toLocaleTimeString('ja-JP', { hour: '2-digit', minute: '2-digit' })}</time></div><p>{message.text}</p></div>
+          <div className={styles.content}><div className={styles.byline}><strong title={message.name}>{message.name}</strong><time dateTime={new Date(message.sentAt).toISOString()}>{new Date(message.sentAt).toLocaleTimeString('ja-JP', { hour: '2-digit', minute: '2-digit' })}</time></div>{message.stamp ? <ChatStamp id={message.stamp} /> : <p>{message.text}</p>}</div>
         </div>)}
       </div>
+      {stampsOpen && <OrnateFrame as="div" size="sm" appearance="panel" className={styles.stamps} role="region" aria-label="スタンプ一覧">{ROOM_CHAT_STAMPS.map(stamp => <button key={stamp.id} type="button" disabled={!stampsReady || sending} onClick={() => void submit({ stamp: stamp.id })} aria-label={`${stamp.label}を送信`}><ChatStamp id={stamp.id} /></button>)}</OrnateFrame>}
       <form className={styles.composer} onSubmit={event => { event.preventDefault(); void submit(); }}>
-        <textarea ref={input} aria-label="メッセージ" placeholder={ready ? '文字入力' : linked ? '接続中…' : '再接続中…'} rows={1} wrap="off" maxLength={MAX_ROOM_CHAT_LENGTH * 2} value={draft} readOnly={sending} onChange={event => setDraft(Array.from(event.target.value).slice(0, MAX_ROOM_CHAT_LENGTH).join(''))} onKeyDown={event => {
+        <button type="button" className={styles.stampToggle} disabled={!stampsReady || sending} aria-label="スタンプ" aria-expanded={stampsOpen} onClick={() => setStampsOpen(value => !value)}><GameIcon name="smile" /></button>
+        <textarea ref={input} aria-label="メッセージ" placeholder={ready ? 'タップして入力' : linked ? '接続中…' : '再接続中…'} rows={1} wrap="off" maxLength={MAX_ROOM_CHAT_LENGTH * 2} value={draft} readOnly={sending} onChange={event => setDraft(Array.from(event.target.value).slice(0, MAX_ROOM_CHAT_LENGTH).join(''))} onKeyDown={event => {
           if (event.key !== 'Enter' || event.shiftKey || event.nativeEvent.isComposing || event.keyCode === 229) return;
           event.preventDefault(); void submit();
         }} />

@@ -219,7 +219,7 @@ export function PlazaProvider({ children }: { children: ReactNode }) {
       // The room becomes this browser's current one once its socket is up (`adopt`).
       keepPlaza(entered.view.id, { token: entered.token, ...(entered.view.plaza?.invite && { invite: entered.view.plaza.invite }) }, false);
       const opened = await open(entered.view.id, entered.token);
-      if (!opened.ok) return settle(entered.view.id, new RoomRequestError(opened.offline ? 0 : 500, opened.message));
+      if (!opened.ok) return settle(entered.view.id, new RoomRequestError(opened.offline ? 0 : opened.closed ? 410 : 500, opened.message));
       return entered.view.id;
     } catch (failure) { return settle(null, failure); }
   }, [open, settle]);
@@ -228,14 +228,19 @@ export function PlazaProvider({ children }: { children: ReactNode }) {
   const resume = useCallback(async (roomId: string, token: string, invite?: string): Promise<Back> => {
     const opened = await open(roomId, token);
     if (opened.ok) return { in: roomId };
-    if (opened.offline) return { offline: opened.message };
+    // Browsers hide HTTP upgrade errors (including 410) behind a generic socket failure.
+    // Re-admission over HTTP distinguishes a closed room from a temporary transport outage.
     if (opened.closed) return { closed: true };
     // Expired membership is admitted again; the server restores unclaimed ownership from this proof.
     try {
       const entered = await enterPlaza(roomId, guestName(), { rejoin: token, invite });
       keepPlaza(roomId, { token: entered.token }, false);
-      return (await open(roomId, entered.token)).ok ? { in: roomId } : null;
-    } catch (failure) { return failure instanceof RoomRequestError && failure.status === 0 ? { offline: failure.message } : null; }
+      const resumed = await open(roomId, entered.token);
+      return resumed.ok ? { in: roomId } : resumed.closed ? { closed: true } : resumed.offline ? { offline: resumed.message } : null;
+    } catch (failure) {
+      return failure instanceof RoomRequestError && failure.status === 410 ? { closed: true }
+        : failure instanceof RoomRequestError && failure.status === 0 ? { offline: failure.message } : null;
+    }
   }, [open]);
 
   /**
@@ -324,7 +329,7 @@ export function PlazaProvider({ children }: { children: ReactNode }) {
       }
       keepPlaza(roomId, { token: entered.token, ...(invite && { invite }) }, false);
       const opened = await open(roomId, entered.token);
-      if (!opened.ok) return settle(roomId, new RoomRequestError(opened.offline ? 0 : 404, opened.message));
+      if (!opened.ok) return settle(roomId, new RoomRequestError(opened.offline ? 0 : opened.closed ? 410 : 404, opened.message));
       return roomId;
     } catch (failure) {
       // A two-seat room: shown the old way, its lobby, where sitting down is the visitor's choice.
@@ -338,9 +343,9 @@ export function PlazaProvider({ children }: { children: ReactNode }) {
   }), [make, open, resume, serial, settle]);
 
   const go = useCallback(async (roomId: string) => {
-    await enter(roomId);
-    // Let in: its table. Refused: its page says why (and offers the way back).
-    router.push(plazaHref(roomId));
+    const entered = await enter(roomId);
+    // A closed current room can admit us to its successor, whose id differs from the link.
+    router.push(plazaHref(entered ?? roomId));
   }, [enter, router]);
 
   const create = useCallback((visibility: RoomVisibility) => serial(async () => {
@@ -388,7 +393,7 @@ export function PlazaProvider({ children }: { children: ReactNode }) {
         const entered = await enterPlaza(old.id, guestName(), { invite });
         keepPlaza(old.id, { token: entered.token, ...(invite && { invite }) }, false);
         const opened = await open(old.id, entered.token);
-        if (!opened.ok) throw new RoomRequestError(opened.offline ? 0 : 404, opened.message);
+        if (!opened.ok) throw new RoomRequestError(opened.offline ? 0 : opened.closed ? 410 : 404, opened.message);
       } catch (failure) {
         if (failure instanceof RoomRequestError && failure.status === 0) {
           settle(old.id, failure);
