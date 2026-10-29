@@ -94,6 +94,8 @@
 .deckZone:disabled { opacity: 1; }
 .deckZone:not(:disabled):hover { filter: brightness(1.04); }
 .zoneLabel { position: absolute; top: 10%; left: 15%; writing-mode: vertical-rl; font: 1.5cqw 'BoardHandwriting', 'Yu Kyokasho', 'Hiragino Mincho ProN', serif; letter-spacing: .04em; height: 88%; line-height: 1.1; }
+/* 縦書きも「幼女／デッキ」のように言葉の区切りで列を分ける。 */
+.zoneLabel > span { display: block; white-space: nowrap; }
 .stack { position: absolute; right: 12%; top: 18%; width: 45%; aspect-ratio: 533 / 800; }
 .stackCard { position: absolute; inset: 0; background: #633c38 url('/images/back-card.webp') center / 100% 100%; border: 1px solid #e4d3bd; border-bottom-color: #94816e; border-radius: 2px; box-shadow: 0 1px 1px #47363280; }
 .cardTarget { position: absolute; inset: -5%; background: #a28bef; border: .48cqw solid #9861e9; }

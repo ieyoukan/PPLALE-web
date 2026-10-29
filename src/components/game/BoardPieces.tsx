@@ -14,7 +14,8 @@ export function DeckStack({ side, kind, ids, thresholds = [], enabled, drawing =
   side: Side; kind: ZoneKind; ids: string[]; thresholds?: number[];
   enabled: boolean; drawing?: boolean; thresholdDraw?: boolean; onClick: () => void; onInspect?: () => void;
 }) {
-  const label = { yojo: '幼女デッキ', sweet: 'お菓子デッキ', nap: 'お昼寝場所', exile: '除外カード' }[kind];
+  const labelWords = { yojo: ['幼女', 'デッキ'], sweet: ['お菓子', 'デッキ'], nap: ['お昼寝', '場所'], exile: ['除外', 'ゾーン'] }[kind];
+  const label = labelWords.join('');
   const helpId = `threshold-draw-${side}`;
   return <><button type="button" data-deck={`${side}-${kind}`} data-threshold-draw={thresholdDraw || undefined} data-label={{ yojo: '幼女', sweet: 'お菓子', nap: 'お昼寝', exile: '除外' }[kind]} className={`${styles.deckZone} ${drawing ? styles.drawReady : ''} ${thresholdDraw ? cue.required : ''}`}
     onClick={onClick} disabled={!enabled} aria-label={`${side === 0 ? 'あなた' : '相手'}の${label} ${ids.length}枚`} aria-describedby={thresholdDraw ? helpId : undefined}>
@@ -22,7 +23,7 @@ export function DeckStack({ side, kind, ids, thresholds = [], enabled, drawing =
       <span className={cue.label} id={helpId}>お菓子を1枚引く</span>
       <svg viewBox="0 0 160 90" aria-hidden="true"><path d="M8 29H85V8L151 45 85 82V61H8Z" /></svg>
     </span>}
-    <span className={styles.zoneLabel}>{label}</span>
+    <span className={styles.zoneLabel}>{labelWords.map(word => <span key={word}>{word}</span>)}</span>
     <span className={styles.stack} data-stack>
       <span className={styles.cardTarget} />
       {ids.map((uid, index) => <span className={styles.stackCard} key={uid}
