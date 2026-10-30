@@ -9,6 +9,9 @@
 .table :focus-visible, .sheet :focus-visible { outline: 3px solid var(--brand-vanilla); outline-offset: 3px; }
 /* Room geometry may extend beyond its grid cell; controls stay above the floor. */
 .top, .people, .side { position: relative; z-index: 1; }
+.roomGuide { position: absolute; right: 2cqw; bottom: 16px; width: clamp(138px, 18cqw, 250px); height: min(32cqh, 360px); z-index: 1; opacity: 1; transition: opacity .2s ease; }
+.table[data-playing] > .roomGuide, .table[data-camera-ready='false'] > .roomGuide { opacity: 0; }
+@media (prefers-reduced-motion: reduce) { .roomGuide { transition: none; } }
 
 /* Lobby controls keep their grid space while the persistent room camera moves to the board. */
 .table[data-playing] > :is(.top, .people, .side, .requests, .toast, .sheetBackdrop),

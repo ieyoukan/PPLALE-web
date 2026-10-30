@@ -8,6 +8,7 @@ import { useMyProfile } from '../social/useMyProfile';
 import { usePlaza } from '../plaza/PlazaProvider';
 import { useLaunchpad } from './LaunchpadContext';
 import styles from './LaunchpadStatus.module.css';
+import { GameGuide } from '../guide/GameGuide';
 
 /** Stays above every tab of the compact pad, including profiles. */
 export function LaunchpadStatus() {
@@ -23,6 +24,7 @@ export function LaunchpadStatus() {
       <PlayerIdentity name={name} card={card} />
     </button>
     <LaunchpadClock />
+    <GameGuide className={styles.guide} />
   </div>;
 }
 

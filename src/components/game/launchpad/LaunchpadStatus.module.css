@@ -1,4 +1,5 @@
-.status { grid-area: status; display: grid; grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr); align-items: center; gap: 12px; min-width: 0; }
+.status { position: relative; grid-area: status; display: grid; grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr); align-items: center; gap: 12px; min-width: 0; }
+.guide { position: absolute; right: 0; bottom: 0; width: 76px; height: 76px; }
 .profile { display: block; width: 100%; min-width: 0; padding: 4px; border: 0; border-radius: var(--brand-control-radius); background: transparent; color: var(--brand-cocoa-deep); }
 .profile:hover { background: var(--brand-blush); }
 .clock { color: var(--brand-cocoa-deep); font-size: 25px; font-weight: 700; font-variant-numeric: tabular-nums; line-height: 1; }

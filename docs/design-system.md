@@ -110,6 +110,7 @@
 | 対戦の丸い主要操作 | `shared/ui/ornament/RoundActionButton.tsx`。円形のカード装飾枠・静止した硬い光沢を共用し、色は `tone`、大きさは呼び出し元で指定する |
 | ランチパッドのキャラクター付き入口 | `game/launchpad/CharacterDestination.tsx`。幅・高さ・ホバーを共通化。入口の順序・画像・操作は `LaunchpadHome.tsx` の `destinations` にまとめる |
 | ルームの立体空間 | `game/plaza/RoomScene.tsx`・`RoomScene.module.css`。盤面・机・床を同じ遠近法と高さで描き、`useRoomCamera.ts` で対戦と待機を往復する。対戦の描画先は `board/BoardSurfaceMount.ts`、席と操作UIは正立した別レイヤーに置く |
+| ルーム・メニューの案内役 | `game/guide/GameGuide.tsx`。提供された5人から起動時に1人を選び、ルームの机の右手前と小型ランチパッドの時計の右で共用する。全身・縦横比・透明部分を保つ。操作を受け取らず、対戦・カメラ移動中はルーム側を隠す。拡大メニューには置かず、セリフは表示しない |
 | ルームのサムネイル | `game/plaza/RoomThumbnailImage.tsx`。URLのルール変換は `src/lib/game/roomThumbnail.ts`、描画とOGPは `src/lib/ogRoomImage.tsx` |
 | ルーム退出の影響表示 | `game/plaza/RoomDepartureNotice.tsx`。対戦中の敗北・オーナー不在・残る入室者の表示を、ホーム移動の確認とルーム作成で共用する |
 | プレイヤーの丸いアイコン | `shared/player/Avatar.tsx`。ルームの席・在室者・対戦中の名前で共用する。カードそのものの表示には使わない |
