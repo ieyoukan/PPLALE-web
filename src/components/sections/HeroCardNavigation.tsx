@@ -1,6 +1,3 @@
-'use client';
-
-import { useEffect, useRef, useState } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
 import { homeTitleFont } from './homeFont';
@@ -13,28 +10,11 @@ const cardButtons = [
   { title: 'デッキをつくる', lines: ['デッキを', 'つくる'], href: '/build', img: '/images/back-card.webp' },
 ];
 
-/** 画面外で配り終わらないよう、最初に見えたときに一度だけ配る。 */
+/** 山札とカードは同じCSSの時間軸で動かす。 */
 export function HeroCardNavigation() {
-  const navigation = useRef<HTMLElement>(null);
-  const [waiting, setWaiting] = useState(false);
-  useEffect(() => {
-    const element = navigation.current!;
-    const bounds = element.getBoundingClientRect();
-    const visibleHeight = Math.max(0, Math.min(bounds.bottom, innerHeight) - Math.max(bounds.top, 0));
-    if (visibleHeight >= bounds.height * .15) return;
-    setWaiting(true);
-    const observer = new IntersectionObserver(entries => {
-      if (entries.some(entry => entry.isIntersecting && entry.intersectionRatio >= .15)) {
-        setWaiting(false);
-        observer.disconnect();
-      }
-    }, { threshold: .15 });
-    observer.observe(element);
-    return () => observer.disconnect();
-  }, []);
   return (
     <nav
-      ref={navigation} aria-label="メニュー" data-hero-navigation data-deal-state={waiting ? 'waiting' : 'playing'}
+      aria-label="メニュー" data-hero-navigation
       className={styles.navigation}
     >
       <span className={styles.pile} aria-hidden="true" data-hero-deck>

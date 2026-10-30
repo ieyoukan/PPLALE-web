@@ -1,52 +1,46 @@
-.hero { position: relative; background: var(--brand-blush); color: var(--brand-cocoa-deep); }
-/* 写真は全幅。横長画面でも顔が収まる高さを確保し、カードは写真の外へ置く。 */
+.hero { position: relative; overflow: clip; background: var(--brand-blush); color: var(--brand-cocoa-deep); }
+/* 写真は全幅。横長画面でも顔が収まる高さを確保し、カードは画像の手前に重ねる。 */
 .visual { position: relative; width: 100%; height: clamp(46vw, 72svh, calc(100vw * 2457 / 3000)); overflow: hidden; }
 .illustration { object-fit: cover; object-position: center; }
 /* ロゴの大きさは承認済みの高さ基準を保ち、背景だけを横幅いっぱいに広げる。 */
 .logo { position: absolute; z-index: 1; top: 2.5%; left: 2.5%; width: min(30%, calc((100svh - 136px) * 3000 / 2457 * .3)); margin: 0; }
 .logo img { display: block; width: 100%; height: auto; }
-.content { position: relative; isolation: isolate; overflow: clip; display: flex; justify-content: center; padding: 28px 16px 52px; }
+.content { position: absolute; z-index: 2; bottom: clamp(18px, 5svh, 48px); inset-inline: 16px; display: flex; justify-content: center; }
 .navigation { --card-gap: 10px; position: relative; display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: var(--card-gap); width: 100%; max-width: 640px; }
-/* 3枚とも中央の山札を始点にし、左・中央・右へ順番に配る。 */
-.card { position: relative; min-width: 0; z-index: 2; animation: heroDeal .72s cubic-bezier(.2, .7, .25, 1) var(--deal-delay) both; }
-.card[data-hero-card='0'] { --deal-x: calc(100% + var(--card-gap)); --deal-angle: -7deg; --deal-delay: .24s; --hover-turn: -2deg; --hover-y: -10deg; z-index: 4; }
-.card[data-hero-card='1'] { --deal-x: 0px; --deal-angle: 5deg; --deal-delay: .44s; --hover-turn: 0deg; --hover-y: -6deg; z-index: 3; }
-.card[data-hero-card='2'] { --deal-x: calc(-100% - var(--card-gap)); --deal-angle: 9deg; --deal-delay: .64s; --hover-turn: 2deg; --hover-y: 10deg; }
-.card:hover, .card:has(:focus-visible) { z-index: 6; }
-.card:has(:focus-visible) { animation: none; }
-.navigation[data-deal-state='waiting'] .card { animation: none; opacity: 0; pointer-events: none; transform: translate(var(--deal-x), 32px) rotate(var(--deal-angle)); }
-.navigation[data-deal-state='waiting'] .card:has(:focus-visible) { opacity: 1; pointer-events: auto; transform: none; }
-.navigation[data-deal-state='waiting'] .pile { animation: none; }
-.cardLink { overflow: hidden; background: var(--brand-cocoa-deep); transform-origin: center bottom; transition: transform .2s ease; }
-.cardLink::after { content: ''; position: absolute; z-index: 11; inset: -30% -60%; pointer-events: none; background: linear-gradient(110deg, transparent 42%, rgb(255 255 255 / 20%) 50%, transparent 58%); opacity: 0; transform: translateX(-70%); }
-.pile { position: absolute; z-index: 0; top: 32px; left: 50%; width: calc((100% - 2 * var(--card-gap)) / 3); aspect-ratio: 220 / 320; transform: translateX(-50%); pointer-events: none; animation: clearPile .24s 1.3s both; }
+/* 右端で止まった山札から、左・中央・右へ直線で配る。 */
+.card { position: relative; min-width: 0; z-index: 2; visibility: hidden; pointer-events: none; transform: translate(var(--deal-x), 24px); animation: heroDeal .5s cubic-bezier(.2, .7, .25, 1) var(--deal-delay) forwards; }
+.card[data-hero-card='0'] { --deal-x: calc(200% + 2 * var(--card-gap)); --deal-delay: .65s; }
+.card[data-hero-card='1'] { --deal-x: calc(100% + var(--card-gap)); --deal-delay: .85s; }
+.card[data-hero-card='2'] { --deal-x: 0px; --deal-delay: 1.05s; }
+.card:has(:focus-visible) { animation: none; visibility: visible; pointer-events: auto; transform: none; }
+.cardLink { overflow: hidden; background: var(--brand-cocoa-deep); transition: filter .15s ease; }
+.cardLink:hover { filter: brightness(.94); }
+.cardLink:active { filter: brightness(.88); }
+.pile { position: absolute; z-index: 3; top: 24px; right: 0; width: calc((100% - 2 * var(--card-gap)) / 3); aspect-ratio: 220 / 320; pointer-events: none; animation: movePile 2.2s both; }
 .pile > i, .pileTop { position: absolute; inset: 0; border-radius: 12px; background: var(--brand-cocoa-deep); }
 .pile > i { border: 1px solid var(--brand-pink-edge); }
-.pile > i:nth-child(1) { transform: translate(5px, 6px) rotate(2deg); }
-.pile > i:nth-child(2) { transform: translate(3px, 4px) rotate(1deg); }
+.pile > i:nth-child(1) { transform: translate(5px, 6px); }
+.pile > i:nth-child(2) { transform: translate(3px, 4px); }
 .pile > i:nth-child(3) { transform: translate(1px, 2px); }
 .pileTop { overflow: hidden; }
 .pileTop img { object-fit: cover; }
 @keyframes heroDeal {
-  from { opacity: 0; pointer-events: none; transform: translate(var(--deal-x), 32px) rotate(var(--deal-angle)); }
-  12% { opacity: 1; pointer-events: auto; }
-  to { opacity: 1; pointer-events: auto; transform: none; }
+  from { visibility: visible; pointer-events: auto; transform: translate(var(--deal-x), 24px); }
+  to { visibility: visible; pointer-events: auto; transform: none; }
 }
-@keyframes clearPile { to { opacity: 0; visibility: hidden; } }
+/* 画面外から入り、配り終わるまで止まり、フェードせず右へ去る。 */
+@keyframes movePile {
+  0% { transform: translateX(100vw); animation-timing-function: ease-out; }
+  25%, 75% { transform: none; animation-timing-function: ease-in; }
+  100% { transform: translateX(100vw); }
+}
 @media (min-width: 768px) { .navigation { --card-gap: 24px; } }
-@media (hover: hover) and (pointer: fine) {
-  .card:hover .cardLink, .cardLink:focus-visible { transform: perspective(800px) rotateX(5deg) rotateY(var(--hover-y)) rotateZ(var(--hover-turn)); }
-  .card:hover .cardLink::after, .cardLink:focus-visible::after { opacity: 1; transform: translateX(70%); transition: transform .5s ease, opacity .12s ease; }
-}
 @media (max-width: 600px) {
   .visual { height: auto; aspect-ratio: 3000 / 2457; }
   .logo { width: 34%; }
 }
 @media (prefers-reduced-motion: reduce) {
-  .card { animation: none; }
-  .navigation[data-deal-state='waiting'] .card { opacity: 1; pointer-events: auto; transform: none; }
+  .card { animation: none; visibility: visible; pointer-events: auto; transform: none; }
   .pile { display: none; }
   .cardLink { transition: none; }
-  .card:hover .cardLink, .cardLink:focus-visible { transform: none; }
-  .cardLink::after { display: none; }
 }

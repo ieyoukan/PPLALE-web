@@ -5,8 +5,7 @@ test.use({ reducedMotion: 'no-preference' });
 async function finishDeal(hero) {
   const menu = hero.getByRole('navigation', { name: 'メニュー', exact: true });
   await menu.scrollIntoViewIfNeeded();
-  await expect(menu).toHaveAttribute('data-deal-state', 'playing');
-  await hero.locator('[data-hero-card]').evaluateAll(async elements => {
+  await hero.locator('[data-hero-card], [data-hero-deck]').evaluateAll(async elements => {
     await Promise.all(elements.flatMap(element => element.getAnimations().map(animation => animation.finished)));
   });
   return menu;
@@ -37,13 +36,14 @@ for (const viewport of [
     expect(mark.x).toBeGreaterThanOrEqual(art.x);
     expect(mark.x).toBeLessThan(art.x + art.width * .1);
     expect(mark.y).toBeLessThan(art.y + art.height * .1);
-    expect((await menu.boundingBox()).y).toBeGreaterThanOrEqual(art.y + art.height);
+    expect((await menu.boundingBox()).y).toBeLessThan(art.y + art.height);
     await expect(menu.getByRole('link')).toHaveCount(3);
     for (const [name, href] of [['ぷぷりえーるとは', '/about/'], ['ゲームをプレイ', '/game/'], ['デッキをつくる', '/build/']]) {
       const entry = menu.getByRole('link', { name, exact: true });
       await expect(entry).toHaveAttribute('href', href);
       const card = await entry.boundingBox();
-      expect(card.y).toBeGreaterThanOrEqual(art.y + art.height);
+      expect(card.y).toBeGreaterThanOrEqual(art.y);
+      expect(card.y + card.height).toBeLessThanOrEqual(art.y + art.height);
       expect(Math.abs(card.width / card.height - 220 / 320)).toBeLessThan(.002);
       await expect(entry.locator('img')).toBeVisible();
       await expect(entry.locator('img')).toHaveCSS('object-fit', 'cover');
@@ -58,50 +58,45 @@ for (const viewport of [
   });
 }
 
-test('cards deal from one visible pile in sequence and tilt on hover without covering the photo', async ({ page }, info) => {
+test('deck enters from the right, stops to deal, then leaves without fading or tilting', async ({ page }, info) => {
   await page.setViewportSize({ width: 1280, height: 900 });
   await page.goto('/');
   await page.addStyleTag({ content: 'nextjs-portal { display:none; }' });
   const hero = page.getByRole('region', { name: 'ぷぷりえーるを遊ぶ', exact: true });
   const cards = hero.locator('[data-hero-card]');
-  await expect(cards).toHaveCount(3);
-  const timings = await cards.evaluateAll(elements => elements.map(element => {
-    const animation = element.getAnimations()[0];
-    animation.pause(); animation.currentTime = 0;
-    const timing = animation.effect.getTiming();
-    return { delay: timing.delay, duration: timing.duration };
-  }));
   const pile = hero.locator('[data-hero-deck]');
-  await pile.evaluate(element => { const animation = element.getAnimations()[0]; animation.pause(); animation.currentTime = 0; });
-  const center = element => element.evaluate(element => { const box = element.getBoundingClientRect(); return { x: box.x + box.width / 2, y: box.y + box.height / 2 }; });
+  const seek = async time => hero.locator('[data-hero-card], [data-hero-deck]').evaluateAll((elements, time) => {
+    elements.forEach(element => { const animation = element.getAnimations()[0]; animation.pause(); animation.currentTime = time; });
+  }, time);
+  const center = async element => element.evaluate(element => { const box = element.getBoundingClientRect(); return { x: box.x + box.width / 2, y: box.y + box.height / 2 }; });
+  await seek(0);
+  expect((await pile.boundingBox()).x).toBeGreaterThanOrEqual(1280);
+  await expect(pile).toHaveCSS('opacity', '1');
+  await seek(600);
   const origin = await center(pile);
-  for (const card of await cards.all()) {
-    const start = await center(card);
-    expect(Math.abs(start.x - origin.x)).toBeLessThan(2);
-    expect(Math.abs(start.y - origin.y)).toBeLessThan(2);
-  }
-  expect(timings[0].delay).toBeLessThan(timings[1].delay);
-  expect(timings[1].delay).toBeLessThan(timings[2].delay);
-  await hero.screenshot({ path: info.outputPath('deck-before-dealing.png') });
-  await cards.evaluateAll((elements, time) => elements.forEach(element => { element.getAnimations()[0].currentTime = time; }), timings[1].delay - 10);
+  expect(origin.x).toBeGreaterThan(640);
+  expect((await pile.boundingBox()).x + (await pile.boundingBox()).width).toBeLessThan(1280);
+  await hero.screenshot({ path: info.outputPath('deck-parked.png') });
+  await seek(850);
   expect((await center(cards.first())).x).toBeLessThan(origin.x - 5);
-  expect(Math.abs((await center(cards.last())).x - origin.x)).toBeLessThan(2);
-  await hero.screenshot({ path: info.outputPath('deck-first-card.png') });
-  await cards.evaluateAll(elements => elements.forEach(element => element.getAnimations()[0].finish()));
-  await pile.evaluate(element => element.getAnimations()[0].finish());
-  await expect(pile).toHaveCSS('opacity', '0');
+  expect(Math.abs((await center(pile)).x - origin.x)).toBeLessThan(1);
+  await expect(pile).toHaveCSS('opacity', '1');
+  await hero.screenshot({ path: info.outputPath('deck-dealing.png') });
+  await seek(1600);
+  for (const card of await cards.all()) {
+    await expect(card).toHaveCSS('visibility', 'visible');
+    await expect(card).toHaveCSS('opacity', '1');
+    expect(await card.evaluate(element => new DOMMatrix(getComputedStyle(element).transform).isIdentity)).toBe(true);
+  }
+  await seek(1900);
+  expect((await center(pile)).x).toBeGreaterThan(origin.x + 5);
+  await expect(pile).toHaveCSS('opacity', '1');
+  await seek(2200);
+  expect((await pile.boundingBox()).x).toBeGreaterThanOrEqual(1280);
   const link = cards.first().getByRole('link');
   await link.hover();
-  await link.evaluate(async element => { await Promise.all(element.getAnimations({ subtree: true }).map(animation => animation.finished)); });
-  expect(await link.evaluate(element => getComputedStyle(element).transform)).not.toBe('none');
-  const photo = await hero.locator('img').first().boundingBox();
-  expect((await link.boundingBox()).y).toBeGreaterThanOrEqual(photo.y + photo.height);
-  await hero.screenshot({ path: info.outputPath('card-hover.png') });
-  // 配られている途中のカードも、クリックで位置が飛ばずにリンクを開ける。
-  await cards.first().evaluate(element => {
-    const animation = element.getAnimations()[0], timing = animation.effect.getTiming();
-    animation.pause(); animation.currentTime = timing.delay + Number(timing.duration) / 2;
-  });
+  await expect(link).toHaveCSS('transform', 'none');
+  expect(await link.evaluate(element => getComputedStyle(element, '::after').content)).toBe('none');
   await link.click();
   await expect(page).toHaveURL(/\/about\/$/);
 });
