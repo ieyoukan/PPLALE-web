@@ -1,19 +1,31 @@
 import { applyCommand, buildPosition, decodePosition } from '@pplale/game-core';
 import type { Command, GameState } from '@pplale/game-core';
 import problems from '@/data/lethalPuzzles.json';
+import introductions from '@/data/introPuzzles.json';
 import { gameCatalog } from './catalog';
+import { parsePuzzleProgress, puzzleProgressSnapshot } from './puzzleProgress';
+export { markPuzzleCleared } from './puzzleProgress';
 
 export const puzzleFruits = [
+  { id: 'intro', label: '入門編' },
   { id: 'strawberry', label: 'イチゴ' },
   { id: 'grape', label: 'ぶどう' },
   { id: 'melon', label: 'メロン' },
 ] as const;
-export const puzzleDifficulties = ['初級', '中級', '上級'] as const;
+export const puzzleDifficulties = ['入門', '初級', '中級', '上級'] as const;
 
-export const lethalPuzzles = problems.map(problem => {
+interface PuzzleSource {
+  id: string;
+  code: string;
+  fruit: string;
+  difficulty: string;
+  lesson?: { title: string; paragraphs: string[] };
+}
+const sources: PuzzleSource[] = [...introductions, ...problems];
+export const lethalPuzzles = sources.map(problem => {
   const position = decodePosition(problem.code);
   if (!position?.title) throw new Error(`パズルの盤面が不正です: ${problem.id}`);
-  return { ...problem, title: position.title, position };
+  return { ...problem, title: position.title, position, lesson: problem.lesson ?? null };
 });
 export type LethalPuzzle = typeof lethalPuzzles[number];
 export type PuzzleStatus = 'playing' | 'cleared' | 'failed';
@@ -54,18 +66,7 @@ export function undoPuzzle(attempt: PuzzleAttempt): PuzzleAttempt {
   return previous ? { ...attempt, game: previous.game, commands: attempt.commands.slice(0, previous.length), history: attempt.history.slice(0, -1), error: '' } : attempt;
 }
 
-const CLEARED_KEY = 'pplale-lethal-cleared-v1';
 export function readClearedPuzzles(): string[] {
-  try {
-    const value: unknown = JSON.parse(localStorage.getItem(CLEARED_KEY) ?? '[]');
-    return Array.isArray(value) ? lethalPuzzles.filter(puzzle => value.includes(puzzle.id)).map(puzzle => puzzle.id) : [];
-  } catch { return []; }
-}
-
-/** Returns false if browser storage is unavailable; playing itself still works. */
-export function markPuzzleCleared(id: string): boolean {
-  try {
-    localStorage.setItem(CLEARED_KEY, JSON.stringify([...new Set([...readClearedPuzzles(), id])]));
-    return true;
-  } catch { return false; }
+  const cleared = parsePuzzleProgress(puzzleProgressSnapshot());
+  return lethalPuzzles.filter(puzzle => cleared.includes(puzzle.id)).map(puzzle => puzzle.id);
 }

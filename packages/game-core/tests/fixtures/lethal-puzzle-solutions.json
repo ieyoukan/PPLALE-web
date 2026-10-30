@@ -6,6 +6,134 @@
     3
   ],
   "puzzles": {
+    "intro-1": {
+      "codeHash": "2ce6c7e82b6f497fd8837e576b44ab1d7395599d97c6f819bfa8d05d78a82328",
+      "commands": [
+        {
+          "actor": 0,
+          "type": "play",
+          "uid": "c2"
+        },
+        {
+          "actor": 0,
+          "type": "attack",
+          "uid": "c2",
+          "target": "c8"
+        },
+        {
+          "actor": 0,
+          "type": "choose",
+          "option": "yojo"
+        },
+        {
+          "actor": 0,
+          "type": "attack",
+          "uid": "c3",
+          "target": "leader"
+        }
+      ]
+    },
+    "intro-2": {
+      "codeHash": "85dde5dd01c784759d84ca0381c3d6680726e2a4fbe4c4d3553099ad4c40302b",
+      "commands": [
+        {
+          "actor": 0,
+          "type": "play",
+          "uid": "c2"
+        },
+        {
+          "actor": 0,
+          "type": "attack",
+          "uid": "c2",
+          "target": "c7"
+        },
+        {
+          "actor": 0,
+          "type": "choose",
+          "option": "yojo"
+        },
+        {
+          "actor": 0,
+          "type": "play",
+          "uid": "c1"
+        },
+        {
+          "actor": 0,
+          "type": "attack",
+          "uid": "c1",
+          "target": "leader"
+        }
+      ]
+    },
+    "intro-3": {
+      "codeHash": "ac93670af3ffc786e2987d30e59e55aa5f31f6ecbc7c54a6145fba2dfee8cb3e",
+      "commands": [
+        {
+          "actor": 0,
+          "type": "play",
+          "uid": "c1"
+        },
+        {
+          "actor": 0,
+          "type": "choose",
+          "option": "c4"
+        },
+        {
+          "actor": 0,
+          "type": "skill",
+          "index": 0
+        },
+        {
+          "actor": 0,
+          "type": "choose",
+          "option": "c1"
+        },
+        {
+          "actor": 0,
+          "type": "attack",
+          "uid": "c1",
+          "target": "c5"
+        },
+        {
+          "actor": 0,
+          "type": "attack",
+          "uid": "c2",
+          "target": "leader"
+        }
+      ]
+    },
+    "intro-4": {
+      "codeHash": "c8efb061a208864f4187a4bdf6802e4fe3ce89ff0ff123d09733e0b1ff5af6ab",
+      "commands": [
+        {
+          "actor": 0,
+          "type": "attack",
+          "uid": "c2",
+          "target": "c5"
+        },
+        {
+          "actor": 0,
+          "type": "play",
+          "uid": "c1"
+        }
+      ]
+    },
+    "intro-5": {
+      "codeHash": "ab3ac4a299d273354d106791c605708c295362bf6277b17148b2ac6f984eb823",
+      "commands": [
+        {
+          "actor": 0,
+          "type": "play",
+          "uid": "c1"
+        },
+        {
+          "actor": 0,
+          "type": "attack",
+          "uid": "c1",
+          "target": "leader"
+        }
+      ]
+    },
     "melon-beginner-1": {
       "title": "メロン初級①",
       "codeHash": "4d537598d133be344d1e04ad4c0aa337680e9b58dab3b46d6cc3241a42737ecd",

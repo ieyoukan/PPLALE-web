@@ -10,10 +10,10 @@ const directory = await mkdtemp(join(tmpdir(), 'pplale-puzzles-'));
 after(() => rm(directory, { recursive: true, force: true }));
 const output = join(directory, 'puzzles.mjs');
 await build({
-  stdin: { contents: `export * from './src/lib/game/puzzles';`, resolveDir: process.cwd() },
+  stdin: { contents: `export * from './src/lib/game/puzzles'; export * from './src/lib/game/introCourse';`, resolveDir: process.cwd() },
   bundle: true, platform: 'node', format: 'esm', outfile: output, logLevel: 'silent',
 });
-const { lethalPuzzles, puzzleFruits, puzzleDifficulties, startPuzzle, playPuzzle, puzzleStatus, undoPuzzle, readClearedPuzzles, markPuzzleCleared } = await import(pathToFileURL(output).href);
+const { lethalPuzzles, puzzleFruits, puzzleDifficulties, startPuzzle, playPuzzle, puzzleStatus, undoPuzzle, readClearedPuzzles, markPuzzleCleared, introProgress } = await import(pathToFileURL(output).href);
 const problemById = id => {
   const puzzle = lethalPuzzles.find(problem => problem.id === id);
   assert.ok(puzzle, id);
@@ -38,12 +38,12 @@ function run(attempt, commands) {
   return attempt;
 }
 
-test('all 25 supplied boards load with their exact cards, slots and resources', () => {
-  assert.equal(lethalPuzzles.length, 25);
-  assert.equal(new Set(lethalPuzzles.map(puzzle => puzzle.id)).size, 25);
+test('all 30 supplied boards load with their exact cards, slots and resources', () => {
+  assert.equal(lethalPuzzles.length, 30);
+  assert.equal(new Set(lethalPuzzles.map(puzzle => puzzle.id)).size, 30);
   const counts = { strawberry: [3, 2, 1], grape: [1, 3, 2], melon: [2, 5, 6] };
-  for (const fruit of puzzleFruits) {
-    for (const [index, difficulty] of puzzleDifficulties.entries()) {
+  for (const fruit of puzzleFruits.filter(fruit => fruit.id !== 'intro')) {
+    for (const [index, difficulty] of puzzleDifficulties.filter(difficulty => difficulty !== '入門').entries()) {
       const group = lethalPuzzles.filter(puzzle => puzzle.fruit === fruit.id && puzzle.difficulty === difficulty);
       assert.deepEqual(group.map(puzzle => puzzle.title), Array.from({ length: counts[fruit.id][index] }, (_, number) => `${fruit.label}${difficulty}${String.fromCodePoint(0x2460 + number)}`));
     }
@@ -82,6 +82,22 @@ test('all 25 supplied boards load with their exact cards, slots and resources', 
   const defender = buffed.cards[buffed.players[1].field[0]];
   assert.equal(defender.attackBonus, 7);
   assert.equal(defender.hpBonus, 7);
+});
+
+test('introductory missions count only their own clears and resume at the first unfinished lesson', () => {
+  const ids = lethalPuzzles.filter(puzzle => puzzle.fruit === 'intro').map(puzzle => puzzle.id);
+  assert.deepEqual(ids, ['intro-1', 'intro-2', 'intro-3', 'intro-4', 'intro-5']);
+  for (const id of ids) assert.ok(problemById(id).lesson.paragraphs.length >= 2);
+  assert.equal(introProgress([]).next.id, 'intro-1');
+  const partial = introProgress(['intro-1', 'intro-1', 'intro-3', 'unknown', firstMelonPuzzle.id]);
+  assert.equal(partial.completed, 2);
+  assert.equal(partial.total, 5);
+  assert.equal(partial.done, false);
+  assert.equal(partial.next.id, 'intro-2');
+  const complete = introProgress(ids);
+  assert.equal(complete.completed, 5);
+  assert.equal(complete.done, true);
+  assert.equal(complete.next, undefined);
 });
 
 test('new advanced puzzles preserve revealed discounts, hiding and barriers', () => {

@@ -1,0 +1,76 @@
+[
+  {
+    "id": "intro-1",
+    "difficulty": "入門",
+    "fruit": "intro",
+    "code": "PPL1.eyJ2ZXJzaW9uIjoxLCJhY3RpdmUiOjAsImZpcnN0IjowLCJwbGF5ZXJzIjpbeyJwbGF5YWJsZSI6InBfMyIsInBvaW50cyI6MiwibWF4UG9pbnRzIjoxMiwidHVybnMiOjQsIm1heFBwIjo0LCJwcCI6NCwiZmllbGQiOltudWxsLG51bGwsbnVsbCx7ImlkIjoieV8xNCJ9XSwiaGFuZCI6WyJ5XzciLCJ5XzQiXSwibmFwIjpbXSwieW9qbyI6WyJ5XzE3Il0sInN3ZWV0IjpbInNfMTkiXSwic2tpbGxzIjpbMCwwLDAsMF19LHsicGxheWFibGUiOiJwXzAiLCJwb2ludHMiOjIsIm1heFBvaW50cyI6MTIsInR1cm5zIjozLCJtYXhQcCI6MywicHAiOjMsImZpZWxkIjpbbnVsbCxudWxsLHsiaWQiOiJ5XzAifSx7ImlkIjoieV84In1dLCJoYW5kIjpbInlfMjAiXSwibmFwIjpbXSwieW9qbyI6W10sInN3ZWV0IjpbXX1dLCJ0aXRsZSI6IuWFpemWgOKRoOWPrOWWmumFlOOBhCAvIOeqgeaSgyAvIOmYsuihmyJ9",
+    "lesson": {
+      "title": "召喚酔いと突撃と防衛",
+      "paragraphs": [
+        "幼女は場に出たターンには基本的に行動できません。次の自分のターンから行動できます（召喚酔い）。",
+        "ただし、突撃を持つ幼女は、場に出たターンから相手の幼女に攻撃できます。",
+        "ターン開始時に最初から場にいる幼女は召喚酔いが解けているため、相手のお菓子を食べたり、相手の幼女に攻撃したりできます。",
+        "相手の場に防衛を持つ幼女がいるときは、防衛を持つ幼女にしか攻撃できません。",
+        "相手の場に幼女がいても、防衛を持っていなければ、無視して相手のお菓子を食べに行けます。"
+      ]
+    }
+  },
+  {
+    "id": "intro-2",
+    "difficulty": "入門",
+    "fruit": "intro",
+    "code": "PPL1.eyJ2ZXJzaW9uIjoxLCJhY3RpdmUiOjAsImZpcnN0IjowLCJwbGF5ZXJzIjpbeyJwbGF5YWJsZSI6InBfMyIsInBvaW50cyI6MiwibWF4UG9pbnRzIjoxNSwidHVybnMiOjUsIm1heFBwIjo1LCJwcCI6NSwiZmllbGQiOltdLCJoYW5kIjpbInlfMTUiLCJ5XzQiXSwibmFwIjpbXSwieW9qbyI6WyJ5XzI2Il0sInN3ZWV0IjpbInNfMjQiXSwic2tpbGxzIjpbMCwwLDAsMF19LHsicGxheWFibGUiOiJwXzAiLCJwb2ludHMiOjIsIm1heFBvaW50cyI6MTIsInR1cm5zIjo0LCJtYXhQcCI6NSwicHAiOjUsImZpZWxkIjpbbnVsbCxudWxsLHsiaWQiOiJ5XzAifSx7ImlkIjoieV84In1dLCJoYW5kIjpbInlfMTMiXSwibmFwIjpbXSwieW9qbyI6W10sInN3ZWV0IjpbXX1dLCJ0aXRsZSI6IuWFpemWgOKRoeeqgeaSg-OBqOaXqemjn-OBhCJ9",
+    "lesson": {
+      "title": "突撃と早食い",
+      "paragraphs": [
+        "幼女は場に出たターンには基本的に行動できず、次の自分のターンから行動できます。",
+        "突撃または早食いを持つ幼女は、場に出たターンに行動できます。",
+        "突撃は、場に出たターンから相手の幼女に攻撃できます。",
+        "早食いは、場に出たターンから相手の幼女に攻撃することも、相手のお菓子を食べることもできます。防衛による攻撃先の制限は受けます。"
+      ]
+    }
+  },
+  {
+    "id": "intro-3",
+    "difficulty": "入門",
+    "fruit": "intro",
+    "code": "PPL1.eyJ2ZXJzaW9uIjoxLCJhY3RpdmUiOjAsImZpcnN0IjowLCJwbGF5ZXJzIjpbeyJwbGF5YWJsZSI6InBfNCIsInBvaW50cyI6MiwibWF4UG9pbnRzIjoxMiwidHVybnMiOjQsIm1heFBwIjo0LCJwcCI6NCwiZmllbGQiOltudWxsLG51bGwsbnVsbCx7ImlkIjoieV8xNCJ9XSwiaGFuZCI6WyJ5XzkiXSwibmFwIjpbXSwieW9qbyI6W10sInN3ZWV0IjpbXX0seyJwbGF5YWJsZSI6InBfMCIsInBvaW50cyI6MiwibWF4UG9pbnRzIjoxMiwidHVybnMiOjMsIm1heFBwIjozLCJwcCI6MywiZmllbGQiOltudWxsLG51bGwseyJpZCI6InlfMSJ9LHsiaWQiOiJ5XzgifV0sImhhbmQiOlsieV8yMCJdLCJuYXAiOltdLCJ5b2pvIjpbXSwic3dlZXQiOltdfV0sInRpdGxlIjoi5YWl6ZaA4pGi6Ziy6KGb44Go5oyR55m644CC44OX44Os44Kk44Ki44OW44Or44K544Kt44Or44Gn56qB5pKD44KS5LuY5LiO44GX44KI44GG44CCIn0",
+    "lesson": {
+      "title": "防衛と挑発。共通スキルで突撃を付与しよう",
+      "paragraphs": [
+        "防衛を持つ幼女が相手の場にいるときは、防衛を持つ幼女にしか攻撃できません。",
+        "挑発は、対象を選択するカード効果・スキルの候補に相手の挑発持ちが含まれる場合、その幼女に対象を集中させます。通常の攻撃先を制限する能力ではありません。",
+        "プレイアブルキャラは共通スキルと固有スキルを持っています。共通スキルはすべてのキャラが持ち、固有スキルはキャラごとに異なります。",
+        "ここでは共通スキルでぷらむに突撃を付与してみましょう。"
+      ]
+    }
+  },
+  {
+    "id": "intro-4",
+    "difficulty": "入門",
+    "fruit": "intro",
+    "code": "PPL1.eyJ2ZXJzaW9uIjoxLCJhY3RpdmUiOjAsImZpcnN0IjowLCJwbGF5ZXJzIjpbeyJwbGF5YWJsZSI6InBfMCIsInBvaW50cyI6NSwibWF4UG9pbnRzIjoxMiwidHVybnMiOjgsIm1heFBwIjoxMCwicHAiOjEwLCJmaWVsZCI6W251bGwsbnVsbCxudWxsLHsiaWQiOiJ5XzAifV0sImhhbmQiOlsic18yMiJdLCJuYXAiOltdLCJ5b2pvIjpbXSwic3dlZXQiOltdLCJza2lsbHMiOlsyLDAsMF19LHsicGxheWFibGUiOiJwXzAiLCJwb2ludHMiOjcsIm1heFBvaW50cyI6MTIsInR1cm5zIjo3LCJtYXhQcCI6OSwicHAiOjksImZpZWxkIjpbbnVsbCxudWxsLG51bGwseyJpZCI6InlfMSJ9XSwiaGFuZCI6WyJ5XzI1IiwieV8yNSJdLCJuYXAiOltdLCJ5b2pvIjpbXSwic3dlZXQiOltdfV0sInRpdGxlIjoi5YWl6ZaA4pGj77ya44CM44GK6I-T5a2Q44Od44Kk44Oz44OI44KS5aWq44GG44CN44Go5oyR55m644Gu56ysMuOBruWKueaenCJ9",
+    "lesson": {
+      "title": "お菓子ポイントを奪うと挑発の第2の効果",
+      "paragraphs": [
+        "相手のお菓子ポイントを奪う効果は非常に強力です。",
+        "ぜいたくプリンアラモードは、相手のお菓子ポイントを7奪う効果を持ちます。相手のお菓子ポイントが7減り、自分のお菓子ポイントが7回復します（最大値まで）。",
+        "ただし、相手の場に挑発を持つ幼女がいると、お菓子ポイントを奪う効果は無効になります。",
+        "相手の挑発を持つ幼女に対処してから、ぜいたくプリンアラモードを使ってみましょう。"
+      ]
+    }
+  },
+  {
+    "id": "intro-5",
+    "difficulty": "入門",
+    "fruit": "intro",
+    "code": "PPL1.eyJ2ZXJzaW9uIjoxLCJhY3RpdmUiOjAsImZpcnN0IjowLCJwbGF5ZXJzIjpbeyJwbGF5YWJsZSI6InBfNCIsInBvaW50cyI6NCwibWF4UG9pbnRzIjoxMiwidHVybnMiOjUsIm1heFBwIjo1LCJwcCI6NSwiZmllbGQiOltdLCJoYW5kIjpbInlfMjUiXSwibmFwIjpbXSwieW9qbyI6W10sInN3ZWV0IjpbXX0seyJwbGF5YWJsZSI6InBfMCIsInBvaW50cyI6MywibWF4UG9pbnRzIjoxMiwidHVybnMiOjQsIm1heFBwIjo1LCJwcCI6NSwiZmllbGQiOltudWxsLG51bGwsbnVsbCx7ImlkIjoieV8yMyJ9XSwiaGFuZCI6WyJ5XzE1IiwieV8xNSJdLCJuYXAiOltdLCJ5b2pvIjpbXSwic3dlZXQiOltdLCJza2lsbHMiOlsyLDAsMV19XSwidGl0bGUiOiLlhaXploDikaTvvJrosqvpgJrjgafnm7jmiYvjga7pmLLooZvjgpLnhKHoppbjgZfjgojjgYYifQ",
+    "lesson": {
+      "title": "貫通で相手の防衛を無視しよう",
+      "paragraphs": [
+        "貫通を持つ幼女は、相手の防衛を無視して、相手のお菓子や防衛を持たない幼女を攻撃できます。",
+        "貫通だけでは召喚酔いは解けません。場に出たターンに行動するには、突撃や早食いが別に必要です。"
+      ]
+    }
+  }
+]

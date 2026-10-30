@@ -10,6 +10,7 @@ import { OrnateFrame } from '@/components/shared/ui/ornament/OrnateFrame';
 import { GameIcon } from '@/components/shared/ui/GameIcon';
 import { sectionInfo } from './places';
 import { visibilityInfo } from '@/components/game/plaza/visibility';
+import { MISSIONS_PATH } from '@/lib/game/introCourse';
 import styles from './LaunchpadHome.module.css';
 
 /** One ordered list owns each destination's behavior and illustration. */
@@ -38,6 +39,7 @@ export function LaunchpadHome({ onHome, onShare }: { onHome: () => void; onShare
     </div>
     <footer className={styles.foot}>
       <nav className={styles.moreLinks} aria-label="その他の画面">
+        <Link href={MISSIONS_PATH} prefetch={false}><GameIcon name="beginner" /><span>初心者ミッション</span></Link>
         <Link href="/" prefetch={false}><GameIcon name="exit" /><span>サイトへ</span></Link>
       </nav>
     </footer>

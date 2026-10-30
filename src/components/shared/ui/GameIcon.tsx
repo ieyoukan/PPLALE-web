@@ -1,5 +1,6 @@
 // ゲームと共通UIで使うSVGアイコンの定義。
 const paths = {
+  beginner: 'M12 7 4 3v12a3 3 0 0 0 1.5 2.6L12 21l6.5-3.4A3 3 0 0 0 20 15V3l-8 4v14',
   sticker: 'M14 21H6a3 3 0 0 1-3-3V6a3 3 0 0 1 3-3h12a3 3 0 0 1 3 3v8l-7 7ZM14 21v-5a2 2 0 0 1 2-2h5M9 6.5l.8 2.7 2.7.8-2.7.8-.8 2.7-.8-2.7-2.7-.8 2.7-.8Z',
   chat: 'M5 4h14a2 2 0 0 1 2 2v10a2 2 0 0 1-2 2h-9l-6 3v-3H5a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2zM7 9h10M7 13h6',
   play: 'M8 5.5v13l10-6.5z',
@@ -49,7 +50,10 @@ const paths = {
 export type GameIconName = keyof typeof paths;
 
 export function GameIcon({ name, className }: { name: GameIconName; className?: string }) {
-  return <svg className={className} viewBox="0 0 24 24" width="1em" height="1em" fill="none" stroke="currentColor" strokeWidth={name === 'more' ? 3.5 : name === 'grid' ? 1.8 : 2.1} strokeLinecap="round" strokeLinejoin="round" aria-hidden="true" focusable="false"><path d={paths[name]} /></svg>;
+  return <svg className={className} viewBox="0 0 24 24" width="1em" height="1em" fill="none" stroke="currentColor" strokeWidth={name === 'more' ? 3.5 : name === 'grid' ? 1.8 : 2.1} strokeLinecap="round" strokeLinejoin="round" aria-hidden="true" focusable="false">
+    {name === 'beginner' && <><path d="M12 7 4 3v12a3 3 0 0 0 1.5 2.6L12 21Z" fill="var(--brand-vanilla)" stroke="none" /><path d="m12 7 8-4v12a3 3 0 0 1-1.5 2.6L12 21Z" fill="var(--brand-sage)" stroke="none" /></>}
+    <path d={paths[name]} />
+  </svg>;
 }
 
 /** The Discord symbol (the brand's own artwork), tinted with the text colour. */

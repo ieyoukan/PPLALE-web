@@ -4,7 +4,7 @@ import type { GameIconName } from '@/components/shared/ui/GameIcon';
 
 /** The launchpad's own tabs, then the game's screens. */
 export type Section = 'home' | 'notifications' | 'instance' | 'volume' | 'settings'
-  | 'discover' | 'cpu' | 'history' | 'puzzles' | 'cards' | 'zukan' | 'editor' | 'social' | 'profile' | 'performance';
+  | 'discover' | 'cpu' | 'history' | 'puzzles' | 'missions' | 'cards' | 'zukan' | 'editor' | 'social' | 'profile' | 'performance';
 /** A section and its selected profile or puzzle fruit, without changing the room address. */
 export interface Place { section: Section; id?: string; fruit?: string }
 
@@ -18,6 +18,7 @@ export const sectionInfo: Record<Section, { label: string; icon: GameIconName }>
   cpu: { label: 'CPU対決', icon: 'cpu' },
   history: { label: '対戦履歴', icon: 'history' },
   puzzles: { label: 'リーサルパズル', icon: 'puzzle' },
+  missions: { label: '初心者ミッション', icon: 'beginner' },
   cards: { label: 'カード', icon: 'cards' },
   zukan: { label: 'カード図鑑', icon: 'cards' },
   editor: { label: '盤面エディタ', icon: 'pen' },
@@ -31,6 +32,7 @@ const paths: [string, Section][] = [
   [PUZZLES_PATH, 'puzzles'], [CARD_GALLERY_PATH, 'zukan'], [CARDS_PATH, 'cards'], [EDITOR_PATH, 'editor'],
   ['/game/social/', 'social'], ['/game/profile/', 'profile'], [NOTIFICATIONS_PATH, 'notifications'], [SETTINGS_PATH, 'settings'],
   ['/game/performance/', 'performance'],
+  ['/game/missions/', 'missions'],
 ];
 
 /** The section an address of the game opens, or null for a board, a room or anything else. */
@@ -51,4 +53,4 @@ export const samePlace = (a: Place, b: Place) => a.section === b.section && a.id
 export const padTabs: Section[] = ['home', 'notifications', 'instance', 'volume', 'settings'];
 export const screens: Section[] = ['discover', 'social', 'cards', 'puzzles', 'history', 'editor'];
 /** Screens opened from another keep their parent selected in the rail. */
-export const parentSection: Partial<Record<Section, Section>> = { zukan: 'cards', profile: 'social', performance: 'settings' };
+export const parentSection: Partial<Record<Section, Section>> = { missions: 'puzzles', zukan: 'cards', profile: 'social', performance: 'settings' };

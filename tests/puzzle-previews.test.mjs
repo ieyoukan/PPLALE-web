@@ -5,7 +5,7 @@ import { readFile } from 'node:fs/promises';
 import sharp from 'sharp';
 
 const root = new URL('../', import.meta.url);
-const problems = JSON.parse(await readFile(new URL('src/data/lethalPuzzles.json', root), 'utf8'));
+const problems = (await Promise.all(['introPuzzles', 'lethalPuzzles'].map(async name => JSON.parse(await readFile(new URL(`src/data/${name}.json`, root), 'utf8'))))).flat();
 const { puzzles } = JSON.parse(await readFile(new URL('src/data/lethalPuzzlePreviews.json', root), 'utf8'));
 const hash = value => createHash('sha256').update(value).digest('hex');
 

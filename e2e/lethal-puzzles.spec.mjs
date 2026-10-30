@@ -57,7 +57,7 @@ test('fruit selection survives reload and fits a phone screen', async ({ page })
   await page.setViewportSize({ width: 390, height: 844 });
   await page.goto('/game/puzzles/');
   await expect(page).toHaveURL(/\/game\/room\/\d{6}\//);
-  await expect(page.locator('[data-puzzle-preview]')).toHaveCount(6);
+  await expect(page.locator('[data-puzzle-preview]')).toHaveCount(5);
   const fruits = page.getByRole('navigation', { name: 'パズルのフルーツ' });
   await fruits.getByRole('link', { name: 'メロン', exact: true }).click();
   await expect(page.locator('[data-puzzle-preview]')).toHaveCount(13);
@@ -69,8 +69,8 @@ test('fruit selection survives reload and fits a phone screen', async ({ page })
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(true);
   await page.screenshot({ path: '/tmp/pplale-puzzle-list-mobile.png' });
   await page.goto('/game/puzzles/?fruit=unknown');
-  await expect(fruits.getByRole('link', { name: 'イチゴ', exact: true })).toHaveAttribute('aria-current', 'page');
-  await expect(page.locator('[data-puzzle-preview]')).toHaveCount(6);
+  await expect(fruits.getByRole('link', { name: '入門編', exact: true })).toHaveAttribute('aria-current', 'page');
+  await expect(page.locator('[data-puzzle-preview]')).toHaveCount(5);
 });
 
 test('failed turn can be undone or restarted on a small screen', async ({ page }) => {

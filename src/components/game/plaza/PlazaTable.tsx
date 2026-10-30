@@ -29,6 +29,7 @@ import { GameIcon } from '@/components/shared/ui/GameIcon';
 import { usePlaza } from './PlazaProvider';
 import { guestIcon, useProfiles } from '@/components/shared/player/useProfiles';
 import { visibilityInfo } from './visibility';
+import { BeginnerMissionLink } from '../missions/BeginnerMissionLink';
 import styles from './Plaza.module.css';
 
 const DECK_KEY = 'pplale-plaza-deck-v1';
@@ -114,6 +115,7 @@ export function PlazaTable({ view, onMenu, match }: { view: RoomView; onMenu: ()
         <span className={styles.count}><GameIcon name="people" />{room.members.length}</span>
       </OrnateFrame>
       <div className={styles.topActions}>
+        <BeginnerMissionLink />
         <button className={styles.inviteButton} onClick={() => setOpen('share')}><GameIcon name="letter" /><span data-ui-title>さそう</span></button>
         <button className={styles.round} onClick={onMenu} aria-label="メニュー"><GameIcon name="grid" /></button>
       </div>

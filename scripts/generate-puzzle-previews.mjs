@@ -10,9 +10,10 @@ import { chromium } from '@playwright/test';
 import sharp from 'sharp';
 
 const root = fileURLToPath(new URL('../', import.meta.url));
-const { values } = parseArgs({ options: { url: { type: 'string', default: 'http://localhost:3000' } } });
+const { values } = parseArgs({ options: { url: { type: 'string', default: 'http://localhost:3000' }, id: { type: 'string', multiple: true } } });
 const base = new URL(values.url);
-const problems = JSON.parse(await readFile(path.join(root, 'src/data/lethalPuzzles.json'), 'utf8'));
+const problems = (await Promise.all(['introPuzzles', 'lethalPuzzles'].map(async name => JSON.parse(await readFile(path.join(root, `src/data/${name}.json`), 'utf8'))))).flat();
+if (values.id?.some(id => !problems.some(problem => problem.id === id))) throw new Error('存在しない問題IDです');
 const manifestPath = path.join(root, 'src/data/lethalPuzzlePreviews.json');
 const previous = await readFile(manifestPath, 'utf8').then(JSON.parse).catch(() => ({ puzzles: {} }));
 const output = path.join(root, 'public/puzzle-previews');
@@ -25,11 +26,19 @@ try {
   const context = await browser.newContext({ viewport: { width: 1280, height: 720 }, deviceScaleFactor: 1, reducedMotion: 'reduce' });
   const page = await context.newPage();
   for (const problem of problems) {
+    // 指定した問題だけ撮り直す場合も、未変更の画像と問題順は保持する。
+    if (values.id?.length && !values.id.includes(problem.id)) {
+      const kept = previous.puzzles[problem.id];
+      if (!kept || kept.positionHash !== hash(problem.code)) throw new Error(`${problem.id}: 画像の再生成が必要です`);
+      puzzles[problem.id] = kept;
+      continue;
+    }
     const url = new URL('/game/puzzle/', base);
     url.searchParams.set('id', problem.id);
     await page.goto(url.href);
     const board = page.locator(`[data-puzzle="${problem.id}"][data-puzzle-revision="0"]`);
     await board.waitFor({ timeout: 60000 });
+    if (problem.lesson) await page.getByRole('button', { name: '挑戦する', exact: true }).click();
     await page.evaluate(async () => {
       await document.fonts.ready;
       await Promise.all(Array.from(document.images, image => image.decode()));

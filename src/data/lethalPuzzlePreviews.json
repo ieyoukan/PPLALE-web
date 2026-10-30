@@ -2,6 +2,41 @@
   "version": 1,
   "renderer": "BoardTable (/game/play)",
   "puzzles": {
+    "intro-1": {
+      "src": "/puzzle-previews/intro-1-4007828d01c59cdc.webp",
+      "width": 1280,
+      "height": 720,
+      "positionHash": "2ce6c7e82b6f497fd8837e576b44ab1d7395599d97c6f819bfa8d05d78a82328",
+      "imageHash": "4007828d01c59cdcd28023fe16e20503e8d4f1b3300fc3ab5c01717e3576e880"
+    },
+    "intro-2": {
+      "src": "/puzzle-previews/intro-2-0675a6e9380c3a0f.webp",
+      "width": 1280,
+      "height": 720,
+      "positionHash": "85dde5dd01c784759d84ca0381c3d6680726e2a4fbe4c4d3553099ad4c40302b",
+      "imageHash": "0675a6e9380c3a0f120c65d0e010764c5ba31ad824b1aae6dea666daca8953b8"
+    },
+    "intro-3": {
+      "src": "/puzzle-previews/intro-3-f06b042a4eee1f37.webp",
+      "width": 1280,
+      "height": 720,
+      "positionHash": "ac93670af3ffc786e2987d30e59e55aa5f31f6ecbc7c54a6145fba2dfee8cb3e",
+      "imageHash": "f06b042a4eee1f37681ec1258d52a03c962a165e0df30d1f8168efdb9bca570a"
+    },
+    "intro-4": {
+      "src": "/puzzle-previews/intro-4-cdd28f26920aeb41.webp",
+      "width": 1280,
+      "height": 720,
+      "positionHash": "c8efb061a208864f4187a4bdf6802e4fe3ce89ff0ff123d09733e0b1ff5af6ab",
+      "imageHash": "cdd28f26920aeb41d35c297bf5a8b14da68bb37c907976cc8dc917bf99ae4c18"
+    },
+    "intro-5": {
+      "src": "/puzzle-previews/intro-5-22577a7509994d1e.webp",
+      "width": 1280,
+      "height": 720,
+      "positionHash": "ab3ac4a299d273354d106791c605708c295362bf6277b17148b2ac6f984eb823",
+      "imageHash": "22577a7509994d1eea7fba451d95a63770a941cc06d7977b248b2d28f1be439f"
+    },
     "strawberry-beginner-1": {
       "src": "/puzzle-previews/strawberry-beginner-1-fcb4246a647f8562.webp",
       "width": 1280,

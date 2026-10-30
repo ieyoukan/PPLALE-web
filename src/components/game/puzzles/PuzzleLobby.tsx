@@ -4,7 +4,8 @@ import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
 import { useSearchParams } from 'next/navigation';
-import { lethalPuzzles, puzzleDifficulties, puzzleFruits, readClearedPuzzles } from '@/lib/game/puzzles';
+import { lethalPuzzles, puzzleDifficulties, puzzleFruits } from '@/lib/game/puzzles';
+import { usePuzzleProgress } from '@/lib/game/usePuzzleProgress';
 import { puzzleHref, puzzleListHref } from '@/lib/game/sessionStore';
 import { ScreenSubtitle } from '@/components/shared/ui/ScreenSubtitle';
 import { OrnateFrame } from '@/components/shared/ui/ornament/OrnateFrame';
@@ -16,7 +17,8 @@ import styles from './Puzzles.module.css';
 const FRUIT_KEY = 'pplale-puzzle-fruit-v1';
 
 export default function PuzzleLobby({ fruitId }: { fruitId?: string } = {}) {
-  const [cleared, setCleared] = useState<string[]>([]);
+  const progress = usePuzzleProgress();
+  const cleared = lethalPuzzles.filter(puzzle => progress.cleared.includes(puzzle.id)).map(puzzle => puzzle.id);
   const queryFruit = useSearchParams().get('fruit');
   const [savedFruit, setSavedFruit] = useState('');
   const requested = fruitId ?? queryFruit;
@@ -27,7 +29,6 @@ export default function PuzzleLobby({ fruitId }: { fruitId?: string } = {}) {
       else setSavedFruit(localStorage.getItem(FRUIT_KEY) ?? '');
     } catch { /* Selection still works for this visit without storage. */ }
   }, [requested, fruit.id]);
-  useEffect(() => { setCleared(readClearedPuzzles()); }, []);
   return <div className={styles.lobby}>
     <ScreenSubtitle>{PUZZLE_TAGLINE}</ScreenSubtitle>
     <div className={styles.intro}>
@@ -39,8 +40,8 @@ export default function PuzzleLobby({ fruitId }: { fruitId?: string } = {}) {
         <span aria-label={`${lethalPuzzles.length}問中${cleared.length}問クリア`}>{cleared.length} / {lethalPuzzles.length}</span>
       </div>
     </div>
-    {puzzleDifficulties.map(difficulty => <section key={difficulty}>
-      <h2 data-ui-title>{fruit.label} {difficulty}</h2>
+    {puzzleDifficulties.filter(difficulty => lethalPuzzles.some(puzzle => puzzle.fruit === fruit.id && puzzle.difficulty === difficulty)).map(difficulty => <section key={difficulty}>
+      <h2 data-ui-title>{fruit.id === 'intro' ? '入門編' : `${fruit.label} ${difficulty}`}</h2>
       <ul className={styles.grid}>{lethalPuzzles.filter(puzzle => puzzle.fruit === fruit.id && puzzle.difficulty === difficulty).map(puzzle => {
         const done = cleared.includes(puzzle.id);
         const preview = previews.puzzles[puzzle.id as keyof typeof previews.puzzles];

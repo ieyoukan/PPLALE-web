@@ -1,0 +1,28 @@
+.missions { display: grid; gap: 18px; color: var(--brand-cocoa-deep); }
+.hero { display: flex; align-items: center; gap: 20px; }
+.hero img { width: 108px; height: 108px; object-fit: contain; flex-shrink: 0; }
+.hero p { margin-top: 8px; line-height: 1.7; }
+.mission { --pad: 24px; display: grid; gap: 18px; }
+.mission header { display: flex; align-items: center; gap: 12px; }
+.mission header > svg { font-size: 36px; flex-shrink: 0; }
+.mission h3 { font-size: 24px; line-height: 1.5; }
+.mission header > b { margin-left: auto; white-space: nowrap; }
+.mission progress { appearance: none; width: 100%; height: 10px; border: 1px solid var(--brand-pink-edge); border-radius: 2px; background: var(--brand-blush); overflow: hidden; }
+.mission progress::-webkit-progress-bar { background: var(--brand-blush); }
+.mission progress::-webkit-progress-value { background: var(--brand-sage); }
+.mission progress::-moz-progress-bar { background: var(--brand-sage); }
+.lessons { display: grid; gap: 8px; list-style: none; margin: 0; padding: 0; }
+.lessons a { display: flex; align-items: center; gap: 14px; padding: 14px; border: 1px solid var(--brand-pink-edge); border-radius: var(--brand-control-radius); background: var(--brand-paper); color: inherit; text-decoration: none; }
+.lessons a > span:nth-child(2) { display: grid; gap: 4px; min-width: 0; }
+.lessons a > svg { margin-left: auto; flex-shrink: 0; font-size: 24px; }
+.lessons b { font-weight: 500; line-height: 1.6; overflow-wrap: anywhere; }
+.lessons small { color: var(--brand-cocoa-soft); }
+.step { display: grid; place-items: center; width: 36px; height: 36px; flex-shrink: 0; background: var(--brand-blush); border-radius: 50%; font-size: 20px; }
+.lessons [data-cleared] .step { background: var(--brand-sage); }
+.start { display: flex; align-items: center; justify-content: center; gap: 14px; padding: 14px; border: 1px solid var(--brand-pink-edge); border-radius: var(--brand-control-radius); background: var(--brand-vanilla); color: inherit; text-decoration: none; font-size: 21px; }
+.achieved { display: flex; align-items: center; justify-content: center; gap: 12px; padding: 14px; background: var(--brand-sage); border-radius: var(--brand-panel-radius); font-size: 21px; }
+.listLink { justify-self: center; color: inherit; text-underline-offset: 4px; }
+.saveNote { color: var(--brand-cocoa-soft); }
+.entry { display: grid; place-items: center; width: 54px; height: 54px; flex-shrink: 0; border: 1px solid var(--brand-pink-edge); border-radius: var(--brand-control-radius); background: var(--brand-paper); color: var(--brand-cocoa-deep); font-size: 32px; text-decoration: none; }
+.missions a:focus-visible, .entry:focus-visible { outline: 3px solid var(--brand-cocoa-deep); outline-offset: 3px; }
+@container stage (max-height: 500px) { .hero img { width: 80px; height: 80px; } .mission { --pad: 16px; } }

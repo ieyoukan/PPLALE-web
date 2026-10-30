@@ -15,6 +15,7 @@ import styles from './Launchpad.module.css';
 const GameLobby = dynamic(() => import('@/components/game/GameLobby'));
 const MatchHistory = dynamic(() => import('@/components/game/history/MatchHistory').then(module => module.MatchHistory));
 const PuzzleLobby = dynamic(() => import('@/components/game/puzzles/PuzzleLobby'));
+const BeginnerMissions = dynamic(() => import('@/components/game/missions/BeginnerMissions').then(module => module.BeginnerMissions));
 const CardsMenu = dynamic(() => import('@/components/game/home/CardsMenu').then(module => module.CardsMenu));
 const CardGallery = dynamic(() => import('@/components/game/home/CardGallery'));
 const RoomBrowser = dynamic(() => import('@/components/game/plaza/RoomBrowser').then(module => module.RoomBrowser));
@@ -36,6 +37,7 @@ export function LaunchpadScreens({ section, place, onPanel, onClose }: { section
     case 'cpu': return <GameLobby />;
     case 'history': return <MatchHistory />;
     case 'puzzles': return <PuzzleLobby fruitId={place.fruit} />;
+    case 'missions': return <BeginnerMissions />;
     case 'cards': return <CardsMenu />;
     case 'zukan': return <CardGallery />;
     case 'editor': return <EditorLobby />;

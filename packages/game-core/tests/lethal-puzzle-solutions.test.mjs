@@ -5,12 +5,12 @@ import { readFileSync } from 'node:fs';
 import { applyCommand, buildPosition, decodePosition } from '../dist/index.js';
 import { catalog } from './helpers.mjs';
 
-const puzzles = JSON.parse(readFileSync(new URL('../../../src/data/lethalPuzzles.json', import.meta.url), 'utf8'));
+const puzzles = ['introPuzzles', 'lethalPuzzles'].flatMap(name => JSON.parse(readFileSync(new URL(`../../../src/data/${name}.json`, import.meta.url), 'utf8')));
 const solutions = JSON.parse(readFileSync(new URL('./fixtures/lethal-puzzle-solutions.json', import.meta.url), 'utf8'));
 
 test('every recorded lethal puzzle solution still wins for the recorded seeds', () => {
-  // Keep answer coverage for the original seven while new author-supplied boards are added.
-  const original = puzzles.filter(puzzle => puzzle.fruit === 'melon' && puzzle.difficulty !== '上級');
+  // 入門5問と、以前から解答を記録しているメロンの7問を欠かさず検証する。
+  const original = puzzles.filter(puzzle => puzzle.fruit === 'intro' || (puzzle.fruit === 'melon' && puzzle.difficulty !== '上級'));
   for (const puzzle of original) assert.ok(solutions.puzzles[puzzle.id], puzzle.id);
   for (const [id, { codeHash, commands }] of Object.entries(solutions.puzzles)) {
     const puzzle = puzzles.find(puzzle => puzzle.id === id);
