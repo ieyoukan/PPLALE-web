@@ -30,7 +30,6 @@ import { usePlaza } from './PlazaProvider';
 import { guestIcon, useProfiles } from '@/components/shared/player/useProfiles';
 import { visibilityInfo } from './visibility';
 import { BeginnerMissionLink } from '../missions/BeginnerMissionLink';
-import { GameGuide } from '../guide/GameGuide';
 import styles from './Plaza.module.css';
 
 const DECK_KEY = 'pplale-plaza-deck-v1';
@@ -109,7 +108,6 @@ export function PlazaTable({ view, onMenu, match }: { view: RoomView; onMenu: ()
   };
 
   return <div ref={root} className={styles.table} data-room-view data-playing={playing || undefined} data-camera-ready={cameraReady}>
-    <GameGuide className={styles.roomGuide} />
     <header className={styles.top} inert={playing || !cameraReady}>
       <OrnateFrame as="button" size="sm" className={styles.roomPlate} onClick={onMenu} aria-label={`${room.name}（${info.label}）のメニュー`}>
         <span className={styles.roomBadge} data-visibility={room.visibility}><GameIcon name={info.icon} />{info.plus && <i>＋</i>}</span>

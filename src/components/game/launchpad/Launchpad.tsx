@@ -11,6 +11,7 @@ import { RulesSheet } from '../plaza/PlazaSheets';
 import { ShareSheet } from '../plaza/ShareSheet';
 import { HomeRoomSheet } from '../plaza/HomeRoomSheet';
 import { NewRoomSheet } from '../plaza/NewRoomSheet';
+import { GameGuide } from '../guide/GameGuide';
 import { useLaunchpad } from './LaunchpadContext';
 import { LaunchpadStatus } from './LaunchpadStatus';
 import { LaunchpadScreens } from './LaunchpadScreens';
@@ -72,6 +73,7 @@ export function Launchpad({ stack, choose }: { stack: Place[]; choose: (section:
         else if (!event.shiftKey && document.activeElement === last) { event.preventDefault(); first?.focus(); }
       }
     }}>
+      {!expanded && <GameGuide className={styles.dialogGuide} />}
       <OrnateFrame className={styles.pad} data-section={section}>
         {!expanded && <LaunchpadStatus />}{tabRail}{head}
         <div ref={panelRef} className={styles.tabPanel} role="tabpanel" id={`${tabId}-panel`} aria-label={title} tabIndex={0}>

@@ -24,6 +24,8 @@
 
 ## 背景
 
+トップページのヒーローは、ユーザー指定の4人のイラスト `orig_mousepad.png` を `public/images/home/hero-friends.webp` に変換して使う（長辺2400px・WebP品質94）。4人の顔を切らずに全体を表示し、原画左上の花柄の余白へ `public/pupu_game.webp` のロゴを重ねる。ゲームなどへの3つの入口は画像の下へ置き、顔にボタンを重ねない。配置は `sections/HeroSection.tsx`・`HeroSection.module.css` で共用する。
+
 ユーザー指定により、ロゴ配色に加えて黄色・オレンジの暖かい背景を採用する。紹介とカードピックアップは既存の `public/images/check-pattern.png` を使う100px周期のチェック柄、機能への入口は淡い黄色（`--brand-vanilla-wash`）とピーチのドットを使う。見出し・本文・ボタンの配色は共通パレットを維持する。
 
 ルーム空間はユーザー指定（2026-10-28）の星空 `public/images/game/room-stars.webp` を使う。元画像は `SKYBOX5.png` で、絵柄・縦横比を保ったWebP。従来の木目は背景全面ではなく机の天板・厚み・四本の脚に使い、半透明の灰色の床に置く。床は初版の縦横それぞれ10倍に広げ、縁が画面に入りにくくする。机の脚の高さはステージ座標で164px。盤面と天板の間は1pxにして接地させ、木目は固定シードで生成した `public/images/game/wood-grain.svg` を面の材質として使う。天板だけを合成レイヤーにキャッシュし、同じSVGをカメラ移動のたびに描き直す負荷を抑える。星空の青は原画の色として扱い、メニューの配色には広げない。床の色は `--brand-room-floor`・`--brand-room-floor-edge`、暗い余白は `--brand-room-night`。立体物の陰影は机と床の接地を表し、ボタンやパネルに影を追加しない。
@@ -110,7 +112,7 @@
 | 対戦の丸い主要操作 | `shared/ui/ornament/RoundActionButton.tsx`。円形のカード装飾枠・静止した硬い光沢を共用し、色は `tone`、大きさは呼び出し元で指定する |
 | ランチパッドのキャラクター付き入口 | `game/launchpad/CharacterDestination.tsx`。幅・高さ・ホバーを共通化。入口の順序・画像・操作は `LaunchpadHome.tsx` の `destinations` にまとめる |
 | ルームの立体空間 | `game/plaza/RoomScene.tsx`・`RoomScene.module.css`。盤面・机・床を同じ遠近法と高さで描き、`useRoomCamera.ts` で対戦と待機を往復する。対戦の描画先は `board/BoardSurfaceMount.ts`、席と操作UIは正立した別レイヤーに置く |
-| ルーム・メニューの案内役 | `game/guide/GameGuide.tsx`。提供された5人から起動時に1人を選び、ルームの机の右手前と小型ランチパッドの時計の右で共用する。全身・縦横比・透明部分を保つ。操作を受け取らず、対戦・カメラ移動中はルーム側を隠す。拡大メニューには置かず、セリフは表示しない |
+| メニューの案内役 | `game/guide/GameGuide.tsx`。提供された5人から起動時に1人を選び、小型ランチパッドの右から大きく現れる。画像の読み込み後に、枠の奥から右へ500msで出す。全身・縦横比・透明部分を保ち、操作を妨げない。メニュー本体は縦長で全タブ同じ大きさ。ルームと拡大メニューには置かず、セリフは表示しない。動きを減らす設定では静止表示する |
 | ルームのサムネイル | `game/plaza/RoomThumbnailImage.tsx`。URLのルール変換は `src/lib/game/roomThumbnail.ts`、描画とOGPは `src/lib/ogRoomImage.tsx` |
 | ルーム退出の影響表示 | `game/plaza/RoomDepartureNotice.tsx`。対戦中の敗北・オーナー不在・残る入室者の表示を、ホーム移動の確認とルーム作成で共用する |
 | プレイヤーの丸いアイコン | `shared/player/Avatar.tsx`。ルームの席・在室者・対戦中の名前で共用する。カードそのものの表示には使わない |

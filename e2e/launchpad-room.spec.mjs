@@ -93,6 +93,12 @@ for (const viewport of [{ width: 1280, height: 800 }, { width: 844, height: 390 
     await expect(identity).toContainText('あなた');
     await expect(clock).toHaveText(/^\d{2}:\d{2}$/);
     const status = pad.getByLabel('プレイヤーと時計');
+    const guide = pad.locator('[data-game-guide]');
+    await guide.locator('img').evaluate(image => image.decode());
+    const character = await guide.getAttribute('data-game-guide');
+    expect(character).toMatch(/^guide-(01|02|03|06|07)$/);
+    expect(await guide.evaluate(element => getComputedStyle(element).pointerEvents)).toBe('none');
+    await expect(page.locator('[data-room-view] [data-game-guide]')).toHaveCount(0);
     const top = await status.evaluate(el => el.offsetTop);
     const small = await bounds();
     expect(small.height).toBeGreaterThan(small.width);
@@ -103,8 +109,10 @@ for (const viewport of [{ width: 1280, height: 800 }, { width: 844, height: 390 
       expect(await bounds()).toEqual(small);
       await expect(identity).toBeInViewport(); await expect(clock).toBeInViewport();
       expect(await status.evaluate(el => el.offsetTop)).toBe(top);
+      await expect(guide).toHaveAttribute('data-game-guide', character);
     }
     await pad.getByRole('button', { name: 'ゲームメニューを拡大' }).click();
+    await expect(guide).toHaveCount(0);
     const large = await bounds();
     expect(large.width).toBeGreaterThan(small.width);
     for (const name of tabs.map(name => name === 'ランチパッドホーム' ? 'いまのぷぷりえーる' : name)) {
@@ -114,6 +122,7 @@ for (const viewport of [{ width: 1280, height: 800 }, { width: 844, height: 390 
     }
     await pad.getByRole('button', { name: 'ランチパッドに縮小' }).click();
     expect(await bounds()).toEqual(small);
+    await expect(guide).toHaveAttribute('data-game-guide', character);
     await expect(pad.getByRole('button', { name: '自分のプロフィール', exact: true })).toBeInViewport();
     await page.screenshot({ path: info.outputPath('launchpad-fixed-portrait.png') });
     await identity.click();
