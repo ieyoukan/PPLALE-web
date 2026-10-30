@@ -1,21 +1,10 @@
-.hero { background: var(--brand-blush); color: var(--brand-cocoa-deep); }
-/* 4人の顔を切らずに表示し、ロゴは原画の左上の余白に置く。 */
-.visual { position: relative; width: min(100%, calc((100svh - 136px) * 3000 / 2457)); min-width: min(100%, 320px); aspect-ratio: 3000 / 2457; margin-inline: auto; }
-.illustration { object-fit: contain; }
-.logo { position: absolute; top: 2.5%; left: 2.5%; width: 30%; margin: 0; }
+.hero { position: relative; min-height: 100svh; background: var(--brand-blush); color: var(--brand-cocoa-deep); }
+/* 画面の縦横比にかかわらず、背景画像で左右の端まで覆う。 */
+.visual { position: absolute; inset: 0; width: 100%; }
+.illustration { object-fit: cover; object-position: center; }
+/* ロゴの大きさは承認済みの高さ基準を保ち、背景だけを横幅いっぱいに広げる。 */
+.logo { position: absolute; z-index: 1; top: 2.5%; left: 2.5%; width: min(30%, calc((100svh - 136px) * 3000 / 2457 * .3)); margin: 0; }
 .logo img { display: block; width: 100%; height: auto; }
-.menu { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 16px; max-width: 780px; min-height: 136px; margin: auto; padding: 24px 20px; align-items: center; }
-.card { display: flex; align-items: center; justify-content: center; gap: 14px; min-width: 0; min-height: 88px; padding: 12px 18px; border: 1px solid var(--brand-control-edge); border-radius: var(--brand-control-radius); background: var(--brand-paper); color: var(--brand-cocoa-deep); text-decoration: none; font-size: 18px; line-height: 1.6; }
-.card[data-play] { background: var(--brand-vanilla); }
-.card > span { display: grid; text-align: center; }
-.cardArt { display: block; width: 34px; height: 51px; flex-shrink: 0; object-fit: contain; }
-.card:hover { background: var(--brand-cream); }
-.card[data-play]:hover { background: var(--brand-vanilla-wash); }
-.card:focus-visible { outline: 3px solid var(--brand-cocoa-deep); outline-offset: 4px; }
-@media (max-width: 600px) {
-  .visual { width: 100%; min-width: 0; }
-  .logo { width: 34%; }
-  .menu { gap: 8px; min-height: 104px; padding: 16px 12px; }
-  .card { min-height: 72px; padding: 8px 4px; font-size: clamp(12px, 3.2vw, 16px); }
-  .cardArt { display: none; }
-}
+.content { position: relative; z-index: 2; min-height: 100svh; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 80px 16px 48px; }
+.card { min-width: 0; position: relative; }
+@media (max-width: 600px) { .logo { width: 34%; } }

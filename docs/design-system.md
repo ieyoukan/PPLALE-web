@@ -24,7 +24,7 @@
 
 ## 背景
 
-トップページのヒーローは、ユーザー指定の4人のイラスト `orig_mousepad.png` を `public/images/home/hero-friends.webp` に変換して使う（長辺2400px・WebP品質94）。4人の顔を切らずに全体を表示し、原画左上の花柄の余白へ `public/pupu_game.webp` のロゴを重ねる。ゲームなどへの3つの入口は画像の下へ置き、顔にボタンを重ねない。配置は `sections/HeroSection.tsx`・`HeroSection.module.css` で共用する。
+トップページのヒーローは、ユーザー指定の4人のイラスト `orig_mousepad.png` を `public/images/home/hero-friends.webp` に変換して使う（長辺2400px・WebP品質94）。背景は `cover` で各解像度の画面横幅全体を覆い、余白を出さない。画面の縦横比による画像のトリミングは許容し、`public/pupu_game.webp` のロゴは左上の位置を保つ。ゲームなどへの3つの入口は、従来のカード裏面・縦長の比率・文字の重ね方・中央配置を維持する。配置は `sections/HeroSection.tsx`・`HeroSection.module.css` で共用する。
 
 ユーザー指定により、ロゴ配色に加えて黄色・オレンジの暖かい背景を採用する。紹介とカードピックアップは既存の `public/images/check-pattern.png` を使う100px周期のチェック柄、機能への入口は淡い黄色（`--brand-vanilla-wash`）とピーチのドットを使う。見出し・本文・ボタンの配色は共通パレットを維持する。
 
