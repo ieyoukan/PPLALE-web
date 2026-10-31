@@ -106,7 +106,7 @@
 | 用途 | 実装と変更する場所 |
 | --- | --- |
 | カードの表示・リスト・絞り込み | `src/components/shared/card/`。カードのデータを渡し、画面ごとのカード部品を作らない |
-| カード拡大・回転・閉じる・フォーカス復帰 | `shared/card/CardDetail.tsx`。閲覧は `card`・`onClose`・`isInDeck={false}`、構築では追加・削除のコールバックを渡す |
+| カード拡大・回転・閉じる・フォーカス復帰 | `shared/card/CardDetail.tsx`。閲覧は `card`・`onClose`・`isInDeck={false}`、構築では追加・削除のコールバックを渡す。`details` を付けると、カードの横にフルーツ・種類・コスト・能力値・効果の説明欄を出す（表示中の言語のカードを渡す） |
 | デッキのカード配置 | `shared/deck/DeckCardLayout.tsx`。画像だけにも、`onCardClick` 付きの確認画面にも使える。配置座標は `src/lib/deckImageLayout.ts` が唯一の定義で、OGP・画像書き出しも同じものを使う |
 | 左寄せのサブタイトル | `shared/ui/ScreenSubtitle.tsx`。本文書体で表示し、人数などは `suffix` で添える |
 | 操作の確認モーダル | `shared/ui/ConfirmDialog.tsx`。ネイティブの `dialog` と共通オーナメント枠を使い、初期フォーカスはキャンセル、送信中は二重操作を止め、失敗を同じモーダル内に表示する。画面固有の文言と処理は呼び出し元で渡す |
