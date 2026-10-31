@@ -111,7 +111,6 @@ function Profile({ uid, mine }: { uid: string; mine: boolean }) {
         {mine && <form onSubmit={event => { event.preventDefault(); void save(); }} className={styles.profileForm}>
           <label>なまえ<input value={profile.displayName} maxLength={12} required autoComplete="nickname" placeholder="ニックネーム" onChange={event => setProfile({ ...profile, displayName: event.target.value })} /></label>
           <label>ひとこと<input aria-label="ひとこと" value={profile.comment} maxLength={80} placeholder="よろしくお願いします！" onChange={event => setProfile({ ...profile, comment: event.target.value })} /><small>{Array.from(profile.comment).length} / 80</small></label>
-          <label className={styles.toggle}><input type="checkbox" checked={profile.searchable ?? true} onChange={event => setProfile({ ...profile, searchable: event.target.checked })} /><GameIcon name="search" />なまえ検索に表示する</label>
           {choosing && <ProfileIconPicker selected={profile.iconCardId} onSelect={iconCardId => { setProfile({ ...profile, iconCardId }); setChoosing(false); }} />}
           <DeckChooser uid={uid} chosen={profile.decks} onChange={decks => setProfile({ ...profile, decks })} />
           <OrnateFrame as="button" size="line" className={styles.cardButton} disabled={busy || !profile.displayName.trim()}><GameIcon name="check" /><span data-ui-title>{busy ? '保存中…' : 'プロフィールを保存'}</span></OrnateFrame>

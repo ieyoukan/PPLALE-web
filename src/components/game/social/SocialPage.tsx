@@ -12,7 +12,6 @@ import { OrnateFrame } from '@/components/shared/ui/ornament/OrnateFrame';
 import { FriendTile } from './FriendTile';
 import { GameIcon } from '@/components/shared/ui/GameIcon';
 import { locate, placeLabel, placeOf, placeOrder } from './location';
-import { NOTIFICATIONS_PATH } from './NotificationsPage';
 import { RoomCard } from './RoomCard';
 import { RoomRuleFilters } from '@/components/shared/room/RoomRuleFilters';
 import { allRoomRules, matchesRoomRules } from '@/lib/game/room/filters';
@@ -36,7 +35,7 @@ export function SocialPage() {
 }
 function Social({ uid }: { uid: string }) {
   const me = useMyProfile();
-  const { friends, received, error, loading } = useSocial(uid);
+  const { friends, error, loading } = useSocial(uid);
   const [rooms, setRooms] = useState<Record<string, RoomInfo>>({}), [now, setNow] = useState(() => Date.now());
   const [ruleFilter, setRuleFilter] = useState<RoomRuleFilter>(allRoomRules);
   const roomIds = [...new Set(friends.flatMap(player => [player.roomId, player.watching?.roomId].filter((id): id is string => !!id)))].sort().join(',');
@@ -66,7 +65,6 @@ function Social({ uid }: { uid: string }) {
     <header className={styles.socialHeading}>
       <ScreenSubtitle suffix={`${friends.length}人`}>フレンドの現在地</ScreenSubtitle>
       <span className={styles.headingLinks}>
-        <Link className={styles.bell} href={NOTIFICATIONS_PATH} aria-label={`通知${received.length ? ` ${received.length}件` : ''}`}><GameIcon name="bell" />{received.length > 0 && <em className={styles.badge}>{received.length}</em>}</Link>
         <Link className={styles.me} href="/game/profile/" aria-label="マイプロフィール">
           <span className={styles.avatar}>{me && <CardArtwork id={me.iconCardId} sizes="40px" />}</span><span>{me?.displayName ?? 'マイプロフィール'}</span><GameIcon name="pen" />
         </Link>

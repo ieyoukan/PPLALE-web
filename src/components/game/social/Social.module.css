@@ -31,9 +31,6 @@
 .profileForm label { display: grid; gap: 6px; font-size: 13px; font-weight: 700; }
 .profileForm small { justify-self: end; color: var(--brand-cocoa-soft); }
 .profileForm > .cardButton { justify-self: center; }
-.profileForm label.toggle { display: flex; align-items: center; gap: 8px; justify-self: start; cursor: pointer; }
-.panel .toggle input { width: 20px; min-height: 20px; height: 20px; margin: 0; padding: 0; accent-color: var(--brand-cocoa); }
-.toggle svg { color: var(--brand-cocoa); font-size: 17px; }
 .actions { display: flex; flex-wrap: wrap; align-items: center; gap: 12px; margin-top: 20px; font-size: 13px; }
 .success { padding: 12px 0; color: #4d6b2c; font-size: 13px; font-weight: 700; }
 .error { padding: 12px 0; color: #9b3a4f; font-size: 13px; font-weight: 700; }
@@ -145,10 +142,6 @@ a.room:hover .roomAction { background: var(--brand-blush); }
 @container stage (max-width: 600px) { .groupBody { grid-template-columns: 1fr; } .room { grid-template-rows: 80px auto; } .roomAction { top: 42px; } .tiles { grid-template-columns: 1fr; } .tile { width: 100%; } }
 .group[data-place=sent], .tile[data-place=sent], .room[data-place=sent] { --place: #b39ad8; --glow: #b39ad855; }
 .headingLinks { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; max-width: 100%; }
-/* The bell: an icon with no frame. */
-.bell { display: inline-flex; flex-shrink: 0; align-items: center; justify-content: center; gap: 6px; min-width: 42px; height: 42px; padding: 0 6px; border-radius: 6px; color: var(--brand-cocoa); font-size: 22px; }
-.bell:hover { background: var(--brand-blush); }
-.bell .badge { flex-shrink: 0; min-width: 22px; height: 22px; padding: 0 6px; font-size: 12px; }
 .empty .primary { gap: 6px; margin-top: 6px; }
 .group[data-place=watching], .tile[data-place=watching], .room[data-place=watching] { --place: #4fb3a9; --glow: #4fb3a955; }
 /* Friends who are in no room: just their tiles, below the rooms. */

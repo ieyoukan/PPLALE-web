@@ -52,12 +52,6 @@ test('a profile shares a short link from its top, a signed-out visitor signs in 
     await search.fill(link);
     await expect(bob.getByRole('link', { name: 'プロフィールを見る ›' })).toHaveAttribute('href', `/game/profile/?id=${a.localId}`);
 
-    // Turned off, the profile is no longer found by name.
-    await alice.getByRole('checkbox', { name: 'なまえ検索に表示する' }).uncheck();
-    await alice.getByRole('button', { name: 'プロフィールを保存', exact: true }).click();
-    await expect(alice.getByRole('status').filter({ hasText: '保存しました' })).toBeVisible();
-    await search.fill(`しぇあ${run}`);
-    await expect(bob.getByText('見つかりませんでした')).toBeVisible();
     expect(errors).toEqual([]);
   } finally { await Promise.all(contexts.map(context => context.close().catch(() => {}))); }
 });

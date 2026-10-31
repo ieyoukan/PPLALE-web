@@ -20,8 +20,8 @@ export default function ProfileOnboarding({ uid }: { uid: string }) {
     const load = () => { void readProfile(uid).then(profile => {
       if (!current) return;
       setStatus(profile ? 'ready' : 'missing');
-      // Saved before name search: made findable once (the profile editor offers to opt out).
-      if (profile && profile.searchable === undefined) void enableSearch(uid).catch(() => {});
+      // Saved before name search: made findable once. Everyone is found by name.
+      if (profile && profile.searchable !== true) void enableSearch(uid).catch(() => {});
     }, () => { if (current) setStatus('error'); }); };
     load(); window.addEventListener('pplale-profile-updated', load);
     return () => { current = false; window.removeEventListener('pplale-profile-updated', load); };

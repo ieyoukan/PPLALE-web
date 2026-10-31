@@ -5,7 +5,7 @@ import { tellFriend, tellRecruit } from './push';
 import { nameGrams } from './profileSearch';
 /**
  * `decks`: ids of the player's saved decks (users/{uid}/decks) they show on their profile, at most MAX_PUBLIC_DECKS.
- * `searchable`: whether others can find the profile by name (`undefined`: saved before name search existed).
+ * `searchable`: found by name search; every profile is (`undefined`/`false`: saved before that, fixed on the owner's next sign-in).
  */
 export interface PlayerProfile { uid: string; displayName: string; comment: string; iconCardId: string; decks: string[]; searchable?: boolean }
 export const MAX_PUBLIC_DECKS = 3;
@@ -35,10 +35,10 @@ export async function saveProfile(profile: PlayerProfile) {
   const displayName = Array.from(profile.displayName.replace(/\p{C}/gu, '').trim()).slice(0, 12).join('');
   const comment = Array.from(profile.comment.replace(/\p{C}/gu, '').trim()).slice(0, 80).join('');
   if (!displayName || !displayCards[profile.iconCardId]) throw new Error('名前とカードのアイコンを選んでください');
-  const ref = sdk.doc(db, 'profiles', profile.uid), searchable = profile.searchable ?? true;
+  const ref = sdk.doc(db, 'profiles', profile.uid), searchable = true;
   await sdk.runTransaction(db, async transaction => {
     const old = await transaction.get(ref);
-    transaction.set(ref, { displayName, comment, iconCardId: profile.iconCardId, decks: deckIds(profile.decks), searchable, nameGrams: searchable ? nameGrams(displayName) : [], updatedAt: sdk.serverTimestamp(), ...(!old.exists() && { createdAt: sdk.serverTimestamp() }) }, { merge: true });
+    transaction.set(ref, { displayName, comment, iconCardId: profile.iconCardId, decks: deckIds(profile.decks), searchable, nameGrams: nameGrams(displayName), updatedAt: sdk.serverTimestamp(), ...(!old.exists() && { createdAt: sdk.serverTimestamp() }) }, { merge: true });
   });
   return { ...profile, displayName, comment, decks: deckIds(profile.decks), searchable };
 }
@@ -52,7 +52,7 @@ export async function enableSearch(uid: string) {
   const ref = sdk.doc(db, 'profiles', uid);
   await sdk.runTransaction(db, async transaction => {
     const data = (await transaction.get(ref)).data();
-    if (typeof data?.displayName !== 'string' || 'searchable' in data) return;
+    if (typeof data?.displayName !== 'string' || data.searchable === true) return;
     transaction.update(ref, { searchable: true, nameGrams: nameGrams(data.displayName), updatedAt: sdk.serverTimestamp() });
   });
 }
