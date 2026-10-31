@@ -48,6 +48,23 @@ function Editor({ initial, uid, place, onClose, onStart }: { initial: DeckDraft;
   const root = useRef<HTMLDivElement>(null), panel = useRef<HTMLDivElement>(null), slotsRef = useRef<HTMLDivElement>(null), zoomFrom = useRef<HTMLElement | null>(null);
   // eslint-disable-next-line react-hooks/exhaustive-deps
   useEffect(() => onStart(initial), []);
+  // Where every deck card was before a change, and the picture a tapped card flies from: after the change the new
+  // card flies to its own sorted place, and the cards it pushes aside slide over (no jumping, no turning).
+  const layout = useRef<Map<string, DOMRect> | null>(null), flight = useRef<{ rect: DOMRect; src: string } | null>(null);
+  const snapshot = () => { layout.current = new Map([...slotsRef.current?.querySelectorAll<HTMLElement>('[data-key]') ?? []].map(element => [element.dataset.key!, element.getBoundingClientRect()])); };
+  useLayoutEffect(() => {
+    const before = layout.current, launched = flight.current, host = root.current, slots = slotsRef.current;
+    layout.current = null; flight.current = null;
+    if (!before || !host || !slots || matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+    const box = host.getBoundingClientRect(), scale = box.width / host.offsetWidth || 1;
+    for (const element of slots.querySelectorAll<HTMLElement>('[data-key]')) {
+      const was = before.get(element.dataset.key!), now = element.getBoundingClientRect();
+      if (!was || (was.left === now.left && was.top === now.top)) continue;
+      element.animate([{ transform: `translate(${(was.left - now.left) / scale}px, ${(was.top - now.top) / scale}px)` }, { transform: 'none' }], { duration: 260, easing: 'cubic-bezier(.3, .7, .4, 1)' });
+    }
+    const target = slots.querySelector<HTMLElement>('[data-arrive]');
+    if (launched && target) fly(launched, target, host, scale);
+  }, [deck]);
 
   // The largest card for which the 20 幼女 fit in 4 rows of the panel; the deck column is exactly 5 of them wide.
   useLayoutEffect(() => {
@@ -69,13 +86,16 @@ function Editor({ initial, uid, place, onClose, onStart }: { initial: DeckDraft;
   const add = useCallback((id: string, from?: HTMLElement | null) => {
     const card = cards.byId.get(id);
     if (!card || (card.type !== 'yojo' && card.type !== 'sweet')) return;
+    snapshot();
+    const picture = from?.querySelector('img');
+    flight.current = picture ? { rect: picture.getBoundingClientRect(), src: picture.currentSrc || picture.src } : null;
     setDeck(current => canAddCard(current, id) ? { ...current, [card.type]: [...current[card.type as DeckKind], id] } : current);
     setArrived(id);
-    if (from) fly(from, slotsRef.current?.querySelector('[data-empty]') ?? slotsRef.current, root.current);
   }, [cards]);
   const remove = useCallback((id: string) => {
     const card = cards.byId.get(id);
     if (!card || (card.type !== 'yojo' && card.type !== 'sweet')) return;
+    snapshot();
     setDeck(current => {
       const list = current[card.type as DeckKind], at = list.lastIndexOf(id);
       return at < 0 ? current : { ...current, [card.type]: list.filter((_, index) => index !== at) };
@@ -143,10 +163,11 @@ function Editor({ initial, uid, place, onClose, onStart }: { initial: DeckDraft;
         </div>
         <div ref={slotsRef} className={styles.slots} data-kind={kind}>
           {Array.from({ length: DECK_LIMITS[kind] }, (_, index) => {
-            const id = sorted[index];
+            const id = sorted[index], copy = id ? sorted.slice(0, index).filter(other => other === id).length : 0;
             if (!id) return <span key={`empty-${index}`} className={styles.emptySlot} data-empty={index === sorted.length || undefined} />;
             const card = cards.byId.get(id);
-            return <button key={`${id}-${index}`} type="button" className={styles.slot} data-arrive={index === freshAt || undefined} data-drag="deck" aria-label={`${card?.name ?? id}${t('をぬく')}`}
+            // Keyed by card and copy, so a card keeps its element (and can slide) when others come before it.
+            return <button key={`${id}#${copy}`} data-key={`${id}#${copy}`} type="button" className={styles.slot} data-arrive={index === freshAt || undefined} data-drag="deck" aria-label={`${card?.name ?? id}${t('をぬく')}`}
               onPointerDown={event => drag.start(event, id, 'deck')} onClick={() => { if (!drag.consumeClick()) remove(id); }}>
               <CardImage card={card} sizes="150px" />
             </button>;
@@ -161,18 +182,17 @@ function Editor({ initial, uid, place, onClose, onStart }: { initial: DeckDraft;
   </div>;
 }
 
-/** The card picture flies from where it was chosen to the deck (moves only; no turning). */
-function fly(from: HTMLElement, to: Element | null, host: HTMLElement | null) {
-  const picture = from.querySelector('img');
-  if (!picture || !to || !host || matchMedia('(prefers-reduced-motion: reduce)').matches) return;
-  const box = host.getBoundingClientRect(), scale = box.width / host.offsetWidth || 1;
-  const a = picture.getBoundingClientRect(), b = to.getBoundingClientRect();
-  const copy = picture.cloneNode() as HTMLImageElement;
-  copy.className = styles.flyer;
-  Object.assign(copy.style, { left: `${(a.left - box.left) / scale}px`, top: `${(a.top - box.top) / scale}px`, width: `${a.width / scale}px`, height: `${a.height / scale}px` });
+/** The tapped card's picture flies to the place the card took in the sorted deck, which shows once it lands (moves only; no turning). */
+function fly(from: { rect: DOMRect; src: string }, to: HTMLElement, host: HTMLElement, scale: number) {
+  const box = host.getBoundingClientRect(), a = from.rect, b = to.getBoundingClientRect();
+  const copy = document.createElement('img');
+  copy.src = from.src; copy.alt = ''; copy.draggable = false; copy.className = styles.flyer;
+  Object.assign(copy.style, { left: `${(a.left - box.left) / scale}px`, top: `${(a.top - box.top) / scale}px`, width: `${a.width / scale}px`, height: `${a.height / scale}px`, transformOrigin: '0 0' });
   host.appendChild(copy);
+  to.style.visibility = 'hidden';
   const dx = (b.left - a.left) / scale, dy = (b.top - a.top) / scale, k = b.width / a.width || 1;
-  copy.animate([{ transform: 'none', opacity: 1 }, { transform: `translate(${dx}px, ${dy}px) scale(${k})`, opacity: .6 }], { duration: 360, easing: 'cubic-bezier(.5, 0, .4, 1)' }).finished.finally(() => copy.remove());
+  copy.animate([{ transform: 'none' }, { transform: `translate(${dx}px, ${dy}px) scale(${k})` }], { duration: 380, easing: 'cubic-bezier(.4, 0, .3, 1)' })
+    .finished.finally(() => { copy.remove(); to.style.visibility = ''; });
 }
 
 /**
