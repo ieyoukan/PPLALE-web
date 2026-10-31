@@ -29,8 +29,8 @@ export function RoomCard({ room, large, here }: { room: RoomInfo; large?: boolea
     {here && <span className={styles.roomAction}><GameIcon name="pin" />いまここ</span>}
     {href && <span className={styles.roomAction}>{plaza ? <GameIcon name="enter" /> : <GameIcon name={place === 'open' ? 'play' : 'eye'} />}{verb}</span>}
     <span className={styles.roomInfo}>
-      {(large || plaza) && <b className={styles.roomHost}>{title}</b>}
-      {plaza ? <span className={own.people} title={visibilityInfo[plaza.visibility].label}><GameIcon name={visibilityInfo[plaza.visibility].icon} /><GameIcon name="people" />{plaza.members}</span> : <b>#{room.id}</b>}
+      {(large || plaza) && <b className={styles.roomHost} data-ui-title>{title}</b>}
+      {plaza ? <span className={own.people} title={visibilityInfo[plaza.visibility].label}><GameIcon name={visibilityInfo[plaza.visibility].icon} /><GameIcon name="people" />{plaza.members}</span> : <b className={styles.roomId}>#{room.id}</b>}
       <span className={styles.fruitDots}>{fruits.map(fruit => <i key={fruit} title={fruitNames[fruit]} style={{ background: fruitArt[fruit].tone }} />)}</span>
     </span>
   </>;

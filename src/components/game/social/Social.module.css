@@ -79,7 +79,7 @@
 .roomAction { display: inline-flex; align-items: center; gap: 4px; position: absolute; top: 72px; right: 8px; padding: 5px 12px; border: 2px solid var(--place); border-radius: 6px; background: var(--brand-paper); color: var(--brand-cocoa-deep); font-size: 13px; font-weight: 800; }
 a.room:hover .roomAction { background: var(--brand-blush); }
 .roomInfo { display: flex; align-items: center; gap: 8px; padding: 8px 10px; font-size: 13px; }
-.roomInfo b { font-family: Georgia, serif; letter-spacing: .04em; }
+.roomInfo .roomId { font-family: Georgia, serif; letter-spacing: .04em; }
 .fruitDots { display: flex; gap: 3px; }
 .fruitDots i { width: 10px; height: 10px; border-radius: 50%; border: 1.5px solid #fff; box-shadow: none; }
 
@@ -114,7 +114,7 @@ a.room:hover .roomAction { background: var(--brand-blush); }
 .share { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin-top: 12px; }
 .panel .share button, .share a { position: relative; min-height: 40px; }
 .panel button.shareLink { flex: 0 1 auto; justify-content: flex-start; min-width: 0; max-width: 100%; padding: 8px 12px; background: var(--brand-cream); font-size: 13px; }
-.shareLink > span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-family: Georgia, serif; letter-spacing: .02em; }
+.shareLink > span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .shareLink > svg { flex: none; font-size: 18px; color: var(--brand-cocoa); }
 .share[data-mine] .shareLink { border-color: var(--brand-cocoa); background: var(--brand-blush); }
 .panel button.shareTile, .shareTile { display: inline-grid; place-items: center; width: 44px; padding: 0; border: 1px solid var(--brand-control-edge); border-radius: var(--brand-control-radius); background: var(--brand-paper); color: var(--brand-cocoa-deep); font-size: 20px; text-decoration: none; }

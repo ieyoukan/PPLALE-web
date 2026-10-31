@@ -77,7 +77,7 @@ function Social({ uid }: { uid: string }) {
       </span>
     </header>
     {here && <details className={styles.group} data-place="here" open>
-      <summary><span className={styles.chevron} aria-hidden="true" /><GameIcon name="pin" />{here.plaza!.name}<span className={styles.placeChip}>いまいるルーム</span></summary>
+      <summary><span className={styles.chevron} aria-hidden="true" /><GameIcon name="pin" /><span data-ui-title>{here.plaza!.name}</span><span className={styles.placeChip}>いまいるルーム</span></summary>
       <div className={styles.groupBody}>
         <RoomCard room={here} here />
         <div className={styles.tiles}>{withMe.map(player => tile(player, 'here', 'いっしょにいます'))}</div>
@@ -92,7 +92,7 @@ function Social({ uid }: { uid: string }) {
     {filtered.map(({ room, members }) => {
       const place = placeOf(room);
       return <details key={room.id} className={styles.group} data-place={place} open>
-        <summary><span className={styles.chevron} aria-hidden="true" />{room.plaza?.name ?? `${room.host}のルーム`}<span className={styles.placeChip}>{placeLabel[place]}</span></summary>
+        <summary><span className={styles.chevron} aria-hidden="true" /><span data-ui-title>{room.plaza?.name ?? `${room.host}のルーム`}</span><span className={styles.placeChip}>{placeLabel[place]}</span></summary>
         <div className={styles.groupBody}>
           <RoomCard room={room} />
           <div className={styles.tiles}>{members.map(({ player, role }) => role === 'host' ? tile(player, place, placeLabel[place]) : tile(player, 'watching', '観戦中'))}</div>
