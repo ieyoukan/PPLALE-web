@@ -1,8 +1,8 @@
 'use client';
 
-import { createContext, useContext, useMemo, useState } from 'react';
+import { createContext, useContext, useEffect, useMemo, useState, useSyncExternalStore } from 'react';
 import type { CardRole, CardType, CardVersion, FruitType, SweetType } from '@/types/card';
-import { APP_LOCALE_COOKIE, type AppLocale } from './config';
+import { APP_LOCALE_COOKIE, browserAppLocale, type AppLocale } from './config';
 
 const englishText: Record<string, string> = {
   'ぷぷりえーる デッキ構築': 'PPLALE Deck Builder',
@@ -210,15 +210,25 @@ const defaultValue: LocaleContextValue = {
 
 const LocaleContext = createContext<LocaleContextValue>(defaultValue);
 
-export function LocaleProvider({ initialLocale, children }: { initialLocale: AppLocale; children: React.ReactNode }) {
-  const [locale, setLocaleState] = useState(initialLocale);
+const noSubscription = () => () => {};
+
+/**
+ * `initialLocale`: the server's choice (the site's proxy reads the cookie, Accept-Language and country).
+ * `live` (the game): the server renders Japanese and the browser then uses the saved choice or its own
+ * language; changing it switches in place instead of reloading, so the room stays connected.
+ */
+export function LocaleProvider({ initialLocale, live = false, children }: { initialLocale: AppLocale; live?: boolean; children: React.ReactNode }) {
+  const detected = useSyncExternalStore(noSubscription, () => live ? browserAppLocale() : initialLocale, () => initialLocale);
+  const [chosen, setChosen] = useState<AppLocale | null>(null);
+  const locale = chosen ?? detected;
+  useEffect(() => { if (live) document.documentElement.lang = locale; }, [live, locale]);
 
   const value = useMemo<LocaleContextValue>(() => ({
     locale,
     setLocale(nextLocale) {
-      setLocaleState(nextLocale);
+      setChosen(nextLocale);
       document.cookie = `${APP_LOCALE_COOKIE}=${nextLocale}; Path=/; Max-Age=31536000; SameSite=Lax`;
-      window.location.reload();
+      if (!live) window.location.reload();
     },
     t: (text) => locale === 'en' ? englishText[text] ?? text : text,
     cardTypeLabel: (type) => cardTypeLabels[locale][type],
@@ -226,7 +236,7 @@ export function LocaleProvider({ initialLocale, children }: { initialLocale: App
     sweetTypeLabel: (type) => sweetTypeLabels[locale][type],
     versionLabel: (version) => versionLabels[locale][version],
     roleLabel: (role) => roleLabels[locale][role],
-  }), [locale]);
+  }), [locale, live]);
 
   return <LocaleContext.Provider value={value}>{children}</LocaleContext.Provider>;
 }
