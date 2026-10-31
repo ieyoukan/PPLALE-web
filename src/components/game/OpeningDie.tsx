@@ -4,7 +4,7 @@ import { useEffect, useLayoutEffect, useRef, useState } from 'react';
 import type { DieVisualState } from './openingDieScene';
 import styles from './OpeningDie.module.css';
 
-export const DICE_THROW_DURATION = 1800;
+export const DICE_THROW_DURATION = 800;
 export function OpeningDie({ value, rolling, interactive, label, onRoll }: {
   value: number | null; rolling: boolean; interactive: boolean; label: string; onRoll: () => void;
 }) {

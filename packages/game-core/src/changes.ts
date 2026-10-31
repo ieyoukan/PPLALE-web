@@ -124,7 +124,7 @@ export const stateFields: Record<keyof GameState, string | null> = {
     effectRoll: 'roll',
     effectBlocks: 'blocked',
     log: 'board: history panel',
-    version: null, effectTauntRules: null, turnRules: null, rules: null, rng: null, serial: null,
+    version: null, effectTauntRules: null, turnRules: null, decisiveOpeningDice: null, rules: null, rng: null, serial: null,
     revision: null, queue: null, stall: null,
 };
 

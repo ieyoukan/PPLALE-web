@@ -213,6 +213,8 @@ export interface GameState {
     effectTauntRules?: true;
     /** 最新のターン進行・手札上限・山札切れの裁定を使う保存形式。 */
     turnRules?: true;
+    /** 開始時のダイスを引き分けなしにする。省略した旧リプレイは当時の乱数を使う。 */
+    decisiveOpeningDice?: true;
     phase: Phase;
     openingRemaining: [number, number];
     mulligan: { eligible: [string[], string[]]; confirmed: [boolean, boolean] };

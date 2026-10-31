@@ -24,7 +24,7 @@ test('report: a played match is accepted and its winner comes from the replay', 
 test('report: nothing but decks, seed and commands is kept', () => {
     const { report } = playedReport(12);
     const record = accepted({ ...report, name: 'someone', decks: report.decks.map(deck => ({ ...deck, name: 'my deck' })), commands: report.commands.map(command => ({ ...command, note: 'x' })) });
-    assert.deepEqual(Object.keys(record).sort(), ['commands', 'day', 'decks', 'id', 'level', 'model', 'seed', 'turns', 'winner']);
+    assert.deepEqual(Object.keys(record).sort(), ['commands', 'day', 'decisiveOpeningDice', 'decks', 'id', 'level', 'model', 'seed', 'turns', 'winner']);
     assert.deepEqual(Object.keys(record.decks[0]).sort(), ['playable', 'sweet', 'yojo']);
     assert.ok(!JSON.stringify(record).includes('my deck') && !JSON.stringify(record).includes('note'));
 });
@@ -66,4 +66,15 @@ test('report: a stored match gives one training position per turn', () => {
     assert.ok(positions.rows.every(row => row.length === valueLayout.full * 2));
     // A record whose result no longer matches the engine is left out of training.
     assert.equal(recordPositions({ ...record, winner: record.winner === 0 ? 1 : 0 }, catalog), null);
+});
+
+
+test('report: legacy seeds still replay without the new opening dice flag', () => {
+    const { report, winner } = playedReport(17, true);
+    assert.equal(report.decisiveOpeningDice, undefined);
+    const record = accepted(report);
+    assert.equal(record.decisiveOpeningDice, undefined);
+    assert.equal(record.winner, winner);
+    assert.ok(recordPositions(record, catalog));
+    rejected({ ...report, decisiveOpeningDice: false });
 });

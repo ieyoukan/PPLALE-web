@@ -85,6 +85,9 @@ export function useBoard(container: RefObject<HTMLDivElement | null>, session: B
   const [presentingOwn, setPresentingOwn] = useState(false);
   const [intent, setIntent] = useState<Command | null>(null);
   const roomInputLocked = useRef(false);
+  const drawnFrom = useRef<GameState | null>(null);
+  // 盤面が変わったら解除する。Undoで以前の盤面に戻った場合も引き直せる。
+  useLayoutEffect(() => { drawnFrom.current = null; }, [actual]);
 
   /** Sends a command (with its animation). Clears the local selection of the acting side. */
   const act = useCallback((command: Command) => {
@@ -135,9 +138,9 @@ export function useBoard(container: RefObject<HTMLDivElement | null>, session: B
   useEffect(() => {
     if (mode !== 'cpu' || levels[1] !== 'master' || typeof game.winner !== 'number') return;
     if (!record || record.reported || !learningConsent.given()) return;
-    reportMatch({ seed: record.seed, decks: record.decks, commands: record.commands, model: modelUsed.current ?? 'unknown' });
+    reportMatch({ decisiveOpeningDice: game.decisiveOpeningDice, seed: record.seed, decks: record.decks, commands: record.commands, model: modelUsed.current ?? 'unknown' });
     markReported();
-  }, [mode, levels, game.winner, record, markReported, modelUsed]);
+  }, [mode, levels, game.winner, game.decisiveOpeningDice, record, markReported, modelUsed]);
 
   // ── Replay ──
   const { stopReplay: endReplay } = session;
@@ -265,6 +268,9 @@ export function useBoard(container: RefObject<HTMLDivElement | null>, session: B
   }
   function clickDeck(side: Side, kind: DeckKind) {
     if (editing) return setPanel({ type: 'editPile', side, kind });
+    if (!deckReady(side, kind) || !remote && drawnFrom.current === actual) return;
+    // 同じ描画フレームの二重タップも1枚にする。次の操作は新しい盤面と着地を待つ。
+    drawnFrom.current = actual;
     if (game.phase === 'opening' || game.phase === 'mulligan') act({ type: 'openingDraw', actor: side, deck: kind });
     else choose(kind);
   }

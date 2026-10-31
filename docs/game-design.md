@@ -58,9 +58,9 @@ CPUの単独対戦・リプレイ・エディタ ──> BoardEmulator
 
 ## 対戦の開始とドロー
 
-`GameState.phase` は `dice` → `initiative` → `opening` → `mulligan` → `playing`。ダイスと先攻決定は core、演出は UI が扱う。初期ドローは `openingRemaining` と `openingDraw` Command で各側を独立して管理する。双方が相手を待たずに山札を選んで引ける。通常ドロー・カード効果・10/5のドローは `pending` に保持し、山札クリックの `choose` Command ごとに1枚引く。解決待ちの間はプレイやターン終了を拒否する。先攻3枚・後攻4枚を引いた後、`mulligan` / `keep` Command で各初期カードを1回だけ交換し、双方が確認して対戦を開始する。CPU も同じ Command を使用する。
+`GameState.phase` は `dice` → `initiative` → `opening` → `mulligan` → `playing`。ダイスと先攻決定は core、演出は UI が扱う。開始ダイスは引き分けなし・選択権の確率50%ずつとし、`decisiveOpeningDice` の有無で旧リプレイの乱数を維持する。CPUの学習用レポートにも同じ区別を含める。初期ドローは `openingRemaining` と `openingDraw` Command で各側を独立して管理する。双方が相手を待たずに山札を選んで引ける。通常ドロー・カード効果・10/5のドローは `pending` に保持し、山札クリックの `choose` Command ごとに1枚引く。解決待ちの間はプレイやターン終了を拒否する。先攻3枚・後攻4枚を引いた後、`mulligan` / `keep` Command で各初期カードを1回だけ交換し、双方が確認して対戦を開始する。CPU も同じ Command を使用する。
 
-UI はドロー前後の手札と山札の差分から移動演出を描く。詳細はサイドパネル、効果の対象は場や手札、山札を直接操作する。保存キーは維持し、旧セッションは進行中の `playing` 状態として復元する。
+UI はドロー前後の手札と山札の差分から移動演出を描く。2026-10-31のテンポ調整で、ダイスは移動800ms・開始時の結果表示350ms・CPUの開始ダイス待ち150ms、ドローは移動360ms・着地80msとする。演出と操作ロックは同じ時間を使い、1タップにつき1枚、着地前の連打は予約せず無視する。詳細はサイドパネル、効果の対象は場や手札、山札を直接操作する。保存キーは維持し、旧セッションは進行中の `playing` 状態として復元する。
 
 ## Vercel への配置
 

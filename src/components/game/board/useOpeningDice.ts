@@ -6,8 +6,8 @@ import type { Command, GameState, Side } from '@pplale/game-core';
 import { gameCatalog } from '@/lib/game/catalog';
 import { DICE_THROW_DURATION } from '../OpeningDie';
 
-const REVEAL_DURATION = 1200;
-const CPU_DELAY = 650;
+const REVEAL_DURATION = 350;
+const CPU_DELAY = 150;
 
 /**
  * The first-player dice. The 3D die needs the result before the throw starts, so it is computed

@@ -50,7 +50,7 @@ export function newGame(decks: [Deck, Deck], catalog: Catalog, rules: Rules, see
         ...(playableMp[d.playable] ? { mp: playableMp[d.playable].initial } : {}),
     })) as [Player, Player];
     const s: GameState = {
-        version: 1, effectTauntRules: true, turnRules: true, phase: 'dice', openingRemaining: [0, 0], mulligan: { eligible: [[], []], confirmed: [false, false] }, dice: null,
+        version: 1, effectTauntRules: true, turnRules: true, decisiveOpeningDice: true, phase: 'dice', openingRemaining: [0, 0], mulligan: { eligible: [[], []], confirmed: [false, false] }, dice: null,
         rules: { ...rules }, rng: seed >>> 0, serial: 0, revision: 0, active: rules.firstPlayer, turn: 0,
         players, cards: {}, queue: [], pending: null, winner: null, log: [],
     };
