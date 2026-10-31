@@ -8,6 +8,8 @@ import Link from 'next/link';
 import { roomVisibilities } from '@pplale/game-core/room';
 import type { RoomVisibility } from '@pplale/game-core/room';
 import { useAuth } from '@/lib/auth';
+import { useI18n } from '@/i18n/LocaleProvider';
+import { APP_LOCALES } from '@/i18n/config';
 import { readRoomSettings, saveRoomSettings } from '@/lib/game/plazaSettings';
 import { PushToggle } from '@/components/pwa/PushToggle';
 import { NotificationVolumeControl } from '../notifications/GameNotifications';
@@ -20,6 +22,7 @@ const homeKinds: RoomVisibility[] = ['public', 'friendsPlus', 'friends', 'invite
 
 export function GameSettings({ volume = true, onLeave }: { volume?: boolean; onLeave?: () => void }) {
   const { user, signInWithGoogle, signOut } = useAuth();
+  const { locale, setLocale } = useI18n();
   const [home, setHome] = useState<RoomVisibility | null>(null);
   const [busy, setBusy] = useState(false);
   useEffect(() => { setHome(readRoomSettings().homeVisibility); }, []);
@@ -56,6 +59,13 @@ export function GameSettings({ volume = true, onLeave }: { volume?: boolean; onL
         })}
       </select>
       <p id="settings-home-note" className={styles.note}>{visibilityInfo[home ?? 'invite'].note}</p>
+    </section>
+    {/* Both names, so someone who cannot read the current language still finds it. */}
+    <section className={styles.section} aria-labelledby="settings-language">
+      <h3 id="settings-language" data-ui-title><GameIcon name="globe" />言語 / Language</h3>
+      <select className={styles.visibilitySelect} aria-labelledby="settings-language" value={locale} onChange={event => setLocale(event.target.value as typeof locale)}>
+        {APP_LOCALES.map(option => <option key={option} value={option} lang={option}>{option === 'ja' ? '日本語' : 'English'}</option>)}
+      </select>
     </section>
     {volume && <section className={styles.section}><NotificationVolumeControl /></section>}
     {user && <section className={styles.section} aria-labelledby="settings-push"><h3 id="settings-push" data-ui-title><GameIcon name="bell" />ブラウザの通知</h3><PushToggle /></section>}

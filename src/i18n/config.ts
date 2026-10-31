@@ -8,6 +8,14 @@ export function isAppLocale(value: string | undefined | null): value is AppLocal
   return value === 'ja' || value === 'en';
 }
 
+/** In the browser: the saved choice, or else the browser's first language (as detectAppLocale reads Accept-Language). */
+export function browserAppLocale(): AppLocale {
+  const saved = document.cookie.match(new RegExp(`(?:^|; )${APP_LOCALE_COOKIE}=([^;]*)`))?.[1];
+  if (isAppLocale(saved)) return saved;
+  const language = (navigator.languages?.[0] ?? navigator.language ?? '').toLowerCase();
+  return !language || language === 'ja' || language.startsWith('ja-') ? 'ja' : 'en';
+}
+
 export function detectAppLocale(acceptLanguage: string | null, country: string | null): AppLocale {
   const preferredLanguages = (acceptLanguage ?? '')
     .split(',')
