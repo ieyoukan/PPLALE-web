@@ -51,8 +51,11 @@
   .navigation { --pile-width: clamp(32px, min(14vw, 9svh), 64px); --pile-y: calc(-1 * var(--pile-width) * 320 / 220 - 12px); }
 }
 @media (max-width: 600px) {
+  .hero { overflow: visible; }
   .visual { height: auto; aspect-ratio: 3000 / 2457; }
   .logo { width: 34%; }
+  /* 顔より下へ置き、カードの下端は次の背景に重ねる。余白は増やさない。 */
+  .content { z-index: 11; bottom: calc(-1 * clamp(32px, 12vw, 56px)); }
 }
 @media (prefers-reduced-motion: reduce) {
   .card { animation: none; visibility: visible; pointer-events: auto; transform: none; }

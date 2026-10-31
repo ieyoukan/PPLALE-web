@@ -43,7 +43,7 @@ for (const viewport of [
       await expect(entry).toHaveAttribute('href', href);
       const card = await entry.boundingBox();
       expect(card.y).toBeGreaterThanOrEqual(art.y);
-      expect(card.y + card.height).toBeLessThanOrEqual(art.y + art.height);
+      expect(card.y + card.height).toBeLessThanOrEqual(art.y + art.height + (viewport.width <= 600 ? 56 : 0));
       expect(Math.abs(card.width / card.height - 220 / 320)).toBeLessThan(.002);
       await expect(entry.locator('img')).toBeVisible();
       await expect(entry.locator('img')).toHaveCSS('object-fit', 'cover');
@@ -51,10 +51,12 @@ for (const viewport of [
         await expect(entry.getByText(line, { exact: true })).toBeVisible();
       }
       await entry.click({ trial: true });
+      if (viewport.width <= 600) await entry.click({ trial: true, position: { x: card.width / 2, y: card.height - 12 } });
     }
     expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
     await page.addStyleTag({ content: 'nextjs-portal { display:none; }' });
-    await hero.screenshot({ path: info.outputPath('home-hero.png') });
+    if (viewport.width <= 600) await page.screenshot({ path: info.outputPath('home-hero.png'), clip: { x: 0, y: 0, width: viewport.width, height: Math.ceil(art.y + art.height + 56) } });
+    else await hero.screenshot({ path: info.outputPath('home-hero.png') });
     const finalCards = await menu.getByRole('link').evaluateAll(elements => elements.map(element => {
       const { x, y, width, height } = element.getBoundingClientRect();
       return { x, y, width, height };
