@@ -1,0 +1,179 @@
+/* ゲーム内のデッキ管理（一覧・ポップアップ・編成）。配色は brand.css、枠は OrnateFrame。カード画像には枠・角丸・影を付けない。 */
+
+/* ── カード：2:3の全体を表示し、画像の保存・選択・長押しメニューを止める ── */
+.card { position: relative; display: block; width: 100%; aspect-ratio: 2 / 3; overflow: hidden; border-radius: 2px; background: var(--brand-cream); -webkit-user-select: none; user-select: none; -webkit-touch-callout: none; }
+.card img { display: block; width: 100%; height: 100%; object-fit: cover; pointer-events: none; -webkit-user-drag: none; }
+.emptyCard { display: grid; place-items: center; width: 100%; aspect-ratio: 2 / 3; border: 2px dashed var(--brand-pink); border-radius: 2px; color: var(--brand-cocoa-soft); font-size: 26px; }
+.dot { flex: none; width: 11px; height: 11px; border: 2px solid #fff; border-radius: 50%; box-shadow: 0 0 0 1px #0000001a; }
+.chip { display: inline-flex; align-items: center; gap: 6px; min-height: 30px; padding: 2px 10px; border: 1px solid var(--brand-control-edge); border-radius: var(--brand-control-radius); background: var(--brand-paper); font-size: 13px; font-weight: 700; }
+.error { margin: 6px 0; color: #9b3a4f; font-size: 13px; font-weight: 700; }
+.loading { padding: 24px; color: var(--brand-cocoa-soft); font-size: 14px; }
+.fits, .misfits, .ruleNote { display: inline-flex; align-items: center; gap: 4px; padding: 3px 10px; border-radius: 6px; font-size: 12px; font-weight: 700; white-space: nowrap; }
+.fits, .ruleNote { background: var(--brand-sage-wash); color: var(--brand-leaf-deep); }
+.misfits { background: var(--brand-blush); color: var(--brand-cocoa-deep); }
+.softButton, .dangerButton { display: inline-flex; align-items: center; justify-content: center; gap: 7px; min-height: 42px; padding: 8px 16px; border: 1px solid var(--brand-control-edge); border-radius: var(--brand-control-radius); background: var(--brand-paper); color: var(--brand-cocoa-deep); font-size: 14px; font-weight: 700; white-space: nowrap; text-decoration: none; cursor: pointer; }
+.softButton:hover:not(:disabled), .dangerButton:hover:not(:disabled) { background: var(--brand-blush); }
+.softButton:active:not(:disabled), .dangerButton:active:not(:disabled), .mainButton:active:not(:disabled) { transform: translateY(2px); }
+.softButton:disabled { opacity: .5; cursor: default; }
+.softButton[data-done] { border-color: var(--brand-leaf-deep); background: var(--brand-sage-wash); color: var(--brand-leaf-deep); }
+.dangerButton { border-color: #9b3a4f; color: #9b3a4f; }
+.deleteButton { color: #9b3a4f; }
+.mainButton { --pad: 10px 24px; --frame-face: var(--brand-blush); display: inline-flex; align-items: center; justify-content: center; gap: 8px; border: 0; background: none; color: var(--brand-cocoa-deep); font-size: 17px; white-space: nowrap; cursor: pointer; filter: none; }
+.mainButton:disabled { opacity: .55; cursor: default; }
+.xMark { font-size: 17px; line-height: 1; }
+
+/* ── ① 一覧 ── */
+.list { display: grid; gap: 14px; color: var(--brand-cocoa-deep); }
+.listHead { display: flex; flex-wrap: wrap; align-items: center; gap: 10px 14px; }
+.listHead h3 { margin: 0; font-size: 18px; color: var(--brand-cocoa); }
+.listHead small { color: var(--brand-cocoa-soft); font-size: 14px; }
+.guestNote { display: inline-flex; align-items: center; gap: 10px; margin-left: auto; color: var(--brand-cocoa-soft); font-size: 13px; }
+.guestNote button { display: inline-flex; align-items: center; gap: 5px; min-height: 34px; padding: 4px 12px; border: 1px solid var(--brand-control-edge); border-radius: var(--brand-control-radius); background: var(--brand-paper); color: var(--brand-cocoa-deep); font-weight: 700; cursor: pointer; }
+.decks { display: grid; grid-template-columns: repeat(auto-fill, minmax(214px, 1fr)); gap: 16px 14px; align-items: start; }
+.newDeck { display: grid; place-items: center; align-content: center; gap: 12px; min-height: 250px; border: 2px dashed var(--brand-pink-edge); border-radius: var(--brand-control-radius); background: var(--brand-cream); color: var(--brand-cocoa); font-size: 16px; cursor: pointer; }
+.newDeck:hover { background: var(--brand-blush); }
+.newArt { position: relative; display: grid; place-items: center; width: 92px; }
+.newArt > svg { position: absolute; font-size: 38px; color: #fff; filter: drop-shadow(0 1px 2px #0007); }
+.deckBox { --pad: 12px 12px 10px; display: grid; gap: 8px; color: var(--brand-cocoa-deep); text-align: left; cursor: pointer; animation: rise .4s ease-out backwards; }
+.deckBox:hover { --frame-face: var(--brand-blush); }
+.deckBox[data-unusable] .fan { opacity: .45; }
+/* プレイアブルを手前に、先頭の幼女・お菓子を後ろへずらして重ねる（傾けない）。 */
+.fan { position: relative; display: block; height: 150px; }
+.fanCard { position: absolute; bottom: 0; display: block; transition: transform .2s ease; }
+.fanCard:nth-child(1) { left: 112px; width: 72px; bottom: 6px; }
+.fanCard:nth-child(2) { left: 70px; width: 78px; bottom: 3px; }
+.fanCard:nth-child(3) { left: 0; width: 96px; }
+.deckBox:hover .fanCard:nth-child(1) { transform: translateY(-6px); }
+.deckBox:hover .fanCard:nth-child(2) { transform: translateY(-3px); }
+/* 長い名前も途中で切らずに折り返す。 */
+.deckName { font-size: 15px; line-height: 1.35; overflow-wrap: anywhere; }
+.deckMeta { display: flex; flex-wrap: wrap; align-items: center; gap: 5px; min-height: 24px; font-size: 12px; }
+.deckMeta > :is(.fits, .misfits, .progress) { margin-left: auto; }
+.progress { display: inline-flex; gap: 3px; }
+.progress i { display: block; width: 28px; height: 6px; overflow: hidden; border-radius: 3px; background: var(--brand-blush); }
+.progress i span { display: block; height: 100%; background: #ef6f8c; }
+.progress i[data-kind=sweet] span { background: var(--brand-star); }
+
+/* ── ポップアップ（ランチパッドの上に重ねる） ── */
+.backdrop { position: absolute; inset: 0; z-index: 80; display: grid; place-items: center; padding: 20px; background: #3a2420a6; backdrop-filter: blur(3px); animation: fade .2s ease both; }
+.dialog { --pad: 34px 38px 28px; position: relative; max-width: 100%; max-height: 100%; overflow: auto; color: var(--brand-cocoa-deep); filter: none; animation: near .3s cubic-bezier(.3, 1.4, .5, 1) both; }
+.close { position: absolute; top: 14px; right: 16px; z-index: 2; display: grid; place-items: center; width: 42px; height: 42px; padding: 0; border: 1px solid var(--brand-control-edge); border-radius: var(--brand-control-radius); background: var(--brand-cream); color: var(--brand-cocoa-deep); font-size: 20px; cursor: pointer; }
+.close:hover { background: var(--brand-blush); }
+.sheetTitle { margin: 0 0 16px; font-size: 22px; color: var(--brand-cocoa); text-align: center; }
+
+/* ② すぐ使う */
+.quick { display: grid; grid-template-columns: 210px minmax(0, 1fr); gap: 26px; width: 900px; }
+.quickPlayable { padding-top: 6px; }
+.playableButton { position: relative; display: block; width: 210px; padding: 0; border: 0; background: none; cursor: pointer; }
+.playableButton:hover .card { filter: brightness(.95); }
+.swap { position: absolute; left: 50%; bottom: 12px; display: inline-flex; align-items: center; gap: 6px; padding: 6px 14px; border-radius: var(--brand-control-radius); background: #fffdf9ee; color: var(--brand-cocoa-deep); font-size: 13px; font-weight: 700; white-space: nowrap; translate: -50% 0; }
+.quickMain { display: grid; align-content: start; gap: 12px; min-width: 0; padding-right: 36px; }
+.nameField { display: flex; align-items: center; gap: 8px; min-width: 0; color: var(--brand-cocoa); font-size: 20px; }
+.nameField input { flex: 1; min-width: 0; padding: 4px 2px; border: 0; border-bottom: 2px dashed var(--brand-pink-edge); background: none; color: var(--brand-cocoa-deep); font: 400 21px var(--font-site-title, inherit); }
+.nameField input:focus { outline: none; border-bottom-color: var(--brand-cocoa); }
+.quickTags { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; }
+.codeRow { display: grid; grid-template-columns: minmax(128px, max-content) minmax(0, 1fr) auto; align-items: center; gap: 10px; }
+.codeLabel { display: inline-flex; align-items: center; gap: 6px; font-size: 13px; font-weight: 700; color: var(--brand-cocoa); }
+.codeLabel i, .curveLabel i { width: 10px; height: 10px; border-radius: 50%; background: #ef6f8c; }
+.codeLabel[data-kind=sweet] i, .curveLabel[data-kind=sweet] i { background: var(--brand-star); }
+.codeLabel small { margin-left: 2px; font: 700 11px Georgia, serif; color: var(--brand-cocoa-soft); }
+.codeLabel small[data-short] { color: #b4384f; }
+.codeRow code { overflow: hidden; padding: 9px 12px; border-radius: 6px; background: var(--brand-cream); color: var(--brand-cocoa-deep); font: 13px/1.4 ui-monospace, Menlo, monospace; white-space: nowrap; text-overflow: ellipsis; -webkit-user-select: all; user-select: all; }
+.codeRow .softButton { min-width: 132px; }
+.quickCurves { display: grid; grid-template-columns: 1fr 1fr; gap: 18px; padding-top: 4px; }
+.curveLabel { display: inline-flex; align-items: center; gap: 5px; margin-bottom: 2px; font-size: 11px; font-weight: 700; color: var(--brand-cocoa-soft); }
+.quickActions { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; margin-top: 4px; }
+.quickActions > :last-child:not(:first-child) { margin-left: auto; }
+.confirmDelete { display: inline-flex; align-items: center; gap: 8px; font-size: 14px; font-weight: 700; }
+.playables { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 10px; animation: rise .25s both; }
+.playables button { position: relative; padding: 4px; border: 1px solid transparent; border-radius: var(--brand-control-radius); background: none; cursor: pointer; }
+.playables button[aria-pressed=true] { border-color: var(--brand-cocoa); background: var(--brand-blush); }
+.exp { position: absolute; top: 8px; left: 8px; padding: 1px 6px; border-radius: 4px; background: var(--brand-cocoa-deep); color: var(--brand-cream); font-size: 10px; font-weight: 700; }
+
+/* コストカーブ：1〜7+の棒と、その上に枚数 */
+.curve { display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); gap: 4px; }
+.curve span { display: grid; grid-template-rows: 12px var(--bar) 12px; align-items: end; justify-items: stretch; }
+.curve em { font: 700 10px Georgia, serif; font-style: normal; text-align: center; color: var(--brand-cocoa); }
+.curve i { display: block; min-height: 0; border-radius: 3px 3px 0 0; background: #ef6f8c; transition: height .3s cubic-bezier(.3, 1.4, .5, 1); }
+.curve[data-kind=sweet] i { background: var(--brand-star); }
+.curve b { font: 10px Georgia, serif; text-align: center; color: var(--brand-cocoa-soft); }
+
+/* ④ 確認・共有（OGPと同じ配置） */
+.confirm { display: grid; justify-items: center; gap: 16px; width: 960px; }
+.confirmImage { position: relative; width: 880px; max-width: 100%; padding: 10px; background: var(--brand-cream); }
+.confirmLayout { position: relative; }
+/* OGP画像の文字の位置（ogDeckImage.ts の 720,558 付近）。 */
+.hashtag { position: absolute; left: 61.7%; top: 89%; font: 400 15px var(--font-site-title, inherit); color: var(--brand-cocoa); pointer-events: none; }
+.shareBar { display: flex; flex-wrap: wrap; align-items: center; justify-content: center; gap: 12px 18px; }
+.shareBar > b { font-size: 20px; color: var(--brand-cocoa); overflow-wrap: anywhere; }
+.shareButtons { display: inline-flex; flex-wrap: wrap; gap: 8px; }
+
+/* ⑤ 新しく作る */
+.newSheet { width: 760px; }
+.starts { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 14px; }
+.start { display: grid; justify-items: center; gap: 8px; padding: 16px 8px 14px; border: 1px solid var(--brand-control-edge); border-radius: var(--brand-control-radius); background: var(--brand-cream); color: var(--brand-cocoa-deep); text-align: center; text-decoration: none; cursor: pointer; }
+.start:hover { background: var(--brand-blush); }
+.start b { font-size: 15px; }
+.start small { font-size: 11.5px; color: var(--brand-cocoa-soft); }
+.startArt { position: relative; display: grid; place-items: center; width: 78px; }
+.startGlyph { position: absolute; font-size: 34px; color: #fff; filter: drop-shadow(0 1px 2px #0007); }
+.dashedCard { display: grid; place-items: center; width: 100%; aspect-ratio: 2 / 3; border: 2px dashed var(--brand-pink-edge); border-radius: 2px; color: var(--brand-cocoa); font-size: 32px; }
+.codeForm { display: grid; gap: 12px; }
+.codeForm label { display: grid; gap: 5px; font-size: 13px; font-weight: 700; }
+.codeForm label span { display: flex; justify-content: space-between; }
+.codeForm label small { font: 700 12px Georgia, serif; color: var(--brand-cocoa-soft); }
+.codeForm input { min-height: 42px; padding: 8px 12px; border: 1px solid var(--brand-pink-edge); border-radius: 6px; background: var(--brand-paper); color: var(--brand-cocoa-deep); font: 14px ui-monospace, Menlo, monospace; }
+
+/* ── ③ 編成 ── */
+.editor { --cw: 90px; --deck-width: 482px; position: relative; display: grid; grid-template-rows: auto minmax(0, 1fr); height: 100%; min-height: 0; color: var(--brand-cocoa-deep); -webkit-user-select: none; user-select: none; }
+.tabRow { display: flex; align-items: flex-end; gap: 14px; min-width: 0; }
+.tabRow .nameField { flex: 1; margin-bottom: 6px; }
+.tabRow .nameField input { font-size: 19px; }
+.tabRow > .softButton, .tabRow > .mainButton { margin-bottom: 6px; }
+/* 幼女・お菓子のタブ：選んでいるタブはココア色で塗り、下のパネルの上辺とつなげる。ほかは白。 */
+.tabs { display: flex; gap: 4px; }
+.tabs button { min-width: 124px; min-height: 42px; padding: 0 20px; border: 1px solid var(--brand-pink-edge); border-bottom: 0; border-radius: var(--brand-control-radius) var(--brand-control-radius) 0 0; background: var(--brand-paper); color: var(--brand-cocoa); font: 400 15px var(--font-site-title, inherit); cursor: pointer; }
+.tabs button[aria-selected=true] { border-color: var(--brand-cocoa); background: var(--brand-cocoa); color: var(--brand-cream); }
+.editorPanel { display: grid; grid-template-columns: minmax(0, 1fr) calc(var(--deck-width) + 28px); gap: 14px; min-height: 0; padding: 14px; border: 1px solid var(--brand-pink-edge); border-top: 3px solid var(--brand-cocoa); border-radius: 0 var(--brand-panel-radius) var(--brand-panel-radius); background: var(--brand-paper); }
+.pool { display: grid; grid-template-rows: auto minmax(0, 1fr); gap: 10px; min-height: 0; border-radius: 4px; }
+.pool[data-over], .deckColumn[data-over] { outline: 2px dashed var(--brand-cocoa); outline-offset: -4px; background: var(--brand-blush); }
+.poolBar { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
+.costs { display: flex; gap: 4px; }
+.costs button { width: 32px; height: 32px; padding: 0; border: 1px solid var(--brand-control-edge); border-radius: 50%; background: var(--brand-paper); color: var(--brand-cocoa-deep); font: 700 13px Georgia, serif; cursor: pointer; }
+.costs button[aria-pressed=true] { border-color: var(--brand-cocoa); background: var(--brand-cocoa); color: var(--brand-cream); }
+.search { position: relative; margin-left: auto; color: var(--brand-cocoa); }
+.search svg { position: absolute; left: 10px; top: 50%; translate: 0 -50%; font-size: 16px; pointer-events: none; }
+.search input { width: 180px; min-height: 34px; padding: 0 10px 0 32px; border: 1px solid var(--brand-pink-edge); border-radius: 6px; background: var(--brand-paper); color: var(--brand-cocoa-deep); font-size: 13px; -webkit-user-select: text; user-select: text; }
+.poolGrid { min-height: 0; overflow-y: auto; overscroll-behavior: contain; padding: 4px 4px 12px; }
+.fruitGroup + .fruitGroup { margin-top: 10px; }
+.fruitHead { display: flex; align-items: center; gap: 6px; margin: 0 0 8px; padding-bottom: 4px; border-bottom: 1px solid var(--brand-pink); font: 400 13px var(--font-site-title, inherit); color: var(--brand-cocoa); }
+.poolCards { display: grid; grid-template-columns: repeat(auto-fill, var(--cw)); justify-content: space-between; gap: 10px 8px; }
+.poolCard { position: relative; display: grid; gap: 4px; width: var(--cw); }
+.cardButton { display: block; padding: 0; border: 0; background: none; cursor: grab; touch-action: manipulation; }
+.cardButton:hover:not(:disabled) .card { filter: brightness(1.06); }
+.cardButton:disabled { cursor: default; }
+.poolCard[data-full] .card { opacity: .55; }
+.pips { display: flex; justify-content: center; gap: 4px; height: 9px; }
+.pips i { width: 9px; height: 9px; border-radius: 50%; background: var(--brand-cocoa); animation: arrive .3s cubic-bezier(.3, 1.6, .5, 1); }
+.zoom { position: absolute; top: 4px; right: 4px; display: grid; place-items: center; width: 26px; height: 26px; padding: 0; border: 0; border-radius: 50%; background: #fffdf9e0; color: var(--brand-cocoa); font-size: 15px; cursor: pointer; }
+.zoom:hover { background: var(--brand-blush); }
+.deckColumn { display: grid; grid-template-rows: auto minmax(0, 1fr); min-height: 0; padding: 0 14px 0; border-radius: 4px; background: var(--brand-cream); }
+.deckHead { display: flex; align-items: center; gap: 12px; height: 44px; }
+.deckHead .curve { flex: 1; }
+.deckHead .curve span { grid-template-rows: 11px var(--bar) 11px; }
+.deckCount { font: 700 22px Georgia, serif; color: var(--brand-cocoa); white-space: nowrap; }
+.deckCount small { font-size: 14px; color: var(--brand-cocoa-soft); }
+.deckCount[data-short] { color: #b4384f; }
+.slots { display: grid; grid-template-columns: repeat(5, var(--cw)); grid-auto-rows: calc(var(--cw) * 1.5); gap: 8px; align-content: start; }
+.slot { display: block; padding: 0; border: 0; background: none; cursor: grab; touch-action: none; }
+.slot:hover .card { filter: brightness(.9); }
+.slot[data-arrive] .card { animation: arrive .35s cubic-bezier(.3, 1.5, .5, 1); }
+.emptySlot { border: 2px dashed var(--brand-pink); border-radius: 2px; }
+.dragGhost { position: absolute; z-index: 90; pointer-events: none; opacity: .92; transform: scale(1.06); }
+.flyer { position: absolute; z-index: 90; pointer-events: none; }
+
+@keyframes fade { from { opacity: 0; } }
+@keyframes rise { from { opacity: 0; transform: translateY(10px); } }
+@keyframes near { from { opacity: 0; transform: scale(.92); } }
+@keyframes arrive { from { opacity: 0; transform: translateY(-14px) scale(.85); } }
+@media (prefers-reduced-motion: reduce) { .deckBox, .backdrop, .dialog, .pips i, .slot[data-arrive] .card, .playables { animation: none; } .fanCard, .curve i { transition: none; } }

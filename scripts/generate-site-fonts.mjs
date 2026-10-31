@@ -43,9 +43,9 @@ export async function homeCodePoints() {
 /** The menu must not download rare-kanji blocks for ordinary setup labels. */
 export async function gameMenuCodePoints() {
   // Menu copy includes the shared account prompts; extraction/addition must not leave stale file names.
-  // Every screen the launchpad opens (social, profile, history, settings, notifications, editor lobby) is part of the menu.
+  // Every screen the launchpad opens (social, profile, decks, history, settings, notifications, editor lobby) is part of the menu.
   const menus = await Promise.all(['src/components/game/plaza', 'src/components/game/launchpad', 'src/components/game/home', 'src/components/game/missions', 'src/components/game/puzzles', 'src/components/shared/auth',
-    'src/components/game/social', 'src/components/game/history', 'src/components/game/settings', 'src/components/game/notifications', 'src/components/game/editor', 'src/components/shared/player', 'src/components/shared/room'].map(sourceFiles));
+    'src/components/game/social', 'src/components/game/history', 'src/components/game/settings', 'src/components/game/notifications', 'src/components/game/editor', 'src/components/game/decks', 'src/components/shared/player', 'src/components/shared/room'].map(sourceFiles));
   return codePoints([
     ...menus.flat(), 'src/components/game/GameLobby.tsx',
     'src/components/game/GameSetup.tsx', 'src/components/game/DeckSelect.tsx',

@@ -1,12 +1,12 @@
 import Link from 'next/link';
-import { CARD_GALLERY_PATH } from '@/lib/game/sessionStore';
+import { CARD_GALLERY_PATH, DECKS_PATH } from '@/lib/game/sessionStore';
 import { OrnateFrame } from '@/components/shared/ui/ornament/OrnateFrame';
 import { GameIcon } from '@/components/shared/ui/GameIcon';
 import styles from './CardsMenu.module.css';
 
 const destinations = [
   { href: CARD_GALLERY_PATH, label: '図鑑', note: 'すべてのカードを見る', icon: 'cards', tone: 'gallery' },
-  { href: '/build', label: 'デッキ構築', note: '保存したデッキ・新しく作る', icon: 'pen', tone: 'build', external: true },
+  { href: DECKS_PATH, label: 'デッキ', note: '保存したデッキ・新しく作る', icon: 'pen', tone: 'build' },
   { href: '/deck/2pick', label: '2Pick構築', note: '2枚から選んでデッキを作る', icon: 'cards', tone: 'gallery', external: true },
   { href: '/deck-view', label: 'デッキ画像', note: 'デッキコードから画像を作る', icon: 'grid', tone: 'build', external: true },
 ] as const;
