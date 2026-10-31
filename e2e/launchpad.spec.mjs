@@ -79,7 +79,8 @@ test('the game\'s screens open in the expanded pad over the same live room, with
   await pad.getByRole('button', { name: 'ゲームメニューを拡大' }).click();
   // Expanded, the game's screens are down the left and the pad's tabs are icons only at the top right.
   const screens = pad.getByRole('tablist', { name: 'ゲームの画面' }), icons = pad.getByRole('tablist', { name: 'ランチパッドのタブ' });
-  await expect(screens.getByRole('tab')).toHaveCount(6);
+  await expect(screens.getByRole('tab')).toHaveCount(7);
+  await expect(screens.getByRole('tab', { name: 'デッキ', exact: true })).toBeVisible();
   await expect(icons.getByRole('tab')).toHaveCount(4);
   await expect(screens.getByRole('tab', { name: /CPU対決|バトル/ })).toHaveCount(0);
   await expect(icons.getByRole('tab', { name: '設定' })).toHaveText('');
