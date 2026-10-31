@@ -51,3 +51,8 @@
 .preferenceIcon { width: 48px; height: 48px; color: var(--brand-cocoa); }
 @container stage (max-height: 650px) { .pad { --pad: 22px 30px 18px; gap: 8px 14px; } .tabBar { gap: 3px; } .tabBar button { min-height: 50px; padding: 4px 2px; } }
 @container stage (max-width: 600px) { .pad { grid-template-columns: 58px minmax(0, 1fr); gap: 8px 10px; } .tabBar { padding-right: 8px; } .tabBar span { font-size: 10px; } .tabBar svg { width: 21px; height: 21px; } }
+
+/* ミッション専用。タブ・プロフィール段・拡大操作を置かず、同じ飾り枠とスクロールを共用する。 */
+.standalone { display: flex; width: min(660px, 100%); height: min(760px, 100%); min-height: 0; }
+.standalone:focus { outline: none; }
+.standalone .pad { grid-template-columns: minmax(0, 1fr); grid-template-rows: auto minmax(0, 1fr); grid-template-areas: 'head' 'panel'; height: 100%; }

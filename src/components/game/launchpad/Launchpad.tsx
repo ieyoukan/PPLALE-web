@@ -32,22 +32,24 @@ export function Launchpad({ stack, choose }: { stack: Place[]; choose: (section:
   // The small pad is for quick actions; its expanded landing page finds public rooms.
   const shownSection = (section: Section) => expanded && section === 'home' ? 'discover' : !expanded && section === 'discover' ? 'home' : section;
   const section = shownSection(place.section);
+  // ミッションは共通の枠・開閉を使い、タブのない専用パネルとして表示する。
+  const standalone = section === 'missions';
   // Each screen opens at its top.
   useEffect(() => { panelRef.current?.scrollTo({ top: 0 }); }, [place, expanded]);
   // Focus moves into the pad (to the pad itself, so no button looks chosen by it).
-  useEffect(() => { box.current?.focus(); }, [expanded]);
+  useEffect(() => { box.current?.focus(); }, [expanded, standalone]);
   const rail = expanded ? screens : padTabs;
   // The rail shows the screen the shown one was opened from (a profile from フレンド: フレンド).
   const current = [...stack].reverse().map(item => shownSection(parentSection[item.section] ?? item.section)).find(item => rail.includes(item));
   const title = sectionInfo[section].label;
-  const icons = expanded && <div className={styles.tabIcons} role="tablist" aria-label="ランチパッドのタブ">{padTabs.filter(item => item !== 'home').map(item =>
+  const icons = !standalone && expanded && <div className={styles.tabIcons} role="tablist" aria-label="ランチパッドのタブ">{padTabs.filter(item => item !== 'home').map(item =>
     <button key={item} id={`${tabId}-${item}`} type="button" role="tab" className={styles.iconButton} aria-label={sectionInfo[item].label} aria-selected={section === item} aria-controls={`${tabId}-panel`} title={sectionInfo[item].label} onClick={() => choose(item)}><GameIcon name={sectionInfo[item].icon} /></button>)}</div>;
   const head = <header className={styles.head}>
     {back && <button className={styles.iconButton} onClick={back} aria-label="もどる" title="もどる"><GameIcon name="back" /></button>}
     <h2 data-ui-title>{title}</h2>
     <div className={styles.headTools}>
       {icons}
-      <button className={styles.iconButton} onClick={() => setExpanded(!expanded)} aria-label={expanded ? 'ランチパッドに縮小' : 'ゲームメニューを拡大'} title={expanded ? '縮小' : '拡大'}><GameIcon name={expanded ? 'collapse' : 'expand'} /></button>
+      {!standalone && <button className={styles.iconButton} onClick={() => setExpanded(!expanded)} aria-label={expanded ? 'ランチパッドに縮小' : 'ゲームメニューを拡大'} title={expanded ? '縮小' : '拡大'}><GameIcon name={expanded ? 'collapse' : 'expand'} /></button>}
       <button className={styles.iconButton} onClick={onClose} aria-label="メニューを閉じる"><GameIcon name="close" /></button>
     </div>
   </header>;
@@ -61,8 +63,8 @@ export function Launchpad({ stack, choose }: { stack: Place[]; choose: (section:
       event.currentTarget.querySelectorAll<HTMLButtonElement>('[role=tab]')[next]?.focus();
     }}>{rail.map(item => <button key={item} id={`${tabId}-${item}`} type="button" role="tab" aria-label={item === 'home' ? 'ランチパッドホーム' : sectionInfo[item].label} aria-selected={current === item} aria-controls={`${tabId}-panel`} tabIndex={current === item || (!current && item === 'home') ? 0 : -1} title={sectionInfo[item].label} onClick={() => choose(item)}><GameIcon name={sectionInfo[item].icon} /><span data-ui-title>{tabLabel(item)}</span></button>)}</nav>;
 
-  return <div className={styles.backdrop} onClick={onClose} data-launchpad data-launchpad-expanded={expanded || undefined}>
-    <div ref={box} tabIndex={-1} inert={!!panel} className={expanded ? styles.expanded : styles.dialog} role="dialog" aria-modal={chatOpen ? undefined : true} aria-label="ゲームメニュー" data-launchpad onClick={event => event.stopPropagation()} onKeyDown={event => {
+  return <div className={styles.backdrop} onClick={onClose} data-launchpad data-launchpad-expanded={!standalone && expanded || undefined}>
+    <div ref={box} tabIndex={-1} inert={!!panel} className={standalone ? styles.standalone : expanded ? styles.expanded : styles.dialog} role="dialog" aria-modal={chatOpen ? undefined : true} aria-label={standalone ? title : 'ゲームメニュー'} data-launchpad onClick={event => event.stopPropagation()} onKeyDown={event => {
       event.stopPropagation();
       const typing = (event.target as HTMLElement).closest('input:not([type=range]), textarea, select, [contenteditable=true]');
       if (event.key === 'Escape' && !panel && !typing && !event.nativeEvent.isComposing && !event.defaultPrevented) { event.preventDefault(); onClose(); }
@@ -73,10 +75,10 @@ export function Launchpad({ stack, choose }: { stack: Place[]; choose: (section:
         else if (!event.shiftKey && document.activeElement === last) { event.preventDefault(); first?.focus(); }
       }
     }}>
-      {!expanded && <GameGuide className={styles.dialogGuide} />}
+      {!standalone && !expanded && <GameGuide className={styles.dialogGuide} />}
       <OrnateFrame className={styles.pad} data-section={section}>
-        {!expanded && <LaunchpadStatus />}{tabRail}{head}
-        <div ref={panelRef} className={styles.tabPanel} role="tabpanel" id={`${tabId}-panel`} aria-label={title} tabIndex={0}>
+        {!standalone && !expanded && <LaunchpadStatus />}{!standalone && tabRail}{head}
+        <div ref={panelRef} className={styles.tabPanel} role={standalone ? 'region' : 'tabpanel'} id={`${tabId}-panel`} aria-label={title} tabIndex={0}>
           <Suspense fallback={null}><LaunchpadScreens section={section} place={place} onPanel={setPanel} onClose={onClose} /></Suspense>
         </div>
       </OrnateFrame>

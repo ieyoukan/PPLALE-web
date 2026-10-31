@@ -30,7 +30,7 @@ test('room mission starts the lesson, saves a real clear and resumes after reloa
   const progress = page.getByRole('progressbar', { name: '入門編のクリア状況', exact: true });
   await expect(progress).toHaveAttribute('value', '0');
   await page.screenshot({ path: info.outputPath('beginner-missions.png') });
-  await page.getByRole('link', { name: 'はじめる', exact: true }).click();
+  await page.getByRole('link', { name: /入門1/ }).click();
   const lesson = page.getByRole('dialog', { name: '召喚酔いと突撃と防衛', exact: true });
   await expect(lesson).toBeVisible(); await expect(lesson).toContainText('召喚酔い');
   await page.screenshot({ path: info.outputPath('intro-lesson.png') });
@@ -46,7 +46,7 @@ test('room mission starts the lesson, saves a real clear and resumes after reloa
   await expect(page.getByRole('link', { name: /入門①.*クリア済み/ })).toBeVisible();
   await page.getByRole('button', { name: 'メニューを閉じる', exact: true }).click();
   await badge(page).click(); await expect(progress).toHaveAttribute('value', '1');
-  await expect(page.getByRole('link', { name: 'つづきから', exact: true })).toHaveAttribute('href', '/game/puzzle/?id=intro-2');
+  await expect(page.locator('a[aria-current=step]')).toHaveAttribute('href', '/game/puzzle/?id=intro-2');
   await page.reload(); await hideDevTools(page); await badge(page).click();
   await expect(progress).toHaveAttribute('value', '1');
 });
@@ -58,7 +58,7 @@ test('finishing the fifth lesson completes the mission and removes the room mark
   const room = page.url();
   await badge(page).click();
   await expect(page.getByRole('progressbar', { name: '入門編のクリア状況' })).toHaveAttribute('value', '4');
-  await page.getByRole('link', { name: 'つづきから', exact: true }).click();
+  await page.locator('a[aria-current=step]').click();
   await page.getByRole('dialog', { name: '貫通で相手の防衛を無視しよう' }).getByRole('button', { name: '挑戦する', exact: true }).click();
   await summon(page, 'c1'); await attack(page, 'c1', 'leader');
   await expect(result(page)).toContainText('初心者ミッション達成');
@@ -88,5 +88,44 @@ test('a failed attempt earns no progress and clearing only the last lesson is no
   expect(await page.evaluate(key => JSON.parse(localStorage.getItem(key)), progressKey)).toEqual(['intro-5']);
   await result(page).getByRole('button', { name: '初心者ミッションへ', exact: true }).click();
   await expect(page.getByRole('progressbar', { name: '入門編のクリア状況' })).toHaveAttribute('value', '1');
-  await expect(page.getByRole('link', { name: 'つづきから', exact: true })).toHaveAttribute('href', '/game/puzzle/?id=intro-1');
+  await expect(page.locator('a[aria-current=step]')).toHaveAttribute('href', '/game/puzzle/?id=intro-1');
 });
+
+
+for (const viewport of [{ width: 1280, height: 860 }, { width: 844, height: 390 }, { width: 390, height: 844 }]) {
+  test(`mission panel has no tabs and presents lessons in sequence at ${viewport.width}x${viewport.height}`, async ({ page }, info) => {
+    await page.setViewportSize(viewport);
+    await page.goto('/game/missions/');
+    await page.waitForURL(/\/game\/room\/\d{6}\//);
+    await hideDevTools(page);
+    const dialog = page.getByRole('dialog', { name: '初心者ミッション', exact: true });
+    await expect(dialog).toBeVisible();
+    await expect(dialog.getByRole('tab')).toHaveCount(0);
+    await expect(dialog.getByRole('tablist')).toHaveCount(0);
+    await expect(dialog.getByRole('link', { name: /^(はじめる|つづきから)$/ })).toHaveCount(0);
+    await expect(dialog.getByRole('button', { name: /拡大|縮小/ })).toHaveCount(0);
+    const current = dialog.locator('a[aria-current=step]');
+    await expect(current).toHaveAttribute('href', '/game/puzzle/?id=intro-1');
+    await expect(current).toContainText('ここから');
+    await expect(current).toBeInViewport();
+    const lessons = dialog.getByRole('list').getByRole('link');
+    await expect(lessons).toHaveCount(5);
+    expect(await lessons.evaluateAll(elements => elements.map(element => new URL(element.href).searchParams.get('id')))).toEqual(['intro-1', 'intro-2', 'intro-3', 'intro-4', 'intro-5']);
+    expect(await current.evaluate(element => element.offsetHeight)).toBeGreaterThan(await lessons.nth(1).evaluate(element => element.offsetHeight));
+    await page.screenshot({ path: info.outputPath('mission-panel.png') });
+    await lessons.last().scrollIntoViewIfNeeded();
+    await lessons.last().click({ trial: true });
+    await expect(lessons.last()).toBeInViewport();
+    const scrolling = dialog.getByRole('region', { name: '初心者ミッション', exact: true });
+    expect(await scrolling.evaluate(element => element.scrollWidth <= element.clientWidth)).toBe(true);
+    await page.keyboard.press('Escape');
+    await expect(dialog).toHaveCount(0);
+    await page.getByRole('button', { name: 'メニュー', exact: true }).click();
+    const launchpad = page.getByRole('dialog', { name: 'ゲームメニュー', exact: true });
+    await expect(launchpad.getByRole('tab')).toHaveCount(5);
+    await launchpad.getByRole('link', { name: '初心者ミッション', exact: true }).click();
+    await expect(dialog).toBeVisible();
+    await expect(dialog).toBeFocused();
+    await expect(dialog.getByRole('tab')).toHaveCount(0);
+  });
+}
