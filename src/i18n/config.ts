@@ -37,3 +37,14 @@ export function detectAppLocale(acceptLanguage: string | null, country: string |
   if (preferredLanguage) return 'en';
   return country?.toUpperCase() === 'JP' ? 'ja' : 'en';
 }
+
+/**
+ * Runs in <head> before anything is drawn: the language for <html lang> and data-locale (which <Bi> and the
+ * LocaleProvider follow). The same rule as browserAppLocale.
+ */
+export const LOCALE_SCRIPT = `(() => { try {
+  const saved = document.cookie.match(/(?:^|; )${APP_LOCALE_COOKIE}=(ja|en)(?:;|$)/);
+  const language = ((navigator.languages && navigator.languages[0]) || navigator.language || '').toLowerCase();
+  const locale = saved ? saved[1] : !language || language === 'ja' || language.startsWith('ja-') ? 'ja' : 'en';
+  document.documentElement.lang = locale; document.documentElement.dataset.locale = locale;
+} catch {} })();`;
