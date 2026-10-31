@@ -12,6 +12,7 @@ import { ShareSheet } from '../plaza/ShareSheet';
 import { HomeRoomSheet } from '../plaza/HomeRoomSheet';
 import { NewRoomSheet } from '../plaza/NewRoomSheet';
 import { GameGuide } from '../guide/GameGuide';
+import { useI18n } from '@/i18n/LocaleProvider';
 import { useLaunchpad } from './LaunchpadContext';
 import { LaunchpadStatus } from './LaunchpadStatus';
 import { LaunchpadScreens } from './LaunchpadScreens';
@@ -20,10 +21,11 @@ import { padTabs, screens, parentSection, sectionInfo } from './places';
 import type { Place, Section } from './places';
 import styles from './Launchpad.module.css';
 
-const tabLabel = (section: Section) => section === 'home' ? 'ホーム' : section === 'discover' ? 'ぷぷりえーる' : sectionInfo[section].label;
 
 export function Launchpad({ stack, choose }: { stack: Place[]; choose: (section: Section) => void }) {
   const { close: onClose, expanded, setExpanded, place, back } = useLaunchpad();
+  const { t } = useI18n();
+  const tabLabel = (section: Section) => t(section === 'home' ? 'ホーム' : section === 'discover' ? 'ぷぷりえーる' : sectionInfo[section].label);
   const plaza = usePlaza();
   const chatOpen = useRoomChatOpen();
   const [panel, setPanel] = useState<RoomPanel | null>(null);
@@ -41,7 +43,7 @@ export function Launchpad({ stack, choose }: { stack: Place[]; choose: (section:
   const rail = expanded ? screens : padTabs;
   // The rail shows the screen the shown one was opened from (a profile from フレンド: フレンド).
   const current = [...stack].reverse().map(item => shownSection(parentSection[item.section] ?? item.section)).find(item => rail.includes(item));
-  const title = sectionInfo[section].label;
+  const title = t(sectionInfo[section].label);
   const icons = !standalone && expanded && <div className={styles.tabIcons} role="tablist" aria-label="ランチパッドのタブ">{padTabs.filter(item => item !== 'home').map(item =>
     <button key={item} id={`${tabId}-${item}`} type="button" role="tab" className={styles.iconButton} aria-label={sectionInfo[item].label} aria-selected={section === item} aria-controls={`${tabId}-panel`} title={sectionInfo[item].label} onClick={() => choose(item)}><GameIcon name={sectionInfo[item].icon} /></button>)}</div>;
   const head = <header className={styles.head}>

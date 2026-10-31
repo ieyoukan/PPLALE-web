@@ -52,6 +52,7 @@ export const NOTIFICATIONS_PATH = '/game/notifications/';
 export const SETTINGS_PATH = '/game/settings/';
 /** 盤面エディタ: place cards freely, then play from there. */
 export const EDITOR_PATH = '/game/editor/';
+export const DECKS_PATH = '/game/decks/';
 export const PUZZLES_PATH = '/game/puzzles/';
 export const puzzleListHref = (fruit: string) => `${PUZZLES_PATH}?fruit=${encodeURIComponent(fruit)}`;
 export const puzzleHref = (id: string) => `/game/puzzle/?id=${encodeURIComponent(id)}`;

@@ -21,6 +21,8 @@ const CardGallery = dynamic(() => import('@/components/game/home/CardGallery'));
 const RoomBrowser = dynamic(() => import('@/components/game/plaza/RoomBrowser').then(module => module.RoomBrowser));
 const EditorLobby = dynamic(() => import('@/components/game/editor/EditorLobby'));
 const SocialPage = dynamic(() => import('@/components/game/social/SocialPage').then(module => module.SocialPage));
+const DecksPage = dynamic(() => import('@/components/game/decks/DecksPage').then(module => module.DecksPage));
+const DeckEditor = dynamic(() => import('@/components/game/decks/DeckEditor').then(module => module.DeckEditor));
 const ProfilePage = dynamic(() => import('@/components/game/social/ProfilePage').then(module => module.ProfilePage));
 const PlayPerformancePanel = dynamic(() => import('@/components/game/performance/PlayPerformancePanel').then(module => module.PlayPerformancePanel));
 
@@ -40,6 +42,8 @@ export function LaunchpadScreens({ section, place, onPanel, onClose }: { section
     case 'missions': return <BeginnerMissions />;
     case 'cards': return <CardsMenu />;
     case 'zukan': return <CardGallery />;
+    case 'decks': return <DecksPage key={`${place.id ?? ''}:${place.from ?? ''}`} place={place} />;
+    case 'deckEditor': return <DeckEditor key={place.id} place={place} onClose={onClose} />;
     case 'editor': return <EditorLobby />;
     case 'social': return <SocialPage />;
     case 'profile': return <ProfilePage id={place.id} />;
