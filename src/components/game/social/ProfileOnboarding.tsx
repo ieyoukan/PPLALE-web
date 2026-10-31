@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState } from 'react';
 import { useAuth } from '@/lib/auth';
-import { defaultProfile, readProfile, saveProfile } from '@/lib/game/social';
+import { defaultProfile, enableSearch, readProfile, saveProfile } from '@/lib/game/social';
 import { CardArtwork } from '@/components/shared/card/CardArtwork';
 import { GameIcon } from '@/components/shared/ui/GameIcon';
 import { ProfileIconPicker } from './ProfileIconPicker';
@@ -17,7 +17,12 @@ export default function ProfileOnboarding({ uid }: { uid: string }) {
   const [attempt, setAttempt] = useState(0);
   useEffect(() => {
     let current = true;
-    const load = () => { void readProfile(uid).then(profile => { if (current) setStatus(profile ? 'ready' : 'missing'); }, () => { if (current) setStatus('error'); }); };
+    const load = () => { void readProfile(uid).then(profile => {
+      if (!current) return;
+      setStatus(profile ? 'ready' : 'missing');
+      // Saved before name search: made findable once (the profile editor offers to opt out).
+      if (profile && profile.searchable === undefined) void enableSearch(uid).catch(() => {});
+    }, () => { if (current) setStatus('error'); }); };
     load(); window.addEventListener('pplale-profile-updated', load);
     return () => { current = false; window.removeEventListener('pplale-profile-updated', load); };
   }, [uid, attempt]);

@@ -31,6 +31,9 @@
 .profileForm label { display: grid; gap: 6px; font-size: 13px; font-weight: 700; }
 .profileForm small { justify-self: end; color: var(--brand-cocoa-soft); }
 .profileForm > .cardButton { justify-self: center; }
+.profileForm label.toggle { display: flex; align-items: center; gap: 8px; justify-self: start; cursor: pointer; }
+.panel .toggle input { width: 20px; min-height: 20px; height: 20px; margin: 0; padding: 0; accent-color: var(--brand-cocoa); }
+.toggle svg { color: var(--brand-cocoa); font-size: 17px; }
 .actions { display: flex; flex-wrap: wrap; align-items: center; gap: 12px; margin-top: 20px; font-size: 13px; }
 .success { padding: 12px 0; color: #4d6b2c; font-size: 13px; font-weight: 700; }
 .error { padding: 12px 0; color: #9b3a4f; font-size: 13px; font-weight: 700; }
@@ -100,9 +103,40 @@ a.room:hover .roomAction { background: var(--brand-blush); }
 .panel .accept { background: var(--brand-sage); }
 .panel .decline { background: #ece3dc; }
 
-.addFriend { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; margin-top: 8px; padding: 12px 0; border-block: 1px solid var(--brand-pink); font-size: 13px; }
-.addFriend label { display: flex; flex: 1; min-width: 220px; align-items: center; gap: 10px; color: var(--brand-cocoa); font-size: 22px; }
-.addFriend input { font-size: 14px; }
+/* Finding someone by name or profile link (UserSearch): results are friend tiles with a neutral edge. */
+.search { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; margin: 4px 0 14px; font-size: 13px; }
+.search label { position: relative; display: flex; flex: 1; min-width: 220px; align-items: center; color: var(--brand-cocoa); font-size: 20px; }
+.search label > svg { position: absolute; left: 12px; pointer-events: none; }
+.panel .search input { padding-left: 42px; font-size: 14px; }
+.search label[data-searching] > svg { animation: bob .8s ease-in-out infinite; }
+.search > .tiles { flex-basis: 100%; }
+.searchEmpty { flex-basis: 100%; margin: 0; color: var(--brand-cocoa-soft); font-size: 13px; }
+.tile[data-place=found] { --place: var(--brand-pink-edge); }
+
+/* Sharing a profile (ProfileShare): its short link, then Discord, X and the device's share sheet as icons. */
+.share { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin-top: 12px; }
+.panel .share button, .share a { position: relative; min-height: 40px; }
+.panel button.shareLink { flex: 0 1 auto; justify-content: flex-start; min-width: 0; max-width: 100%; padding: 8px 12px; background: var(--brand-cream); font-size: 13px; }
+.shareLink > span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-family: Georgia, serif; letter-spacing: .02em; }
+.shareLink > svg { flex: none; font-size: 18px; color: var(--brand-cocoa); }
+.share[data-mine] .shareLink { border-color: var(--brand-cocoa); background: var(--brand-blush); }
+.panel button.shareTile, .shareTile { display: inline-grid; place-items: center; width: 44px; padding: 0; border: 1px solid var(--brand-control-edge); border-radius: var(--brand-control-radius); background: var(--brand-paper); color: var(--brand-cocoa-deep); font-size: 20px; text-decoration: none; }
+.shareTile:hover, .panel button.shareLink:hover { background: var(--brand-blush); }
+.share :is(button, a):active { transform: translateY(2px); }
+.xMark { font-size: 20px; line-height: 1; }
+.copiedDot { position: absolute; top: -7px; right: -7px; display: grid; place-items: center; width: 22px; height: 22px; border-radius: 50%; background: var(--brand-sage); color: var(--brand-cocoa-deep); font-size: 13px; font-style: normal; animation: popIn .35s cubic-bezier(.3, 1.6, .5, 1) both; }
+.srOnly { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
+
+/* A visitor who is not signed in: both faces with a heart between, and one button to sign in and ask. */
+.befriend { display: grid; justify-items: center; gap: 14px; margin-bottom: 20px; padding: 18px 12px; border-block: 1px solid var(--brand-pink); background: var(--brand-vanilla-wash); }
+.pair { display: flex; align-items: center; gap: 14px; }
+.blankFace { display: grid; place-items: center; width: 64px; height: 64px; border: 2px dashed var(--brand-pink-edge); border-radius: 50%; color: var(--brand-cocoa-soft); font-size: 28px; }
+.pairHeart { width: 30px; height: 30px; color: var(--brand-pink-edge); fill: currentColor; animation: beat 1.6s ease-in-out infinite; }
+.perks { display: flex; flex-wrap: wrap; justify-content: center; gap: 6px 18px; margin: 0; padding: 0; list-style: none; color: var(--brand-cocoa); font-size: 12px; font-weight: 700; }
+.perks li { display: inline-flex; align-items: center; gap: 5px; }
+.perks svg { font-size: 17px; }
+@keyframes popIn { from { opacity: 0; transform: scale(.4); } }
+@media (prefers-reduced-motion: reduce) { .pairHeart, .copiedDot, .search label[data-searching] > svg { animation: none; } }
 
 @keyframes beat { 0%, 70%, 100% { transform: scale(1); } 80% { transform: scale(1.25); } 90% { transform: scale(.95); } }
 @keyframes bob { 50% { transform: translateY(-3px); } }

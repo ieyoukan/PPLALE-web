@@ -30,6 +30,7 @@ test.beforeAll(async () => {
           'next/image': `import React from 'react'; export default function Image({ src, alt }) { return <img src={src} alt={alt} style={{ position: 'absolute', inset: 0, width: '100%', height: '100%' }} />; }`,
           '@/lib/auth': 'export const useAuth = () => ({ signOut: async () => window.__account(null) });',
           '@/lib/game/social': `export const defaultProfile = (uid, displayName) => ({ uid, displayName, comment: 'よろしくお願いします！', iconCardId: 'p_1', decks: [] });
+            export const enableSearch = async () => {};
             export async function readProfile(uid) {
               window.__reads.push(uid);
               if (window.__readFails) throw new Error('offline');

@@ -2,8 +2,12 @@
 
 import { displayCards } from './catalog';
 import { tellFriend, tellRecruit } from './push';
-/** `decks`: ids of the player's saved decks (users/{uid}/decks) they show on their profile, at most MAX_PUBLIC_DECKS. */
-export interface PlayerProfile { uid: string; displayName: string; comment: string; iconCardId: string; decks: string[] }
+import { nameGrams } from './profileSearch';
+/**
+ * `decks`: ids of the player's saved decks (users/{uid}/decks) they show on their profile, at most MAX_PUBLIC_DECKS.
+ * `searchable`: whether others can find the profile by name (`undefined`: saved before name search existed).
+ */
+export interface PlayerProfile { uid: string; displayName: string; comment: string; iconCardId: string; decks: string[]; searchable?: boolean }
 export const MAX_PUBLIC_DECKS = 3;
 const deckIds = (value: unknown) => Array.isArray(value) ? [...new Set(value.filter((id): id is string => typeof id === 'string' && /^[\w-]{1,128}$/.test(id)))].slice(0, MAX_PUBLIC_DECKS) : [];
 export interface Friendship { id: string; members: [string, string]; requestedBy: string; status: 'pending' | 'accepted' }
@@ -19,7 +23,7 @@ async function store() {
   return { sdk, db, auth };
 }
 function profileOf(uid: string, data?: Record<string, unknown>): PlayerProfile {
-  return { uid, displayName: typeof data?.displayName === 'string' ? data.displayName : 'プレイヤー', comment: typeof data?.comment === 'string' ? data.comment : '', iconCardId: typeof data?.iconCardId === 'string' && displayCards[data.iconCardId] ? data.iconCardId : 'p_1', decks: deckIds(data?.decks) };
+  return { uid, displayName: typeof data?.displayName === 'string' ? data.displayName : 'プレイヤー', comment: typeof data?.comment === 'string' ? data.comment : '', iconCardId: typeof data?.iconCardId === 'string' && displayCards[data.iconCardId] ? data.iconCardId : 'p_1', decks: deckIds(data?.decks), ...(typeof data?.searchable === 'boolean' && { searchable: data.searchable }) };
 }
 export async function readProfile(uid: string): Promise<PlayerProfile | null> {
   const { sdk, db } = await store(), value = await sdk.getDoc(sdk.doc(db, 'profiles', uid));
@@ -31,12 +35,38 @@ export async function saveProfile(profile: PlayerProfile) {
   const displayName = Array.from(profile.displayName.replace(/\p{C}/gu, '').trim()).slice(0, 12).join('');
   const comment = Array.from(profile.comment.replace(/\p{C}/gu, '').trim()).slice(0, 80).join('');
   if (!displayName || !displayCards[profile.iconCardId]) throw new Error('名前とカードのアイコンを選んでください');
-  const ref = sdk.doc(db, 'profiles', profile.uid);
+  const ref = sdk.doc(db, 'profiles', profile.uid), searchable = profile.searchable ?? true;
   await sdk.runTransaction(db, async transaction => {
     const old = await transaction.get(ref);
-    transaction.set(ref, { displayName, comment, iconCardId: profile.iconCardId, decks: deckIds(profile.decks), updatedAt: sdk.serverTimestamp(), ...(!old.exists() && { createdAt: sdk.serverTimestamp() }) }, { merge: true });
+    transaction.set(ref, { displayName, comment, iconCardId: profile.iconCardId, decks: deckIds(profile.decks), searchable, nameGrams: searchable ? nameGrams(displayName) : [], updatedAt: sdk.serverTimestamp(), ...(!old.exists() && { createdAt: sdk.serverTimestamp() }) }, { merge: true });
   });
-  return { ...profile, displayName, comment, decks: deckIds(profile.decks) };
+  return { ...profile, displayName, comment, decks: deckIds(profile.decks), searchable };
+}
+/**
+ * Makes a profile saved before name search findable, once: only the search fields are added, so a profile
+ * this client cannot fully read (an unknown icon, say) is never rewritten with its fallbacks.
+ */
+export async function enableSearch(uid: string) {
+  const { sdk, db, auth } = await store();
+  if (auth.currentUser?.uid !== uid) return;
+  const ref = sdk.doc(db, 'profiles', uid);
+  await sdk.runTransaction(db, async transaction => {
+    const data = (await transaction.get(ref)).data();
+    if (typeof data?.displayName !== 'string' || 'searchable' in data) return;
+    transaction.update(ref, { searchable: true, nameGrams: nameGrams(data.displayName), updatedAt: sdk.serverTimestamp() });
+  });
+}
+/** The short address that opens a profile (next.config.ts redirects it), for sharing. */
+export const profileShareUrl = (uid: string) => `${location.origin}/u/${encodeURIComponent(uid)}`;
+
+/** Profiles whose name contains `query` (signed-in players only; the server queries, so profiles stay unlistable). */
+export async function searchProfiles(query: string, signal?: AbortSignal): Promise<PlayerProfile[]> {
+  const { auth } = await store(), token = await auth.currentUser?.getIdToken();
+  if (!token) throw new Error('ログインしてください');
+  const response = await fetch(`/api/profiles/search/?q=${encodeURIComponent(query)}`, { headers: { Authorization: `Bearer ${token}` }, signal });
+  if (!response.ok) throw new Error('検索できませんでした');
+  const { profiles } = await response.json() as { profiles: Record<string, unknown>[] };
+  return profiles.map(data => profileOf(String(data.uid), data));
 }
 export async function requestFriend(other: string) {
   const { sdk, db, auth } = await store(), uid = auth.currentUser?.uid;

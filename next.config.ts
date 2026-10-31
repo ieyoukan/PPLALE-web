@@ -91,7 +91,11 @@ const config: NextConfig = {
   // Links to a room from before rooms had their own address (`?id=`): every room is /game/room/<id>/ now.
   async redirects() {
     const room = { type: 'query' as const, key: 'id', value: '(?<id>\\d{6})' };
-    return ['/game/room', '/game/battle/room'].map(source => ({ source, has: [room], destination: '/game/room/:id/', permanent: false }));
+    return [
+      ...['/game/room', '/game/battle/room'].map(source => ({ source, has: [room], destination: '/game/room/:id/', permanent: false })),
+      // The short profile address to share (src/lib/game/social.ts profileShareUrl).
+      { source: '/u/:uid([\\w-]{1,128})', destination: '/game/profile/?id=:uid', permanent: false },
+    ];
   },
   turbopack: {
     resolveAlias: {

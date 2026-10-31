@@ -38,7 +38,10 @@ export function ProfileWhere({ uid, name, mine, canRead }: { uid: string; name: 
     {own && plaza.view ? <>
       <RoomThumbnailImage rules={own.nextRules ?? plaza.view.rules} className={styles.ownRoomImage} sizes="320px" />
       <div className={styles.profileLocation}><GameIcon name={visibilityInfo[own.visibility].icon} /><span><b data-ui-title>{own.name}</b><small>{visibilityInfo[own.visibility].label}</small></span></div>
-    </> : shown.kind === 'room' ? <RoomCard room={shown.room} large />
+    </> : !canRead ? <div className={styles.profileLocation} data-offline>
+        <GameIcon name="heart" /><span><b data-ui-title>フレンド限定</b></span>
+      </div>
+    : shown.kind === 'room' ? <RoomCard room={shown.room} large />
       : <div className={styles.profileLocation} data-offline={shown.kind === 'offline' || undefined}>
         <GameIcon name={shown.kind === 'offline' ? 'people' : 'letter'} />
         <span><b data-ui-title>{shown.kind === 'offline' ? 'オフライン' : 'プライベートルーム'}</b>{shown.kind === 'private' && <small>{visibilityInfo[shown.visibility].label}</small>}</span>

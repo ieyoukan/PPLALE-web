@@ -1,0 +1,34 @@
+import { NextRequest } from 'next/server';
+import { getAuth } from 'firebase-admin/auth';
+import { getFirestore } from 'firebase-admin/firestore';
+import { adminApp } from '@/lib/firebaseAdmin';
+import { foldName, MAX_NAME_LENGTH, SEARCH_LIMIT } from '@/lib/game/profileSearch';
+
+export const runtime = 'nodejs';
+const noStore = { 'Cache-Control': 'private, no-store' };
+
+/**
+ * Name search for signed-in players. Firestore rules keep `profiles` unlistable, so the server runs one
+ * `array-contains` query (at most SEARCH_LIMIT results, no paging) and returns only the public fields.
+ */
+export async function GET(request: NextRequest): Promise<Response> {
+  const token = request.headers.get('authorization')?.match(/^Bearer (.+)$/)?.[1];
+  if (!token) return Response.json({ error: 'unauthorized' }, { status: 401, headers: noStore });
+  const query = foldName(request.nextUrl.searchParams.get('q') ?? '');
+  if (!query || Array.from(query).length > MAX_NAME_LENGTH) return Response.json({ profiles: [] }, { headers: noStore });
+  try {
+    const app = adminApp(), { uid } = await getAuth(app).verifyIdToken(token);
+    const found = await getFirestore(app).collection('profiles').where('nameGrams', 'array-contains', query).limit(SEARCH_LIMIT + 1).get();
+    const profiles = found.docs.flatMap(doc => {
+      const data = doc.data();
+      // The grams are written by each owner: show a profile only if its actual name matches.
+      if (doc.id === uid || data.searchable !== true || typeof data.displayName !== 'string' || !foldName(data.displayName).includes(query)) return [];
+      return [{ uid: doc.id, displayName: data.displayName, comment: typeof data.comment === 'string' ? data.comment : '', iconCardId: data.iconCardId }];
+    }).slice(0, SEARCH_LIMIT);
+    return Response.json({ profiles }, { headers: noStore });
+  } catch (error) {
+    const auth = typeof error === 'object' && error && 'code' in error && String(error.code).startsWith('auth/');
+    if (!auth) console.error('プロフィール検索に失敗しました:', error);
+    return Response.json({ error: auth ? 'unauthorized' : 'failed' }, { status: auth ? 401 : 500, headers: noStore });
+  }
+}

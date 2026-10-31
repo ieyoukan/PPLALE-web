@@ -18,6 +18,8 @@ import { RoomRuleFilters } from '@/components/shared/room/RoomRuleFilters';
 import { allRoomRules, matchesRoomRules } from '@/lib/game/room/filters';
 import type { RoomRuleFilter } from '@/lib/game/room/filters';
 import { Invitations } from './Invitations';
+import { ProfileShare } from './ProfileShare';
+import { UserSearch } from './UserSearch';
 import { useMyProfile } from './useMyProfile';
 import { useSocial } from './useSocial';
 import styles from './Social.module.css';
@@ -71,9 +73,10 @@ function Social({ uid }: { uid: string }) {
       </span>
     </header>
     {error && <p className={styles.error} role="alert">{error}</p>}
+    <UserSearch />
     <RoomRuleFilters value={ruleFilter} onChange={setRuleFilter} />
     <Invitations filter={ruleFilter} />
-    {!friends.length && <div className={styles.empty} role="status"><p>{loading ? '読み込み中…' : 'プロフィールのリンクから、フレンドになろう。'}</p>{!loading && <Link className={styles.primary} href={NOTIFICATIONS_PATH}><GameIcon name="add" />フレンドを追加</Link>}</div>}
+    {!friends.length && <div className={styles.empty} role={loading ? 'status' : undefined}><p>{loading ? '読み込み中…' : 'リンクを送って、フレンドになろう'}</p>{!loading && me && <ProfileShare uid={uid} name={me.displayName} mine />}</div>}
     {ordered.length > 0 && filtered.length === 0 && <p className={styles.filterEmpty}>このルールのルームは見つかりません</p>}
     {filtered.map(({ room, members }) => {
       const place = placeOf(room);

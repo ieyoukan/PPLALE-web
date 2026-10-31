@@ -1,6 +1,6 @@
 import { NextRequest } from 'next/server';
-import { initializeApp, cert, getApps } from 'firebase-admin/app';
 import { getFirestore } from 'firebase-admin/firestore';
+import { adminApp } from '@/lib/firebaseAdmin';
 import { isValidOgSignature } from '@/lib/ogSignature';
 import { getOgDeckImage } from '@/lib/ogDeckImage';
 
@@ -15,12 +15,7 @@ export async function GET(request: NextRequest, context: { params: Promise<{ use
     if (!isValidOgSignature({ userId, deckId, tsParam: request.nextUrl.searchParams.get('ts'), sigParam: request.nextUrl.searchParams.get('sig') })) {
       return new Response('Unauthorized', { status: 401, headers: noStore });
     }
-    if (!getApps().length) initializeApp({ credential: cert({
-      projectId: process.env.FIREBASE_PROJECT_ID,
-      clientEmail: process.env.FIREBASE_CLIENT_EMAIL,
-      privateKey: process.env.FIREBASE_PRIVATE_KEY?.replace(/\\n/g, '\n'),
-    }) });
-    const deck = await getFirestore().collection('users').doc(userId).collection('decks').doc(deckId).get();
+    const deck = await getFirestore(adminApp()).collection('users').doc(userId).collection('decks').doc(deckId).get();
     const data = deck.data();
     if (!deck.exists || !data) return new Response('Not found', { status: 404, headers: noStore });
     const { bytes, etag } = await getOgDeckImage(data);

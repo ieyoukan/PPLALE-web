@@ -37,10 +37,15 @@ service cloud.firestore {
     }
 
     // Public game profiles contain only a chosen name, card icon, short comment and up to 3 of the player's (already public) decks.
+    // nameGrams: the substrings of the name for the server's name search (src/lib/game/profileSearch.ts); empty when not searchable.
+    // Listing stays closed: the search API queries with the Admin SDK and checks the name itself.
     match /profiles/{userId} {
       function validProfile() {
-        return request.resource.data.keys().hasOnly(['displayName', 'comment', 'iconCardId', 'decks', 'createdAt', 'updatedAt']) &&
+        return request.resource.data.keys().hasOnly(['displayName', 'comment', 'iconCardId', 'decks', 'searchable', 'nameGrams', 'createdAt', 'updatedAt']) &&
           (!('decks' in request.resource.data) || request.resource.data.decks is list && request.resource.data.decks.size() <= 3) &&
+          (!('searchable' in request.resource.data) || request.resource.data.searchable is bool) &&
+          (!('nameGrams' in request.resource.data) || request.resource.data.nameGrams is list && request.resource.data.nameGrams.size() <= 78 &&
+            (request.resource.data.get('searchable', false) == true || request.resource.data.nameGrams.size() == 0)) &&
           request.resource.data.displayName is string && request.resource.data.displayName.size() > 0 && request.resource.data.displayName.size() <= 12 &&
           request.resource.data.comment is string && request.resource.data.comment.size() <= 80 &&
           request.resource.data.iconCardId is string && request.resource.data.iconCardId.matches('[a-z]+_[0-9]+') &&
