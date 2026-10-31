@@ -84,6 +84,7 @@ export function PpPanel({ side, name, portrait, order, current, maximum, own }: 
 type Rect = { x: number; y: number; width: number; height: number };
 /** A card travelling between two places on the table (drawn, discarded, destroyed, stolen …). */
 export interface DrawFlight {
+  id: number;
   uid: string; cardId: string; from: Rect; to: Rect;
   /** down: back all the way; up: face all the way; reveal: back → face; hide: face → back. */
   look: 'down' | 'up' | 'reveal' | 'hide';
@@ -93,6 +94,8 @@ export interface DrawFlight {
   delay: number;
   /** Where it lands, or null when it leaves the game. */
   toZone: Zone | null;
+  /** 山札から手札へのドローだけは、移動中も次の1枚を引ける。 */
+  fromZone: Zone;
 }
 const looks = { down: styles.lookDown, up: styles.lookUp, reveal: styles.lookReveal, hide: styles.lookHide } as const;
 export function FlyingCard({ flight }: { flight: DrawFlight }) {

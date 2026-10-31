@@ -18,6 +18,7 @@ import { useCpuPlayer } from './useCpuPlayer';
 import { cpuSidesOf, sideLabel } from './useGameSession';
 import type { BoardSession } from './useGameSession';
 import { useOpeningDice } from './useOpeningDice';
+import { useDrawInput } from './useDrawInput';
 import { enterLandscape } from '../stage/stageSpace';
 
 export type Panel =
@@ -34,6 +35,8 @@ const typeOf = (game: GameState, uid: string) => gameCatalog[game.cards[uid].car
 // A replay moves quickly through the opening and leaves time to follow each turn.
 const REPLAY_DELAY = 500;
 const REPLAY_OPENING_DELAY = 150;
+const isDrawCommand = (game: GameState, command: Command) => command.type === 'openingDraw'
+  || command.type === 'choose' && game.pending?.task.op === 'draw' && (command.option === 'yojo' || command.option === 'sweet');
 
 /**
  * Everything the board UI needs: the match, who may act, what is targetable, and the handlers
@@ -80,14 +83,13 @@ export function useBoard(container: RefObject<HTMLDivElement | null>, session: B
   if (!deciding && before !== actual) setBefore(actual);
   const game = deciding ? before : actual;
   const animations = useBoardAnimations({ game: actual, shown: game, view, mode, cpuSides, replaying, container, spectating: watching ? names : undefined });
-  const { run: animate, skipNext: skipAnimation, flights, strike, turnNotice, announcement, ping, order, effectRoll, choiceNote, busy: animating } = animations;
+  const { run: animate, skipNext: skipAnimation, flights, strike, busy: animating, drawBlocked } = animations;
   // The request travels while the presentation runs. Only the presentation gates accepting its view.
   const [presentingOwn, setPresentingOwn] = useState(false);
   const [intent, setIntent] = useState<Command | null>(null);
   const roomInputLocked = useRef(false);
-  const drawnFrom = useRef<GameState | null>(null);
-  // 盤面が変わったら解除する。Undoで以前の盤面に戻った場合も引き直せる。
-  useLayoutEffect(() => { drawnFrom.current = null; }, [actual]);
+  const drawInput = useDrawInput();
+  const { reset: resetDrawInput } = drawInput;
 
   /** Sends a command (with its animation). Clears the local selection of the acting side. */
   const act = useCallback((command: Command) => {
@@ -125,7 +127,7 @@ export function useBoard(container: RefObject<HTMLDivElement | null>, session: B
   }, [presentingOwn, remote?.waiting]);
   const modelUsed = useCpuPlayer({
     enabled: ready && !replaying && !puzzleFinished && cpuSides.length > 0 && !loading && !paused, sides: cpuSides, levels, game: actual, act, flights,
-    busy: { any: moving, blocking: rollingDice || !!strike || !!turnNotice || !!announcement || !!ping || !!order || !!effectRoll || !!choiceNote },
+    busy: { any: moving, blocking: rollingDice || drawBlocked || !!remote?.waiting || presentingOwn },
   });
   // A finished match against さいきょう goes to the CPU server once, if this browser agreed to it.
   // The course of the match (形勢), judged with what side 0 can know.
@@ -171,6 +173,7 @@ export function useBoard(container: RefObject<HTMLDivElement | null>, session: B
       handling.current = key;
       resetAnimations();
       resetDice();
+      resetDrawInput();
       setPresentingOwn(false);
       setIntent(null);
       roomInputLocked.current = false;
@@ -190,13 +193,13 @@ export function useBoard(container: RefObject<HTMLDivElement | null>, session: B
       handling.current = key;
       return accept();
     }
-    const parallelDraw = command.type === 'openingDraw' && (actual.phase === 'opening' || actual.phase === 'mulligan');
-    if (rollingDice || animating && !parallelDraw) return;
+    const parallelDraw = isDrawCommand(actual, command);
+    if (rollingDice || (parallelDraw ? drawBlocked : animating)) return;
     handling.current = key;
     // A hand reaction reveals its card in the resulting public zone, even if the previous hand was hidden.
     const shownCardId = cardId ?? (command.type === 'choose' ? after.cards[command.option]?.cardId : undefined);
     animate(command, accept, shownCardId);
-  }, [next, accept, seat, watching, replaying, paused, animating, rollingDice, animate, resetAnimations, resetDice, showDie, presentingOwn, actual.phase]);
+  }, [next, accept, seat, watching, replaying, paused, animating, drawBlocked, rollingDice, animate, resetAnimations, resetDice, resetDrawInput, showDie, presentingOwn, actual]);
 
   // A replay moved to another position: what was being presented is dropped and the new position shown as it is.
   const timeline = session.timeline;
@@ -260,19 +263,17 @@ export function useBoard(container: RefObject<HTMLDivElement | null>, session: B
   };
 
   function deckReady(side: Side, kind: DeckKind) {
-    if (remote?.sending) return false;
+    if (remote?.waiting || presentingOwn || drawInput.waiting || drawBlocked || deciding || loading || rollingDice) return false;
     // Opening draws, and the redraws after giving cards back in the mulligan (once those have landed in the deck).
     const redraw = game.phase === 'mulligan' && !game.mulligan.confirmed[side] && !flights.some(f => f.toZone === 'yojo' || f.toZone === 'sweet');
-    if (game.phase === 'opening' || redraw) return canControl(side) && !loading && !rollingDice && game.openingRemaining[side] > 0 && !flights.some(f => game.players[side].hand.includes(f.uid));
-    return ours && !busy && !loading && pending!.actor === side && pending!.decks.includes(kind);
+    if (game.phase === 'opening' || redraw) return canControl(side) && game.openingRemaining[side] > 0;
+    return ours && pending!.actor === side && pending!.decks.includes(kind);
   }
   function clickDeck(side: Side, kind: DeckKind) {
     if (editing) return setPanel({ type: 'editPile', side, kind });
-    if (!deckReady(side, kind) || !remote && drawnFrom.current === actual) return;
-    // 同じ描画フレームの二重タップも1枚にする。次の操作は新しい盤面と着地を待つ。
-    drawnFrom.current = actual;
+    if (!deckReady(side, kind) || !drawInput.take()) return;
     if (game.phase === 'opening' || game.phase === 'mulligan') act({ type: 'openingDraw', actor: side, deck: kind });
-    else choose(kind);
+    else act({ type: 'choose', actor: side, option: kind });
   }
   /** Tap on a field slot: pick an effect target, attack, place the selected unit, or inspect. */
   function clickSlot(side: Side, uid: string | undefined, slot: number) {
@@ -356,6 +357,7 @@ export function useBoard(container: RefObject<HTMLDivElement | null>, session: B
   function resetTable() {
     animations.reset();
     dice.reset();
+    resetDrawInput();
     setView(home);
     setSelected(null);
     setAttacker(null);

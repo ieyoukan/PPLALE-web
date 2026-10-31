@@ -89,10 +89,10 @@ test('a play automatically records network, server and shown-board timings and b
   expect(JSON.stringify(samples)).not.toMatch(/あなた|相手|test-token|123456|cardId|"uid"/);
   await page.goto(`${base}/game/performance/`);
   await expect(page.getByRole('heading',{name:'通信計測',exact:true})).toBeVisible();
-  await expect(page.getByRole('status')).toContainText('記録 1 件');
+  await expect(page.getByRole('status').filter({ hasText: /記録 \d+ 件/ })).toContainText('記録 1 件');
   await expect(page.getByRole('heading',{name:'サーバー処理の内訳'})).toBeVisible();
   const download=page.waitForEvent('download');await page.getByRole('button',{name:'JSONを書き出す'}).click();expect((await download).suggestedFilename()).toBe('pplale-play-performance.json');
-  await page.getByRole('button',{name:'この端末の記録を消す'}).click();await expect(page.getByRole('status')).toContainText('記録 0 件');
+  await page.getByRole('button',{name:'この端末の記録を消す'}).click();await expect(page.getByRole('status').filter({ hasText: /記録 \d+ 件/ })).toContainText('記録 0 件');
   await page.screenshot({path:'/tmp/pplale-play-performance-desktop.png',fullPage:true});
 });
 
@@ -193,4 +193,36 @@ test('opening draws remain independent while the opponent has a card in flight',
   await expect.poll(() => room.requests.length).toBe(2);
   room.reply();
   await expect(page.locator('[data-hand-list] [data-hand]')).toHaveCount(2);
+});
+
+
+for (const kind of ['opening', 'effect']) test(`${kind} room draws overlap after acknowledgement, but never predict a draw`, async ({ page }) => {
+  let initial = arena();
+  if (kind === 'opening') { initial.phase = 'opening'; initial.openingRemaining = [3, 4]; }
+  else initial = applyCommand(initial, { type: 'adjust', actor: 0, resource: 'points', delta: -8 }, catalog, true).state;
+  const room = await board(page, initial);
+  const deck = page.locator(`button[data-deck="0-${kind === 'opening' ? 'yojo' : 'sweet'}"]`);
+  await expect(deck).toBeEnabled();
+  await freeze(page);
+  await click(deck);
+  await expect.poll(() => room.requests.length).toBe(1);
+  await page.clock.runFor(350);
+  await expect(deck).toBeDisabled();
+  await deck.evaluate(button => button.click());
+  expect(room.requests).toHaveLength(1);
+  await expect(page.locator('[data-hand-list] [data-hand]')).toHaveCount(0);
+  room.reply();
+  await page.clock.runFor(40);
+  await expect(page.locator('[data-hand-list] [data-hand]')).toHaveCount(1);
+  await expect(page.locator('[data-draw-flight]')).toHaveCount(1);
+  await expect(deck).toBeEnabled();
+  await click(deck);
+  await expect.poll(() => room.requests.length).toBe(2);
+  room.reply();
+  await page.clock.runFor(40);
+  await expect(page.locator('[data-hand-list] [data-hand]')).toHaveCount(2);
+  await expect(page.locator('[data-draw-flight]')).toHaveCount(2);
+  await page.clock.runFor(1200);
+  expect(room.requests).toHaveLength(2);
+  await expect(page.locator('[data-draw-flight]')).toHaveCount(0);
 });

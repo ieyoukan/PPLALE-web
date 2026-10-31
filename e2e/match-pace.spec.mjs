@@ -5,12 +5,12 @@ import { arena, catalog, run } from '../packages/game-core/tests/helpers.mjs';
 test.use({ reducedMotion: 'no-preference' });
 const key = 'pplale-game-session-v2';
 const saved = page => page.evaluate(key => JSON.parse(localStorage.getItem(key)).game, key);
-async function load(page, game) {
+async function load(page, game, mode = 'hotseat') {
   await page.goto('/robots.txt');
-  await page.evaluate(({ key, game }) => {
+  await page.evaluate(({ key, game, mode }) => {
     localStorage.setItem('pplale-show-assessment', 'hidden');
-    localStorage.setItem(key, JSON.stringify({ game, mode: 'hotseat', level: 'easy' }));
-  }, { key, game });
+    localStorage.setItem(key, JSON.stringify({ game, mode, level: 'easy' }));
+  }, { key, game, mode });
   await page.goto('/game/play/');
   await expect(page.locator('[data-table]')).toBeVisible();
 }
@@ -40,7 +40,7 @@ test('opening dice finish in one short round and allow the winner to choose', as
   await expect(page.getByRole('radio', { name: '先攻', exact: true })).toBeVisible();
 });
 
-for (const kind of ['opening', 'effect']) test(`${kind} draws land quickly and ignore taps during the flight`, async ({ page }) => {
+for (const kind of ['opening', 'effect']) test(`${kind} draws overlap at the original speed and ignore double taps`, async ({ page }) => {
   let game = arena();
   if (kind === 'opening') { game.phase = 'opening'; game.openingRemaining = [3, 4]; }
   else game = run(game, { type: 'adjust', actor: 0, resource: 'points', delta: -8 }, true);
@@ -48,20 +48,28 @@ for (const kind of ['opening', 'effect']) test(`${kind} draws land quickly and i
   const deck = page.locator(`[data-deck="0-${kind === 'opening' ? 'yojo' : 'sweet'}"]`);
   await expect(deck).toBeEnabled();
   await freeze(page);
-  // 同じフレームの二重クリックも、飛行中のタップも次のドローとして予約しない。
+  // 同じフレームの二重クリックと短い連打は、次のドローとして予約しない。
   await deck.evaluate(button => { button.click(); button.click(); });
   await expect(page.locator('[data-hand-list] [data-hand]')).toHaveCount(1);
   await expect(deck).toBeDisabled();
-  await page.clock.runFor(300);
+  await page.clock.runFor(200);
   await deck.evaluate(button => button.click());
   expect((await saved(page)).players[0].hand).toHaveLength(1);
   await expect(deck).toBeDisabled();
-  await page.clock.runFor(200);
+  await page.clock.runFor(150);
   await expect(deck).toBeEnabled();
-  await expect(page.locator('[data-draw-flight]')).toHaveCount(0);
+  const flights = page.locator('[data-draw-flight]');
+  await expect(flights).toHaveCount(1);
+  await expect(flights.first()).toHaveCSS('animation-duration', '0.8s');
+  await flights.first().evaluate(element => { element.drawAnimation = element.getAnimations()[0]; });
   await deck.evaluate(button => button.click());
   await expect(page.locator('[data-hand-list] [data-hand]')).toHaveCount(2);
-  await page.clock.runFor(600);
+  await expect(flights).toHaveCount(2);
+  // 2枚目を引いても、1枚目の移動アニメーションは最初から再生しない。
+  expect(await flights.first().evaluate(element => element.getAnimations()[0] === element.drawAnimation)).toBe(true);
+  if (kind === 'effect') await expect(page.getByRole('button', { name: /ターン\s*終了/ })).toBeDisabled();
+  await page.clock.runFor(1100);
+  await expect(flights).toHaveCount(0);
   expect((await saved(page)).players[0].hand).toHaveLength(2);
   if (kind === 'opening') {
     await page.getByRole('button', { name: 'メニュー', exact: true }).evaluate(button => button.click());
@@ -71,4 +79,15 @@ for (const kind of ['opening', 'effect']) test(`${kind} draws land quickly and i
     await deck.evaluate(button => button.click());
     await expect(page.locator('[data-hand-list] [data-hand]')).toHaveCount(2);
   }
+});
+
+
+test('CPU opening draws overlap without speeding up the cards', async ({ page }, info) => {
+  const game = arena();
+  game.phase = 'opening'; game.openingRemaining = [3, 3];
+  await load(page, game, 'cpu');
+  await expect(page.locator('[data-draw-flight]')).toHaveCount(2);
+  expect((await saved(page)).players[1].hand.length).toBeGreaterThanOrEqual(2);
+  await expect(page.locator('[data-draw-flight]').first()).toHaveCSS('animation-duration', '0.8s');
+  await page.screenshot({ path: info.outputPath('overlapping-draws.png') });
 });

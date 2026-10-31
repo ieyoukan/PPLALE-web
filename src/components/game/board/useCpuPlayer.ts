@@ -53,10 +53,10 @@ function useCpuWorker(enabled: boolean) {
 /** The CPU side that should act now, or null. Opening draws and the mulligan run in parallel per side. */
 function cpuToMove(game: GameState, sides: Side[], flights: DrawFlight[], animating: boolean): Side | null {
   const cardFlying = (side: Side) => flights.some(f => game.players[side].hand.includes(f.uid));
-  if (game.phase === 'opening') return sides.find(side => game.openingRemaining[side] > 0 && !cardFlying(side)) ?? null;
-  if (game.phase === 'mulligan') return sides.find(side => !game.mulligan.confirmed[side] && !cardFlying(side)) ?? null;
+  if (game.phase === 'opening') return sides.find(side => game.openingRemaining[side] > 0) ?? null;
+  if (game.phase === 'mulligan') return sides.find(side => !game.mulligan.confirmed[side] && (game.openingRemaining[side] > 0 || !cardFlying(side))) ?? null;
   const actor = game.pending?.task.actor ?? game.active;
-  return !animating && sides.includes(actor) ? actor : null;
+  return (!animating || game.pending?.task.op === 'draw') && sides.includes(actor) ? actor : null;
 }
 
 /**
@@ -81,10 +81,10 @@ export function useCpuPlayer({ enabled, sides, levels, game, act, busy, flights 
     return () => { current = false; };
   }, [wantsServed]);
   const modelUsed = useRef<string | null>(null);
+  const side = cpuToMove(game, sides, flights, busy.any);
   useEffect(() => {
     if (!enabled || busy.blocking || game.winner !== null || game.phase === 'dice') return;
     if (wantsServed && served === undefined) return;
-    const side = cpuToMove(game, sides, flights, busy.any);
     if (side === null) return;
     // An answer for an older position (the match changed while thinking) is dropped.
     let cancelled = false;
@@ -94,6 +94,6 @@ export function useCpuPlayer({ enabled, sides, levels, game, act, busy, flights 
       if (response.command && !cancelled) act(response.command);
     }), handReactionOps.includes(game.pending?.task.op ?? '') ? fakeLag() : CPU_DELAY);
     return () => { clearTimeout(timer); cancelled = true; };
-  }, [enabled, sides, levels, game, act, busy.any, busy.blocking, flights, think, wantsServed, served]);
+  }, [enabled, side, levels, game, act, busy.blocking, think, wantsServed, served]);
   return modelUsed;
 }

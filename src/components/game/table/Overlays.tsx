@@ -41,6 +41,6 @@ export function AnimationLayer() {
     </strong>)}
     {pops.map(pop => <span key={pop.id} className={`${styles.pop} ${popTones[pop.tone]}`} style={{ left: pop.x, top: pop.y }}>{pop.text}</span>)}
     {choiceNote && <div key={choiceNote.id} className={styles.choiceNote} role="status">{sideName(board, choiceNote.side)}：{choiceNote.label}</div>}
-    <div className={styles.flightLayer}>{flights.map(flight => <FlyingCard key={flight.uid} flight={flight} />)}</div>
+    <div className={styles.flightLayer}>{flights.map(flight => <FlyingCard key={flight.id} flight={flight} />)}</div>
   </>;
 }

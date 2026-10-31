@@ -60,8 +60,9 @@ function buzz(hits: Hit[]) {
   const amount = Math.max(...blows.map(hit => hit.amount));
   navigator.vibrate(amount >= 4 ? [70, 50, 90] : 30 + amount * 15);
 }
-/** Cards on their way into a hand, deck or the field must land before anyone acts; ones going to a pile are only decoration. */
+/** 通常操作は着地待ち。山札→手札への移動中は、次のドローだけを重ねられる。 */
 const blocksPlay = (flight: DrawFlight) => flight.toZone !== 'nap' && flight.toZone !== 'exile';
+const isDraw = (flight: DrawFlight) => flight.toZone === 'hand' && (flight.fromZone === 'yojo' || flight.fromZone === 'sweet');
 const spotKey = (spot: Spot) => 'unit' in spot ? `unit:${spot.unit}` : 'hand' in spot ? `hand:${spot.hand}` : 'pile' in spot ? `pile:${spot.pile.join('-')}` : 'leader' in spot ? `leader:${spot.leader}` : `pp:${spot.pp}`;
 const selectorOf = (spot: Spot) => 'unit' in spot ? `[data-unit="${spot.unit}"]` : 'hand' in spot ? `[data-hand="${spot.hand}"]`
   : 'pile' in spot ? `[data-deck="${spot.pile.join('-')}"] [data-stack]` : 'leader' in spot ? `[data-leader="${spot.leader}"]` : `[data-pp="${spot.pp}"]`;
@@ -156,12 +157,17 @@ export function useBoardAnimations({ game, shown, view, mode, cpuSides, replayin
     }
     const next = seen.flights;
     if (next.length) {
+      const handTargets = new Map(shown.players.flatMap(player => player.hand).map(uid => [uid, liveRect(root, { hand: uid })]));
       // A card is in one flight at a time: one that starts replaces an earlier one still shown
       // (given back in the mulligan and drawn again right away).
-      setFlights(current => [...current.filter(f => !next.some(n => n.uid === f.uid)), ...next]);
+      setFlights(current => [...current.filter(f => !next.some(n => n.uid === f.uid)).map(flight => {
+        // 続けて引くと手札が並び直すので、飛行中のカードも新しい着地点へ向ける。
+        const to = flight.toZone === 'hand' ? handTargets.get(flight.uid) : undefined;
+        return to ? { ...flight, to } : flight;
+      }), ...next]);
       // The card rests where it lands for a moment: removing it exactly when the flight should end cuts
       // the landing off whenever the animation starts a little late (a busy frame).
-      later(() => setFlights(current => current.filter(f => !next.includes(f))), Math.max(...next.map(f => f.delay)) + DRAW_DURATION + FLIGHT_REST);
+      later(() => setFlights(current => current.filter(f => !next.some(n => n.id === f.id))), Math.max(...next.map(f => f.delay)) + DRAW_DURATION + FLIGHT_REST);
     }
     // Who goes first was decided: show both sides' order before the opening draws.
     if (old.phase === 'initiative' && shown.phase === 'opening') {
@@ -277,7 +283,11 @@ export function useBoardAnimations({ game, shown, view, mode, cpuSides, replayin
   /** A tap moves on: ゲームセット → verdict → result screen. */
   const advanceFinale = useCallback(() => setFinale(current => current === 'set' ? 'verdict' : current === 'verdict' ? null : current), []);
 
-  return { timing, flights, strike, turnNotice, announcement, ping, order, finale, hits, pops, effectRoll, choiceNote, advanceFinale, busy: flights.some(blocksPlay) || !!strike || !!turnNotice || !!announcement || !!ping || !!order || !!effectRoll || !!choiceNote || lagging, run, skipNext, reset };
+  const blocking = !!strike || !!turnNotice || !!announcement || !!ping || !!order || !!effectRoll || !!choiceNote || lagging;
+  return { timing, flights, strike, turnNotice, announcement, ping, order, finale, hits, pops, effectRoll, choiceNote, advanceFinale,
+    busy: flights.some(blocksPlay) || blocking,
+    drawBlocked: flights.some(flight => blocksPlay(flight) && !isDraw(flight)) || blocking,
+    run, skipNext, reset };
 }
 
 /**
