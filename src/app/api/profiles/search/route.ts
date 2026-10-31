@@ -1,7 +1,6 @@
 import { NextRequest } from 'next/server';
-import { getAuth } from 'firebase-admin/auth';
 import { getFirestore } from 'firebase-admin/firestore';
-import { adminApp } from '@/lib/firebaseAdmin';
+import { adminApp, verifiedUid } from '@/lib/firebaseAdmin';
 import { foldName, MAX_NAME_LENGTH, SEARCH_LIMIT } from '@/lib/game/profileSearch';
 
 export const runtime = 'nodejs';
@@ -17,8 +16,9 @@ export async function GET(request: NextRequest): Promise<Response> {
   const query = foldName(request.nextUrl.searchParams.get('q') ?? '');
   if (!query || Array.from(query).length > MAX_NAME_LENGTH) return Response.json({ profiles: [] }, { headers: noStore });
   try {
-    const app = adminApp(), { uid } = await getAuth(app).verifyIdToken(token);
-    const found = await getFirestore(app).collection('profiles').where('nameGrams', 'array-contains', query).limit(SEARCH_LIMIT + 1).get();
+    const uid = await verifiedUid(token);
+    if (!uid) return Response.json({ error: 'unauthorized' }, { status: 401, headers: noStore });
+    const found = await getFirestore(adminApp()).collection('profiles').where('nameGrams', 'array-contains', query).limit(SEARCH_LIMIT + 1).get();
     const profiles = found.docs.flatMap(doc => {
       const data = doc.data();
       // The grams are written by each owner: show a profile only if its actual name matches.
@@ -27,8 +27,7 @@ export async function GET(request: NextRequest): Promise<Response> {
     }).slice(0, SEARCH_LIMIT);
     return Response.json({ profiles }, { headers: noStore });
   } catch (error) {
-    const auth = typeof error === 'object' && error && 'code' in error && String(error.code).startsWith('auth/');
-    if (!auth) console.error('プロフィール検索に失敗しました:', error);
-    return Response.json({ error: auth ? 'unauthorized' : 'failed' }, { status: auth ? 401 : 500, headers: noStore });
+    console.error('プロフィール検索に失敗しました:', error);
+    return Response.json({ error: 'failed' }, { status: 500, headers: noStore });
   }
 }

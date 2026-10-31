@@ -28,7 +28,7 @@
 
 `profiles/{uid}`: displayName, iconCardId, comment, decks（公開するデッキのID、3つまで）, searchable, nameGrams, createdAt, updatedAt。単体の公開読み取り、所有者の書き込みだけ許可。プロフィール一覧の全件取得・クライアントからの検索クエリは許可しない。
 
-名前検索: `nameGrams` は正規化した名前（`src/lib/game/profileSearch.ts` の `foldName`）の部分文字列すべて（12文字で最大78個。`searchable: false` なら空）。検索は `GET /api/profiles/search/?q=` がID tokenを確認し、Admin SDKで `array-contains` を1回だけ実行する（ページ送りなし、20件まで）。返すのは公開項目（名前・ひとこと・アイコン）だけで、所有者が書く `nameGrams` を信用せず、実際の名前に検索語が含まれるものだけを返す。検索導入前のプロフィールは、本人がログインしたときに検索用の2項目だけを1回追加する（ほかの項目は書き換えない）。Admin SDKの認証情報はVercelの `FIREBASE_PROJECT_ID`・`FIREBASE_CLIENT_EMAIL`・`FIREBASE_PRIVATE_KEY`（デッキのOGP画像と共通）。
+名前検索: `nameGrams` は正規化した名前（`src/lib/game/profileSearch.ts` の `foldName`）の部分文字列すべて（12文字で最大78個。`searchable: false` なら空）。検索は `GET /api/profiles/search/?q=` がID tokenをFirebase Authの `accounts:lookup` で確認し（`firebase-admin/auth` はESM専用の依存をrequireするためVercelで読み込めない）、Admin SDKで `array-contains` を1回だけ実行する（ページ送りなし、20件まで）。返すのは公開項目（名前・ひとこと・アイコン）だけで、所有者が書く `nameGrams` を信用せず、実際の名前に検索語が含まれるものだけを返す。検索導入前のプロフィールは、本人がログインしたときに検索用の2項目だけを1回追加する（ほかの項目は書き換えない）。Admin SDKの認証情報はVercelの `FIREBASE_PROJECT_ID`・`FIREBASE_CLIENT_EMAIL`・`FIREBASE_PRIVATE_KEY`（デッキのOGP画像と共通）。
 
 `friendships/{sortedUidA~sortedUidB}`: members, requestedBy, status, createdAt, acceptedAt。申請側はpendingだけ作成でき、承認は相手側だけ。メンバーの差し替えや他人のフレンド一覧の読み取りは禁止。双方どちらからでも削除でき、削除後は相手の募集を読めない。
 

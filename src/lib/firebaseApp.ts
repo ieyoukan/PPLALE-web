@@ -11,6 +11,9 @@ const firebaseConfig = {
   measurementId: "G-SZPZ5GN71F"
 };
 
+/** The web app's public API key (not a secret), also used by the server to check ID tokens. */
+export const firebaseApiKey = firebaseConfig.apiKey;
+
 // Firebaseの初期化（既存のアプリがある場合はそれを使用）
 export const app = getApps().length ? getApp() : initializeApp(firebaseConfig);
 
