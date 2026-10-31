@@ -18,10 +18,9 @@ import type { Place } from '../launchpad/places';
 import { CardImage, CostCurve, byCost, fruitColors, useCards } from './deckParts';
 import { DeckConfirm } from './DeckPopups';
 import { useDecks } from './useDecks';
+import { SEAT_DECK_SAVED } from './seatDeck';
 import styles from './Decks.module.css';
 
-/** Sent when a deck made from a seat is saved: the seat chooses it (PlazaTable). `detail.id`: the saved deck. */
-export const SEAT_DECK_SAVED = 'pplale-seat-deck-saved';
 const GAP = 8, COSTS = [1, 2, 3, 4, 5, 6, '7+'] as const;
 type Cost = typeof COSTS[number];
 

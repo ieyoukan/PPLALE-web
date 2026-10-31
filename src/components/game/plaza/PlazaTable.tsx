@@ -16,6 +16,8 @@ import { useAuth } from '@/lib/auth';
 import { usableChoice } from '@/lib/game/deckSources';
 import { randomSeed } from '@/lib/game/match';
 import { useDeckChoices } from '../DeckSelect';
+import { useLaunchpad } from '../launchpad/LaunchpadContext';
+import { SEAT_DECK_SAVED } from '../decks/seatDeck';
 import { OrnateFrame } from '@/components/shared/ui/ornament/OrnateFrame';
 import { Avatar } from '@/components/shared/player/Avatar';
 import { ProfileLink } from '@/components/shared/player/ProfileLink';
@@ -67,6 +69,14 @@ export function PlazaTable({ view, onMenu, match }: { view: RoomView; onMenu: ()
   };
 
   const [selected, choose] = useChosenDeck();
+  const { openAt } = useLaunchpad();
+  // A deck made or edited from this seat in the launchpad is the seat's deck when it is saved.
+  useEffect(() => {
+    const saved = (event: Event) => { const id = (event as CustomEvent<{ id: string }>).detail?.id; if (id) choose(`saved:${id}`); };
+    window.addEventListener(SEAT_DECK_SAVED, saved);
+    return () => window.removeEventListener(SEAT_DECK_SAVED, saved);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
   const { choices, saved } = useDeckChoices(view.rules, 'このルーム');
   const chosen = usableChoice(choices, selected);
   const me = mySeat === null ? null : view.players[mySeat]!;
@@ -156,6 +166,7 @@ export function PlazaTable({ view, onMenu, match }: { view: RoomView; onMenu: ()
 
     {open === 'deckContents' && chosen && <DeckContentsSheet choice={chosen} onClose={() => setOpen(null)} onAction={me && !me.ready ? () => setOpen('deck') : undefined} actionLabel="デッキを変更" />}
     {open === 'deck' && <DeckSheet choices={choices} chosen={chosen} onChoose={id => { choose(id); setOpen(null); }} onClose={() => setOpen(null)}
+      onMake={() => { setOpen(null); openAt({ section: 'decks', id: 'new', from: 'seat' }); }} onEdit={id => { setOpen(null); openAt({ section: 'decks', id, from: 'seat' }); }}
       signIn={user ? undefined : () => { signInWithGoogle().catch(() => setError('ログインできませんでした')); }} loading={saved.loading} />}
     {open === 'rules' && <RulesSheet view={view} onClose={() => setOpen(null)} />}
     {open === 'share' && <ShareSheet view={view} onClose={() => setOpen(null)} />}

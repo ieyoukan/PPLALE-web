@@ -18,11 +18,14 @@ import { Sheet } from './Sheet';
 import styles from './Plaza.module.css';
 
 /** The decks there are for the room's rules: those the rules do not allow are shown, greyed, with why. */
-export function DeckSheet({ choices, chosen, onChoose, onClose, signIn, loading }: {
+/** `onMake`, `onEdit`: open the launchpad's decks to make one, or at a saved one's popup (deck id), for this seat. */
+export function DeckSheet({ choices, chosen, onChoose, onClose, signIn, loading, onMake, onEdit }: {
   choices: DeckChoice[]; chosen?: DeckChoice; onChoose: (id: string) => void; onClose: () => void; signIn?: () => void; loading: boolean;
+  onMake?: () => void; onEdit?: (deckId: string) => void;
 }) {
   const [preview, setPreview] = useState<DeckChoice | null>(null);
-  if (preview) return <DeckContentsSheet choice={preview} onClose={() => setPreview(null)} onAction={!preview.errors.length ? () => onChoose(preview.id) : undefined} actionLabel="このデッキにする" />;
+  if (preview) return <DeckContentsSheet choice={preview} onClose={() => setPreview(null)} onAction={!preview.errors.length ? () => onChoose(preview.id) : undefined} actionLabel="このデッキにする"
+    onEdit={preview.source === 'saved' && onEdit ? () => onEdit(preview.id.slice('saved:'.length)) : undefined} />;
   return <Sheet title="デッキをえらぶ" onClose={onClose} wide>
     <ul className={styles.deckGrid}>{choices.map(choice => {
       const deck = choice.source === 'random' ? null : choice.deck(0);
@@ -38,13 +41,14 @@ export function DeckSheet({ choices, chosen, onChoose, onClose, signIn, loading 
     <div className={styles.sheetFoot}>
       {signIn && <button className={styles.softButton} onClick={signIn}>ログインして保存したデッキを使う</button>}
       {loading && <span className={styles.note}>デッキを読み込み中…</span>}
-      <a className={styles.softButton} href="/build" target="_blank" rel="noopener noreferrer"><GameIcon name="pen" />デッキを作る</a>
+      {onMake ? <button className={styles.softButton} onClick={onMake}><GameIcon name="plus" />つくる</button>
+        : <a className={styles.softButton} href="/build" target="_blank" rel="noopener noreferrer"><GameIcon name="pen" />デッキを作る</a>}
     </div>
   </Sheet>;
 }
 
 /** A fixed deck's actual cards. Random decks are only generated when ready is pressed. */
-export function DeckContentsSheet({ choice, onClose, onAction, actionLabel }: { choice: DeckChoice; onClose: () => void; onAction?: () => void; actionLabel: string }) {
+export function DeckContentsSheet({ choice, onClose, onAction, actionLabel, onEdit }: { choice: DeckChoice; onClose: () => void; onAction?: () => void; actionLabel: string; onEdit?: () => void }) {
   const [expanded, setExpanded] = useState<string | null>(null);
   const trigger = useRef<HTMLButtonElement | null>(null);
   const deck = choice.source === 'random' ? null : choice.deck(0);
@@ -53,7 +57,10 @@ export function DeckContentsSheet({ choice, onClose, onAction, actionLabel }: { 
     {!deck && <p className={styles.note}>おまかせデッキは、対戦の準備ができたときにカードが決まります。</p>}
     {deck && <DeckCardLayout deck={{ yojoDeckIds: deck.yojo, sweetDeckIds: deck.sweet, playableCardId: deck.playable }} label="デッキのカード" imageOf={id => displayCards[id]?.imageUrl} nameOf={id => displayCards[id]?.name ?? id} onCardClick={(id, event) => { trigger.current = event.currentTarget; setExpanded(id); }} />}
     {!!choice.errors.length && <p className={styles.note}>{choice.errors.join(' / ')}</p>}
-    {onAction && <div className={styles.sheetFoot}><OrnateFrame as="button" size="line" className={styles.primaryButton} onClick={onAction}><GameIcon name="cards" /><span data-ui-title>{actionLabel}</span></OrnateFrame></div>}
+    {(onAction || onEdit) && <div className={styles.sheetFoot}>
+      {onEdit && <button className={styles.softButton} onClick={onEdit}><GameIcon name="pen" />編集</button>}
+      {onAction && <OrnateFrame as="button" size="line" className={styles.primaryButton} onClick={onAction}><GameIcon name="cards" /><span data-ui-title>{actionLabel}</span></OrnateFrame>}
+    </div>}
   </Sheet></div>
     {card && <CardDetail card={card} onClose={() => setExpanded(null)} isInDeck={false} returnFocusRef={trigger} />}
   </>;

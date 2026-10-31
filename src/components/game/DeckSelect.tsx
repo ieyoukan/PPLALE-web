@@ -7,25 +7,40 @@ import { useAuth } from '@/lib/auth';
 import { deckChoices } from '@/lib/game/deckSources';
 import type { DeckChoice } from '@/lib/game/deckSources';
 import type { SavedGameDeck } from '@/lib/game/savedDecks';
+import { validateDeck } from '@pplale/game-core';
+import { gameCatalog } from '@/lib/game/catalog';
+import { DECKS_CHANGED } from '@/lib/game/deckStore';
 
-/** The signed-in player's saved decks (none without a login). */
+/**
+ * The player's saved decks: their account's when signed in, this browser's (the game's and the site's guest
+ * decks) otherwise. Read again whenever a deck is saved or deleted (deckStore `DECKS_CHANGED`).
+ */
 function useSavedDecks() {
-  const { user } = useAuth();
+  const { user, loading: authLoading } = useAuth();
+  const uid = user?.uid ?? null;
   const [decks, setDecks] = useState<SavedGameDeck[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   useEffect(() => {
+    if (authLoading) return;
     let active = true;
     setDecks([]);
     setError('');
-    if (!user) return setLoading(false);
-    setLoading(true);
-    import('@/lib/game/savedDecks').then(({ loadGameDecks }) => loadGameDecks(user.uid))
-      .then(result => { if (active) setDecks(result); })
-      .catch(() => { if (active) setError('保存済みデッキを読み込めませんでした。接続とログイン状態を確認してください。'); })
-      .finally(() => { if (active) setLoading(false); });
-    return () => { active = false; };
-  }, [user]);
+    const load = (first: boolean) => {
+      if (first) setLoading(true);
+      import('@/lib/game/deckStore').then(({ listDecks }) => listDecks(uid))
+        .then(result => { if (active) setDecks(result.map(saved => {
+          const deck = { name: saved.name || '無名のデッキ', yojo: saved.yojo, sweet: saved.sweet, playable: saved.playable ?? '' };
+          return { id: saved.id, deck, errors: validateDeck(deck, gameCatalog) };
+        })); })
+        .catch(() => { if (active) setError('保存済みデッキを読み込めませんでした。接続とログイン状態を確認してください。'); })
+        .finally(() => { if (active) setLoading(false); });
+    };
+    load(true);
+    const changed = () => load(false);
+    window.addEventListener(DECKS_CHANGED, changed);
+    return () => { active = false; window.removeEventListener(DECKS_CHANGED, changed); };
+  }, [uid, authLoading]);
   return { decks, loading, error };
 }
 
