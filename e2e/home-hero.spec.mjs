@@ -55,6 +55,22 @@ for (const viewport of [
     expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
     await page.addStyleTag({ content: 'nextjs-portal { display:none; }' });
     await hero.screenshot({ path: info.outputPath('home-hero.png') });
+    const finalCards = await menu.getByRole('link').evaluateAll(elements => elements.map(element => {
+      const { x, y, width, height } = element.getBoundingClientRect();
+      return { x, y, width, height };
+    }));
+    await hero.locator('[data-hero-card], [data-hero-deck]').evaluateAll(elements => elements.forEach(element => {
+      const animation = element.getAnimations()[0]; animation.pause(); animation.currentTime = 600;
+    }));
+    const deck = await hero.locator('[data-hero-deck]').boundingBox();
+    expect(deck.x).toBeGreaterThan(screenWidth * .7);
+    expect(deck.x + deck.width).toBeLessThanOrEqual(screenWidth - 15);
+    expect(deck.y).toBeGreaterThanOrEqual(art.y);
+    for (const card of finalCards) {
+      expect(deck.x >= card.x + card.width || deck.x + deck.width <= card.x
+        || deck.y >= card.y + card.height || deck.y + deck.height <= card.y).toBe(true);
+    }
+    await hero.screenshot({ path: info.outputPath('deck-at-right-edge.png') });
   });
 }
 
@@ -83,6 +99,8 @@ test('deck enters from the right, stops to deal, then leaves without fading or t
   await expect(pile).toHaveCSS('opacity', '1');
   await hero.screenshot({ path: info.outputPath('deck-dealing.png') });
   await seek(1600);
+  const lastCard = await cards.last().boundingBox();
+  expect((await pile.boundingBox()).x).toBeGreaterThan(lastCard.x + lastCard.width);
   for (const card of await cards.all()) {
     await expect(card).toHaveCSS('visibility', 'visible');
     await expect(card).toHaveCSS('opacity', '1');

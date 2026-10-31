@@ -6,17 +6,28 @@
 .logo { position: absolute; z-index: 1; top: 2.5%; left: 2.5%; width: min(30%, calc((100svh - 136px) * 3000 / 2457 * .3)); margin: 0; }
 .logo img { display: block; width: 100%; height: auto; }
 .content { position: absolute; z-index: 2; bottom: clamp(18px, 5svh, 48px); inset-inline: 16px; display: flex; justify-content: center; }
-.navigation { --card-gap: 10px; position: relative; display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: var(--card-gap); width: 100%; max-width: 640px; }
-/* 右端で止まった山札から、左・中央・右へ直線で配る。 */
-.card { position: relative; min-width: 0; z-index: 2; visibility: hidden; pointer-events: none; transform: translate(var(--deal-x), 24px); animation: heroDeal .5s cubic-bezier(.2, .7, .25, 1) var(--deal-delay) forwards; }
-.card[data-hero-card='0'] { --deal-x: calc(200% + 2 * var(--card-gap)); --deal-delay: .65s; }
-.card[data-hero-card='1'] { --deal-x: calc(100% + var(--card-gap)); --deal-delay: .85s; }
-.card[data-hero-card='2'] { --deal-x: 0px; --deal-delay: 1.05s; }
+.navigation {
+  --card-gap: 10px;
+  --nav-width: min(640px, calc(100vw - 32px));
+  --card-width: calc((var(--nav-width) - 2 * var(--card-gap)) / 3);
+  --pile-width: var(--card-width);
+  /* カード列の左上から見た山札の座標。配るカードも同じ値を使う。 */
+  --pile-x: calc(100vw - 16px - var(--pile-width) - (100vw - var(--nav-width)) / 2);
+  --pile-y: 24px;
+  --pile-scale: calc(var(--pile-width) / var(--card-width));
+  position: relative; display: grid; grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: var(--card-gap); width: var(--nav-width);
+}
+/* 山札は画面右端で停止。カード列から離れた同じ座標を配る始点にする。 */
+.card { position: relative; min-width: 0; z-index: 2; visibility: hidden; pointer-events: none; transform-origin: top left; transform: translate(var(--deal-x), var(--pile-y)) scale(var(--pile-scale)); animation: heroDeal .5s cubic-bezier(.2, .7, .25, 1) var(--deal-delay) forwards; }
+.card[data-hero-card='0'] { --deal-x: var(--pile-x); --deal-delay: .65s; }
+.card[data-hero-card='1'] { --deal-x: calc(var(--pile-x) - var(--card-width) - var(--card-gap)); --deal-delay: .85s; }
+.card[data-hero-card='2'] { --deal-x: calc(var(--pile-x) - 2 * (var(--card-width) + var(--card-gap))); --deal-delay: 1.05s; }
 .card:has(:focus-visible) { animation: none; visibility: visible; pointer-events: auto; transform: none; }
 .cardLink { overflow: hidden; background: var(--brand-cocoa-deep); transition: filter .15s ease; }
 .cardLink:hover { filter: brightness(.94); }
 .cardLink:active { filter: brightness(.88); }
-.pile { position: absolute; z-index: 3; top: 24px; right: 0; width: calc((100% - 2 * var(--card-gap)) / 3); aspect-ratio: 220 / 320; pointer-events: none; animation: movePile 2.2s both; }
+.pile { position: absolute; z-index: 3; top: var(--pile-y); left: var(--pile-x); width: var(--pile-width); aspect-ratio: 220 / 320; pointer-events: none; animation: movePile 2.2s both; }
 .pile > i, .pileTop { position: absolute; inset: 0; border-radius: 12px; background: var(--brand-cocoa-deep); }
 .pile > i { border: 1px solid var(--brand-pink-edge); }
 .pile > i:nth-child(1) { transform: translate(5px, 6px); }
@@ -25,7 +36,7 @@
 .pileTop { overflow: hidden; }
 .pileTop img { object-fit: cover; }
 @keyframes heroDeal {
-  from { visibility: visible; pointer-events: auto; transform: translate(var(--deal-x), 24px); }
+  from { visibility: visible; pointer-events: auto; transform: translate(var(--deal-x), var(--pile-y)) scale(var(--pile-scale)); }
   to { visibility: visible; pointer-events: auto; transform: none; }
 }
 /* 画面外から入り、配り終わるまで止まり、フェードせず右へ去る。 */
@@ -35,6 +46,10 @@
   100% { transform: translateX(100vw); }
 }
 @media (min-width: 768px) { .navigation { --card-gap: 24px; } }
+/* 横に余裕がない画面では、小さな山札を右上へ逃がしてカードに重ねない。 */
+@media (max-width: 1099px) {
+  .navigation { --pile-width: clamp(32px, min(14vw, 9svh), 64px); --pile-y: calc(-1 * var(--pile-width) * 320 / 220 - 12px); }
+}
 @media (max-width: 600px) {
   .visual { height: auto; aspect-ratio: 3000 / 2457; }
   .logo { width: 34%; }
