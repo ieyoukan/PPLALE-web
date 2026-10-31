@@ -15,16 +15,18 @@ import own from './RoomCard.module.css';
 /**
  * A room as a world card (as in VRChat): its rules' fruit pictures and what it is doing. Choosing it enters
  * the room (a room to gather in), or joins or watches a two-seat room. `large`: the bigger card on a profile.
+ * `here`: the room this player is in, shown with a pin instead of a way in.
  */
-export function RoomCard({ room, large }: { room: RoomInfo; large?: boolean }) {
+export function RoomCard({ room, large, here }: { room: RoomInfo; large?: boolean; here?: boolean }) {
   const { go } = usePlaza();
   const place = placeOf(room), plaza = room.plaza, { fruits } = roomThumbnail(room.rules);
-  const href = plaza ? roomHref(room.id) : place === 'open' ? roomHref(room.id) : place === 'playing' ? watchHref(room.id) : undefined;
+  const href = here ? undefined : plaza ? roomHref(room.id) : place === 'open' ? roomHref(room.id) : place === 'playing' ? watchHref(room.id) : undefined;
   const title = plaza ? plaza.name : `${room.host}のルーム`;
   const verb = plaza ? '入る' : place === 'open' ? '参加' : '観戦';
   const card = <>
     <span className={styles.roomArt} aria-hidden="true"><RoomThumbnailImage rules={room.rules} sizes={large ? '420px' : '200px'} /></span>
     <span className={styles.roomBadge}>{placeLabel[place]}</span>
+    {here && <span className={styles.roomAction}><GameIcon name="pin" />いまここ</span>}
     {href && <span className={styles.roomAction}>{plaza ? <GameIcon name="enter" /> : <GameIcon name={place === 'open' ? 'play' : 'eye'} />}{verb}</span>}
     <span className={styles.roomInfo}>
       {(large || plaza) && <b className={styles.roomHost}>{title}</b>}

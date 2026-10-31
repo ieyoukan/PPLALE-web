@@ -144,6 +144,8 @@ a.room:hover .roomAction { background: var(--brand-blush); }
 .headingLinks { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; max-width: 100%; }
 .empty .primary { gap: 6px; margin-top: 6px; }
 .group[data-place=watching], .tile[data-place=watching], .room[data-place=watching] { --place: #4fb3a9; --glow: #4fb3a955; }
+/* The room this player is in: the leaf green of the logo, above every other room. */
+.group[data-place=here], .tile[data-place=here] { --place: var(--brand-leaf-deep); --glow: transparent; }
 /* Friends who are in no room: just their tiles, below the rooms. */
 .elsewhere { margin-top: 18px; padding-top: 18px; border-top: 1px solid var(--brand-pink); }
 .watchMark { display: inline-grid; place-items: center; flex: none; color: var(--place); font-size: 13px; }

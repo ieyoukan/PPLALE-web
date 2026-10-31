@@ -5,8 +5,9 @@ import Link from 'next/link';
 import { useAuth } from '@/lib/auth';
 import { ScreenSubtitle } from '@/components/shared/ui/ScreenSubtitle';
 import type { SocialPlayer } from '@/lib/game/social';
-import type { RoomInfo } from '@pplale/game-core/room';
+import type { RoomInfo, RoomView } from '@pplale/game-core/room';
 import { lookupRooms } from '@/lib/game/room/client';
+import { usePlaza } from '../plaza/PlazaProvider';
 import { CardArtwork } from '@/components/shared/card/CardArtwork';
 import { OrnateFrame } from '@/components/shared/ui/ornament/OrnateFrame';
 import { FriendTile } from './FriendTile';
@@ -34,7 +35,7 @@ export function SocialPage() {
   return <Social key={user.uid} uid={user.uid} />;
 }
 function Social({ uid }: { uid: string }) {
-  const me = useMyProfile();
+  const me = useMyProfile(), plaza = usePlaza();
   const { friends, error, loading } = useSocial(uid);
   const [rooms, setRooms] = useState<Record<string, RoomInfo>>({}), [now, setNow] = useState(() => Date.now());
   const [ruleFilter, setRuleFilter] = useState<RoomRuleFilter>(allRoomRules);
@@ -51,10 +52,15 @@ function Social({ uid }: { uid: string }) {
     document.addEventListener('visibilitychange', refresh);
     return () => { current = false; clearInterval(timer); document.removeEventListener('visibilitychange', refresh); };
   }, [roomIds]);
-  const groups = new Map<string, Group>(), elsewhere: SocialPlayer[] = [];
+  // The room this player is in comes first, whatever its visibility (an invited room too: they are in it).
+  const here = plaza.linked && plaza.view?.plaza ? currentRoom(plaza.view) : null;
+  const inHere = new Set(here ? plaza.view!.plaza!.members.flatMap(member => member.profileId && member.online ? [member.profileId] : []) : []);
+  const groups = new Map<string, Group>(), elsewhere: SocialPlayer[] = [], withMe: SocialPlayer[] = [];
   for (const player of friends) {
+    if (inHere.has(player.profile.uid)) { withMe.push(player); continue; }
     const found = locate(player, rooms, now);
     if (!found) { elsewhere.push(player); continue; }
+    if (found.room.id === here?.id) { withMe.push(player); continue; }
     const group = groups.get(found.room.id) ?? { room: found.room, members: [] };
     group.members.push({ player, role: found.role }); groups.set(found.room.id, group);
   }
@@ -70,6 +76,13 @@ function Social({ uid }: { uid: string }) {
         </Link>
       </span>
     </header>
+    {here && <details className={styles.group} data-place="here" open>
+      <summary><span className={styles.chevron} aria-hidden="true" /><GameIcon name="pin" />{here.plaza!.name}<span className={styles.placeChip}>いまいるルーム</span></summary>
+      <div className={styles.groupBody}>
+        <RoomCard room={here} here />
+        <div className={styles.tiles}>{withMe.map(player => tile(player, 'here', 'いっしょにいます'))}</div>
+      </div>
+    </details>}
     {error && <p className={styles.error} role="alert">{error}</p>}
     <UserSearch />
     <RoomRuleFilters value={ruleFilter} onChange={setRuleFilter} />
@@ -88,4 +101,13 @@ function Social({ uid }: { uid: string }) {
     })}
     {elsewhere.length > 0 && <div className={`${styles.tiles} ${styles.elsewhere}`}>{elsewhere.map(player => tile(player, 'away', ''))}</div>}
   </section>;
+}
+
+/** The room this player is in, described as a room card describes others (from the room's own view). */
+function currentRoom(view: RoomView): RoomInfo {
+  const plaza = view.plaza!;
+  return {
+    id: view.id, rules: plaza.nextRules ?? view.rules, host: plaza.creator.name, status: view.status, open: false, spectators: true,
+    plaza: { name: plaza.name, visibility: plaza.visibility, creator: plaza.creator, members: plaza.members.filter(member => member.online).length, seated: view.players.filter(Boolean).length },
+  };
 }
