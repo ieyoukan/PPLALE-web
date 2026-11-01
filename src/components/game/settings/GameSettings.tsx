@@ -22,7 +22,7 @@ const homeKinds: RoomVisibility[] = ['public', 'friendsPlus', 'friends', 'invite
 
 export function GameSettings({ volume = true, onLeave }: { volume?: boolean; onLeave?: () => void }) {
   const { user, signInWithGoogle, signOut } = useAuth();
-  const { locale, setLocale } = useI18n();
+  const { locale, setLocale, t } = useI18n();
   const [home, setHome] = useState<RoomVisibility | null>(null);
   const [busy, setBusy] = useState(false);
   useEffect(() => { setHome(readRoomSettings().homeVisibility); }, []);
@@ -50,15 +50,15 @@ export function GameSettings({ volume = true, onLeave }: { volume?: boolean; onL
   };
   return <div className={styles.settings}>
     <section className={styles.section} aria-labelledby="settings-home">
-      <h3 id="settings-home" data-ui-title><GameIcon name="home" />ホームルームの公開範囲</h3>
-      <p className={styles.note}>ゲームを開いたときに作るルームの公開範囲です</p>
+      <h3 id="settings-home" data-ui-title><GameIcon name="home" />{t('ホームルームの公開範囲')}</h3>
+      <p className={styles.note}>{t('ゲームを開いたときに作るルームの公開範囲です')}</p>
       <select className={styles.visibilitySelect} aria-labelledby="settings-home" aria-describedby="settings-home-note" value={home ?? 'invite'} disabled={home === null} onChange={event => choose(event.target.value as RoomVisibility)}>
         {homeKinds.filter(kind => roomVisibilities.includes(kind)).map(kind => {
           const needsLogin = !user && (kind === 'friends' || kind === 'friendsPlus');
-          return <option key={kind} value={kind} disabled={needsLogin}>{visibilityInfo[kind].label}{needsLogin ? '（ログインが必要）' : ''}</option>;
+          return <option key={kind} value={kind} disabled={needsLogin}>{t(visibilityInfo[kind].label)}{needsLogin ? t('（ログインが必要）') : ''}</option>;
         })}
       </select>
-      <p id="settings-home-note" className={styles.note}>{visibilityInfo[home ?? 'invite'].note}</p>
+      <p id="settings-home-note" className={styles.note}>{t(visibilityInfo[home ?? 'invite'].note)}</p>
     </section>
     {/* Both names, so someone who cannot read the current language still finds it. */}
     <section className={styles.section} aria-labelledby="settings-language">
@@ -68,18 +68,18 @@ export function GameSettings({ volume = true, onLeave }: { volume?: boolean; onL
       </select>
     </section>
     {volume && <section className={styles.section}><NotificationVolumeControl /></section>}
-    {user && <section className={styles.section} aria-labelledby="settings-push"><h3 id="settings-push" data-ui-title><GameIcon name="bell" />ブラウザの通知</h3><PushToggle /></section>}
-    <section className={styles.section} aria-label="通信">
-      <Link className={styles.link} href="/game/performance/" onClick={onLeave} prefetch={false}><GameIcon name="history" />通信計測</Link>
+    {user && <section className={styles.section} aria-labelledby="settings-push"><h3 id="settings-push" data-ui-title><GameIcon name="bell" />{t('ブラウザの通知')}</h3><PushToggle /></section>}
+    <section className={styles.section} aria-label={t('通信')}>
+      <Link className={styles.link} href="/game/performance/" onClick={onLeave} prefetch={false}><GameIcon name="history" />{t('通信計測')}</Link>
     </section>
     <section className={styles.section} aria-labelledby="settings-account">
-      <h3 id="settings-account" data-ui-title><GameIcon name="star" />アカウント</h3>
+      <h3 id="settings-account" data-ui-title><GameIcon name="star" />{t('アカウント')}</h3>
       <div className={styles.links}>
         {user ? <>
-          <button className={styles.link} disabled={busy} onClick={() => void handleSwitchAccount()}><GameIcon name="heart" />アカウントを切り替える</button>
-          <button className={styles.link} disabled={busy} onClick={() => void handleSignOut()}><GameIcon name="exit" />ログアウト</button>
-        </> : <button className={styles.link} onClick={() => void signInWithGoogle().catch(() => {})}><GameIcon name="heart" />ログイン</button>}
-        <Link className={styles.link} href="/" onClick={onLeave}><GameIcon name="exit" />サイトへ</Link>
+          <button className={styles.link} disabled={busy} onClick={() => void handleSwitchAccount()}><GameIcon name="heart" />{t('アカウントを切り替える')}</button>
+          <button className={styles.link} disabled={busy} onClick={() => void handleSignOut()}><GameIcon name="exit" />{t('ログアウト')}</button>
+        </> : <button className={styles.link} onClick={() => void signInWithGoogle().catch(() => {})}><GameIcon name="heart" />{t('ログイン')}</button>}
+        <Link className={styles.link} href="/" onClick={onLeave}><GameIcon name="exit" />{t('サイトへ')}</Link>
       </div>
     </section>
   </div>;

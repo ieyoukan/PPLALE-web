@@ -12,6 +12,7 @@ import { CardArtwork } from '@/components/shared/card/CardArtwork';
 import { OrnateFrame } from '@/components/shared/ui/ornament/OrnateFrame';
 import { FriendTile } from './FriendTile';
 import { GameIcon } from '@/components/shared/ui/GameIcon';
+import { useI18n } from '@/i18n/LocaleProvider';
 import { locate, placeLabel, placeOf, placeOrder } from './location';
 import { RoomCard } from './RoomCard';
 import { RoomRuleFilters } from '@/components/shared/room/RoomRuleFilters';
@@ -29,13 +30,13 @@ interface Member { player: SocialPlayer; role: 'host' | 'watching' }
 interface Group { room: RoomInfo; members: Member[] }
 
 export function SocialPage() {
-  const { user, loading, signInWithGoogle } = useAuth();
-  if (loading) return <p role="status">読み込み中…</p>;
-  if (!user) return <section className={styles.panel} aria-label="ソーシャル"><ScreenSubtitle>フレンドの現在地</ScreenSubtitle><div className={styles.signIn}><h3 data-ui-title>フレンドと遊ぼう</h3><p>プロフィールを作って、フレンドの募集に参加しよう。</p><OrnateFrame as="button" size="sm" className={styles.cardButton} onClick={() => void signInWithGoogle()}><span data-ui-title>ログイン</span></OrnateFrame></div></section>;
+  const { user, loading, signInWithGoogle } = useAuth(), { t } = useI18n();
+  if (loading) return <p role="status">{t('読み込み中…')}</p>;
+  if (!user) return <section className={styles.panel} aria-label={t('ソーシャル')}><ScreenSubtitle>{t('フレンドの現在地')}</ScreenSubtitle><div className={styles.signIn}><h3 data-ui-title>{t('フレンドと遊ぼう')}</h3><p>{t('プロフィールを作って、フレンドの募集に参加しよう。')}</p><OrnateFrame as="button" size="sm" className={styles.cardButton} onClick={() => void signInWithGoogle()}><span data-ui-title>{t('ログイン')}</span></OrnateFrame></div></section>;
   return <Social key={user.uid} uid={user.uid} />;
 }
 function Social({ uid }: { uid: string }) {
-  const me = useMyProfile(), plaza = usePlaza();
+  const me = useMyProfile(), plaza = usePlaza(), { t, nameText } = useI18n();
   const { friends, error, loading } = useSocial(uid);
   const [rooms, setRooms] = useState<Record<string, RoomInfo>>({}), [now, setNow] = useState(() => Date.now());
   const [ruleFilter, setRuleFilter] = useState<RoomRuleFilter>(allRoomRules);
@@ -67,35 +68,35 @@ function Social({ uid }: { uid: string }) {
   const ordered = [...groups.values()].sort((a, b) => placeOrder.indexOf(placeOf(a.room)) - placeOrder.indexOf(placeOf(b.room)) || a.room.id.localeCompare(b.room.id));
   const filtered = ordered.filter(group => matchesRoomRules(group.room, ruleFilter));
   const tile = ({ profile, friendship }: SocialPlayer, place: string, status: string) => <FriendTile key={friendship.id} profile={profile} place={place} status={status} />;
-  return <section className={styles.panel} aria-label="ソーシャル">
+  return <section className={styles.panel} aria-label={t('ソーシャル')}>
     <header className={styles.socialHeading}>
-      <ScreenSubtitle suffix={`${friends.length}人`}>フレンドの現在地</ScreenSubtitle>
+      <ScreenSubtitle suffix={t('{count}人', { count: friends.length })}>{t('フレンドの現在地')}</ScreenSubtitle>
       <span className={styles.headingLinks}>
-        <Link className={styles.me} href="/game/profile/" aria-label="マイプロフィール">
-          <span className={styles.avatar}>{me && <CardArtwork id={me.iconCardId} sizes="40px" />}</span><span>{me?.displayName ?? 'マイプロフィール'}</span><GameIcon name="pen" />
+        <Link className={styles.me} href="/game/profile/" aria-label={t('マイプロフィール')}>
+          <span className={styles.avatar}>{me && <CardArtwork id={me.iconCardId} sizes="40px" />}</span><span>{me?.displayName ?? t('マイプロフィール')}</span><GameIcon name="pen" />
         </Link>
       </span>
     </header>
     {here && <details className={styles.group} data-place="here" open>
-      <summary><span className={styles.chevron} aria-hidden="true" /><GameIcon name="pin" /><span data-ui-title>{here.plaza!.name}</span><span className={styles.placeChip}>いまいるルーム</span></summary>
+      <summary><span className={styles.chevron} aria-hidden="true" /><GameIcon name="pin" /><span data-ui-title>{nameText(here.plaza!.name)}</span><span className={styles.placeChip}>{t('いまいるルーム')}</span></summary>
       <div className={styles.groupBody}>
         <RoomCard room={here} here />
-        <div className={styles.tiles}>{withMe.map(player => tile(player, 'here', 'いっしょにいます'))}</div>
+        <div className={styles.tiles}>{withMe.map(player => tile(player, 'here', t('いっしょにいます')))}</div>
       </div>
     </details>}
-    {error && <p className={styles.error} role="alert">{error}</p>}
+    {error && <p className={styles.error} role="alert">{t(error)}</p>}
     <UserSearch />
     <RoomRuleFilters value={ruleFilter} onChange={setRuleFilter} />
     <Invitations filter={ruleFilter} />
-    {!friends.length && <div className={styles.empty} role={loading ? 'status' : undefined}><p>{loading ? '読み込み中…' : 'リンクを送って、フレンドになろう'}</p>{!loading && me && <ProfileShare uid={uid} name={me.displayName} mine />}</div>}
-    {ordered.length > 0 && filtered.length === 0 && <p className={styles.filterEmpty}>このルールのルームは見つかりません</p>}
+    {!friends.length && <div className={styles.empty} role={loading ? 'status' : undefined}><p>{loading ? t('読み込み中…') : t('リンクを送って、フレンドになろう')}</p>{!loading && me && <ProfileShare uid={uid} name={me.displayName} mine />}</div>}
+    {ordered.length > 0 && filtered.length === 0 && <p className={styles.filterEmpty}>{t('このルールのルームは見つかりません')}</p>}
     {filtered.map(({ room, members }) => {
       const place = placeOf(room);
       return <details key={room.id} className={styles.group} data-place={place} open>
-        <summary><span className={styles.chevron} aria-hidden="true" /><span data-ui-title>{room.plaza?.name ?? `${room.host}のルーム`}</span><span className={styles.placeChip}>{placeLabel[place]}</span></summary>
+        <summary><span className={styles.chevron} aria-hidden="true" /><span data-ui-title>{room.plaza ? nameText(room.plaza.name) : t('{name}のルーム', { name: room.host })}</span><span className={styles.placeChip}>{t(placeLabel[place])}</span></summary>
         <div className={styles.groupBody}>
           <RoomCard room={room} />
-          <div className={styles.tiles}>{members.map(({ player, role }) => role === 'host' ? tile(player, place, placeLabel[place]) : tile(player, 'watching', '観戦中'))}</div>
+          <div className={styles.tiles}>{members.map(({ player, role }) => role === 'host' ? tile(player, place, t(placeLabel[place])) : tile(player, 'watching', t('観戦中')))}</div>
         </div>
       </details>;
     })}

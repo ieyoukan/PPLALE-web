@@ -9,7 +9,7 @@ test.setTimeout(90_000);
 async function newDeck(page) {
   // The address leads to the room first; the menu opens over it once the room is there.
   await page.waitForURL(/\/game\/room\/\d{6}\/$/, { timeout: 30000 });
-  const pad = page.getByRole('dialog', { name: 'ゲームメニュー', exact: true });
+  const pad = page.getByRole('dialog', { name: /^(ゲームメニュー|Game menu)$/ });
   await pad.getByRole('button', { name: /あたらしく作る|Make a new deck/ }).click();
   return pad;
 }

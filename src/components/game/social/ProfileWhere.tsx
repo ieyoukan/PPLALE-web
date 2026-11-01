@@ -5,6 +5,7 @@ import type { ProfileLocation } from '@pplale/game-core/room';
 import { readProfileLocation } from '@/lib/game/room/client';
 import { usePlaza } from '../plaza/PlazaProvider';
 import { GameIcon } from '@/components/shared/ui/GameIcon';
+import { useI18n } from '@/i18n/LocaleProvider';
 import { RoomThumbnailImage } from '../plaza/RoomThumbnailImage';
 import { visibilityInfo } from '../plaza/visibility';
 import { AskToEnter } from './AskToEnter';
@@ -13,7 +14,7 @@ import styles from './Social.module.css';
 
 /** Unavailable locations display offline and never retain a stale join/request action. */
 export function ProfileWhere({ uid, name, mine, canRead }: { uid: string; name: string; mine: boolean; canRead: boolean }) {
-  const plaza = usePlaza();
+  const plaza = usePlaza(), { t } = useI18n();
   const own = mine && plaza.linked ? plaza.view?.plaza : undefined;
   const ownId = own ? plaza.id : null;
   const [location, setLocation] = useState<ProfileLocation>({ kind: 'offline' });
@@ -33,18 +34,18 @@ export function ProfileWhere({ uid, name, mine, canRead }: { uid: string; name: 
     return () => { current = false; clearInterval(timer); document.removeEventListener('visibilitychange', visible); };
   }, [uid, canRead, ownId]);
   const shown: ProfileLocation = canRead ? location : { kind: 'offline' };
-  return <section className={styles.where} aria-label="いまいるルーム">
-    <h3 data-ui-title><GameIcon name="pin" />いまいるルーム</h3>
+  return <section className={styles.where} aria-label={t('いまいるルーム')}>
+    <h3 data-ui-title><GameIcon name="pin" />{t('いまいるルーム')}</h3>
     {own && plaza.view ? <>
       <RoomThumbnailImage rules={own.nextRules ?? plaza.view.rules} className={styles.ownRoomImage} sizes="320px" />
-      <div className={styles.profileLocation}><GameIcon name={visibilityInfo[own.visibility].icon} /><span><b data-ui-title>{own.name}</b><small>{visibilityInfo[own.visibility].label}</small></span></div>
+      <div className={styles.profileLocation}><GameIcon name={visibilityInfo[own.visibility].icon} /><span><b data-ui-title>{own.name}</b><small>{t(visibilityInfo[own.visibility].label)}</small></span></div>
     </> : !canRead ? <div className={styles.profileLocation} data-offline>
-        <GameIcon name="heart" /><span><b data-ui-title>フレンド限定</b></span>
+        <GameIcon name="heart" /><span><b data-ui-title>{t('フレンド限定')}</b></span>
       </div>
     : shown.kind === 'room' ? <RoomCard room={shown.room} large />
       : <div className={styles.profileLocation} data-offline={shown.kind === 'offline' || undefined}>
         <GameIcon name={shown.kind === 'offline' ? 'people' : 'letter'} />
-        <span><b data-ui-title>{shown.kind === 'offline' ? 'オフライン' : 'プライベートルーム'}</b>{shown.kind === 'private' && <small>{visibilityInfo[shown.visibility].label}</small>}</span>
+        <span><b data-ui-title>{shown.kind === 'offline' ? t('オフライン') : t('プライベートルーム')}</b>{shown.kind === 'private' && <small>{t(visibilityInfo[shown.visibility].label)}</small>}</span>
       </div>}
     {!mine && canRead && shown.kind === 'private' && <AskToEnter key={`${uid}:${shown.visibility}`} uid={uid} name={name} />}
   </section>;

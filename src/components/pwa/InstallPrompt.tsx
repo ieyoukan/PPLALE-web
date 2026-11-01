@@ -2,6 +2,7 @@
 
 import { useEffect, useState, useSyncExternalStore } from 'react';
 import Image from 'next/image';
+import { useI18n } from '@/i18n/LocaleProvider';
 import { canPromptInstall, isIos, isStandalone, promptInstall, subscribeInstall } from '@/lib/pwa';
 import styles from './InstallPrompt.module.css';
 
@@ -19,6 +20,7 @@ export function InstallPrompt() {
   const prompt = useSyncExternalStore(subscribeInstall, canPromptInstall, () => false);
   const [eligible, setEligible] = useState<'ios' | 'other' | null>(null);
   const [shown, setShown] = useState(false);
+  const { t } = useI18n();
 
   useEffect(() => {
     const dismissed = Number(localStorage.getItem(DISMISSED_KEY) || 0);
@@ -34,20 +36,20 @@ export function InstallPrompt() {
   const dismiss = () => { localStorage.setItem(DISMISSED_KEY, String(Date.now())); setShown(false); };
   const iphone = way === 'ios' && /iPhone|iPod/.test(navigator.userAgent);
 
-  return <aside className={styles.card} aria-label="ホーム画面に追加">
+  return <aside className={styles.card} aria-label={t('ホーム画面に追加')}>
     <Image className={styles.icon} src="/icon-192.png" alt="" width={56} height={56} />
     <div className={styles.text}>
-      <strong>ホーム画面に追加</strong>
-      <small>全画面で遊べて、通知も届く</small>
+      <strong>{t('ホーム画面に追加')}</strong>
+      <small>{t('全画面で遊べて、通知も届く')}</small>
     </div>
     {way === 'prompt'
-      ? <button className={styles.add} onClick={() => { void promptInstall(); }}>追加する</button>
+      ? <button className={styles.add} onClick={() => { void promptInstall(); }}>{t('追加する')}</button>
       : <ol className={styles.steps}>
-        <li><ShareIcon /><span className={styles.visuallyHidden}>共有</span></li>
+        <li><ShareIcon /><span className={styles.visuallyHidden}>{t('共有')}</span></li>
         <li aria-hidden="true" className={styles.then}>›</li>
-        <li><PlusIcon /><span>ホーム画面に追加</span></li>
+        <li><PlusIcon /><span>{t('ホーム画面に追加')}</span></li>
       </ol>}
-    <button className={styles.close} onClick={dismiss} aria-label="閉じる">×</button>
+    <button className={styles.close} onClick={dismiss} aria-label={t('閉じる')}>×</button>
     {/* Safari's share button is in the bottom bar on iPhone. */}
     {iphone && <span className={styles.pointer} aria-hidden="true" />}
   </aside>;

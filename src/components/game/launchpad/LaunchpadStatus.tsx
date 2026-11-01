@@ -7,19 +7,20 @@ import { guestIcon } from '@/components/shared/player/useProfiles';
 import { useMyProfile } from '../social/useMyProfile';
 import { usePlaza } from '../plaza/PlazaProvider';
 import { useLaunchpad } from './LaunchpadContext';
+import { useI18n } from '@/i18n/LocaleProvider';
 import styles from './LaunchpadStatus.module.css';
 
 /** Stays above every tab of the compact pad, including profiles. */
 export function LaunchpadStatus() {
   const { user, loading } = useAuth(), profile = useMyProfile();
-  const { view } = usePlaza(), { openAt } = useLaunchpad();
+  const { view } = usePlaza(), { openAt } = useLaunchpad(), { t, nameText } = useI18n();
   const room = view?.plaza, member = room?.members.find(member => member.id === room.me);
   // An identity change re-enters the room asynchronously; never show the previous account here.
   const self = !loading && member?.profileId === user?.uid ? member : undefined;
-  const name = loading ? '…' : user ? profile?.displayName || self?.name || 'プレイヤー' : self?.name || 'ゲスト';
+  const name = loading ? '…' : user ? profile?.displayName || (self?.name && nameText(self.name)) || t('プレイヤー') : (self?.name && nameText(self.name)) || t('ゲスト');
   const card = user ? profile?.iconCardId : guestIcon(self?.id ?? '');
-  return <div className={styles.status} aria-label="プレイヤーと時計">
-    <button type="button" className={styles.profile} aria-label="自分のプロフィール" title="自分のプロフィール" onClick={() => openAt({ section: 'profile' })}>
+  return <div className={styles.status} aria-label={t('プレイヤーと時計')}>
+    <button type="button" className={styles.profile} aria-label={t('自分のプロフィール')} title={t('自分のプロフィール')} onClick={() => openAt({ section: 'profile' })}>
       <PlayerIdentity name={name} card={card} />
     </button>
     <LaunchpadClock />
@@ -28,7 +29,7 @@ export function LaunchpadStatus() {
 
 /** Only the clock updates each minute; the room and the rest of the menu do not rerender. */
 function LaunchpadClock() {
-  const [time, setTime] = useState('--:--');
+  const [time, setTime] = useState('--:--'), { t } = useI18n();
   useEffect(() => {
     let timer: ReturnType<typeof setTimeout>;
     const refresh = () => {
@@ -39,5 +40,5 @@ function LaunchpadClock() {
     refresh(); document.addEventListener('visibilitychange', refresh);
     return () => { clearTimeout(timer); document.removeEventListener('visibilitychange', refresh); };
   }, []);
-  return <time className={styles.clock} dateTime={time === '--:--' ? undefined : time} aria-label="現在の時刻">{time}</time>;
+  return <time className={styles.clock} dateTime={time === '--:--' ? undefined : time} aria-label={t('現在の時刻')}>{time}</time>;
 }

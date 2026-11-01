@@ -44,29 +44,29 @@ export function Launchpad({ stack, choose }: { stack: Place[]; choose: (section:
   // The rail shows the screen the shown one was opened from (a profile from フレンド: フレンド).
   const current = [...stack].reverse().map(item => shownSection(parentSection[item.section] ?? item.section)).find(item => rail.includes(item));
   const title = t(sectionInfo[section].label);
-  const icons = !standalone && expanded && <div className={styles.tabIcons} role="tablist" aria-label="ランチパッドのタブ">{padTabs.filter(item => item !== 'home').map(item =>
-    <button key={item} id={`${tabId}-${item}`} type="button" role="tab" className={styles.iconButton} aria-label={sectionInfo[item].label} aria-selected={section === item} aria-controls={`${tabId}-panel`} title={sectionInfo[item].label} onClick={() => choose(item)}><GameIcon name={sectionInfo[item].icon} /></button>)}</div>;
+  const icons = !standalone && expanded && <div className={styles.tabIcons} role="tablist" aria-label={t('ランチパッドのタブ')}>{padTabs.filter(item => item !== 'home').map(item =>
+    <button key={item} id={`${tabId}-${item}`} type="button" role="tab" className={styles.iconButton} aria-label={t(sectionInfo[item].label)} aria-selected={section === item} aria-controls={`${tabId}-panel`} title={t(sectionInfo[item].label)} onClick={() => choose(item)}><GameIcon name={sectionInfo[item].icon} /></button>)}</div>;
   const head = <header className={styles.head}>
-    {back && <button className={styles.iconButton} onClick={back} aria-label="もどる" title="もどる"><GameIcon name="back" /></button>}
+    {back && <button className={styles.iconButton} onClick={back} aria-label={t('もどる')} title={t('もどる')}><GameIcon name="back" /></button>}
     <h2 data-ui-title>{title}</h2>
     <div className={styles.headTools}>
       {icons}
-      {!standalone && <button className={styles.iconButton} onClick={() => setExpanded(!expanded)} aria-label={expanded ? 'ランチパッドに縮小' : 'ゲームメニューを拡大'} title={expanded ? '縮小' : '拡大'}><GameIcon name={expanded ? 'collapse' : 'expand'} /></button>}
-      <button className={styles.iconButton} onClick={onClose} aria-label="メニューを閉じる"><GameIcon name="close" /></button>
+      {!standalone && <button className={styles.iconButton} onClick={() => setExpanded(!expanded)} aria-label={expanded ? t('ランチパッドに縮小') : t('ゲームメニューを拡大')} title={expanded ? t('縮小') : t('拡大')}><GameIcon name={expanded ? 'collapse' : 'expand'} /></button>}
+      <button className={styles.iconButton} onClick={onClose} aria-label={t('メニューを閉じる')}><GameIcon name="close" /></button>
     </div>
   </header>;
   // The tabs (small) or the game's screens (expanded) down the left side of the pad.
-  const tabRail = <nav className={styles.tabBar} role="tablist" aria-orientation="vertical" aria-label={expanded ? 'ゲームの画面' : 'ランチパッドのタブ'} onKeyDown={event => {
+  const tabRail = <nav className={styles.tabBar} role="tablist" aria-orientation="vertical" aria-label={expanded ? t('ゲームの画面') : t('ランチパッドのタブ')} onKeyDown={event => {
       const index = Math.max(0, rail.findIndex(item => item === current));
       const forward = event.key === 'ArrowDown' || event.key === 'ArrowRight', backward = event.key === 'ArrowUp' || event.key === 'ArrowLeft';
       const next = forward ? (index + 1) % rail.length : backward ? (index + rail.length - 1) % rail.length : event.key === 'Home' ? 0 : event.key === 'End' ? rail.length - 1 : -1;
       if (next < 0) return;
       event.preventDefault(); choose(rail[next]);
       event.currentTarget.querySelectorAll<HTMLButtonElement>('[role=tab]')[next]?.focus();
-    }}>{rail.map(item => <button key={item} id={`${tabId}-${item}`} type="button" role="tab" aria-label={item === 'home' ? 'ランチパッドホーム' : sectionInfo[item].label} aria-selected={current === item} aria-controls={`${tabId}-panel`} tabIndex={current === item || (!current && item === 'home') ? 0 : -1} title={sectionInfo[item].label} onClick={() => choose(item)}><GameIcon name={sectionInfo[item].icon} /><span data-ui-title>{tabLabel(item)}</span></button>)}</nav>;
+    }}>{rail.map(item => <button key={item} id={`${tabId}-${item}`} type="button" role="tab" aria-label={item === 'home' ? t('ランチパッドホーム') : t(sectionInfo[item].label)} aria-selected={current === item} aria-controls={`${tabId}-panel`} tabIndex={current === item || (!current && item === 'home') ? 0 : -1} title={t(sectionInfo[item].label)} onClick={() => choose(item)}><GameIcon name={sectionInfo[item].icon} /><span data-ui-title>{tabLabel(item)}</span></button>)}</nav>;
 
   return <div className={styles.backdrop} onClick={onClose} data-launchpad data-launchpad-expanded={!standalone && expanded || undefined}>
-    <div ref={box} tabIndex={-1} inert={!!panel} className={standalone ? styles.standalone : expanded ? styles.expanded : styles.dialog} role="dialog" aria-modal={chatOpen ? undefined : true} aria-label={standalone ? title : 'ゲームメニュー'} data-launchpad onClick={event => event.stopPropagation()} onKeyDown={event => {
+    <div ref={box} tabIndex={-1} inert={!!panel} className={standalone ? styles.standalone : expanded ? styles.expanded : styles.dialog} role="dialog" aria-modal={chatOpen ? undefined : true} aria-label={standalone ? title : t('ゲームメニュー')} data-launchpad onClick={event => event.stopPropagation()} onKeyDown={event => {
       event.stopPropagation();
       const typing = (event.target as HTMLElement).closest('input:not([type=range]), textarea, select, [contenteditable=true]');
       if (event.key === 'Escape' && !panel && !typing && !event.nativeEvent.isComposing && !event.defaultPrevented) { event.preventDefault(); onClose(); }
