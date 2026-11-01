@@ -9,6 +9,7 @@ import { useRouter } from 'next/navigation';
 import type { GameState } from '@pplale/game-core';
 import { PLAY_PATH, cpuSidesOf, describeSavedMatch, saveSession } from '@/lib/game/sessionStore';
 import type { Levels, MatchSetup, Mode } from '@/lib/game/sessionStore';
+import { useI18n } from '@/i18n/LocaleProvider';
 import { GameSetup } from './GameSetup';
 import styles from './GameLobby.module.css';
 import { PreparationProgress, useMatchPreparation } from './MatchPreparation';
@@ -20,8 +21,9 @@ export default function GameLobby() {
   const [saved, setSaved] = useState<string | null>(null);
   const [error, setError] = useState('');
   const preparation = useMatchPreparation();
+  const { t } = useI18n();
   // localStorage is only available in the browser, after the first render.
-  useEffect(() => { setSaved(describeSavedMatch()); }, []);
+  useEffect(() => { setSaved(describeSavedMatch(t)); }, [t]);
 
   async function start({ game, seed, setup, mode, levels }: { game: GameState; seed: number; setup: MatchSetup; mode: Mode; levels: Levels }) {
     const { localMatchCardIds } = await import('@/lib/game/matchAssets');
@@ -35,10 +37,10 @@ export default function GameLobby() {
 
   return <div className={styles.lobby}>
     {saved && <Link href={PLAY_PATH} prefetch={false} className={styles.resume}>
-      <span>前回の対戦を続ける</span><small>{saved}</small>
+      <span>{t('前回の対戦を続ける')}</span><small>{saved}</small>
     </Link>}
     <GameSetup modes={modes} onStart={start} />
     <PreparationProgress progress={preparation.progress} overlay />
-    {error && <p role="alert" className={styles.error}>{error}</p>}
+    {error && <p role="alert" className={styles.error}>{t(error)}</p>}
   </div>;
 }

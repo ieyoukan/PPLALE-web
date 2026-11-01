@@ -9,6 +9,7 @@ import type { CSSProperties, ReactNode } from 'react';
 import Image from 'next/image';
 import { fruitNames, fruits, fruitsUpTo, playableNow } from '@pplale/game-core';
 import type { Fruit, MatchRules } from '@pplale/game-core';
+import { useI18n } from '@/i18n/LocaleProvider';
 import styles from './RulePicker.module.css';
 
 import { fruitArt } from '@/lib/game/roomThumbnail';
@@ -23,11 +24,12 @@ export { fruitArt };
 function Tile({ name, note, image, tone, on, soon, onChange }: {
   name: string; note?: ReactNode; image: string; tone: string; on: boolean; soon?: boolean; onChange?: (on: boolean) => void;
 }) {
+  const { t, locale } = useI18n();
   const body = <>
     <span className={styles.art} style={{ '--tone': tone } as CSSProperties}>
       <Image src={image} alt="" width={320} height={180} sizes="(max-width: 720px) 46vw, 240px" loading="eager" />
       {on && <span className={styles.mark}><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 13l4 4L19 7" /></svg></span>}
-      {soon && <span className={styles.soon}>準備中</span>}
+      {soon && <span className={styles.soon}>{locale === 'en' ? t('準備中（対戦ではまだ使えない）') : '準備中'}</span>}
     </span>
     <span className={styles.name}>{name}{note && <small>{note}</small>}</span>
   </>;
@@ -44,6 +46,7 @@ function Tile({ name, note, image, tone, on, soon, onChange }: {
  */
 export function RulePicker({ rules, onChange, compact = false }: { rules: MatchRules; onChange: (rules: MatchRules) => void; compact?: boolean }) {
   const { extendedPlayable } = rules;
+  const { t } = useI18n();
   // On: this fruit's environment. Off: the environment just before it (いちご itself always stays).
   const toggleFruit = (fruit: Fruit, on: boolean) => {
     const index = fruits.indexOf(fruit);
@@ -54,22 +57,22 @@ export function RulePicker({ rules, onChange, compact = false }: { rules: MatchR
   return <div className={`${styles.picker} ${compact ? styles.compact : ''}`}>
     <div className={styles.groups}>
       <fieldset className={styles.group}>
-        <legend>使えるフルーツ<small>いちごから順に追加</small></legend>
+        <legend>{t('使えるフルーツ')}<small>{t('いちごから順に追加')}</small></legend>
         <div className={`${styles.tiles} ${styles.fruits}`}>{fruits.map(fruit => {
           const playable = playableNow.fruits.includes(fruit);
-          return <Tile key={fruit} name={fruitNames[fruit]} {...fruitArt[fruit]} on={playable && rules.fruits.includes(fruit)} soon={!playable} onChange={on => toggleFruit(fruit, on)} />;
+          return <Tile key={fruit} name={t(fruitNames[fruit])} {...fruitArt[fruit]} on={playable && rules.fruits.includes(fruit)} soon={!playable} onChange={on => toggleFruit(fruit, on)} />;
         })}</div>
       </fieldset>
       <fieldset className={styles.group}>
-        <legend>プレイアブル</legend>
+        <legend>{t('プレイアブル')}</legend>
         <div className={`${styles.tiles} ${styles.versions}`}>
           {/* The rules only decide ExP: a 通常 playable may always lead a deck. */}
-          <Tile name="通常" note="いつも使える" image="/images/versions/通常.webp" tone="#a88667" on />
-          <Tile name="拡張プレイアブル" note="ExP" image="/images/versions/β.webp" tone="#9B4341" on={playableNow.extendedPlayable && extendedPlayable} soon={!playableNow.extendedPlayable}
+          <Tile name={t('通常')} note={t('いつも使える')} image="/images/versions/通常.webp" tone="#a88667" on />
+          <Tile name={t('拡張プレイアブル')} note="ExP" image="/images/versions/β.webp" tone="#9B4341" on={playableNow.extendedPlayable && extendedPlayable} soon={!playableNow.extendedPlayable}
             onChange={on => onChange({ fruits: rules.fruits, extendedPlayable: on })} />
         </div>
       </fieldset>
     </div>
-    {waiting && <p className={styles.note}>「準備中」のカードは、まだ対戦で動かせないため選べません。対応したものから選べるようになります。</p>}
+    {waiting && <p className={styles.note}>{t('「準備中」のカードは、まだ対戦で動かせないため選べません。対応したものから選べるようになります。')}</p>}
   </div>;
 }

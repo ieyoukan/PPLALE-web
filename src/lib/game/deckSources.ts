@@ -3,6 +3,7 @@ import { deckRuleErrors, randomDeck } from '@pplale/game-core';
 import type { Deck, MatchRules } from '@pplale/game-core';
 import { demoDeck, gameCatalog } from './catalog';
 import type { SavedGameDeck } from './savedDecks';
+import type { Translate } from './sessionStore';
 
 type DeckSourceId = 'trial' | 'random' | 'saved';
 
@@ -56,6 +57,14 @@ const deckSources: DeckSource[] = [
   // Decks built on the site and kept in the player's account.
   { id: 'saved', choices: (rules, { saved, where }) => saved.map(({ id, deck }) => ready('saved', id, deck, rules, where)) },
 ];
+
+/** The names the game itself gives decks (the player's own names are never translated). */
+const givenNames = new Set([demoDeck.name, 'おまかせデッキ', '無名のデッキ', 'あなた', '相手', 'CPU']);
+/**
+ * A deck's name in the current language: a choice's name, or a match deck's (`あなた · おまかせデッキ`,
+ * see match.ts). Only the parts the game made are translated.
+ */
+export const deckNameIn = (name: string, t: Translate) => name.split(' · ').map(part => givenNames.has(part) ? t(part) : part).join(' · ');
 
 /** Every deck the sources have for these rules. */
 export const deckChoices = (rules: MatchRules, context: SourceContext): DeckChoice[] => deckSources.flatMap(source => source.choices(rules, context));

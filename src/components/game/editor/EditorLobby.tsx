@@ -10,6 +10,7 @@ import { deleteSaved, emptyPosition, loadSaved, openInEditor } from '@/lib/game/
 import type { SavedPosition } from '@/lib/game/positions';
 import { EDITOR_PATH, PLAY_PATH, readSession } from '@/lib/game/sessionStore';
 import { OrnateFrame } from '@/components/shared/ui/ornament/OrnateFrame';
+import { useI18n } from '@/i18n/LocaleProvider';
 import styles from './EditorLobby.module.css';
 
 export default function EditorLobby() {
@@ -18,6 +19,7 @@ export default function EditorLobby() {
   const [inProgress, setInProgress] = useState(false);
   const [code, setCode] = useState('');
   const [error, setError] = useState('');
+  const { locale, t, gameText } = useI18n();
 
   function open(position: Position) {
     try {
@@ -39,27 +41,27 @@ export default function EditorLobby() {
   }, []);
 
   return <div className={styles.lobby}>
-    <p className={styles.lead}>対戦の盤面の上で、好きなカードを場や手札に置いて、その盤面から遊べます。このターンに勝てるか、どう動くのがよいかも調べられます。</p>
+    <p className={styles.lead}>{t('対戦の盤面の上で、好きなカードを場や手札に置いて、その盤面から遊べます。このターンに勝てるか、どう動くのがよいかも調べられます。')}</p>
     <div className={styles.doors}>
-      {inProgress && <OrnateFrame as="button" size="sm" className={`${styles.door} ${styles.primary}`} onClick={() => router.push(PLAY_PATH)}><b data-ui-title>編集のつづき</b><small>前回の盤面を開く</small></OrnateFrame>}
-      <OrnateFrame as="button" size="sm" className={`${styles.door} ${inProgress ? '' : styles.primary}`} onClick={() => open(emptyPosition())}><b data-ui-title>新しい盤面を作る</b><small>何もない盤面から</small></OrnateFrame>
+      {inProgress && <OrnateFrame as="button" size="sm" className={`${styles.door} ${styles.primary}`} onClick={() => router.push(PLAY_PATH)}><b data-ui-title>{t('編集のつづき')}</b><small>{t('前回の盤面を開く')}</small></OrnateFrame>}
+      <OrnateFrame as="button" size="sm" className={`${styles.door} ${inProgress ? '' : styles.primary}`} onClick={() => open(emptyPosition())}><b data-ui-title>{t('新しい盤面を作る')}</b><small>{t('何もない盤面から')}</small></OrnateFrame>
     </div>
     {saved.length > 0 && <section>
-      <h2 data-ui-title>保存した盤面</h2>
+      <h2 data-ui-title>{t('保存した盤面')}</h2>
       <ul className={styles.saved}>{saved.map(s => <li key={s.id}>
-        <button className={styles.open} onClick={() => open(s.position)}><b>{s.position.title}</b><small>{new Date(s.savedAt).toLocaleString('ja-JP')}</small></button>
-        <button className={styles.remove} aria-label={`${s.position.title}を削除`} onClick={() => setSaved(deleteSaved(s.id))}>削除</button>
+        <button className={styles.open} onClick={() => open(s.position)}><b>{s.position.title}</b><small>{new Date(s.savedAt).toLocaleString(locale === 'en' ? 'en-US' : 'ja-JP')}</small></button>
+        <button className={styles.remove} aria-label={t('{title}を削除', { title: String(s.position.title) })} onClick={() => setSaved(deleteSaved(s.id))}>{t('削除')}</button>
       </li>)}</ul>
     </section>}
     <section>
-      <h2 data-ui-title>コードから開く</h2>
-      <textarea value={code} rows={3} spellCheck={false} placeholder="PPL1. から始まる盤面のコードを貼り付ける" aria-label="盤面のコード" onChange={event => setCode(event.target.value)} />
+      <h2 data-ui-title>{t('コードから開く')}</h2>
+      <textarea value={code} rows={3} spellCheck={false} placeholder={t('PPL1. から始まる盤面のコードを貼り付ける')} aria-label={t('盤面のコード')} onChange={event => setCode(event.target.value)} />
       <button className={styles.small} disabled={!code.trim()} onClick={() => {
         const found = decodePosition(code);
         if (found) open(found);
         else setError('盤面のコードが見つかりません（PPL1. から始まる文字列です）');
-      }}>この盤面を開く</button>
+      }}>{t('この盤面を開く')}</button>
     </section>
-    {error && <p role="alert" className={styles.error}>{error}</p>}
+    {error && <p role="alert" className={styles.error}>{gameText(error)}</p>}
   </div>;
 }

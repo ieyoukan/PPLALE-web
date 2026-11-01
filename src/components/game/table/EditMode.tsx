@@ -7,6 +7,8 @@ import { implementedCard } from '@pplale/game-core';
 import type { Side } from '@pplale/game-core';
 import { fruitNames } from '@pplale/game-core/room';
 import { displayCards } from '@/lib/game/catalog';
+import { useI18n } from '@/i18n/LocaleProvider';
+import { useCardName } from '@/i18n/useCardName';
 import { useBoardContext } from '../board/BoardContext';
 import type { Picking } from '../board/useBoard';
 import { GameCard } from '../GameCard';
@@ -21,12 +23,13 @@ const who = (side: Side) => side === 0 ? 'あなた' : '相手';
 /** Shown while editing, beside the table: that the board is being edited, and whose turn it is set to. */
 export function EditBar() {
   const { game, editing, edit } = useBoardContext();
+  const { t } = useI18n();
   if (!editing) return null;
-  return <div className={styles.editBar} role="toolbar" aria-label="盤面エディタ">
-    <b>編集モード</b>
-    <span className={styles.editBarHint}>場・手札・山札・プレイアブルを押して変える</span>
-    <span className={styles.editBarTurn} role="group" aria-label="手番"><span>手番</span>
-      {([0, 1] as Side[]).map(side => <button key={side} aria-pressed={game.active === side} onClick={() => edit({ type: 'turn', active: side })}>{who(side)}</button>)}
+  return <div className={styles.editBar} role="toolbar" aria-label={t('盤面エディタ')}>
+    <b>{t('編集モード')}</b>
+    <span className={styles.editBarHint}>{t('場・手札・山札・プレイアブルを押して変える')}</span>
+    <span className={styles.editBarTurn} role="group" aria-label={t('手番')}><span>{t('手番')}</span>
+      {([0, 1] as Side[]).map(side => <button key={side} aria-pressed={game.active === side} onClick={() => edit({ type: 'turn', active: side })}>{t(who(side))}</button>)}
     </span>
   </div>;
 }
@@ -34,8 +37,9 @@ export function EditBar() {
 /** Shown while playing a board that can be edited: back to edit mode from the position on the table. */
 export function EditButton() {
   const { game, mode, editing, position, remote, replaying, busy, editBoard } = useBoardContext();
+  const { t } = useI18n();
   if (editing || remote || replaying || game.phase !== 'playing' || !(position || mode === 'hotseat')) return null;
-  return <button className={styles.editToggle} disabled={busy} onClick={editBoard}>✎ 編集</button>;
+  return <button className={styles.editToggle} disabled={busy} onClick={editBoard}>✎ {t('編集')}</button>;
 }
 
 /** Every card that may go to the place being filled; a tap puts it there. */
@@ -44,6 +48,8 @@ export function CardPicker() {
   const [query, setQuery] = useState('');
   const [fruit, setFruit] = useState('all');
   const [added, setAdded] = useState<string[]>([]);
+  const { t } = useI18n();
+  const cardName = useCardName();
   if (!picking) return null;
   const { side, zone, slot } = picking, single = zone === 'field';
   const close = () => { setPicking(null); setQuery(''); setFruit('all'); setAdded([]); };
@@ -53,21 +59,22 @@ export function CardPicker() {
     if (!single) return setAdded(previous => [...previous, cardId]);
     close();
   }
-  const name = (cardId: string) => displayCards[cardId]?.name ?? cardId;
+  const name = (cardId: string) => cardName(cardId, displayCards[cardId]?.name ?? cardId);
+  const title = t('{who}の{place}に置くカード', { who: t(who(side)), place: t(places[zone]) });
   const shown = poolOf(zone).filter(cardId => name(cardId).includes(query.trim()) && (fruit === 'all' || displayCards[cardId]?.fruit === fruit));
-  return <div className={styles.picker} role="dialog" aria-modal="true" aria-label={`${who(side)}の${places[zone]}に置くカード`} onClick={close}>
+  return <div className={styles.picker} role="dialog" aria-modal="true" aria-label={title} onClick={close}>
     <div className={styles.pickerSheet} onClick={event => event.stopPropagation()}>
       <header>
-        <h2>{who(side)}の{places[zone]}に置くカード</h2>
-        <input value={query} placeholder="名前でさがす" aria-label="名前でさがす" onChange={event => setQuery(event.target.value)} />
-        <select aria-label="フルーツで絞る" value={fruit} onChange={event => setFruit(event.target.value)}>
-          <option value="all">すべて</option><option value="strawberry">いちご</option><option value="grape">ぶどう</option><option value="melon">メロン</option><option value="orange">オレンジ</option>
+        <h2>{title}</h2>
+        <input value={query} placeholder={t('名前でさがす')} aria-label={t('名前でさがす')} onChange={event => setQuery(event.target.value)} />
+        <select aria-label={t('フルーツで絞る')} value={fruit} onChange={event => setFruit(event.target.value)}>
+          <option value="all">{t('すべて')}</option><option value="strawberry">{t('いちご')}</option><option value="grape">{t('ぶどう')}</option><option value="melon">{t('メロン')}</option><option value="orange">{t('オレンジ')}</option>
         </select>
-        <button onClick={close}>{single ? 'やめる' : '閉じる'}</button>
+        <button onClick={close}>{t(single ? 'やめる' : '閉じる')}</button>
       </header>
-      {added.length > 0 && <p>加えたカード：{added.map(name).join('、')}</p>}
+      {added.length > 0 && <p>{t('加えたカード：{cards}', { cards: added.map(name).join(t('、')) })}</p>}
       <ul>{shown.map(cardId => <li key={cardId}>
-        <button aria-label={`${name(cardId)}（${fruitNames[displayCards[cardId]?.fruit as keyof typeof fruitNames] ?? 'トークン'}）`} onClick={() => add(cardId)}><GameCard id={cardId} sizes="130px" /></button>
+        <button aria-label={t('{name}（{note}）', { name: name(cardId), note: t(fruitNames[displayCards[cardId]?.fruit as keyof typeof fruitNames] ?? 'トークン') })} onClick={() => add(cardId)}><GameCard id={cardId} sizes="130px" /></button>
       </li>)}</ul>
     </div>
   </div>;

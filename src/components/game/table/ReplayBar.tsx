@@ -5,6 +5,7 @@
 // swung, moves the replay there at once.
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import type { PointerEvent as ReactPointerEvent } from 'react';
+import { useI18n } from '@/i18n/LocaleProvider';
 import { useBoardContext } from '../board/BoardContext';
 import { useReplayAssessment } from '../board/useReplayAssessment';
 import { stageRect, toStage } from '../stage/stageSpace';
@@ -30,6 +31,7 @@ function Icon({ name }: { name: keyof typeof icons }) {
 export function ReplayBar() {
   const { timeline, seekReplay, paused, setPaused, stopReplay, names, view, showAssessment } = useBoardContext();
   const points = useReplayAssessment(timeline, showAssessment);
+  const { t } = useI18n();
   const [shown, setShown] = useState(true);
   const hideTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   // Up while paused; while playing it goes down after a while and comes back on any touch, like a video player.
@@ -97,10 +99,10 @@ export function ReplayBar() {
 
   const progress = `${x(at) / 10}%`;
   return <>
-    <button className={styles.handle} data-shown={shown || undefined} onClick={wake} aria-label="再生コントロールを表示"><span /></button>
-    <section className={styles.player} data-shown={shown || undefined} aria-label="リプレイの再生" onPointerEnter={() => { if (hideTimer.current) clearTimeout(hideTimer.current); }} onPointerLeave={() => { if (!paused) wake(); }}>
-      {timeline && <div ref={track} className={styles.track} role="slider" tabIndex={0} aria-label="再生位置" aria-valuemin={0} aria-valuemax={last} aria-valuenow={at}
-        aria-valuetext={`${at} / ${last}手`}
+    <button className={styles.handle} data-shown={shown || undefined} onClick={wake} aria-label={t('再生コントロールを表示')}><span /></button>
+    <section className={styles.player} data-shown={shown || undefined} aria-label={t('リプレイの再生')} onPointerEnter={() => { if (hideTimer.current) clearTimeout(hideTimer.current); }} onPointerLeave={() => { if (!paused) wake(); }}>
+      {timeline && <div ref={track} className={styles.track} role="slider" tabIndex={0} aria-label={t('再生位置')} aria-valuemin={0} aria-valuemax={last} aria-valuenow={at}
+        aria-valuetext={t('{at} / {last}手', { at, last })}
         onPointerDown={event => { dragging.current = true; event.currentTarget.setPointerCapture(event.pointerId); seekAt(event); }}
         onPointerMove={event => { if (dragging.current) seekAt(event); }}
         onPointerUp={() => { dragging.current = false; }} onPointerCancel={() => { dragging.current = false; }}>
@@ -117,7 +119,7 @@ export function ReplayBar() {
         {!curve && <span className={styles.plain}><span style={{ width: progress }} /></span>}
         <span className={styles.head} style={{ left: progress }} />
         {swings.map(swing => <button key={swing.from} className={styles.swing} data-up={swing.change > 0 || undefined} style={{ left: `${x(swing.from) / 10}%` }}
-          aria-label={`${names[view]}の形勢が${Math.round(Math.abs(swing.change) * 100)}%${swing.change > 0 ? '良くなった' : '悪くなった'}場面へ`}
+          aria-label={t(swing.change > 0 ? '{name}の形勢が{percent}%良くなった場面へ' : '{name}の形勢が{percent}%悪くなった場面へ', { name: t(names[view]), percent: Math.round(Math.abs(swing.change) * 100) })}
           onPointerDown={event => event.stopPropagation()} onClick={() => seekReplay(swing.from)}>
           <span>{swing.change > 0 ? '+' : '−'}{Math.round(Math.abs(swing.change) * 100)}</span>
         </button>)}
@@ -127,11 +129,11 @@ export function ReplayBar() {
           {timeline && <output className={styles.count} aria-live="off">{at}<small> / {last}</small></output>}
         </span>
         <span className={styles.main}>
-          {timeline && <button onClick={() => turnStep(-1)} disabled={at === 0} aria-label="前のターンへ"><Icon name="previous" /></button>}
-          <button className={styles.play} onClick={() => setPaused(!paused)} aria-label={paused ? '再生する' : '一時停止'}><Icon name={paused ? 'play' : 'pause'} /></button>
-          {timeline && <button onClick={() => turnStep(1)} disabled={!turns.some(index => index > at)} aria-label="次のターンへ"><Icon name="next" /></button>}
+          {timeline && <button onClick={() => turnStep(-1)} disabled={at === 0} aria-label={t('前のターンへ')}><Icon name="previous" /></button>}
+          <button className={styles.play} onClick={() => setPaused(!paused)} aria-label={t(paused ? '再生する' : '一時停止')}><Icon name={paused ? 'play' : 'pause'} /></button>
+          {timeline && <button onClick={() => turnStep(1)} disabled={!turns.some(index => index > at)} aria-label={t('次のターンへ')}><Icon name="next" /></button>}
         </span>
-        <span className={styles.side}><button className={styles.stop} onClick={stopReplay} aria-label="リプレイをやめる"><Icon name="close" /></button></span>
+        <span className={styles.side}><button className={styles.stop} onClick={stopReplay} aria-label={t('リプレイをやめる')}><Icon name="close" /></button></span>
       </div>
     </section>
   </>;

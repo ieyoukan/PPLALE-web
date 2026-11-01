@@ -1,5 +1,6 @@
 'use client';
 
+import { useI18n } from '@/i18n/LocaleProvider';
 import { useBoardContext } from '../board/BoardContext';
 import { outcomeOf } from './outcome';
 import styles from './MatchScreens.module.css';
@@ -8,11 +9,12 @@ import styles from './MatchScreens.module.css';
 export function Finale() {
   const board = useBoardContext();
   const { finale, advanceFinale } = board.animations;
-  const outcome = outcomeOf(board);
+  const { t } = useI18n();
+  const outcome = outcomeOf(board, t);
   if (!outcome || finale !== 'set' && finale !== 'verdict') return null;
   return <button className={styles.finale} onClick={advanceFinale}>
     {finale === 'set'
-      ? <strong key="set" className={styles.gameSet}>ゲームセット</strong>
+      ? <strong key="set" className={styles.gameSet}>{t('ゲームセット')}</strong>
       : <strong key="verdict" className={`${styles.verdict} ${styles[outcome.kind]}`}>{outcome.text}</strong>}
   </button>;
 }

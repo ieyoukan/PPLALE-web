@@ -1,7 +1,10 @@
+'use client';
+
 import Link from 'next/link';
 import { CARD_GALLERY_PATH, DECKS_PATH } from '@/lib/game/sessionStore';
 import { OrnateFrame } from '@/components/shared/ui/ornament/OrnateFrame';
 import { GameIcon } from '@/components/shared/ui/GameIcon';
+import { useI18n } from '@/i18n/LocaleProvider';
 import styles from './CardsMenu.module.css';
 
 const destinations = [
@@ -13,10 +16,11 @@ const destinations = [
 
 /** Site tools open alongside the game so their room connection stays alive. */
 export function CardsMenu() {
+  const { t } = useI18n();
   return <div className={styles.tiles}>{destinations.map(destination => {
     const external = 'external' in destination && destination.external;
     return <OrnateFrame key={destination.href} as={Link} size="sm" href={destination.href} prefetch={external ? false : undefined} className={styles.tile} data-tone={destination.tone} target={external ? '_blank' : undefined} rel={external ? 'noopener noreferrer' : undefined}>
-      <GameIcon name={destination.icon} /><b data-ui-title>{destination.label}</b><span>{destination.note}{external && <small>別タブで開く <GameIcon name="expand" /></small>}</span>
+      <GameIcon name={destination.icon} /><b data-ui-title>{t(destination.label)}</b><span>{t(destination.note)}{external && <small>{t('別タブで開く')} <GameIcon name="expand" /></small>}</span>
     </OrnateFrame>;
   })}</div>;
 }

@@ -6,6 +6,7 @@ import { useRouter, useSearchParams } from 'next/navigation';
 import type { MatchRecording } from '@pplale/game-core/history';
 import { readRecording } from '@/lib/game/room/client';
 import { useAuth } from '@/lib/auth';
+import { useI18n } from '@/i18n/LocaleProvider';
 import { BoardTable } from '../BoardEmulator';
 import { useRecordedSession } from './useRecordedSession';
 import styles from './History.module.css';
@@ -15,13 +16,15 @@ export function RecordedReplay() {
   const params = useSearchParams(), id = params.get('id');
   const step = Math.max(0, Number(params.get('step')) || 0);
   const { user, loading } = useAuth();
-  if (loading) return <main className={styles.replayPage} role="status">認証を確認しています…</main>;
+  const { t } = useI18n();
+  if (loading) return <main className={styles.replayPage} role="status">{t('認証を確認しています…')}</main>;
   return <IdentityReplay key={`${id}:${step}:${user?.uid ?? 'guest'}`} id={id} step={step} />;
 }
 
 function IdentityReplay({ id, step }: { id: string | null; step: number }) {
   const [recording, setRecording] = useState<MatchRecording | null>(null);
   const [error, setError] = useState('');
+  const { t, gameText } = useI18n();
   useEffect(() => {
     if (!id || !/^[\da-f-]{36}$/.test(id)) { setError('リプレイが見つかりません'); return; }
     let current = true;
@@ -33,7 +36,7 @@ function IdentityReplay({ id, step }: { id: string | null; step: number }) {
     }, (failure: unknown) => { if (current) setError(failure instanceof Error ? failure.message : 'リプレイを読み込めませんでした'); });
     return () => { current = false; };
   }, [id]);
-  if (!recording) return <main className={styles.replayPage}><section className={styles.history} role="status"><h1>リプレイ</h1><p>{error || 'リプレイを読み込んでいます…'}</p><Link href="/game/battle/history/">対戦履歴へ戻る</Link></section></main>;
+  if (!recording) return <main className={styles.replayPage}><section className={styles.history} role="status"><h1>{t('リプレイ')}</h1><p>{error ? gameText(error) : t('リプレイを読み込んでいます…')}</p><Link href="/game/battle/history/">{t('対戦履歴へ戻る')}</Link></section></main>;
   return <Player key={recording.match.id} recording={recording} initialStep={step} />;
 }
 
