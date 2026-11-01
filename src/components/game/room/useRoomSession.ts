@@ -31,7 +31,7 @@ function reducer(table: Table, action: Played | 'accept'): Table {
  * the view it (or the other side's command) leads to waits in a queue until the board has shown it.
  */
 export function useRoomSession({ room, initial, seat, onLeave, plaza }: {
-  room: Pick<Room, 'send' | 'subscribe' | 'linked' | 'presented'>; initial: Played; seat: Side; onLeave: () => void;
+  room: Pick<Room, 'send' | 'subscribe' | 'linked' | 'presented' | 'presentation'>; initial: Played; seat: Side; onLeave: () => void;
   /** A match at a plaza's table: after it, the seat is kept for the next one (`rematch`) or given up (`onLeave`). */
   plaza?: { rematch: () => void; menu: () => void };
 }): BoardSession {
@@ -87,10 +87,10 @@ export function useRoomSession({ room, initial, seat, onLeave, plaza }: {
     const player = shown.players[side];
     return { card: player?.profileId && profiles[player.profileId] ? profiles[player.profileId].iconCardId : guestIcon(player?.member ?? ''), cpu: !!player?.cpu };
   }) as [AvatarIdentity, AvatarIdentity], [shown.players, profiles]);
-  const { presented } = room;
+  const { presented, presentation } = room;
   const plazaMenu = plaza?.menu;
-  const remote = useMemo(() => ({ seat, watching, assessment, turnClock, ownDeck: shown.ownDeck, matchRules: shown.rules, freeMatch: initial.mode === 'free', names, portraits, sending: !linked || sending, waiting: !linked || sending || queue.length > 0, failed, next, accept, resign, abort, resigned: shown.resigned, leave: onLeave, presented, ...(plazaMenu && { plaza: { menu: plazaMenu } }) }),
-    [seat, watching, assessment, turnClock, shown.ownDeck, shown.rules, initial.mode, names, portraits, linked, sending, queue.length, failed, next, accept, resign, abort, shown.resigned, onLeave, presented, plazaMenu]);
+  const remote = useMemo(() => ({ seat, watching, assessment, turnClock, ownDeck: shown.ownDeck, matchRules: shown.rules, freeMatch: initial.mode === 'free', names, portraits, sending: !linked || sending, waiting: !linked || sending || queue.length > 0, failed, next, accept, resign, abort, resigned: shown.resigned, leave: onLeave, presented, presentation, ...(plazaMenu && { plaza: { menu: plazaMenu } }) }),
+    [seat, watching, assessment, turnClock, shown.ownDeck, shown.rules, initial.mode, names, portraits, linked, sending, queue.length, failed, next, accept, resign, abort, shown.resigned, onLeave, presented, presentation, plazaMenu]);
   return {
     game: shown.game, error, history: [], commands: [], mode: 'room', levels: ['normal', 'normal'], ready: true, saveError: '',
     send, undo: nothing, canUndo: false, remote,

@@ -1,7 +1,7 @@
 import { duration, parseServerTiming, roundedMs } from '@pplale/game-core/performance';
-import type { PlayKind, PlayOutcome, PlayReport, PlaySample, ServerTiming } from '@pplale/game-core/performance';
+import type { PlayKind, PlayOutcome, PlayReport, PlaySample, ServerTiming, PresentationState } from '@pplale/game-core/performance';
 
-type Trace = { kind:PlayKind; input:number; sent:number; revision:number; background:boolean; ack?:number; server?:ServerTiming; reportable?:boolean; timer:ReturnType<typeof setTimeout> };
+type Trace = { kind:PlayKind; input:number; sent:number; revision:number; background:boolean; ack?:number; server?:ServerTiming; reportable?:boolean; preview?:number; waitStart?:number; waitElapsed:number; observed?:boolean; timer:ReturnType<typeof setTimeout> };
 /** One connection's monotonic clock. IDs/revisions stay here and never enter saved metrics. */
 export function playTiming(record: (sample:PlaySample) => void, report: (report:PlayReport) => void, now = () => performance.now()) {
   const pending = new Map<number, Trace>();
@@ -16,7 +16,11 @@ export function playTiming(record: (sample:PlaySample) => void, report: (report:
       ...(trace.ack !== undefined && {roundTrip:roundedMs(trace.ack-trace.sent)}),
       ...(view !== undefined && view >= trace.sent && {sendToView:roundedMs(view-trace.sent)}),
       ...(view !== undefined && paint !== undefined && paint >= view && {viewToPaint:roundedMs(paint-view), inputToPaint:roundedMs(paint-trace.input)}),
-      ...(trace.server && {server:trace.server})};
+      ...(trace.server && {server:trace.server}),
+      ...(trace.observed && {presentation: {
+        ...(trace.preview !== undefined && {inputToPreview:roundedMs(trace.preview-trace.input)}),
+        resolutionWait:roundedMs(trace.waitElapsed + (trace.waitStart === undefined ? 0 : now()-trace.waitStart)),
+      }})};
     try { record(sample); } catch { /* Observability is never part of the game transaction. */ }
     if (outcome === 'ok' && trace.reportable && sample.roundTrip !== undefined && sample.sendToView !== undefined && sample.viewToPaint !== undefined && sample.inputToPaint !== undefined) {
       try { report({n, background:sample.background, inputToSend:sample.inputToSend!, roundTrip:sample.roundTrip, sendToView:sample.sendToView, viewToPaint:sample.viewToPaint, inputToPaint:sample.inputToPaint}); } catch { /* Best effort. */ }
@@ -33,7 +37,16 @@ export function playTiming(record: (sample:PlaySample) => void, report: (report:
       const sent = now(), input = inputAt !== undefined && duration(sent-inputAt) ? inputAt : sent;
       if (pending.size >= 64) finish(pending.keys().next().value!, 'unpresented');
       const timer = setTimeout(() => finish(n,'unpresented'),120_000);
-      pending.set(n,{kind,input,sent,revision,background:hidden(),timer});
+      pending.set(n,{kind,input,sent,revision,background:hidden(),waitElapsed:0,timer});
+    },
+    presentation(state:PresentationState) {
+      // 同時に送れる自分の操作は1件。古い表示待ちが残っても、最新の操作だけに付ける。
+      const trace = [...pending.values()].at(-1);
+      if (!trace) return;
+      const at = now(); trace.observed = true;
+      if (state.preview && trace.preview === undefined) trace.preview = at;
+      if (state.waiting && trace.waitStart === undefined) trace.waitStart = at;
+      if (!state.waiting && trace.waitStart !== undefined) { trace.waitElapsed += at-trace.waitStart; trace.waitStart = undefined; }
     },
     received(revision:number) {
       if (!received.has(revision)) received.set(revision,now()); prune(received);

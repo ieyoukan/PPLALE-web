@@ -3,6 +3,7 @@ import { playTiming } from './playTiming';
 import { recordPlaySample } from './performanceLog';
 import { isPlayKind } from '@pplale/game-core/performance';
 import type { PlayReport } from '@pplale/game-core/performance';
+import type { PresentationState } from '@pplale/game-core/performance';
 import type { ClientMessage, RoomAction, RoomView, ServerMessage } from '@pplale/game-core/room';
 
 // 対戦・チャットのWebSocket接続。受信、再接続、送信の応答待ちを管理する。
@@ -20,6 +21,7 @@ export interface RoomConnection {
   /** 操作の反映と表示状態の受信後に完了する。失敗時はRoomRequestErrorで拒否する。 */
   send(action: RoomAction, inputAt?: number): Promise<void>;
   presented(revision: number): void;
+  presentation(state: PresentationState): void;
   close(): void;
 }
 
@@ -111,6 +113,7 @@ export function connectRoom(id: string, token: string | null, handlers: RoomConn
   open();
   return {
     presented: revision => timing.presented(revision),
+    presentation: state => timing.presentation(state),
     send(action,inputAt) {
       return new Promise((resolve, reject) => {
         if (!socket || socket.readyState !== WebSocket.OPEN) return reject(new RoomRequestError(0, UNREACHABLE));

@@ -1,0 +1,94 @@
+{
+  "measuredAt": "2026-11-01T04:58:41.401Z",
+  "web": "https://pplale.vercel.app",
+  "server": "https://pplale-room.youkan.uk",
+  "serverVersion": "0.16.0",
+  "forcedPresentationWait": true,
+  "note": "Private guest test room; 3 real plays. Fixed random only reproduces the client presentation wait; network is real. No room IDs or tokens are exported.",
+  "measurements": [
+    {
+      "feedbackMs": 1317,
+      "confirmedMs": 1253.699999988079,
+      "preview": false,
+      "animationDuration": "0.32s"
+    },
+    {
+      "feedbackMs": 1282.199999988079,
+      "confirmedMs": 1245.199999988079,
+      "preview": false,
+      "animationDuration": "0.32s"
+    },
+    {
+      "feedbackMs": 1280.4000000357628,
+      "confirmedMs": 1244.9000000357628,
+      "preview": false,
+      "animationDuration": "0.32s"
+    }
+  ],
+  "samples": [
+    {
+      "kind": "play",
+      "outcome": "ok",
+      "at": 1793509080000,
+      "background": false,
+      "inputToSend": 1.7,
+      "roundTrip": 118.5,
+      "sendToView": 114.7,
+      "viewToPaint": 1199.7,
+      "inputToPaint": 1316.1,
+      "server": {
+        "queue": 0.1,
+        "read": 5.4,
+        "apply": 1.1,
+        "store": 21.6,
+        "presence": 0,
+        "deliver": 0,
+        "publish": 0,
+        "total": 0
+      }
+    },
+    {
+      "kind": "play",
+      "outcome": "ok",
+      "at": 1793509080000,
+      "background": false,
+      "inputToSend": 0.3,
+      "roundTrip": 91.2,
+      "sendToView": 90.6,
+      "viewToPaint": 1191.2,
+      "inputToPaint": 1282.1,
+      "server": {
+        "queue": 0.1,
+        "read": 5.9,
+        "apply": 0.6,
+        "store": 22.3,
+        "presence": 0,
+        "deliver": 0,
+        "publish": 0,
+        "total": 0
+      }
+    },
+    {
+      "kind": "play",
+      "outcome": "ok",
+      "at": 1793509080000,
+      "background": false,
+      "inputToSend": 0.2,
+      "roundTrip": 92.1,
+      "sendToView": 90.1,
+      "viewToPaint": 1189.8,
+      "inputToPaint": 1280.1,
+      "server": {
+        "queue": 0.1,
+        "read": 6.3,
+        "apply": 0.5,
+        "store": 22.6,
+        "presence": 0,
+        "deliver": 0,
+        "publish": 0,
+        "total": 0
+      }
+    }
+  ],
+  "errors": []
+}

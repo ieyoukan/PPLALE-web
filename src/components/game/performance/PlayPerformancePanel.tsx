@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useState, useSyncExternalStore } from 'react';
-import { playKinds, summarizeByKind, summarizePlays } from '@pplale/game-core/performance';
+import { playKinds, summarizeByKind, summarizePlays, presentationStages, percentiles, duration } from '@pplale/game-core/performance';
 import type { ClientTiming, Percentiles, PlayPerformance, PlaySummary, ServerTiming } from '@pplale/game-core/performance';
 import { clearPlaySamples, performanceLog } from '@/lib/game/room/performanceLog';
 import { readServerStats } from '@/lib/game/room/client';
@@ -45,6 +45,8 @@ export function PlayPerformancePanel() {
     <p>ルームで受け付けた操作から、応答・盤面表示までを自動計測します。p95は95%の操作が収まる時間です。</p>
     {tab==='local' ? <>
       <Summary summary={summarizePlays(samples)} byKind={summarizeByKind(samples)} />
+      <Metrics title="画面の反応と確定待ち" labels={{inputToPreview:'入力 → 仮置き表示', resolutionWait:'画面の確定待ち（演出・反応）'}}
+        values={Object.fromEntries(presentationStages.map(stage => [stage, percentiles(samples.filter(sample => sample.outcome === 'ok' && !sample.background).flatMap(sample => duration(sample.presentation?.[stage]) ? [sample.presentation![stage]!] : []))]))} />
       <section><h3>直近の操作</h3><div className={styles.scroll}><table><thead><tr><th>時刻</th><th>操作</th><th>結果</th><th>往復</th><th>入力 → 表示</th><th>サーバー合計</th></tr></thead><tbody>{samples.slice(-30).reverse().map((sample,index)=><tr key={index}><td>{new Date(sample.at).toLocaleTimeString('ja-JP',{hour:'2-digit',minute:'2-digit'})}</td><th scope="row">{labels[sample.kind]}</th><td>{outcomes[sample.outcome]}{sample.background?'（背景）':''}</td><td>{ms(sample.roundTrip)}</td><td>{ms(sample.inputToPaint)}</td><td>{ms(sample.server?.total)}</td></tr>)}</tbody></table></div></section>
       <div className={styles.actions}><button disabled={!samples.length} onClick={exportSamples}>JSONを書き出す</button><button disabled={!samples.length} onClick={clearPlaySamples}>この端末の記録を消す</button></div>
       <p>このブラウザに直近200件を保存します。名前・ルームID・カード内容は記録しません。</p>

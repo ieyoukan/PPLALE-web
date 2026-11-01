@@ -922,16 +922,16 @@ export function createRoomServer({ config, backend, catalog, history, push = pus
                     before = decider(target);
                     return actPlaza(target, member, body, catalog);
                 }, timing);
+                // Whoever leaves is told the result before their sockets are ended.
+                if (outcome.removed?.includes(member)) tell(socket, { type: 'result', n });
+                await announce(room, undefined, timing, outcome.removed, outcome.chat);
+                timing.total = performance.now() - received;
                 const sent = body as RoomAction;
                 const measured = outcome.command && sent.action === 'command' && isPlayKind(sent.command.type) ? parseServerTiming(timing) : undefined;
                 if (measured && sent.action === 'command' && isPlayKind(sent.command.type)) {
                     reportable.set(n, { kind: sent.command.type, timing: measured, at: Date.now() });
                     if (reportable.size > 64) reportable.delete(reportable.keys().next().value!);
                 }
-                // Whoever leaves is told the result before their sockets are ended.
-                if (outcome.removed?.includes(member)) tell(socket, { type: 'result', n });
-                await announce(room, undefined, timing, outcome.removed, outcome.chat);
-                timing.total = performance.now() - received;
                 if (!outcome.removed?.includes(member)) tell(socket, { type: 'result', n, ...(measured && { timing: measured, revision: room.state?.revision }) });
                 if (outcome.command) latency.record(timing);
                 if (outcome.started) countLater('matchesStarted');

@@ -64,8 +64,8 @@ function useMatchAssets(ids: string[], initial: Played | null) {
 }
 
 function PlazaMatch({ initial, onDone, onMenu }: { initial: Played; onDone: () => void; onMenu: () => void }) {
-  const plaza = usePlaza(), { send, subscribe, linked, presented, view } = plaza;
-  const room = useMemo(() => ({ send, subscribe, linked, presented }), [send, subscribe, linked, presented]);
+  const plaza = usePlaza(), { send, subscribe, linked, presented, presentation, view } = plaza;
+  const room = useMemo(() => ({ send, subscribe, linked, presented, presentation }), [send, subscribe, linked, presented, presentation]);
   const seated = !initial.watching;
   // After the match: a player who leaves the result gives up the seat; one who plays again keeps it.
   const onLeave = useCallback(() => { if (seated) void send({ action: 'stand' }).catch(() => {}); onDone(); }, [seated, send, onDone]);

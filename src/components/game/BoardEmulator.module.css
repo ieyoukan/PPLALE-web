@@ -623,3 +623,6 @@
    cards piled on the deck never cover it (the stack is 45% wide, 12% from the right, 18% from the top). */
 .deckZone[data-deck$='-yojo'] .deckCount, .deckZone[data-deck$='-sweet'] .deckCount { top: 18%; right: auto; bottom: auto; left: 65.5%; z-index: 30; transform: translate(-50%, -50%); }
 .far .deckZone[data-deck$='-yojo'] .deckCount, .far .deckZone[data-deck$='-sweet'] .deckCount { transform: translate(-50%, -50%) rotate(180deg); }
+
+/* 確定前の仮置き。既存の配置アニメーションの速度を保ち、操作は受け付けない。 */
+.fieldSlot[data-pending-play] { opacity: .8; filter: none; pointer-events: none; }

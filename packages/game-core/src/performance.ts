@@ -5,6 +5,9 @@ export const serverStages = ['queue', 'read', 'apply', 'store', 'presence', 'del
 export type ServerTiming = Record<typeof serverStages[number], number>;
 export const clientStages = ['inputToSend', 'roundTrip', 'sendToView', 'viewToPaint', 'inputToPaint'] as const;
 export type ClientTiming = Partial<Record<typeof clientStages[number], number>>;
+export const presentationStages = ['inputToPreview', 'resolutionWait'] as const;
+export type PresentationTiming = Partial<Record<typeof presentationStages[number], number>>;
+export interface PresentationState { preview: boolean; waiting: boolean }
 export type PlayOutcome = 'ok' | 'rejected' | 'timeout' | 'disconnected' | 'unpresented';
 export interface PlaySample extends ClientTiming {
     kind: PlayKind;
@@ -13,6 +16,8 @@ export interface PlaySample extends ClientTiming {
     outcome: PlayOutcome;
     background: boolean;
     server?: ServerTiming;
+    /** 端末だけの表示診断。演出と反応待ちを同じ分類にし、相手の手札を明かさない。 */
+    presentation?: PresentationTiming;
 }
 export interface PlayReport extends Required<ClientTiming> { n: number; background: boolean }
 export interface Percentiles { count: number; p50: number; p95: number; max: number }
@@ -40,6 +45,14 @@ export function parseServerTiming(value: unknown): ServerTiming | undefined {
     const item = value as Record<string, unknown>;
     if (!serverStages.every(stage => duration(item[stage]))) return undefined;
     return Object.fromEntries(serverStages.map(stage => [stage, roundedMs(item[stage] as number)])) as ServerTiming;
+}
+
+/** ローカル診断の既知の時間だけを残す。旧形式にはこの項目がない。 */
+export function parsePresentationTiming(value: unknown): PresentationTiming | undefined {
+    if (!value || typeof value !== 'object') return undefined;
+    const source = value as Record<string, unknown>;
+    const entries = presentationStages.filter(stage => duration(source[stage])).map(stage => [stage, roundedMs(source[stage] as number)]);
+    return entries.length ? Object.fromEntries(entries) : undefined;
 }
 
 /** 許可した項目だけを保存し、クライアントが追加した情報を混ぜない。 */

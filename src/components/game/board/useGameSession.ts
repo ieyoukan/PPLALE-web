@@ -7,6 +7,7 @@ import { demoDeck, gameCatalog } from '@/lib/game/catalog';
 import { createMatch, randomSeed, usableSetup } from '@/lib/game/match';
 import { readSession, saveSession, sideLabel } from '@/lib/game/sessionStore';
 import type { Levels, MatchSetup, Mode } from '@/lib/game/sessionStore';
+import type { PresentationState } from '@pplale/game-core/performance';
 import type { RoomTurnClock } from '@pplale/game-core/room';
 import type { AssessedPoint } from './assess';
 import type { LethalPuzzle, PuzzleStatus } from '@/lib/game/puzzles';
@@ -40,6 +41,7 @@ export interface Incoming {
 export interface RemoteSession {
   /** Next paint opportunity of the actually shown board, after its privacy/presentation gate. */
   presented?: (revision:number) => void;
+  presentation?: (state:PresentationState) => void;
   /** Public estimates observed in a room, or the saved estimates of a completed recording. */
   assessment?: AssessedPoint[];
   turnClock?: RoomTurnClock & { serverNow: number; receivedAt: number; limitMs: number };

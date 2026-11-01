@@ -5,7 +5,7 @@ import type { PlaySample } from '@pplale/game-core/performance';
 import { memoryBackend } from '../src/backend.ts';
 import { commandTiming } from '../src/latency.ts';
 import { playPerformance } from '../src/play-performance.ts';
-import { serve, shared, startedMatch, connect } from './helpers.ts';
+import { serve, shared, startedMatch, connect, deck } from './helpers.ts';
 
 const sample:PlaySample={kind:'attack',at:Math.floor(Date.now()/60000)*60000,outcome:'ok',background:false,inputToPaint:50};
 test('shared diagnostics are bounded, expire, and survive a different backend connection',async t=>{
@@ -48,4 +48,23 @@ test('only issued ACKs on the same seated socket produce one sanitized shared sa
   assert.equal((await served.server.stats()).performance?.summary.measured,1);
   await watcher.close();
   await other.close();
+});
+
+test('plaza ACK timing includes completed presence, delivery and publish',async t=>{
+  const backend=memoryBackend();
+  const served=await serve({data:{open:()=>({...backend,async publish(...args:Parameters<typeof backend.publish>){await new Promise(resolve=>setTimeout(resolve,15));return backend.publish(...args);}})}});
+  t.after(()=>served.close());
+  const made=await served.call<import('@pplale/game-core/room').Entered>('/rooms',{name:'検証',rules:{fruits:['strawberry'],extendedPlayable:false},plaza:{visibility:'invite'}});
+  const {view,token}=made.data;
+  const joined=await served.call<import('@pplale/game-core/room').Entered>(`/rooms/${view.id}/join`,{name:'相手',plaza:true,invite:view.plaza!.invite});
+  const a=await connect(served,view.id,token),b=await connect(served,view.id,joined.data.token);
+  await Promise.all([a.until(v=>!!v.plaza),b.until(v=>!!v.plaza)]);
+  for(const [client,seat] of [[a,0],[b,1]] as const)assert.equal(await client.act({action:'sit',seat}),undefined);
+  for(const client of [a,b])assert.equal(await client.act({action:'ready',deck}),undefined);
+  await a.until(v=>v.game?.phase==='dice');
+  const issued=new Promise<Extract<ServerMessage,{type:'result'}>>(resolve=>a.socket.on('message',raw=>{const m=JSON.parse(String(raw)) as ServerMessage;if(m.type==='result'&&m.timing)resolve(m);}));
+  assert.equal(await a.act({action:'command',command:{type:'roll',actor:0},revision:a.latest().game!.revision}),undefined);
+  const ack=await issued;
+  assert.ok(ack.timing!.publish>=14,JSON.stringify(ack.timing));assert.ok(ack.timing!.total>=ack.timing!.publish);
+  assert.ok(ack.timing!.total>=ack.timing!.read+ack.timing!.apply+ack.timing!.store);
 });

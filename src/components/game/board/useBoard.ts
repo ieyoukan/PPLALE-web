@@ -87,6 +87,7 @@ export function useBoard(container: RefObject<HTMLDivElement | null>, session: B
   // The request travels while the presentation runs. Only the presentation gates accepting its view.
   const [presentingOwn, setPresentingOwn] = useState(false);
   const [intent, setIntent] = useState<Command | null>(null);
+  const [intentRevision, setIntentRevision] = useState<number | null>(null);
   const roomInputLocked = useRef(false);
   const drawInput = useDrawInput();
   const { reset: resetDrawInput } = drawInput;
@@ -102,20 +103,34 @@ export function useBoard(container: RefObject<HTMLDivElement | null>, session: B
       setExchanges([]);
     }
     if (remote) {
+      setIntentRevision(actual.revision);
       setIntent(command);
       setPresentingOwn(true);
       animate(command, () => setPresentingOwn(false));
       send(command,inputAt);
     } else animate(command, () => send(command));
-  }, [view, animate, send, remote, actual.phase]);
+  }, [view, animate, send, remote, actual.phase, actual.revision]);
 
-  const presented = remote?.presented;
+  // 仮置きは自分にだけ見せる。PP・効果・攻撃可否はサーバーの確定状態から変えない。
+  const submitted = intent?.type === 'play' && intent.actor === view ? intent : null;
+  const submittedCard = submitted && game.cards[submitted.uid];
+  const slot = submitted?.slot ?? Array.from({ length: 7 }, (_, index) => index).find(index => !game.players[view].field.some(uid => game.cards[uid].slot === index));
+  const pendingPlay = remote && game.revision === intentRevision && !error && submitted && submittedCard && gameCatalog[submittedCard.cardId]?.type === 'yojo'
+    && game.players[view].hand.includes(submitted.uid) && slot !== undefined
+    ? { uid: submitted.uid, cardId: submittedCard.cardId, side: view, slot } : null;
+  const previewing = !!pendingPlay;
+  const presented = remote?.presented, presentation = remote?.presentation;
   useLayoutEffect(() => {
     if (!presented || watching) return;
+    const waiting = presentingOwn || deciding;
+    presentation?.({ preview: false, waiting });
     let second = 0;
-    const first = requestAnimationFrame(() => { second = requestAnimationFrame(() => presented(game.revision)); });
+    const first = requestAnimationFrame(() => { second = requestAnimationFrame(() => {
+      presentation?.({ preview: previewing, waiting });
+      presented(game.revision);
+    }); });
     return () => { cancelAnimationFrame(first); cancelAnimationFrame(second); };
-  },[presented,game.revision,watching]);
+  },[presented,presentation,game.revision,watching,previewing,presentingOwn,deciding]);
 
   const dice = useOpeningDice({ game: actual, act, paused: loading, cpuSides, cpuRolls: ready && !loading && !paused && !animating, remote: !!remote });
   const { busy: rollingDice } = dice;
@@ -402,7 +417,7 @@ export function useBoard(container: RefObject<HTMLDivElement | null>, session: B
     selected, attacker, pending, ours, playEnabled,
     animations, dice, drag, mulligan,
     intent: remote && (presentingOwn || remote.waiting) ? intent : null,
-    canControl, canStrike, canAttackNow, affordable, isOption, flying, deckReady,
+    pendingPlay, canControl, canStrike, canAttackNow, affordable, isOption, flying, deckReady,
     act, choose, play, adjust, clickDeck, clickSlot, clickHand, attackLeader,
     setPanel, setSelected, setAttacker, setView, setPaused, leave, undo, clearSelection, toggleFullscreen, rematch, startReplay, stopReplay,
   };

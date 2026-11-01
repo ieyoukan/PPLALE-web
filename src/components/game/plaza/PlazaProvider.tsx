@@ -5,6 +5,7 @@ import { createContext, useCallback, useContext, useEffect, useMemo, useRef, use
 import type { ReactNode } from 'react';
 import { usePathname, useRouter } from 'next/navigation';
 import { TWO_SEAT_ROOM, listedVisibility } from '@pplale/game-core/room';
+import type { PresentationState } from '@pplale/game-core/performance';
 import type { RoomAction, RoomChatMessage, RoomView, RoomVisibility } from '@pplale/game-core/room';
 import { useAuth } from '@/lib/auth';
 import { WATCHING_BEAT, publishPresence } from '@/lib/game/social';
@@ -53,6 +54,7 @@ interface PlazaContextValue {
   send(action: RoomAction, inputAt?: number): Promise<void>;
   subscribe(listener: (view: RoomView) => void): () => void;
   presented(revision: number): void;
+  presentation(state: PresentationState): void;
   /** 入室拒否の表示を閉じる。 */
   settle(): void;
   /** 入室できなかった理由を伝えてから、自分のルームへ戻る。必要なら新規作成する。 */
@@ -409,6 +411,7 @@ export function PlazaProvider({ children }: { children: ReactNode }) {
     listeners.current.add(listener);
     return () => { listeners.current.delete(listener); };
   }, []);
+  const presentation = useCallback((state: PresentationState) => activeConnectionRef.current?.socket.presentation(state), []);
   const presented = useCallback((revision: number) => activeConnectionRef.current?.socket.presented(revision), []);
   const settleStage = useCallback(() => setStage(activeConnectionRef.current ? { kind: 'in' } : { kind: 'idle' }), []);
   const goHome = useCallback(async (notice: string) => {
@@ -426,8 +429,8 @@ export function PlazaProvider({ children }: { children: ReactNode }) {
   const rulesKey = view?.plaza && view.plaza.owner === view.plaza.me ? JSON.stringify(view.plaza.nextRules ?? view.rules) : null;
   useEffect(() => { if (rulesKey) saveRoomSettings({ rules: JSON.parse(rulesKey) }); }, [rulesKey]);
 
-  const value = useMemo<PlazaContextValue>(() => ({ stage, id, view: identityMismatch ? null : view, linked, chat: identityMismatch ? [] : chat, launch, enter, go, create, newHome, leave, send, subscribe, presented, settle: settleStage, goHome, legacy }),
-    [stage, id, view, identityMismatch, linked, chat, launch, enter, go, create, newHome, leave, send, subscribe, presented, settleStage, goHome, legacy]);
+  const value = useMemo<PlazaContextValue>(() => ({ stage, id, view: identityMismatch ? null : view, linked, chat: identityMismatch ? [] : chat, launch, enter, go, create, newHome, leave, send, subscribe, presented, presentation, settle: settleStage, goHome, legacy }),
+    [stage, id, view, identityMismatch, linked, chat, launch, enter, go, create, newHome, leave, send, subscribe, presented, presentation, settleStage, goHome, legacy]);
   return <Context.Provider value={value}>
     {children}
     {/* Moving between rooms: the current one stays on screen under a small sign. */}
