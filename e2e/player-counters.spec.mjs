@@ -21,7 +21,7 @@ test('zero counts stay hidden; playing Uyuchi adds only the own counter without 
   await resource(page,0,'uyuchi').click();await expect(page.getByRole('heading',{name:'カードのカウント',exact:true})).toBeVisible();
 });
 
-for(const viewport of [{width:1280,height:860},{width:844,height:390},{width:390,height:844}])test(`counters stay with their player and remain visible at ${viewport.width}x${viewport.height}`,async({page})=>{
+for(const viewport of [{width:1280,height:860},{width:844,height:390},{width:390,height:844},{width:320,height:568},{width:568,height:320}])test(`counters stay with their player and remain visible at ${viewport.width}x${viewport.height}`,async({page})=>{
   await page.setViewportSize(viewport);
   const game=arena({me:{playable:'p_6'},foe:{playable:'p_6'}});
   for(const [side,player] of game.players.entries()){
@@ -31,6 +31,9 @@ for(const viewport of [{width:1280,height:860},{width:844,height:390},{width:390
   for(const [side,values] of [[0,{uyuchi:5,sweets:7,mochida:9,mp:12}],[1,{uyuchi:2,sweets:3,mochida:4,mp:6}]]){
     for(const [kind,value]of Object.entries(values)){
       const counter=resource(page,side,kind);await expect(counter).toBeVisible();await expect(counter.locator('b')).toContainText(String(value));
+      const bounds=await counter.boundingBox();expect(bounds.x).toBeGreaterThanOrEqual(0);expect(bounds.y).toBeGreaterThanOrEqual(0);
+      expect(bounds.x+bounds.width).toBeLessThanOrEqual(viewport.width);expect(bounds.y+bounds.height).toBeLessThanOrEqual(viewport.height);
+      expect(await counter.locator('b').evaluate(element=>element.scrollWidth<=element.clientWidth)).toBe(true);
       const visible=()=>counter.evaluate(element=>{const r=element.getBoundingClientRect();return element.contains(document.elementFromPoint(r.x+r.width/2,r.y+r.height/2));});
       await expect.poll(visible).toBe(true);
     }
@@ -45,4 +48,13 @@ test('spent MP remains visible at zero and opens the correct skills',async({page
   await load(page,game);await expect(resource(page,0,'mp').locator('b')).toHaveText('0/20');
   await resource(page,0,'mp').click();await expect(page.getByRole('dialog',{name:'スキル',exact:true})).toBeVisible();
   expect((await saved(page)).players[0].mp).toBe(0);
+});
+
+test('strawberry type added to Uyuchi counts on play and survives reload',async({page})=>{
+  const game=arena({me:{hand:['y_72']}}),uid=hand(game)[0];
+  game.cards[uid].fruitTypes=['strawberry'];game.players[0].played=Array(4).fill('y_2');
+  await load(page,game);await expect(resource(page,0,'uyuchi').locator('b')).toHaveText('4');
+  await page.locator(`[data-hand="${uid}"]`).click();await page.getByRole('button',{name:'場に出す',exact:true}).click();
+  await expect(resource(page,0,'uyuchi').locator('b')).toHaveText('5');
+  await page.reload();await expect(resource(page,0,'uyuchi').locator('b')).toHaveText('5');
 });

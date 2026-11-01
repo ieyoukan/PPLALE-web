@@ -17,6 +17,7 @@ export { canAttack } from './core/combat.ts';
 export { activePassive, extendedPlayables, mpMax, playableMp, playablePassives, playableSkills, skillLimit, skillLimits, skillAt, skillPrice, skillsFor } from './playables/skills.ts';
 export type { PassiveScript, SkillScript } from './playables/skills.ts';
 export { implementedCard, scriptOf } from './cards/registry.ts';
+export { uyuchiPlayCount } from './core/playCounts.ts';
 export { fruitsOf } from './core/protection.ts';
 export { exSkillInfo } from './playables/exSkills.ts';
 export type { CardScript, OpDef } from './cards/types.ts';

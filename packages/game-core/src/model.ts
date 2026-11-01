@@ -117,6 +117,8 @@ export interface Player {
     milestones: number[];
     /** この対戦で手札から使ったカードID。使用した順に保持する。 */
     played: string[];
+    /** 印刷時は別タイプだが、イチゴタイプを付けてプレイした「うゆち」の回数。 */
+    extraUyuchiPlays?: number;
     /** ふわふわパンケーキ */
     shield: boolean;
     /** 待機中のおいしくなる呪文の回数。次の実体のお菓子を「1＋この回数」倍にする。 */

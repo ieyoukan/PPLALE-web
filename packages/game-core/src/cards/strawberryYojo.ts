@@ -1,4 +1,5 @@
 // いちご（strawberry）の幼女カード。各カードの原文は src/data/yojo.json / tokenYojo.json。
+import { uyuchiPlayCount } from '../core/playCounts.ts';
 import type { Catalog, GameState, Side } from '../model.ts';
 import type { CardScript, CardScripts } from './types.ts';
 import { take } from './helpers.ts';
@@ -9,7 +10,7 @@ const inomuOnField = (s: GameState, side: Side, catalog: Catalog) =>
 /** うゆち系: このバトル中に手札から場に出した「うゆち」が既に5枚以上なら +3/+3 して早食い。 */
 const uyuchi = (next?: string): CardScript => ({
     onPlay(ctx) {
-        const count = ctx.me.played.filter(id => ctx.catalog[id]?.name.includes('うゆち') && ctx.catalog[id].fruit === 'strawberry').length;
+        const count = uyuchiPlayCount(ctx.me, ctx.catalog);
         if (count >= 5) {
             ctx.buff(ctx.uid, 3, 3);
             ctx.addKeyword(ctx.uid, 'fast');

@@ -166,7 +166,7 @@ export function editGame(state: GameState, edit: BoardEdit, catalog: Catalog): G
         case 'played': {
             // As in a match: a passive that these plays switch on (or off) moves the uses left with its limit.
             const p = s.players[edit.side];
-            withSkillLimits(p, catalog, () => { p.played = [...edit.cardIds]; });
+            withSkillLimits(p, catalog, () => { p.played = [...edit.cardIds]; delete p.extraUyuchiPlays; });
             break;
         }
         case 'deck': {

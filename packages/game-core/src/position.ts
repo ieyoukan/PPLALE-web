@@ -58,6 +58,8 @@ export interface PositionSide {
     sweet: string[];
     /** Cards played from hand earlier this game, oldest first (うゆち, カフェオレ, ケーキの種類 …). */
     played?: string[];
+    /** タイプ付与によってイチゴのうゆちとして数えた追加プレイ回数。 */
+    extraUyuchiPlays?: number;
     /** ふわふわパンケーキ */
     shield?: boolean;
     /** おいしくなる呪文 waiting for the next sweet. */
@@ -113,7 +115,7 @@ const handCard = z.union([id, z.object({ id, cost: delta.optional(), revealed: z
 const sideSchema = z.object({
     playable: id, points: count, maxPoints: count, turns: count, maxPp: count, pp: count,
     skills: z.array(count).max(8).optional(), field: z.array(unit.nullable()).max(FIELD_SIZE), hand: z.array(handCard).max(60),
-    nap: ids, exile: ids.optional(), yojo: ids, sweet: ids, played: ids.optional(), shield: z.boolean().optional(), sweetBoost: count.optional(),
+    nap: ids, exile: ids.optional(), yojo: ids, sweet: ids, played: ids.optional(), extraUyuchiPlays: count.optional(), shield: z.boolean().optional(), sweetBoost: count.optional(),
     skillHistory: z.array(count).max(500).optional(),
     exSkills: z.partialRecord(z.enum(exSkillIds as [ExSkillId, ...ExSkillId[]]), z.object({ uses: count, lastTurn: z.number().int().optional(), usedThisTurn: count.optional() })).optional(),
     ice: count.optional(), acorns: count.optional(), mochidaLeft: count.optional(), skipDraw: count.optional(), strawberryOnlyUntil: z.number().int().optional(),
@@ -184,6 +186,7 @@ export function buildPosition(position: Position, catalog: Catalog, { names = ['
         name: names[index], yojo: [], sweet: [], hand: [], field: [], nap: [], exile: [], playable: p.playable,
         points: p.points, maxPoints: p.maxPoints, turns: p.turns, pp: p.pp, ppBonus: p.maxPp - p.turns, turnPpBonus: 0, nextPpDebt: 0,
         milestones: ([10, 5] as const).filter(threshold => p.points <= threshold), played: [...(p.played ?? [])],
+        ...(p.extraUyuchiPlays ? { extraUyuchiPlays: p.extraUyuchiPlays } : {}),
         shield: !!p.shield, sweetBoost: p.sweetBoost ?? 0,
         skills: limitsOf(p, catalog).map((limit, i) => Math.min(limit, p.skills?.[i] ?? limit)), lastBorrow: -10,
         ...(playableMp[p.playable] ? { mp: p.mp ?? playableMp[p.playable].initial } : {}),
@@ -284,6 +287,7 @@ export function positionOf(s: GameState, catalog: Catalog): Position {
         if (p.skills.length !== limits.length || p.skills.some((left, i) => left !== limits[i])) side.skills = [...p.skills];
         if (p.mp !== undefined && p.mp !== playableMp[p.playable]?.initial) side.mp = p.mp;
         if (p.played.length) side.played = [...p.played];
+        if (p.extraUyuchiPlays) side.extraUyuchiPlays = p.extraUyuchiPlays;
         if (p.shield) side.shield = true;
         if (p.sweetBoost) side.sweetBoost = p.sweetBoost;
         if (p.skillHistory?.length) side.skillHistory = [...p.skillHistory];

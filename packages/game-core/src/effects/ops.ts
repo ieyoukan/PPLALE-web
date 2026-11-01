@@ -118,10 +118,12 @@ export const genericOps: OpTable = {
             const kind = t.deck ?? t.target as DeckKind, uid = draw(fx.s, t.actor, kind);
             const drawn = [...(t.ids ?? []), ...(uid ? [uid] : [])];
             const total = (t.count ?? 1) * (t.multiplier ?? 1);
-            if (total > 1) fx.next({ ...t, count: total - 1, target: undefined, ids: drawn, multiplier: 1 });
+            // 必要枚数に届かなくても、引ける山札が空になったらここで一連のドローを完了する。
+            const done = total <= 1 || !(t.deck ? fx.me[t.deck].length : fx.me.yojo.length + fx.me.sweet.length);
+            if (!done) fx.next({ ...t, count: total - 1, target: undefined, ids: drawn, multiplier: 1 });
             const source = t.source && fx.s.cards[t.source];
             if (uid && !systemDraws.includes(t.text ?? '') && fx.me.exSkills?.smoke) fx.losePoints(fx.side, 1, 'reduce');
-            if (source) scriptFor(fx.s, source.uid).onDrawn?.(cardContext(fx.s, fx.catalog, t.actor, source.uid), { kind, uid, drawn, done: total <= 1 });
+            if (source) scriptFor(fx.s, source.uid).onDrawn?.(cardContext(fx.s, fx.catalog, t.actor, source.uid), { kind, uid, drawn, done });
         },
     },
     /** End-turn hand limit: exile chosen cards, without discard triggers. */

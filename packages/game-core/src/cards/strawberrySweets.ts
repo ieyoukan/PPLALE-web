@@ -147,10 +147,13 @@ export const strawberrySweets: CardScripts = {
     // s_18 いちごパフェ: 2枚引く。幼女デッキから引いた枚数だけ相手のお菓子を減らし、お菓子デッキからの枚数だけ回復。
     s_18: {
         onPlay: ctx => ctx.queue('draw', { count: 2 }),
-        onDrawn(ctx, { kind, uid }) {
-            if (!uid) return;
-            if (kind === 'yojo') ctx.losePoints(ctx.foeSide, 1, 'reduce');
-            else ctx.heal(1);
+        onDrawn(ctx, { drawn, done }) {
+            if (!done) return;
+            // 2枚とも引いてから枚数分をまとめて処理する。回復量が2でも回復は1回。
+            const yojo = drawn.filter(uid => ctx.defOf(uid).type === 'yojo').length;
+            const sweets = drawn.filter(uid => ctx.defOf(uid).type === 'sweet').length;
+            if (yojo) ctx.losePoints(ctx.foeSide, yojo, 'reduce');
+            if (sweets) ctx.heal(sweets);
         },
     },
     // s_19 ふわふわパンケーキ: お菓子を3回復。食べる／奪う効果を1度だけ無効化（重複しない）。

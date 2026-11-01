@@ -18,7 +18,7 @@ const exSkills = z.partialRecord(z.enum(exSkillIds as [ExSkillId, ...ExSkillId[]
 const player = z.object({
     name: z.string(), yojo: ids, sweet: ids, hand: ids, field: ids.max(7), nap: ids, exile: ids, playable: z.string(),
     points: positive, maxPoints: positive, turns: positive, pp: positive, ppBonus: integer, turnPpBonus: positive.max(2).default(0), nextPpDebt: positive,
-    milestones: z.array(z.union([z.literal(10), z.literal(5)])), played: ids, shield: z.boolean(),
+    milestones: z.array(z.union([z.literal(10), z.literal(5)])), played: ids, extraUyuchiPlays: positive.optional(), shield: z.boolean(),
     // v1 saves stored おいしくなる呪文 as a boolean.
     sweetBoost: positive.optional(), doubleSweet: z.boolean().optional(),
     skills: z.array(positive), lastBorrow: integer,

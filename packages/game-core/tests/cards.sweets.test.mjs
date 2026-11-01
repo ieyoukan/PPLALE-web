@@ -99,6 +99,50 @@ test('s_18 いちごパフェ: each yojo draw reduces the opponent, each sweet d
   assert.equal(s.players[0].points, 6);
 });
 
+test('s_18 いちごパフェ: 回復は全ドロー後に1回。メロンうぃまるの強化も1回', () => {
+  for (const points of [5, 12]) {
+    for (const decks of [['sweet', 'sweet'], ['yojo', 'sweet'], ['sweet', 'yojo'], ['yojo', 'yojo']]) {
+      let s = arena({ me: { hand: ['s_18'], field: ['y_76'], points } });
+      const wimaru = field(s)[0], before = stats(s, wimaru);
+      s = play(s, hand(s)[0]);
+      s = choose(s, decks[0]);
+      assert.equal(s.players[0].points, points, '1枚目のドローではまだ回復しない');
+      assert.deepEqual(stats(s, wimaru), before);
+      s = choose(s, decks[1]);
+      const sweets = decks.filter(deck => deck === 'sweet').length;
+      assert.equal(s.players[0].points, Math.min(12, points + sweets));
+      assert.equal(s.players[1].points, 12 - (2 - sweets));
+      assert.deepEqual(stats(s, wimaru), before.map(value => value + (sweets ? 1 : 0)));
+    }
+  }
+});
+
+test('s_18 いちごパフェ: ここあの献身も回復量2に対して1回だけ消費', () => {
+  let s = arena({ me: { hand: ['s_18'], field: ['y_76'], points: 5 } });
+  s.players[0].exSkills = { healing: { uses: 2 } };
+  s = draws(play(s, hand(s)[0]), 'sweet');
+  assert.equal(s.players[0].points, 8);
+  assert.equal(s.players[0].exSkills.healing.uses, 1);
+});
+
+test('s_18 いちごパフェ: 山札が途中で尽きても、引けたお菓子の分を1回回復する', () => {
+  let s = arena({ me: { hand: ['s_18'], field: ['y_76'], points: 5 } });
+  s.players[0].yojo = [];s.players[0].sweet = s.players[0].sweet.slice(0, 1);
+  const wimaru = field(s)[0], before = stats(s, wimaru);
+  s = draws(play(s, hand(s)[0]), 'sweet');
+  assert.equal(s.pending, null);
+  assert.equal(s.players[0].points, 6);
+  assert.deepEqual(stats(s, wimaru), before.map(value => value + 1));
+});
+
+test('s_18 いちごパフェ: おいしくなる呪文で4枚引いても回復は1回', () => {
+  let s = arena({ me: { hand: ['s_18'], field: ['y_76'], points: 5 } });
+  const wimaru = field(s)[0], before = stats(s, wimaru);s.players[0].sweetBoost = 1;
+  s = draws(play(s, hand(s)[0]), 'sweet');
+  assert.equal(s.players[0].points, 9);
+  assert.deepEqual(stats(s, wimaru), before.map(value => value + 1));
+});
+
 test('s_19 ふわふわパンケーキ: heal 3 and a barrier that stops one steal, not reductions or taunt-blocked steals', () => {
   let s = arena({ me: { hand: ['s_19'], points: 5 }, foe: { hand: ['s_22', 's_22'], pp: 20 } });
   s = play(s, hand(s)[0]);
