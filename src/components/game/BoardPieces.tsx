@@ -5,22 +5,32 @@ import type { CSSProperties } from 'react';
 import { HAND_CARD_SIZES } from '@/lib/game/cardImages';
 import { GameCard } from './GameCard';
 import { Avatar } from '@/components/shared/player/Avatar';
+import { useI18n } from '@/i18n/LocaleProvider';
 import type { AvatarIdentity } from '@/components/shared/player/Avatar';
 import styles from './BoardEmulator.module.css';
 import cue from './DrawCue.module.css';
 
 export type ZoneKind = 'yojo' | 'sweet' | 'nap' | 'exile';
+/** The pile's name in words, one column each in the vertical label (「幼女／デッキ」); short words in English. */
+const zoneWords = {
+  ja: { yojo: ['幼女', 'デッキ'], sweet: ['お菓子', 'デッキ'], nap: ['お昼寝', '場所'], exile: ['除外', 'ゾーン'] },
+  en: { yojo: ['Girl', 'deck'], sweet: ['Sweets', 'deck'], nap: ['Nap', 'place'], exile: ['Removed', 'zone'] },
+} as const;
+/** The one-word name shown above a pile on low screens. */
+const zoneShort = { ja: { yojo: '幼女', sweet: 'お菓子', nap: 'お昼寝', exile: '除外' }, en: { yojo: 'Girls', sweet: 'Sweets', nap: 'Nap', exile: 'Removed' } } as const;
 export function DeckStack({ side, kind, ids, thresholds = [], enabled, drawing = false, thresholdDraw = false, onClick, onInspect }: {
   side: Side; kind: ZoneKind; ids: string[]; thresholds?: number[];
   enabled: boolean; drawing?: boolean; thresholdDraw?: boolean; onClick: () => void; onInspect?: () => void;
 }) {
-  const labelWords = { yojo: ['幼女', 'デッキ'], sweet: ['お菓子', 'デッキ'], nap: ['お昼寝', '場所'], exile: ['除外', 'ゾーン'] }[kind];
-  const label = labelWords.join('');
+  const { locale, t } = useI18n();
+  const labelWords = zoneWords[locale][kind];
+  const label = labelWords.join(locale === 'en' ? ' ' : '');
+  const owner = t(side === 0 ? 'あなた' : '相手');
   const helpId = `threshold-draw-${side}`;
-  return <><button type="button" data-deck={`${side}-${kind}`} data-threshold-draw={thresholdDraw || undefined} data-label={{ yojo: '幼女', sweet: 'お菓子', nap: 'お昼寝', exile: '除外' }[kind]} className={`${styles.deckZone} ${drawing ? styles.drawReady : ''} ${thresholdDraw ? cue.required : ''}`}
-    onClick={onClick} disabled={!enabled} aria-label={`${side === 0 ? 'あなた' : '相手'}の${label} ${ids.length}枚`} aria-describedby={thresholdDraw ? helpId : undefined}>
+  return <><button type="button" data-deck={`${side}-${kind}`} data-threshold-draw={thresholdDraw || undefined} data-label={zoneShort[locale][kind]} className={`${styles.deckZone} ${drawing ? styles.drawReady : ''} ${thresholdDraw ? cue.required : ''}`}
+    onClick={onClick} disabled={!enabled} aria-label={t('{owner}の{zone} {n}枚', { owner, zone: label, n: ids.length })} aria-describedby={thresholdDraw ? helpId : undefined}>
     {thresholdDraw && <span className={cue.guide} data-draw-cue>
-      <span className={cue.label} id={helpId}>お菓子を1枚引く</span>
+      <span className={cue.label} id={helpId}>{t('お菓子を1枚引く')}</span>
       <svg viewBox="0 0 160 90" aria-hidden="true"><path d="M8 29H85V8L151 45 85 82V61H8Z" /></svg>
     </span>}
     <span className={styles.zoneLabel}>{labelWords.map(word => <span key={word}>{word}</span>)}</span>
@@ -31,14 +41,14 @@ export function DeckStack({ side, kind, ids, thresholds = [], enabled, drawing =
     </span>
     {kind === 'sweet' && <span className={styles.thresholds}>{[10, 5].map(value => <span key={value}
       className={thresholds.includes(value) ? styles.reached : ''}
-      role="img" aria-label={`${value}ポイントのドロー${thresholds.includes(value) ? '機会使用済み' : '未達'}`}>
+      role="img" aria-label={t(thresholds.includes(value) ? '{n}ポイントのドロー機会使用済み' : '{n}ポイントのドロー未達', { n: value })}>
       <i />{value === 10 ? '⑩' : '⑤'}
     </span>)}</span>}
   </button>
     {onInspect
       ? <button type="button" className={`${styles.deckCount} ${styles.deckContentsButton}`} onClick={onInspect}
-        aria-label={`${side === 0 ? 'あなた' : '相手'}の${label}の中身を見る（${ids.length}枚）`} title="中身を見る">{ids.length}<small>枚</small></button>
-      : <span className={styles.deckCount}>{ids.length}<small>枚</small></span>}
+        aria-label={t('{owner}の{zone}の中身を見る（{n}枚）', { owner, zone: label, n: ids.length })} title={t('中身を見る')}>{ids.length}<small>{t('枚')}</small></button>
+      : <span className={styles.deckCount}>{ids.length}<small>{t('枚')}</small></span>}
   </>;
 }
 
@@ -48,31 +58,34 @@ export function Counter({ label, value, points, bonus = 0, temporaryBonus = 0, p
   adjusts?: string;
   onAdjust: (delta: number) => void; onReset: () => void; test: boolean; target?: boolean; onClick?: () => void;
 }) {
-  const name = adjusts ?? (points ? 'お菓子ポイント' : '追加PP');
+  const { t } = useI18n();
+  // The callers' Japanese labels are translated here too (t() leaves text that is already English).
+  const name = t(adjusts ?? (points ? 'お菓子ポイント' : '追加PP'));
   return <div className={`${styles.counter} ${target ? styles.counterTarget : ''}`}>
-    <button className={styles.counterLabel} onClick={onClick} aria-label={`${label} ${value}`}>
-      {label}
+    <button className={styles.counterLabel} onClick={onClick} aria-label={`${t(label)} ${value}`}>
+      {t(label)}
     </button>
     <div className={styles.counterValue}><span>{value}</span>{pp && <small>{pp} PP</small>}
-      {!!bonus && <span className={styles.whiteMarble} role="img" aria-label={`追加PP ${bonus}`}>{bonus > 0 ? '+' : ''}{bonus}</span>}
-      {!!temporaryBonus && <span className={styles.whiteMarble} role="img" aria-label={`このターンの追加PP ${temporaryBonus}`}>+{temporaryBonus}</span>}
+      {!!bonus && <span className={styles.whiteMarble} role="img" aria-label={t('追加PP {n}', { n: bonus })}>{bonus > 0 ? '+' : ''}{bonus}</span>}
+      {!!temporaryBonus && <span className={styles.whiteMarble} role="img" aria-label={t('このターンの追加PP {n}', { n: temporaryBonus })}>+{temporaryBonus}</span>}
     </div>
     <div className={styles.counterControls}>
-      <button disabled={!test} onClick={() => onAdjust(-5)} aria-label={`${name}を5減らす`}>≪</button>
-      <button disabled={!test} onClick={() => onAdjust(-1)} aria-label={`${name}を1減らす`}>＜</button>
+      <button disabled={!test} onClick={() => onAdjust(-5)} aria-label={t('{name}を{n}減らす', { name, n: 5 })}>≪</button>
+      <button disabled={!test} onClick={() => onAdjust(-1)} aria-label={t('{name}を{n}減らす', { name, n: 1 })}>＜</button>
       <button disabled={!test} onClick={onReset}>Reset</button>
-      <button disabled={!test} onClick={() => onAdjust(1)} aria-label={`${name}を1増やす`}>＞</button>
-      <button disabled={!test} onClick={() => onAdjust(5)} aria-label={`${name}を5増やす`}>≫</button>
+      <button disabled={!test} onClick={() => onAdjust(1)} aria-label={t('{name}を{n}増やす', { name, n: 1 })}>＞</button>
+      <button disabled={!test} onClick={() => onAdjust(5)} aria-label={t('{name}を{n}増やす', { name, n: 5 })}>≫</button>
     </div>
   </div>;
 }
 
 export function PpPanel({ side, name, portrait, order, current, maximum, own }: { side: number; name: string; portrait?: AvatarIdentity; order?: 'first' | 'second'; current: number; maximum: number; own: boolean }) {
-  return <div data-pp={side} className={`${styles.ppPanel} ${own ? styles.ownPp : ''}`} role="group" aria-label={`${own ? '自分' : '相手'}のPP ${current} / ${maximum}`}>
+  const { t } = useI18n();
+  return <div data-pp={side} className={`${styles.ppPanel} ${own ? styles.ownPp : ''}`} role="group" aria-label={t(own ? '自分のPP {current} / {max}' : '相手のPP {current} / {max}', { current, max: maximum })}>
     <div className={styles.ppPlayerName} title={name}>
       {portrait && <Avatar {...portrait} size={24} />}
       <div className={styles.ppNameText}>{name}</div>
-      {order && <small className={styles.ppOrder} data-order={order}>{order === 'first' ? '先攻' : '後攻'}</small>}
+      {order && <small className={styles.ppOrder} data-order={order}>{t(order === 'first' ? '先攻' : '後攻')}</small>}
     </div>
     <div className={styles.ppAmount} aria-hidden="true"><span>PP</span><b>{current}</b><em>/{maximum}</em></div>
     {own && maximum > 0 && <div className={styles.ppGems} style={{ '--pp-count': maximum } as CSSProperties} aria-hidden="true">

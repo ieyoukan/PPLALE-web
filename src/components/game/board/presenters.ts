@@ -24,6 +24,8 @@ export interface Scene {
   byAttack: boolean;
   /** Where a spot was just before the command, or where it is now. */
   rect(spot: Spot, when: 'before' | 'after'): Rect | undefined;
+  /** useI18n().t: the labels in the reader's language. */
+  t(japaneseText: string, vars?: Record<string, string | number>): string;
 }
 export interface Presentation {
   flights: DrawFlight[];
@@ -61,12 +63,12 @@ export const presenters: { [K in ChangeKind]: Presenter<K> } = {
     if (from?.zone === 'hand' && to?.zone === 'field') return;
     // Created by an effect: a token appears on the field by itself; one added to a hand is labelled.
     if (!from) {
-      if (to?.zone === 'hand') out.pop({ hand: uid }, '手札に追加', 'info');
+      if (to?.zone === 'hand') out.pop({ hand: uid }, scene.t('手札に追加'), 'info');
       return;
     }
     const start = scene.rect(spotOf(from, uid), 'before');
     if (!to) {
-      if (start) out.pop(from.zone === 'field' ? { unit: uid } : spotOf(from, uid), 'ゲームから除外', 'info');
+      if (start) out.pop(from.zone === 'field' ? { unit: uid } : spotOf(from, uid), scene.t('ゲームから除外'), 'info');
       return;
     }
     const end = scene.rect(spotOf(to, uid), 'after');
@@ -88,18 +90,18 @@ export const presenters: { [K in ChangeKind]: Presenter<K> } = {
     out.pop({ unit: change.uid }, `${signed(change.attack)}/${signed(change.hp)}`, change.attack < 0 || change.hp < 0 ? 'debuff' : 'buff');
   },
   keywords(change, scene, out) {
-    if (onField(scene.after, change.uid) && change.added.length) out.pop({ unit: change.uid }, change.added.map(k => keywordNames[k]).join('・'), 'info');
+    if (onField(scene.after, change.uid) && change.added.length) out.pop({ unit: change.uid }, change.added.map(k => scene.t(keywordNames[k])).join(scene.t('・')), 'info');
   },
   // The hand card's cost marble animates by itself (GameCard).
   cost: () => {},
   reveal(change, scene, out) {
-    if (change.revealed && inHand(scene.after, change.uid)) out.pop({ hand: change.uid }, '公開', 'info');
+    if (change.revealed && inHand(scene.after, change.uid)) out.pop({ hand: change.uid }, scene.t('公開'), 'info');
   },
   unitShield(change, scene, out) {
-    if (change.on && onField(scene.after, change.uid)) out.pop({ unit: change.uid }, 'バリア', 'info');
+    if (change.on && onField(scene.after, change.uid)) out.pop({ unit: change.uid }, scene.t('バリア'), 'info');
   },
   link(change, scene, out) {
-    if (onField(scene.after, change.uid)) out.pop({ unit: change.uid }, 'くっつき', 'info');
+    if (onField(scene.after, change.uid)) out.pop({ unit: change.uid }, scene.t('くっつき'), 'info');
   },
   points(change, scene, out) {
     const rect = scene.rect({ leader: change.side }, 'after');
@@ -107,32 +109,32 @@ export const presenters: { [K in ChangeKind]: Presenter<K> } = {
     if (change.amount < 0) out.hits.push({ id: ++ids, amount: -change.amount, x: rect.x + rect.width / 2, y: rect.y + rect.height / 2, kind: scene.byAttack ? 'attack' : 'effect' });
     else out.pop({ leader: change.side }, `+${change.amount}`, 'heal');
   },
-  maxPoints(change, _scene, out) {
-    out.pop({ leader: change.side }, `最大${signed(change.amount)}`, 'heal');
+  maxPoints(change, scene, out) {
+    out.pop({ leader: change.side }, scene.t('最大{n}', { n: signed(change.amount) }), 'heal');
   },
   pp(change, _scene, out) {
     // Spending is the player's own action, and the refill is shown by the turn announcement.
     if (change.amount > 0 && !change.turnStart) out.pop({ pp: change.side }, `+${change.amount} PP`, 'heal');
   },
-  maxPp(change, _scene, out) {
-    out.pop({ pp: change.side }, `最大PP${signed(change.amount)}`, 'heal');
+  maxPp(change, scene, out) {
+    out.pop({ pp: change.side }, scene.t('最大PP{n}', { n: signed(change.amount) }), 'heal');
   },
-  ppDebt(change, _scene, out) {
-    if (change.amount > 0) out.pop({ pp: change.side }, `次のターン PP−${change.amount}`, 'debuff');
+  ppDebt(change, scene, out) {
+    if (change.amount > 0) out.pop({ pp: change.side }, scene.t('次のターン PP−{n}', { n: change.amount }), 'debuff');
   },
   mp(change, _scene, out) {
     // Spending MP is the player's own action (the skill is announced); the playable shows what is left.
     if (change.amount > 0) out.pop({ pp: change.side }, `+${change.amount} MP`, 'heal');
   },
-  sweetShield(change, _scene, out) {
-    if (change.on) out.pop({ leader: change.side }, 'パンケーキ保護', 'info');
+  sweetShield(change, scene, out) {
+    if (change.on) out.pop({ leader: change.side }, scene.t('パンケーキ保護'), 'info');
   },
   sweetBoost(change, scene, out) {
-    if (change.amount > 0) out.pop({ leader: change.side }, `次のお菓子 ×${scene.after.players[change.side].sweetBoost + 1}`, 'buff');
+    if (change.amount > 0) out.pop({ leader: change.side }, scene.t('次のお菓子 ×{n}', { n: scene.after.players[change.side].sweetBoost + 1 }), 'buff');
   },
-  skillUses(change, _scene, out) {
+  skillUses(change, scene, out) {
     // Using a skill is announced (and counted in the skill panel); only a restored use is labelled.
-    if (change.amount > 0) out.pop({ leader: change.side }, `スキル回数${signed(change.amount)}`, 'heal');
+    if (change.amount > 0) out.pop({ leader: change.side }, scene.t('スキル回数{n}', { n: signed(change.amount) }), 'heal');
   },
   roll(change, _scene, out) {
     out.roll = change;
@@ -143,7 +145,7 @@ export const presenters: { [K in ChangeKind]: Presenter<K> } = {
     const rect = scene.rect({ unit: change.uid }, 'after') ?? scene.rect({ unit: change.uid }, 'before');
     if (!rect) return;
     if (change.what === 'damage') out.hits.push({ id: ++ids, amount: 0, x: rect.x + rect.width / 2, y: rect.y + rect.height / 2, kind: 'effect' });
-    else out.pop({ unit: change.uid }, '無効', 'debuff');
+    else out.pop({ unit: change.uid }, scene.t('無効'), 'debuff');
   },
 };
 

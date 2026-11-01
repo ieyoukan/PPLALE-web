@@ -1,3 +1,4 @@
+import { browserAppLocale } from '@/i18n/config';
 import { gameCardSource, prepareGameCardFormat } from '../matchAssets';
 
 const warmed = new Map<string, Promise<void>>();
@@ -38,7 +39,8 @@ export async function warmRoomCards(ids: string[], signal?: AbortSignal, progres
   await prepareGameCardFormat();
   const sources = [...new Set([
     '/images/back-card.webp', '/images/game/zone-frame.svg', '/images/game/counter-label.svg', '/images/game/cafe-logo.svg',
-    ...ids.map(gameCardSource).filter((src): src is string => !!src),
+    // The pictures the board will show: the English cards when the game is in English.
+    ...ids.map(id => gameCardSource(id, browserAppLocale() === 'en')).filter((src): src is string => !!src),
   ])];
   let next = 0, done = 0, failed = false;
   progress?.({ done, total: sources.length });

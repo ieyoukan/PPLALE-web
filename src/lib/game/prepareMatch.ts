@@ -20,7 +20,7 @@ export async function prepareMatchAssets(ids: string[], { cpu = false, master = 
   await Promise.all([
     warmRoomCards(ids, signal, progress, decode),
     prepareCode().then(async () => {
-      await document.fonts.load('400 20px BoardHandwriting', '0123456789PPお菓子ポイント引く');
+      await document.fonts.load('400 20px BoardHandwriting', '0123456789PPお菓子ポイント引くTurnYouOpponentFirstSecond');
       if (cpu) {
         const { prepareGameWorker } = await import('@/components/game/board/preparedWorkers');
         await Promise.all([

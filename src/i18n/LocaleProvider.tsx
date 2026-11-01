@@ -73,7 +73,7 @@ const LocaleContext = createContext<LocaleContextValue>(defaultValue);
 
 const noSubscription = () => () => {};
 /** Names the game or the room server gives when none was chosen. */
-const DEFAULT_NAMES = new Set(['ゲスト', 'ホスト', 'プレイヤー', 'フレンド', '相手', 'CPU', '無名のデッキ', 'おまかせデッキ']);
+const DEFAULT_NAMES = new Set(['ゲスト', 'ホスト', 'プレイヤー', 'フレンド', '相手', 'あなた', 'CPU', '無名のデッキ', 'おまかせデッキ']);
 const fill = (text: string, vars?: Record<string, string | number>) => vars ? text.replace(/\{(\w+)\}/g, (whole, name: string) => name in vars ? String(vars[name]) : whole) : text;
 
 /**

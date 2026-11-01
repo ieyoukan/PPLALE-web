@@ -3,12 +3,14 @@
 import { useEffect, useLayoutEffect, useRef, useState } from 'react';
 import type { DieVisualState } from './openingDieScene';
 import styles from './OpeningDie.module.css';
+import { useI18n } from '@/i18n/LocaleProvider';
 
 export const DICE_THROW_DURATION = 800;
 export function OpeningDie({ value, rolling, interactive, label, onRoll }: {
   value: number | null; rolling: boolean; interactive: boolean; label: string; onRoll: () => void;
 }) {
   const host = useRef<HTMLSpanElement>(null);
+  const { t } = useI18n();
   const visual = useRef<DieVisualState>({ value, rolling });
   const [rendered, setRendered] = useState(false);
   const [failed, setFailed] = useState(false);
@@ -25,7 +27,7 @@ export function OpeningDie({ value, rolling, interactive, label, onRoll }: {
   }, []);
   const ready = interactive && !rolling && (rendered || failed);
   return <button type="button" className={`${styles.surface} ${ready ? styles.ready : ''}`} disabled={!ready} onClick={onRoll}
-    aria-label={interactive ? `${label}のサイコロを振る` : rolling ? `${label}のサイコロが回転中` : `${label}のサイコロ${value === null ? '' : `：${value}`}`}>
+    aria-label={interactive ? t('{name}のサイコロを振る', { name: label }) : rolling ? t('{name}のサイコロが回転中', { name: label }) : value === null ? t('{name}のサイコロ', { name: label }) : t('{name}のサイコロ：{n}', { name: label, n: value })}>
     <span ref={host} className={`${styles.scene} ${rendered ? styles.sceneReady : ''}`} aria-hidden="true" />
     {failed && <svg className={styles.fallback} viewBox="0 0 300 320" aria-hidden="true">
       <defs><filter id="die-shadow"><feGaussianBlur stdDeviation="5" /></filter></defs>

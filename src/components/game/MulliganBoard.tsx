@@ -6,6 +6,8 @@ import type { DeckKind } from '@pplale/game-core';
 import { GameCard } from './GameCard';
 import { stageRect, toStage } from './stage/stageSpace';
 import styles from './MulliganBoard.module.css';
+import { useI18n } from '@/i18n/LocaleProvider';
+import { useCardName } from '@/i18n/useCardName';
 
 type Card = { uid: string; id: string; name: string; deck: DeckKind };
 type Zone = 'swap' | 'keep';
@@ -20,6 +22,8 @@ export function MulliganBoard({ cards, selected, enabled, confirmed, onToggle, o
   onToggle: (uid: string, swap: boolean) => void; onConfirm: () => void;
 }) {
   const stage = useRef<HTMLDivElement>(null);
+  const { t } = useI18n();
+  const cardName = useCardName();
   const gesture = useRef<Drag | null>(null);
   const suppressClick = useRef(false);
   const [size, setSize] = useState({ width: 0, height: 0 });
@@ -79,13 +83,13 @@ export function MulliganBoard({ cards, selected, enabled, confirmed, onToggle, o
     const zone = zoneAt(at.x, at.y);
     if (zone && movable) onToggle(g.uid, zone === 'swap');
   }
-  return <section className={styles.overlay} aria-label="初期手札の交換">
+  return <section className={styles.overlay} aria-label={t('初期手札の交換')}>
     <div ref={stage} className={styles.stage} onPointerMove={move} onPointerUp={release} onPointerCancel={() => { gesture.current = null; setDrag(null); setHover(null); }}>
       <div className={styles.destinations}><div data-mulligan-zone="swap" className={`${styles.zone} ${styles.swap} ${hover === 'swap' ? styles.hovered : ''}`}>
-        <h2>交換する</h2>
+        <h2>{t('交換する')}</h2>
         {!groups.swap.length && <span className={styles.emptySwap} aria-hidden="true">↻</span>}
       </div></div>
-      <div data-mulligan-zone="keep" className={`${styles.keep} ${hover === 'keep' ? styles.hovered : ''}`}><h2>手札</h2></div>
+      <div data-mulligan-zone="keep" className={`${styles.keep} ${hover === 'keep' ? styles.hovered : ''}`}><h2>{t('手札')}</h2></div>
       <span className={styles.upArrow} aria-hidden="true">⌃</span>
       {cards.map(card => {
         const placed = position(card), held = drag?.uid === card.uid, swap = zoneOf(card) === 'swap';
@@ -94,7 +98,7 @@ export function MulliganBoard({ cards, selected, enabled, confirmed, onToggle, o
         return <button key={card.uid} data-mulligan-card={card.uid} data-hand={card.uid} data-exchange={swap ? 'swap' : 'keep'}
           className={`${styles.card} ${held ? styles.held : ''} ${swap ? styles.exchanging : ''}`}
           style={{ width: held ? drag.width : placed.width, transform: `translate3d(${x}px, ${y}px, 0)${held ? ' rotate(-4deg) scale(1.06)' : ''}`, visibility: size.width ? 'visible' : 'hidden' }}
-          disabled={!movable} aria-label={`${card.name}：${swap ? '交換する' : '手札に残す'}`} aria-pressed={swap}
+          disabled={!movable} aria-label={t(swap ? '{name}：交換する' : '{name}：手札に残す', { name: cardName(card.id, card.name) })} aria-pressed={swap}
           onPointerDown={event => pickUp(event, card)}
           onClick={() => { if (suppressClick.current) { suppressClick.current = false; return; } onToggle(card.uid, !swap); }}
           onKeyDown={event => {
@@ -104,8 +108,8 @@ export function MulliganBoard({ cards, selected, enabled, confirmed, onToggle, o
     </div>
     <div className={styles.controls}>
       <button className={styles.confirm} disabled={!enabled || !!drag} onClick={onConfirm}
-        aria-label={confirmed ? '手札確定済み' : groups.swap.length ? `${groups.swap.length}枚を交換` : '交換せずに決定'}>{confirmed ? '✓' : groups.swap.length ? '交換' : '決定'}</button>
-      {confirmed && <span className={styles.waiting} role="status" aria-label="相手の準備を待っています"><i /><i /><i /></span>}
+        aria-label={confirmed ? t('手札確定済み') : groups.swap.length ? t('{n}枚を交換', { n: groups.swap.length }) : t('交換せずに決定')}>{confirmed ? '✓' : t(groups.swap.length ? '交換' : '決定')}</button>
+      {confirmed && <span className={styles.waiting} role="status" aria-label={t('相手の準備を待っています')}><i /><i /><i /></span>}
     </div>
   </section>;
 }
