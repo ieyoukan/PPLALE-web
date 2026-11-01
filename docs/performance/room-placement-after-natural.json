@@ -1,0 +1,106 @@
+{
+  "measuredAt": "2026-11-01T05:09:50.504Z",
+  "web": "https://pplale.vercel.app",
+  "server": "https://pplale-room.youkan.uk",
+  "serverVersion": "0.16.1",
+  "forcedPresentationWait": false,
+  "note": "Private guest test room; 3 real plays. Fixed random only reproduces the client presentation wait; network is real. No room IDs or tokens are exported.",
+  "measurements": [
+    {
+      "feedbackMs": 39.200000047683716,
+      "confirmedMs": 1488.300000011921,
+      "preview": true,
+      "animationDuration": "0.32s"
+    },
+    {
+      "feedbackMs": 45.89999997615814,
+      "confirmedMs": 1856.5999999642372,
+      "preview": true,
+      "animationDuration": "0.32s"
+    },
+    {
+      "feedbackMs": 44.19999998807907,
+      "confirmedMs": 175.89999997615814,
+      "preview": true,
+      "animationDuration": "0.32s"
+    }
+  ],
+  "samples": [
+    {
+      "kind": "play",
+      "outcome": "ok",
+      "at": 1793509740000,
+      "background": false,
+      "inputToSend": 0.7,
+      "roundTrip": 110.8,
+      "sendToView": 107.3,
+      "viewToPaint": 1411.9,
+      "inputToPaint": 1519.9,
+      "server": {
+        "queue": 0.1,
+        "read": 6.6,
+        "apply": 4.6,
+        "store": 32.5,
+        "presence": 0.4,
+        "deliver": 3.3,
+        "publish": 3,
+        "total": 50.5
+      },
+      "presentation": {
+        "inputToPreview": 39,
+        "resolutionWait": 1476.7
+      }
+    },
+    {
+      "kind": "play",
+      "outcome": "ok",
+      "at": 1793509740000,
+      "background": false,
+      "inputToSend": 0.2,
+      "roundTrip": 90.2,
+      "sendToView": 89.7,
+      "viewToPaint": 1769.4,
+      "inputToPaint": 1859.3,
+      "server": {
+        "queue": 0,
+        "read": 6.4,
+        "apply": 0.4,
+        "store": 21.8,
+        "presence": 0.3,
+        "deliver": 2.4,
+        "publish": 1.8,
+        "total": 33.1
+      },
+      "presentation": {
+        "inputToPreview": 45.7,
+        "resolutionWait": 1852.1
+      }
+    },
+    {
+      "kind": "play",
+      "outcome": "ok",
+      "at": 1793509740000,
+      "background": false,
+      "inputToSend": 0.2,
+      "roundTrip": 174.1,
+      "sendToView": 172.1,
+      "viewToPaint": 20.3,
+      "inputToPaint": 192.6,
+      "server": {
+        "queue": 0,
+        "read": 8.9,
+        "apply": 0.3,
+        "store": 48.1,
+        "presence": 0.2,
+        "deliver": 1.7,
+        "publish": 1.8,
+        "total": 61.1
+      },
+      "presentation": {
+        "inputToPreview": 44.2,
+        "resolutionWait": 0
+      }
+    }
+  ],
+  "errors": []
+}

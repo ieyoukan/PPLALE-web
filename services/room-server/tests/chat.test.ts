@@ -40,7 +40,9 @@ test('chat: member identity, Unicode limits, retry idempotency, bounded room-onl
 });
 
 test('chat: two pods deliver separate chat frames, preserve play, reconnect history and legacy clients', async t => {
-    const data = shared(), a = await serve({ data }), b = await serve({ data });
+    // 入室直後のheartbeatが混ざると、チャットと無関係な在室通知まで数えてしまう。
+    // このテストは明示的な入退室だけを使い、定期的な在室更新は別のテストで確認する。
+    const data = shared(), a = await serve({ data, beatSeconds: 60 }), b = await serve({ data, beatSeconds: 60 });
     t.after(async () => { await a.close(); await b.close(); });
     const made = (await a.call<Entered>('/rooms', { rules, name: 'ありす', plaza: { visibility: 'public' } })).data;
     const id = made.view.id, bob = (await b.call<Entered>(`/rooms/${id}/join`, { name: 'ぼぶ' })).data;
