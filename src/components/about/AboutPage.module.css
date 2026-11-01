@@ -45,6 +45,7 @@
   line-height: 1.4;
   text-align: center;
 }
+.note { margin: -10px 0 16px; color: var(--brand-cocoa); font-size: 14px; text-align: center; }
 
 /* 章・見出しへのジャンプ */
 .chips { display: flex; gap: 8px; margin: 0 -16px 18px; padding: 4px 16px 6px; overflow-x: auto; scrollbar-width: none; }

@@ -1,9 +1,13 @@
+'use client';
+
 import Image from 'next/image';
 import { HeroCardNavigation } from './HeroCardNavigation';
 import styles from './HeroSection.module.css';
+import { useI18n } from '@/i18n/LocaleProvider';
 
 export default function HeroSection() {
-  return <section aria-label="ぷぷりえーるを遊ぶ" className={styles.hero}>
+  const { t } = useI18n();
+  return <section aria-label={t('ぷぷりえーるを遊ぶ')} className={styles.hero}>
     <div className={styles.visual}>
       <Image src="/images/home/hero-friends.webp" alt="" fill sizes="100vw" loading="eager" fetchPriority="high" className={styles.illustration} />
       <h1 className={styles.logo}>

@@ -6,11 +6,13 @@ import dynamic from 'next/dynamic';
 import type { CardInfo } from '@/types/card';
 import { css } from 'styled-system/css';
 import styles from './CardPickupDeck.module.css';
+import { useI18n } from '@/i18n/LocaleProvider';
 
 const DrawnCards = dynamic(() => import('./CardPickupDraw'));
 
 /** Keep the unopened deck light; load cards, validation and their spring animation on a tap. */
 export default function CardPickupDeck() {
+  const { t } = useI18n();
   const [pickupCards, setPickupCards] = useState<CardInfo[]>([]);
   const [drawRound, setDrawRound] = useState(0);
   const [drawing, setDrawing] = useState(false);
@@ -27,7 +29,7 @@ export default function CardPickupDeck() {
       setPickupCards(createPickup());
       setDrawRound(round => round + 1);
     } catch {
-      setError('カードを読み込めませんでした。もう一度お試しください');
+      setError(t('カードを読み込めませんでした。もう一度お試しください'));
     } finally { inFlight.current = false; setDrawing(false); }
   };
   return (
@@ -70,7 +72,7 @@ export default function CardPickupDeck() {
               _focusVisible: { ring: '4px', ringColor: 'var(--brand-sage)' },
             })}
             onClick={handleDraw}
-            aria-label={isOpened ? '山札からカードをもう一度引く' : '山札からカードをピックアップする'}
+            aria-label={t(isOpened ? '山札からカードをもう一度引く' : '山札からカードをピックアップする')}
           >
           <span
             className={css({

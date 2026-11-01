@@ -5,6 +5,7 @@ import Card from '@/components/shared/card/Card';
 import { allSweetCards, allYojoCards } from '@/data/cards';
 import type { CardInfo } from '@/types/card';
 import { css } from 'styled-system/css';
+import { useI18n } from '@/i18n/LocaleProvider';
 
 function randomItem(cards: CardInfo[]): CardInfo {
   return cards[Math.floor(Math.random() * cards.length)];
@@ -29,6 +30,7 @@ export function createPickup(): CardInfo[] {
 
 export default function CardPickupDraw({ pickupCards, drawRound }: { pickupCards: CardInfo[]; drawRound: number }) {
   const reduceMotion = useReducedMotion();
+  const { t } = useI18n();
   const baseCardWidth = pickupCards.length === 3 ? 102 : 82;
   const baseCardHeight = Math.round(baseCardWidth * 1.5);
   const smallCardWidth = pickupCards.length === 3 ? 150 : 140;
@@ -36,7 +38,7 @@ export default function CardPickupDraw({ pickupCards, drawRound }: { pickupCards
 
   return (
           <ul
-            aria-label="ピックアップしたカード"
+            aria-label={t('ピックアップしたカード')}
             className={css({
               position: 'relative',
               h: { base: '40', sm: '56', md: '72', lg: '88' },

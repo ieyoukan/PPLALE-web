@@ -1,5 +1,6 @@
 import Link from 'next/link';
 import { css } from 'styled-system/css';
+import { Bi } from '@/i18n/Bi';
 
 export default function Footer() {
   return (
@@ -27,7 +28,7 @@ export default function Footer() {
             transitionProperty: 'color, background-color, border-color, text-decoration-color, fill, stroke',
           })}
         >
-          プライバシーポリシー
+          <Bi ja="プライバシーポリシー" en="Privacy Policy" />
         </Link>
         <span className={css({ color: 'var(--brand-pink)' })}>•</span>
         <Link
@@ -38,7 +39,7 @@ export default function Footer() {
             transitionProperty: 'color, background-color, border-color, text-decoration-color, fill, stroke',
           })}
         >
-          利用規約
+          <Bi ja="利用規約" en="Terms of Use" />
         </Link>
         <span className={css({ color: 'var(--brand-pink)' })}>•</span>
         <Link
@@ -49,7 +50,7 @@ export default function Footer() {
             transitionProperty: 'color, background-color, border-color, text-decoration-color, fill, stroke',
           })}
         >
-          クレジット
+          <Bi ja="クレジット" en="Credits" />
         </Link>
         <span className={css({ color: 'var(--brand-pink)' })}>•</span>
         <Link
@@ -60,7 +61,7 @@ export default function Footer() {
             transitionProperty: 'color, background-color, border-color, text-decoration-color, fill, stroke',
           })}
         >
-          お問い合わせ
+          <Bi ja="お問い合わせ" en="Contact" />
         </Link>
       </div>
     </footer>

@@ -3,6 +3,7 @@ import path from 'node:path';
 import Markdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import styles from './RulesDoc.module.css';
+import RulesEnglish from './RulesEnglish';
 
 const source = path.join(process.cwd(), 'docs/game-rules.md');
 
@@ -26,7 +27,8 @@ export async function loadRules() {
 }
 
 export default function RulesDoc({ markdown }: { markdown: string }) {
-  return (
+  return (<>
+    <RulesEnglish />
     <div className={styles.doc}>
       <Markdown
         remarkPlugins={[remarkGfm]}
@@ -38,5 +40,5 @@ export default function RulesDoc({ markdown }: { markdown: string }) {
         {markdown}
       </Markdown>
     </div>
-  );
+  </>);
 }

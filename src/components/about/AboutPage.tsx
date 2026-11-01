@@ -7,11 +7,16 @@ import Image from 'next/image';
 import Link from 'next/link';
 import { AnimatePresence, motion, useReducedMotion } from 'framer-motion';
 import type { RulesHeading } from './RulesDoc';
+import { RULES_ENGLISH_ID, rulesHeadingEnglish } from './RulesEnglish';
+import { Bi } from '@/i18n/Bi';
+import { useI18n } from '@/i18n/LocaleProvider';
 import styles from './AboutPage.module.css';
 
 interface Slide {
   src: string;
   title: string;
+  /** The title in English (the page images themselves are in Japanese). */
+  en: string;
   width: number;
   height: number;
 }
@@ -19,36 +24,37 @@ interface Slide {
 interface Group {
   id: string;
   title: string;
+  en: string;
   icon: string;
   slides: Slide[];
 }
 
 type Mode = 'book' | 'text';
 
-const landscape = (src: string, title: string): Slide => ({ src: `/images/about/${src}.webp`, title, width: 1191, height: 842 });
+const landscape = (src: string, title: string, en: string): Slide => ({ src: `/images/about/${src}.webp`, title, en, width: 1191, height: 842 });
 
 const groups: Group[] = [
-  { id: 'story', title: 'あらすじ', icon: '📖', slides: [landscape('story', 'あらすじ')] },
+  { id: 'story', title: 'あらすじ', en: 'Story', icon: '📖', slides: [landscape('story', 'あらすじ', 'Story')] },
   {
-    id: 'rules', title: 'ルール', icon: '🃏', slides: [
-      landscape('rule-1', 'ルール説明① 対戦前の準備・勝利条件・カードの見方'),
-      landscape('rule-2', 'ルール説明② デッキの作り方'),
-      landscape('rule-3', 'ルール説明③ 1ターン目の流れ'),
-      landscape('rule-4', 'ルール説明④ 自分のターンにできること'),
-      landscape('rule-5', 'ルール説明⑤ その他のルール'),
-      landscape('rule-6', 'ルール説明⑥ 特殊効果'),
-      landscape('rule-6-2', 'ルール説明⑥ 特殊効果 続'),
-      { src: '/images/about/keywords-basic.webp', title: 'キーワード早見表 基本の特殊効果', width: 800, height: 1200 },
-      { src: '/images/about/keywords.webp', title: 'キーワード早見表', width: 800, height: 1200 },
+    id: 'rules', title: 'ルール', en: 'Rules', icon: '🃏', slides: [
+      landscape('rule-1', 'ルール説明① 対戦前の準備・勝利条件・カードの見方', 'Rules 1: Setup, how to win and reading a card'),
+      landscape('rule-2', 'ルール説明② デッキの作り方', 'Rules 2: Building a deck'),
+      landscape('rule-3', 'ルール説明③ 1ターン目の流れ', 'Rules 3: Your first turn'),
+      landscape('rule-4', 'ルール説明④ 自分のターンにできること', 'Rules 4: What you can do on your turn'),
+      landscape('rule-5', 'ルール説明⑤ その他のルール', 'Rules 5: Other rules'),
+      landscape('rule-6', 'ルール説明⑥ 特殊効果', 'Rules 6: Special abilities'),
+      landscape('rule-6-2', 'ルール説明⑥ 特殊効果 続', 'Rules 6: Special abilities (cont.)'),
+      { src: '/images/about/keywords-basic.webp', title: 'キーワード早見表 基本の特殊効果', en: 'Keyword guide: basic abilities', width: 800, height: 1200 },
+      { src: '/images/about/keywords.webp', title: 'キーワード早見表', en: 'Keyword guide', width: 800, height: 1200 },
     ],
   },
   {
-    id: 'faq-ichigo', title: 'FAQ', icon: '🍓',
-    slides: [1, 2, 3, 4, 5, 6].map(n => landscape(`faq-ichigo-${n}`, `FAQ${n} イチゴタイプ`)),
+    id: 'faq-ichigo', title: 'FAQ', en: 'FAQ', icon: '🍓',
+    slides: [1, 2, 3, 4, 5, 6].map(n => landscape(`faq-ichigo-${n}`, `FAQ${n} イチゴタイプ`, `FAQ ${n}: Strawberry`)),
   },
   {
-    id: 'faq-budou', title: 'FAQ', icon: '🍇',
-    slides: [1, 2, 3, 4, 5, 6].map(n => landscape(`faq-budou-${n}`, `FAQ${n} ぶどうタイプ`)),
+    id: 'faq-budou', title: 'FAQ', en: 'FAQ', icon: '🍇',
+    slides: [1, 2, 3, 4, 5, 6].map(n => landscape(`faq-budou-${n}`, `FAQ${n} ぶどうタイプ`, `FAQ ${n}: Grape`)),
   },
 ];
 
@@ -59,6 +65,8 @@ const clampPage = (page: number) => Math.min(allSlides.length - 1, Math.max(0, p
 function Lightbox({ index, onClose, onMove }: { index: number; onClose: () => void; onMove: (step: number) => void }) {
   const slide = allSlides[index];
   const reduceMotion = useReducedMotion();
+  const { t, locale } = useI18n();
+  const slideTitle = locale === 'en' ? slide.en : slide.title;
   const [direction, setDirection] = useState(0);
 
   const move = useCallback((step: number) => {
@@ -83,14 +91,14 @@ function Lightbox({ index, onClose, onMove }: { index: number; onClose: () => vo
 
   return (
     <motion.div
-      role="dialog" aria-modal="true" aria-label={slide.title} className={styles.lightbox}
+      role="dialog" aria-modal="true" aria-label={slideTitle} className={styles.lightbox}
       initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
       onClick={onClose}
     >
-      <button type="button" aria-label="とじる" className={styles.close} onClick={onClose}>×</button>
-      <button type="button" aria-label="まえへ" disabled={index === 0} className={`${styles.arrow} ${styles.arrowLeft}`}
+      <button type="button" aria-label={t('とじる')} className={styles.close} onClick={onClose}>×</button>
+      <button type="button" aria-label={t('まえへ')} disabled={index === 0} className={`${styles.arrow} ${styles.arrowLeft}`}
         onClick={event => { event.stopPropagation(); move(-1); }}>‹</button>
-      <button type="button" aria-label="つぎへ" disabled={index === allSlides.length - 1} className={`${styles.arrow} ${styles.arrowRight}`}
+      <button type="button" aria-label={t('つぎへ')} disabled={index === allSlides.length - 1} className={`${styles.arrow} ${styles.arrowRight}`}
         onClick={event => { event.stopPropagation(); move(1); }}>›</button>
 
       <div className={styles.lightboxStage}>
@@ -109,7 +117,7 @@ function Lightbox({ index, onClose, onMove }: { index: number; onClose: () => vo
             }}
             onClick={event => event.stopPropagation()}
           >
-            <Image src={slide.src} alt={slide.title} fill unoptimized draggable={false} style={{ objectFit: 'contain' }} />
+            <Image src={slide.src} alt={slideTitle} fill unoptimized draggable={false} style={{ objectFit: 'contain' }} />
           </motion.div>
         </AnimatePresence>
       </div>
@@ -123,6 +131,8 @@ function Book({ onZoom, paused }: { onZoom: (page: number) => void; paused: bool
   const thumbsRef = useRef<HTMLDivElement>(null);
   const slide = allSlides[index];
   const activeGroup = groupOf(slide);
+  const { t, locale } = useI18n();
+  const titleOf = (page: Slide) => locale === 'en' ? page.en : page.title;
 
   const turnTo = (next: number) => setPage(current => {
     const index = clampPage(next);
@@ -141,17 +151,17 @@ function Book({ onZoom, paused }: { onZoom: (page: number) => void; paused: bool
 
   return (
     <>
-      <nav aria-label="しょう" className={styles.chips}>
+      <nav aria-label={t('しょう')} className={styles.chips}>
         {groups.map(group => (
-          <button type="button" key={group.id} data-ui-title aria-label={`${group.icon} ${group.title}を開く`}
+          <button type="button" key={group.id} data-ui-title aria-label={t('{title}を開く', { title: `${group.icon} ${locale === 'en' ? group.en : group.title}` })}
             aria-pressed={activeGroup.id === group.id} className={styles.chip}
             onClick={() => turnTo(allSlides.indexOf(group.slides[0]))}>
-            <span aria-hidden="true">{group.icon}</span>{group.title}
+            <span aria-hidden="true">{group.icon}</span><Bi ja={group.title} en={group.en} />
           </button>
         ))}
       </nav>
 
-      <section className={styles.reader} aria-label="ぷぷりえーるの本" tabIndex={0}
+      <section className={styles.reader} aria-label={t('ぷぷりえーるの本')} tabIndex={0}
         onKeyDown={event => {
           if (paused) return;
           if (event.key === 'ArrowRight') { event.preventDefault(); turn(1); }
@@ -176,25 +186,25 @@ function Book({ onZoom, paused }: { onZoom: (page: number) => void; paused: bool
                   if (info.offset.x < -45) turn(1);
                   if (info.offset.x > 45) turn(-1);
                 }}>
-                <Image src={slide.src} alt={slide.title} fill unoptimized draggable={false} style={{ objectFit: 'contain' }} />
+                <Image src={slide.src} alt={titleOf(slide)} fill unoptimized draggable={false} style={{ objectFit: 'contain' }} />
               </motion.div>
             </AnimatePresence>
-            <button type="button" className={styles.zoom} aria-label="このページを大きく見る" onClick={() => onZoom(index)}>⤢</button>
+            <button type="button" className={styles.zoom} aria-label={t('このページを大きく見る')} onClick={() => onZoom(index)}>⤢</button>
           </div>
         </div>
 
         <div className={styles.controls}>
-          <button type="button" aria-label="前のページ" disabled={index === 0} onClick={() => turn(-1)}>‹</button>
+          <button type="button" aria-label={t('前のページ')} disabled={index === 0} onClick={() => turn(-1)}>‹</button>
           <span role="status" aria-live="polite" aria-atomic="true" className={styles.pageNumber}>
-            <span className={styles.pageTitle}>{slide.title}</span>
+            <span className={styles.pageTitle}><Bi ja={slide.title} en={slide.en} /></span>
             <span>{index + 1}<small> / {allSlides.length}</small></span>
           </span>
-          <button type="button" aria-label="次のページ" disabled={index === allSlides.length - 1} onClick={() => turn(1)}>›</button>
+          <button type="button" aria-label={t('次のページ')} disabled={index === allSlides.length - 1} onClick={() => turn(1)}>›</button>
         </div>
 
-        <div ref={thumbsRef} className={styles.thumbs} aria-label="ページいちらん" role="group">
+        <div ref={thumbsRef} className={styles.thumbs} aria-label={t('ページいちらん')} role="group">
           {allSlides.map((thumb, i) => (
-            <button type="button" key={thumb.src} aria-label={`${i + 1}ページ ${thumb.title}`} aria-current={i === index ? 'page' : undefined}
+            <button type="button" key={thumb.src} aria-label={t('{n}ページ {title}', { n: i + 1, title: titleOf(thumb) })} aria-current={i === index ? 'page' : undefined}
               className={styles.thumb} onClick={() => turnTo(i)}>
               <Image src={thumb.src} alt="" width={96} height={68} unoptimized loading="lazy" />
             </button>
@@ -205,23 +215,35 @@ function Book({ onZoom, paused }: { onZoom: (page: number) => void; paused: bool
   );
 }
 
+/** A chapter chip: the Japanese title, or its English name when there is one. */
+function ChipTitle({ title }: { title: string }) {
+  const english = rulesHeadingEnglish[title];
+  return english ? <Bi ja={title} en={english} /> : <>{title}</>;
+}
+
 function RulesText({ rulesDoc, headings }: { rulesDoc: React.ReactNode; headings: RulesHeading[] }) {
+  const { t } = useI18n();
   return (
     <>
-      <nav aria-label="もくじ" className={`${styles.chips} ${styles.stickyChips}`}>
+      <nav aria-label={t('もくじ')} className={`${styles.chips} ${styles.stickyChips}`}>
+        <button type="button" data-ui-title data-lang="en" lang="en" className={styles.chip}
+          onClick={() => document.getElementById(RULES_ENGLISH_ID)?.scrollIntoView({ behavior: 'smooth' })}>
+          Overview
+        </button>
         {headings.map(heading => (
           <button type="button" key={heading.id} data-ui-title className={styles.chip}
             onClick={() => document.getElementById(heading.id)?.scrollIntoView({ behavior: 'smooth' })}>
-            {heading.title.replace(/^[\d.]+\s*/, '')}
+            <ChipTitle title={heading.title.replace(/^[\d.]+\s*/, '')} />
           </button>
         ))}
       </nav>
-      <article aria-label="ルール・裁定集" className={styles.sheet}>{rulesDoc}</article>
+      <article aria-label={t('ルール・裁定集')} className={styles.sheet}>{rulesDoc}</article>
     </>
   );
 }
 
 export default function AboutPage({ rulesDoc, rulesHeadings }: { rulesDoc: React.ReactNode; rulesHeadings: RulesHeading[] }) {
+  const { t } = useI18n();
   const [mode, setMode] = useState<Mode>('book');
   const [openIndex, setOpenIndex] = useState<number | null>(null);
   const close = useCallback(() => setOpenIndex(null), []);
@@ -243,12 +265,12 @@ export default function AboutPage({ rulesDoc, rulesHeadings }: { rulesDoc: React
     <main className={styles.main}>
       <header className={styles.bar}>
         <div className={styles.barInner}>
-          <Link href="/" aria-label="トップへもどる" className={styles.back}>‹</Link>
-          <div role="tablist" aria-label="よみかた" className={styles.modes}>
-            {([['book', '📖', '本でよむ'], ['text', '📝', 'もじでよむ']] as const).map(([value, icon, label]) => (
+          <Link href="/" aria-label={t('トップへもどる')} className={styles.back}>‹</Link>
+          <div role="tablist" aria-label={t('よみかた')} className={styles.modes}>
+            {([['book', '📖', '本でよむ', 'Pictures'], ['text', '📝', 'もじでよむ', 'Text']] as const).map(([value, icon, label, english]) => (
               <button type="button" role="tab" key={value} aria-selected={mode === value} className={styles.mode}
                 onClick={() => changeMode(value)}>
-                <span aria-hidden="true">{icon}</span>{label}
+                <span aria-hidden="true">{icon}</span><Bi ja={label} en={english} />
               </button>
             ))}
           </div>
@@ -257,8 +279,11 @@ export default function AboutPage({ rulesDoc, rulesHeadings }: { rulesDoc: React
 
       <div className={styles.content}>
         <motion.h1 className={styles.title} initial={{ opacity: 0, y: -24 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5 }}>
-          ぷぷりえーるとは
+          <Bi ja="ぷぷりえーるとは" en="About PPLALE" />
         </motion.h1>
+        <p data-lang="en" lang="en" className={styles.note}>
+          {mode === 'book' ? 'The picture pages are in Japanese. Tap "Text" for the rules in English.' : 'The rules overview is in English; the detailed rulings and FAQ are in Japanese.'}
+        </p>
         {mode === 'book' ? <Book onZoom={setOpenIndex} paused={openIndex !== null} /> : <RulesText rulesDoc={rulesDoc} headings={rulesHeadings} />}
       </div>
 

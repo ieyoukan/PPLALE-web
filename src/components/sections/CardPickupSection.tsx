@@ -1,5 +1,6 @@
 import { css } from 'styled-system/css';
 import CardPickupDeck from './CardPickupDeck';
+import { Bi } from '@/i18n/Bi';
 
 export default function CardPickupSection() {
   return (
@@ -46,7 +47,7 @@ export default function CardPickupSection() {
             borderWidth: '0',
           })}
         >
-          カードピックアップ
+          <Bi ja="カードピックアップ" en="Card pickup" />
         </h2>
         <CardPickupDeck />
       </div>

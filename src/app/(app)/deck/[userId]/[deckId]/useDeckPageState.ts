@@ -303,7 +303,7 @@ export function useDeckPageState({
   };
 
   const handleNameChange = async (newName: string) => {
-    const normalizedName = newName.trim() || '無名のデッキ';
+    const normalizedName = newName.trim() || (locale === 'ja' ? '無名のデッキ' : 'Untitled deck');
 
     if (userId === 'local') {
       setIsEditing(false);
