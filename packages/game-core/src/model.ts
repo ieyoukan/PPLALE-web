@@ -190,7 +190,16 @@ export interface Task {
     blockedTarget?: string;
     resume?: Task;
 }
+/** 仮選択してから確定するカード選択。ルールの処理順は変えない表示用の指定。 */
+export interface CardSelection {
+    kind: 'discard' | 'exile' | 'activate' | 'give';
+    count?: number;
+    optional?: boolean;
+    /** 任意選択を終える既存の回答ID。 */
+    finish?: string;
+}
 export interface Choice {
+    selection?: CardSelection;
     prompt: string;
     options: {
         id: string;

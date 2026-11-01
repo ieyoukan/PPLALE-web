@@ -78,7 +78,7 @@ export const orangeYojo: CardScripts = {
                 if (t.target === 'yes') step(ctx, 'exileNap', { count: 2 });
             } else {
                 if (t.target) { ctx.exile(t.target); t = { ...t, target: undefined, count: t.count! - 1 }; }
-                if (t.count! > 0) ctx.pick('除外する幼女を選んでください', eligible.filter(uid => ctx.me.nap.includes(uid)), t);
+                if (t.count! > 0) ctx.pick('除外する幼女を選んでください', eligible.filter(uid => ctx.me.nap.includes(uid)), t, { kind: 'exile', count: t.count });
                 else { ctx.queue('draw'); ctx.queue('buff', { target: ctx.uid, amount: 2, hp: 2 }); }
             }
         },
@@ -95,7 +95,7 @@ export const orangeYojo: CardScripts = {
         onPlay: ctx => step(ctx, 'exileHand', { count: 2 }),
         effect(ctx, t) {
             if (t.target) { ctx.exile(t.target); t = { ...t, target: undefined, count: t.count! - 1 }; }
-            if (t.count! > 0 && ctx.me.hand.length) ctx.pick('除外する手札を選んでください', ctx.me.hand, t);
+            if (t.count! > 0 && ctx.me.hand.length) ctx.pick('除外する手札を選んでください', ctx.me.hand, t, { kind: 'exile', count: t.count });
             else ctx.queue('draw', { count: 3 });
         },
     },

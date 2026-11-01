@@ -11,6 +11,7 @@ import { cardCounts } from '../board/matchInfo';
 import { useLongPress } from '../board/useLongPress';
 import { Counter, DeckStack } from '../BoardPieces';
 import type { ZoneKind } from '../BoardPieces';
+import { CardChoiceMark } from './ChoiceTray';
 import { GameCard } from '../GameCard';
 import styles from '../BoardEmulator.module.css';
 
@@ -111,6 +112,7 @@ function FieldSlot({ side, slot }: { side: Side; slot: number }) {
   const uid = game.players[side].field.find(id => game.cards[id].slot === slot), card = uid ? game.cards[uid] : null;
   const pending = board.pendingPlay?.side === side && board.pendingPlay.slot === slot ? board.pendingPlay : null;
   const displayed = card?.cardId ?? pending?.cardId;
+  const choiceSelected = !!uid && board.cardChoice.selected.includes(uid);
   const targeting = !!uid && (board.isOption(uid) || !!attacker && side !== view && board.canStrike(attacker, uid));
   const placing = !!selected && near && !uid && playEnabled && gameCatalog[game.cards[selected].cardId].type === 'yojo';
   const classes = [
@@ -120,12 +122,13 @@ function FieldSlot({ side, slot }: { side: Side; slot: number }) {
   ].filter(Boolean).join(' ');
   // Touch and hold enlarges a unit, like the right click.
   const hold = longPress(() => { if (uid) { drag.cancel(); board.setPanel({ type: 'inspect', uid }); } });
-  return <button data-slot={slot} data-side={side} data-unit={uid} data-pending-play={pending?.uid} aria-busy={!!pending || undefined} disabled={!!pending || !!attacker && side !== view && !targeting} className={classes}
+  return <button data-slot={slot} data-side={side} data-unit={uid} data-choice-selected={choiceSelected || undefined} aria-pressed={uid && board.cardChoice.selection?.candidates.includes(uid) ? choiceSelected : undefined} data-pending-play={pending?.uid} aria-busy={!!pending || undefined} disabled={!!pending || !!attacker && side !== view && !targeting} className={classes}
     aria-label={t(side === 0 ? 'あなたの場 {slot} {card}' : '相手の場 {slot} {card}', { slot: slot + 1, card: displayed ? cardName(displayed, displayCards[displayed].name) : t('空き') })}
     {...hold}
     onClick={() => { if (!drag.clickSuppressed()) board.clickSlot(side, uid, slot); }}
     onPointerDown={event => { if (uid) hold.onPointerDown(event); if (uid && near) drag.pickUp(event, uid, 'field'); }}
     onContextMenu={event => { event.preventDefault(); if (uid) board.setPanel({ type: 'inspect', uid }); }}>
+    {choiceSelected && board.cardChoice.selection && <CardChoiceMark kind={board.cardChoice.selection.kind} />}
     {displayed && <>
       <GameCard id={displayed} instance={card ?? undefined} abilities={!!card} />
       {editing && card && card.entered === game.turn && <span className={styles.editFlag}>{t('出たばかり')}</span>}

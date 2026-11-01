@@ -627,3 +627,18 @@
 
 /* 確定前の仮置き。既存の配置アニメーションの速度を保ち、操作は受け付けない。 */
 .fieldSlot[data-pending-play] { opacity: .8; filter: none; pointer-events: none; }
+
+/* 捨てる・除外する操作は仮選択して確定。公開選択と同じ手札付近に操作を置く。 */
+.cardChoice { font-family: var(--font-site-body), sans-serif; position: fixed; z-index: 65; left: 50%; bottom: 160px; transform: translateX(-50%); width: min(850px, 86cqw); display: flex; flex-direction: column; align-items: center; gap: 10px; pointer-events: none; }
+.cardChoice > strong { padding: 4px 12px; max-width: 100%; background: var(--brand-paper); color: var(--brand-cocoa-deep); font-size: 18px; text-align: center; }
+.choiceCandidates { box-sizing: border-box; display: flex; gap: 12px; max-width: 100%; overflow-x: auto; padding: 8px; pointer-events: auto; background: var(--brand-paper); }
+.choiceCard { position: relative; flex: 0 0 100px; width: 100px; aspect-ratio: 533 / 800; padding: 0; border: 0; background: none; }
+.choiceCompletion { display: flex; flex-wrap: wrap; align-items: center; justify-content: center; gap: 10px; pointer-events: auto; }
+.choiceCompletion button { font-family: var(--font-site-title), sans-serif; min-height: 48px; padding: 10px 20px; border: 1px solid var(--brand-control-edge); border-radius: var(--brand-control-radius); background: var(--brand-paper); color: var(--brand-cocoa-deep); font-size: 20px; font-weight: 700; }
+.choiceCompletion button:disabled { opacity: .6; }
+.choiceCompletion small { padding: 4px 8px; background: var(--brand-paper); color: var(--brand-cocoa-deep); }
+.choiceMark { position: absolute; z-index: 3; left: 4px; right: 4px; bottom: 6px; padding: 3px 4px; background: var(--brand-paper); color: var(--brand-cocoa-deep); font: 700 14px var(--font-site-body), sans-serif; text-align: center; pointer-events: none; }
+@container stage (max-height: 600px) { .cardChoice { bottom: 110px; } .choiceCard { flex-basis: 80px; width: 80px; } }
+
+/* 手札は下端が画面外に隠れるので、選択マークは見えている上辺に置く。 */
+.handCard .choiceMark { top: 6px; bottom: auto; }

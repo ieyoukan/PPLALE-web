@@ -31,7 +31,7 @@ function execute(s: GameState, t: Task, catalog: Catalog) {
         const scoped = unitsInScope(s, t);
         const candidates = selectable(s, t.actor, (t.candidates ?? scoped).filter(uid => scoped.includes(uid)), t.ignoreAvoidance);
         const remaining = candidates.filter(id => scoped.includes(id) && !(t.ids ?? []).includes(id));
-        fx.pick('対象の幼女を選んでください', remaining, { ...t, candidates, selected: true });
+        fx.pick('対象の幼女を選んでください', remaining, { ...t, candidates, selected: true }, t.op === 'exile' ? { kind: 'exile' } : undefined);
         return;
     }
     if (t.selected && t.target && !t.checked && !t.ignoreAvoidance && s.players[other(t.actor)].field.includes(t.target) && s.cards[t.target].keywords.includes('evade')) {

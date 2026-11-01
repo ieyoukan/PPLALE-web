@@ -132,14 +132,14 @@ export const genericOps: OpTable = {
                 fx.me.exile.push(t.target);
                 fx.note(`${fx.defOf(t.target).name}を手札上限のため除外`);
             }
-            if (fx.me.hand.length > 9) fx.pick(`あと${fx.me.hand.length - 9}枚除外`, fx.me.hand, { ...t, target: undefined });
+            if (fx.me.hand.length > 9) fx.pick(`あと${fx.me.hand.length - 9}枚除外`, fx.me.hand, { ...t, target: undefined }, { kind: 'exile', count: fx.me.hand.length - 9 });
         },
     },
     finishTurn: { run: (fx, t) => finishTurn(fx.s, t.actor) },
     /** Discard one card from hand. With an empty hand it does nothing and later steps continue. */
     discard: {
         run(fx, t) {
-            if (!t.target) return fx.pick('捨てる手札を選んでください', fx.me.hand, t);
+            if (!t.target) return fx.pick('捨てる手札を選んでください', fx.me.hand, t, { kind: 'discard' });
             fx.discard(t.target);
         },
     },

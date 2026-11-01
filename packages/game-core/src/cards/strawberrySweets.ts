@@ -39,7 +39,7 @@ const floatOps: OpTable = {
     float: {
         run(fx, t) {
             if (!t.target) {
-                if (fx.me.hand.length) fx.ask('手札を1枚除外してフロートを探しますか？', [{ id: 'skip', label: 'しない' }, ...fx.me.hand.map(id => ({ id, label: fx.defOf(id).name }))], t);
+                if (fx.me.hand.length) fx.ask('手札を1枚除外してフロートを探しますか？', [{ id: 'skip', label: 'しない' }, ...fx.me.hand.map(id => ({ id, label: fx.defOf(id).name }))], t, { kind: 'exile' });
                 return;
             }
             if (t.target === 'skip') return;
@@ -73,7 +73,7 @@ const doughnutOps: OpTable = {
     doughnut: {
         run(fx, t) {
             if (!t.target) {
-                fx.pick('捨てるドーナツを選んでください', fx.me.hand.filter(id => fx.defOf(id).sweetType === 'doughnut'), t);
+                fx.pick('捨てるドーナツを選んでください', fx.me.hand.filter(id => fx.defOf(id).sweetType === 'doughnut'), t, { kind: 'discard' });
                 return;
             }
             fx.discard(t.target);
@@ -225,7 +225,7 @@ export const strawberrySweets: CardScripts = {
             gift: {
                 run(fx, t) {
                     if (!t.target) {
-                        fx.pick('相手へ渡すお菓子を選んでください', fx.me.hand.filter(id => fx.isRealSweet(id)), t);
+                        fx.pick('相手へ渡すお菓子を選んでください', fx.me.hand.filter(id => fx.isRealSweet(id)), t, { kind: 'give' });
                         return;
                     }
                     fx.me.hand = fx.me.hand.filter(id => id !== t.target);

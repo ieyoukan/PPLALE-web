@@ -7,6 +7,7 @@ import { HAND_CARD_SIZES } from '@/lib/game/cardImages';
 import { useI18n } from '@/i18n/LocaleProvider';
 import { useCardName } from '@/i18n/useCardName';
 import { useBoardContext } from '../board/BoardContext';
+import { CardChoiceMark } from './ChoiceTray';
 import { GameCard } from '../GameCard';
 import styles from '../BoardEmulator.module.css';
 
@@ -38,9 +39,11 @@ export function HandDock() {
         board.isOption(uid) && styles.targetable, (board.flying(uid) || board.pendingPlay?.uid === uid || drag.held?.uid === uid) && styles.dealing,
         grouped && styles.revealedHandCard, mixed && index === concealed.length && styles.revealedHandStart,
       ].filter(Boolean).join(' ');
+      const choiceSelected = board.cardChoice.selected.includes(uid);
+      const choiceCandidate = board.cardChoice.selection?.candidates.includes(uid);
       const submitting = intent && 'uid' in intent && intent.uid === uid;
-      return <button key={uid} data-hand={uid} data-concealed={hidden || undefined} data-submitting={submitting || undefined} aria-busy={submitting || undefined} data-revealed={card.revealed || undefined} data-reveal-pending={preview || undefined} className={classes}
-        disabled={hidden || revealing && (!board.isOption(uid) || busy)} aria-pressed={revealing && board.isOption(uid) ? preview : undefined}
+      return <button key={uid} data-hand={uid} data-choice-selected={choiceSelected || undefined} data-concealed={hidden || undefined} data-submitting={submitting || undefined} aria-busy={submitting || undefined} data-revealed={card.revealed || undefined} data-reveal-pending={preview || undefined} className={classes}
+        disabled={hidden || choiceCandidate && busy || revealing && (!board.isOption(uid) || busy)} aria-pressed={choiceCandidate ? choiceSelected : revealing && board.isOption(uid) ? preview : undefined}
         style={{ '--angle': `${Math.max(-angleLimit, Math.min(angleLimit, offset * 4))}deg`, '--lift': `${Math.min(35, Math.abs(offset) * 7)}px`, '--overlap': `${Math.min(100, Math.max(40, (me.hand.length - 4) * 13))}px`, zIndex: index } as CSSProperties}
         aria-label={hidden ? t('非公開の手札') : t('手札 {name}', { name: cardName(card.cardId, face.name) }) + (preview ? t('（公開予定）') : card.revealed ? t('（公開）') : '')} onPointerDown={event => { if (!hidden && !remote?.watching) drag.pickUp(event, uid, 'hand'); }}
         onClick={() => {
@@ -49,7 +52,8 @@ export function HandDock() {
           else board.clickHand(uid);
         }}>
         {!hidden && <GameCard id={card.cardId} instance={card} currentCost={costOf(game, uid, gameCatalog, view)} sizes={HAND_CARD_SIZES} />}
-        {grouped && <span className={styles.revealed}>{t(preview ? '公開予定' : '公開')}</span>}
+        {grouped && !choiceSelected && <span className={styles.revealed}>{t(preview ? '公開予定' : '公開')}</span>}
+        {choiceSelected && board.cardChoice.selection && <CardChoiceMark kind={board.cardChoice.selection.kind} />}
       </button>;
     })}
     {editing && <button className={styles.addHand} aria-label={t('手札に加える')} onClick={() => board.setPicking({ side: view, zone: 'hand' })}>＋</button>}

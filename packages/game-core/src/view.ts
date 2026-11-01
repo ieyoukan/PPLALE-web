@@ -6,13 +6,14 @@ import { cardContext, effects } from './effects/context.ts';
 import { activePassive, playableMp, playablePassives, skillAt, skillLimit, skillPrice, skillsFor } from './playables/skills.ts';
 import { skillUnavailable } from './playables/usage.ts';
 import { other } from './model.ts';
-import type { Catalog, DeckKind, GameState, Side, TaskOp } from './model.ts';
+import type { CardSelection, Catalog, DeckKind, GameState, Side, TaskOp } from './model.ts';
 
 /**
  * Where each option of the pending choice lives, so the UI can let the player pick it in place:
  * units on the field, cards in hand, deck stacks, or buttons in a tray (anything else).
  */
 export interface PendingView {
+    selection?: CardSelection & { candidates: string[]; min: number; max: number; key: string };
     actor: Side;
     op: TaskOp;
     prompt: string;
@@ -32,6 +33,14 @@ export function pendingView(s: GameState): PendingView | null {
     if (task.op === 'cardEffect' && task.step === 'reveal' && options.some(option => option.id === 'done')) {
         view.reveal = { selected: [...(task.ids ?? [])] };
     }
+    const selection = s.pending.selection ?? legacyCardSelection(s);
+    if (selection) {
+        const candidates = options.filter(option => !!s.cards[option.id]).map(option => option.id);
+        const max = Math.max(0, Math.min(selection.count ?? 1, candidates.length));
+        const { op, actor, source, step, subject, text, keyword } = task;
+        view.selection = { ...selection, candidates, min: selection.optional ? 0 : max, max,
+            key: JSON.stringify([op, actor, source, step, subject, text, keyword]) };
+    }
     for (const option of options) {
         if (task.op === 'draw' && (option.id === 'yojo' || option.id === 'sweet')) view.decks.push(option.id);
         else if (s.players.some(p => p.field.includes(option.id))) view.units.push(option.id);
@@ -39,6 +48,17 @@ export function pendingView(s: GameState): PendingView | null {
         else view.buttons.push({ ...option, cardId: s.cards[option.id]?.cardId });
     }
     return view;
+}
+
+/** 旧保存・更新前サーバーの質問にも確認を付ける。新しい質問は効果側のselection指定を使う。 */
+function legacyCardSelection(s: GameState): CardSelection | undefined {
+    const { prompt, options, task } = s.pending!;
+    const cards = options.filter(option => !!s.cards[option.id]);
+    if (!cards.length || !/捨て|除外|渡す/.test(prompt)) return;
+    const optional = options.some(option => option.id === 'done');
+    return { kind: /除外/.test(prompt) ? 'exile' : /渡す/.test(prompt) ? 'give' : 'discard',
+        count: optional ? cards.length : task.op === 'trimHand' ? s.players[task.actor].hand.length - 9 : task.count ?? 1,
+        ...(optional && { optional: true, finish: 'done' }) };
 }
 
 /** Legal attack targets for each unit of `side` ('leader' = the opponent's sweets). */

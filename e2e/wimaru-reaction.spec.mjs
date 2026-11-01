@@ -32,6 +32,7 @@ for (const viewport of [{ width: 1280, height: 860 }, { width: 844, height: 390 
       await page.waitForTimeout(1000);
       expect((await savedGame(page)).revision).toBe(before.revision);
       await page.locator(`[data-hand-list] [data-hand="${uid}"]`).click();
+      await page.getByRole('button', { name: '発動する', exact: true }).click();
       await expect(used(page)).toBeVisible();
       const announcement = page.getByRole('status').filter({ hasText: 'うぃまるを使った！' });
       await expect(announcement.getByText('あなたの手札の効果', { exact: true })).toBeVisible();

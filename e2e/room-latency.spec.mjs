@@ -263,3 +263,22 @@ test('a real hidden hand reaction keeps the preview without confirming PP and ca
   await expect(page.locator(`[data-hand-list] [data-hand="${uid}"]`)).toHaveCount(0);
   expect(after.players[0].pp).toBe(initial.players[0].pp);
 });
+
+
+test('discard and exile drafts send nothing until confirmed; refusal stops the remaining choices',async({page})=>{
+  const initial=applyCommand(arena({me:{hand:Array(12).fill('y_17')}}),{type:'end',actor:0},catalog).state;
+  const [a,b,c]=initial.players[0].hand,room=await board(page,initial);
+  const card=uid=>page.locator(`[data-hand-list] [data-hand="${uid}"]`);
+  for(const uid of [a,b,c])await card(uid).evaluate(element=>element.click());
+  await expect(card(a)).toHaveAttribute('aria-pressed','true');expect(room.requests).toHaveLength(0);
+  await card(a).evaluate(element=>element.click());await expect(card(a)).toHaveAttribute('aria-pressed','false');
+  await card(a).evaluate(element=>element.click());
+  await page.getByRole('button',{name:'除外する（3枚）',exact:true}).click();
+  await expect.poll(()=>room.requests.length).toBe(1);expect(room.requests[0].action.command.option).toBe(b);
+  await page.waitForTimeout(100);expect(room.requests).toHaveLength(1);
+  room.reply();await expect.poll(()=>room.requests.length).toBe(2);expect(room.requests[1].action.command.option).toBe(c);
+  room.reply('盤面が更新されました。もう一度操作してください');
+  await expect(page.getByRole('alert').filter({hasText:'盤面が更新されました'})).toBeVisible();
+  await page.waitForTimeout(300);expect(room.requests).toHaveLength(2);
+  await expect(card(a)).toBeVisible();await expect(card(c)).toBeVisible();
+});

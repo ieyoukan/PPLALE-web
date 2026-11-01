@@ -158,7 +158,7 @@ export const strawberryYojo: CardScripts = {
                     if (t.target) t = { ...t, target: undefined, count: (t.count ?? 0) - 1, ids: [...(t.ids ?? []), t.target] };
                     const rest = fx.me.hand.filter(uid => !(t.ids ?? []).includes(uid));
                     if ((t.count ?? 0) > 0 && rest.length) {
-                        fx.pick(`あと${t.count}枚捨てます（ダイス結果）`, rest, t);
+                        fx.pick(`あと${t.count}枚捨てます（ダイス結果）`, rest, t, { kind: 'discard', count: t.count });
                         return;
                     }
                     if (t.ids?.length) fx.discard(t.ids);

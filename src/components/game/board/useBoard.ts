@@ -18,6 +18,7 @@ import { useCpuPlayer } from './useCpuPlayer';
 import { cpuSidesOf, sideLabel } from './useGameSession';
 import type { BoardSession } from './useGameSession';
 import { useOpeningDice } from './useOpeningDice';
+import { useCardChoice } from './useCardChoice';
 import { useDrawInput } from './useDrawInput';
 import { enterLandscape } from '../stage/stageSpace';
 
@@ -254,6 +255,7 @@ export function useBoard(container: RefObject<HTMLDivElement | null>, session: B
   const me = game.players[view];
   const pending = useMemo(() => pendingView(game), [game]);
   const ours = !!pending && canControl(pending.actor);
+  const cardChoice = useCardChoice({ pending, revision: game.revision, enabled: ours && !editing && !replaying, busy, failed: remote?.failed ?? error, act });
   const attacks = useMemo(() => attackTargets(game, game.active, gameCatalog), [game]);
   const playEnabled = !editing && !puzzleFinished && game.phase === 'playing' && canControl(view) && game.active === view && !game.pending && !busy && !loading && game.winner === null;
   const flying = (uid: string) => flights.some(f => f.uid === uid);
@@ -264,7 +266,12 @@ export function useBoard(container: RefObject<HTMLDivElement | null>, session: B
   const isOption = (id: string) => ours && !!pending && [...pending.units, ...pending.hand].includes(id);
 
   // ── Actions ──
-  const choose = (option: string) => { if (ours && pending && !busy) act({ type: 'choose', actor: pending.actor, option }); };
+  const choose = (option: string) => {
+    if (!ours || !pending || busy || cardChoice.submitting) return;
+    if (cardChoice.selection?.candidates.includes(option)) return cardChoice.toggle(option);
+    cardChoice.cancel();
+    act({ type: 'choose', actor: pending.actor, option });
+  };
   const play = (uid: string, slot?: number) => act({ type: 'play', actor: view, uid, slot });
   /** One change of the board in edit mode, shown at once (no animation). */
   const editBoard = useCallback((change: BoardEdit) => {
@@ -405,16 +412,17 @@ export function useBoard(container: RefObject<HTMLDivElement | null>, session: B
     setPanel(null);
     setSelected(null);
     setAttacker(null);
+    cardChoice.cancel();
     drag.cancel();
   }
 
   return {
-    game, mode, levels, view, me, panel, ready, busy, paused, names, portraits, remote, puzzle,
+    game, mode, levels, view, me, panel, ready, busy: busy || cardChoice.submitting, paused, names, portraits, remote, puzzle,
     assessment, assessable, showAssessment, setShowAssessment,
     setup, canRematch, canReplay, replaying, timeline, seekReplay, position, editBoard: openEditor, editStartingBoard,
     editing, edit: editBoard, picking, setPicking, session,
     error: error || saveError, canUndo,
-    selected, attacker, pending, ours, playEnabled,
+    selected, attacker, pending, ours, playEnabled, cardChoice,
     animations, dice, drag, mulligan,
     intent: remote && (presentingOwn || remote.waiting) ? intent : null,
     pendingPlay, canControl, canStrike, canAttackNow, affordable, isOption, flying, deckReady,
