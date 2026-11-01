@@ -5,9 +5,9 @@ import { viewFor } from '../packages/game-core/dist/index.js';
 const base = process.env.PPLALE_ROOM_TEST_URL;
 test.skip(!base, 'set PPLALE_ROOM_TEST_URL to a web app with a room server URL');
 
-async function room(page, seat = 0, direct = false) {
+async function room(page, seat = 0, direct = false, position) {
   const id = '123456'; let socket, version = 0;
-  let game = arena({ me: { hand: ['y_0'] }, foe: { hand: ['y_1'] } }); game.active = seat;
+  let game = position ?? arena({ me: { hand: ['y_0'] }, foe: { hand: ['y_1'] } }); game.active = seat;
   let playing = direct;
   const messages = [];
   const view = () => ({ id, version: ++version, status: playing ? 'playing' : 'lobby', match: 1, matchId: 'camera-match', seat, spectators: 0,
@@ -110,4 +110,27 @@ test('cancelling a camera animation still enables the settled match controls', a
   await expect(page.locator('[data-room-camera="match"]')).toBeVisible();
   await expect(page.getByRole('button', { name: 'メニュー', exact: true })).toBeInViewport();
   await expect(page.locator('[data-scene-ready="true"]')).toHaveCount(1);
+});
+
+for(const {seat,viewport} of [
+  {seat:0,viewport:{width:1280,height:860}},
+  {seat:0,viewport:{width:844,height:390}},
+  {seat:1,viewport:{width:844,height:390}},
+  {seat:1,viewport:{width:390,height:844}},
+]) test(`revealed cards leave sweets readable in the room from seat ${seat} at ${viewport.width}x${viewport.height}`,async({page})=>{
+  await page.setViewportSize(viewport);
+  const game=arena({me:{hand:Array(18).fill('y_0'),points:7},foe:{hand:Array(18).fill('y_0'),points:9}});
+  for(const player of game.players)for(const uid of player.hand)game.cards[uid].revealed=true;
+  await room(page,seat,true,game);
+  await expect(page.locator('[data-scene-ready="true"]')).toHaveCount(1,{timeout:20000});
+  const value=page.locator(`[data-leader="${seat}"] [class*="counterValue"] > span`).first();
+  await expect(value).toHaveText(seat===0?'7':'9');
+  const unobscured=()=>value.evaluate(element=>{
+    const r=element.getBoundingClientRect(),leader=element.closest('[data-leader]');
+    return [.25,.5,.75].every(fraction=>leader.contains(document.elementFromPoint(r.x+r.width*fraction,r.y+r.height/2)));
+  });
+  await expect.poll(unobscured).toBe(true);
+  await page.locator('[data-hand-list] [data-hand]').last().focus();
+  await expect.poll(unobscured).toBe(true);
+  await page.screenshot({path:`/tmp/pplale-room-revealed-points-${seat}-${viewport.width}.png`});
 });
