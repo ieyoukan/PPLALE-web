@@ -1100,7 +1100,7 @@ export function createRoomServer({ config, backend, catalog, history, push = pus
         }
     }, PING_INTERVAL);
     server.on('close', () => { clearInterval(beats); clearInterval(pinging); for (const { timer } of turnTimers.values()) clearTimeout(timer); turnTimers.clear(); for (const { timer } of cpuTimers.values()) clearTimeout(timer); cpuTimers.clear(); void thinker.close(); });
-    server.on('listening', () => { void ready.then(beat); });
+    server.on('listening', () => { void ready.then(beat).catch(error => console.error('room subscription', error instanceof Error ? error.message : error)); });
 
     return Object.assign(server, {
         stats, beat,
@@ -1114,7 +1114,8 @@ export function createRoomServer({ config, backend, catalog, history, push = pus
             clearInterval(beats);
             for (const { timer } of cpuTimers.values()) clearTimeout(timer);
             cpuTimers.clear();
-            await thinker.close();
+            // Redisの購読開始中でも、完了を待ってから接続を閉じる。
+            await Promise.allSettled([ready, thinker.close()]);
             for (const { timer } of turnTimers.values()) clearTimeout(timer);
             turnTimers.clear();
             const held = Array.from(wss.clients as Set<Attached>);
