@@ -10,7 +10,7 @@ const remaining = (clock: Clock) => clock.deadline === null ? clock.remainingMs
   : Math.max(0, clock.deadline - clock.serverNow - (performance.now() - clock.receivedAt));
 
 /** Updates only this small gauge; the board and the server never tick along with it. */
-export function TurnClock({ clock }: { clock: Clock }) {
+export function TurnClock({ clock, compact = false }: { clock: Clock; compact?: boolean }) {
   const [left, setLeft] = useState(() => remaining(clock));
   const { t } = useI18n();
   useEffect(() => {
@@ -20,7 +20,7 @@ export function TurnClock({ clock }: { clock: Clock }) {
     return () => clearInterval(timer);
   }, [clock]);
   const seconds = Math.ceil(left / 1000), paused = clock.deadline === null;
-  return <div className={styles.clock} role="timer" aria-label={t('ターン残り時間')} aria-live="off" data-paused={paused || undefined} data-urgent={seconds <= 20 || undefined}>
+  return <div className={styles.clock} role="timer" aria-label={t('ターン残り時間')} aria-live="off" data-compact={compact || undefined} data-paused={paused || undefined} data-urgent={seconds <= 20 || undefined}>
     <div className={styles.time}>
       <svg viewBox="0 0 24 24" aria-hidden="true">{paused
         ? <path d="M8 5v14M16 5v14" />

@@ -1,13 +1,12 @@
 'use client';
 
-import { availablePpMaximum, playableMp } from '@pplale/game-core';
+import { availablePpMaximum } from '@pplale/game-core';
 import type { CSSProperties } from 'react';
 import type { DeckKind, Side } from '@pplale/game-core';
 import { displayCards, gameCatalog } from '@/lib/game/catalog';
 import { useI18n } from '@/i18n/LocaleProvider';
 import { useCardName } from '@/i18n/useCardName';
 import { useBoardContext } from '../board/BoardContext';
-import { cardCounts } from '../board/matchInfo';
 import { useLongPress } from '../board/useLongPress';
 import { Counter, DeckStack } from '../BoardPieces';
 import type { ZoneKind } from '../BoardPieces';
@@ -20,7 +19,7 @@ const FIELD_SLOTS = 7;
 /** One player's half of the table: decks, piles, playable, counters, field and (far side) hand backs. */
 export function PlayerSide({ side }: { side: Side }) {
   const board = useBoardContext();
-  const { game, view, mode, busy, attacker, attackLeader, remote, editing, setup } = board;
+  const { game, view, mode, busy, attacker, attackLeader, remote, editing } = board;
   const { t } = useI18n();
   const cardName = useCardName();
   const player = game.players[side], near = side === view;
@@ -33,10 +32,6 @@ export function PlayerSide({ side }: { side: Side }) {
   const concealed = player.hand.filter(uid => !game.cards[uid].revealed);
   const revealed = player.hand.filter(uid => game.cards[uid].revealed);
   const mixed = concealed.length > 0 && revealed.length > 0;
-  const mp = playableMp[player.playable];
-  const counts = cardCounts(player, gameCatalog);
-  const fruits = (remote?.matchRules ?? setup?.matchRules)?.fruits;
-  const showMochida = !fruits || fruits.includes('melon') || counts.mochida > 0;
   return <section className={`${styles.playerSide} ${near ? styles.near : styles.far}`} aria-label={t(`${who}の盤面`)}>
     <Zone side={side} kind="yojo" className={styles.deckYojo} />
     <Zone side={side} kind="sweet" className={styles.deckSweet} />
@@ -44,8 +39,6 @@ export function PlayerSide({ side }: { side: Side }) {
     <Zone side={side} kind="exile" className={styles.exileZone} />
     <button className={styles.playableZone} onClick={() => board.setPanel(editing ? { type: 'editPlayer', side } : { type: 'skills', side })} aria-label={t(editing ? `${who}の設定` : `${who}のスキル`)}>
       <span className={styles.playableCard}><GameCard id={player.playable} sizes="90px" /></span>
-      {/* MP is public, like PP: shown on the playable that has it (しゅれい). */}
-      {mp && <span className={styles.mpBadge} role="img" aria-label={`MP ${player.mp ?? 0} / ${mp.max}`}>MP {player.mp ?? 0}/{mp.max}</span>}
     </button>
     <div className={styles.turnCounter}>
       {/* Edit mode: the number shown (the turn count) is what the buttons change, and the PP is filled to the
@@ -63,9 +56,6 @@ export function PlayerSide({ side }: { side: Side }) {
       {player.shield && <span className={styles.shieldIndicator}>{t('パンケーキ保護')}</span>}
     </div>
     <div className={styles.field}>
-      <button className={styles.fieldCounts} onClick={() => board.setPanel({ type: 'counts' })} aria-label={t('{who}のカウント：うゆち {uyuchi}、お菓子 {sweets}、場を離れたもちだ {mochida}', { who: t(who), ...counts })}>
-        <span>{t('うゆち')} <b>{counts.uyuchi}</b></span><span>{t('お菓子')} <b>{counts.sweets}</b></span>{showMochida && <span>{t('もちだ')} <b>{counts.mochida}</b></span>}
-      </button>
       {Array.from({ length: FIELD_SLOTS }, (_, slot) => <FieldSlot key={slot} side={side} slot={slot} />)}
     </div>
     {!near && <div className={`${styles.opponentHand} ${open ? styles.openHand : ''} ${mixed ? styles.opponentHandWithRevealed : ''}`} role="group" aria-label={t('相手の手札 {count}枚', { count: player.hand.length })}>

@@ -5,13 +5,14 @@ import { viewFor } from '../packages/game-core/dist/index.js';
 const base = process.env.PPLALE_ROOM_TEST_URL;
 test.skip(!base, 'set PPLALE_ROOM_TEST_URL to a web app with a room server URL');
 
-async function room(page, seat = 0, direct = false, position) {
+async function room(page, seat = 0, direct = false, position, clock = false) {
   const id = '123456'; let socket, version = 0;
   let game = position ?? arena({ me: { hand: ['y_0'] }, foe: { hand: ['y_1'] } }); game.active = seat;
   let playing = direct;
   const messages = [];
   const view = () => ({ id, version: ++version, status: playing ? 'playing' : 'lobby', match: 1, matchId: 'camera-match', seat, spectators: 0,
-    rules: { fruits: ['strawberry'], extendedPlayable: false, spectators: true }, last: null, resigned: null,
+    rules: { fruits: ['strawberry'], extendedPlayable: false, spectators: true, ...(clock && {turnSeconds:120}) },
+    ...(clock && {serverNow:Date.now(),turnClock:{turn:game.turn,side:game.active,remainingMs:62000,deadline:null}}), last: null, resigned: null,
     players: [0, 1].map(side => ({ member: side === seat ? 'me' : 'friend', name: side === seat ? 'あなた' : 'フレンド', online: true, ready: playing })),
     game: playing ? viewFor(game, seat) : null,
     plaza: { name: '星空のルーム', visibility: 'invite', me: 'me', owner: 'me', creator: { name: 'あなた' },
@@ -133,4 +134,26 @@ for(const {seat,viewport} of [
   await page.locator('[data-hand-list] [data-hand]').last().focus();
   await expect.poll(unobscured).toBe(true);
   await page.screenshot({path:`/tmp/pplale-room-revealed-points-${seat}-${viewport.width}.png`});
+});
+
+
+for(const viewport of [{width:1280,height:860},{width:844,height:390},{width:390,height:844}])test(`room seat one keeps all counters and the clock readable at ${viewport.width}x${viewport.height}`,async({page})=>{
+  await page.setViewportSize(viewport);
+  const game=arena({me:{playable:'p_6'},foe:{playable:'p_6'}});
+  game.players.forEach((player,side)=>{player.played=[...Array(side?5:2).fill('y_2'),...Array(side?7:3).fill('s_0')];player.mp=side?12:6;player.mochidaLeft=side?9:4;});
+  const connection=await room(page,1,true,game,true);
+  await expect(page.locator('[data-scene-ready="true"]')).toHaveCount(1,{timeout:20000});
+  const end=page.getByRole('button',{name:/ターン\s*終了/});const before=await end.boundingBox();
+  for(const side of [0,1]){
+    const counters=page.locator(`[data-pp="${side}"] [data-resource]`);await expect(counters).toHaveCount(4);
+    for(const counter of await counters.all()){
+      await expect.poll(()=>counter.evaluate(element=>{const r=element.getBoundingClientRect(),top=document.elementFromPoint(r.x+r.width/2,r.y+r.height/2);return element.contains(top)?null:{resource:element.dataset.resource,cover:top?.closest('button')?.getAttribute('aria-label')??top?.outerHTML.slice(0,160)};})).toBeNull();
+    }
+  }
+  await expect(page.locator('[data-pp="1"] [data-resource="uyuchi"]')).toContainText('5');
+  const clock=page.getByRole('timer',{name:'ターン残り時間'});await expect(clock).toBeVisible();await expect(clock.locator('time')).toHaveText('1:02');
+  game.players[1].played.push('y_2');game.revision++;connection.show(true);
+  await expect(page.locator('[data-pp="1"] [data-resource="uyuchi"]')).toContainText('6');
+  expect(Math.abs((await end.boundingBox()).y-before.y)).toBeLessThan(1);
+  await page.screenshot({path:`/tmp/pplale-room-player-counters-${viewport.width}.png`});
 });

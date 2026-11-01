@@ -1,7 +1,7 @@
 'use client';
 
 import type { Side, Zone } from '@pplale/game-core';
-import type { CSSProperties } from 'react';
+import type { CSSProperties, ReactNode } from 'react';
 import { HAND_CARD_SIZES } from '@/lib/game/cardImages';
 import { GameCard } from './GameCard';
 import { Avatar } from '@/components/shared/player/Avatar';
@@ -79,7 +79,7 @@ export function Counter({ label, value, points, bonus = 0, temporaryBonus = 0, p
   </div>;
 }
 
-export function PpPanel({ side, name, portrait, order, current, maximum, own }: { side: number; name: string; portrait?: AvatarIdentity; order?: 'first' | 'second'; current: number; maximum: number; own: boolean }) {
+export function PpPanel({ side, name, portrait, order, current, maximum, own, children }: { side: number; name: string; portrait?: AvatarIdentity; order?: 'first' | 'second'; current: number; maximum: number; own: boolean; children?: ReactNode }) {
   const { t } = useI18n();
   return <div data-pp={side} className={`${styles.ppPanel} ${own ? styles.ownPp : ''}`} role="group" aria-label={t(own ? '自分のPP {current} / {max}' : '相手のPP {current} / {max}', { current, max: maximum })}>
     <div className={styles.ppPlayerName} title={name}>
@@ -91,6 +91,7 @@ export function PpPanel({ side, name, portrait, order, current, maximum, own }: 
     {own && maximum > 0 && <div className={styles.ppGems} style={{ '--pp-count': maximum } as CSSProperties} aria-hidden="true">
       {Array.from({ length: maximum }, (_, index) => <i key={index} className={index < current ? styles.availablePp : styles.spentPp} />)}
     </div>}
+    {children}
   </div>;
 }
 

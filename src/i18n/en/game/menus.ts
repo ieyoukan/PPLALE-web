@@ -71,6 +71,8 @@ export const menus: Record<string, string> = {
   'オレンジ': 'Orange',
   'いちごから順に追加': 'Added in order from strawberry',
   'いつも使える': 'Always allowed',
+  '{name}のカウンター': "{name}'s counters",
+  '{name}の{counter} {value}': "{name}'s {counter} {value}",
   'うゆち': 'Uyuchi',
   'もちだ': 'Mochida',
   'お互いが打った手と、勝ち負け': 'Both players\' moves, and who won',

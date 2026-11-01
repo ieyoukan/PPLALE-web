@@ -17,3 +17,10 @@
   .clock meter { flex: 1; min-width: 0; }
   .clock small { display: none; }
 }
+
+/* 追加カウンターを下に置けるよう、対戦の時計は主要操作の空いている下部に収める。 */
+.clock[data-compact] { position: absolute; left: 50%; bottom: 8px; transform: translateX(-50%); width: 86px; padding: 0; border: 0; background: none; gap: 2px; pointer-events: none; }
+.clock[data-compact] .time { font-size: 20px; gap: 4px; }
+.clock[data-compact] .time svg { width: 15px; height: 15px; }
+.clock[data-compact] meter { height: 2px; }
+.clock[data-compact] small { display: none; }
