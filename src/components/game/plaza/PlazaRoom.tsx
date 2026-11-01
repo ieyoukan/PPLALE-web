@@ -13,6 +13,7 @@ import link from '../room/Room.module.css';
 import { GameIcon } from '@/components/shared/ui/GameIcon';
 import { PlazaTable } from './PlazaTable';
 import { usePlaza } from './PlazaProvider';
+import { useI18n } from '@/i18n/LocaleProvider';
 import styles from './Plaza.module.css';
 
 type Played = RoomView & { game: GameState };
@@ -32,7 +33,9 @@ export function PlazaRoom({ view, onMenu }: { view: RoomView; onMenu: () => void
   const done = useCallback(() => setDismissed(shown?.matchId ?? null), [shown?.matchId]);
   // Those in the room see its name on the tab (the shared link's title only says what the link may).
   const name = view.plaza?.name;
-  useEffect(() => { if (name) document.title = `${name}｜ぷぷりえーる`; }, [name]);
+  const { t } = useI18n();
+  const title = name ? t('{name}｜ぷぷりえーる', { name }) : '';
+  useEffect(() => { if (title) document.title = title; }, [title]);
   const prepared = useMatchAssets(roomMatchCardIds((shown ?? view).rules), shown);
   // The room and its geometry remain mounted through play, results, rematches and spectating.
   return <PlazaTable view={view} onMenu={onMenu} match={shown && prepared ? {
@@ -65,6 +68,7 @@ function useMatchAssets(ids: string[], initial: Played | null) {
 
 function PlazaMatch({ initial, onDone, onMenu }: { initial: Played; onDone: () => void; onMenu: () => void }) {
   const plaza = usePlaza(), { send, subscribe, linked, presented, presentation, view } = plaza;
+  const { t } = useI18n();
   const room = useMemo(() => ({ send, subscribe, linked, presented, presentation }), [send, subscribe, linked, presented, presentation]);
   const seated = !initial.watching;
   // After the match: a player who leaves the result gives up the seat; one who plays again keeps it.
@@ -77,11 +81,11 @@ function PlazaMatch({ initial, onDone, onMenu }: { initial: Played; onDone: () =
   const replay = view?.status === 'finished' && view.matchId === initial.matchId ? view.replayId : undefined;
   return <>
     <BoardTable session={session} />
-    {replay && <aside className={link.spectatorTools}><Link href={`/game/replay/?id=${replay}`}>リプレイを見る ▶</Link></aside>}
+    {replay && <aside className={link.spectatorTools}><Link href={`/game/replay/?id=${replay}`}>{t('リプレイを見る ▶')}</Link></aside>}
     {/* On the board's right rail, where nothing of the match is: the room and the game's menu. */}
-    <button className={`${boardStyles.infoButton} ${styles.roomTool}`} aria-label={`ルーム（${people}人）`} onClick={onMenu}>
-      <GameIcon name="people" /><small>ルーム</small><b aria-hidden="true">{people}</b>
+    <button className={`${boardStyles.infoButton} ${styles.roomTool}`} aria-label={t('ルーム（{count}人）', { count: people })} onClick={onMenu}>
+      <GameIcon name="people" /><small>{t('ルーム')}</small><b aria-hidden="true">{people}</b>
     </button>
-    {!linked && <p className={`${link.badge} ${link.badgeDown}`} role="status">ルームサーバーに再接続しています…</p>}
+    {!linked && <p className={`${link.badge} ${link.badgeDown}`} role="status">{t('ルームサーバーに再接続しています…')}</p>}
   </>;
 }

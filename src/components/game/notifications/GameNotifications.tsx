@@ -4,6 +4,7 @@ import { createContext, useCallback, useContext, useEffect, useId, useMemo, useR
 import type { ReactNode } from 'react';
 import { NotificationSound } from '@/lib/game/notificationSound';
 import type { GameNotice } from '@/lib/game/notificationSound';
+import { useI18n } from '@/i18n/LocaleProvider';
 import styles from './GameNotifications.module.css';
 
 const SOUND_KEY = 'pplale-notification-sound-v1';
@@ -103,23 +104,25 @@ export const useGameNotifications = () => useContext(Context);
 
 export function NotificationSoundToggle({ compact = false }: { compact?: boolean }) {
   const { enabled, toggle } = useGameNotifications();
-  return <button type="button" className={`${styles.toggle} ${compact ? styles.compact : ''}`} aria-label="通知音" aria-pressed={enabled}
-    title={enabled ? '通知音をOFFにする' : '通知音をONにする'} onClick={toggle}>
+  const { t } = useI18n();
+  return <button type="button" className={`${styles.toggle} ${compact ? styles.compact : ''}`} aria-label={t('通知音')} aria-pressed={enabled}
+    title={t(enabled ? '通知音をOFFにする' : '通知音をONにする')} onClick={toggle}>
     <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
       <path d="M11 5 6 9H3v6h3l5 4z" />
       {enabled ? <path d="M15 8a6 6 0 0 1 0 8m3-11a10 10 0 0 1 0 14" /> : <path d="m16 9 6 6m0-6-6 6" />}
-    </svg>{!compact && <span>通知音 {enabled ? 'ON' : 'OFF'}</span>}
+    </svg>{!compact && <span>{t('通知音')} {enabled ? 'ON' : 'OFF'}</span>}
   </button>;
 }
 
 /** The game's current audio is the short match notifications; the slider adjusts their shared output. */
 export function NotificationVolumeControl() {
   const { enabled, volume, setVolume, preview } = useGameNotifications();
+  const { t } = useI18n();
   const id = useId();
-  return <section className={styles.volume} aria-label="通知音の音量">
-    <div className={styles.volumeHeading}><h3 data-ui-title>通知音</h3><NotificationSoundToggle compact /></div>
-    <label htmlFor={id}>音量 <output htmlFor={id}>{Math.round(volume * 100)}%</output></label>
-    <input id={id} type="range" min="0" max="100" value={Math.round(volume * 100)} onChange={event => setVolume(Number(event.target.value) / 100)} aria-label="通知音の音量" aria-valuetext={`${Math.round(volume * 100)}%`} />
-    <button className={styles.toggle} disabled={!enabled || volume === 0} onClick={preview}>音をたしかめる</button>
+  return <section className={styles.volume} aria-label={t('通知音の音量')}>
+    <div className={styles.volumeHeading}><h3 data-ui-title>{t('通知音')}</h3><NotificationSoundToggle compact /></div>
+    <label htmlFor={id}>{t('音量')} <output htmlFor={id}>{Math.round(volume * 100)}%</output></label>
+    <input id={id} type="range" min="0" max="100" value={Math.round(volume * 100)} onChange={event => setVolume(Number(event.target.value) / 100)} aria-label={t('通知音の音量')} aria-valuetext={`${Math.round(volume * 100)}%`} />
+    <button className={styles.toggle} disabled={!enabled || volume === 0} onClick={preview}>{t('音をたしかめる')}</button>
   </section>;
 }

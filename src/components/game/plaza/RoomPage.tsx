@@ -16,6 +16,7 @@ import { RoomCreatedSheet } from './RoomManagementSheets';
 import { PlazaRoom } from './PlazaRoom';
 import { plazaHref, usePlaza } from './PlazaProvider';
 import type { Refusal } from './PlazaProvider';
+import { useI18n } from '@/i18n/LocaleProvider';
 import styles from './LaunchScreen.module.css';
 import plazaStyles from './Plaza.module.css';
 
@@ -68,15 +69,16 @@ const reasons: Record<Refusal, string> = {
 /** Why the room could not be entered, and where to go instead. */
 export function Refused({ reason, message, id }: { reason: Refusal; message: string; id?: string }) {
   const plaza = usePlaza(), router = useRouter();
+  const { t, gameText } = useI18n();
   const [busy, setBusy] = useState(false);
   const other = plaza.id && plaza.id !== id ? plaza.id : null;
   return <>
-    <p className={styles.troubleText} role="alert">{reasons[reason]}{reason === 'error' && message && <small>{message}</small>}</p>
+    <p className={styles.troubleText} role="alert">{t(reasons[reason])}{reason === 'error' && message && <small>{gameText(message)}</small>}</p>
     <div className={styles.troubleActions}>
-      {reason === 'offline' && <button className={plazaStyles.primaryButton} disabled={busy} onClick={() => { setBusy(true); router.refresh(); window.location.reload(); }}><GameIcon name="refresh" /><span data-ui-title>もう一度</span></button>}
-      {other ? <button className={plazaStyles.primaryButton} onClick={() => { plaza.settle(); router.push(plazaHref(other)); }}><GameIcon name="back" /><span data-ui-title>もとのルームへ</span></button>
-        : reason !== 'offline' && <button className={plazaStyles.primaryButton} disabled={busy} onClick={() => { setBusy(true); void plaza.create(DEFAULT_VISIBILITY); }}><GameIcon name="door" /><span data-ui-title>インバイトのルームを作る</span></button>}
-      <Link className={plazaStyles.softButton} href={CPU_PATH} prefetch={false}><GameIcon name="cpu" />ひとりで遊ぶ</Link>
+      {reason === 'offline' && <button className={plazaStyles.primaryButton} disabled={busy} onClick={() => { setBusy(true); router.refresh(); window.location.reload(); }}><GameIcon name="refresh" /><span data-ui-title>{t('もう一度')}</span></button>}
+      {other ? <button className={plazaStyles.primaryButton} onClick={() => { plaza.settle(); router.push(plazaHref(other)); }}><GameIcon name="back" /><span data-ui-title>{t('もとのルームへ')}</span></button>
+        : reason !== 'offline' && <button className={plazaStyles.primaryButton} disabled={busy} onClick={() => { setBusy(true); void plaza.create(DEFAULT_VISIBILITY); }}><GameIcon name="door" /><span data-ui-title>{t('インバイトのルームを作る')}</span></button>}
+      <Link className={plazaStyles.softButton} href={CPU_PATH} prefetch={false}><GameIcon name="cpu" />{t('ひとりで遊ぶ')}</Link>
     </div>
   </>;
 }

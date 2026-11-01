@@ -2,7 +2,6 @@
 
 import { useEffect, useState } from 'react';
 import Image from 'next/image';
-import { fruitNames } from '@pplale/game-core';
 import { MAX_MEMBERS } from '@pplale/game-core/room';
 import type { RoomInfo, RoomView } from '@pplale/game-core/room';
 import { browseRooms } from '@/lib/game/room/client';
@@ -16,6 +15,7 @@ import { usePlaza } from './PlazaProvider';
 import { RoomThumbnailImage } from './RoomThumbnailImage';
 import { visibilityInfo } from './visibility';
 import { RoomIdEntry } from './RoomIdEntry';
+import { useI18n } from '@/i18n/LocaleProvider';
 import styles from './RoomBrowser.module.css';
 
 /** Keep the current public room's live information; private rooms belong in Social. */
@@ -32,6 +32,7 @@ function currentRoomInfo(view: RoomView | null): RoomInfo | null {
 /** Public room discovery shared by expansion and the small pad's room shortcut. */
 export function RoomBrowser({ onCreate, onEntered }: { onCreate: () => void; onEntered: () => void }) {
   const plaza = usePlaza();
+  const { t, gameText, fruitLabel, nameText } = useI18n();
   const [rooms, setRooms] = useState<RoomInfo[]>([]);
   const [selected, setSelected] = useState('');
   const [loading, setLoading] = useState(true), [error, setError] = useState('');
@@ -71,55 +72,55 @@ export function RoomBrowser({ onCreate, onEntered }: { onCreate: () => void; onE
   };
   return <div className={styles.browser}>
     <div className={styles.toolbar}>
-      <ScreenSubtitle>パブリックルーム</ScreenSubtitle>
-      <button type="button" className={styles.iconButton} aria-label="ルーム一覧を更新" onClick={() => { setLoading(true); setRevision(value => value + 1); }} disabled={loading}><GameIcon name="refresh" /></button>
-      <button type="button" className={styles.filterButton} aria-expanded={filtering} onClick={() => setFiltering(value => !value)}><GameIcon name="rules" /><span>絞り込み</span></button>
-      <button type="button" className={styles.filterButton} aria-expanded={byId} onClick={() => setById(value => !value)}><GameIcon name="enter" /><span>IDで入る</span></button>
-      <OrnateFrame as="button" size="line" className={styles.createButton} onClick={onCreate}><GameIcon name="plus" /><span data-ui-title>ルームを作る</span></OrnateFrame>
+      <ScreenSubtitle>{t('パブリックルーム')}</ScreenSubtitle>
+      <button type="button" className={styles.iconButton} aria-label={t('ルーム一覧を更新')} onClick={() => { setLoading(true); setRevision(value => value + 1); }} disabled={loading}><GameIcon name="refresh" /></button>
+      <button type="button" className={styles.filterButton} aria-expanded={filtering} onClick={() => setFiltering(value => !value)}><GameIcon name="rules" /><span>{t('絞り込み')}</span></button>
+      <button type="button" className={styles.filterButton} aria-expanded={byId} onClick={() => setById(value => !value)}><GameIcon name="enter" /><span>{t('IDで入る')}</span></button>
+      <OrnateFrame as="button" size="line" className={styles.createButton} onClick={onCreate}><GameIcon name="plus" /><span data-ui-title>{t('ルームを作る')}</span></OrnateFrame>
     </div>
     {filtering && <RoomRuleFilters value={filters} onChange={setFilters} />}
     {byId && <RoomIdEntry onEntered={onEntered} />}
-    {error && <p className={styles.error} role="alert">{error}</p>}
+    {error && <p className={styles.error} role="alert">{gameText(error)}</p>}
     <div className={styles.layout}>
-      {chosen ? <OrnateFrame as="section" size="sm" className={styles.detail} aria-label="選択したルーム">
+      {chosen ? <OrnateFrame as="section" size="sm" className={styles.detail} aria-label={t('選択したルーム')}>
         <div className={styles.overview}>
-          <RoomThumbnailImage rules={chosen.rules} className={styles.thumbnail} alt="ルームのサムネイル" sizes="(max-width: 600px) 70vw, 320px" />
+          <RoomThumbnailImage rules={chosen.rules} className={styles.thumbnail} alt={t('ルームのサムネイル')} sizes="(max-width: 600px) 70vw, 320px" />
           <div className={styles.description}>
-            <div className={styles.heading}><h3 data-ui-title>{chosen.plaza!.name}</h3><small>#{chosen.id}</small></div>
+            <div className={styles.heading}><h3 data-ui-title>{nameText(chosen.plaza!.name)}</h3><small>#{chosen.id}</small></div>
             <div className={styles.facts}>
-              <span><GameIcon name={visibilityInfo[chosen.plaza!.visibility].icon} />{visibilityInfo[chosen.plaza!.visibility].label}</span>
-              <span aria-label={`人数 ${chosen.plaza!.members} / ${MAX_MEMBERS}`}><GameIcon name="people" />{chosen.plaza!.members} / {MAX_MEMBERS}</span>
+              <span><GameIcon name={visibilityInfo[chosen.plaza!.visibility].icon} />{t(visibilityInfo[chosen.plaza!.visibility].label)}</span>
+              <span aria-label={t('人数 {count} / {max}', { count: chosen.plaza!.members, max: MAX_MEMBERS })}><GameIcon name="people" />{chosen.plaza!.members} / {MAX_MEMBERS}</span>
               <span><GameIcon name="seat" />{chosen.plaza!.seated} / 2</span>
             </div>
-            <p className={styles.creator}><GameIcon name="crown" /><span>作成者</span><b>{chosen.plaza!.creator.name}</b></p>
+            <p className={styles.creator}><GameIcon name="crown" /><span>{t('作成者')}</span><b>{chosen.plaza!.creator.name}</b></p>
           </div>
         </div>
-        <div className={styles.rules} aria-label="ルームのルール">
-          <span><GameIcon name="rules" />{fruitNames[chosen.rules.fruits.at(-1)!]}まで</span>
-          <span>{chosen.rules.extendedPlayable ? '拡張あり' : '通常'}</span>
-          <span><GameIcon name="timer" />{chosen.rules.turnSeconds ? `${chosen.rules.turnSeconds / 60}分` : '無制限'}</span>
+        <div className={styles.rules} aria-label={t('ルームのルール')}>
+          <span><GameIcon name="rules" />{t('{fruit}まで', { fruit: fruitLabel(chosen.rules.fruits.at(-1)!) })}</span>
+          <span>{t(chosen.rules.extendedPlayable ? '拡張あり' : '通常')}</span>
+          <span><GameIcon name="timer" />{chosen.rules.turnSeconds ? t('{minutes}分', { minutes: chosen.rules.turnSeconds / 60 }) : t('無制限')}</span>
         </div>
         <div className={styles.entry}>
-          <span className={styles.status}>{chosen.status === 'playing' ? '対戦中・観戦できます' : '待機中'}</span>
+          <span className={styles.status}>{t(chosen.status === 'playing' ? '対戦中・観戦できます' : '待機中')}</span>
           <OrnateFrame as="button" size="line" className={styles.enterButton} onClick={() => void enter()} disabled={busy || (!chosen.open && chosen.id !== current?.id)}>
-            <GameIcon name={chosen.id === current?.id ? 'pin' : 'enter'} /><span data-ui-title>{busy ? 'つないでいます…' : chosen.id === current?.id ? 'いまのルームへ' : chosen.open ? '入る' : '満員'}</span>
+            <GameIcon name={chosen.id === current?.id ? 'pin' : 'enter'} /><span data-ui-title>{t(busy ? 'つないでいます…' : chosen.id === current?.id ? 'いまのルームへ' : chosen.open ? '入る' : '満員')}</span>
           </OrnateFrame>
         </div>
       </OrnateFrame> : <div className={styles.empty}>
         <Image src="/images/game/characters/home-purple.webp" alt="" width={120} height={132} />
-        <p role="status">{loading ? 'ルームを探しています…' : 'パブリックルームがありません'}</p>
+        <p role="status">{t(loading ? 'ルームを探しています…' : 'パブリックルームがありません')}</p>
       </div>}
-      <aside className={styles.directory} aria-label="パブリックルーム一覧" aria-busy={loading}>
-        <div className={styles.listHeading}><b data-ui-title>ルーム</b><span>{available.length}</span></div>
+      <aside className={styles.directory} aria-label={t('パブリックルーム一覧')} aria-busy={loading}>
+        <div className={styles.listHeading}><b data-ui-title>{t('ルーム')}</b><span>{available.length}</span></div>
         <ul className={styles.list}>{available.map(room => <li key={room.id}>
           <button type="button" className={styles.room} aria-pressed={chosen?.id === room.id} onClick={() => setSelected(room.id)} aria-label={`${room.plaza!.name} #${room.id}`}>
             <span className={styles.roomIcon}><GameIcon name={visibilityInfo[room.plaza!.visibility].icon} /></span>
-            <span className={styles.roomText}><b>{room.plaza!.name}</b><small>#{room.id}・{visibilityInfo[room.plaza!.visibility].label}</small>
-              <span><GameIcon name="people" />{room.plaza!.members}<GameIcon name="seat" />{room.plaza!.seated} / 2{room.id === current?.id && <em>いまのルーム</em>}</span>
+            <span className={styles.roomText}><b>{nameText(room.plaza!.name)}</b><small>#{room.id}・{t(visibilityInfo[room.plaza!.visibility].label)}</small>
+              <span><GameIcon name="people" />{room.plaza!.members}<GameIcon name="seat" />{room.plaza!.seated} / 2{room.id === current?.id && <em>{t('いまのルーム')}</em>}</span>
             </span>
           </button>
         </li>)}</ul>
-        {loading && <p className={styles.loading} role="status">更新中…</p>}
+        {loading && <p className={styles.loading} role="status">{t('更新中…')}</p>}
       </aside>
     </div>
   </div>;

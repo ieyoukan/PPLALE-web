@@ -10,11 +10,13 @@ import { ChatMessages } from './ChatMessages';
 import { ChatStampPicker } from './ChatStampPicker';
 import { useChatSender } from './useChatSender';
 import { useUnreadMessages } from './useUnreadMessages';
+import { useI18n } from '@/i18n/LocaleProvider';
 import styles from './RoomChat.module.css';
 
 /** チャットの配置・開閉・スクロール・キー操作だけを管理する。送信と未読の判定は各フックへ任せる。 */
 export function RoomChatPanel({ open, onOpen, onClose }: { open: boolean; onOpen(): void; onClose(): void }) {
   const { chat, view, send, linked } = usePlaza();
+  const { t } = useI18n();
   const input = useRef<HTMLTextAreaElement>(null);
   const log = useRef<HTMLDivElement>(null);
   const previousFocus = useRef<HTMLElement | null>(null);
@@ -77,8 +79,8 @@ export function RoomChatPanel({ open, onOpen, onClose }: { open: boolean; onOpen
     nearEnd.current = true;
   };
 
-  return <aside className={styles.chat} aria-label="ルーム内チャット" data-room-chat>
-    {open && <OrnateFrame as="section" appearance="panel" size="sm" className={styles.panel} id={panelId} aria-label="いまのルームの会話">
+  return <aside className={styles.chat} aria-label={t('ルーム内チャット')} data-room-chat>
+    {open && <OrnateFrame as="section" appearance="panel" size="sm" className={styles.panel} id={panelId} aria-label={t('いまのルームの会話')}>
       <ChatMessages messages={chat} ownMemberId={ownMemberId} logRef={log} onScroll={event => {
         const box = event.currentTarget;
         nearEnd.current = box.scrollHeight - box.scrollTop - box.clientHeight < 48;
@@ -89,9 +91,9 @@ export function RoomChatPanel({ open, onOpen, onClose }: { open: boolean; onOpen
         onToggleStamps={() => setStampsOpen(value => !value)} onSubmit={sendText} />
     </OrnateFrame>}
     <button type="button" className={styles.toggle} onClick={open ? close : show} aria-expanded={open} aria-controls={open ? panelId : undefined}
-      aria-keyshortcuts="T" aria-label="ルームチャット" aria-describedby={unread ? unreadId : undefined} title="チャット（T）">
+      aria-keyshortcuts="T" aria-label={t('ルームチャット')} aria-describedby={unread ? unreadId : undefined} title={t('チャット（T）')}>
       <GameIcon name="chat" />
-      {unread > 0 && <span id={unreadId} className={styles.badge} role="status" aria-label={`未読${unread}件`}>{unread > 99 ? '99+' : unread}</span>}
+      {unread > 0 && <span id={unreadId} className={styles.badge} role="status" aria-label={t('未読{count}件', { count: unread })}>{unread > 99 ? '99+' : unread}</span>}
     </button>
   </aside>;
 }

@@ -10,6 +10,7 @@ import { appendRoomAssessment, readRoomAssessment, saveRoomAssessment } from './
 import type { AssessedPoint } from '../board/assess';
 import type { AvatarIdentity } from '@/components/shared/player/Avatar';
 import { guestIcon, useProfiles } from '@/components/shared/player/useProfiles';
+import { useI18n } from '@/i18n/LocaleProvider';
 
 type Played = RoomView & { game: GameState };
 const played = (view: RoomView): view is Played => !!view.game;
@@ -36,6 +37,7 @@ export function useRoomSession({ room, initial, seat, onLeave, plaza }: {
   plaza?: { rematch: () => void; menu: () => void };
 }): BoardSession {
   const watching = !!initial.watching;
+  const { t } = useI18n();
   const { send: request, subscribe, linked } = room;
   const [{ shown, queue, assessment }, dispatch] = useReducer(reducer, initial, view => ({ shown: view, queue: [], assessment: readRoomAssessment(view) }));
   useEffect(() => saveRoomAssessment({ matchId: shown.matchId }, assessment), [shown.matchId, assessment]);
@@ -81,7 +83,8 @@ export function useRoomSession({ room, initial, seat, onLeave, plaza }: {
   const plazaRematch = plaza?.rematch;
   const rematch = useCallback(() => plazaRematch ? plazaRematch() : initial.mode === 'free' ? onLeave() : ask('rematch'), [ask, initial.mode, onLeave, plazaRematch]);
 
-  const names = useMemo<[string, string]>(() => [shown.players[0]?.name ?? '相手', shown.players[1]?.name ?? '相手'], [shown.players]);
+  const opponent = t('相手');
+  const names = useMemo<[string, string]>(() => [shown.players[0]?.name ?? opponent, shown.players[1]?.name ?? opponent], [shown.players, opponent]);
   const profiles = useProfiles(shown.players.map(player => player?.profileId));
   const portraits = useMemo(() => ([0, 1] as const).map(side => {
     const player = shown.players[side];

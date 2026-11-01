@@ -3,6 +3,7 @@
 import type { RefObject } from 'react';
 import { MAX_ROOM_CHAT_LENGTH } from '@pplale/game-core/room';
 import { GameIcon } from '@/components/shared/ui/GameIcon';
+import { useI18n } from '@/i18n/LocaleProvider';
 import styles from './RoomChat.module.css';
 
 /** 日本語変換の確定では送信せず、通常のEnterで送信する。 */
@@ -19,13 +20,14 @@ export function ChatComposer({ inputRef, draft, error, sending, ready, linked, s
   onToggleStamps: () => void;
   onSubmit: () => Promise<void>;
 }) {
-  const placeholder = ready ? 'タップして入力' : linked ? '接続中…' : '再接続中…';
+  const { t, gameText } = useI18n();
+  const placeholder = t(ready ? 'タップして入力' : linked ? '接続中…' : '再接続中…');
 
   return <form className={styles.composer} onSubmit={event => { event.preventDefault(); void onSubmit(); }}>
-    <button type="button" className={styles.stampToggle} disabled={!stampsReady || sending} aria-label="スタンプ" title="スタンプ" aria-expanded={stampsOpen} onClick={onToggleStamps}>
+    <button type="button" className={styles.stampToggle} disabled={!stampsReady || sending} aria-label={t('スタンプ')} title={t('スタンプ')} aria-expanded={stampsOpen} onClick={onToggleStamps}>
       <GameIcon name="sticker" />
     </button>
-    <textarea ref={inputRef} aria-label="メッセージ" placeholder={placeholder} rows={1} wrap="off" maxLength={MAX_ROOM_CHAT_LENGTH * 2}
+    <textarea ref={inputRef} aria-label={t('メッセージ')} placeholder={placeholder} rows={1} wrap="off" maxLength={MAX_ROOM_CHAT_LENGTH * 2}
       value={draft} readOnly={sending}
       onChange={event => onDraftChange(Array.from(event.target.value).slice(0, MAX_ROOM_CHAT_LENGTH).join(''))}
       onKeyDown={event => {
@@ -33,7 +35,7 @@ export function ChatComposer({ inputRef, draft, error, sending, ready, linked, s
         event.preventDefault();
         void onSubmit();
       }} />
-    <button type="submit" disabled={!ready || !draft.trim() || sending} aria-label="メッセージを送信">送信</button>
-    {error && <p className={styles.error} role="alert">{error}</p>}
+    <button type="submit" disabled={!ready || !draft.trim() || sending} aria-label={t('メッセージを送信')}>{t('送信')}</button>
+    {error && <p className={styles.error} role="alert">{gameText(error)}</p>}
   </form>;
 }

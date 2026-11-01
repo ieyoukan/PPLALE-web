@@ -14,6 +14,7 @@ import type { RoomConnection } from '@/lib/game/room/client';
 import { guestName, readRoomSettings, saveRoomSettings } from '@/lib/game/plazaSettings';
 import { useGameNotifications } from '../notifications/GameNotifications';
 import { OrnateFrame } from '@/components/shared/ui/ornament/OrnateFrame';
+import { useI18n } from '@/i18n/LocaleProvider';
 import styles from './Plaza.module.css';
 
 export const plazaHref = (id: string) => `/game/room/${id}/`;
@@ -109,6 +110,7 @@ export function PlazaProvider({ children }: { children: ReactNode }) {
   const router = useRouter(), pathname = usePathname();
   const { user, loading: authLoading } = useAuth();
   const { notify } = useGameNotifications();
+  const { t } = useI18n();
   const [stage, setStage] = useState<PlazaStage>({ kind: 'idle' });
   const [view, setView] = useState<RoomView | null>(null);
   const [id, setId] = useState<string | null>(null);
@@ -434,6 +436,6 @@ export function PlazaProvider({ children }: { children: ReactNode }) {
   return <Context.Provider value={value}>
     {children}
     {/* Moving between rooms: the current one stays on screen under a small sign. */}
-    {stage.kind === 'entering' && (!stage.full || stage.notice) && <div className={styles.veil} role="status" aria-live="polite"><OrnateFrame as="span" size="sm" className={styles.veilSign}><span className={styles.veilDots} aria-hidden="true"><span /><span /><span /></span>{stage.notice ?? 'ルームに接続中'}</OrnateFrame></div>}
+    {stage.kind === 'entering' && (!stage.full || stage.notice) && <div className={styles.veil} role="status" aria-live="polite"><OrnateFrame as="span" size="sm" className={styles.veilSign}><span className={styles.veilDots} aria-hidden="true"><span /><span /><span /></span>{t(stage.notice ?? 'ルームに接続中')}</OrnateFrame></div>}
   </Context.Provider>;
 }

@@ -4,12 +4,14 @@ import { useEffect, useState } from 'react';
 import { describeRoomRules } from '@pplale/game-core/room';
 import type { RoomRules } from '@pplale/game-core/room';
 import { roomHref, watchHref } from '@/lib/game/sessionStore';
+import { useI18n } from '@/i18n/LocaleProvider';
 import styles from './Room.module.css';
 
 /** The words an invitation is made of; the link opens the room's page, where the friend joins. */
-function invitation(id: string, rules: RoomRules, origin: string) {
+function invitation(id: string, rules: RoomRules, origin: string, t: ReturnType<typeof useI18n>['t'], gameText: (text: string) => string) {
   const url = `${origin}${roomHref(id)}`;
-  const lines = ['ぷぷりえーるのルームマッチ、対戦相手を募集中！', `ルームID：${id}`, describeRoomRules(rules)];
+  const described = gameText(describeRoomRules(rules));
+  const lines = [t('ぷぷりえーるのルームマッチ、対戦相手を募集中！'), t('ルームID：{id}', { id }), described];
   return {
     url,
     /** Opens the board for someone who only watches (rooms that allow it). */
@@ -17,30 +19,31 @@ function invitation(id: string, rules: RoomRules, origin: string) {
     /** X adds the link itself, so its text goes without it. */
     post: `https://x.com/intent/post?${new URLSearchParams({ text: `${lines.join('\n')}\n#ぷぷりえーる`, url })}`,
     /** Discord shows the id as code (easy to copy) and unfolds the link below it. */
-    discord: `**ぷぷりえーる ルームマッチ募集**\nルームID：\`${id}\`\n${describeRoomRules(rules)}\n${url}`,
+    discord: `${t('**ぷぷりえーる ルームマッチ募集**')}\n${t('ルームID：{id}', { id: `\`${id}\`` })}\n${described}\n${url}`,
     plain: [...lines, url].join('\n'),
   };
 }
 
 /** Ways to invite someone: the id, the link, a post on X, a message for Discord, the device's share sheet. */
 export function RoomShare({ id, rules }: { id: string; rules: RoomRules }) {
+  const { t, gameText } = useI18n();
   const [copied, setCopied] = useState('');
   // The share sheet exists on phones and some desktops; known only in the browser.
   const [canShare, setCanShare] = useState(false);
   useEffect(() => { setCanShare(typeof navigator.share === 'function'); }, []);
-  const invite = invitation(id, rules, typeof window === 'undefined' ? '' : window.location.origin);
+  const invite = invitation(id, rules, typeof window === 'undefined' ? '' : window.location.origin, t, gameText);
   const copy = (what: string, text: string) => {
     navigator.clipboard.writeText(text).then(() => setCopied(what), () => setCopied('コピーできませんでした'));
   };
   return <>
     <div className={styles.row}>
-      <button className={styles.secondary} onClick={() => copy('ルームIDをコピーしました', id)}>IDをコピー</button>
-      <button className={styles.secondary} onClick={() => copy('リンクをコピーしました', invite.url)}>リンクをコピー</button>
-      <button className={styles.secondary} onClick={() => copy('Discordに貼り付けられます', invite.discord)}>Discord用にコピー</button>
-      <a className={styles.secondary} href={invite.post} target="_blank" rel="noopener noreferrer">Xで募集</a>
-      {rules.spectators && <button className={styles.secondary} onClick={() => copy('観戦用のリンクをコピーしました', invite.watch)}>観戦リンクをコピー</button>}
-      {canShare && <button className={styles.secondary} onClick={() => { navigator.share({ text: invite.plain }).catch(() => {}); }}>共有…</button>}
+      <button className={styles.secondary} onClick={() => copy('ルームIDをコピーしました', id)}>{t('IDをコピー')}</button>
+      <button className={styles.secondary} onClick={() => copy('リンクをコピーしました', invite.url)}>{t('リンクをコピー')}</button>
+      <button className={styles.secondary} onClick={() => copy('Discordに貼り付けられます', invite.discord)}>{t('Discord用にコピー')}</button>
+      <a className={styles.secondary} href={invite.post} target="_blank" rel="noopener noreferrer">{t('Xで募集')}</a>
+      {rules.spectators && <button className={styles.secondary} onClick={() => copy('観戦用のリンクをコピーしました', invite.watch)}>{t('観戦リンクをコピー')}</button>}
+      {canShare && <button className={styles.secondary} onClick={() => { navigator.share({ text: invite.plain }).catch(() => {}); }}>{t('共有…')}</button>}
     </div>
-    <p className={styles.note} role="status">{copied || 'リンクを開くか、ルーム一覧の「IDで入る」から参加できます。'}</p>
+    <p className={styles.note} role="status">{t(copied || 'リンクを開くか、ルーム一覧の「IDで入る」から参加できます。')}</p>
   </>;
 }

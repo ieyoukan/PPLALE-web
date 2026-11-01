@@ -17,12 +17,14 @@ import link from './Room.module.css';
 import { MatchAssetGate } from '../MatchPreparation';
 import { roomMatchCardIds } from '@/lib/game/matchAssets';
 import { RoomLobby } from './RoomLobby';
+import { useI18n } from '@/i18n/LocaleProvider';
 
 type Played = RoomView & { game: GameState };
 
 export default function RoomBoard({ id, watch = false }: { id: string; watch?: boolean }) {
   const room = useRoom(id, watch);
   const { stage, view, linked, error } = room;
+  const { t } = useI18n();
   // For a player, anything that is not a match (no seat, still choosing decks, room gone) is the room's lobby.
   const elsewhere = !watch && (stage === 'gone' || stage === 'visitor' || stage === 'seated' && !view?.game);
   // Friends see a signed-in spectator in this room while a match can be watched.
@@ -32,18 +34,18 @@ export default function RoomBoard({ id, watch = false }: { id: string; watch?: b
   if (elsewhere) return <div className={link.standalone}><RoomLobby room={room} /></div>;
   if (stage !== 'seated' || !view?.game) return <div className={styles.emulator} aria-busy="true" />;
   // What the table cannot show by itself: a connection that dropped, and who is looking on.
-  const away = view.players.flatMap((player, seat) => player && !player.online && (watch || seat !== view.seat) ? [watch ? player.name : '相手'] : []);
-  const trouble = !linked ? 'ルームサーバーに再接続しています…' : away.length && view.status === 'playing' ? `${away.join('・')}の接続が切れています（戻るのを待っています）` : null;
+  const away = view.players.flatMap((player, seat) => player && !player.online && (watch || seat !== view.seat) ? [watch ? player.name : t('相手')] : []);
+  const trouble = !linked ? t('ルームサーバーに再接続しています…') : away.length && view.status === 'playing' ? t('{names}の接続が切れています（戻るのを待っています）', { names: away.join(t('・')) }) : null;
   return <MatchAssetGate ids={roomMatchCardIds(view.rules)}>
-    {watch && <aside className={link.spectatorTools} aria-label="観戦メニュー">
-      <Link href={BATTLE_PATH}>観戦を終了</Link>
-      {view.status === 'finished' && view.replayId && <Link href={`/game/replay/?id=${view.replayId}`}>リプレイを見る ▶</Link>}
+    {watch && <aside className={link.spectatorTools} aria-label={t('観戦メニュー')}>
+      <Link href={BATTLE_PATH}>{t('観戦を終了')}</Link>
+      {view.status === 'finished' && view.replayId && <Link href={`/game/replay/?id=${view.replayId}`}>{t('リプレイを見る ▶')}</Link>}
     </aside>}
-    {!watch && view.status === 'finished' && view.replayId && <aside className={link.spectatorTools}><Link href={`/game/replay/?id=${view.replayId}`}>リプレイを見る ▶</Link></aside>}
+    {!watch && view.status === 'finished' && view.replayId && <aside className={link.spectatorTools}><Link href={`/game/replay/?id=${view.replayId}`}>{t('リプレイを見る ▶')}</Link></aside>}
     {/* A new match is a new table. */}
     <Table key={view.match} room={room} initial={view as Played} seat={view.seat} />
     {trouble ? <p className={linked ? link.badge : `${link.badge} ${link.badgeDown}`} role="status">{trouble}</p>
-      : (watch || view.spectators > 0) && <p className={`${link.badge} ${link.badgeQuiet}`} role="status">{watch ? '観戦中' : '観戦'} {view.spectators}人</p>}
+      : (watch || view.spectators > 0) && <p className={`${link.badge} ${link.badgeQuiet}`} role="status">{t(watch ? '観戦中 {count}人' : '観戦 {count}人', { count: view.spectators })}</p>}
   </MatchAssetGate>;
 }
 
@@ -57,12 +59,13 @@ function Table({ room, initial, seat }: { room: Room; initial: Played; seat: Sid
 
 /** What a spectator sees while there is no match: who is in the room, or why it cannot be watched. */
 function Waiting({ view, reason }: { view: RoomView | null; reason: string }) {
-  const names = view?.players.map(player => player?.name ?? '募集中').join(' vs ');
+  const { t, gameText } = useI18n();
+  const names = view?.players.map(player => player?.name ?? t('募集中')).join(' vs ');
   return <div className={link.standalone}>
     <section className={link.panel} role="status">
-      <h2>{!view ? '観戦できません' : view.status === 'closed' ? 'このルームは解散しました' : '対戦が始まるのを待っています'}</h2>
-      <p>{!view ? reason || 'ルームが見つかりません' : view.status === 'closed' ? '観戦していたルームはなくなりました。' : `${names}　2人の準備ができると、ここで対戦が始まります。`}</p>
-      <div className={link.row}><Link href={BATTLE_PATH} className={link.secondary}>バトルへ戻る</Link></div>
+      <h2>{t(!view ? '観戦できません' : view.status === 'closed' ? 'このルームは解散しました' : '対戦が始まるのを待っています')}</h2>
+      <p>{!view ? reason ? gameText(reason) : t('ルームが見つかりません') : view.status === 'closed' ? t('観戦していたルームはなくなりました。') : t('{names}　2人の準備ができると、ここで対戦が始まります。', { names: names ?? '' })}</p>
+      <div className={link.row}><Link href={BATTLE_PATH} className={link.secondary}>{t('バトルへ戻る')}</Link></div>
     </section>
   </div>;
 }
