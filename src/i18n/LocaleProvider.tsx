@@ -47,6 +47,8 @@ interface LocaleContextValue {
   t: (japaneseText: string, vars?: Record<string, string | number>) => string;
   /** Text made by the game engine or the room server (logs, prompts, errors): translated by pattern in English. */
   gameText: (text: string) => string;
+  /** A player's or room's name as shown: in English only the game's default names (ゲスト, プレイヤー, 〇〇のルーム …) are translated; names people chose stay. */
+  nameText: (name: string) => string;
   cardTypeLabel: (type: CardType) => string;
   fruitLabel: (fruit: FruitType) => string;
   sweetTypeLabel: (type: SweetType) => string;
@@ -59,6 +61,7 @@ const defaultValue: LocaleContextValue = {
   setLocale: () => undefined,
   t: (text, vars) => fill(text, vars),
   gameText: text => text,
+  nameText: name => name,
   cardTypeLabel: (type) => cardTypeLabels.ja[type],
   fruitLabel: (fruit) => fruitLabels.ja[fruit],
   sweetTypeLabel: (type) => sweetTypeLabels.ja[type],
@@ -69,12 +72,14 @@ const defaultValue: LocaleContextValue = {
 const LocaleContext = createContext<LocaleContextValue>(defaultValue);
 
 const noSubscription = () => () => {};
+/** Names the game or the room server gives when none was chosen. */
+const DEFAULT_NAMES = new Set(['ゲスト', 'ホスト', 'プレイヤー', 'フレンド', '相手', 'CPU', '無名のデッキ', 'おまかせデッキ']);
 const fill = (text: string, vars?: Record<string, string | number>) => vars ? text.replace(/\{(\w+)\}/g, (whole, name: string) => name in vars ? String(vars[name]) : whole) : text;
 
 /**
  * `initialLocale`: the server's choice (the site's proxy reads the cookie, Accept-Language and country).
  * `live` (the game): the server renders Japanese and the browser then uses the saved choice or its own
- * language; changing it switches in place instead of reloading, so the room stays connected.
+ * language. Changing it reloads the page (cards and their pictures differ by language; a room rejoins by itself).
  */
 export function LocaleProvider({ initialLocale, live = false, children }: { initialLocale: AppLocale; live?: boolean; children: React.ReactNode }) {
   const detected = useSyncExternalStore(noSubscription, () => live ? browserAppLocale() : initialLocale, () => initialLocale);
@@ -95,16 +100,18 @@ export function LocaleProvider({ initialLocale, live = false, children }: { init
     setLocale(nextLocale) {
       setChosen(nextLocale);
       document.cookie = `${APP_LOCALE_COOKIE}=${nextLocale}; Path=/; Max-Age=31536000; SameSite=Lax`;
-      if (!live) window.location.reload();
+      // Cards, their pictures and the game's text all change: reload (a room comes back from its address and saved seat).
+      window.location.reload();
     },
     t: (text, vars) => fill(locale === 'en' ? siteEnglish[text] ?? game?.text[text] ?? text : text, vars),
     gameText: text => locale === 'en' && game ? game.translate(text) : text,
+    nameText: name => locale === 'en' && game && (DEFAULT_NAMES.has(name) || /^.+のルーム$/.test(name)) ? game.translate(name) : name,
     cardTypeLabel: (type) => cardTypeLabels[locale][type],
     fruitLabel: (fruit) => fruitLabels[locale][fruit],
     sweetTypeLabel: (type) => sweetTypeLabels[locale][type],
     versionLabel: (version) => versionLabels[locale][version],
     roleLabel: (role) => roleLabels[locale][role],
-  }), [locale, live, game]);
+  }), [locale, game]);
 
   return <LocaleContext.Provider value={value}>{children}</LocaleContext.Provider>;
 }

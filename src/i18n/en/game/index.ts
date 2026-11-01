@@ -14,16 +14,26 @@ const cardNames: Record<string, string> = (() => {
   return Object.fromEntries(all('ja').flatMap(card => english.has(card.id) ? [[card.name, english.get(card.id)!]] : []));
 })();
 
-/** Engine and server text: an exact match, else the first matching pattern (its captured parts translated again when known). */
+/** A captured part: a known text or card name, a 、-separated list of them (any length), or kept as it is (a player's name, a number). */
+function part(value: string): string {
+  const known = exact[value] ?? text[value] ?? cardNames[value];
+  if (known) return known;
+  return value.includes('、') ? value.split('、').map(item => exact[item] ?? text[item] ?? cardNames[item] ?? item).join(', ') : value;
+}
+
+/**
+ * Engine and server text: an exact match, else the first matching pattern (its captured parts translated again),
+ * else errors joined with ' / ' or several sentences/lines, each on its own.
+ */
 function translate(value: string): string {
   if (!value) return value;
   const known = exact[value] ?? text[value] ?? cardNames[value];
   if (known) return known;
   for (const [pattern, english] of patterns) {
     const match = value.match(pattern);
-    if (match) return english.replace(/\$(\d)/g, (_, index: string) => { const part = match[Number(index)] ?? ''; return exact[part] ?? text[part] ?? cardNames[part] ?? part; });
+    if (match) return english.replace(/\$(\d)/g, (_, index: string) => part(match[Number(index)] ?? ''));
   }
-  // Several sentences or lines: each on its own.
+  if (value.includes(' / ')) return value.split(' / ').map(translate).join(' / ');
   const pieces = value.split(/(?<=[。！？\n])/);
   return pieces.length > 1 ? pieces.map(piece => translate(piece.trim()) + (piece.endsWith('\n') ? '\n' : ' ')).join('').trim() : value;
 }
