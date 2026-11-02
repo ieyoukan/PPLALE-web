@@ -22,7 +22,10 @@
 .chips { display: flex; gap: 6px; }
 .chips b { padding: 3px 12px; border-radius: 999px; background: var(--brand-blush); font-size: 13px; }
 .chips b + b { background: var(--brand-sage-wash); }
-.status { display: flex; align-items: center; gap: 12px; font-size: 16px; color: var(--brand-cocoa-soft); }
+.status { display: grid; justify-items: center; gap: 10px; font-size: 16px; color: var(--brand-cocoa-soft); }
+/* ゲームの画像・音声の読み込み：桜色からバニラ色へ満ちていくゲージ（文字は出さない）。 */
+.loading { display: block; width: min(320px, 60vw); height: 10px; overflow: hidden; border: 1px solid var(--brand-pink-edge); border-radius: 6px; background: var(--brand-paper); }
+.loading i { display: block; height: 100%; border-radius: 5px; background: linear-gradient(90deg, var(--brand-pink), var(--brand-vanilla)); transition: width .3s ease-out; }
 .dots { display: flex; gap: 6px; }
 .dots i { width: 9px; height: 9px; border-radius: 50%; background: var(--brand-pink-edge); animation: hop 1.2s ease-in-out infinite; }
 .dots i:nth-child(2) { animation-delay: .15s; background: var(--brand-vanilla); }

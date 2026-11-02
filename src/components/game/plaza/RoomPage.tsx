@@ -8,6 +8,7 @@ import { DEFAULT_VISIBILITY } from '@pplale/game-core/room';
 import type { RoomInfo } from '@pplale/game-core/room';
 import { plazaKey, readRoomInfo, seatFor } from '@/lib/game/room/client';
 import { CPU_PATH } from '@/lib/game/sessionStore';
+import { usePreload } from '@/lib/game/preloadGame';
 import RoomBoard from '../room/RoomBoard';
 import { LaunchScreen } from './LaunchScreen';
 import { useLaunchpad } from '@/components/game/launchpad/LaunchpadContext';
@@ -23,6 +24,8 @@ import plazaStyles from './Plaza.module.css';
 export function RoomPage({ id }: { id: string }) {
   const params = useSearchParams(), invite = params.get('invite'), watch = params.get('watch') === '1', created = params.get('created') === '1';
   const router = useRouter(), { enter, stage, view, id: current, legacy: legacyId, goHome } = usePlaza();
+  // The launch screen stays until the game's pictures and music are in (preloadGame).
+  const preload = usePreload();
   const launchpad = useLaunchpad();
   // null: not known yet. A seat kept in this browser is a two-seat room's; a link to watch may be either.
   const [kind, setKind] = useState<'plaza' | 'legacy' | null>(null);
@@ -52,7 +55,7 @@ export function RoomPage({ id }: { id: string }) {
 
   if (legacy) return <RoomBoard id={id} watch={watch && !seatFor(id)} />;
   if (kind === null) return <LaunchScreen status="ルームに入っています" />;
-  if (current === id && view) return <><PlazaRoom view={view} onMenu={launchpad.open} />
+  if (current === id && view && preload.ready) return <><PlazaRoom view={view} onMenu={launchpad.open} />
     {created && view.plaza && view.plaza.owner === view.plaza.me && <RoomCreatedSheet view={view} onClose={() => router.replace(plazaHref(id))} />}</>;
   if (stage.kind === 'refused' && (stage.to === id || stage.to === null)) return <LaunchScreen><Refused reason={stage.reason} message={stage.message} id={id} /></LaunchScreen>;
   return <LaunchScreen status="ルームに入っています" preview={preview} />;

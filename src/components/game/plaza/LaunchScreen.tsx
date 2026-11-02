@@ -13,6 +13,7 @@ import { RoomThumbnailImage } from './RoomThumbnailImage';
 import { OrnateFrame } from '@/components/shared/ui/ornament/OrnateFrame';
 import { getCardCatalog } from '@/data/catalog';
 import { useI18n } from '@/i18n/LocaleProvider';
+import { usePreload } from '@/lib/game/preloadGame';
 import styles from './LaunchScreen.module.css';
 
 interface Shown { id: string; name: string; image: string; kind: 'yojo' | 'sweet'; fruit?: Fruit; effect: string }
@@ -45,6 +46,8 @@ export function LaunchScreen({ status = 'ルームに接続しています', pre
   const [picked, setCard] = useState<Shown | null>(null);
   useEffect(() => { setCard(someCard()); }, []);
   const card = picked && locale === 'en' ? inEnglish(picked) : picked;
+  // The game's pictures and music load while this shows (the room waits for them, at most PRELOAD_WAIT_MS).
+  const preload = usePreload(), share = preload.total ? preload.done / preload.total : 0;
   return <section className={styles.launch} aria-busy={!children} aria-label={t('ぷぷりえーる')}>
     <span className={styles.stars} aria-hidden="true">{stars.map(([left, top, delay], index) => <i key={index} style={{ left: `${left}%`, top: `${top}%`, animationDelay: `${delay}s` }} />)}</span>
     <Image className={styles.logo} src="/images/game/logo.webp" alt={t('お菓子争奪戦争 ぷぷりえーる')} width={462} height={227} priority />
@@ -61,6 +64,11 @@ export function LaunchScreen({ status = 'ルームに接続しています', pre
       </OrnateFrame>}
     </div>
     {children ? <OrnateFrame className={styles.trouble}>{children}</OrnateFrame>
-      : <p className={styles.status} role="status" aria-label={t(status)}><span className={styles.dots} aria-hidden="true"><i /><i /><i /></span></p>}
+      : <div className={styles.status}>
+        <p role="status" aria-label={t(status)}><span className={styles.dots} aria-hidden="true"><i /><i /><i /></span></p>
+        {!preload.ready && <span className={styles.loading} role="progressbar" aria-label={t('ゲームのデータを読み込んでいます')} aria-valuemin={0} aria-valuemax={100} aria-valuenow={Math.round(share * 100)}>
+          <i style={{ width: `${Math.max(4, share * 100)}%` }} />
+        </span>}
+      </div>}
   </section>;
 }

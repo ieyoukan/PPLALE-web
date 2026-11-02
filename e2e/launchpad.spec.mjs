@@ -44,12 +44,14 @@ test('five tabs switch in place, room actions and volume persist, and Escape res
   await page.keyboard.press('Escape');
 
   await pad.getByRole('tab', { name: '音量', exact: true }).click();
-  const slider = pad.getByRole('slider', { name: '通知音の音量' });
+  // BGM, effects and notifications sit in the same rows; notifications off greys their slider.
+  await expect(pad.getByRole('slider')).toHaveCount(3);
+  const slider = pad.getByRole('slider', { name: 'BGM' }), notices = pad.getByRole('slider', { name: '通知音' });
   await slider.fill('37');
   await expect(slider).toHaveValue('37');
-  await expect(pad.getByRole('button', { name: '音をたしかめる' })).toBeEnabled();
+  await expect(notices).toBeEnabled();
   await pad.getByRole('button', { name: '通知音', exact: true }).click();
-  await expect(pad.getByRole('button', { name: '音をたしかめる' })).toBeDisabled();
+  await expect(notices).toBeDisabled();
   await pad.getByRole('tab', { name: '設定', exact: true }).click();
   await expect(pad.getByRole('tabpanel')).toContainText('アカウント');
   // The home room's visibility is kept for the next room the game opens with.
@@ -64,6 +66,7 @@ test('five tabs switch in place, room actions and volume persist, and Escape res
   await page.getByRole('button', { name: 'メニュー', exact: true }).click();
   await pad.getByRole('tab', { name: '音量', exact: true }).click();
   await expect(slider).toHaveValue('37');
+  await expect(notices).toBeDisabled();
   await expect(pad.getByRole('button', { name: '通知音', exact: true })).toHaveAttribute('aria-pressed', 'false');
   expect(errors).toEqual([]);
 });
