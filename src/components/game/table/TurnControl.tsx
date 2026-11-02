@@ -24,7 +24,7 @@ export function TurnControl() {
     ? undefined : side === game.rules.firstPlayer ? 'first' as const : 'second' as const;
   return <div className={`${styles.turnControl} ${actionStyles.rail}`}>
     <PpPanel side={other(view)} name={t(names[other(view)])} portrait={portraits[other(view)]} order={orderFor(other(view))} current={game.players[other(view)].pp} maximum={availablePpMaximum(game, other(view))} own={false}><PlayerCounters side={other(view)} /></PpPanel>
-    <div className={actionStyles.center}>{editing
+    <div className={actionStyles.center} data-turn-center>{editing
       ? <RoundActionButton tone="sage" className={`${actionStyles.action} ${actionStyles.play}`} onClick={() => setPanel({ type: 'play' })}>{twoLines(t('この盤面で\n遊ぶ'))}</RoundActionButton>
       : <RoundActionButton tone={mine ? 'pink' : 'muted'} className={actionStyles.action} disabled={!playEnabled} onClick={() => act({ type: 'end', actor: game.active })}>
         {remote?.watching && !remote.recorded ? t('観戦中') : twoLines(t(mine ? 'ターン\n終了' : '相手の\nターン'))}
