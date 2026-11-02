@@ -63,3 +63,5 @@
 .seatSlot { position: absolute; top: 48%; left: 2%; width: 214px; transform: translateY(-50%); z-index: 2; }
 .seatSlot[data-seat='1'] { left: auto; right: 2%; }
 .scene[data-active] .seatSlot { visibility: hidden; }
+/* 対戦の盤面は、カメラが動き出すまで（ルームの間）隠したまま描いておく（PlazaTable の useStagedBoard）。 */
+.scene:not([data-active]) .surfaceMount > [data-table] { visibility: hidden; }

@@ -50,8 +50,13 @@ export function useRoomCamera({ root, active, viewer, animate, onReady }: {
         { transform: `${from} scale3d(${old.width / width}, ${old.height / height}, 1)` },
         { transform },
       ], { duration: 1100, easing: 'cubic-bezier(.4, 0, .15, 1)' }));
-      const start = document.timeline.currentTime;
-      if (typeof start === 'number') animations.forEach(animation => { animation.startTime = start; });
+      // Begin on the frame after the new size is laid out, so the first frames are not skipped.
+      animations.forEach(animation => animation.pause());
+      requestAnimationFrame(() => requestAnimationFrame(() => {
+        if (flight.current !== animations) return;
+        const start = document.timeline.currentTime;
+        animations.forEach(animation => { if (typeof start === 'number') animation.startTime = start; else animation.play(); });
+      }));
       flight.current = animations;
       const settle = () => {
         if (flight.current !== animations) return;

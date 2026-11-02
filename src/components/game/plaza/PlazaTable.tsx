@@ -52,7 +52,10 @@ export function PlazaTable({ view, onMenu, match }: { view: RoomView; onMenu: ()
   const root = useRef<HTMLDivElement>(null);
   const [target, setTarget] = useState<HTMLDivElement | null>(null);
   const [cameraReady, setCameraReady] = useState(true);
-  const playing = !!match;
+  // The match's board is first drawn hidden on the table, its pictures decoded; only then does the camera
+  // move. Rendering the board while the camera turns made the turn stutter or jump straight to the end.
+  const staged = useStagedBoard(!!match, match?.animate ?? true, root, target);
+  const playing = !!match && staged;
   const plaza = usePlaza(), room = view.plaza!;
   const { t, gameText, nameText } = useI18n();
   const { user, signInWithGoogle } = useAuth();
@@ -177,7 +180,7 @@ export function PlazaTable({ view, onMenu, match }: { view: RoomView; onMenu: ()
       signIn={user ? undefined : () => { signInWithGoogle().catch(() => setError('ログインできませんでした')); }}
       onClose={() => setOpen(view.players[open.cpu] ? null : { opponent: open.cpu })}
       onChoose={(level, choice) => { const side = open.cpu; setOpen(null); ask({ action: 'cpu', seat: side, level, ...(choice.source !== 'random' && { deck: choice.deck(randomSeed()) }) }); }} />}
-    {match && target && <BoardSurfaceContext.Provider value={{ target, root, controlsReady: cameraReady }}>{match.content}</BoardSurfaceContext.Provider>}
+    {match && target && <BoardSurfaceContext.Provider value={{ target, root, controlsReady: cameraReady && staged }}>{match.content}</BoardSurfaceContext.Provider>}
   </div>;
 }
 
@@ -203,4 +206,30 @@ function SeatState({ player }: { player: RoomPlayer }) {
 /** The deck's playable, or (おまかせ: made when the match starts) a pile of cards. */
 function PlayableArt({ id }: { id?: string }) {
   return id ? <span className={styles.deckPortrait}><CardArtwork id={id} sizes="60px" /></span> : <GameIcon name="cards" />;
+}
+
+const nextFrame = () => new Promise<void>(resolve => requestAnimationFrame(() => resolve()));
+/**
+ * Whether the match's board has been drawn (hidden, while the room still shows) and may be shown: its
+ * table is in the surface, its pictures and fonts are decoded and two frames have passed. At most 3 s,
+ * so a slow picture never keeps the player in the lobby. Without the camera move it is shown at once.
+ */
+function useStagedBoard(match: boolean, animate: boolean, root: React.RefObject<HTMLDivElement | null>, target: HTMLDivElement | null) {
+  const [staged, setStaged] = useState(false);
+  const [wasMatch, setWasMatch] = useState(match);
+  if (wasMatch !== match) { setWasMatch(match); if (!match) setStaged(false); }
+  useEffect(() => {
+    if (!match || staged) return;
+    if (!animate) { setStaged(true); return; }
+    let cancelled = false;
+    const settle = async () => {
+      for (let frames = 0; frames < 120 && !target?.querySelector('[data-table]'); frames++) await nextFrame();
+      const pictures = [...root.current?.querySelectorAll('img') ?? []];
+      await Promise.all([...pictures.map(picture => picture.decode().catch(() => {})), document.fonts.ready]);
+      await nextFrame(); await nextFrame();
+    };
+    void Promise.race([settle(), new Promise(resolve => setTimeout(resolve, 3000))]).then(() => { if (!cancelled) setStaged(true); });
+    return () => { cancelled = true; };
+  }, [match, animate, staged, root, target]);
+  return staged;
 }

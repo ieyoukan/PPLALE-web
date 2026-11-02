@@ -51,12 +51,29 @@ for (const { seat, viewport } of [
     const sample = () => { const watch = window.__sceneWatch; if (!watch.running) return; watch.frames++; if (watch.nodes.some(node => !node?.isConnected || !node.checkVisibility())) watch.missing++; requestAnimationFrame(sample); };
     requestAnimationFrame(sample);
   });
+  // Record, from the moment the camera starts, whether the board was already drawn and how long frames took.
+  await page.evaluate(() => {
+    const flight = window.__flight = { boardAtStart: null, gaps: [] };
+    const scene = document.querySelector('[data-room-scene]');
+    new MutationObserver((_, observer) => {
+      if (scene.dataset.roomCamera !== 'moving') return;
+      observer.disconnect();
+      flight.boardAtStart = !!scene.querySelector('[data-table] img') && [...scene.querySelectorAll('[data-table] img')].every(image => image.complete);
+      let last = performance.now();
+      const frame = now => { flight.gaps.push(now - last); last = now; if (scene.dataset.roomCamera === 'moving') requestAnimationFrame(frame); };
+      requestAnimationFrame(frame);
+    }).observe(scene, { attributes: true, attributeFilter: ['data-room-camera'] });
+  });
   show(true);
   await expect(page.locator('[data-room-camera="moving"]')).toBeVisible({ timeout: 20000 });
   await page.waitForTimeout(260);
   expect(await page.evaluate(() => getComputedStyle(document.querySelector('[data-room-floor]').parentElement).transform === getComputedStyle(document.querySelector('[data-room-board-projection]')).transform)).toBe(true);
   await page.screenshot({ path: info.outputPath('camera-midway.png') });
   await expect(page.locator('[data-room-camera="match"]')).toBeVisible();
+  // The board was drawn before the turn began, and the turn ran without a long stall.
+  const flight = await page.evaluate(() => window.__flight);
+  expect(flight.boardAtStart).toBe(true);
+  expect(Math.max(...flight.gaps.slice(1))).toBeLessThan(120);
   await expect(page.locator('[data-room-scene] [data-table]')).toHaveCount(1);
   await expect(page.locator('[data-in-scene]')).toHaveCSS('display', 'contents');
   const roomBounds = await page.locator('[data-room-view]').boundingBox();
