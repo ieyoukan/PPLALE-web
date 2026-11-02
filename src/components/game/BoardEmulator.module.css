@@ -349,9 +349,6 @@
 .counterValue { height: 28%; }
 .turnControl { position: fixed; right: 16px; top: 39%; width: auto; }
 @container stage (max-height: 600px) { .turnControl { top: 30%; right: 12px; gap: 8px; } .near .zoneLabel, .far .zoneLabel { display: none; } .deckZone::before { content: attr(data-label); position: absolute; left: 0; right: 0; top: -22px; font-size: 18px; color: #62485d; white-space: nowrap; } .deckCount { right: 5%; bottom: 0; } }
-.occupied .cardImage { animation: placeCard .32s ease-out; }
-@keyframes placeCard { from { transform: translateY(-25px) scale(1.14) rotate(-4deg); filter: drop-shadow(10px 20px 10px #43234366); } to { transform: translateY(0) scale(1) rotate(0); } }
-@media (prefers-reduced-motion: reduce) { .occupied .cardImage { animation: none; } }
 @container stage (max-height: 600px) {
   .handDock { bottom: -100px; }
   .hand { height: 150px; }
