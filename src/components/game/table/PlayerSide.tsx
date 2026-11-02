@@ -1,7 +1,7 @@
 'use client';
 
 import { availablePpMaximum } from '@pplale/game-core';
-import { Fragment, useState } from 'react';
+import { Fragment, useEffect, useState } from 'react';
 import type { CSSProperties } from 'react';
 import type { DeckKind, Side } from '@pplale/game-core';
 import { displayCards, gameCatalog } from '@/lib/game/catalog';
@@ -16,6 +16,8 @@ import { GameCard } from '../GameCard';
 import styles from '../BoardEmulator.module.css';
 
 const FIELD_SLOTS = 7;
+/** How long a card's landing effect lasts (BoardEmulator.module.css landCard / landGlow / landSpark). */
+const LANDING_MS = 900;
 
 /** One player's half of the table: decks, piles, playable, counters, field and (far side) hand backs. */
 export function PlayerSide({ side }: { side: Side }) {
@@ -107,6 +109,12 @@ function FieldSlot({ side, slot }: { side: Side; slot: number }) {
   const here = uid ?? pending?.uid ?? null;
   const [previous, setPrevious] = useState(here), [landed, setLanded] = useState<string | null>(null);
   if (previous !== here) { setPrevious(here); setLanded(here); }
+  // Only at that moment: once played out, the mark goes, so pressing, attacking or acting never replays it.
+  useEffect(() => {
+    if (!landed) return;
+    const timer = setTimeout(() => setLanded(current => current === landed ? null : current), LANDING_MS);
+    return () => clearTimeout(timer);
+  }, [landed]);
   const choiceSelected = !!uid && board.cardChoice.selected.includes(uid);
   const targeting = !!uid && (board.isOption(uid) || !!attacker && side !== view && board.canStrike(attacker, uid));
   const placing = !!selected && near && !uid && playEnabled && gameCatalog[game.cards[selected].cardId].type === 'yojo';
