@@ -36,7 +36,7 @@ export function HandDock() {
       const angleLimit = mixed ? 8 : 16;
       const classes = [
         styles.handCard, !hidden && board.affordable(uid) && styles.playableHand, selected === uid && styles.selectedHand,
-        board.isOption(uid) && styles.targetable, (board.flying(uid) || board.pendingPlay?.uid === uid || drag.held?.uid === uid) && styles.dealing,
+        board.isOption(uid) && styles.targetable, (board.flying(uid) || board.pendingPlay?.uid === uid || drag.held?.uid === uid && !drag.held.aim) && styles.dealing, drag.held?.uid === uid && drag.held.aim && styles.aimingCard,
         grouped && styles.revealedHandCard, mixed && index === concealed.length && styles.revealedHandStart,
       ].filter(Boolean).join(' ');
       const choiceSelected = board.cardChoice.selected.includes(uid);

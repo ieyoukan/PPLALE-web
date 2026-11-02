@@ -66,7 +66,9 @@ export function BoardTable({ session }: { session: BoardSession }) {
   const drawerOpen = !!panel && panel.type !== 'inspect' && panel.type !== 'skills';
   const { timing } = animations;
   const timingStyle = { '--draw-duration': `${timing.draw}ms`, '--strike-duration': `${timing.strike}ms`, '--announcement-duration': `${timing.announce}ms`, '--ping-duration': `${timing.ping}ms` } as CSSProperties;
-  const table = <div className={`${styles.table} ${surface ? styles.sceneTable : ''}`} data-table data-readable={surface ? '' : undefined} style={timingStyle}>
+  // A sweet is used by dropping it anywhere on the table.
+  const sweetHeld = !!drag.held && me.hand.includes(drag.held.uid) && gameCatalog[game.cards[drag.held.uid].cardId]?.type === 'sweet';
+  const table = <div className={`${styles.table} ${surface ? styles.sceneTable : ''}`} data-table data-aim-ok={sweetHeld || undefined} data-readable={surface ? '' : undefined} style={timingStyle}>
     <div className={styles.mat}><div className={styles.logoLayer} aria-hidden="true">
       {Array.from({ length: 8 }, (_, index) => <Image key={index} src="/images/game/cafe-logo.svg" alt="" width={1568} height={882}
         unoptimized loading="eager" fetchPriority={index === 0 ? 'high' : 'auto'} className={styles.matLogo} />)}

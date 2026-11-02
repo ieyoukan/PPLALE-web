@@ -54,7 +54,7 @@ export function PlayerSide({ side }: { side: Side }) {
         : <Counter label={t('ターン数(+pp)')} value={player.turns} bonus={player.ppBonus} temporaryBonus={player.turnPpBonus} pp={`${player.pp} / ${availablePpMaximum(game, side)}`} test={sandbox}
           onAdjust={delta => board.adjust(side, 'ppBonus', delta)} onReset={() => board.adjust(side, 'ppBonus', -player.ppBonus)} />}
     </div>
-    <div className={styles.pointsCounter} data-leader={side}>
+    <div className={styles.pointsCounter} data-leader={side} data-aim-ok={leaderTarget || undefined}>
       <Counter label={t('お菓子ポイント')} value={player.points} points target={leaderTarget} test={sandbox} onClick={editing ? () => board.setPanel({ type: 'editPlayer', side }) : attackLeader}
         onAdjust={delta => board.adjust(side, 'points', delta)} onReset={() => board.adjust(side, 'points', player.maxPoints - player.points)} />
       {player.shield && <span className={styles.shieldIndicator}>{t('パンケーキ保護')}</span>}
@@ -122,19 +122,19 @@ function FieldSlot({ side, slot }: { side: Side; slot: number }) {
   const placing = !!selected && near && !uid && playEnabled && gameCatalog[game.cards[selected].cardId].type === 'yojo';
   const classes = [
     styles.fieldSlot, (card || pending) && styles.occupied, (targeting || placing) && styles.targetable, uid && (uid === attacker || uid === board.queuedAttack?.uid) && styles.attacking,
-    card?.exhausted && styles.exhausted, uid && (drag.held?.uid === uid || animations.strike?.uid === uid) && styles.dealing,
+    card?.exhausted && styles.exhausted, uid && (drag.held?.uid === uid && !drag.held.aim || animations.strike?.uid === uid) && styles.dealing, uid && drag.held?.uid === uid && drag.held.aim && styles.aimingCard,
     card?.keywords.includes('taunt') && styles.tauntCard, editing && !card && styles.editSlot,
   ].filter(Boolean).join(' ');
   // Touch and hold enlarges a unit, like the right click.
   const hold = longPress(() => { if (uid) { drag.cancel(); board.setPanel({ type: 'inspect', uid }); } });
-  return <button data-slot={slot} data-side={side} data-unit={uid} data-choice-selected={choiceSelected || undefined} aria-pressed={uid && board.cardChoice.selection?.candidates.includes(uid) ? choiceSelected : undefined} data-pending-play={pending?.uid} data-queued-target={(uid && board.queuedAttack?.target === uid) || undefined} data-landing={(!!here && here === landed) || undefined} aria-busy={!!pending || undefined} disabled={!!pending || !!attacker && side !== view && !targeting} className={classes}
+  return <button data-slot={slot} data-side={side} data-unit={uid} data-choice-selected={choiceSelected || undefined} aria-pressed={uid && board.cardChoice.selection?.candidates.includes(uid) ? choiceSelected : undefined} data-pending-play={pending?.uid} data-queued-target={(uid && board.queuedAttack?.target === uid) || undefined} data-landing={(!!here && here === landed) || undefined} data-aim-ok={(targeting || placing) || undefined} aria-busy={!!pending || undefined} disabled={!!pending || !!attacker && side !== view && !targeting} className={classes}
     aria-label={t(side === 0 ? 'あなたの場 {slot} {card}' : '相手の場 {slot} {card}', { slot: slot + 1, card: displayed ? cardName(displayed, displayCards[displayed].name) : t('空き') })}
     {...hold}
     onClick={() => { if (!drag.clickSuppressed()) board.clickSlot(side, uid, slot); }}
     onPointerDown={event => { if (uid) hold.onPointerDown(event); if (uid && near) drag.pickUp(event, uid, 'field'); }}
     onContextMenu={event => { event.preventDefault(); if (uid) board.setPanel({ type: 'inspect', uid }); }}>
     {choiceSelected && board.cardChoice.selection && <CardChoiceMark kind={board.cardChoice.selection.kind} />}
-    {displayed && here === landed && <span key={landed} className={styles.landing} aria-hidden="true">
+    {displayed && here === landed && <span key={`landing:${landed}`} className={styles.landing} aria-hidden="true">
       <i className={styles.landingGlow} />{[0, 1, 2, 3, 4, 5].map(spark => <i key={spark} className={styles.landingSpark} style={{ '--spark': spark } as CSSProperties} />)}
     </span>}
     {displayed && <Fragment key={here}>

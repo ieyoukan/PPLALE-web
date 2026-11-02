@@ -672,3 +672,22 @@
 .fieldSlot[data-queued-target] { outline: .35cqw solid #d2475f; outline-offset: .2cqw; animation: queuedTarget .9s ease-in-out infinite alternate; }
 @keyframes queuedTarget { from { outline-color: #d2475f66; } to { outline-color: #d2475f; } }
 @media (prefers-reduced-motion: reduce) { .fieldSlot[data-queued-target] { animation: none; } }
+
+/* 矢印でねらう操作（設定の「カードの操作」）：カードは持ち上がったまま残り、カードから指先まで曲線の矢印が伸びる。
+   出せる場所の上では矢印が金色に光り、その場所の枠も光る。回転の動きは使わず、線の模様だけが先へ流れる。 */
+.aimArrow { position: fixed; inset: 0; z-index: 190; width: 100%; height: 100%; overflow: visible; pointer-events: none; }
+.aimArrow path, .aimArrow circle { fill: none; stroke-linecap: round; stroke-linejoin: round; }
+.aimShadow { stroke: #31202555; stroke-width: 15; transform: translate(3px, 5px); }
+.aimLine { stroke: var(--brand-cocoa-deep); stroke-width: 13; }
+.aimFlow { stroke: var(--brand-blush); stroke-width: 7; stroke-dasharray: 16 11; animation: aimFlow .5s linear infinite; }
+.aimRing { stroke: var(--brand-cocoa-deep); stroke-width: 3; stroke-dasharray: 9 7; fill: #fffdf966 !important; transition: r .15s; }
+.aimHead { fill: var(--brand-blush) !important; stroke: var(--brand-cocoa-deep); stroke-width: 3; }
+.aimArrow[data-ready] .aimFlow { stroke: var(--brand-vanilla); }
+.aimArrow[data-ready] .aimLine { stroke: var(--brand-star-deep); filter: drop-shadow(0 0 6px #f5d36ecc); }
+.aimArrow[data-ready] .aimHead { fill: var(--brand-vanilla) !important; stroke: var(--brand-star-deep); }
+.aimArrow[data-ready] .aimRing { stroke: var(--brand-star-deep); fill: #f5df9755 !important; }
+.aimingCard { filter: drop-shadow(0 0 .9cqw #f5d36e) brightness(1.06); }
+.handCard.aimingCard { transform: translateY(-14%) !important; }
+[data-aimed].fieldSlot, [data-aimed] .counterLabel { outline: .4cqw solid var(--brand-star); outline-offset: .25cqw; box-shadow: 0 0 1.4cqw .3cqw #f5d36ecc; }
+@keyframes aimFlow { to { stroke-dashoffset: -27; } }
+@media (prefers-reduced-motion: reduce) { .aimFlow { animation: none; } }
