@@ -54,7 +54,8 @@
 .cardImage { object-fit: contain; user-select: none; }
 .occupied .cardImage { filter: drop-shadow(0 2px 3px #3c202a66); }
 .exhausted .cardImage { filter: brightness(.75) saturate(.65); transform: rotate(3deg); }
-.targetable { outline: 2px solid #60bf80 !important; box-shadow: 0 0 13px #6fcf87bb !important; animation: targetPulse 1.4s ease-in-out infinite; }
+/* A still glow. (Its former pulse never showed, the !important shadow winning over the animation, yet it recomputed the style every frame.) */
+.targetable { outline: 2px solid #60bf80 !important; box-shadow: 0 0 13px #6fcf87bb !important; }
 .attacking { outline: 3px solid #e0b84c; box-shadow: 0 0 17px #f4d960a6; }
 .damageMarble, .whiteMarble, .buffMarble, .costMarble {
   --marble-size: clamp(36px, 3.2cqw, 48px);
@@ -109,7 +110,11 @@
 .thresholds > span { position: relative; width: 2.25cqw; font: 1.55cqw 'BoardHandwriting', 'Yu Kyokasho', serif; line-height: 1.55; }
 .thresholds i { display: none; }
 .thresholds .reached i { position: absolute; display: block; inset: 0; width: 2.1cqw; height: 2.1cqw; border-radius: 50%; background: radial-gradient(circle at 28% 24%, #c3fffa, #81e6dd 45%, #57c4c1 80%); border-left: .2cqw solid #397c7b; box-shadow: 1px 2px 3px #46666070; transform: translate(-.2cqw, -.05cqw); }
-.drawReady { filter: drop-shadow(0 0 8px #58c881); animation: deckPulse 1.3s ease-in-out infinite; }
+/* The glow stays still and a brighter one fades in and out over it (drawGlow): a filter changing every frame is redrawn on the main thread. */
+.drawReady { filter: drop-shadow(0 0 3px #75c497); }
+/* zone-frame.svg keeps its 210:195 shape inside the zone (centred), so the glow takes the same size from the zone's own units. */
+.drawGlow { position: absolute; inset: 0; container-type: size; pointer-events: none; }
+.drawGlow::before { content: ''; position: absolute; inset: 0; margin: auto; width: min(100cqw, 100cqh * 210 / 195); height: min(100cqh, 100cqw * 195 / 210); border-radius: 13.8% / 14.9%; box-shadow: 0 0 8px #58c881a8; animation: glowPulse 1.3s ease-in-out infinite; }
 .drawReady .stack { transform: translateY(-4px); }
 .playableZone { position: absolute; left: 46.65%; width: 9.65%; height: 20%; padding: 0; background: url('/images/game/zone-frame.svg') center / 100% 100%; border: 0; }
 .near .playableZone { top: 77%; }
@@ -210,8 +215,7 @@
 .popInfo { background: #000000c7; color: #fffdeb; }
 @keyframes pop { 0% { opacity: 0; transform: translate(-50%, -20%) scale(.6); } 15% { opacity: 1; transform: translate(-50%, -50%) scale(1.12); } 25%, 80% { opacity: 1; transform: translate(-50%, -60%) scale(1); } 100% { opacity: 0; transform: translate(-50%, -110%) scale(1); } }
 @media (prefers-reduced-motion: reduce) { .pop { animation: hitNumberFade 1.3s linear both; } }
-@keyframes deckPulse { 50% { filter: drop-shadow(0 0 3px #75c497); } }
-@keyframes targetPulse { 50% { box-shadow: 0 0 4px #7fc69266; } }
+@keyframes glowPulse { 50% { opacity: 0; } }
 @container stage (max-width: 900px) {
   .toolbar { flex-wrap: wrap; gap: 8px; padding: 6px 10px; }
   .drawer { top: 62px; }
@@ -219,7 +223,7 @@
 }
 @media (prefers-reduced-motion: reduce) {
   .handCard, .fieldSlot { transition: none; }
-  .targetable, .drawReady { animation: none; }
+  .drawGlow::before { animation: none; }
   .flyingCard, .flightSpin, .lookReveal, .lookHide { animation-duration: .01s; }
 }
 

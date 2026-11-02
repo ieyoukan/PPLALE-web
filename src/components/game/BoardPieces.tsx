@@ -33,6 +33,7 @@ export function DeckStack({ side, kind, ids, thresholds = [], enabled, drawing =
       <span className={cue.label} id={helpId}>{t('お菓子を1枚引く')}</span>
       <svg viewBox="0 0 160 90" aria-hidden="true"><path d="M8 29H85V8L151 45 85 82V61H8Z" /></svg>
     </span>}
+    {drawing && <span className={styles.drawGlow} aria-hidden="true" />}
     <span className={styles.zoneLabel}>{labelWords.map(word => <span key={word}>{word}</span>)}</span>
     <span className={styles.stack} data-stack>
       <span className={styles.cardTarget} />

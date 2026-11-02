@@ -78,9 +78,12 @@ a.person:hover { background: color-mix(in srgb, var(--brand-cream-on-dark) 10%, 
 .sitButton { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 14px; width: 100%; padding: var(--pad); border: 0; background: none; color: var(--brand-cocoa); text-align: center; }
 .sitButton b { font-size: 24px; }
 /* A diamond like the cards' ornaments, calling from far to near. */
-.plus { display: grid; place-items: center; width: 80px; height: 80px; background: var(--brand-cocoa); color: var(--brand-cream); font-size: 36px; clip-path: polygon(50% 0, 100% 50%, 50% 100%, 0 50%); animation: beckon 1.8s ease-in-out infinite; }
-.plusSoft { background: var(--brand-star-deep); color: var(--brand-cream); animation-duration: 2.6s; }
-.sitButton:hover .plus { animation-duration: .9s; }
+.plus { display: grid; place-items: center; width: 80px; height: 80px; background: var(--brand-cocoa); color: var(--brand-cream); font-size: 36px; clip-path: polygon(50% 0, 100% 50%, 50% 100%, 0 50%); }
+/* Two beats now and then (PlazaTable's Beckon): a sign moving without end keeps the whole room redrawn. */
+.plus[data-beckon] { animation: beckon 1.8s ease-in-out 2; }
+.plusSoft { background: var(--brand-star-deep); color: var(--brand-cream); }
+.plusSoft[data-beckon] { animation-duration: 2.6s; }
+.sitButton:hover .plus { animation: beckon .9s ease-in-out infinite; }
 
 /* Shared rules and ownership below the table. The poster contains its own labels. */
 .side { grid-area: side; display: flex; flex-direction: column; align-items: center; justify-content: flex-end; gap: 3px; min-height: 0; }
@@ -90,8 +93,9 @@ a.person:hover { background: color-mix(in srgb, var(--brand-cream-on-dark) 10%, 
 .ownerChip svg { color: var(--brand-vanilla); }
 .claim { display: flex; align-items: center; justify-content: center; gap: 8px; padding: 12px; font-size: 18px; }
 .claim:disabled { opacity: .5; }
-.claim:disabled svg { animation: none; }
-.claim svg { animation: beckon 1.6s ease-in-out infinite; }
+.claimIcon { display: inline-grid; }
+.claimIcon[data-beckon] { animation: beckon 1.6s ease-in-out 2; }
+.claim:disabled .claimIcon { animation: none; }
 .claim svg { color: var(--brand-star-deep); font-size: 22px; }
 
 /* ── Bottom: the deck and getting ready ── */
@@ -204,7 +208,7 @@ a.person:hover { background: color-mix(in srgb, var(--brand-cream-on-dark) 10%, 
 @keyframes fade { from { opacity: 0; } }
 @keyframes rise { from { opacity: 0; transform: translateY(30px) scale(.97); } }
 @media (prefers-reduced-motion: reduce) {
-  .person, .seat, .plus, .claim svg, .ready, .thinking i, .request, .toast, .sheetBackdrop, .sheet, .copied, .copiedDot, .veil, .veilDots span { animation: none; }
+  .person, .seat, .plus, .plus[data-beckon], .sitButton:hover .plus, .claimIcon[data-beckon], .ready, .thinking i, .request, .toast, .sheetBackdrop, .sheet, .copied, .copiedDot, .veil, .veilDots span { animation: none; }
 }
 
 /* ── Inviting friends by name (in the share sheet) ── */

@@ -46,6 +46,20 @@ function useChosenDeck() {
   return [selected, choose] as const;
 }
 
+
+/**
+ * A sign that calls now and then: two slow beats every 10 s (and without pause while pointed at), not
+ * without end. While anything on the room's screen moves, the whole 3D room is drawn again every frame.
+ */
+const BECKON_EVERY = 10_000, BECKON_FOR = 5_200;
+function Beckon({ className, children }: { className: string; children: ReactNode }) {
+  const [on, setOn] = useState(true);
+  useEffect(() => {
+    const timer = setTimeout(() => setOn(!on), on ? BECKON_FOR : BECKON_EVERY - BECKON_FOR);
+    return () => clearTimeout(timer);
+  }, [on]);
+  return <span className={className} data-beckon={on || undefined}>{children}</span>;
+}
 export function PlazaTable({ view, onMenu, match }: { view: RoomView; onMenu: () => void; match?: {
   viewer: Side; animate: boolean; content: ReactNode;
 } }) {
@@ -95,7 +109,7 @@ export function PlazaTable({ view, onMenu, match }: { view: RoomView; onMenu: ()
     if (!player) return <OrnateFrame as="button" appearance="panel" size="sm" faint className={`${styles.seat} ${styles.seatEmpty} ${styles.sitButton}`} key={`empty-${side}`}
       disabled={busy} onClick={() => mySeat === null ? ask({ action: 'sit', seat: side }) : setOpen({ opponent: side })}
       aria-label={t(mySeat === null ? 'この席にすわる' : '対戦相手をえらぶ')}>
-      <span className={`${styles.plus} ${mySeat === null ? '' : styles.plusSoft}`}><GameIcon name={mySeat === null ? 'plus' : 'people'} /></span>
+      <Beckon className={`${styles.plus} ${mySeat === null ? '' : styles.plusSoft}`}><GameIcon name={mySeat === null ? 'plus' : 'people'} /></Beckon>
       <b data-ui-title>{t(mySeat === null ? 'すわる' : '相手をえらぶ')}</b>
     </OrnateFrame>;
     const self = side === mySeat;
@@ -157,7 +171,7 @@ export function PlazaTable({ view, onMenu, match }: { view: RoomView; onMenu: ()
         <RoomThumbnailImage rules={view.rules} alt={t('ルームのルール')} className={styles.rulesThumbnail} sizes="360px" />
       </button>
       {owner ? <span className={styles.ownerChip}><GameIcon name="crown" />{owner.id === room.me ? t('あなたがオーナー') : owner.name}</span>
-        : <button className={styles.claim} disabled={busy || room.canClaimOwner === false} title={room.canClaimOwner === false ? t('ログイン中の人が先にオーナーを引き継げます') : undefined} onClick={() => ask({ action: 'claim' })}><GameIcon name="crown" /><span data-ui-title>{t('オーナーになる')}</span></button>}
+        : <button className={styles.claim} disabled={busy || room.canClaimOwner === false} title={room.canClaimOwner === false ? t('ログイン中の人が先にオーナーを引き継げます') : undefined} onClick={() => ask({ action: 'claim' })}><Beckon className={styles.claimIcon}><GameIcon name="crown" /></Beckon><span data-ui-title>{t('オーナーになる')}</span></button>}
     </aside>
 
     {!!room.requests?.length && <div className={styles.requests} role="region" aria-label={t('入りたい人')}>{room.requests.map(request => <OrnateFrame size="sm" key={request.profileId} className={styles.request}>

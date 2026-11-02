@@ -35,7 +35,7 @@
 
 | 文書 | 対象 |
 | --- | --- |
-| [ゲーム画面の読み込み](performance/game-performance.md) | 準備画面・初期読み込みの変更と過去の測定 |
+| [ゲーム画面の読み込み](performance/game-performance.md) | 準備画面・初期読み込み・待機中の負荷・メモリの変更と過去の測定 |
 | [操作の応答速度改善設計](performance/game-interaction-performance-design.md) | 対戦操作の設計・実装方針 |
 | [応答改善の計測記録](performance/game-interaction-performance-results.md) | 実装した変更・比較条件・再計測手順 |
 | [ルーム操作速度の自動計測](performance/play-performance.md) | 稼働中の計測区間・集計・保存の仕様 |
