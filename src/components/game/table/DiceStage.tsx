@@ -17,15 +17,16 @@ export function DiceStage() {
   const { game, dice, busy } = board;
   const { t } = useI18n();
   if (!(game.phase === 'dice' || game.phase === 'initiative' || dice.reveal)) return null;
-  const choosing = game.phase === 'initiative' && !busy;
-  // A CPU decides by itself; its choice is shown by the versus screen that follows.
-  if (choosing && !board.canControl(game.active)) return null;
+  // The plates once the dice have finished; they stay (the button waiting) while the choice is sent.
+  // A CPU (or the other player) decides by itself: the dice stay shown under the same veil until the
+  // versus screen takes over, so the table never flashes bright between the two.
+  const choosing = game.phase === 'initiative' && !dice.busy && board.canControl(game.active);
   const visible: Side = dice.busy ? dice.rollingSide : game.phase === 'opening' ? 1 : dice.nextDie;
   const value = dice.rolling ? dice.outcome : dice.complete && game.phase === 'dice' && !dice.reveal ? null : game.dice?.rolls[visible] ?? null;
   const interactive = game.phase === 'dice' && !busy && board.canControl(visible) && visible === dice.nextDie;
   return <div className={styles.diceFocus} role="group" aria-label={t('先攻・後攻のダイス')}>
     <div className={styles.diceStage}>
-      {choosing ? <OrderChoice onDecide={order => board.act({ type: 'initiative', actor: game.active, order })} /> : <>
+      {choosing ? <OrderChoice sending={busy} onDecide={order => board.act({ type: 'initiative', actor: game.active, order })} /> : <>
         <div className={styles.focusDie}>
           <span>{t(sideName(board, visible))}</span>
           <OpeningDie value={value} rolling={dice.rolling} interactive={interactive} label={t(sideName(board, visible))} onRoll={dice.roll} />
@@ -37,7 +38,7 @@ export function DiceStage() {
 }
 
 /** The dice winner picks one of two plates, then confirms. */
-function OrderChoice({ onDecide }: { onDecide: (order: Order) => void }) {
+function OrderChoice({ sending, onDecide }: { sending: boolean; onDecide: (order: Order) => void }) {
   const [picked, setPicked] = useState<Order | null>(null);
   const { locale, t } = useI18n();
   return <div className={screens.orderChoice}>
@@ -50,6 +51,6 @@ function OrderChoice({ onDecide }: { onDecide: (order: Order) => void }) {
         <strong>{locale === 'ja' ? <><span aria-hidden="true">{word[0]}</span><span aria-hidden="true">{word[1]}</span></> : <span aria-hidden="true">{t(word)}</span>}</strong>
       </button>)}
     </div>
-    <button className={screens.orderDecide} disabled={!picked} onClick={() => picked && onDecide(picked)}>{t('決定')}</button>
+    <button className={screens.orderDecide} disabled={!picked || sending} onClick={() => picked && onDecide(picked)}>{t('決定')}</button>
   </div>;
 }

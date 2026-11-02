@@ -5,6 +5,8 @@ import { createCutDieGeometry, createDieMaterials } from './openingDieAppearance
 export interface DieVisualState {
   value: number | null;
   rolling: boolean;
+  /** The die's brightness: 1, more while pointed at, less while pressed (the floor stays as it is). */
+  light: number;
 }
 
 const SETTLE_FRACTION = .72;
@@ -73,6 +75,8 @@ export function createOpeningDieScene(
   const geometry = createCutDieGeometry();
   const anisotropy = Math.min(8, renderer.capabilities.getMaxAnisotropy());
   const materials = createDieMaterials(anisotropy);
+  const baseColors = materials.map(material => material.color.clone());
+  let brightness = 1, lastFrame = 0;
   const die = new THREE.Mesh(geometry, materials);
   die.castShadow = true;
   die.receiveShadow = true;
@@ -113,11 +117,16 @@ export function createOpeningDieScene(
   die.quaternion.copy(orientation(read().value ?? 1));
   function render(now: number) {
     const state = read();
+    const step = Math.min(1, (now - (lastFrame || now)) / 60);
+    lastFrame = now;
     // Polling the state is cheap; re-rendering static shadows and every mesh vertex is not.
-    if (!needsRender && !state.rolling && !wasRolling && state.value === lastValue) {
+    if (!needsRender && !state.rolling && !wasRolling && state.value === lastValue && Math.abs(state.light - brightness) < .002) {
       frame = requestAnimationFrame(render);
       return;
     }
+    // Eases to the wanted brightness over about .15 s.
+    brightness = Math.abs(state.light - brightness) < .002 ? state.light : brightness + (state.light - brightness) * Math.max(step, .25);
+    materials.forEach((material, index) => material.color.copy(baseColors[index]).multiplyScalar(brightness));
     const target = orientation(state.value ?? 1);
     if (state.rolling && !wasRolling) {
       began = now;

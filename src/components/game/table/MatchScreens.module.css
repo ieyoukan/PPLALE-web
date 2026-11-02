@@ -31,7 +31,8 @@
 .versusMark { position: relative; font: italic 700 min(11cqh, 15cqw) / 1 Georgia, 'Times New Roman', serif; letter-spacing: -.04em; color: #fffdeb; text-shadow: 0 0 18px #000, 0 4px 10px #000; animation: versusMark .5s .45s cubic-bezier(.2, 1.3, .3, 1) both; }
 .versusCaption { position: absolute; right: 0; top: 50%; max-width: 38%; margin: 0; padding-top: 10px; text-align: right; font-size: clamp(13px, 1.8cqw, 22px); text-shadow: 0 2px 8px #000; }
 
-@keyframes versusShow { 0% { opacity: 0; } 5%, 90% { opacity: 1; } 100% { opacity: 0; } }
+/* Starts dark: it takes over from the dice' veil (fading in from clear made the table flash bright between them). */
+@keyframes versusShow { 0%, 90% { opacity: 1; } 100% { opacity: 0; } }
 @keyframes versusFromTop { from { opacity: 0; transform: translateY(-40%); } }
 @keyframes versusFromBottom { from { opacity: 0; transform: translateY(40%); } }
 @keyframes versusBeam { from { opacity: 0; transform: translateY(-50%) scaleX(0); } }

@@ -384,7 +384,8 @@
 
 
 
-.diceFocus { position: fixed; z-index: 120; inset: 0; display: grid; place-items: center; background: #000000a6; backdrop-filter: blur(5px); }
+.diceFocus { position: fixed; z-index: 120; inset: 0; display: grid; place-items: center; background: #000000a6; backdrop-filter: blur(5px); animation: veilIn .25s ease-out both; }
+@keyframes veilIn { from { opacity: 0; } }
 .diceStage { position: relative; display: flex; flex-direction: column; align-items: center; gap: 36px; padding: 24px; color: #fff4d8; text-align: center; }
 .focusDie { display: flex; flex-direction: column; align-items: center; gap: 28px; padding: 24px; transition: opacity .3s, filter .3s; }
 .focusDie > span:first-child { font-size: 28px; font-weight: 700; }
@@ -476,6 +477,7 @@
 @keyframes targetPing { 0% { transform: scale(1.35); opacity: 0; } 30% { transform: scale(1); opacity: 1; } 75% { opacity: 1; } 100% { transform: scale(1.08); opacity: 0; } }
 
 @media (prefers-reduced-motion: reduce) {
+  .diceFocus { animation: none; }
   .announcement, .announcementText { animation: none; }
   .announcementCard, .targetPing { animation: none; }
 }
