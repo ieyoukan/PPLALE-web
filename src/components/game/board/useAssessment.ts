@@ -8,6 +8,10 @@ import type { AssessmentCache } from './assessmentCache';
 import { takeGameWorker } from './preparedWorkers';
 
 const SETTING_KEY = 'pplale-show-assessment';
+/** The newest position is asked for once the moves settle: a turn played quickly is judged at its end, not between its animations. */
+const SETTLE_MS = 300;
+/** The record is written at most this often (and when the board closes or the page is left), not on every judged position. */
+const SAVE_MS = 1500;
 
 /** Whether the course of the match is shown (menu toggle, kept in this browser). */
 export function useAssessmentSetting(): [boolean, (show: boolean) => void] {
@@ -36,6 +40,8 @@ export function useAssessment({ enabled, initial, current, commands, viewer }: {
     if (!active) return;
     cache.current = syncAssessment(readAssessment(), initial!, viewer, []);
     setPoints(cache.current.points);
+    let saving: ReturnType<typeof setTimeout> | undefined;
+    const save = () => { clearTimeout(saving); saving = undefined; if (cache.current) saveAssessment(cache.current); };
     try {
       const instance = takeGameWorker('assess');
       instance.addEventListener('message', (event: MessageEvent<AssessResponse>) => {
@@ -47,17 +53,23 @@ export function useAssessment({ enabled, initial, current, commands, viewer }: {
         for (const point of incoming) merged.set(point.index, point);
         record.points = [...merged.values()].sort((a, b) => a.index - b.index);
         setPoints(record.points);
-        saveAssessment(record);
+        saving ??= setTimeout(save, SAVE_MS);
       });
       worker.current = instance;
-      return () => { instance.terminate(); worker.current = null; };
+      window.addEventListener('pagehide', save);
+      return () => {
+        window.removeEventListener('pagehide', save);
+        if (saving !== undefined) save();
+        instance.terminate(); worker.current = null;
+      };
     } catch { worker.current = null; }
   }, [active, initial, viewer]);
   useEffect(() => {
     if (!active || !initial) return;
-    cache.current = syncAssessment(cache.current, initial, viewer, commands);
-    setPoints(cache.current.points);
-    worker.current?.postMessage({ id: ++request.current, initial, current, commands, viewer, saved: cache.current } satisfies AssessRequest);
+    const record = cache.current = syncAssessment(cache.current, initial, viewer, commands);
+    setPoints(record.points);
+    const timer = setTimeout(() => worker.current?.postMessage({ id: ++request.current, initial, current, commands, viewer, saved: record } satisfies AssessRequest), SETTLE_MS);
+    return () => clearTimeout(timer);
   }, [active, initial, current, commands, viewer]);
   return active ? points.filter(p => p.index <= commands.length) : [];
 }
