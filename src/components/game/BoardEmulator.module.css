@@ -248,7 +248,7 @@
 .occupied .cardImage { filter: drop-shadow(2px 7px 4px #41233975); }
 .attacking { z-index: 15; transform: translateY(-20px) rotate(-4deg) scale(1.13); filter: drop-shadow(0 20px 10px #4f2b4860); transition: transform .2s; }
 .fieldSlot:disabled:not(.occupied) { opacity: .7; }
-.fieldSlot:disabled.occupied { filter: saturate(.5) brightness(.72); }
+.fieldSlot:disabled.occupied:not([data-pending-play]) { filter: saturate(.5) brightness(.72); }
 .readyGem { width: 14px; height: 14px; bottom: -7px; border: 2px solid #fff5cc; border-radius: 50%; background: #92d3a3; }
 .tauntCard { box-shadow: 0 0 0 3px #e7a9ba, 0 0 20px #f8bbc28c; }
 .zoneLabel { font-size: clamp(18px, 1.5cqw, 28px); }
@@ -621,7 +621,7 @@
 .far .deckZone[data-deck$='-yojo'] .deckCount, .far .deckZone[data-deck$='-sweet'] .deckCount { transform: translate(-50%, -50%) rotate(180deg); }
 
 /* 確定前の仮置き。既存の配置アニメーションの速度を保ち、操作は受け付けない。 */
-.fieldSlot[data-pending-play] { opacity: .8; filter: none; pointer-events: none; }
+.fieldSlot[data-pending-play] { filter: none; pointer-events: none; }
 
 /* 捨てる・除外する操作は仮選択して確定。公開選択と同じ手札付近に操作を置く。 */
 .cardChoice { font-family: var(--font-site-body), sans-serif; position: fixed; z-index: 65; left: 50%; bottom: 160px; transform: translateX(-50%); width: min(850px, 86cqw); display: flex; flex-direction: column; align-items: center; gap: 10px; pointer-events: none; }
@@ -642,3 +642,27 @@
 .ppPanel { height: auto; min-height: 94px; filter: none; }
 .ownPp { height: auto; min-height: 118px; }
 .ppPanel:has([data-player-counters]) { gap: 4px; }
+
+/* 場に出たカード：手前から盤へ降りて弾み（回転しない）、足もとに光の輪と小さな星が広がる。
+   確定を待つ間も灰色にせず、足もとの光がゆっくり明滅する。 */
+.fieldSlot[data-landing] .cardImage { animation: landCard .46s cubic-bezier(.25, 1.35, .45, 1) both; }
+.landing { position: absolute; inset: 0; z-index: 3; pointer-events: none; overflow: visible; }
+.landingGlow { position: absolute; inset: 0; border: .45cqw solid #fffbe6; box-shadow: 0 0 1.6cqw .5cqw #f5d36ee6, inset 0 0 1.2cqw #f5df97b3; opacity: 0; animation: landGlow .62s ease-out .18s both; }
+.landingSpark { --angle: calc(var(--spark) * 60deg + 30deg); position: absolute; left: 50%; top: 50%; width: 1.7cqw; aspect-ratio: 1; margin: -.85cqw; background: #ffe58a; clip-path: polygon(50% 0, 62% 38%, 100% 50%, 62% 62%, 50% 100%, 38% 62%, 0 50%, 38% 38%); filter: drop-shadow(0 0 .3cqw #f5df97); opacity: 0; animation: landSpark .62s cubic-bezier(.2, .7, .3, 1) .16s both; }
+.fieldSlot[data-pending-play] { animation: pendingGlow 1.1s ease-in-out .5s infinite alternate; }
+@keyframes landCard {
+  0% { opacity: 0; transform: translateY(-18%) scale(1.28); filter: drop-shadow(0 2.4cqw 1.2cqw #31202555); }
+  62% { opacity: 1; transform: translateY(0) scale(.95); filter: drop-shadow(0 .3cqw .3cqw #31202566); }
+  100% { transform: none; filter: none; }
+}
+@keyframes landGlow { 0% { opacity: 0; transform: scale(.92); } 30% { opacity: 1; } 100% { opacity: 0; transform: scale(1.32, 1.22); } }
+@keyframes landSpark {
+  0% { opacity: 0; transform: translate(0, 0) scale(.4); }
+  25% { opacity: 1; }
+  100% { opacity: 0; transform: translate(calc(cos(var(--angle)) * 7.5cqw), calc(sin(var(--angle)) * 8.5cqw)) scale(1); }
+}
+@keyframes pendingGlow { from { box-shadow: inset 0 0 0 .36cqw #fff9e5c9, 0 0 .4cqw .1cqw #f5df9766; } to { box-shadow: inset 0 0 0 .36cqw #fff9e5c9, 0 0 1.4cqw .3cqw #f5df97e6; } }
+@media (prefers-reduced-motion: reduce) {
+  .fieldSlot[data-landing] .cardImage, .fieldSlot[data-pending-play] { animation: none; }
+  .landing { display: none; }
+}

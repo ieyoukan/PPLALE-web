@@ -1,6 +1,7 @@
 'use client';
 
 import { availablePpMaximum } from '@pplale/game-core';
+import { Fragment, useState } from 'react';
 import type { CSSProperties } from 'react';
 import type { DeckKind, Side } from '@pplale/game-core';
 import { displayCards, gameCatalog } from '@/lib/game/catalog';
@@ -102,6 +103,10 @@ function FieldSlot({ side, slot }: { side: Side; slot: number }) {
   const uid = game.players[side].field.find(id => game.cards[id].slot === slot), card = uid ? game.cards[uid] : null;
   const pending = board.pendingPlay?.side === side && board.pendingPlay.slot === slot ? board.pendingPlay : null;
   const displayed = card?.cardId ?? pending?.cardId;
+  // A card that comes onto this slot while the board is shown lands with an effect (not one already there when it opened).
+  const here = uid ?? pending?.uid ?? null;
+  const [previous, setPrevious] = useState(here), [landed, setLanded] = useState<string | null>(null);
+  if (previous !== here) { setPrevious(here); setLanded(here); }
   const choiceSelected = !!uid && board.cardChoice.selected.includes(uid);
   const targeting = !!uid && (board.isOption(uid) || !!attacker && side !== view && board.canStrike(attacker, uid));
   const placing = !!selected && near && !uid && playEnabled && gameCatalog[game.cards[selected].cardId].type === 'yojo';
@@ -112,17 +117,20 @@ function FieldSlot({ side, slot }: { side: Side; slot: number }) {
   ].filter(Boolean).join(' ');
   // Touch and hold enlarges a unit, like the right click.
   const hold = longPress(() => { if (uid) { drag.cancel(); board.setPanel({ type: 'inspect', uid }); } });
-  return <button data-slot={slot} data-side={side} data-unit={uid} data-choice-selected={choiceSelected || undefined} aria-pressed={uid && board.cardChoice.selection?.candidates.includes(uid) ? choiceSelected : undefined} data-pending-play={pending?.uid} aria-busy={!!pending || undefined} disabled={!!pending || !!attacker && side !== view && !targeting} className={classes}
+  return <button data-slot={slot} data-side={side} data-unit={uid} data-choice-selected={choiceSelected || undefined} aria-pressed={uid && board.cardChoice.selection?.candidates.includes(uid) ? choiceSelected : undefined} data-pending-play={pending?.uid} data-landing={(!!here && here === landed) || undefined} aria-busy={!!pending || undefined} disabled={!!pending || !!attacker && side !== view && !targeting} className={classes}
     aria-label={t(side === 0 ? 'あなたの場 {slot} {card}' : '相手の場 {slot} {card}', { slot: slot + 1, card: displayed ? cardName(displayed, displayCards[displayed].name) : t('空き') })}
     {...hold}
     onClick={() => { if (!drag.clickSuppressed()) board.clickSlot(side, uid, slot); }}
     onPointerDown={event => { if (uid) hold.onPointerDown(event); if (uid && near) drag.pickUp(event, uid, 'field'); }}
     onContextMenu={event => { event.preventDefault(); if (uid) board.setPanel({ type: 'inspect', uid }); }}>
     {choiceSelected && board.cardChoice.selection && <CardChoiceMark kind={board.cardChoice.selection.kind} />}
-    {displayed && <>
+    {displayed && here === landed && <span key={landed} className={styles.landing} aria-hidden="true">
+      <i className={styles.landingGlow} />{[0, 1, 2, 3, 4, 5].map(spark => <i key={spark} className={styles.landingSpark} style={{ '--spark': spark } as CSSProperties} />)}
+    </span>}
+    {displayed && <Fragment key={here}>
       <GameCard id={displayed} instance={card ?? undefined} abilities={!!card} />
       {editing && card && card.entered === game.turn && <span className={styles.editFlag}>{t('出たばかり')}</span>}
       {card && !card.exhausted && board.canAttackNow(uid!) && <span className={styles.readyGem} />}
-    </>}
+    </Fragment>}
   </button>;
 }
