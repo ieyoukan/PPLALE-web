@@ -22,7 +22,7 @@ export function bgmUrl(scene: BgmScene) {
   return TRACKS[scene] + format;
 }
 const KEYS: Record<AudioChannel, string> = { bgm: 'pplale-bgm-volume-v1', se: 'pplale-se-volume-v1' };
-export const DEFAULT_VOLUMES: Record<AudioChannel, number> = { bgm: 0.5, se: 0.7 };
+export const DEFAULT_VOLUMES: Record<AudioChannel, number> = { bgm: 0.3, se: 0.7 };
 /** The loudest the music and the effects get at 100% (the tracks are mastered loud; effects are short). */
 const BGM_LEVEL = 0.55, SE_LEVEL = 0.5;
 const FADE_OUT = 0.5, FADE_IN = 0.9;
