@@ -101,6 +101,10 @@ export function BoardTable({ session }: { session: BoardSession }) {
       <DiceStage />
       <ChoiceTray />
       {error && <div className={styles.errorToast} role="alert">{gameText(error)}</div>}
+      {board.queuedAttack && board.waitingForcedDraw && <div className={styles.attackActions} role="status">
+        <span className={styles.queuedNote}>{t('相手が引いたら攻撃します')}</span>
+        <button onClick={board.cancelQueuedAttack}>{t('やめる')}</button>
+      </div>}
       {attacker && <div className={styles.attackActions}>
         <button onClick={() => setPanel({ type: 'inspect', uid: attacker })}>{t('拡大')}</button>
         <button onClick={() => { setAttacker(null); drag.cancel(); }}>{t('戻す ↶')}</button>

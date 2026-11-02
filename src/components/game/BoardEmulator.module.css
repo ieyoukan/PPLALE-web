@@ -666,3 +666,9 @@
   .fieldSlot[data-landing] .cardImage, .fieldSlot[data-pending-play] { animation: none; }
   .landing { display: none; }
 }
+
+/* 相手の強制ドロー（お菓子ポイント10・5）を待つ間に予約した攻撃：攻撃先の枠が明滅する。 */
+.queuedNote { align-self: center; padding: 6px 12px; border-radius: var(--brand-control-radius); background: var(--brand-paper); color: var(--brand-cocoa-deep); font: 700 15px var(--font-site-body), sans-serif; }
+.fieldSlot[data-queued-target] { outline: .35cqw solid #d2475f; outline-offset: .2cqw; animation: queuedTarget .9s ease-in-out infinite alternate; }
+@keyframes queuedTarget { from { outline-color: #d2475f66; } to { outline-color: #d2475f; } }
+@media (prefers-reduced-motion: reduce) { .fieldSlot[data-queued-target] { animation: none; } }

@@ -111,13 +111,13 @@ function FieldSlot({ side, slot }: { side: Side; slot: number }) {
   const targeting = !!uid && (board.isOption(uid) || !!attacker && side !== view && board.canStrike(attacker, uid));
   const placing = !!selected && near && !uid && playEnabled && gameCatalog[game.cards[selected].cardId].type === 'yojo';
   const classes = [
-    styles.fieldSlot, (card || pending) && styles.occupied, (targeting || placing) && styles.targetable, uid === attacker && styles.attacking,
+    styles.fieldSlot, (card || pending) && styles.occupied, (targeting || placing) && styles.targetable, uid && (uid === attacker || uid === board.queuedAttack?.uid) && styles.attacking,
     card?.exhausted && styles.exhausted, uid && (drag.held?.uid === uid || animations.strike?.uid === uid) && styles.dealing,
     card?.keywords.includes('taunt') && styles.tauntCard, editing && !card && styles.editSlot,
   ].filter(Boolean).join(' ');
   // Touch and hold enlarges a unit, like the right click.
   const hold = longPress(() => { if (uid) { drag.cancel(); board.setPanel({ type: 'inspect', uid }); } });
-  return <button data-slot={slot} data-side={side} data-unit={uid} data-choice-selected={choiceSelected || undefined} aria-pressed={uid && board.cardChoice.selection?.candidates.includes(uid) ? choiceSelected : undefined} data-pending-play={pending?.uid} data-landing={(!!here && here === landed) || undefined} aria-busy={!!pending || undefined} disabled={!!pending || !!attacker && side !== view && !targeting} className={classes}
+  return <button data-slot={slot} data-side={side} data-unit={uid} data-choice-selected={choiceSelected || undefined} aria-pressed={uid && board.cardChoice.selection?.candidates.includes(uid) ? choiceSelected : undefined} data-pending-play={pending?.uid} data-queued-target={(uid && board.queuedAttack?.target === uid) || undefined} data-landing={(!!here && here === landed) || undefined} aria-busy={!!pending || undefined} disabled={!!pending || !!attacker && side !== view && !targeting} className={classes}
     aria-label={t(side === 0 ? 'あなたの場 {slot} {card}' : '相手の場 {slot} {card}', { slot: slot + 1, card: displayed ? cardName(displayed, displayCards[displayed].name) : t('空き') })}
     {...hold}
     onClick={() => { if (!drag.clickSuppressed()) board.clickSlot(side, uid, slot); }}
