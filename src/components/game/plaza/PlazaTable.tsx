@@ -68,7 +68,8 @@ export function PlazaTable({ view, onMenu, match }: { view: RoomView; onMenu: ()
   const [cameraReady, setCameraReady] = useState(true);
   // The match's board is first drawn hidden on the table, its pictures decoded; only then does the camera
   // move. Rendering the board while the camera turns made the turn stutter or jump straight to the end.
-  const staged = useStagedBoard(!!match, match?.animate ?? true, root, target);
+  // Staged with the camera about to move: not ready until it arrives (the match music and the controls wait for that).
+  const staged = useStagedBoard(!!match, match?.animate ?? true, root, target, () => setCameraReady(false));
   const playing = !!match && staged;
   const plaza = usePlaza(), room = view.plaza!;
   const { t, gameText, nameText } = useI18n();
@@ -228,7 +229,7 @@ const nextFrame = () => new Promise<void>(resolve => requestAnimationFrame(() =>
  * table is in the surface, its pictures and fonts are decoded and two frames have passed. At most 3 s,
  * so a slow picture never keeps the player in the lobby. Without the camera move it is shown at once.
  */
-function useStagedBoard(match: boolean, animate: boolean, root: React.RefObject<HTMLDivElement | null>, target: HTMLDivElement | null) {
+function useStagedBoard(match: boolean, animate: boolean, root: React.RefObject<HTMLDivElement | null>, target: HTMLDivElement | null, onFlight: () => void) {
   const [staged, setStaged] = useState(false);
   const [wasMatch, setWasMatch] = useState(match);
   if (wasMatch !== match) { setWasMatch(match); if (!match) setStaged(false); }
@@ -238,12 +239,17 @@ function useStagedBoard(match: boolean, animate: boolean, root: React.RefObject<
     let cancelled = false;
     const settle = async () => {
       for (let frames = 0; frames < 120 && !target?.querySelector('[data-table]'); frames++) await nextFrame();
-      const pictures = [...root.current?.querySelectorAll('img') ?? []];
+      // Only the board's own pictures, on the table (drawn there through a portal) and in its controls (the hand).
+      // A lazy picture not loaded yet (a CPU's icon, hidden until the camera arrives) does not start while hidden:
+      // waiting for it, or for the room's own pictures (the rules thumbnail), held the camera for the full 3 s.
+      const pictures = [...target?.querySelectorAll('img') ?? [], ...root.current?.querySelectorAll<HTMLImageElement>('[data-in-scene] img') ?? []]
+        .filter(picture => picture.complete || picture.loading !== 'lazy');
       await Promise.all([...pictures.map(picture => picture.decode().catch(() => {})), document.fonts.ready]);
       await nextFrame(); await nextFrame();
     };
-    void Promise.race([settle(), new Promise(resolve => setTimeout(resolve, 3000))]).then(() => { if (!cancelled) setStaged(true); });
+    void Promise.race([settle(), new Promise(resolve => setTimeout(resolve, 3000))]).then(() => { if (!cancelled) { onFlight(); setStaged(true); } });
     return () => { cancelled = true; };
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- onFlight is a fresh closure each render; it only sets state.
   }, [match, animate, staged, root, target]);
   return staged;
 }

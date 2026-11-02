@@ -30,10 +30,14 @@ export function GameAudioProvider({ children }: { children: ReactNode }) {
   return <MatchMusic.Provider value={claim}>{children}</MatchMusic.Provider>;
 }
 
-/** Plays the match music while the calling board is on screen. */
-export function useMatchMusic() {
+/** Plays the match music while the calling board is on screen (`shown`: in a room, once the camera has reached it). */
+export function useMatchMusic(shown = true) {
   const claim = useContext(MatchMusic);
-  useEffect(() => { claim(true); return () => claim(false); }, [claim]);
+  useEffect(() => {
+    if (!shown) return;
+    claim(true);
+    return () => claim(false);
+  }, [claim, shown]);
 }
 
 /** A channel's volume (0–1), kept on this device, and how to change it. */

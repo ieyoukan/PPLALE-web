@@ -57,7 +57,8 @@ export function BoardTable({ session }: { session: BoardSession }) {
   const container = useRef<HTMLDivElement>(null);
   const board = useBoard(surface?.root ?? container, session);
   const { t, gameText } = useI18n();
-  useMatchMusic();
+  // In a room the board is drawn hidden and the camera flies to it first: the music changes on arrival.
+  useMatchMusic(!surface || surface.controlsReady);
   const { game, me, view, mode, paused, attacker, selected, drag, mulligan, ready, panel, error, replaying, remote, editing, animations, setup, puzzle, setPanel, setPaused, setAttacker } = board;
   // The saved match is still loading (or missing, and the preparation page is opening).
   if (!ready) return <div data-readable className={styles.emulator} aria-busy="true" />;
