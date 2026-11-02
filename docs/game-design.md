@@ -96,6 +96,13 @@ UI はドロー前後の手札と山札の差分から移動演出を描く。20
 - 英語では盤面・手札・拡大表示のカードも英語版のカード画像（`src/data/en/`の画像を`pnpm run game:assets`が対戦用の大きさにしたもの。`gameCardSource(id, true)`）、スキルの説明も英語。ルームの先読みも英語の画像を読む。
 - 用語は英語のカードデータ（`src/data/en/`）に合わせる：幼女 little girl、お菓子 sweets、プレイアブル playable character、お菓子ポイント sweets points、お昼寝場所 napping place、突撃 Charge、PP・MP はそのまま。
 
+## BGMと効果音
+
+ゲーム（`/game/`）の中だけで鳴らす（`src/lib/game/gameAudio.ts`、`components/game/audio/GameAudio.tsx`）。ブラウザは操作のあとでないと音を出せないため、最初のタップ・キー入力で始め、タブが隠れている間は止める。サイトのページへ出ると止まる。
+- BGM：対戦の盤面（CPU対決・ルームの対戦・パズル・リプレイ・盤面エディタ）を出している間は「なぞ？なぞ！ぷぷりえ☆大解決！（からおけ☆ばーじょん）」（`public/audio/bgm/nazonazo-daikaiketsu`）、それ以外（起動画面・ルーム・メニュー）は「いのせんとるーむ」（`innocent-room`）。ファイルはOpus（WebM、40kbps）と、Opusを再生できないブラウザ向けのHE-AAC（m4a、48kbps）で、元のMP3（128kbps・計5.4MB）の約4割（各形式で計約2MB）。ブラウザは片方だけ読む。作り方：`ffmpeg -i 元.mp3 -map_metadata -1 -vn -c:a libopus -b:a 40k -vbr on -application audio 名前.webm` と `ffmpeg -i 元.mp3 -map_metadata -1 -vn -c:a aac_at -profile:a 4 -b:a 48k -movflags +faststart 名前.m4a`（macOSのffmpeg）。どちらもループし、切り替えは0.5秒で消して0.9秒で入れる。ホームの曲は止めたところから、対戦の曲は頭から。1つの`<audio>`で曲を差し替える（iOSで、操作で一度鳴らした要素なら後から曲を替えても鳴らせるため）。音量0の曲は読み込まない。
+- 効果音：合成した短い音。カードが場に出る（光の輪の演出と同時）・攻撃が当たる・カードを引く。
+- 音量：BGM（初期50%）・効果音（初期70%）・通知音（初期100%）。ランチパッドの「音量」と設定で変え、ブラウザに保存する。
+
 ## デッキ管理（ランチパッドの「デッキ」）
 
 ゲームを離れずにデッキを作る・使うための画面（`src/components/game/decks/`、2026-10-31）。カードの並べ方・ルールの判定はゲームの定義（`game-core`の`validateDeck`・`singleCopy`・`deckRuleErrors`）を使い、サイトの構築ツール（`/build`、`/deck/...`）と同じデッキを読み書きする。

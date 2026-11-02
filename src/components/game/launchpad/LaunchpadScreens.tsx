@@ -2,7 +2,7 @@
 
 // 各画面の遅延読込をここに集約する。開いていない画面のコードは先に読み込まない。
 import dynamic from 'next/dynamic';
-import { NotificationVolumeControl } from '../notifications/GameNotifications';
+import { SoundSettings } from '../audio/SoundSettings';
 import { NotificationsPage } from '../social/NotificationsPage';
 import { GameSettings } from '../settings/GameSettings';
 import { CurrentRoomPanel } from '../plaza/CurrentRoomPanel';
@@ -34,7 +34,7 @@ export function LaunchpadScreens({ section, place, onPanel, onClose }: { section
     case 'home': return <LaunchpadHome onHome={() => onPanel('home')} onShare={() => onPanel('share')} />;
     case 'notifications': return <NotificationsPage />;
     case 'instance': return <CurrentRoomPanel onAction={onPanel} />;
-    case 'volume': return <div className={styles.preferences}><GameIcon name="volume" className={styles.preferenceIcon} /><NotificationVolumeControl /></div>;
+    case 'volume': return <div className={styles.preferences}><GameIcon name="volume" className={styles.preferenceIcon} /><SoundSettings /></div>;
     case 'settings': return <GameSettings volume={false} />;
     case 'cpu': return <GameLobby />;
     case 'history': return <MatchHistory />;

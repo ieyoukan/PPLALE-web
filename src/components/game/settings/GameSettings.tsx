@@ -12,7 +12,7 @@ import { useI18n } from '@/i18n/LocaleProvider';
 import { APP_LOCALES } from '@/i18n/config';
 import { readRoomSettings, saveRoomSettings } from '@/lib/game/plazaSettings';
 import { PushToggle } from '@/components/pwa/PushToggle';
-import { NotificationVolumeControl } from '../notifications/GameNotifications';
+import { SoundSettings } from '../audio/SoundSettings';
 import { GameIcon } from '@/components/shared/ui/GameIcon';
 import { visibilityInfo } from '../plaza/visibility';
 import styles from './GameSettings.module.css';
@@ -67,7 +67,7 @@ export function GameSettings({ volume = true, onLeave }: { volume?: boolean; onL
         {APP_LOCALES.map(option => <option key={option} value={option} lang={option}>{option === 'ja' ? '日本語' : 'English'}</option>)}
       </select>
     </section>
-    {volume && <section className={styles.section}><NotificationVolumeControl /></section>}
+    {volume && <section className={styles.section}><SoundSettings /></section>}
     {user && <section className={styles.section} aria-labelledby="settings-push"><h3 id="settings-push" data-ui-title><GameIcon name="bell" />{t('ブラウザの通知')}</h3><PushToggle /></section>}
     <section className={styles.section} aria-label={t('通信')}>
       <Link className={styles.link} href="/game/performance/" onClick={onLeave} prefetch={false}><GameIcon name="history" />{t('通信計測')}</Link>

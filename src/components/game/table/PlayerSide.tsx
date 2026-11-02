@@ -8,6 +8,7 @@ import { displayCards, gameCatalog } from '@/lib/game/catalog';
 import { useI18n } from '@/i18n/LocaleProvider';
 import { useCardName } from '@/i18n/useCardName';
 import { useBoardContext } from '../board/BoardContext';
+import { gameAudio } from '@/lib/game/gameAudio';
 import { useLongPress } from '../board/useLongPress';
 import { Counter, DeckStack } from '../BoardPieces';
 import type { ZoneKind } from '../BoardPieces';
@@ -112,6 +113,7 @@ function FieldSlot({ side, slot }: { side: Side; slot: number }) {
   // Only at that moment: once played out, the mark goes, so pressing, attacking or acting never replays it.
   useEffect(() => {
     if (!landed) return;
+    gameAudio().play('land');
     const timer = setTimeout(() => setLanded(current => current === landed ? null : current), LANDING_MS);
     return () => clearTimeout(timer);
   }, [landed]);

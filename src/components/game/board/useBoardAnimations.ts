@@ -1,5 +1,6 @@
 'use client';
 
+import { gameAudio } from '@/lib/game/gameAudio';
 import { useCallback, useLayoutEffect, useRef, useState } from 'react';
 import type { RefObject } from 'react';
 import { canAttack, changesBetween, handReactionOps, HIDDEN_CARD, other, scriptOf, skillAt, turnOf } from '@pplale/game-core';
@@ -153,6 +154,7 @@ export function useBoardAnimations({ game, shown, view, mode, cpuSides, replayin
     }
     if (seen.hits.length) {
       if (!replaying) buzz(seen.hits);
+      gameAudio().play('hit');
       setHits(current => [...current, ...seen.hits]);
       later(() => setHits(current => current.filter(hit => !seen.hits.includes(hit))), HIT_DURATION);
     }
@@ -161,6 +163,9 @@ export function useBoardAnimations({ game, shown, view, mode, cpuSides, replayin
       later(() => setPops(current => current.filter(pop => !seen.pops.includes(pop))), POP_DURATION);
     }
     const next = seen.flights;
+    // A card drawn into a hand: one swish as the first one flies.
+    const drawn = next.filter(flight => flight.toZone === 'hand');
+    if (drawn.length) later(() => gameAudio().play('draw'), Math.min(...drawn.map(flight => flight.delay)));
     if (next.length) {
       const handTargets = new Map(shown.players.flatMap(player => player.hand).map(uid => [uid, liveRect(root, { hand: uid })]));
       // A card is in one flight at a time: one that starts replaces an earlier one still shown

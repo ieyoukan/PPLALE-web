@@ -1,0 +1,9 @@
+/* 音量の設定：見出し・スライダー・値（と通知音のON/OFF）を1行に並べる。 */
+.sound { display: grid; gap: 16px; width: min(460px, 100%); color: var(--brand-cocoa-deep); }
+.row { display: grid; grid-template-columns: 112px minmax(0, 1fr) 48px 36px; align-items: center; gap: 12px; }
+.row h3 { display: inline-flex; align-items: center; gap: 7px; margin: 0; font-size: 18px; color: var(--brand-cocoa); white-space: nowrap; }
+.row h3 svg { width: 22px; height: 22px; flex: none; }
+.row input { width: 100%; min-height: 30px; accent-color: var(--brand-cocoa); cursor: pointer; }
+.row input:disabled { opacity: .45; cursor: default; }
+.row output { font-variant-numeric: tabular-nums; font-weight: 700; text-align: right; }
+.extra { display: flex; justify-content: center; }
