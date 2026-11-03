@@ -8,7 +8,9 @@
 .table button:disabled { cursor: default; }
 .table :focus-visible, .sheet :focus-visible { outline: 3px solid var(--brand-vanilla); outline-offset: 3px; }
 /* Room geometry may extend beyond its grid cell; controls stay above the floor. */
-.top, .people, .side { position: relative; z-index: 1; }
+/* Their own layer in front of the 3D room: otherwise Chrome sometimes composites the huge translucent floor
+   (RoomScene .floor) over them once something in them repaints (a hover), greying the whole header. */
+.top, .people, .side { position: relative; z-index: 1; transform: translateZ(0); }
 .srOnly { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
 
 /* Lobby controls keep their grid space while the persistent room camera moves to the board. */
