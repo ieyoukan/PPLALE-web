@@ -139,6 +139,8 @@ export function PlazaTable({ view, onMenu, match }: { view: RoomView; onMenu: ()
 
   return <div ref={root} className={styles.table} data-room-view data-playing={playing || undefined} data-camera-ready={cameraReady}>
     <header className={styles.top} inert={playing || !cameraReady}>
+      {/* The page's heading for screen readers: the room's name shows inside the plate, a button (no heading may go there). */}
+      <h1 className={styles.srOnly}>{nameText(room.name)}</h1>
       <OrnateFrame as="button" size="sm" className={styles.roomPlate} onClick={onMenu} aria-label={t('{name}（{visibility}）のメニュー', { name: room.name, visibility: t(info.label) })}>
         <span className={styles.roomBadge} data-visibility={room.visibility}><GameIcon name={info.icon} />{info.plus && <i>＋</i>}</span>
         <span className={styles.roomTitle}><b data-ui-title>{nameText(room.name)}</b><small>{t(info.label)}・{nameText(room.creator.name)}</small></span>
