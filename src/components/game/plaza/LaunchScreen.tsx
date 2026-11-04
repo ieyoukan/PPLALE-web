@@ -13,7 +13,7 @@ import { RoomThumbnailImage } from './RoomThumbnailImage';
 import { OrnateFrame } from '@/components/shared/ui/ornament/OrnateFrame';
 import { getCardCatalog } from '@/data/catalog';
 import { useI18n } from '@/i18n/LocaleProvider';
-import { usePreload } from '@/lib/game/preloadGame';
+import { launchPictureShown, usePreload } from '@/lib/game/preloadGame';
 import styles from './LaunchScreen.module.css';
 
 interface Shown { id: string; name: string; image: string; kind: 'yojo' | 'sweet'; fruit?: Fruit; effect: string }
@@ -44,24 +44,26 @@ export function LaunchScreen({ status = 'ルームに接続しています', pre
   // Chosen in the browser after the first paint, so the page itself can be sent before scripts run.
   const { t, locale, cardTypeLabel, fruitLabel, nameText } = useI18n();
   const [picked, setCard] = useState<Shown | null>(null);
-  useEffect(() => { setCard(someCard()); }, []);
+  useEffect(() => { const chosen = someCard(); setCard(chosen); if (!chosen) launchPictureShown(); }, []);
   const card = picked && locale === 'en' ? inEnglish(picked) : picked;
   // The game's pictures and music load while this shows (the room waits for them, at most PRELOAD_WAIT_MS).
   const preload = usePreload(), share = preload.total ? preload.done / preload.total : 0;
   return <section className={styles.launch} aria-busy={!children} aria-label={t('ぷぷりえーる')}>
     <span className={styles.stars} aria-hidden="true">{stars.map(([left, top, delay], index) => <i key={index} style={{ left: `${left}%`, top: `${top}%`, animationDelay: `${delay}s` }} />)}</span>
-    <Image className={styles.logo} src="/images/game/logo.webp" alt={t('お菓子争奪戦争 ぷぷりえーる')} width={462} height={227} priority />
+    <Image className={styles.logo} src="/images/game/logo.webp" alt={t('お菓子争奪戦争 ぷぷりえーる')} width={462} height={227} preload />
     {(preview?.plaza || home) && <OrnateFrame size="sm" className={styles.roomPreview}>
       <RoomThumbnailImage rules={preview?.rules ?? homeRules} alt={t('ルームのサムネイル')} sizes="240px" />
       <span>{preview?.plaza ? nameText(preview.plaza.name) : t('あなたのルーム')}</span>
     </OrnateFrame>}
     <div className={styles.feature} data-shown={card ? '' : undefined}>
-      <span className={styles.cardArt}>{card && <Image src={card.image} alt="" fill sizes="240px" priority />}</span>
-      {card && <OrnateFrame className={styles.cardText}>
-        <span className={styles.chips}><b>{cardTypeLabel(card.kind)}</b>{card.fruit && <b>{fruitLabel(card.fruit)}</b>}</span>
-        <h2 data-ui-title>{card.name}</h2>
-        <p>{card.effect}</p>
-      </OrnateFrame>}
+      {/* Chosen after the first paint: fetched at once and first (it is the largest picture of the screen). */}
+      <span className={styles.cardArt}>{card && <Image src={card.image} alt="" fill sizes="240px" loading="eager" fetchPriority="high" onLoad={launchPictureShown} onError={launchPictureShown} />}</span>
+      {/* The frame is there from the start (still hidden), so the card's arrival moves nothing. */}
+      <OrnateFrame className={styles.cardText}>
+        {card && <><span className={styles.chips}><b>{cardTypeLabel(card.kind)}</b>{card.fruit && <b>{fruitLabel(card.fruit)}</b>}</span>
+          <h2 data-ui-title>{card.name}</h2>
+          <p>{card.effect}</p></>}
+      </OrnateFrame>
     </div>
     {children ? <OrnateFrame className={styles.trouble}>{children}</OrnateFrame>
       : <div className={styles.status}>

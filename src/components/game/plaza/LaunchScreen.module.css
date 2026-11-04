@@ -9,14 +9,15 @@
 .roomPreview { --pad: 12px; position: absolute; top: 38px; right: 48px; z-index: 1; display: grid; gap: 4px; width: 200px; filter: none; }
 .roomPreview img { display: block; width: 100%; height: auto; aspect-ratio: 16 / 9; object-fit: cover; }
 .roomPreview span { overflow: hidden; padding: 0 3px; color: var(--brand-cocoa-deep); font-size: 13px; font-weight: 700; text-overflow: ellipsis; white-space: nowrap; }
-.feature { display: flex; align-items: center; gap: 44px; opacity: 0; transform: translateY(10px); transition: opacity .5s ease, transform .5s ease; }
+/* The card (the taller one) sets the height and the text is centred beside it: the text growing as its font arrives moves nothing. */
+.feature { display: flex; align-items: flex-start; gap: 44px; opacity: 0; transform: translateY(10px); transition: opacity .5s ease, transform .5s ease; }
 .feature[data-shown] { opacity: 1; transform: none; }
 .cardArt {
   /* The card as printed: no ring, no rounding, upright; it floats up and down (docs/design-system.md). */
   position: relative; width: 236px; aspect-ratio: 2 / 3; overflow: hidden; filter: none; animation: float 5s ease-in-out infinite;
 }
 .cardArt img { object-fit: contain; }
-.cardText { --pad: 30px 34px; display: grid; gap: 10px; width: 420px; filter: none; }
+.cardText { --pad: 30px 34px; display: grid; gap: 10px; align-self: center; width: 420px; filter: none; }
 .cardText h2 { font-size: 30px; line-height: 1.2; color: var(--brand-cocoa); }
 .cardText p { font-size: 17px; line-height: 1.65; }
 .chips { display: flex; gap: 6px; }

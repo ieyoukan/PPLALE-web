@@ -16,11 +16,14 @@ export type PreloadState = { done: number; total: number; finished: boolean; rea
 export const PRELOAD_WAIT_MS = 30_000;
 const PARALLEL = 6;
 
-/** Pictures the board, the room and the chat draw as they are (not resized by next/image). */
+/**
+ * Pictures the board and the room draw as they are (not resized by next/image). Not the starry sky (the
+ * stage's own background, already loading: fetching it here too downloaded it twice) nor the large fruit
+ * illustrations (only the server draws them, into link previews).
+ */
 const RAW_IMAGES = [
   '/images/back-card.webp', '/images/game/zone-frame.svg', '/images/game/counter-label.svg', '/images/game/cafe-logo.svg',
-  '/images/game/wood-grain.svg', '/images/game/room-stars.webp', '/images/game/menu-bg.webp',
-  ...['strawberry', 'grape', 'melon', 'orange'].map(fruit => `/images/game/fruits/${fruit}.webp`),
+  '/images/game/wood-grain.svg',
 ];
 /** Pictures shown through next/image: the size each is drawn at, so the same resized file is fetched. */
 const SIZED_IMAGES: { src: string; width: number; height: number; sizes?: string }[] = [
@@ -57,6 +60,18 @@ async function assetUrls() {
 
 let state: PreloadState = { done: 0, total: 0, finished: false, ready: false };
 let started = false;
+
+/** The longest the bulk download waits for the launch screen's own picture. */
+const LAUNCH_PICTURE_WAIT_MS = 2500;
+let markLaunchPicture: () => void = () => {};
+const launchPicture = new Promise<void>(resolve => { markLaunchPicture = resolve; });
+/** The launch screen's card is shown (or could not be): the bulk downloads may start. */
+export function launchPictureShown() { markLaunchPicture(); }
+/**
+ * Resolves once the launch screen's card is in, or after LAUNCH_PICTURE_WAIT_MS. Started beside it, the
+ * game's hundreds of files shared a slow line with that one picture, the largest of the screen, and held it back.
+ */
+export const afterLaunchPicture = () => Promise.race([launchPicture, new Promise<void>(resolve => setTimeout(resolve, LAUNCH_PICTURE_WAIT_MS))]);
 const listeners = new Set<() => void>();
 const update = (next: PreloadState) => { state = next; listeners.forEach(listener => listener()); };
 
@@ -64,8 +79,11 @@ const update = (next: PreloadState) => { state = next; listeners.forEach(listene
 export function preloadGame() {
   if (started) return;
   started = true;
+  // Room for the page's own timings after these hundreds of files (the browser keeps 250 by default, then drops
+  // the rest: what the page loads later would go unmeasured, e.g. by Speed Insights).
+  performance.setResourceTimingBufferSize(1500);
   setTimeout(() => { if (!state.ready) update({ ...state, ready: true }); }, PRELOAD_WAIT_MS);
-  void assetUrls().then(async urls => {
+  void afterLaunchPicture().then(assetUrls).then(async urls => {
     let next = 0, done = 0;
     update({ ...state, done, total: urls.length });
     await Promise.all(Array.from({ length: PARALLEL }, async () => {

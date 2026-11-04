@@ -67,6 +67,17 @@ const config: NextConfig = {
             key: 'X-Frame-Options',
             value: 'DENY',
           },
+          // Isolate the window from pages it did not open; the Google sign-in popup (signInWithPopup) keeps working.
+          {
+            key: 'Cross-Origin-Opener-Policy',
+            value: 'same-origin-allow-popups',
+          },
+          // No plugins, no <base> rewriting, never framed. Scripts are not restricted here: Next.js's inline
+          // scripts would need a nonce, which makes every page rendered per request.
+          {
+            key: 'Content-Security-Policy',
+            value: "object-src 'none'; base-uri 'self'; frame-ancestors 'none'",
+          },
         ],
       },
       {

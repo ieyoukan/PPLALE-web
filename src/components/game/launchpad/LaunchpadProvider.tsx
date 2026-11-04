@@ -5,6 +5,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import type { ReactNode } from 'react';
 import { usePathname } from 'next/navigation';
 import { preconnect } from 'react-dom';
+import { useAuth } from '@/lib/auth';
 import { isPlazaPath } from '../plaza/PlazaProvider';
 import { Launchpad } from './Launchpad';
 import { LaunchpadContext as Context } from './LaunchpadContext';
@@ -23,9 +24,11 @@ function busyWithEscape(event: KeyboardEvent) {
 }
 
 export function LaunchpadProvider({ children }: { children: ReactNode }) {
-  // Profiles, decks and friends are read from Firestore as soon as a screen of them opens.
-  preconnect('https://firestore.googleapis.com', { crossOrigin: 'anonymous' });
   const [shown, setShown] = useState(false);
+  // Profiles, decks and friends are read from Firestore: connect early for a signed-in player (their profile
+  // loads at once) or when the pad opens. A guest who never opens it does not open an unused connection.
+  const { user } = useAuth();
+  if (user || shown) preconnect('https://firestore.googleapis.com', { crossOrigin: 'anonymous' });
   const [expanded, setExpanded] = useState(false);
   const [stack, setStack] = useState<Place[]>([home]);
   const pathname = usePathname();
