@@ -6,6 +6,7 @@ import { PlayerIdentity } from '@/components/shared/player/PlayerIdentity';
 import { guestIcon } from '@/components/shared/player/useProfiles';
 import { useMyProfile } from '../social/useMyProfile';
 import { usePlaza } from '../plaza/PlazaProvider';
+import { roomServerUrl } from '@/lib/game/room/client';
 import { useLaunchpad } from './LaunchpadContext';
 import { useI18n } from '@/i18n/LocaleProvider';
 import styles from './LaunchpadStatus.module.css';
@@ -24,6 +25,7 @@ export function LaunchpadStatus() {
       <PlayerIdentity name={name} card={card} />
     </button>
     <LaunchpadClock />
+    <LaunchpadStats />
   </div>;
 }
 
@@ -41,4 +43,40 @@ function LaunchpadClock() {
     return () => { clearTimeout(timer); document.removeEventListener('visibilitychange', refresh); };
   }, []);
   return <time className={styles.clock} dateTime={time === '--:--' ? undefined : time} aria-label={t('現在の時刻')}>{time}</time>;
+}
+
+/** Beside the clock, small: frames per second and the round trip to the room server, measured only while the pad is open. */
+function LaunchpadStats() {
+  const [fps, setFps] = useState<number | null>(null), [ping, setPing] = useState<number | null>(null);
+  useEffect(() => {
+    let frame = 0, frames = 0, since = performance.now();
+    const tick = (now: number) => {
+      frames++;
+      if (now - since >= 1000) { setFps(Math.round(frames * 1000 / (now - since))); frames = 0; since = now; }
+      frame = requestAnimationFrame(tick);
+    };
+    frame = requestAnimationFrame(tick);
+    return () => cancelAnimationFrame(frame);
+  }, []);
+  useEffect(() => {
+    if (!roomServerUrl) return;
+    let timer: ReturnType<typeof setTimeout>, stopped = false, warm = false;
+    // The server's health check: no room work, so the time is the network's. The first request also opens
+    // the connection (hundreds of ms), so it is not shown and the next one follows at once.
+    const measure = async () => {
+      const start = performance.now();
+      try {
+        await (await fetch(`${roomServerUrl}/healthz`, { cache: 'no-store' })).arrayBuffer();
+        if (!stopped && warm) setPing(Math.round(performance.now() - start));
+      } catch { if (!stopped) setPing(null); }
+      if (!stopped) timer = setTimeout(measure, warm ? 3000 : 0);
+      warm = true;
+    };
+    void measure();
+    return () => { stopped = true; clearTimeout(timer); };
+  }, []);
+  return <span className={styles.stats}>
+    <span>{fps ?? '--'} FPS</span>
+    {roomServerUrl && <span>{ping ?? '--'} ms</span>}
+  </span>;
 }
