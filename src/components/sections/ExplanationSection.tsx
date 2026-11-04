@@ -2,6 +2,7 @@
 
 import Image from 'next/image';
 import Link from 'next/link';
+import IntroMovie from './IntroMovie';
 import styles from './ExplanationSection.module.css';
 import { css } from 'styled-system/css';
 import { Bi } from '@/i18n/Bi';
@@ -40,6 +41,8 @@ export default function ExplanationSection() {
               <Bi ja="ゲームについて" en="About the game" />
             </h2>
           </div>
+
+          <IntroMovie />
 
           <div className={css({ display: 'grid', gridTemplateColumns: 'repeat(1, minmax(0, 1fr))', gap: '10', mb: '10', mt: '10', md: { gridTemplateColumns: 'repeat(2, minmax(0, 1fr))', gap: '16' } })}>
             {explanationCards.map((card) => (

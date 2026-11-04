@@ -221,6 +221,9 @@ export const siteEnglish: Record<string, string> = {
   // サイトのトップ・紹介ページ（属性など、<Bi>で切り替えられないもの）
   'プレイヤー': 'Player',
   'ぷぷりえーるを遊ぶ': 'Play PPLALE',
+  '紹介ムービー': 'Introduction movie',
+  '音を出す': 'Unmute',
+  '音を消す': 'Mute',
   'ぷぷりえーるとは': 'About PPLALE',
   'ぷぷりえとは': 'About Peuplier',
   'ゲームをプレイ': 'Play the game',
