@@ -4,13 +4,14 @@ import '@/app/panda.css';
 
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import Image from 'next/image';
-import Link from 'next/link';
 import { AnimatePresence, motion, useReducedMotion } from 'framer-motion';
 import type { RulesHeading } from './RulesDoc';
 import { RULES_ENGLISH_ID, rulesHeadingEnglish } from './RulesEnglish';
 import { Bi } from '@/i18n/Bi';
 import { useI18n } from '@/i18n/LocaleProvider';
 import styles from './AboutPage.module.css';
+import { SiteHeader } from '@/components/site/SiteHeader';
+import { VRCHAT_WORLD_URL } from '@/lib/communityLinks';
 
 interface Slide {
   src: string;
@@ -263,9 +264,7 @@ export default function AboutPage({ rulesDoc, rulesHeadings }: { rulesDoc: React
 
   return (
     <main className={styles.main}>
-      <header className={styles.bar}>
-        <div className={styles.barInner}>
-          <Link href="/" aria-label={t('トップへもどる')} className={styles.back}>‹</Link>
+      <SiteHeader>
           <div role="tablist" aria-label={t('よみかた')} className={styles.modes}>
             {([['book', '📖', '本でよむ', 'Pictures'], ['text', '📝', 'もじでよむ', 'Text']] as const).map(([value, icon, label, english]) => (
               <button type="button" role="tab" key={value} aria-selected={mode === value} className={styles.mode}
@@ -274,13 +273,16 @@ export default function AboutPage({ rulesDoc, rulesHeadings }: { rulesDoc: React
               </button>
             ))}
           </div>
-        </div>
-      </header>
+      </SiteHeader>
 
       <div className={styles.content}>
         <motion.h1 className={styles.title} initial={{ opacity: 0, y: -24 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5 }}>
           <Bi ja="ぷぷりえーるとは" en="About PPLALE" />
         </motion.h1>
+        <a href={VRCHAT_WORLD_URL} target="_blank" rel="noopener noreferrer" className={styles.world}>
+          <Image src="/VRChat-Logo-Black.png" alt="" width={48} height={24} />
+          <Bi ja="ワールドであそぶ" en="Visit the VRChat world" /> <span aria-hidden="true">↗</span>
+        </a>
         <p data-lang="en" lang="en" className={styles.note}>
           {mode === 'book' ? 'The picture pages are in Japanese. Tap "Text" for the rules in English.' : 'The rules overview is in English; the detailed rulings and FAQ are in Japanese.'}
         </p>

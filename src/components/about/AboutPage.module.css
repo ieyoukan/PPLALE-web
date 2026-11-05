@@ -7,18 +7,8 @@
   color: var(--brand-cocoa-deep);
 }
 
-/* 上部のバー */
-.bar {
-  position: sticky;
-  top: 0;
-  z-index: 20;
-  background: color-mix(in srgb, var(--brand-paper) 90%, transparent);
-  backdrop-filter: blur(8px);
-  border-bottom: 2px solid var(--brand-pink);
-  box-shadow: 0 2px 10px var(--brand-shadow);
-}
-.barInner { display: flex; align-items: center; gap: 10px; max-width: 1100px; margin: 0 auto; padding: 8px 12px; }
-.back, .mode, .chip, .zoom, .controls button, .close, .arrow {
+/* 上部のバーは共通の SiteHeader（components/site）。ここでは右側の表示切り替えだけを整える。 */
+.mode, .chip, .zoom, .controls button, .close, .arrow {
   border: 2px solid var(--brand-pink-edge);
   background: var(--brand-paper);
   color: var(--brand-cocoa-deep);
@@ -26,11 +16,10 @@
   cursor: pointer;
   transition: transform .15s, background .15s, box-shadow .15s;
 }
-.back { display: grid; place-items: center; flex-shrink: 0; width: 42px; height: 42px; border-radius: 50%; font-size: 26px; font-weight: 700; line-height: 1; }
 .modes { display: flex; gap: 8px; margin-left: auto; }
 .mode { display: flex; align-items: center; gap: 6px; height: 42px; padding: 0 16px; border-radius: 999px; font-size: 15px; white-space: nowrap; }
 .mode[aria-selected='true'] { background: var(--brand-pink); transform: translateY(2px); box-shadow: 0 1px 0 var(--brand-pink-edge); }
-.back:hover, .mode:not([aria-selected='true']):hover, .chip:not([aria-pressed='true']):hover,
+.mode:not([aria-selected='true']):hover, .chip:not([aria-pressed='true']):hover,
 .zoom:hover, .controls button:not(:disabled):hover, .close:hover, .arrow:not(:disabled):hover {
   background: var(--brand-blush);
   transform: translateY(-2px);
@@ -45,6 +34,15 @@
   line-height: 1.4;
   text-align: center;
 }
+/* ワールドへの入口。見出しのすぐ下に黄色のボタンで置く。 */
+.world {
+  display: flex; align-items: center; justify-content: center; gap: 8px; width: fit-content; min-height: 44px; margin: -4px auto 18px; padding: 6px 18px;
+  border: 2px solid var(--brand-star); border-radius: var(--brand-control-radius); background: var(--brand-vanilla);
+  color: var(--brand-cocoa-deep); font-weight: 700; text-decoration: none;
+}
+.world img { width: 44px; height: 22px; object-fit: contain; }
+.world:hover { background: var(--brand-vanilla-wash); }
+.world:focus-visible { outline: 3px solid var(--brand-cocoa); outline-offset: 3px; }
 .note { margin: -10px 0 16px; color: var(--brand-cocoa); font-size: 14px; text-align: center; }
 
 /* 章・見出しへのジャンプ */

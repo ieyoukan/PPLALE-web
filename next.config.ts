@@ -110,6 +110,8 @@ const config: NextConfig = {
     return [
       ...['/game/room', '/game/battle/room'].map(source => ({ source, has: [room], destination: '/game/room/:id/', permanent: false })),
       // The short profile address to share (src/lib/game/social.ts profileShareUrl).
+      // The tournament page became part of the community page (2026-11-06).
+      { source: '/tournament', destination: '/community/', permanent: true },
       { source: '/u/:uid([\\w-]{1,128})', destination: '/game/profile/?id=:uid', permanent: false },
     ];
   },

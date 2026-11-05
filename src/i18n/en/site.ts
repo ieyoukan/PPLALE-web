@@ -149,7 +149,6 @@ export const siteEnglish: Record<string, string> = {
   '画像アイコン': 'Image icon',
   '大会一覧': 'Tournaments',
   '使用可能フルーツ': 'Allowed fruit types',
-  '大会ページへ': 'Open tournament page',
   // ゲーム内のデッキ管理・ランチパッド
   '1枚ずつ選ぶ': 'Pick cards one by one',
   '2枚から選ぶ（別タブ）': 'Pick one of two (new tab)',
@@ -223,6 +222,10 @@ export const siteEnglish: Record<string, string> = {
   'ぷぷりえーるを遊ぶ': 'Play PPLALE',
   '紹介ムービー': 'Introduction movie',
   '音を出す': 'Unmute',
+  'デッキ構築': 'Deck Builder',
+  'VRChatで開きます': 'Opens in VRChat',
+  'Discordの招待ページを開きます': 'Opens the Discord invitation',
+  'コミュニティ': 'Community',
   '音を消す': 'Mute',
   'ぷぷりえーるとは': 'About PPLALE',
   'ぷぷりえとは': 'About Peuplier',

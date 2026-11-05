@@ -3,6 +3,7 @@
 import Image from 'next/image';
 import Link from 'next/link';
 import IntroMovie from './IntroMovie';
+import { VRCHAT_WORLD_URL } from '@/lib/communityLinks';
 import styles from './ExplanationSection.module.css';
 import { css } from 'styled-system/css';
 import { Bi } from '@/i18n/Bi';
@@ -70,15 +71,26 @@ export default function ExplanationSection() {
                       <Bi ja={card.description} en={card.enDescription} />
                     </p>
                     {card.rules && (
-                      <Link href="/about" prefetch={false} className={css({
+                      <div className={css({ display: 'flex', flexWrap: 'wrap', gap: '3', mt: '6' })}>
+                        <Link href="/about" prefetch={false} className={css({
                         display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
-                        gap: '3', minH: '12', mt: '6', px: '6', py: '3',
+                        gap: '3', minH: '12', px: '6', py: '3',
                         bg: 'var(--brand-pink)', color: 'var(--brand-cocoa-deep)', rounded: 'xl', fontSize: 'lg', fontWeight: 'bold',
                         _hover: { bg: 'var(--brand-blush)' },
                         _focusVisible: { outline: '3px solid', outlineColor: 'var(--brand-cocoa)', outlineOffset: '3px' },
                       })}>
-                        <Bi ja="ルール・あそびかた" en="Rules and how to play" /> <span aria-hidden="true">→</span>
-                      </Link>
+                          <Bi ja="ルール・あそびかた" en="Rules and how to play" /> <span aria-hidden="true">→</span>
+                        </Link>
+                        <a href={VRCHAT_WORLD_URL} target="_blank" rel="noopener noreferrer" className={css({
+                        display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
+                        gap: '3', minH: '12', px: '6', py: '3',
+                        bg: 'var(--brand-vanilla)', color: 'var(--brand-cocoa-deep)', rounded: 'xl', fontSize: 'lg', fontWeight: 'bold',
+                        _hover: { bg: 'var(--brand-vanilla-wash)' },
+                        _focusVisible: { outline: '3px solid', outlineColor: 'var(--brand-cocoa)', outlineOffset: '3px' },
+                      })}>
+                          <Bi ja="ワールドであそぶ" en="Visit the VRChat world" /> <span aria-hidden="true">↗</span>
+                        </a>
+                      </div>
                     )}
                   </div>
 

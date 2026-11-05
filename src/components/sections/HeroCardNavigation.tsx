@@ -11,7 +11,7 @@ import { useI18n } from '@/i18n/LocaleProvider';
 const cardButtons = [
   { title: 'ぷぷりえーるとは', lines: ['ぷぷりえーる', 'とは'], en: ['About', 'PPLALE'], href: '/about', img: '/images/back-card.webp' },
   { title: 'ゲームをプレイ', lines: ['ゲームを', 'プレイ'], en: ['Play', 'the game'], href: '/game', img: '/images/back-card.webp' },
-  { title: 'デッキをつくる', lines: ['デッキを', 'つくる'], en: ['Build', 'a deck'], href: '/build', img: '/images/back-card.webp' },
+  { title: 'コミュニティ', lines: ['コミュニティ'], en: ['Community'], href: '/community', img: '/images/back-card.webp' },
 ];
 
 /** 山札とカードは同じCSSの時間軸で動かす。 */
