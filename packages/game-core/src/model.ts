@@ -30,11 +30,17 @@ export interface Definition {
     effect?: string;
 }
 export type Catalog = Record<string, Definition>;
+/** The card backs a deck may use (its sleeve). red is the original back; the rest were added 2026-11-06. */
+export const SLEEVES = ['red', 'green', 'purple', 'pink', 'blue', 'brown', 'teal'] as const;
+export type Sleeve = typeof SLEEVES[number];
+export const isSleeve = (value: unknown): value is Sleeve => typeof value === 'string' && (SLEEVES as readonly string[]).includes(value);
 export interface Deck {
     name: string;
     yojo: string[];
     sweet: string[];
     playable: string;
+    /** Only how the backs of this deck's cards look; never part of the match itself. */
+    sleeve?: Sleeve;
 }
 
 export interface Rules {

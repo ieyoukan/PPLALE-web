@@ -490,6 +490,7 @@ export function plazaView(room: Room, id: string, online: ReadonlySet<string>, c
     const players = seats.map((seat, index) => seat && {
         name: seat.name, ...(seat.profileId && { profileId: seat.profileId }), ready: seat.ready, online: !!seat.cpu || online.has(seat.member!),
         ...(seat.left && { left: true }), ...((index === mine || seat.cpu) && seat.deck && { deck: seat.deck.name }),
+        ...(seat.deck?.sleeve && seat.deck.sleeve !== 'red' && { sleeve: seat.deck.sleeve }),
         ...(seat.member && { member: seat.member }), ...(seat.cpu && { cpu: seat.cpu }),
     }) as RoomView['players'];
     const shares = mayInvite(plaza, id);

@@ -4,21 +4,25 @@
 // ゲストはサイトのゲスト用と同じlocalStorageの形式に書き、どちらの画面でも同じデッキを開ける。
 import { nanoid } from 'nanoid';
 import { deckRuleErrors, singleCopy, validateDeck } from '@pplale/game-core';
-import type { Deck, MatchRules } from '@pplale/game-core';
+import { isSleeve } from '@pplale/game-core';
+import type { Deck, MatchRules, Sleeve } from '@pplale/game-core';
 import { gameCatalog } from './catalog';
 
 export const DECK_LIMITS = { yojo: 20, sweet: 10 } as const;
 export type DeckKind = keyof typeof DECK_LIMITS;
 
 /** A saved deck as the game shows it. `playable` is null until one is chosen. */
-export interface StoredDeck { id: string; name: string; yojo: string[]; sweet: string[]; playable: string | null; updatedAt: number }
+export interface StoredDeck { id: string; name: string; yojo: string[]; sweet: string[]; playable: string | null; sleeve: Sleeve; updatedAt: number }
 /** What the editor holds: a deck not saved yet has no id. */
-export type DeckDraft = Omit<StoredDeck, 'id' | 'updatedAt'> & { id?: string };
+/** `sleeve`: left out, a save keeps the deck's sleeve as it is (a new deck gets the red one). */
+export type DeckDraft = Omit<StoredDeck, 'id' | 'updatedAt' | 'sleeve'> & { id?: string; sleeve?: Sleeve };
 
 /** Sent on window after any save or delete, so lists, rooms and seats read the decks again. */
 export const DECKS_CHANGED = 'pplale-decks-changed';
 const LOCAL_INDEX = 'localDecks';
-const localKey = (id: string, field: 'name' | 'yojo' | 'sweet' | 'playable') => `deck_${id}_${field}`;
+const localKey = (id: string, field: 'name' | 'yojo' | 'sweet' | 'playable' | 'sleeve') => `deck_${id}_${field}`;
+/** A saved sleeve, or the original red back for decks saved before sleeves (or with one this version does not know). */
+const sleeveOf = (value: unknown): Sleeve => isSleeve(value) ? value : 'red';
 
 const ids = (value: unknown): string[] => Array.isArray(value) ? value.filter((id): id is string => typeof id === 'string') : [];
 /** The site stores guests' cards as card objects ({ id, … }); only the ids are kept. */
@@ -42,7 +46,7 @@ export async function listDecks(uid: string | null): Promise<StoredDeck[]> {
   const snapshot = await sdk.getDocs(sdk.collection(db, 'users', uid, 'decks'));
   return snapshot.docs.map(doc => {
     const data = doc.data();
-    return { id: doc.id, name: typeof data.name === 'string' ? data.name : '', yojo: ids(data.yojoDeckIds), sweet: ids(data.sweetDeckIds), playable: typeof data.playableCardId === 'string' ? data.playableCardId : null, updatedAt: time(data.updatedAt) };
+    return { id: doc.id, name: typeof data.name === 'string' ? data.name : '', yojo: ids(data.yojoDeckIds), sweet: ids(data.sweetDeckIds), playable: typeof data.playableCardId === 'string' ? data.playableCardId : null, sleeve: sleeveOf(data.sleeve), updatedAt: time(data.updatedAt) };
   }).sort((a, b) => b.updatedAt - a.updatedAt);
 }
 
@@ -52,7 +56,7 @@ function listLocalDecks(): StoredDeck[] {
     return index.flatMap(entry => {
       if (typeof entry?.id !== 'string') return [];
       const id = entry.id, playable = localIds(`[${localStorage.getItem(localKey(id, 'playable')) ?? ''}]`)[0] ?? null;
-      return [{ id, name: localStorage.getItem(localKey(id, 'name')) ?? '', yojo: localIds(localStorage.getItem(localKey(id, 'yojo'))), sweet: localIds(localStorage.getItem(localKey(id, 'sweet'))), playable, updatedAt: time(entry.updatedAt) }];
+      return [{ id, name: localStorage.getItem(localKey(id, 'name')) ?? '', yojo: localIds(localStorage.getItem(localKey(id, 'yojo'))), sweet: localIds(localStorage.getItem(localKey(id, 'sweet'))), playable, sleeve: sleeveOf(localStorage.getItem(localKey(id, 'sleeve'))), updatedAt: time(entry.updatedAt) }];
     }).sort((a, b) => b.updatedAt - a.updatedAt);
   } catch { return []; }
 }
@@ -63,12 +67,13 @@ export async function saveDeck(uid: string | null, deck: DeckDraft): Promise<str
   const yojo = deck.yojo.slice(0, DECK_LIMITS.yojo), sweet = deck.sweet.slice(0, DECK_LIMITS.sweet);
   if (uid) {
     const { sdk, db } = await firestore();
-    await sdk.setDoc(sdk.doc(db, 'users', uid, 'decks', id), { name, yojoDeckIds: yojo, sweetDeckIds: sweet, playableCardId: deck.playable, updatedAt: now, ...(!deck.id && { createdAt: now }) }, { merge: true });
+    await sdk.setDoc(sdk.doc(db, 'users', uid, 'decks', id), { name, yojoDeckIds: yojo, sweetDeckIds: sweet, playableCardId: deck.playable, ...(deck.sleeve && { sleeve: sleeveOf(deck.sleeve) }), updatedAt: now, ...(!deck.id && { createdAt: now }) }, { merge: true });
   } else {
     localStorage.setItem(localKey(id, 'name'), name);
     localStorage.setItem(localKey(id, 'yojo'), JSON.stringify(yojo.map(card => ({ id: card }))));
     localStorage.setItem(localKey(id, 'sweet'), JSON.stringify(sweet.map(card => ({ id: card }))));
     localStorage.setItem(localKey(id, 'playable'), JSON.stringify(deck.playable ? { id: deck.playable } : null));
+    if (deck.sleeve) localStorage.setItem(localKey(id, 'sleeve'), sleeveOf(deck.sleeve));
     const index = (JSON.parse(localStorage.getItem(LOCAL_INDEX) || '[]') as { id?: unknown }[]).filter(entry => entry?.id !== id);
     localStorage.setItem(LOCAL_INDEX, JSON.stringify([{ id, name, createdAt: now, updatedAt: now, userId: 'local' }, ...index]));
   }
@@ -81,7 +86,7 @@ export async function deleteDeck(uid: string | null, id: string) {
     const { sdk, db } = await firestore();
     await sdk.deleteDoc(sdk.doc(db, 'users', uid, 'decks', id));
   } else {
-    for (const field of ['name', 'yojo', 'sweet', 'playable'] as const) localStorage.removeItem(localKey(id, field));
+    for (const field of ['name', 'yojo', 'sweet', 'playable', 'sleeve'] as const) localStorage.removeItem(localKey(id, field));
     const index = (JSON.parse(localStorage.getItem(LOCAL_INDEX) || '[]') as { id?: unknown }[]).filter(entry => entry?.id !== id);
     localStorage.setItem(LOCAL_INDEX, JSON.stringify(index));
   }
@@ -96,7 +101,7 @@ export function canAddCard(deck: Pick<DeckDraft, 'yojo' | 'sweet'>, id: string):
   return list.length < DECK_LIMITS[kind] && !(singleCopy(gameCatalog, id) && list.includes(id));
 }
 
-export const asGameDeck = (deck: DeckDraft): Deck => ({ name: deck.name, yojo: deck.yojo, sweet: deck.sweet, playable: deck.playable ?? '' });
+export const asGameDeck = (deck: DeckDraft): Deck => ({ name: deck.name, yojo: deck.yojo, sweet: deck.sweet, playable: deck.playable ?? '', ...(deck.sleeve && deck.sleeve !== 'red' && { sleeve: deck.sleeve }) });
 /** Why the deck cannot be played: its size and cards, then (in a room) the room's rules. */
 export function deckProblems(deck: DeckDraft, rules?: MatchRules): string[] {
   const game = asGameDeck(deck);

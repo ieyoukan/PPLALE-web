@@ -29,9 +29,10 @@ function useSavedDecks() {
     setError('');
     const load = (first: boolean) => {
       if (first) setLoading(true);
-      import('@/lib/game/deckStore').then(({ listDecks }) => listDecks(uid))
-        .then(result => { if (active) setDecks(result.map(saved => {
-          const deck = { name: saved.name || '無名のデッキ', yojo: saved.yojo, sweet: saved.sweet, playable: saved.playable ?? '' };
+      import('@/lib/game/deckStore').then(({ listDecks, asGameDeck }) => listDecks(uid).then(result => ({ result, asGameDeck })))
+        .then(({ result, asGameDeck }) => { if (active) setDecks(result.map(saved => {
+          // The sleeve goes with the deck to the match (the backs of its cards); it is not part of the rules.
+          const deck = asGameDeck({ ...saved, name: saved.name || '無名のデッキ' });
           return { id: saved.id, deck, errors: validateDeck(deck, gameCatalog) };
         })); })
         .catch(() => { if (active) setError('保存済みデッキを読み込めませんでした。接続とログイン状態を確認してください。'); })

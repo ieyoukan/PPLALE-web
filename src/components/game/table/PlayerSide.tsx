@@ -9,6 +9,7 @@ import { useI18n } from '@/i18n/LocaleProvider';
 import { useCardName } from '@/i18n/useCardName';
 import { useBoardContext } from '../board/BoardContext';
 import { gameAudio } from '@/lib/game/gameAudio';
+import { sleeveBackground } from '@/lib/game/sleeves';
 import { useLongPress } from '../board/useLongPress';
 import { Counter, DeckStack } from '../BoardPieces';
 import type { ZoneKind } from '../BoardPieces';
@@ -36,7 +37,7 @@ export function PlayerSide({ side }: { side: Side }) {
   const concealed = player.hand.filter(uid => !game.cards[uid].revealed);
   const revealed = player.hand.filter(uid => game.cards[uid].revealed);
   const mixed = concealed.length > 0 && revealed.length > 0;
-  return <section className={`${styles.playerSide} ${near ? styles.near : styles.far}`} aria-label={t(`${who}の盤面`)}>
+  return <section className={`${styles.playerSide} ${near ? styles.near : styles.far}`} style={{ '--sleeve-image': sleeveBackground(board.sleeves[side]) } as CSSProperties} aria-label={t(`${who}の盤面`)}>
     <Zone side={side} kind="yojo" className={styles.deckYojo} />
     <Zone side={side} kind="sweet" className={styles.deckSweet} />
     <Zone side={side} kind="nap" className={styles.napZone} />

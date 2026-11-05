@@ -5,6 +5,7 @@ import { getCardCatalog } from '@/data/catalog';
 import { doc, setDoc } from 'firebase/firestore';
 import { db, auth } from '@/lib/firebase';
 import { validateDeckData } from '@/lib/schema';
+import { isSleeve } from '@pplale/game-core';
 import { useAuth } from '@/lib/auth';
 import { browserPopupRedirectResolver, GoogleAuthProvider, signInWithPopup } from 'firebase/auth';
 import { useI18n } from '@/i18n/LocaleProvider';
@@ -252,6 +253,8 @@ export function useDeckPageState({
           yojoDeckIds: yojoDeck.map(card => card.id),
           sweetDeckIds: sweetDeck.map(card => card.id),
           playableCardId: selectedPlayableCard?.id || null,
+          // A guest deck's sleeve (saved by the game) goes with it to the account.
+          ...(isSleeve(localStorage.getItem(`deck_${deckId}_sleeve`)) && { sleeve: localStorage.getItem(`deck_${deckId}_sleeve`) }),
           updatedAt: new Date()
         };
         try {
@@ -282,6 +285,8 @@ export function useDeckPageState({
           yojoDeckIds: yojoDeck.map(card => card.id),
           sweetDeckIds: sweetDeck.map(card => card.id),
           playableCardId: selectedPlayableCard?.id || null,
+          // A guest deck's sleeve (saved by the game) goes with it to the account.
+          ...(isSleeve(localStorage.getItem(`deck_${deckId}_sleeve`)) && { sleeve: localStorage.getItem(`deck_${deckId}_sleeve`) }),
           updatedAt: new Date()
         };
         try {

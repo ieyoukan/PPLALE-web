@@ -3,6 +3,7 @@
 import type { Side, Zone } from '@pplale/game-core';
 import type { CSSProperties, ReactNode } from 'react';
 import { HAND_CARD_SIZES } from '@/lib/game/cardImages';
+import { sleeveBackground } from '@/lib/game/sleeves';
 import { GameCard } from './GameCard';
 import { Avatar } from '@/components/shared/player/Avatar';
 import { useI18n } from '@/i18n/LocaleProvider';
@@ -101,6 +102,8 @@ type Rect = { x: number; y: number; width: number; height: number };
 export interface DrawFlight {
   id: number;
   uid: string; cardId: string; from: Rect; to: Rect;
+  /** Whose place it leaves: its back is in that player's sleeve. */
+  side: Side;
   /** down: back all the way; up: face all the way; reveal: back → face; hide: face → back. */
   look: 'down' | 'up' | 'reveal' | 'hide';
   /** Rotation at each end in degrees (the far side's field and piles lie upside down). */
@@ -113,13 +116,14 @@ export interface DrawFlight {
   fromZone: Zone;
 }
 const looks = { down: styles.lookDown, up: styles.lookUp, reveal: styles.lookReveal, hide: styles.lookHide } as const;
-export function FlyingCard({ flight }: { flight: DrawFlight }) {
+export function FlyingCard({ flight, sleeve }: { flight: DrawFlight; sleeve?: string }) {
   const { from, to, look, spin, delay, cardId } = flight;
   const css = {
     left: from.x, top: from.y, width: from.width, height: from.height,
     '--fly-x': `${to.x - from.x}px`, '--fly-y': `${to.y - from.y}px`,
     '--fly-scale-x': to.width / from.width, '--fly-scale-y': to.height / from.height,
     '--spin-start': `${spin[0]}deg`, '--spin-end': `${spin[1]}deg`, '--fly-delay': `${delay}ms`,
+    '--sleeve-image': sleeveBackground(sleeve),
   } as React.CSSProperties;
   return <div className={styles.flyingCard} data-draw-flight style={css} aria-hidden="true">
     <div className={styles.flightSpin}><div className={looks[look]}>

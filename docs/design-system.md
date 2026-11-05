@@ -147,6 +147,7 @@
 | ゲストへのログイン案内 | `shared/auth/GuestSignInPrompt.tsx`。ランチパッドではコンパクト表示、対戦後はフレンド・デッキ共有への案内として共用する。対戦操作を遮らない。自分のプロフィールでは `purpose="profile"` でログインを要求し、ボタンを押すまで認証ポップアップは開かない |
 | フレンドへの招待 | `game/social/InviteFriendButton.tsx`。プロフィールと共有画面で送信・失敗・送信済みを共用。表示権限は `src/lib/game/room/invitations.ts`、実際の許可はサーバーで再確認する |
 | カード画像（現行・記録済み） | `shared/card/CardArtwork.tsx`。対戦履歴も同じ描画を使い、記録時のカタログを渡せる |
+| カードスリーブ（デッキの裏面） | 一覧は `packages/game-core/src/model.ts` の `SLEEVES`（赤＝従来の `back-card.webp`、緑・紫・ピンク・青・茶色・青緑はユーザー提供の画像を533×800のWebPにした `public/images/sleeves/*.webp`）。画像と読み上げ名は `src/lib/game/sleeves.ts`。デッキごとに保存し（Firestore・ゲストの `deck_<id>_sleeve`、無ければ赤）、デッキを開いて最初に出る `DeckQuick` のプレイアブルの下のボタンから7色を選ぶ。対戦では `useBoard` の `sleeves` を `--sleeve-image` として各プレイヤーの盤面・手札・飛ぶカードに渡し、`BoardEmulator.module.css` の裏面がそれを読む。ルームではデッキと一緒に送り、サーバーが全員に公開する（`RoomPlayer.sleeve`）。Firestoreのルールも同じ7色だけを許す |
 | メニューの名前・アイコン・URLの対応 | `game/launchpad/places.ts` と `shared/ui/GameIcon.tsx`。アイコンは意味ごとに既存のSVGを使う |
 
 部品の利用例はカード構築の `components/deck/Deck.tsx`、ルームの `plaza/PlazaSheets.tsx`、図鑑の `home/CardGallery.tsx`。カード拡大は呼び出し元を `inert` にし、`returnFocusRef` で元のカードへ戻す。既存の画面をランチパッドへ追加するときはローカルの `Suspense` の内側に置き、盤面全体の描画を止めない。

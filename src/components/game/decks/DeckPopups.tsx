@@ -17,6 +17,7 @@ import type { CardInfo } from '@/types/card';
 import { CardBack, CardImage, CostCurve, FruitChips, fruitsOfDeck } from './deckParts';
 import type { Cards } from './deckParts';
 import styles from './Decks.module.css';
+import { SLEEVES, sleeveNames } from '@/lib/game/sleeves';
 
 /**
  * Over the whole launchpad (drawn into its backdrop, inside the scaled stage): framed, closed by its × (the
@@ -66,7 +67,7 @@ export function DeckQuick({ deck, uid, cards, rules, onEdit, onConfirm, onClose,
   onEdit: () => void; onConfirm: () => void; onClose: () => void; onDeleted: () => void;
 }) {
   const { t } = useI18n();
-  const [name, setName] = useState(deck.name), [choosing, setChoosing] = useState(false);
+  const [name, setName] = useState(deck.name), [choosing, setChoosing] = useState<'playable' | 'sleeve' | null>(null);
   const [deleting, setDeleting] = useState(false), [busy, setBusy] = useState(false), [error, setError] = useState('');
   const { copied, failed, copy } = useCopied();
   const save = (change: Partial<DeckDraft>) => {
@@ -86,9 +87,15 @@ export function DeckQuick({ deck, uid, cards, rules, onEdit, onConfirm, onClose,
   };
   return <DeckDialog label={deck.name || t('無名のデッキ')} onClose={onClose} className={styles.quick}>
     <div className={styles.quickPlayable}>
-      <button type="button" className={styles.playableButton} aria-expanded={choosing} onClick={() => setChoosing(value => !value)} aria-label={t('プレイアブルを変える')}>
+      <button type="button" className={styles.playableButton} aria-expanded={choosing === 'playable'} onClick={() => setChoosing(value => value === 'playable' ? null : 'playable')} aria-label={t('プレイアブルを変える')}>
         {playable ? <CardImage card={playable} sizes="220px" eager /> : <span className={styles.emptyCard}><GameIcon name="plus" /></span>}
         <span className={styles.swap}><GameIcon name="refresh" />{t('変える')}</span>
+      </button>
+      {/* The sleeve: the backs of this deck's cards, as the opponent sees them. */}
+      <button type="button" className={styles.sleeveButton} aria-expanded={choosing === 'sleeve'} onClick={() => setChoosing(value => value === 'sleeve' ? null : 'sleeve')} aria-label={t('スリーブを変える')}>
+        <span className={styles.sleeveThumb}><CardBack sleeve={deck.sleeve} sizes="60px" /></span>
+        <span data-ui-title>{t('スリーブ')}</span>
+        <GameIcon name="refresh" />
       </button>
     </div>
     <div className={styles.quickMain}>
@@ -97,9 +104,13 @@ export function DeckQuick({ deck, uid, cards, rules, onEdit, onConfirm, onClose,
         <FruitChips fruits={fruitsOfDeck([...deck.yojo, ...deck.sweet], cards)} />
         {rules && complete && <span className={problems.length ? styles.misfits : styles.fits}>{problems.length ? t('このルーム×') : <><GameIcon name="check" />{t('このルームOK')}</>}</span>}
       </div>
-      {choosing ? <div className={styles.playables} role="group" aria-label={t('プレイアブルを選ぶ')}>
-        {cards.playable.map(card => <button key={card.id} type="button" aria-pressed={card.id === deck.playable} disabled={busy} onClick={() => { setChoosing(false); if (card.id !== deck.playable) save({ playable: card.id }); }} aria-label={card.name}>
+      {choosing === 'playable' ? <div className={styles.playables} role="group" aria-label={t('プレイアブルを選ぶ')}>
+        {cards.playable.map(card => <button key={card.id} type="button" aria-pressed={card.id === deck.playable} disabled={busy} onClick={() => { setChoosing(null); if (card.id !== deck.playable) save({ playable: card.id }); }} aria-label={card.name}>
           <CardImage card={card} sizes="130px" />{card.version === 'beta' && <span className={styles.exp}>ExP</span>}
+        </button>)}
+      </div> : choosing === 'sleeve' ? <div className={styles.sleeves} role="group" aria-label={t('スリーブを選ぶ')}>
+        {SLEEVES.map(sleeve => <button key={sleeve} type="button" aria-pressed={sleeve === deck.sleeve} disabled={busy} onClick={() => { setChoosing(null); if (sleeve !== deck.sleeve) save({ sleeve }); }} aria-label={t(sleeveNames[sleeve])}>
+          <CardBack sleeve={sleeve} sizes="110px" />
         </button>)}
       </div> : <>
         {codeRow('yojo', t('幼女デッキ'))}

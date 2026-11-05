@@ -7,6 +7,7 @@ import { HAND_CARD_SIZES } from '@/lib/game/cardImages';
 import { useI18n } from '@/i18n/LocaleProvider';
 import { useCardName } from '@/i18n/useCardName';
 import { useBoardContext } from '../board/BoardContext';
+import { sleeveBackground } from '@/lib/game/sleeves';
 import { CardChoiceMark } from './ChoiceTray';
 import { GameCard } from '../GameCard';
 import styles from '../BoardEmulator.module.css';
@@ -26,7 +27,7 @@ export function HandDock() {
   const concealed = me.hand.filter(uid => !inRevealedGroup(uid));
   const revealed = me.hand.filter(inRevealedGroup);
   const mixed = concealed.length > 0 && revealed.length > 0;
-  return <div className={styles.handDock}>
+  return <div className={styles.handDock} style={{ '--sleeve-image': sleeveBackground(board.sleeves[board.view]) } as CSSProperties}>
     <div className={styles.hand} data-hand-list>{[...concealed, ...revealed].map((uid, index) => {
       const card = game.cards[uid], face = displayCards[card.cardId], preview = draft.includes(uid), grouped = inRevealedGroup(uid);
       // Respect the supplied view: a hidden identity has no picture or inspection action.

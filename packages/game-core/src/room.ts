@@ -4,7 +4,7 @@ export type { RoomChatStampId } from './chatStamps.ts';
 // ルームのルールと、ブラウザ・サーバー間で共有する型。
 // ブラウザとルームサーバーの通信形式を定義する。
 // サーバーが完全な状態を持ち、閲覧者に許可した情報だけを返す。
-import type { Catalog, Command, Deck, GameState, Side } from './model.ts';
+import type { Catalog, Command, Deck, GameState, Side, Sleeve } from './model.ts';
 import type { CpuLevel } from './ai/types.ts';
 import { defaultMatchRules, deckRuleErrors, describeMatchRules, parseMatchRules } from './rules.ts';
 import type { MatchRules } from './rules.ts';
@@ -107,6 +107,8 @@ export interface RoomPlayer {
     left?: boolean;
     /** 自分またはCPUの選択済みデッキ名。未公開のカード内容は含めない。 */
     deck?: string;
+    /** 選択済みデッキのスリーブ（カードの裏面）。見た目だけなので全員に公開する。赤（標準）は省く。 */
+    sleeve?: Sleeve;
     /** この席に座っているルームメンバー。 */
     member?: string;
     /** この席はサーバーのCPUが操作する。 */

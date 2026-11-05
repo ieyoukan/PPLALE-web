@@ -90,10 +90,11 @@ export function useRoomSession({ room, initial, seat, onLeave, plaza }: {
     const player = shown.players[side];
     return { card: player?.profileId && profiles[player.profileId] ? profiles[player.profileId].iconCardId : guestIcon(player?.member ?? ''), cpu: !!player?.cpu };
   }) as [AvatarIdentity, AvatarIdentity], [shown.players, profiles]);
+  const sleeves = useMemo<[string | undefined, string | undefined]>(() => [shown.players[0]?.sleeve, shown.players[1]?.sleeve], [shown.players]);
   const { presented, presentation } = room;
   const plazaMenu = plaza?.menu;
-  const remote = useMemo(() => ({ seat, watching, assessment, turnClock, ownDeck: shown.ownDeck, matchRules: shown.rules, freeMatch: initial.mode === 'free', names, portraits, sending: !linked || sending, waiting: !linked || sending || queue.length > 0, failed, next, accept, resign, abort, resigned: shown.resigned, leave: onLeave, presented, presentation, ...(plazaMenu && { plaza: { menu: plazaMenu } }) }),
-    [seat, watching, assessment, turnClock, shown.ownDeck, shown.rules, initial.mode, names, portraits, linked, sending, queue.length, failed, next, accept, resign, abort, shown.resigned, onLeave, presented, presentation, plazaMenu]);
+  const remote = useMemo(() => ({ seat, watching, assessment, turnClock, ownDeck: shown.ownDeck, matchRules: shown.rules, freeMatch: initial.mode === 'free', names, portraits, sleeves, sending: !linked || sending, waiting: !linked || sending || queue.length > 0, failed, next, accept, resign, abort, resigned: shown.resigned, leave: onLeave, presented, presentation, ...(plazaMenu && { plaza: { menu: plazaMenu } }) }),
+    [seat, watching, assessment, turnClock, shown.ownDeck, shown.rules, initial.mode, names, portraits, sleeves, linked, sending, queue.length, failed, next, accept, resign, abort, shown.resigned, onLeave, presented, presentation, plazaMenu]);
   return {
     game: shown.game, error, history: [], commands: [], mode: 'room', levels: ['normal', 'normal'], ready: true, saveError: '',
     send, undo: nothing, canUndo: false, remote,

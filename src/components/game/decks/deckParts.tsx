@@ -9,6 +9,7 @@ import { getCardCatalog } from '@/data/catalog';
 import { useI18n } from '@/i18n/LocaleProvider';
 import type { CardInfo } from '@/types/card';
 import styles from './Decks.module.css';
+import { sleeveImage } from '@/lib/game/sleeves';
 
 /** The cards in the current language (names, effects and the English card images), by id. */
 export function useCards() {
@@ -28,8 +29,9 @@ export function CardImage({ card, sizes, eager }: { card: CardInfo | undefined; 
   return <span className={styles.card}>{card && <Image src={card.imageUrl} alt={card.name} fill sizes={sizes} draggable={false} loading={eager ? 'eager' : undefined} />}</span>;
 }
 
-export function CardBack({ sizes = '100px' }: { sizes?: string }) {
-  return <span className={styles.card}><Image src="/images/back-card.webp" alt="" fill sizes={sizes} draggable={false} /></span>;
+/** A card's back in the deck's sleeve (the original red one without). */
+export function CardBack({ sizes = '100px', sleeve }: { sizes?: string; sleeve?: string | null }) {
+  return <span className={styles.card}><Image src={sleeveImage(sleeve)} alt="" fill sizes={sizes} draggable={false} /></span>;
 }
 
 /** By cost (1 … 7+, a cost of 0 or more than 7 counted at the ends), as bars with their counts above. */

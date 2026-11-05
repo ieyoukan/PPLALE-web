@@ -16,21 +16,27 @@ service cloud.firestore {
       // 作成: 所有者のみ・許可されたフィールドのみ書き込み可能
       // 注: build/2pick/ログイン後保存で送るキーが異なるため hasAll ではなく
       //     hasOnly（許可リストのサブセット）で検証する
-      allow create: if isOwner(userId) &&
+      // sleeve: カードの裏面の色。ゲームの SLEEVES（packages/game-core/src/model.ts）と同じ一覧だけを許す。
+      function validSleeve() {
+        return !('sleeve' in request.resource.data) ||
+          request.resource.data.sleeve in ['red', 'green', 'purple', 'pink', 'blue', 'brown', 'teal'];
+      }
+      allow create: if isOwner(userId) && validSleeve() &&
         request.resource.data.keys().hasOnly([
           'name',
           'yojoDeckIds',
           'sweetDeckIds',
           'playableCardId',
+          'sleeve',
           'createdAt',
           'updatedAt',
           'is2pick',
         ]);
 
       // 更新: 所有者のみ・変更できるフィールドを制限
-      allow update: if isOwner(userId) &&
+      allow update: if isOwner(userId) && validSleeve() &&
         request.resource.data.diff(resource.data).affectedKeys()
-          .hasOnly(['name', 'yojoDeckIds', 'sweetDeckIds', 'playableCardId', 'updatedAt', 'is2pick']);
+          .hasOnly(['name', 'yojoDeckIds', 'sweetDeckIds', 'playableCardId', 'sleeve', 'updatedAt', 'is2pick']);
 
       // 削除: 所有者のみ
       allow delete: if isOwner(userId);

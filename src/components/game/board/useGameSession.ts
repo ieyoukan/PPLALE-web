@@ -59,6 +59,8 @@ export interface RemoteSession {
   names: [string, string];
   /** Same public profile / guest / CPU portraits as the seats at the room's table. */
   portraits?: [AvatarIdentity, AvatarIdentity];
+  /** Each seat's sleeve as the room tells it (none: the original red back). */
+  sleeves?: [string | undefined, string | undefined];
   /** A command is on its way, or a change has not been shown yet: nothing new may be sent. */
   waiting: boolean;
   /** This seat is submitting a command, or its connection is unavailable. */

@@ -75,7 +75,7 @@ export const presenters: { [K in ChangeKind]: Presenter<K> } = {
     if (!start || !end) return;
     const shownBefore = isVisible(from, scene.before, uid, scene), shownAfter = isVisible(to, scene.after, uid, scene);
     out.flights.push({
-      id: ++ids, uid, cardId, from: start, to: end, fromZone: from.zone, toZone: to.zone,
+      id: ++ids, uid, cardId, from: start, to: end, side: from.side, fromZone: from.zone, toZone: to.zone,
       look: shownBefore && shownAfter ? 'up' : shownAfter ? 'reveal' : shownBefore ? 'hide' : 'down',
       spin: [spinOf(from, scene), spinOf(to, scene)],
       delay: from.zone === 'field' ? LEAVE_FIELD_DELAY : 0,

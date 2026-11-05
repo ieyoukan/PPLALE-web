@@ -85,6 +85,16 @@
 .quickActions { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; margin-top: 4px; }
 .quickActions > :last-child:not(:first-child) { margin-left: auto; }
 .confirmDelete { display: inline-flex; align-items: center; gap: 8px; font-size: 14px; font-weight: 700; }
+/* The sleeve under the playable: its back, small, then the word; the choices take the place of the codes. */
+.sleeveButton { display: flex; align-items: center; gap: 10px; width: 210px; margin-top: 12px; padding: 6px 12px 6px 6px; border: 1px solid var(--brand-control-edge); border-radius: var(--brand-control-radius); background: var(--brand-paper); color: var(--brand-cocoa-deep); font-size: 15px; cursor: pointer; }
+.sleeveButton:hover, .sleeveButton[aria-expanded=true] { background: var(--brand-blush); }
+.sleeveButton > span:nth-child(2) { flex: 1; text-align: left; }
+.sleeveButton svg { width: 18px; height: 18px; }
+.sleeveThumb { width: 34px; flex-shrink: 0; }
+.sleeves { display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); gap: 10px; animation: rise .25s both; }
+.sleeves button { position: relative; padding: 4px; border: 1px solid transparent; border-radius: var(--brand-control-radius); background: none; cursor: pointer; }
+.sleeves button[aria-pressed=true] { border-color: var(--brand-cocoa); background: var(--brand-blush); }
+.sleeves button:hover:not([aria-pressed=true]) { background: var(--brand-blush); }
 .playables { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 10px; animation: rise .25s both; }
 .playables button { position: relative; padding: 4px; border: 1px solid transparent; border-radius: var(--brand-control-radius); background: none; cursor: pointer; }
 .playables button[aria-pressed=true] { border-color: var(--brand-cocoa); background: var(--brand-blush); }
@@ -176,4 +186,4 @@
 @keyframes rise { from { opacity: 0; transform: translateY(10px); } }
 @keyframes near { from { opacity: 0; transform: scale(.92); } }
 @keyframes arrive { from { opacity: 0; transform: translateY(-14px) scale(.85); } }
-@media (prefers-reduced-motion: reduce) { .deckBox, .backdrop, .dialog, .pips i, .slot[data-arrive] .card, .playables { animation: none; } .fanCard, .curve i { transition: none; } }
+@media (prefers-reduced-motion: reduce) { .deckBox, .backdrop, .dialog, .pips i, .slot[data-arrive] .card, .playables, .sleeves { animation: none; } .fanCard, .curve i { transition: none; } }

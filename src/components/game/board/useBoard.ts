@@ -59,6 +59,8 @@ export function useBoard(container: RefObject<HTMLDivElement | null>, session: B
     { card: profile?.iconCardId ?? actual.players[0].playable, cpu: mode === 'watch' },
     { card: actual.players[1].playable, cpu: mode === 'watch' || mode === 'cpu' },
   ];
+  /** Each side's sleeve (the backs of its cards): from the room, or the decks of a match set up here. */
+  const sleeves = useMemo<[string | undefined, string | undefined]>(() => remote?.sleeves ?? [setup?.decks[0]?.sleeve, setup?.decks[1]?.sleeve], [remote?.sleeves, setup]);
   const home: Side = remote?.seat ?? (mode === 'watch' ? 1 : 0);
   const [view, setView] = useState<Side>(home);
   const [selected, setSelected] = useState<string | null>(null);
@@ -447,7 +449,7 @@ export function useBoard(container: RefObject<HTMLDivElement | null>, session: B
   }
 
   return {
-    game, mode, levels, view, me, panel, ready, busy: busy || cardChoice.submitting, paused, names, portraits, remote, puzzle,
+    game, mode, levels, view, me, panel, ready, busy: busy || cardChoice.submitting, paused, names, portraits, sleeves, remote, puzzle,
     assessment, assessable, showAssessment, setShowAssessment,
     setup, canRematch, canReplay, replaying, timeline, seekReplay, position, editBoard: openEditor, editStartingBoard,
     editing, edit: editBoard, picking, setPicking, session,
