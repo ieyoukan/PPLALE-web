@@ -48,7 +48,6 @@
 .prose a { color: var(--brand-cocoa-deep); text-decoration: underline; text-decoration-color: var(--brand-peach); text-decoration-thickness: 2px; text-underline-offset: 3px; overflow-wrap: anywhere; }
 .prose a:hover { text-decoration-color: var(--brand-cocoa); }
 .prose hr { border: 0; border-top: 2px dotted var(--brand-pink-edge); margin: 24px 0; }
-.note { color: var(--brand-cocoa-soft); font-size: 13px; }
 
 @media (max-width: 600px) {
   .headerInner { height: 54px; padding: 0 12px; }
