@@ -23,7 +23,7 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
         <SettingsButton />
         <FireBaseLogin />
       </SiteHeader>
-      <main className={css({ minH: 'calc(100vh - 60px)', bg: { base: 'var(--brand-dots) 0 0 / 20px 20px, var(--brand-vanilla-wash)', _dark: 'transparent' } })}>{children}</main>
+      <main className={css({ minH: 'calc(100vh - 60px)', bg: { base: 'var(--brand-cream)', _dark: 'transparent' } })}>{children}</main>
     </>
   );
 }

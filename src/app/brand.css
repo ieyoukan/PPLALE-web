@@ -37,7 +37,4 @@
   /* The darkest brown, for shadows and veils (always with transparency). */
   --brand-ink: #2b170c;
   --brand-gingham: linear-gradient(#fff8f040, #fff8f040), url("/images/check-pattern.png");
-  /* Polka dots: peach dots on the pale yellow, as on the home page's entrances (size 20px). */
-  --brand-dots: radial-gradient(circle, var(--brand-peach) 1.5px, transparent 2px);
-  --brand-dots-pink: radial-gradient(circle, var(--brand-pink) 3px, transparent 3.5px);
 }

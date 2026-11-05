@@ -26,7 +26,7 @@ const tournaments: { ja: string; en: string; fruits: Fruit[]; jaNote: string; en
 export default function CommunityPage() {
   const { t, fruitLabel } = useI18n();
   return (
-    <SitePage ja="コミュニティ" en="Community" pattern="pink-dots" width="lg"
+    <SitePage ja="コミュニティ" en="Community" pattern="blush" width="lg"
       lead={<Bi ja="VRChatのワールドとDiscordで、いっしょに遊ぼう！" en="Play together in the VRChat world and on Discord!" />}>
       <div className={styles.links}>
         <OrnateFrame as="a" appearance="panel" href={VRCHAT_WORLD_URL} target="_blank" rel="noopener noreferrer" className={styles.link}>

@@ -9,9 +9,23 @@
 .link:focus-visible { outline: 3px solid var(--brand-cocoa); outline-offset: 4px; }
 .art { position: relative; display: block; aspect-ratio: 16 / 9; overflow: hidden; background: var(--brand-cocoa-deep); }
 .world { object-fit: cover; }
-/* Discordの絵は水玉の上に全身を見せる。 */
-.discordArt { background: var(--brand-dots-pink) 0 0 / 24px 24px, var(--brand-dots-pink) 12px 12px / 24px 24px, var(--brand-cream); }
-.friends { object-fit: contain; object-position: center bottom; padding-top: 10px; }
+/* Discordの絵：斜めのストライプを重ね、キャラクターはシールのような白い縁取りで手前に置く。
+   全体に細い白の斜線、中央を斜めに横切る淡い帯、左下に濃いめの斜線の面。 */
+.discordArt {
+  background:
+    repeating-linear-gradient(135deg, color-mix(in srgb, var(--brand-paper) 88%, transparent) 0 9px, transparent 9px 18px),
+    color-mix(in srgb, var(--brand-pink) 60%, var(--brand-blush));
+}
+.discordArt::before, .discordArt::after { content: ''; position: absolute; inset: 0; pointer-events: none; }
+.discordArt::before { background: color-mix(in srgb, var(--brand-paper) 58%, transparent); clip-path: polygon(34% 0, 78% 0, 48% 100%, 4% 100%); }
+.discordArt::after {
+  background: repeating-linear-gradient(135deg, color-mix(in srgb, var(--brand-pink-edge) 55%, transparent) 0 11px, transparent 11px 22px);
+  clip-path: polygon(0 52%, 46% 30%, 30% 100%, 0 100%);
+}
+.friends {
+  z-index: 1; object-fit: contain; object-position: center bottom; padding-top: 10px;
+  filter: drop-shadow(2px 0 0 var(--brand-paper)) drop-shadow(-2px 0 0 var(--brand-paper)) drop-shadow(0 2px 0 var(--brand-paper)) drop-shadow(0 -2px 0 var(--brand-paper));
+}
 .caption { display: flex; align-items: center; gap: 12px; padding: 4px 10px 8px; }
 .brand { width: 32px; height: 32px; object-fit: contain; opacity: .82; }
 .wordmark { width: 60px; height: 30px; }

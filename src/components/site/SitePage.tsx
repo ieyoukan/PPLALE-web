@@ -1,4 +1,4 @@
-// サイトの読み物ページの共通の器。水玉かチェック柄の背景に、ヘッダー・見出し・本文・フッターを置く。
+// サイトの読み物ページの共通の器。無地（クリーム・桜色）かチェック柄の背景に、ヘッダー・見出し・本文・フッターを置く。
 // 見た目の基準は docs/design-system.md の「サイトのページ」。
 import type { ComponentProps, ReactNode } from 'react';
 import { SiteHeader } from './SiteHeader';
@@ -7,9 +7,9 @@ import Footer from '@/components/sections/Footer';
 import { OrnateFrame } from '@/components/shared/ui/ornament/OrnateFrame';
 import { Bi } from '@/i18n/Bi';
 
-type Pattern = 'dots' | 'pink-dots' | 'gingham';
+type Pattern = 'plain' | 'blush' | 'gingham';
 
-export function SitePage({ ja, en, pattern = 'dots', width = 'md', lead, headerActions, children }: {
+export function SitePage({ ja, en, pattern = 'plain', width = 'md', lead, headerActions, children }: {
   ja: string; en: string;
   pattern?: Pattern;
   /** md: reading width (legal pages). lg: wider layouts (community). */
