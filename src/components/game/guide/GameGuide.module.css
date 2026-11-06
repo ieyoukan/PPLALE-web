@@ -1,9 +1,9 @@
 /* ランチパッドの横の案内役（GameGuide.tsx）。置き場所と現れ方は Launchpad.module.css の .dialogGuide。 */
 .guide { display: block; pointer-events: none; user-select: none; }
-/* Pressed, the guide slips back behind the launchpad (the way it came out), then comes out again. */
+/* Pressed, the guide slips back behind the launchpad (the way it came out) and stays there until it is closed. */
 .body { position: absolute; inset: 0; display: block; width: 100%; height: 100%; padding: 0; border: 0; background: none; cursor: pointer; pointer-events: auto; -webkit-tap-highlight-color: transparent;
   transition: transform .4s cubic-bezier(.3, 1.4, .5, 1); }
-.guide[data-hiding] .body { transform: translate(-38%, 4%); transition: transform .14s ease-in; }
+.guide[data-hiding] .body { transform: translate(-72%, 6%); transition: transform .16s ease-in; cursor: default; }
 .body:focus-visible { outline: 3px solid var(--brand-cocoa); outline-offset: -6px; border-radius: var(--brand-control-radius); }
 .art { display: block; width: 100%; height: 100%; object-fit: contain; object-position: center bottom; }
 
