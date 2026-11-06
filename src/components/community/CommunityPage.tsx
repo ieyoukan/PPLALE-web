@@ -20,6 +20,7 @@ const tournaments: { ja: string; en: string; fruits: Fruit[]; jaNote: string; en
   { ja: 'イチゴ杯', en: 'Strawberry Cup', fruits: ['strawberry'], jaNote: 'いちごだけ', enNote: 'Strawberry only' },
   { ja: 'ぶどう杯', en: 'Grape Cup', fruits: ['grape', 'strawberry'], jaNote: 'いちご・ぶどう', enNote: 'Strawberry and Grape' },
   { ja: 'メロン杯', en: 'Melon Cup', fruits: ['melon', 'grape', 'strawberry'], jaNote: 'いちご・ぶどう・めろん', enNote: 'Up to Melon' },
+  { ja: 'オレンジ杯', en: 'Orange Cup', fruits: ['orange', 'melon', 'grape', 'strawberry'], jaNote: 'いちご・ぶどう・めろん・おれんじ', enNote: 'Up to Orange' },
   { ja: 'ようかん杯', en: 'Yokan Cup', fruits: ['strawberry'], jaNote: '2Pickのデッキで', enNote: 'With a 2Pick deck', href: '/deck/2pick?twoCardLimit=false&fruits=strawberry' },
 ];
 
@@ -69,6 +70,7 @@ export default function CommunityPage() {
             return <li key={cup.en}>{cup.href ? <Link href={cup.href} prefetch={false} className={styles.cup}>{body}</Link> : <div className={styles.cup}>{body}</div>}</li>;
           })}
         </ul>
+        <p className={styles.cupMore}><Bi ja="ほかにも、さまざまなレギュレーションの大会があります。" en="There are also tournaments with many other rules." /></p>
         <p className={styles.cupFoot}><Bi ja="日程・レギュレーションはDiscordでお知らせします" en="Dates and rules are announced on Discord" /></p>
       </SitePanel>
     </SitePage>
