@@ -270,7 +270,6 @@ export const menus: Record<string, string> = {
   '{name}が招待してくれたよ': '{name} invited you',
   'タップしてルームへ行こう': 'Tap to go to the room',
   '{name}の新しいメッセージ。チャットを開く': 'New message from {name}. Open the chat',
-  '既読 {count}': 'Read by {count}',
   '既読': 'Read',
   '印をつけた手': 'Marked moves',
   '{turn} {name} {delta}': '{turn}, {name}, {delta}',

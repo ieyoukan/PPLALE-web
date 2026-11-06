@@ -9,8 +9,8 @@ import { useI18n } from '@/i18n/LocaleProvider';
 import styles from './RoomChat.module.css';
 
 /**
- * 自分は右、相手は左。スタンプと文字は同じ発言者表示を使う。自分の発言には、読んだ人の数を「既読」で添える
- * （ほかに1人だけなら「既読」、2人以上なら「既読 2」）。`reads`: メンバーごとの読んだ最後の発言（既読対応サーバー）。
+ * 自分は右、相手は左。スタンプと文字は同じ発言者表示を使う。自分の発言は、ほかの誰かが読んだら「既読」を添える
+ * （人数は出さない）。`reads`: メンバーごとの読んだ最後の発言（既読対応サーバー）。
  */
 export function ChatMessages({ messages, ownMemberId, reads, members = [], logRef, onScroll }: {
   messages: RoomChatMessage[];
@@ -25,11 +25,11 @@ export function ChatMessages({ messages, ownMemberId, reads, members = [], logRe
   const profiles = useProfiles(messages.map(message => message.profileId));
   const others = members.filter(member => member !== ownMemberId);
   const position = new Map(messages.map((message, index) => [message.id, index]));
-  const readers = (index: number) => reads ? others.filter(member => (position.get(reads[member] ?? '') ?? -1) >= index).length : 0;
+  const isRead = (index: number) => !!reads && others.some(member => (position.get(reads[member] ?? '') ?? -1) >= index);
 
   return <div ref={logRef} role="log" aria-label={t('チャットのメッセージ')} aria-live="polite" aria-relevant="additions" className={styles.log} onScroll={onScroll}>
     {messages.map((message, index) => {
-      const own = message.member === ownMemberId, read = own ? readers(index) : 0;
+      const own = message.member === ownMemberId, read = own && isRead(index);
       return <div key={message.id} className={styles.message} data-own={own || undefined}>
       <Avatar card={message.profileId ? profiles[message.profileId]?.iconCardId : guestIcon(message.member)} size={48} />
       <div className={styles.content}>
@@ -38,7 +38,7 @@ export function ChatMessages({ messages, ownMemberId, reads, members = [], logRe
           <time dateTime={new Date(message.sentAt).toISOString()}>
             {new Date(message.sentAt).toLocaleTimeString(locale === 'en' ? 'en-US' : 'ja-JP', { hour: '2-digit', minute: '2-digit' })}
           </time>
-          {read > 0 && <span className={styles.read}>{others.length > 1 ? t('既読 {count}', { count: read }) : t('既読')}</span>}
+          {read && <span className={styles.read}>{t('既読')}</span>}
         </div>
         {message.stamp ? <ChatStamp id={message.stamp} /> : <p>{message.text}</p>}
       </div>
