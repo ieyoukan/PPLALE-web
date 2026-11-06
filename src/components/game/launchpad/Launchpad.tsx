@@ -77,7 +77,7 @@ export function Launchpad({ stack, choose }: { stack: Place[]; choose: (section:
         else if (!event.shiftKey && document.activeElement === last) { event.preventDefault(); first?.focus(); }
       }
     }}>
-      {!standalone && !expanded && <GameGuide className={styles.dialogGuide} />}
+      {!standalone && !expanded && <GameGuide className={styles.dialogGuide} wordsClassName={styles.dialogGuideWords} />}
       <OrnateFrame className={styles.pad} data-section={section}>
         {!standalone && !expanded && <LaunchpadStatus />}{!standalone && tabRail}{head}
         <div ref={panelRef} className={styles.tabPanel} role={standalone ? 'region' : 'tabpanel'} id={`${tabId}-panel`} aria-label={title} tabIndex={0}>

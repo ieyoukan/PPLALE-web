@@ -98,7 +98,8 @@ for (const viewport of [{ width: 1280, height: 800 }, { width: 844, height: 390 
     const character = await guide.getAttribute('data-game-guide');
     expect(character).toMatch(/^(gato|chori|nao|iriai|rikusu|gitty|shuo|buran|mika)$/);
     // Named, with what they say on opening (GameGuide GUIDES).
-    await expect(guide.getByRole('status')).toContainText(/\S/);
+    // The words are drawn on their own layer, in front of the launchpad.
+    await expect(pad.locator('[data-guide-ready] [role=status]')).toContainText(/\S/);
     expect(await guide.evaluate(element => getComputedStyle(element).pointerEvents)).toBe('none');
     await expect(page.locator('[data-room-view] [data-game-guide]')).toHaveCount(0);
     const top = await status.evaluate(el => el.offsetTop);

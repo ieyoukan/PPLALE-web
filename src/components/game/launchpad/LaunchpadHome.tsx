@@ -16,11 +16,11 @@ import styles from './LaunchpadHome.module.css';
 
 /** One ordered list owns each destination's behavior and illustration. */
 const destinations = [
-  { target: 'social', character: 'mug-gato', tone: 'vanilla' },
-  { target: 'discover', character: 'mug-shuo', tone: 'sage' },
-  { target: 'cards', character: 'mug-gitty', tone: 'pink' },
-  { target: 'puzzles', character: 'mug-chori', tone: 'vanilla' },
-  { target: 'history', character: 'mug-rikusu', tone: 'vanilla' },
+  { target: 'social', character: 'gato-mug', tone: 'vanilla' },
+  { target: 'discover', character: 'shuo', tone: 'sage' },
+  { target: 'cards', character: 'gitty', tone: 'pink' },
+  { target: 'puzzles', character: 'chori-mug', tone: 'vanilla' },
+  { target: 'history', character: 'rikusu-mug', tone: 'vanilla' },
   { target: 'editor', character: 'buran', tone: 'pink' },
 ] as const;
 

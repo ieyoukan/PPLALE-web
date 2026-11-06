@@ -44,7 +44,7 @@ export default function CommunityPage() {
 
         <OrnateFrame as="a" appearance="panel" href={DISCORD_INVITE_URL} target="_blank" rel="noopener noreferrer" className={styles.link}>
           <span className={`${styles.art} ${styles.discordArt}`}>
-            <Image src="/images/game/characters/friends.webp" alt="" fill sizes="(max-width: 760px) 70vw, 340px" className={styles.friends} />
+            <Image src="/images/game/characters/rikusu-momoka.webp" alt="" fill sizes="(max-width: 760px) 70vw, 340px" className={styles.friends} />
           </span>
           <span className={styles.caption}>
             <Image src="/Discord-Symbol-Black.svg" alt="" width={40} height={40} className={styles.brand} />

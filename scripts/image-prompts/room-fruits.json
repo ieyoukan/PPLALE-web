@@ -3,7 +3,7 @@
   "transparent_background": true,
   "style_references": [
     "public/pupu_game.webp",
-    "public/images/game/characters/friends.webp"
+    "public/images/game/characters/rikusu-momoka.webp"
   ],
   "output_directory": "public/images/game/fruits",
   "export": "Trim transparent margins, fit into 560×560, add 40px transparent padding on every side, export 640×640 WebP at quality 92 with alphaQuality 100.",

@@ -30,9 +30,9 @@ const RAW_IMAGES = [
 const SIZED_IMAGES: { src: string; width: number; height: number; sizes?: string }[] = [
   // The launchpad's guides (GameGuide.tsx GUIDES), drawn at 360px.
   ...GUIDES.map(guide => ({ src: `/images/game/characters/${guide.image}.webp`, width: guide.width, height: guide.height, sizes: '360px' })),
-  ...['mug-gato', 'mug-shuo', 'mug-gitty', 'mug-chori', 'mug-rikusu', 'buran'].map(name => ({ src: `/images/game/characters/${name}.webp`, width: 100, height: 110 })),
-  { src: '/images/game/characters/mug-shuo.webp', width: 120, height: 132 },
-  { src: '/images/game/characters/friends.webp', width: 88, height: 76, sizes: '88px' },
+  ...['gato-mug', 'shuo', 'gitty', 'chori-mug', 'rikusu-mug', 'buran'].map(name => ({ src: `/images/game/characters/${name}.webp`, width: 100, height: 110 })),
+  { src: '/images/game/characters/shuo.webp', width: 120, height: 132 },
+  { src: '/images/game/characters/rikusu-momoka.webp', width: 88, height: 76, sizes: '88px' },
 ];
 
 /** The file the browser will pick from next/image's candidates on this screen (its pixel ratio). */
