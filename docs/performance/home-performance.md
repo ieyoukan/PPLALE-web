@@ -35,3 +35,14 @@ Lighthouse（モバイル）で、ぷぷりえーるとはのLCPが本番で13.4
 - ヒーローのイラストとコミュニティのワールドの絵に `preload` を付ける。
 
 手元の本番ビルド（`next start`）での結果（devtools方式）：トップ LCP 1.8秒、ぷぷりえーるとは LCP 2.1秒（フォント28本・583KB、ページ全体1.2MB）。残る遅れは、描画を止めるCSSのファイル（ぷぷりえーるとはで6本）。`experimental.inlineCss` で埋め込めるが、実験的機能でサイト全体（ゲーム画面を含む）に効き、再訪問時にCSSをキャッシュできず、RSCの中身とCSSが二重に送られるため採用していない。推定方式（Lighthouseの既定）は、画像の表示がJavaScriptの実行を待つものとして3秒前後の遅れを加えるので、実際の遅れは devtools 方式で確認する。
+
+### PageSpeed Insightsの指摘への対応（2026-11-07）
+
+ぷぷりえーるとはの本番のPageSpeed Insightsの診断から：
+
+- **フォントの連鎖**：章見出し・目次・タイトルは見出し用書体（Mochiy Pop One）を `--font-site-title` 経由で使うため、章名の漢字だけでまれな漢字の分割が十数本読まれていた。見出し用にもルール用の書体「PPLALE Rules Title」（271字、約41KB）を生成し、`AboutPage.module.css` の `.about` で `--font-site-title` の先頭に置く。フォントは28本・575KB → 14本・452KB。
+- **強制リフロー**：本のページの切り替え（`AnimatePresence`）とスワイプ（`drag`）にframer-motionを使っていて、最初の描画で位置を測っていた（91ms・47ms）。ページの切り替えはCSSのアニメーション、スワイプはポインターの押した位置と離した位置の差で判定する。拡大表示（`AboutLightbox.tsx`）は開いたときだけ `next/dynamic` で読み込む。サムネイルの列の位置合わせは、ページを動かした後だけ行う。初期のJavaScriptは222KB → 168KB。残る強制リフロー（約160ms）は発生元が特定されない（`[unattributed]`）。
+- **以前のJavaScript（推定14KiB）**：Next.jsが必ず入れる `polyfill-module`（`next/dist/build/polyfills/polyfill-module.js`、実体は約1.4KB）。公式の設定では外せず、対象ブラウザ（Chrome 111+ / Safari 16.4+）では何もしない。フレームワークの内部をエイリアスで差し替えると更新で壊れやすいため、対応しない。
+- **描画を止めるCSS（推定90ms）**：6ファイル・約60KB。`experimental.cssChunking: 'graph'` や `inlineCss` で減らせるが、実験的でゲーム画面を含むサイト全体のCSSの順番・キャッシュに影響するため採用しない。
+
+実際に回線とCPUを遅くした計測（devtools方式）では、LCPは本番2.1〜2.2秒・改善後2.1〜2.3秒でほぼ同じ（LCPの画像の読み込みが主）。推定方式（既定）は同じビルドでも実行ごとに描画を止めるCSSの推定が1〜2.6秒の幅で変わるので、改善の比較には devtools 方式を使う。

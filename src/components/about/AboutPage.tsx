@@ -4,7 +4,7 @@ import '@/app/panda.css';
 
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import Image from 'next/image';
-import { AnimatePresence, motion, useReducedMotion } from 'framer-motion';
+import dynamic from 'next/dynamic';
 import type { RulesHeading } from './RulesDoc';
 import { RULES_ENGLISH_ID, rulesHeadingEnglish } from './RulesEnglish';
 import { Bi } from '@/i18n/Bi';
@@ -13,142 +13,41 @@ import styles from './AboutPage.module.css';
 import { SitePage, SitePanel } from '@/components/site/SitePage';
 import { OrnateFrame } from '@/components/shared/ui/ornament/OrnateFrame';
 import { VRCHAT_WORLD_URL } from '@/lib/communityLinks';
+import { allSlides, clampPage, groupOf, groups } from './aboutSlides';
+import type { Slide } from './aboutSlides';
 
-interface Slide {
-  src: string;
-  title: string;
-  /** The title in English (the page images themselves are in Japanese). */
-  en: string;
-  width: number;
-  height: number;
-}
+// The enlarged view (and its animation library) is loaded only when a page is enlarged.
+const Lightbox = dynamic(() => import('./AboutLightbox'), { ssr: false });
 
-interface Group {
-  id: string;
-  title: string;
-  en: string;
-  icon: string;
-  slides: Slide[];
-}
+/** Swipes shorter than this (px) are taps. */
+const SWIPE = 45;
+const reducedMotion = () => typeof window !== 'undefined' && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 
-
-const landscape = (src: string, title: string, en: string): Slide => ({ src: `/images/about/${src}.webp`, title, en, width: 1191, height: 842 });
-
-const groups: Group[] = [
-  { id: 'story', title: 'あらすじ', en: 'Story', icon: '📖', slides: [landscape('story', 'あらすじ', 'Story')] },
-  {
-    id: 'rules', title: 'ルール', en: 'Rules', icon: '🃏', slides: [
-      landscape('rule-1', 'ルール説明① 対戦前の準備・勝利条件・カードの見方', 'Rules 1: Setup, how to win and reading a card'),
-      landscape('rule-2', 'ルール説明② デッキの作り方', 'Rules 2: Building a deck'),
-      landscape('rule-3', 'ルール説明③ 1ターン目の流れ', 'Rules 3: Your first turn'),
-      landscape('rule-4', 'ルール説明④ 自分のターンにできること', 'Rules 4: What you can do on your turn'),
-      landscape('rule-5', 'ルール説明⑤ その他のルール', 'Rules 5: Other rules'),
-      landscape('rule-6', 'ルール説明⑥ 特殊効果', 'Rules 6: Special abilities'),
-      landscape('rule-6-2', 'ルール説明⑥ 特殊効果 続', 'Rules 6: Special abilities (cont.)'),
-      { src: '/images/about/keywords-basic.webp', title: 'キーワード早見表 基本の特殊効果', en: 'Keyword guide: basic abilities', width: 800, height: 1200 },
-      { src: '/images/about/keywords.webp', title: 'キーワード早見表', en: 'Keyword guide', width: 800, height: 1200 },
-    ],
-  },
-  {
-    id: 'faq-ichigo', title: 'FAQ', en: 'FAQ', icon: '🍓',
-    slides: [1, 2, 3, 4, 5, 6].map(n => landscape(`faq-ichigo-${n}`, `FAQ${n} イチゴタイプ`, `FAQ ${n}: Strawberry`)),
-  },
-  {
-    id: 'faq-budou', title: 'FAQ', en: 'FAQ', icon: '🍇',
-    slides: [1, 2, 3, 4, 5, 6].map(n => landscape(`faq-budou-${n}`, `FAQ${n} ぶどうタイプ`, `FAQ ${n}: Grape`)),
-  },
-];
-
-const allSlides = groups.flatMap(group => group.slides);
-const groupOf = (slide: Slide) => groups.find(group => group.slides.includes(slide))!;
-const clampPage = (page: number) => Math.min(allSlides.length - 1, Math.max(0, page));
-
-function Lightbox({ index, onClose, onMove }: { index: number; onClose: () => void; onMove: (step: number) => void }) {
-  const slide = allSlides[index];
-  const reduceMotion = useReducedMotion();
-  const { t, locale } = useI18n();
-  const slideTitle = locale === 'en' ? slide.en : slide.title;
-  const [direction, setDirection] = useState(0);
-
-  const move = useCallback((step: number) => {
-    setDirection(step);
-    onMove(step);
-  }, [onMove]);
-
-  useEffect(() => {
-    const onKey = (event: KeyboardEvent) => {
-      if (event.key === 'Escape') onClose();
-      if (event.key === 'ArrowRight') move(1);
-      if (event.key === 'ArrowLeft') move(-1);
-    };
-    const { overflow } = document.body.style;
-    document.body.style.overflow = 'hidden';
-    window.addEventListener('keydown', onKey);
-    return () => {
-      document.body.style.overflow = overflow;
-      window.removeEventListener('keydown', onKey);
-    };
-  }, [move, onClose]);
-
-  return (
-    <motion.div
-      role="dialog" aria-modal="true" aria-label={slideTitle} className={styles.lightbox}
-      initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
-      onClick={onClose}
-    >
-      <button type="button" aria-label={t('とじる')} className={styles.close} onClick={onClose}>×</button>
-      <button type="button" aria-label={t('まえへ')} disabled={index === 0} className={`${styles.arrow} ${styles.arrowLeft}`}
-        onClick={event => { event.stopPropagation(); move(-1); }}>‹</button>
-      <button type="button" aria-label={t('つぎへ')} disabled={index === allSlides.length - 1} className={`${styles.arrow} ${styles.arrowRight}`}
-        onClick={event => { event.stopPropagation(); move(1); }}>›</button>
-
-      <div className={styles.lightboxStage}>
-        <AnimatePresence initial={false} custom={direction} mode="popLayout">
-          <motion.div
-            key={slide.src}
-            className={styles.lightboxSlide}
-            initial={reduceMotion ? { opacity: 0 } : { opacity: 0, x: direction * 120, scale: 0.96 }}
-            animate={{ opacity: 1, x: 0, scale: 1 }}
-            exit={reduceMotion ? { opacity: 0 } : { opacity: 0, x: direction * -120, scale: 0.96 }}
-            transition={{ type: 'spring', stiffness: 260, damping: 28 }}
-            drag="x" dragConstraints={{ left: 0, right: 0 }} dragElastic={0.6}
-            onDragEnd={(_, info) => {
-              if (info.offset.x < -60 && index < allSlides.length - 1) move(1);
-              if (info.offset.x > 60 && index > 0) move(-1);
-            }}
-            onClick={event => event.stopPropagation()}
-          >
-            <Image src={slide.src} alt={slideTitle} fill unoptimized draggable={false} style={{ objectFit: 'contain' }} />
-          </motion.div>
-        </AnimatePresence>
-      </div>
-    </motion.div>
-  );
-}
-
+/**
+ * The picture book, one page at a time. No animation library: the next page comes forward from just behind in CSS
+ * (no turning: docs/design-system.md), and a swipe is read from where the pointer went down and came up.
+ * Measuring the layout on the first paint (the library's drag, the strip's scrolling) forced reflows.
+ */
 function Book({ onZoom, paused }: { onZoom: (page: number) => void; paused: boolean }) {
-  const [{ index, direction }, setPage] = useState({ index: 0, direction: 1 });
-  const reduceMotion = useReducedMotion();
+  const [index, setIndex] = useState(0);
   const thumbsRef = useRef<HTMLDivElement>(null);
+  const swipeFrom = useRef<number | null>(null);
+  const moved = useRef(false);
   const slide = allSlides[index];
   const activeGroup = groupOf(slide);
   const { t, locale } = useI18n();
   const titleOf = (page: Slide) => locale === 'en' ? page.en : page.title;
 
-  const turnTo = (next: number) => setPage(current => {
-    const index = clampPage(next);
-    return index === current.index ? current : { index, direction: index > current.index ? 1 : -1 };
-  });
-  const turn = (step: number) => setPage(current => {
-    const index = clampPage(current.index + step);
-    return index === current.index ? current : { index, direction: step };
-  });
+  const turnTo = (next: number) => { moved.current = true; setIndex(clampPage(next)); };
+  const turn = (step: number) => { moved.current = true; setIndex(current => clampPage(current + step)); };
 
+  // Keep the current page's thumbnail in view, once the reader has moved (the first page is already there).
   useEffect(() => {
+    if (!moved.current) return;
     const strip = thumbsRef.current;
     const thumb = strip?.children[index] as HTMLElement | undefined;
-    if (strip && thumb) strip.scrollTo({ left: thumb.offsetLeft - strip.clientWidth / 2 + thumb.clientWidth / 2, behavior: reduceMotion ? 'auto' : 'smooth' });
-  }, [index, reduceMotion]);
+    if (strip && thumb) strip.scrollTo({ left: thumb.offsetLeft - strip.clientWidth / 2 + thumb.clientWidth / 2, behavior: reducedMotion() ? 'auto' : 'smooth' });
+  }, [index]);
 
   return (
     <>
@@ -171,27 +70,21 @@ function Book({ onZoom, paused }: { onZoom: (page: number) => void; paused: bool
           if (event.key === 'End') { event.preventDefault(); turnTo(allSlides.length - 1); }
         }}>
         <OrnateFrame size="sm" className={styles.book}>
-          <div className={styles.paper}>
-            <AnimatePresence initial={false} custom={direction} mode="wait">
-              <motion.div key={slide.src} custom={direction} className={styles.page}
-                // The next page comes forward from just behind (no turning: docs/design-system.md).
-                variants={{
-                  enter: reduceMotion ? { opacity: 0 } : { opacity: 0, scale: 0.97 },
-                  visible: { opacity: 1, scale: 1 },
-                  leave: reduceMotion ? { opacity: 0 } : { opacity: 0, scale: 1.01 },
-                }}
-                initial="enter" animate="visible" exit="leave"
-                transition={{ duration: reduceMotion ? 0 : 0.2, ease: 'easeOut' }}
-                drag="x" dragConstraints={{ left: 0, right: 0 }} dragElastic={0.15}
-                onDragEnd={(_, info) => {
-                  if (info.offset.x < -45) turn(1);
-                  if (info.offset.x > 45) turn(-1);
-                }}>
-                {/* The first page is the page's largest paint (LCP): preloaded, at the size it is shown (the enlarged view keeps the original). */}
-                <Image src={slide.src} alt={titleOf(slide)} fill sizes="(max-width: 1072px) calc(100vw - 72px), 1000px" draggable={false} style={{ objectFit: 'contain' }}
-                  preload={index === 0} loading="eager" fetchPriority={index === 0 ? 'high' : 'auto'} />
-              </motion.div>
-            </AnimatePresence>
+          <div className={styles.paper}
+            onPointerDown={event => { if (event.isPrimary) swipeFrom.current = event.clientX; }}
+            onPointerCancel={() => { swipeFrom.current = null; }}
+            onPointerUp={event => {
+              const from = swipeFrom.current;
+              swipeFrom.current = null;
+              if (from === null) return;
+              if (event.clientX - from < -SWIPE) turn(1);
+              else if (event.clientX - from > SWIPE) turn(-1);
+            }}>
+            <div key={slide.src} className={styles.page}>
+              {/* The first page is the page's largest paint (LCP): preloaded, at the size it is shown (the enlarged view keeps the original). */}
+              <Image src={slide.src} alt={titleOf(slide)} fill sizes="(max-width: 1072px) calc(100vw - 72px), 1000px" draggable={false} style={{ objectFit: 'contain' }}
+                preload={index === 0} loading="eager" fetchPriority={index === 0 ? 'high' : 'auto'} />
+            </div>
             <button type="button" className={styles.zoom} aria-label={t('このページを大きく見る')} onClick={() => onZoom(index)}>⤢</button>
           </div>
         </OrnateFrame>
@@ -286,9 +179,7 @@ export default function AboutPage({ rulesDoc, rulesHeadings }: { rulesDoc: React
         </section>
       </div>
 
-      <AnimatePresence>
-        {openIndex !== null && <Lightbox index={openIndex} onClose={close} onMove={moveBy} />}
-      </AnimatePresence>
+      {openIndex !== null && <Lightbox index={openIndex} onClose={close} onMove={moveBy} />}
     </SitePage>
   );
 }

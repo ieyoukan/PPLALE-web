@@ -21,7 +21,7 @@ test('the rules face covers the rules text that the shared subsets do not, in on
   for (const char of rules) assert.ok(points.has(char.codePointAt(0)), `rules character missing: ${char}`);
   const shared = new Set([...await homeCodePoints(), ...await gameMenuCodePoints()]);
   const faces = manifest.filter(font => font.rules);
-  assert.equal(faces.length, 2);
+  assert.equal(faces.length, 3);
   for (const face of faces) {
     const [part] = face.parts;
     const source = create(await readFile(path.join(fontCache, face.file)));

@@ -23,7 +23,9 @@
 .controls button:not(:disabled):hover, .close:hover, .arrow:not(:disabled):hover { background: var(--brand-blush); }
 .chip:active, .zoom:active, .controls button:not(:disabled):active, .jumps a:active { transform: translateY(2px); }
 
-.about { display: flex; flex-direction: column; gap: 48px; }
+/* The rules' kanji come from their own faces (rules-fonts.css, imported by RulesDoc): the headings, chips and titles
+   here read the title font through this variable, so they get it first instead of a dozen rare-kanji blocks. */
+.about { --font-site-title: 'PPLALE Rules Title', 'Mochiy Pop One', 'Mochiy Pop One Fallback'; display: flex; flex-direction: column; gap: 48px; }
 .part { scroll-margin-top: 72px; }
 .partTitle {
   margin: 0 0 16px; color: var(--brand-cocoa);
@@ -53,7 +55,10 @@
 .reader { outline-offset: 8px; }
 .book { --pad: clamp(14px, 2.4vw, 24px); }
 .paper { position: relative; aspect-ratio: 1191 / 842; background: var(--brand-paper); }
-.page { position: absolute; inset: 0; overflow: hidden; touch-action: pan-y; }
+.paper { touch-action: pan-y; -webkit-user-select: none; user-select: none; }
+/* The next page comes forward from just behind; the transform ends as none (no fill), as before. */
+.page { position: absolute; inset: 0; overflow: hidden; animation: pageIn .2s ease-out; }
+@keyframes pageIn { from { opacity: 0; transform: scale(.97); } }
 .zoom { position: absolute; right: 8px; bottom: 8px; z-index: 2; display: grid; place-items: center; width: 44px; height: 44px; font-size: 22px; }
 
 .controls { display: flex; justify-content: center; align-items: center; gap: 20px; margin: 18px auto 12px; }
@@ -104,4 +109,5 @@
 }
 @media (prefers-reduced-motion: reduce) {
   .about *, .jumps a { transition: none; }
+  .page { animation: none; }
 }
