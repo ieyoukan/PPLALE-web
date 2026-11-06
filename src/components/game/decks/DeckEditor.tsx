@@ -148,7 +148,7 @@ function Editor({ initial, uid, place, onClose, onStart }: { initial: DeckDraft;
                   onPointerDown={event => drag.start(event, card.id, 'pool')} onClick={event => { if (!drag.consumeClick()) add(card.id, event.currentTarget); }}>
                   <CardImage card={card} sizes="150px" />
                 </button>
-                <span className={styles.pips} aria-label={`${n}`}>{Array.from({ length: n }, (_, index) => <i key={index} />)}</span>
+                <span className={styles.pips} role="img" aria-label={`${n}`}>{Array.from({ length: n }, (_, index) => <i key={index} />)}</span>
                 <button type="button" className={styles.zoom} aria-label={`${card.name}${t('を大きく見る')}`} onClick={event => { zoomFrom.current = event.currentTarget; setZoomed(card); }}><GameIcon name="eye" /></button>
               </div>;
             })}</div>

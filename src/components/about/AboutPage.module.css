@@ -56,8 +56,10 @@
 .book { --pad: clamp(14px, 2.4vw, 24px); }
 .paper { position: relative; aspect-ratio: 1191 / 842; background: var(--brand-paper); }
 .paper { touch-action: pan-y; -webkit-user-select: none; user-select: none; }
-/* The next page comes forward from just behind; the transform ends as none (no fill), as before. */
-.page { position: absolute; inset: 0; overflow: hidden; animation: pageIn .2s ease-out; }
+/* A page turned to comes forward from just behind; the transform ends as none (no fill), as before. The first page
+   is not animated: LCP counts an image only once it is visible, so a fade-in delayed it to the fade's end. */
+.page { position: absolute; inset: 0; overflow: hidden; }
+.page[data-turned] { animation: pageIn .2s ease-out; }
 @keyframes pageIn { from { opacity: 0; transform: scale(.97); } }
 .zoom { position: absolute; right: 8px; bottom: 8px; z-index: 2; display: grid; place-items: center; width: 44px; height: 44px; font-size: 22px; }
 
@@ -79,7 +81,9 @@
 .thumb[aria-current='page'] { border-color: var(--brand-cocoa); opacity: 1; }
 
 /* 文字：飾り枠の紙面（SitePanel）にルール・裁定集の全文 */
-.sheet { --pad: clamp(24px, 4.5vw, 48px); }
+/* The whole rules (about 1,400 elements) are laid out only near the screen: on a phone their layout held up the
+   first page's paint (LCP). They stay in the HTML for search engines and agents; jumps into them still work. */
+.sheet { --pad: clamp(24px, 4.5vw, 48px); content-visibility: auto; contain-intrinsic-size: auto 12000px; }
 
 /* 拡大表示 */
 .lightbox {
@@ -109,5 +113,5 @@
 }
 @media (prefers-reduced-motion: reduce) {
   .about *, .jumps a { transition: none; }
-  .page { animation: none; }
+  .page[data-turned] { animation: none; }
 }

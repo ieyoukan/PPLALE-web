@@ -178,7 +178,7 @@ function AssessmentDetail({ side }: { side: Side }) {
               data-selected={move.point.index === selected || undefined}
               // Pressed or focused (not hovered: the list scrolls under the pointer when a mark is chosen), it shows where it is on the curve.
               onClick={() => setSelected(move.point.index)} onFocus={() => setSelected(move.point.index)}>
-              <span className={styles.actor} aria-label={t(names[move.actor])} />
+              <span className={styles.actor} role="img" aria-label={t(names[move.actor])} />
               {move.mark && <span className={styles.tag} data-mark={move.mark}>{t(move.mark === 'blunder' ? '悪手' : move.mark === 'dubious' ? '疑問手' : '好転')}</span>}
               <span className={styles.moveText}>{moveText(move.point.label ?? '', t, gameText)}</span>
               {move.delta === null ? <span className={styles.delta}>—</span>

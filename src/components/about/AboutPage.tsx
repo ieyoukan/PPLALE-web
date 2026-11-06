@@ -2,7 +2,7 @@
 
 import '@/app/panda.css';
 
-import React, { useCallback, useEffect, useRef, useState } from 'react';
+import React, { Suspense, useCallback, useEffect, useRef, useState } from 'react';
 import Image from 'next/image';
 import dynamic from 'next/dynamic';
 import type { RulesHeading } from './RulesDoc';
@@ -32,22 +32,23 @@ function Book({ onZoom, paused }: { onZoom: (page: number) => void; paused: bool
   const [index, setIndex] = useState(0);
   const thumbsRef = useRef<HTMLDivElement>(null);
   const swipeFrom = useRef<number | null>(null);
-  const moved = useRef(false);
+  // Whether the reader has moved from the first page (the first one is shown at once, without the page's entrance).
+  const [moved, setMoved] = useState(false);
   const slide = allSlides[index];
   const activeGroup = groupOf(slide);
   const { t, locale } = useI18n();
   const titleOf = (page: Slide) => locale === 'en' ? page.en : page.title;
 
-  const turnTo = (next: number) => { moved.current = true; setIndex(clampPage(next)); };
-  const turn = (step: number) => { moved.current = true; setIndex(current => clampPage(current + step)); };
+  const turnTo = (next: number) => { setMoved(true); setIndex(clampPage(next)); };
+  const turn = (step: number) => { setMoved(true); setIndex(current => clampPage(current + step)); };
 
   // Keep the current page's thumbnail in view, once the reader has moved (the first page is already there).
   useEffect(() => {
-    if (!moved.current) return;
+    if (!moved) return;
     const strip = thumbsRef.current;
     const thumb = strip?.children[index] as HTMLElement | undefined;
     if (strip && thumb) strip.scrollTo({ left: thumb.offsetLeft - strip.clientWidth / 2 + thumb.clientWidth / 2, behavior: reducedMotion() ? 'auto' : 'smooth' });
-  }, [index]);
+  }, [index, moved]);
 
   return (
     <>
@@ -80,7 +81,8 @@ function Book({ onZoom, paused }: { onZoom: (page: number) => void; paused: bool
               if (event.clientX - from < -SWIPE) turn(1);
               else if (event.clientX - from > SWIPE) turn(-1);
             }}>
-            <div key={slide.src} className={styles.page}>
+            {/* Only a page turned to comes forward: the first one is there at once, as a fade-in would hold back its paint (LCP). */}
+            <div key={slide.src} className={styles.page} data-turned={moved || undefined}>
               {/* The first page is the page's largest paint (LCP): preloaded, at the size it is shown (the enlarged view keeps the original). */}
               <Image src={slide.src} alt={titleOf(slide)} fill sizes="(max-width: 1072px) calc(100vw - 72px), 1000px" draggable={false} style={{ objectFit: 'contain' }}
                 preload={index === 0} loading="eager" fetchPriority={index === 0 ? 'high' : 'auto'} />
@@ -175,7 +177,8 @@ export default function AboutPage({ rulesDoc, rulesHeadings }: { rulesDoc: React
         <section id="text" aria-labelledby="text-heading" className={styles.part}>
           <h2 id="text-heading" className={styles.partTitle}><Bi ja="ルール・裁定集" en="Rules and rulings" /></h2>
           <p data-lang="en" lang="en" className={styles.note}>The rules overview is in English; the detailed rulings and FAQ are in Japanese.</p>
-          <RulesText rulesDoc={rulesDoc} headings={rulesHeadings} />
+          {/* Its own boundary: React hydrates the long rules apart from the book, and the first page can paint in between. */}
+          <Suspense fallback={null}><RulesText rulesDoc={rulesDoc} headings={rulesHeadings} /></Suspense>
         </section>
       </div>
 

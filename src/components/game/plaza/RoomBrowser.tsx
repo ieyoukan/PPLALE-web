@@ -89,13 +89,13 @@ export function RoomBrowser({ onCreate, onEntered }: { onCreate: () => void; onE
             <div className={styles.heading}><h3 data-ui-title>{nameText(chosen.plaza!.name)}</h3><small>#{chosen.id}</small></div>
             <div className={styles.facts}>
               <span><GameIcon name={visibilityInfo[chosen.plaza!.visibility].icon} />{t(visibilityInfo[chosen.plaza!.visibility].label)}</span>
-              <span aria-label={t('人数 {count} / {max}', { count: chosen.plaza!.members, max: MAX_MEMBERS })}><GameIcon name="people" />{chosen.plaza!.members} / {MAX_MEMBERS}</span>
+              <span role="img" aria-label={t('人数 {count} / {max}', { count: chosen.plaza!.members, max: MAX_MEMBERS })}><GameIcon name="people" />{chosen.plaza!.members} / {MAX_MEMBERS}</span>
               <span><GameIcon name="seat" />{chosen.plaza!.seated} / 2</span>
             </div>
             <p className={styles.creator}><GameIcon name="crown" /><span>{t('作成者')}</span><b>{chosen.plaza!.creator.name}</b></p>
           </div>
         </div>
-        <div className={styles.rules} aria-label={t('ルームのルール')}>
+        <div className={styles.rules} role="group" aria-label={t('ルームのルール')}>
           <span><GameIcon name="rules" />{t('{fruit}まで', { fruit: fruitLabel(chosen.rules.fruits.at(-1)!) })}</span>
           <span>{t(chosen.rules.extendedPlayable ? '拡張あり' : '通常')}</span>
           <span><GameIcon name="timer" />{chosen.rules.turnSeconds ? t('{minutes}分', { minutes: chosen.rules.turnSeconds / 60 }) : t('無制限')}</span>

@@ -20,7 +20,7 @@ export function LaunchpadStatus() {
   const self = !loading && member?.profileId === user?.uid ? member : undefined;
   const name = loading ? '…' : user ? profile?.displayName || (self?.name && nameText(self.name)) || t('プレイヤー') : (self?.name && nameText(self.name)) || t('ゲスト');
   const card = user ? profile?.iconCardId : guestIcon(self?.id ?? '');
-  return <div className={styles.status} aria-label={t('プレイヤーと時計')}>
+  return <div className={styles.status} role="group" aria-label={t('プレイヤーと時計')}>
     <button type="button" className={styles.profile} aria-label={t('自分のプロフィール')} title={t('自分のプロフィール')} onClick={() => openAt({ section: 'profile' })}>
       <PlayerIdentity name={name} card={card} />
     </button>

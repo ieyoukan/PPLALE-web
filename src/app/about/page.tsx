@@ -1,9 +1,10 @@
 import type { Metadata } from 'next';
 import AboutPage from '@/components/about/AboutPage';
-import RulesDoc, { loadRules, rulesFaq } from '@/components/about/RulesDoc';
+import RulesDoc, { loadRules } from '@/components/about/RulesDoc';
 import { site } from '@/lib/site';
 
 // 検索・共有・AIエージェント向けの情報は docs/seo.md の「ぷぷりえーるとは」を参照。
+// FAQの構造化データは置かない：HTMLとNext.jsの描画データに二重に入って重く（約80KB）、スマホのLCPを遅らせていた。
 const title = 'ぷぷりえーるとは（ルール・遊び方・FAQ）| ぷぷりえーる';
 const description = 'お菓子争奪戦争ぷぷりえーるのあらすじと、対戦の始め方・ターンの流れ・勝ち方、用語と能力、いちご・ぶどうのFAQ、裁定集をまとめたページです。';
 const url = `${site.url}/about/`;
@@ -25,7 +26,6 @@ export const metadata: Metadata = {
 
 export default async function About() {
   const { markdown, headings } = await loadRules();
-  const faq = rulesFaq(markdown);
   const structuredData = {
     '@context': 'https://schema.org',
     '@graph': [
@@ -49,12 +49,6 @@ export default async function About() {
           genre: 'カードゲーム',
           url: `${site.url}/`,
         },
-      },
-      {
-        '@type': 'FAQPage',
-        '@id': `${url}#faq`,
-        inLanguage: 'ja',
-        mainEntity: faq.map(({ question, answer }) => ({ '@type': 'Question', name: question, acceptedAnswer: { '@type': 'Answer', text: answer } })),
       },
     ],
   };

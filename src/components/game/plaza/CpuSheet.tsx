@@ -31,7 +31,7 @@ export function CpuSheet({ choices, loading, signIn, current, onChoose, onClose 
     <ul className={styles.cpuGrid}>{cpuLevels.map((item, index) => <li key={item}>
       <OrnateFrame as="button" size="sm" className={styles.cpuTile} data-level={item} aria-pressed={item === level} onClick={() => setLevel(item)}>
         <Avatar cpu size={72} /><b data-ui-title>{t(cpuProfiles[item].name)}</b>
-        <span className={styles.stars} aria-label={t('強さ{level}', { level: index + 1 })}>{cpuLevels.map((_, star) => <GameIcon key={star} name="star" className={star <= index ? styles.starOn : styles.starOff} />)}</span>
+        <span className={styles.stars} role="img" aria-label={t('強さ{level}', { level: index + 1 })}>{cpuLevels.map((_, star) => <GameIcon key={star} name="star" className={star <= index ? styles.starOn : styles.starOff} />)}</span>
         {item === level && <span className={styles.tileCheck}><GameIcon name="check" /></span>}
       </OrnateFrame>
     </li>)}</ul>

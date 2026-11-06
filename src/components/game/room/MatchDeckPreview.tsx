@@ -10,7 +10,7 @@ export function MatchDeckPreview({ name, deck }: { name: string; deck: Deck | nu
   const { t } = useI18n();
   const cardName = useCardName();
   const cards = deck ? [deck.yojo[0], deck.sweet[0], deck.playable] : [null, null, null];
-  return <div className={styles.matchDeckPreview} aria-label={t('選択中のデッキ')}>
+  return <div className={styles.matchDeckPreview} role="group" aria-label={t('選択中のデッキ')}>
     <div className={styles.matchDeckArt} aria-hidden="true">
       {cards.map((id, index) => <span key={index} className={styles.matchDeckCard}>
         {id ? <GameCard id={id} sizes="64px" /> : <b>?</b>}

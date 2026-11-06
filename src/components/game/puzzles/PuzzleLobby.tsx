@@ -39,7 +39,7 @@ export default function PuzzleLobby({ fruitId }: { fruitId?: string } = {}) {
       </nav>
       <div className={styles.progress}>
         <progress max={lethalPuzzles.length} value={cleared.length} aria-label={t('パズルのクリア状況')} />
-        <span aria-label={t('{total}問中{cleared}問クリア', { total: lethalPuzzles.length, cleared: cleared.length })}>{cleared.length} / {lethalPuzzles.length}</span>
+        <span role="img" aria-label={t('{total}問中{cleared}問クリア', { total: lethalPuzzles.length, cleared: cleared.length })}>{cleared.length} / {lethalPuzzles.length}</span>
       </div>
     </div>
     {puzzleDifficulties.filter(difficulty => lethalPuzzles.some(puzzle => puzzle.fruit === fruit.id && puzzle.difficulty === difficulty)).map(difficulty => <section key={difficulty}>

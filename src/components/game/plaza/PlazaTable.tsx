@@ -212,12 +212,12 @@ function SeatState({ player }: { player: RoomPlayer }) {
   const { t } = useI18n();
   if (player.cpu) {
     const strength = cpuLevels.indexOf(player.cpu);
-    return <span className={styles.seatState} data-state="ready" aria-label={t('準備OK・強さ{level}', { level: strength + 1 })}><GameIcon name="check" />
+    return <span className={styles.seatState} data-state="ready" role="img" aria-label={t('準備OK・強さ{level}', { level: strength + 1 })}><GameIcon name="check" />
       <span className={styles.stars} aria-hidden="true">{cpuLevels.map((level, star) => <GameIcon key={level} name="star" className={star <= strength ? styles.starOn : styles.starOff} />)}</span></span>;
   }
   if (!player.online) return <span className={styles.seatState} data-state="away">Zzz</span>;
   if (player.ready) return <span className={styles.seatState} data-state="ready"><GameIcon name="check" />OK</span>;
-  return <span className={styles.seatState} data-state="choosing"><span className={styles.thinking} aria-label={t('デッキをえらんでいます')}><i /><i /><i /></span></span>;
+  return <span className={styles.seatState} data-state="choosing"><span className={styles.thinking} role="img" aria-label={t('デッキをえらんでいます')}><i /><i /><i /></span></span>;
 }
 
 /** The deck's playable, or (おまかせ: made when the match starts) a pile of cards. */

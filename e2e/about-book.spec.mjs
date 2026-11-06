@@ -60,7 +60,7 @@ for (const width of [1280, 390]) {
     test('shows docs/game-rules.md as text below the book, in the HTML from the server', async ({ page, request }, info) => {
       // Search engines and agents read the rules without running the page.
       const html = await (await request.get('/about/')).text();
-      for (const text of ['1. 対戦開始と初期手札', 'ぶどうFAQ⑥-1', '"@type":"FAQPage"', '"@type":"BreadcrumbList"']) expect(html).toContain(text);
+      for (const text of ['1. 対戦開始と初期手札', 'ぶどうFAQ⑥-1', '"@type":"AboutPage"', '"@type":"BreadcrumbList"']) expect(html).toContain(text);
       expect(html).not.toMatch(/<h1[^>]*opacity:0/);
       await page.goto('/about/');
       await page.getByRole('link', { name: /もじでよむ/ }).click();

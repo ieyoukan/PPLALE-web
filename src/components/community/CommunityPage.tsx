@@ -60,7 +60,7 @@ export default function CommunityPage() {
         <ul className={styles.cups}>
           {tournaments.map(cup => {
             const body = <>
-              <span className={styles.fruits} aria-label={cup.fruits.map(fruitLabel).join('・')}>
+              <span className={styles.fruits} role="img" aria-label={cup.fruits.map(fruitLabel).join('・')}>
                 {cup.fruits.map(fruit => <Image key={fruit} src={`/images/game/fruits/${fruit}.webp`} alt="" width={24} height={24} />)}
               </span>
               <span className={styles.cupName}><Bi ja={cup.ja} en={cup.en} /></span>
