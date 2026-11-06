@@ -5,6 +5,7 @@
 // 次に開いたときは別の人が出てくる。基準は public/images/game/characters/README.md。
 import Image from 'next/image';
 import { useEffect, useRef, useState } from 'react';
+import type { CSSProperties } from 'react';
 import { gameAudio } from '@/lib/game/gameAudio';
 import styles from './GameGuide.module.css';
 
@@ -61,7 +62,9 @@ export function GameGuide({ className, wordsClassName }: { className?: string; w
         <Image className={styles.art} src={`/images/game/characters/${guide.image}.webp`} alt="" width={guide.width} height={guide.height} sizes="360px" loading="eager" draggable={false} onLoad={() => setReady(true)} />
       </button>}
     </span>
-    {guide && ready && !hiding && <span className={`${styles.wordsLayer} ${className ?? ''} ${wordsClassName ?? ''}`} data-guide-ready>
+    {/* --shape: the picture's height to its width, so the words sit at the head of each one (GameGuide.module.css). */}
+    {guide && ready && !hiding && <span className={`${styles.wordsLayer} ${className ?? ''} ${wordsClassName ?? ''}`} data-guide-ready
+      style={{ '--shape': guide.height / guide.width } as CSSProperties}>
       <span className={styles.words} role="status"><b>{guide.name}</b>{guide.line}</span>
     </span>}
   </>;
