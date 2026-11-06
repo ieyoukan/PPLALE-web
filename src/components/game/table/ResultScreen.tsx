@@ -91,7 +91,7 @@ function Result({ outcome: { winner, kind } }: { outcome: Outcome }) {
         {canRematch && !remote?.freeMatch && <button className={`${styles.plateButton} ${styles.primaryPlate}`} onClick={rematch}>{t(remote?.plaza ? 'この席でもう一度' : remote ? 'もう一度（デッキ選択へ）' : position ? '同じ盤面でもう一度' : '再戦する')}</button>}
       </div>
     </div>
-    {analysisOpen && <ResultSheet title={t('形勢の詳細')} onClose={() => setAnalysisOpen(false)}><AssessmentGraph side={featured} /></ResultSheet>}
+    {analysisOpen && <ResultSheet title={t('形勢の詳細')} bubble onClose={() => setAnalysisOpen(false)}><AssessmentGraph side={featured} /></ResultSheet>}
     {deck && deckOpen && <DeckSheet deck={deck} onClose={() => setDeckOpen(false)} />}
   </section>;
 }
@@ -106,8 +106,11 @@ function ResultAnalysis({ side, onOpen }: { side: Side; onOpen: () => void }) {
   </div>;
 }
 
-/** Keep secondary detail lists out of the result's main actions. */
-function ResultSheet({ title, onClose, children }: { title: string; onClose: () => void; children: ReactNode }) {
+/**
+ * Keep secondary detail lists out of the result's main actions. `bubble`: 形勢の詳細 — a see-through sheet shaped like a
+ * speech bubble (one sharp corner), with no heading shown (the title is only its name for screen readers).
+ */
+function ResultSheet({ title, bubble = false, onClose, children }: { title: string; bubble?: boolean; onClose: () => void; children: ReactNode }) {
   const sheet = useRef<HTMLDivElement>(null);
   const { t } = useI18n();
   useEffect(() => {
@@ -119,8 +122,8 @@ function ResultSheet({ title, onClose, children }: { title: string; onClose: () 
     if (event.key === 'Escape') { event.stopPropagation(); onClose(); }
     if (event.key === 'Tab') { event.preventDefault(); sheet.current?.querySelector<HTMLButtonElement>('button')?.focus(); }
   }}>
-    <div ref={sheet} className={styles.deckSheet} onClick={event => event.stopPropagation()}>
-      <header><h3>{title}</h3><button onClick={onClose} aria-label={t('{title}を閉じる', { title })}>×</button></header>
+    <div ref={sheet} className={`${styles.deckSheet} ${bubble ? styles.bubbleSheet : ''}`} onClick={event => event.stopPropagation()}>
+      <header>{!bubble && <h3>{title}</h3>}<button onClick={onClose} aria-label={t('{title}を閉じる', { title })}>×</button></header>
       {children}
     </div>
   </div>;

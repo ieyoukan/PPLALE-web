@@ -27,7 +27,7 @@
 .controls { display: grid; grid-template-columns: 1fr auto 1fr; align-items: center; }
 .main { display: flex; align-items: center; gap: 14px; }
 .side { display: flex; align-items: center; }
-.side:last-child { justify-content: flex-end; }
+.side:last-child { justify-content: flex-end; gap: 8px; }
 .controls button { display: grid; place-items: center; width: 40px; height: 40px; padding: 0; border-radius: 50%; color: #fffdeb; font-size: 20px; transition: background .15s, transform .15s; }
 .controls button:hover:not(:disabled) { background: #fffdeb1f; }
 .controls button:active:not(:disabled) { transform: scale(.92); }

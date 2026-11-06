@@ -23,6 +23,7 @@ const icons = {
   previous: 'M7 6v12M18 6l-8 6 8 6z',
   next: 'M17 6v12M6 6l8 6-8 6z',
   close: 'M6.5 6.5l11 11M17.5 6.5l-11 11',
+  down: 'M6 9.5l6 6 6-6',
 } as const;
 function Icon({ name }: { name: keyof typeof icons }) {
   return <svg viewBox="0 0 24 24" width="1em" height="1em" fill={name === 'play' || name === 'previous' || name === 'next' ? 'currentColor' : 'none'} stroke="currentColor" strokeWidth={name === 'pause' ? 3.2 : 2.2} strokeLinecap="round" strokeLinejoin="round" aria-hidden="true" focusable="false"><path d={icons[name]} /></svg>;
@@ -33,6 +34,8 @@ export function ReplayBar() {
   const points = useReplayAssessment(timeline, showAssessment);
   const { t } = useI18n();
   const [shown, setShown] = useState(true);
+  // Put away by its own button: it stays down (even paused) until its tab is pressed.
+  const [away, setAway] = useState(false);
   const hideTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   // Up while paused; while playing it goes down after a while and comes back on any touch, like a video player.
   const wake = useCallback(() => {
@@ -99,8 +102,8 @@ export function ReplayBar() {
 
   const progress = `${x(at) / 10}%`;
   return <>
-    <button className={styles.handle} data-shown={shown || undefined} onClick={wake} aria-label={t('再生コントロールを表示')}><span /></button>
-    <section className={styles.player} data-shown={shown || undefined} aria-label={t('リプレイの再生')} onPointerEnter={() => { if (hideTimer.current) clearTimeout(hideTimer.current); }} onPointerLeave={() => { if (!paused) wake(); }}>
+    <button className={styles.handle} data-shown={(shown && !away) || undefined} onClick={() => { setAway(false); wake(); }} aria-label={t('再生コントロールを表示')}><span /></button>
+    <section className={styles.player} data-shown={(shown && !away) || undefined} inert={away || undefined} aria-label={t('リプレイの再生')} onPointerEnter={() => { if (hideTimer.current) clearTimeout(hideTimer.current); }} onPointerLeave={() => { if (!paused) wake(); }}>
       {timeline && <div ref={track} className={styles.track} role="slider" tabIndex={0} aria-label={t('再生位置')} aria-valuemin={0} aria-valuemax={last} aria-valuenow={at}
         aria-valuetext={t('{at} / {last}手', { at, last })}
         onPointerDown={event => { dragging.current = true; event.currentTarget.setPointerCapture(event.pointerId); seekAt(event); }}
@@ -133,7 +136,10 @@ export function ReplayBar() {
           <button className={styles.play} onClick={() => setPaused(!paused)} aria-label={t(paused ? '再生する' : '一時停止')}><Icon name={paused ? 'play' : 'pause'} /></button>
           {timeline && <button onClick={() => turnStep(1)} disabled={!turns.some(index => index > at)} aria-label={t('次のターンへ')}><Icon name="next" /></button>}
         </span>
-        <span className={styles.side}><button className={styles.stop} onClick={stopReplay} aria-label={t('リプレイをやめる')}><Icon name="close" /></button></span>
+        <span className={styles.side}>
+          <button className={styles.stop} onClick={() => setAway(true)} aria-label={t('再生コントロールをしまう')}><Icon name="down" /></button>
+          <button className={styles.stop} onClick={stopReplay} aria-label={t('リプレイをやめる')}><Icon name="close" /></button>
+        </span>
       </div>
     </section>
   </>;

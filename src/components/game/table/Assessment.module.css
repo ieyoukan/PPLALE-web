@@ -9,9 +9,9 @@
 /* The whole match (result screen and 形勢の詳細): a dark face so the curve and its marks stand out on any sheet.
    Shapes in the SVG stretch with the box; the marks, axis and turn numbers lie over it in HTML. */
 .graph { display: grid; gap: 8px; }
-.graph h3, .detailHead h3 { font-size: clamp(14px, 1.6cqw, 18px); margin: 0; }
-.graph h3 small, .detailHead h3 small { margin-left: 8px; opacity: .8; font-size: .8em; }
-.chart { position: relative; height: clamp(150px, 26vh, 230px); margin: 0 0 18px 22px; border-radius: 8px; background: #2b1a12; }
+.graph h3 { font-size: clamp(14px, 1.6cqw, 18px); margin: 0; }
+.graph h3 small { margin-left: 8px; opacity: .8; font-size: .8em; }
+.chart { position: relative; touch-action: pan-y; height: clamp(150px, 26vh, 230px); margin: 0 0 18px 22px; border-radius: 8px; background: #2b1a12; }
 .chart svg { position: absolute; inset: 0; width: 100%; height: 100%; border-radius: inherit; overflow: hidden; }
 .chartCompact { height: 120px; margin-bottom: 0; }
 .bandMine { fill: #fff3d614; }
@@ -24,11 +24,28 @@
 .axis { position: absolute; left: -22px; width: 18px; transform: translateY(-50%); color: currentColor; opacity: .75; font-size: 10px; text-align: right; font-variant-numeric: tabular-nums; }
 .turnNumber { position: absolute; bottom: -17px; transform: translateX(-50%); font-size: 11px; font-weight: 700; opacity: .55; font-variant-numeric: tabular-nums; }
 .turnNumber[data-mine] { opacity: 1; }
+/* Pointed at: a line through the move, and what it was above the curve. */
+.cursor[data-pointed] { background: #fff3d6aa; }
+/* Inside the dark face, at its top: a light bubble, so it is never cut off by the sheet or the counts above. */
+.pointed {
+  position: absolute; top: 8px; z-index: 3; display: grid; gap: 2px; width: max-content; max-width: min(320px, 70%);
+  padding: 7px 12px; border: 1px solid #e3cdbf; border-radius: 12px 12px 12px 3px; background: #fffdebf2; color: #4a3328; font-size: 13px; line-height: 1.45;
+  transform: translateX(-50%); pointer-events: none;
+}
+.pointed small { color: #7b5e58; font-size: 11px; }
+.pointed span { display: flex; align-items: center; gap: 6px; overflow-wrap: anywhere; }
+.pointed i { flex: none; width: 10px; height: 10px; border-radius: 50%; background: #ff5f6d; }
+.pointed i[data-mark=dubious] { background: #ffc145; }
+.pointed b { font-variant-numeric: tabular-nums; }
+.pointed b[data-sign='1'] { color: #3f7a2a; }
+.pointed b[data-sign='-1'] { color: #c0364a; }
 .cursor { position: absolute; top: 0; bottom: 0; width: 2px; margin-left: -1px; background: #fff3d6; pointer-events: none; }
-/* Marks: a red dot for a blunder, amber for a dubious move, a green diamond for a turnaround. */
+/* Marks: a red dot for a blunder, amber for a dubious move, a green ▲ where the chance rose, a pink ▼ where it fell. */
 .mark { position: absolute; width: 14px; height: 14px; margin: -7px 0 0 -7px; padding: 0; border: 2px solid #2b1a12; border-radius: 50%; background: #ff5f6d; box-shadow: 0 0 0 2px #fff3d6; cursor: pointer; }
 .mark[data-mark=dubious] { background: #ffc145; }
-.mark[data-mark=turnaround] { border-radius: 2px; background: #7fe0a2; transform: rotate(45deg); }
+.mark[data-mark=up], .mark[data-mark=down] { width: 16px; height: 14px; margin: -7px 0 0 -8px; border: 0; border-radius: 0; box-shadow: none; filter: drop-shadow(0 0 0 #fff3d6) drop-shadow(0 0 1.5px #fff3d6); }
+.mark[data-mark=up] { background: #7fe0a2; clip-path: polygon(50% 0, 100% 100%, 0 100%); }
+.mark[data-mark=down] { background: #ff8aa0; clip-path: polygon(0 0, 100% 0, 50% 100%); }
 .mark[data-selected] { width: 20px; height: 20px; margin: -10px 0 0 -10px; box-shadow: 0 0 0 3px #fff3d6; }
 span.mark { cursor: default; width: 10px; height: 10px; margin: -5px 0 0 -5px; box-shadow: 0 0 0 1.5px #fff3d6; }
 .mark:focus-visible { outline: 3px solid #fff3d6; outline-offset: 3px; }
@@ -40,13 +57,13 @@ span.mark { cursor: default; width: 10px; height: 10px; margin: -5px 0 0 -5px; b
 
 /* 形勢の詳細 (on the result screen's light sheet): dark ink, the changes in deep green and red. */
 .detail { --gain: #3f7a2a; --loss: #c0364a; display: grid; gap: 14px; color: #4a3328; }
-.detailHead { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 8px 16px; }
-.counts { display: flex; gap: 8px; margin: 0; padding: 0; list-style: none; font-size: 14px; }
+.counts { display: flex; flex-wrap: wrap; gap: 8px; margin: 0; padding: 0 48px 0 0; list-style: none; font-size: 14px; }
 .counts li { display: flex; align-items: center; gap: 6px; padding: 4px 10px; border: 1px solid #e3cdbf; border-radius: 8px; background: #fff; }
 .counts b { font-size: 16px; font-variant-numeric: tabular-nums; }
 .counts i, .turnMarks i { display: inline-block; width: 10px; height: 10px; border-radius: 50%; background: #ff5f6d; }
 .counts [data-mark=dubious] i, .turnMarks i[data-mark=dubious] { background: #ffc145; }
-.counts [data-mark=turnaround] i, .turnMarks i[data-mark=turnaround] { border-radius: 1px; background: #4fbf78; transform: rotate(45deg) scale(.85); }
+.counts [data-mark=up] i, .turnMarks i[data-mark=up], .pointed i[data-mark=up] { border-radius: 0; background: #4fbf78; clip-path: polygon(50% 0, 100% 100%, 0 100%); }
+.counts [data-mark=down] i, .turnMarks i[data-mark=down], .pointed i[data-mark=down] { border-radius: 0; background: #e0607e; clip-path: polygon(0 0, 100% 0, 50% 100%); }
 
 .chartHold { padding: 6px 0 4px; background: #fffdeb; }
 @media (min-height: 700px) { .chartHold { position: sticky; top: -18px; z-index: 2; } }
@@ -83,7 +100,8 @@ span.mark { cursor: default; width: 10px; height: 10px; margin: -5px 0 0 -5px; b
 .moveText { overflow-wrap: anywhere; }
 .tag { padding: 1px 8px; border-radius: 6px; background: #c0364a; color: #fff; font-size: 12px; font-weight: 700; white-space: nowrap; }
 .tag[data-mark=dubious] { background: #f2b33d; color: #3b2516; }
-.tag[data-mark=turnaround] { background: #3f7a2a; }
+.tag[data-mark=up] { background: #3f7a2a; }
+.tag[data-mark=down] { background: #e0607e; color: #fff; }
 .replay { display: grid; place-items: center; width: 30px; height: 30px; padding: 0; border: 1px solid #e3cdbf; border-radius: 8px; background: #fff; color: #6b4a3a; cursor: pointer; }
 .replay i { width: 0; height: 0; margin-left: 2px; border-style: solid; border-width: 6px 0 6px 10px; border-color: transparent transparent transparent currentColor; }
 .replay:hover { background: #fbf3ea; }

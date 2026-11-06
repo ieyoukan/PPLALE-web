@@ -267,6 +267,8 @@ export const menus: Record<string, string> = {
   '形勢 {name} {percent}%': 'Standing: {name} {percent}%',
   '形勢が好転した手': 'Moves that turned the game',
   '形勢の推移': 'Course of the match',
+  '再生コントロールをしまう': 'Put the replay controls away',
+  '悪化': 'Setback',
   'オンライン': 'Online',
   '{name}が招待してくれたよ': '{name} invited you',
   'タップしてルームへ行こう': 'Tap to go to the room',

@@ -114,6 +114,10 @@
 .deckSheet h3 { margin: 0; font-size: 22px; }
 .deckSheet h4 { margin: 18px 0 8px; font-size: 16px; color: #a88667; }
 .deckSheet header button { width: 44px; height: 44px; border-radius: 50%; background: #e7c3e2; font-size: 24px; color: #6b4a3a; }
+/* 形勢の詳細: see-through, shaped like a speech bubble (the lower-left corner sharp), the close button alone at the top. */
+.bubbleSheet { border: 2px solid #e7c3e2b3; border-radius: 22px 22px 22px 4px; background: color-mix(in srgb, #fffdeb 84%, transparent); backdrop-filter: blur(6px); }
+.bubbleSheet header { position: sticky; top: -18px; z-index: 3; justify-content: flex-end; height: 0; }
+.bubbleSheet header button { width: 36px; height: 36px; margin-top: 18px; font-size: 20px; background: color-mix(in srgb, #e7c3e2 80%, transparent); }
 .deckGrid { display: grid; grid-template-columns: repeat(auto-fill, minmax(92px, 1fr)); gap: 10px; margin: 0; padding: 0; list-style: none; }
 .deckCard { position: relative; aspect-ratio: 533 / 800; }
 .deckCount { position: absolute; right: 2px; bottom: 2px; padding: 2px 8px; border-radius: 999px; background: #a88667; color: #fffdeb; font-size: 15px; font-weight: 700; }
