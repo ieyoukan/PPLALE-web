@@ -6,29 +6,93 @@
 @container stage (max-height: 500px) { .bar { left: 4px; } .track { height: 34cqh; } }
 @media (prefers-reduced-motion: reduce) { .near { transition: none; } }
 
-/* The whole match, on the result screen. */
+/* The whole match (result screen and 形勢の詳細): a dark face so the curve and its marks stand out on any sheet.
+   Shapes in the SVG stretch with the box; the marks, axis and turn numbers lie over it in HTML. */
 .graph { display: grid; gap: 8px; }
-.graph h3 { font-size: clamp(14px, 1.6cqw, 18px); margin: 0; }
-.graph h3 small { margin-left: 8px; opacity: .75; font-size: .8em; }
-.graph svg { width: 100%; height: clamp(90px, 18cqh, 160px); border-radius: 8px; background: #ffffff14; }
-.ahead { fill: #9fd3a822; }
-.even { stroke: #fffdeb88; stroke-dasharray: 6 6; }
-.tickFirst, .tickSecond { stroke: #fffdeb22; }
-.curve { fill: none; stroke: #fffdeb; stroke-width: 2.5; stroke-linejoin: round; }
-.blunder { fill: #ff7b7b; stroke: #fffdeb; }
-.dubious { fill: #ffc66b; stroke: #fffdeb; }
-.mistakes { display: grid; gap: 4px; margin: 0; padding: 0; list-style: none; font-size: clamp(12px, 1.4cqw, 16px); }
-.mistakes small { opacity: .75; }
-.blunderTag, .dubiousTag { display: inline-block; margin-right: 8px; padding: 0 8px; border-radius: 999px; font-size: .85em; color: #3b2530; }
-.blunderTag { background: #ff9b9b; }
-.dubiousTag { background: #ffd28a; }
-.highlight { fill: #a8edc6; stroke: #fffdeb; stroke-width: 1.5; }
-.highlights { padding: 8px; border-radius: 12px; background: linear-gradient(120deg, #9fd3a822, #a8edc608); border: 1px solid #a8edc633; }
-.highlightTag { display: inline-block; margin-right: 8px; padding: 0 8px; border-radius: 999px; font-size: .85em; color: #254838; background: #a8edc6; }
-.note { font-size: 11px; opacity: .65; }
+.graph h3, .detailHead h3 { font-size: clamp(14px, 1.6cqw, 18px); margin: 0; }
+.graph h3 small, .detailHead h3 small { margin-left: 8px; opacity: .8; font-size: .8em; }
+.chart { position: relative; height: clamp(150px, 26vh, 230px); margin: 0 0 18px 22px; border-radius: 8px; background: #2b1a12; }
+.chart svg { position: absolute; inset: 0; width: 100%; height: 100%; border-radius: inherit; overflow: hidden; }
+.chartCompact { height: 120px; margin-bottom: 0; }
+.bandMine { fill: #fff3d614; }
+.bandTheirs { fill: transparent; }
+.areaAhead { fill: #7fd39a; fill-opacity: .55; }
+.areaBehind { fill: #f08ca0; fill-opacity: .55; }
+.even { stroke: #fff3d6aa; stroke-width: 1.5; stroke-dasharray: 5 5; }
+.curve { fill: none; stroke: #fff3d6; stroke-width: 3; stroke-linejoin: round; stroke-linecap: round; }
+/* 100 / 50 / 0 on the left, outside the face. */
+.axis { position: absolute; left: -22px; width: 18px; transform: translateY(-50%); color: currentColor; opacity: .75; font-size: 10px; text-align: right; font-variant-numeric: tabular-nums; }
+.turnNumber { position: absolute; bottom: -17px; transform: translateX(-50%); font-size: 11px; font-weight: 700; opacity: .55; font-variant-numeric: tabular-nums; }
+.turnNumber[data-mine] { opacity: 1; }
+.cursor { position: absolute; top: 0; bottom: 0; width: 2px; margin-left: -1px; background: #fff3d6; pointer-events: none; }
+/* Marks: a red dot for a blunder, amber for a dubious move, a green diamond for a turnaround. */
+.mark { position: absolute; width: 14px; height: 14px; margin: -7px 0 0 -7px; padding: 0; border: 2px solid #2b1a12; border-radius: 50%; background: #ff5f6d; box-shadow: 0 0 0 2px #fff3d6; cursor: pointer; }
+.mark[data-mark=dubious] { background: #ffc145; }
+.mark[data-mark=turnaround] { border-radius: 2px; background: #7fe0a2; transform: rotate(45deg); }
+.mark[data-selected] { width: 20px; height: 20px; margin: -10px 0 0 -10px; box-shadow: 0 0 0 3px #fff3d6; }
+span.mark { cursor: default; width: 10px; height: 10px; margin: -5px 0 0 -5px; box-shadow: 0 0 0 1.5px #fff3d6; }
+.mark:focus-visible { outline: 3px solid #fff3d6; outline-offset: 3px; }
 
-/* Result overview: detailed move lists open separately. */
+/* Result overview: the curve only; 形勢の詳細 opens separately. */
 .compact { gap: 6px; min-width: 0; }
 .compact h3 { font-size: 18px; line-height: 1.4; }
 .compact h3 small { display: block; margin-left: 0; overflow-wrap: anywhere; }
-.compact svg { height: 120px; }
+
+/* 形勢の詳細 (on the result screen's light sheet): dark ink, the changes in deep green and red. */
+.detail { --gain: #3f7a2a; --loss: #c0364a; display: grid; gap: 14px; color: #4a3328; }
+.detailHead { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 8px 16px; }
+.counts { display: flex; gap: 8px; margin: 0; padding: 0; list-style: none; font-size: 14px; }
+.counts li { display: flex; align-items: center; gap: 6px; padding: 4px 10px; border: 1px solid #e3cdbf; border-radius: 8px; background: #fff; }
+.counts b { font-size: 16px; font-variant-numeric: tabular-nums; }
+.counts i, .turnMarks i { display: inline-block; width: 10px; height: 10px; border-radius: 50%; background: #ff5f6d; }
+.counts [data-mark=dubious] i, .turnMarks i[data-mark=dubious] { background: #ffc145; }
+.counts [data-mark=turnaround] i, .turnMarks i[data-mark=turnaround] { border-radius: 1px; background: #4fbf78; transform: rotate(45deg) scale(.85); }
+
+.chartHold { padding: 6px 0 4px; background: #fffdeb; }
+@media (min-height: 700px) { .chartHold { position: sticky; top: -18px; z-index: 2; } }
+.turns { display: grid; gap: 6px; margin: 0; padding: 0; list-style: none; }
+.turn { border: 1px solid #ead9cc; border-radius: 8px; background: #fff; overflow: hidden; }
+.turn[data-mine] { border-color: #d9c2b2; }
+.turnHead { display: grid; grid-template-columns: 30px minmax(4em, 9em) auto minmax(60px, 1fr) 46px 16px; align-items: center; gap: 10px; width: 100%; min-height: 46px; padding: 6px 10px; border: 0; background: none; color: inherit; font: inherit; text-align: left; cursor: pointer; }
+.turnHead:hover { background: #fbf3ea; }
+.turnHead:focus-visible { outline: 3px solid #6b4a3a; outline-offset: -3px; }
+.turnBadge { display: grid; place-items: center; width: 28px; height: 28px; border-radius: 8px; background: #efe3d8; font-weight: 700; font-variant-numeric: tabular-nums; }
+.turn[data-mine] .turnBadge { background: #6b4a3a; color: #fffdeb; }
+.turnOwner { overflow: hidden; font-size: 14px; text-overflow: ellipsis; white-space: nowrap; }
+.turnMarks { display: flex; gap: 4px; min-width: 0; }
+.chevron { width: 8px; height: 8px; border-right: 2px solid currentColor; border-bottom: 2px solid currentColor; transform: rotate(45deg); opacity: .6; }
+.turnHead[aria-expanded=true] .chevron { transform: rotate(-135deg); }
+.deltaBar { position: relative; display: block; height: 10px; border-radius: 5px; background: #f1e6dc; }
+.deltaBar::after { content: ''; position: absolute; left: 50%; top: -2px; bottom: -2px; width: 1px; background: #b89d8c; }
+.deltaBar i { position: absolute; top: 0; bottom: 0; border-radius: 5px; background: var(--gain); }
+.deltaBar i[data-sign='-1'] { background: var(--loss); }
+.delta { font-weight: 700; font-variant-numeric: tabular-nums; text-align: right; white-space: nowrap; }
+.delta::after { content: '%'; margin-left: 1px; font-size: .75em; font-weight: 400; }
+.delta[data-sign='1'] { color: var(--gain); }
+.delta[data-sign='-1'] { color: var(--loss); }
+.delta[data-sign='0'] { opacity: .6; }
+
+.moves { display: grid; margin: 0; padding: 4px 10px 8px; border-top: 1px dashed #ead9cc; list-style: none; }
+.move { display: grid; grid-template-columns: 10px auto minmax(0, 1fr) 46px 32px; align-items: center; gap: 8px; min-height: 36px; padding: 2px 4px; border-radius: 6px; font-size: 14px; }
+.move:not(:has(.tag)) { grid-template-columns: 10px minmax(0, 1fr) 46px 32px; }
+.move { cursor: pointer; }
+.move[data-selected] { background: #fbf0e4; box-shadow: inset 3px 0 0 #6b4a3a; }
+.actor { width: 10px; height: 10px; border-radius: 50%; background: #c9b3a5; }
+.move[data-mine] .actor { background: #6b4a3a; }
+.move:not([data-mine]) .moveText { opacity: .75; }
+.moveText { overflow-wrap: anywhere; }
+.tag { padding: 1px 8px; border-radius: 6px; background: #c0364a; color: #fff; font-size: 12px; font-weight: 700; white-space: nowrap; }
+.tag[data-mark=dubious] { background: #f2b33d; color: #3b2516; }
+.tag[data-mark=turnaround] { background: #3f7a2a; }
+.replay { display: grid; place-items: center; width: 30px; height: 30px; padding: 0; border: 1px solid #e3cdbf; border-radius: 8px; background: #fff; color: #6b4a3a; cursor: pointer; }
+.replay i { width: 0; height: 0; margin-left: 2px; border-style: solid; border-width: 6px 0 6px 10px; border-color: transparent transparent transparent currentColor; }
+.replay:hover { background: #fbf3ea; }
+.replay:focus-visible { outline: 3px solid #6b4a3a; outline-offset: 2px; }
+.note { margin: 0; font-size: 12px; opacity: .75; }
+
+@media (max-width: 560px) {
+  .turnHead { grid-template-columns: 28px minmax(3em, 1fr) auto minmax(40px, 1fr) 42px 12px; gap: 6px; padding: 6px 8px; }
+  .move { gap: 6px; font-size: 13px; }
+  .counts { font-size: 12px; }
+}
+@media (prefers-reduced-motion: reduce) { .chevron { transition: none; } }

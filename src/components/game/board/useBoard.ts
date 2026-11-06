@@ -221,6 +221,7 @@ export function useBoard(container: RefObject<HTMLDivElement | null>, session: B
 
   // A replay moved to another position: what was being presented is dropped and the new position shown as it is.
   const timeline = session.timeline;
+  const replayTarget = useRef<number | null>(null);
   const seekReplay = useCallback((at: number) => {
     if (!timeline || at === timeline.at) return;
     handling.current = null;
@@ -232,6 +233,15 @@ export function useBoard(container: RefObject<HTMLDivElement | null>, session: B
     setExchanges([]);
     timeline.seek(at);
   }, [timeline, resetAnimations, resetDice, skipAnimation]);
+
+  // A replay opened at a move (replayFrom) goes there as soon as its positions are known.
+  useEffect(() => {
+    if (!timeline || replayTarget.current === null) return;
+    const at = replayTarget.current;
+    replayTarget.current = null;
+    seekReplay(at);
+    setPaused(true);
+  }, [timeline, seekReplay]);
 
   const failed = remote?.failed;
   useEffect(() => {
@@ -430,6 +440,15 @@ export function useBoard(container: RefObject<HTMLDivElement | null>, session: B
     session.editStart();
   }
   function startReplay() { resetTable(); session.startReplay(); }
+  /**
+   * Opens the replay at the position after `at` commands, paused (形勢の詳細: look again at a move). The replay's
+   * positions are worked out when it starts, so the jump waits for its timeline.
+   */
+  function replayFrom(at: number) {
+    replayTarget.current = at;
+    if (timeline) { seekReplay(at); setPaused(true); replayTarget.current = null; }
+    else startReplay();
+  }
   function stopReplay() { resetTable(); session.stopReplay(); }
   function undo() {
     animations.skipNext();
@@ -459,7 +478,7 @@ export function useBoard(container: RefObject<HTMLDivElement | null>, session: B
     intent: remote && (presentingOwn || remote.waiting) ? intent : null,
     pendingPlay, canControl, canStrike, canAttackNow, affordable, isOption, flying, deckReady,
     act, choose, play, adjust, clickDeck, clickSlot, clickHand, attackLeader,
-    setPanel, setSelected, setAttacker, setView, setPaused, leave, undo, clearSelection, toggleFullscreen, rematch, startReplay, stopReplay,
+    setPanel, setSelected, setAttacker, setView, setPaused, leave, undo, clearSelection, toggleFullscreen, rematch, startReplay, replayFrom, stopReplay,
   };
 }
 export type Board = ReturnType<typeof useBoard>;
