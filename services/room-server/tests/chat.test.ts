@@ -111,3 +111,21 @@ test('chat stamps: fixed catalog, server fallback, shared limits, retries and me
     assert.equal(plazaView(room, owner, new Set([owner]), catalog).plaza!.chatStamps, true);
     assert.equal(plazaView(room, owner, new Set([owner]), catalog).plaza!.chat![0].stamp, 'ageru');
 });
+
+test('chat: read receipts move forward, follow the sender, and are shown with the history', () => {
+    const { room } = createPlaza('123458', { rules, plaza: { visibility: 'public' } }, { name: 'ありす', profileId: 'alice' });
+    const owner = room.plaza!.owner!, guest = admit(room, { name: 'ぼぶ' }).member.id;
+    const act = (body: unknown, at: number, member = owner) => actPlaza(room, member, body, catalog, at);
+    act(message('おはよう'), 0);
+    act(message('いまどこ？'), 2000);
+    const [first, second] = room.plaza!.chat!.map(item => item.id);
+    // The sender has read their own message; the other member has read nothing yet.
+    assert.deepEqual(plazaView(room, guest, new Set([owner, guest]), catalog).plaza!.chatReads, { [owner]: second });
+    assert.equal(plazaView(room, guest, new Set([owner, guest]), catalog).plaza!.chatReceipts, true);
+    assert.deepEqual(act({ action: 'chatRead', id: second }, 3000, guest), { chat: true });
+    // Never backwards, never to a message that is not in the history.
+    assert.deepEqual(act({ action: 'chatRead', id: first }, 3100, guest), {});
+    assert.deepEqual(act({ action: 'chatRead', id: 'unknown' }, 3200, guest), {});
+    assert.deepEqual(plazaView(room, owner, new Set([owner, guest]), catalog).plaza!.chatReads, { [owner]: second, [guest]: second });
+    assert.throws(() => act({ action: 'chatRead', id: second }, 3300, 'outsider'), /ルームが見つかりません/);
+});

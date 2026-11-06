@@ -166,6 +166,8 @@ export type RoomAction =
     | { action: 'rename'; name: string }
     /** 文字または登録済みスタンプを送る。送信IDを使い、再試行しても重複させない。 */
     | ({ action: 'chat'; messageId: string } & ({ text: string; stamp?: never } | { stamp: RoomChatStampId; text?: never }))
+    /** その発言まで読んだ（既読）。表示中のチャットで最新の他人の発言を送る。 */
+    | { action: 'chatRead'; id: string }
     /** 招待リンクを更新し、古いリンクを失効させる。 */
     | { action: 'renewInvite' }
     /** フレンドからの入室リクエストへ回答する。 */
@@ -228,6 +230,10 @@ export interface PlazaView {
     chatEnabled?: true;
     /** 登録済みスタンプの送信に対応するサーバー。 */
     chatStamps?: true;
+    /** 既読（chatRead）に対応するサーバー。 */
+    chatReceipts?: true;
+    /** メンバーごとの、読んだ最後の発言ID。履歴（chat）と一緒に返す。 */
+    chatReads?: Record<string, string>;
     /** 対戦中に変更された、次の試合用のルール。 */
     nextRules?: RoomRules;
     /** 招待リンクの秘密。共有できるメンバーだけに返す。 */
@@ -270,7 +276,7 @@ export type ClientMessage =
 /** viewは表示状態、resultは操作番号nの成否、goneはルーム・メンバーの消失。成功した操作のviewはresultより先に届く。 */
 export type ServerMessage =
     | { type: 'view'; view: RoomView }
-    | { type: 'chat'; id: string; version: number; messages: RoomChatMessage[] }
+    | { type: 'chat'; id: string; version: number; messages: RoomChatMessage[]; /** メンバーごとの既読位置。 */ reads?: Record<string, string> }
     | { type: 'result'; n: number; error?: string; revision?: number; timing?: ServerTiming }
     /** `closed`: a plaza closed while this member was away; they may make its successor (`PlazaRequest.from`). */
     | { type: 'gone'; error: string; closed?: true };

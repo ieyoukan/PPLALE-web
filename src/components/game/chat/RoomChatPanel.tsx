@@ -10,12 +10,14 @@ import { ChatMessages } from './ChatMessages';
 import { ChatStampPicker } from './ChatStampPicker';
 import { useChatSender } from './useChatSender';
 import { useUnreadMessages } from './useUnreadMessages';
+import { useChatArrivals } from './useChatArrivals';
+import { ChatPreview } from './ChatPreview';
 import { useI18n } from '@/i18n/LocaleProvider';
 import styles from './RoomChat.module.css';
 
 /** チャットの配置・開閉・スクロール・キー操作だけを管理する。送信と未読の判定は各フックへ任せる。 */
 export function RoomChatPanel({ open, onOpen, onClose }: { open: boolean; onOpen(): void; onClose(): void }) {
-  const { chat, view, send, linked } = usePlaza();
+  const { id: roomId, chat, chatReads, view, send, linked } = usePlaza();
   const { t } = useI18n();
   const input = useRef<HTMLTextAreaElement>(null);
   const log = useRef<HTMLDivElement>(null);
@@ -27,11 +29,31 @@ export function RoomChatPanel({ open, onOpen, onClose }: { open: boolean; onOpen
   const ready = linked && !!view?.plaza?.chatEnabled;
   const stampsReady = ready && !!view?.plaza?.chatStamps;
   const unread = useUnreadMessages(chat, ownMemberId, open);
+  // A new message from someone else while the chat is closed (or the tab hidden): a bubble, a sound, and an OS notice.
+  const { preview, clearPreview } = useChatArrivals(chat, ownMemberId, open, roomId);
+  const receipts = !!view?.plaza?.chatReceipts;
+
+  // 既読: reading the open chat in a shown tab marks the newest message of the others as read.
+  const lastOthers = [...chat].reverse().find(message => message.member !== ownMemberId);
+  const readSent = useRef<string | null>(null);
+  const ownRead = ownMemberId ? chatReads[ownMemberId] : undefined;
+  useEffect(() => {
+    if (!open || !ready || !receipts || !lastOthers) return;
+    const mark = () => {
+      if (document.hidden || ownRead === lastOthers.id || readSent.current === lastOthers.id) return;
+      readSent.current = lastOthers.id;
+      send({ action: 'chatRead', id: lastOthers.id }).catch(() => { readSent.current = null; });
+    };
+    mark();
+    document.addEventListener('visibilitychange', mark);
+    return () => document.removeEventListener('visibilitychange', mark);
+  }, [open, ready, receipts, lastOthers, ownRead, send]);
   const sender = useChatSender(send, ready, stampsReady);
   const unreadId = `${panelId}-unread`;
 
   const show = () => {
     previousFocus.current = document.activeElement as HTMLElement | null;
+    clearPreview();
     onOpen();
   };
   const close = () => {
@@ -81,7 +103,7 @@ export function RoomChatPanel({ open, onOpen, onClose }: { open: boolean; onOpen
 
   return <aside className={styles.chat} aria-label={t('ルーム内チャット')} data-room-chat>
     {open && <OrnateFrame as="section" appearance="panel" size="sm" className={styles.panel} id={panelId} aria-label={t('いまのルームの会話')}>
-      <ChatMessages messages={chat} ownMemberId={ownMemberId} logRef={log} onScroll={event => {
+      <ChatMessages messages={chat} ownMemberId={ownMemberId} reads={receipts ? chatReads : undefined} members={view?.plaza?.members.map(member => member.id) ?? []} logRef={log} onScroll={event => {
         const box = event.currentTarget;
         nearEnd.current = box.scrollHeight - box.scrollTop - box.clientHeight < 48;
       }} />
@@ -90,6 +112,7 @@ export function RoomChatPanel({ open, onOpen, onClose }: { open: boolean; onOpen
         stampsReady={stampsReady} stampsOpen={stampsOpen} onDraftChange={sender.setDraft}
         onToggleStamps={() => setStampsOpen(value => !value)} onSubmit={sendText} />
     </OrnateFrame>}
+    {!open && preview && <ChatPreview message={preview} onOpen={show} />}
     <button type="button" className={styles.toggle} onClick={open ? close : show} aria-expanded={open} aria-controls={open ? panelId : undefined}
       aria-keyshortcuts="T" aria-label={t('ルームチャット')} aria-describedby={unread ? unreadId : undefined} title={t('チャット（T）')}>
       <GameIcon name="chat" />

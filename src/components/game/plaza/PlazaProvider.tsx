@@ -40,6 +40,8 @@ interface PlazaContextValue {
   view: RoomView | null;
   linked: boolean;
   chat: RoomChatMessage[];
+  /** メンバーごとの、読んだ最後の発言ID（既読）。既読に対応するサーバーだけが返す。 */
+  chatReads: Record<string, string>;
   /** 起動時に元のルームへ戻るか、新しく作る。成功したルームIDを返す。 */
   launch(): Promise<string | null>;
   /** 指定したルームへ入る。成功時はID、拒否時はnullを返し、理由をstageへ反映する。 */
@@ -117,6 +119,7 @@ export function PlazaProvider({ children }: { children: ReactNode }) {
   const [linked, setLinked] = useState(true);
   const [legacy, setLegacy] = useState<string | null>(null);
   const [chat, setChat] = useState<RoomChatMessage[]>([]);
+  const [chatReads, setChatReads] = useState<Record<string, string>>({});
   const chatVersion = useRef(0);
   const activeConnectionRef = useRef<Held | null>(null);
   const version = useRef(0);
@@ -133,15 +136,18 @@ export function PlazaProvider({ children }: { children: ReactNode }) {
     return next;
   }, []);
 
-  const receiveChatMessages = useCallback((messages: RoomChatMessage[], revision: number) => {
-    if (revision <= chatVersion.current) return;
+  const receiveChatMessages = useCallback((messages: RoomChatMessage[], revision: number, reads?: Record<string, string>) => {
+    if (revision < chatVersion.current) return;
+    // A read receipt comes with the same messages at the same revision as the room's last change: take the reads.
+    if (reads) setChatReads(previous => Object.keys(previous).length === Object.keys(reads).length && Object.entries(reads).every(([member, id]) => previous[member] === id) ? previous : reads);
+    if (revision === chatVersion.current) return;
     chatVersion.current = revision;
     setChat(previous => previous.length === messages.length && previous.every((message, index) => message.id === messages[index].id && message.name === messages[index].name) ? previous : messages);
   }, []);
   const receiveRoomView = useCallback((socket: RoomConnection, next: RoomView) => {
     if (activeConnectionRef.current?.socket !== socket || next.version <= version.current) return;
     version.current = next.version;
-    if (next.plaza?.chat) receiveChatMessages(next.plaza.chat, next.version);
+    if (next.plaza?.chat) receiveChatMessages(next.plaza.chat, next.version, next.plaza.chatReads);
     if (next.plaza?.invite) keepInvite(next.id, next.plaza.invite);
     // 相手の着席と試合開始には、共通の通知音を使う。
     const across = next.watching ? null : next.players[next.seat === 0 ? 1 : 0];
@@ -164,7 +170,7 @@ export function PlazaProvider({ children }: { children: ReactNode }) {
     const old = activeConnectionRef.current;
     activeConnectionRef.current = next;
     version.current = 0;
-    chatVersion.current = 0; setChat([]);
+    chatVersion.current = 0; setChat([]); setChatReads({});
     setId(next.id);
     setLinked(true);
     setStage({ kind: 'in' });
@@ -184,7 +190,7 @@ export function PlazaProvider({ children }: { children: ReactNode }) {
         receiveRoomView(socket, next);
       },
       onLink(up) { if (activeConnectionRef.current?.socket === socket) setLinked(up); },
-      onChat(message) { if (activeConnectionRef.current?.socket === socket && message.id === roomId) receiveChatMessages(message.messages, message.version); },
+      onChat(message) { if (activeConnectionRef.current?.socket === socket && message.id === roomId) receiveChatMessages(message.messages, message.version, message.reads); },
       onGone(message, closed) {
         if (!settled) { settled = true; clearTimeout(timer); socket.close(); return resolve({ ok: false, message, closed: !!closed }); }
         if (activeConnectionRef.current?.socket === socket && !leaving.current.has(socket)) handleLostConnectionRef.current({ id: roomId, token, socket }, message, !!closed);
@@ -431,8 +437,8 @@ export function PlazaProvider({ children }: { children: ReactNode }) {
   const rulesKey = view?.plaza && view.plaza.owner === view.plaza.me ? JSON.stringify(view.plaza.nextRules ?? view.rules) : null;
   useEffect(() => { if (rulesKey) saveRoomSettings({ rules: JSON.parse(rulesKey) }); }, [rulesKey]);
 
-  const value = useMemo<PlazaContextValue>(() => ({ stage, id, view: identityMismatch ? null : view, linked, chat: identityMismatch ? [] : chat, launch, enter, go, create, newHome, leave, send, subscribe, presented, presentation, settle: settleStage, goHome, legacy }),
-    [stage, id, view, identityMismatch, linked, chat, launch, enter, go, create, newHome, leave, send, subscribe, presented, presentation, settleStage, goHome, legacy]);
+  const value = useMemo<PlazaContextValue>(() => ({ stage, id, view: identityMismatch ? null : view, linked, chat: identityMismatch ? [] : chat, chatReads: identityMismatch ? {} : chatReads, launch, enter, go, create, newHome, leave, send, subscribe, presented, presentation, settle: settleStage, goHome, legacy }),
+    [stage, id, view, identityMismatch, linked, chat, chatReads, launch, enter, go, create, newHome, leave, send, subscribe, presented, presentation, settleStage, goHome, legacy]);
   return <Context.Provider value={value}>
     {children}
     {/* Moving between rooms: the current one stays on screen under a small sign. */}

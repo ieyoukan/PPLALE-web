@@ -10,7 +10,7 @@ import type { MatchEnd } from '@pplale/game-core/history';
 import { publicAssessment } from './public-assessment.ts';
 import { RoomError, applyMatchCommand, command, deck, giveUp, hash, playerName, side, startMatch } from './rooms.ts';
 import type { Outcome, Room, Seat } from './rooms.ts';
-import { appendChatMessage, chatActionSchema } from './chat.ts';
+import { appendChatMessage, chatActionSchema, chatReadSchema, chatReads, markChatRead } from './chat.ts';
 import { syncTurnClock, turnTimeoutCommand } from './turn-clock.ts';
 
 export interface PlazaMember {
@@ -23,6 +23,8 @@ export interface PlazaMember {
     /** 認証済みアカウントと端末の履歴所有者。表示用の情報へ含めない。 */
     historyOwners?: string[];
     lastChatAt?: number;
+    /** 読んだ最後の発言ID（既読）。 */
+    chatRead?: string;
     /** すべての接続が切れた時刻。接続中は設定しない。 */
     away?: number;
 }
@@ -90,6 +92,7 @@ const action = z.discriminatedUnion('action', [
     z.object({ action: z.literal('rules'), rules: z.unknown() }),
     z.object({ action: z.literal('rename'), name: z.string() }),
     chatActionSchema,
+    chatReadSchema,
     z.object({ action: z.literal('renewInvite') }),
     z.object({ action: z.literal('answer'), profileId, accept: z.boolean() }),
 ]);
@@ -334,7 +337,11 @@ export function actPlaza(room: Room, id: string, body: unknown, catalog: Catalog
     switch (request.action) {
         case 'chat':
             appendChatMessage(plaza, me, request, now);
+            // Who sends has read up to their own message.
+            markChatRead(plaza, me, plaza.chat!.at(-1)!.id);
             return { chat: true };
+        case 'chatRead':
+            return markChatRead(plaza, me, request.id) ? { chat: true } : {};
         case 'ready': {
             const own = seated();
             if (room.status !== 'lobby') throw new RoomError(409, room.status === 'finished' ? '「もう一度」を選んでから準備してください' : '対戦中はデッキを変えられません');
@@ -505,7 +512,7 @@ export function plazaView(room: Room, id: string, online: ReadonlySet<string>, c
         plaza: {
             name: plaza.name, visibility: plaza.visibility, creator: plaza.creator, owner: plaza.owner, me: id,
             canClaimOwner: plaza.owner === null && !!plaza.members.find(member => member.id === id && mayClaim(plaza, member, online)),
-            chatEnabled: true, chatStamps: true, ...(chatHistory && { chat: plaza.chat ?? [] }),
+            chatEnabled: true, chatStamps: true, chatReceipts: true, ...(chatHistory && { chat: plaza.chat ?? [], chatReads: chatReads(plaza) }),
             members: plaza.members.map(member => {
                 const seat = seats.findIndex(taken => taken?.member === member.id);
                 return { id: member.id, name: member.name, ...(member.profileId && { profileId: member.profileId }), online: online.has(member.id), ...(seat >= 0 && { seat: seat as Side }) };

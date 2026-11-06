@@ -42,6 +42,7 @@ import type { Config } from './config.ts';
 import { RoomError, act, createRoom, expireTurn, joinRoom, playerName, roomInfo, seatOf, seatView, tidy } from './rooms.ts';
 import type { Present, Room } from './rooms.ts';
 import { actPlaza, admit, askToEnter, closeEmpty, cpuToAct, createPlaza, entryOf, formerOf, inviteByName, memberOf, notePresence, playCpu, plazaInfo, plazaView, rejoiningMember, succeed, tidyPlaza } from './plaza.ts';
+import { chatReads } from './chat.ts';
 import type { PlazaOutcome, Visitor } from './plaza.ts';
 import { cpuThinker } from './cpu.ts';
 import { handReactionOps } from '@pplale/game-core';
@@ -304,7 +305,7 @@ export function createRoomServer({ config, backend, catalog, history, push = pus
         if (chat && room.plaza) {
             if (pair) for (const socket of pair[3]) {
                 if (socket.chatEnabled && socket.entry && room.plaza.members.some(member => member.id === memberOfEntry(socket.entry!.member)))
-                    tell(socket, { type: 'chat', id: room.id, version: room.version, messages: room.plaza.chat ?? [] });
+                    tell(socket, { type: 'chat', id: room.id, version: room.version, messages: room.plaza.chat ?? [], reads: chatReads(room.plaza) });
             }
             return;
         }
