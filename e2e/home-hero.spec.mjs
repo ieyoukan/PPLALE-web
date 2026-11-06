@@ -38,7 +38,7 @@ for (const viewport of [
     expect(mark.y).toBeLessThan(art.y + art.height * .1);
     expect((await menu.boundingBox()).y).toBeLessThan(art.y + art.height);
     await expect(menu.getByRole('link')).toHaveCount(3);
-    for (const [name, href] of [['ぷぷりえーるとは', '/about/'], ['ゲームをプレイ', '/game/'], ['デッキをつくる', '/build/']]) {
+    for (const [name, href] of [['ぷぷりえーるとは', '/about/'], ['ゲームをプレイ', '/game/'], ['コミュニティ', '/community/']]) {
       const entry = menu.getByRole('link', { name, exact: true });
       await expect(entry).toHaveAttribute('href', href);
       const card = await entry.boundingBox();
@@ -47,7 +47,7 @@ for (const viewport of [
       expect(Math.abs(card.width / card.height - 220 / 320)).toBeLessThan(.002);
       await expect(entry.locator('img')).toBeVisible();
       await expect(entry.locator('img')).toHaveCSS('object-fit', 'cover');
-      for (const line of name === 'ぷぷりえーるとは' ? ['ぷぷりえーる', 'とは'] : name === 'ゲームをプレイ' ? ['ゲームを', 'プレイ'] : ['デッキを', 'つくる']) {
+      for (const line of name === 'ぷぷりえーるとは' ? ['ぷぷりえーる', 'とは'] : name === 'ゲームをプレイ' ? ['ゲームを', 'プレイ'] : ['コミュニティ']) {
         await expect(entry.getByText(line, { exact: true })).toBeVisible();
       }
       await entry.click({ trial: true });

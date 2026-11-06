@@ -10,7 +10,8 @@ import { RULES_ENGLISH_ID, rulesHeadingEnglish } from './RulesEnglish';
 import { Bi } from '@/i18n/Bi';
 import { useI18n } from '@/i18n/LocaleProvider';
 import styles from './AboutPage.module.css';
-import { SiteHeader } from '@/components/site/SiteHeader';
+import { SitePage, SitePanel } from '@/components/site/SitePage';
+import { OrnateFrame } from '@/components/shared/ui/ornament/OrnateFrame';
 import { VRCHAT_WORLD_URL } from '@/lib/communityLinks';
 
 interface Slide {
@@ -30,7 +31,6 @@ interface Group {
   slides: Slide[];
 }
 
-type Mode = 'book' | 'text';
 
 const landscape = (src: string, title: string, en: string): Slide => ({ src: `/images/about/${src}.webp`, title, en, width: 1191, height: 842 });
 
@@ -170,18 +170,18 @@ function Book({ onZoom, paused }: { onZoom: (page: number) => void; paused: bool
           if (event.key === 'Home') { event.preventDefault(); turnTo(0); }
           if (event.key === 'End') { event.preventDefault(); turnTo(allSlides.length - 1); }
         }}>
-        <div className={styles.book}>
+        <OrnateFrame size="sm" className={styles.book}>
           <div className={styles.paper}>
             <AnimatePresence initial={false} custom={direction} mode="wait">
               <motion.div key={slide.src} custom={direction} className={styles.page}
+                // The next page comes forward from just behind (no turning: docs/design-system.md).
                 variants={{
-                  enter: (direction: number) => reduceMotion ? { opacity: 0 } : { opacity: 0, rotateY: direction > 0 ? 75 : -75 },
-                  visible: { opacity: 1, rotateY: 0 },
-                  leave: (direction: number) => reduceMotion ? { opacity: 0 } : { opacity: 0, rotateY: direction > 0 ? -75 : 75 },
+                  enter: reduceMotion ? { opacity: 0 } : { opacity: 0, scale: 0.97 },
+                  visible: { opacity: 1, scale: 1 },
+                  leave: reduceMotion ? { opacity: 0 } : { opacity: 0, scale: 1.01 },
                 }}
                 initial="enter" animate="visible" exit="leave"
-                transition={{ duration: reduceMotion ? 0 : 0.22, ease: 'easeInOut' }}
-                style={{ transformOrigin: direction > 0 ? 'left center' : 'right center' }}
+                transition={{ duration: reduceMotion ? 0 : 0.2, ease: 'easeOut' }}
                 drag="x" dragConstraints={{ left: 0, right: 0 }} dragElastic={0.15}
                 onDragEnd={(_, info) => {
                   if (info.offset.x < -45) turn(1);
@@ -192,7 +192,7 @@ function Book({ onZoom, paused }: { onZoom: (page: number) => void; paused: bool
             </AnimatePresence>
             <button type="button" className={styles.zoom} aria-label={t('このページを大きく見る')} onClick={() => onZoom(index)}>⤢</button>
           </div>
-        </div>
+        </OrnateFrame>
 
         <div className={styles.controls}>
           <button type="button" aria-label={t('前のページ')} disabled={index === 0} onClick={() => turn(-1)}>‹</button>
@@ -238,60 +238,55 @@ function RulesText({ rulesDoc, headings }: { rulesDoc: React.ReactNode; headings
           </button>
         ))}
       </nav>
-      <article aria-label={t('ルール・裁定集')} className={styles.sheet}>{rulesDoc}</article>
+      <SitePanel className={styles.sheet}>{rulesDoc}</SitePanel>
     </>
   );
 }
 
+/**
+ * The picture book above, the whole rules as text below: both are in the page's HTML from the server, so search
+ * engines and agents read the rules without running it (docs/seo.md). The header's links jump between them;
+ * `#text` (the old address of the text tab) lands on the rules.
+ */
 export default function AboutPage({ rulesDoc, rulesHeadings }: { rulesDoc: React.ReactNode; rulesHeadings: RulesHeading[] }) {
   const { t } = useI18n();
-  const [mode, setMode] = useState<Mode>('book');
   const [openIndex, setOpenIndex] = useState<number | null>(null);
   const close = useCallback(() => setOpenIndex(null), []);
   const moveBy = useCallback((step: number) => {
     setOpenIndex(current => current === null ? null : clampPage(current + step));
   }, []);
 
-  useEffect(() => {
-    if (window.location.hash === '#text') setMode('text');
-  }, []);
-
-  const changeMode = (next: Mode) => {
-    setMode(next);
-    window.history.replaceState(null, '', next === 'text' ? '#text' : window.location.pathname);
-    window.scrollTo({ top: 0 });
-  };
-
   return (
-    <main className={styles.main}>
-      <SiteHeader>
-          <div role="tablist" aria-label={t('よみかた')} className={styles.modes}>
-            {([['book', '📖', '本でよむ', 'Pictures'], ['text', '📝', 'もじでよむ', 'Text']] as const).map(([value, icon, label, english]) => (
-              <button type="button" role="tab" key={value} aria-selected={mode === value} className={styles.mode}
-                onClick={() => changeMode(value)}>
-                <span aria-hidden="true">{icon}</span><Bi ja={label} en={english} />
-              </button>
-            ))}
-          </div>
-      </SiteHeader>
-
-      <div className={styles.content}>
-        <motion.h1 className={styles.title} initial={{ opacity: 0, y: -24 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5 }}>
-          <Bi ja="ぷぷりえーるとは" en="About PPLALE" />
-        </motion.h1>
+    <SitePage ja="ぷぷりえーるとは" en="About PPLALE" width="lg"
+      lead={<Bi
+        ja="「お菓子争奪戦争ぷぷりえーる」は、VRChatから生まれた幼女とお菓子のカードゲーム。2つのデッキからカードを引き、PPを使って、相手のお菓子を先に0にしたら勝ち！ブラウザではCPU対戦やルーム対戦も楽しめます。"
+        en="PPLALE (お菓子争奪戦争ぷぷりえーる) is a card game of little girls and sweets, born in VRChat. Draw cards from your two decks, spend PP, and reduce your opponent's sweets to 0 first to win! In the browser you can also play against the CPU or in online rooms." />}
+      headerActions={<nav aria-label={t('よみかた')} className={styles.jumps}>
+        <a href="#book"><span aria-hidden="true">📖</span><Bi ja="本でよむ" en="Pictures" /></a>
+        <a href="#text"><span aria-hidden="true">📝</span><Bi ja="もじでよむ" en="Text" /></a>
+      </nav>}>
+      <div className={styles.about}>
         <a href={VRCHAT_WORLD_URL} target="_blank" rel="noopener noreferrer" className={styles.world}>
           <Image src="/VRChat-Logo-Black.png" alt="" width={48} height={24} />
           <Bi ja="ワールドであそぶ" en="Visit the VRChat world" /> <span aria-hidden="true">↗</span>
         </a>
-        <p data-lang="en" lang="en" className={styles.note}>
-          {mode === 'book' ? 'The picture pages are in Japanese. Tap "Text" for the rules in English.' : 'The rules overview is in English; the detailed rulings and FAQ are in Japanese.'}
-        </p>
-        {mode === 'book' ? <Book onZoom={setOpenIndex} paused={openIndex !== null} /> : <RulesText rulesDoc={rulesDoc} headings={rulesHeadings} />}
+
+        <section id="book" aria-labelledby="book-heading" className={styles.part}>
+          <h2 id="book-heading" className={styles.partTitle}><Bi ja="あらすじとルールの本" en="Picture book" /></h2>
+          <p data-lang="en" lang="en" className={styles.note}>The picture pages are in Japanese. The rules overview in English is below.</p>
+          <Book onZoom={setOpenIndex} paused={openIndex !== null} />
+        </section>
+
+        <section id="text" aria-labelledby="text-heading" className={styles.part}>
+          <h2 id="text-heading" className={styles.partTitle}><Bi ja="ルール・裁定集" en="Rules and rulings" /></h2>
+          <p data-lang="en" lang="en" className={styles.note}>The rules overview is in English; the detailed rulings and FAQ are in Japanese.</p>
+          <RulesText rulesDoc={rulesDoc} headings={rulesHeadings} />
+        </section>
       </div>
 
       <AnimatePresence>
         {openIndex !== null && <Lightbox index={openIndex} onClose={close} onMove={moveBy} />}
       </AnimatePresence>
-    </main>
+    </SitePage>
   );
 }

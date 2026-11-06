@@ -31,13 +31,13 @@ function Table({ head, rows }: { head: [string, string]; rows: [ReactNode, React
 export default function RulesEnglish() {
   return (
     <div data-lang="en" lang="en" className={styles.doc} style={{ marginBottom: 40 }}>
-      <h2 id={RULES_ENGLISH_ID}>Rules overview</h2>
+      <h3 id={RULES_ENGLISH_ID}>Rules overview</h3>
       <p>
         An English summary of the core rules. Reduce your opponent&apos;s <strong>sweets points</strong> to 0 to win.
         The detailed rules, rulings and FAQ further down this page are in Japanese.
       </p>
 
-      <h3>Starting a match</h3>
+      <h4>Starting a match</h4>
       <ol>
         <li>Each player rolls a die. The higher roll chooses whether to go first or second (the starting rolls never tie).</li>
         <li>The first player draws 3 cards and the second player draws 4. Both players draw their opening hands at the same time.</li>
@@ -46,7 +46,7 @@ export default function RulesEnglish() {
         <li>The match begins when both players have confirmed their hands.</li>
       </ol>
 
-      <h3>Your turn and other rules</h3>
+      <h4>Your turn and other rules</h4>
       <Table head={['Item', 'Rule']} rows={[
         ['Draw', 'At the start of your turn, draw 1 card from either deck. This includes the first player\'s first turn.'],
         ['Actions', 'Play little girls and sweets, use your playable character\'s skills and act with the little girls on your field, in any order, as long as you can pay the cost.'],
@@ -60,7 +60,7 @@ export default function RulesEnglish() {
         ['Card changes', 'Card effects may be changed without notice for game balance.'],
       ]} />
 
-      <h3>Sweets points and Hunger State</h3>
+      <h4>Sweets points and Hunger State</h4>
       <p>You are in <strong>Hunger State</strong> while your sweets points are <strong>5 or less</strong>. A player whose sweets points reach 0 loses.</p>
       <Table head={['Wording', 'Meaning']} rows={[
         ['Eat', 'A little girl attacking the sweets and card effects that "eat" are resolved separately.'],
@@ -69,7 +69,7 @@ export default function RulesEnglish() {
         ['Recover / change a value', 'Your sweets points cannot go above your maximum.'],
       ]} />
 
-      <h3>Abilities</h3>
+      <h4>Abilities</h4>
       <Table head={['Ability', 'Rule']} rows={[
         ['Defense', 'While your opponent has a little girl with Defense, your little girls without Penetration cannot attack the sweets or little girls without Defense: they must choose a little girl with Defense.'],
         ['Provocation', 'For card effects and skills that choose targets, if the possible targets include an opponent\'s little girl with Provocation, only she can be chosen. It also cancels effects that steal sweets. It does not redirect normal attacks.'],
@@ -80,7 +80,7 @@ export default function RulesEnglish() {
       ]} />
       <p>Defense limits what little girls can attack. Provocation limits effects that choose targets. Effects on all targets or random targets are not redirected by Provocation.</p>
 
-      <h3>Tag (1d6 ≥ X)</h3>
+      <h4>Tag (1d6 ≥ X)</h4>
       <p>Roll 1d6 for a little girl with Tag when she is attacked by an opponent&apos;s little girl, or chosen as the target of an opponent&apos;s card effect or playable character skill. <strong>On X or more, she dodges.</strong></p>
       <Table head={['Source', 'When she dodges']} rows={[
         ['Attack by a little girl', 'The whole attack is cancelled. No damage is dealt either way, the attacker counts as having acted, and on-attack effects do not trigger.'],
@@ -89,7 +89,7 @@ export default function RulesEnglish() {
       ]} />
       <p>A little girl cannot have Tag twice: if she gains it again, she rolls once using the smaller X. Tag does not apply to effects on all targets or random targets.</p>
 
-      <h3>Hide-and-Seek</h3>
+      <h4>Hide-and-Seek</h4>
       <p>From the turn she comes into play <strong>until the start of your next turn</strong>, she cannot be chosen as the target of attacks by the opponent&apos;s little girls, the opponent&apos;s card effects or the opponent&apos;s playable skills.</p>
       <ul>
         <li>If she attacks, the effect ends.</li>
@@ -99,7 +99,7 @@ export default function RulesEnglish() {
         <li>With Provocation: while hiding, targets are not redirected to her, but she still cancels effects that steal sweets.</li>
       </ul>
 
-      <h3>Color Tag (fruit type)</h3>
+      <h4>Color Tag (fruit type)</h4>
       <p>A little girl with Color Tag <strong>takes no damage and no effects from the opponent&apos;s little girls</strong> of the fruit type in brackets. It does not cover sweets or playable characters of that type.</p>
     </div>
   );

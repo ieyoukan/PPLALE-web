@@ -10,6 +10,16 @@
 - `sitemap.xml` は公開ページの正規URLを掲載する。更新日を正確に管理できない間は、ビルド日時を `lastmod` として出さない。
 - Googleの所有権確認用メタタグと `robots.txt` のサイトマップ指定は設定済み。Search Consoleの登録状況やインデックス状況は別途確認する。
 
+## ぷぷりえーるとは（`/about/`）
+
+ルールのページは、検索エンジンとAIエージェントが**JavaScriptを実行せずに**本文を読めることを優先する（2026-11-06）。
+
+- 絵の本（あらすじ・ルール・FAQの画像）と、`docs/game-rules.md` から作るルール・裁定集の全文を、同じページに上下に並べる。全文はサーバーで描画し、タブや `hidden` で隠さない。ヘッダーの「本でよむ」「もじでよむ」は `#book`・`#text` へのページ内リンクで、旧タブのURL `#text` もそのまま使える。
+- 見出しは h1（ぷぷりえーるとは）→ h2（あらすじとルールの本／ルール・裁定集）→ h3（章）→ h4（節）。h1にアニメーションの初期値（`opacity:0`）を付けない。本のページ画像の `alt` はページ名。
+- タイトル・説明・OGP（`og:url` は `/about/`、`og:type` は `article`）はこのページ専用に `src/app/about/page.tsx` で指定する。ルートのOGPはページの `openGraph` で丸ごと置き換わるため、サイト名・画像も書く。
+- JSON-LDは `BreadcrumbList`（ホーム → ぷぷりえーるとは）、`AboutPage`（`about` に `Game`）、`FAQPage`。FAQは `RulesDoc.tsx` の `rulesFaq` が「5. ぶどうタイプのFAQ」「6. イチゴタイプのFAQ」「6.1 ユーザー裁定」の表から自動で作るので、ルールの文書を直せば一緒に変わる。GoogleはFAQのリッチリザルトを政府・医療などの権威あるサイトに限っているため（2023年8月〜）、検索結果にFAQの表示は出ない前提で、内容の理解とAIエージェント向けに置いている。
+- AIエージェント向けに、ルール・裁定集の本文をMarkdownで返す `/rules.md`（`src/app/rules.md/route.ts`）と、サイトの案内 `/llms.txt`（`src/app/llms.txt/route.ts`）を出す。`/about/` の `<link rel="alternate" type="text/markdown">` から `/rules.md` を案内する。llms.txtは提案段階の形式で、Googleの検索順位には使われない。
+
 ## 公開後に行うこと
 
 1. Google Search Consoleで `https://pplale.vercel.app/` のプロパティを開く。
