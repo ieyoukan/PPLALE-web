@@ -3,7 +3,8 @@
 // 切り替える（iOSは一度操作で鳴らした要素なら、あとから曲を替えても鳴らせる）。通知音は GameNotifications。
 
 export type BgmScene = 'home' | 'match';
-export type SoundEffect = 'land' | 'hit' | 'draw';
+/** land / hit / draw: the match. pop: the launchpad's guide, tapped (ピョコ). */
+export type SoundEffect = 'land' | 'hit' | 'draw' | 'pop';
 export type AudioChannel = 'bgm' | 'se';
 
 const TRACKS: Record<BgmScene, string> = {
@@ -171,6 +172,20 @@ const synth: Record<SoundEffect, (context: AudioContext, output: AudioNode, at: 
     gain.gain.exponentialRampToValueAtTime(0.0001, at + 0.22);
     tone.connect(gain).connect(output);
     tone.start(at); tone.stop(at + 0.24);
+  },
+  // The guide ducks away (ピョコ): a quick bubble of a note, sliding up, then a smaller one.
+  pop: (context, output, at) => {
+    for (const [from, to, start, length, level] of [[520, 1240, 0, 0.09, 0.32], [880, 1560, 0.07, 0.07, 0.18]] as const) {
+      const tone = context.createOscillator(), gain = context.createGain();
+      tone.type = 'sine';
+      tone.frequency.setValueAtTime(from, at + start);
+      tone.frequency.exponentialRampToValueAtTime(to, at + start + length);
+      gain.gain.setValueAtTime(0.0001, at + start);
+      gain.gain.exponentialRampToValueAtTime(level, at + start + 0.008);
+      gain.gain.exponentialRampToValueAtTime(0.0001, at + start + length + 0.05);
+      tone.connect(gain).connect(output);
+      tone.start(at + start); tone.stop(at + start + length + 0.06);
+    }
   },
   // A card drawn: a short paper swish.
   draw: (context, output, at) => {

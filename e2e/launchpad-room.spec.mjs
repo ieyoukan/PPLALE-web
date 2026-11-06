@@ -96,7 +96,9 @@ for (const viewport of [{ width: 1280, height: 800 }, { width: 844, height: 390 
     const guide = pad.locator('[data-game-guide]');
     await guide.locator('img').evaluate(image => image.decode());
     const character = await guide.getAttribute('data-game-guide');
-    expect(character).toMatch(/^guide-(01|02|03|06|07)$/);
+    expect(character).toMatch(/^(gato|chori|nao|iriai|rikusu|gitty|shuo|buran|mika)$/);
+    // Named, with what they say on opening (GameGuide GUIDES).
+    await expect(guide.getByRole('status')).toContainText(/\S/);
     expect(await guide.evaluate(element => getComputedStyle(element).pointerEvents)).toBe('none');
     await expect(page.locator('[data-room-view] [data-game-guide]')).toHaveCount(0);
     const top = await status.evaluate(el => el.offsetTop);
@@ -122,7 +124,9 @@ for (const viewport of [{ width: 1280, height: 800 }, { width: 844, height: 390 
     }
     await pad.getByRole('button', { name: 'ランチパッドに縮小' }).click();
     expect(await bounds()).toEqual(small);
-    await expect(guide).toHaveAttribute('data-game-guide', character);
+    // Coming back to the small launchpad is another opening: someone else comes out (never the same one twice in a row).
+    await expect(guide).toHaveAttribute('data-game-guide', /\w/);
+    await expect(guide).not.toHaveAttribute('data-game-guide', character);
     await expect(pad.getByRole('button', { name: '自分のプロフィール', exact: true })).toBeInViewport();
     await page.screenshot({ path: info.outputPath('launchpad-fixed-portrait.png') });
     await identity.click();

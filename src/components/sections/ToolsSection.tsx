@@ -7,10 +7,10 @@ import { Bi } from '@/i18n/Bi';
 import { useI18n } from '@/i18n/LocaleProvider';
 
 const destinations = [
-  { href: '/build', title: 'デッキをつくる', description: '推しのデッキを作ろう', en: 'Build a deck', enDescription: 'Make a deck of your favorites', image: 'home-mint.webp', color: 'mint' },
-  { href: '/deck/2pick', title: '2Pickであそぶ', description: '選ぶたび、わくわく。', en: 'Play 2Pick', enDescription: 'Every pick is a thrill.', image: 'home-yellow.webp', color: 'yellow' },
-  { href: '/community', title: 'コミュニティ', description: 'みんなで、お菓子争奪戦！', en: 'Community', enDescription: 'Battle for sweets together!', image: 'home-pink.webp', color: 'pink' },
-  { href: '/deck-view', title: 'デッキを画像に', description: 'お気に入りをシェアしよう。', en: 'Deck image', enDescription: 'Share your favorite deck.', image: 'home-purple.webp', color: 'peach' },
+  { href: '/build', title: 'デッキをつくる', description: '推しのデッキを作ろう', en: 'Build a deck', enDescription: 'Make a deck of your favorites', image: 'mug-gitty.webp', color: 'mint' },
+  { href: '/deck/2pick', title: '2Pickであそぶ', description: '選ぶたび、わくわく。', en: 'Play 2Pick', enDescription: 'Every pick is a thrill.', image: 'mug-rikusu.webp', color: 'yellow' },
+  { href: '/community', title: 'コミュニティ', description: 'みんなで、お菓子争奪戦！', en: 'Community', enDescription: 'Battle for sweets together!', image: 'mug-gato.webp', color: 'pink' },
+  { href: '/deck-view', title: 'デッキを画像に', description: 'お気に入りをシェアしよう。', en: 'Deck image', enDescription: 'Share your favorite deck.', image: 'mug-shuo.webp', color: 'peach' },
 ];
 
 export default function ToolsSection() {
@@ -23,7 +23,7 @@ export default function ToolsSection() {
             <span className={styles.eyebrow} aria-hidden="true">LET’S PLAY!</span>
             <h2 id="tools-heading"><Bi ja={<>もっと、<br className={styles.mobileBreak} />ぷぷりえーる</>} en={<>More <br className={styles.mobileBreak} />PPLALE</>} /></h2>
           </div>
-          <Image src="/images/game/characters/home-rabbit.webp" alt="" width={444} height={640}
+          <Image src="/images/game/characters/mug-chori.webp" alt="" width={444} height={640}
             sizes="(max-width: 600px) 90px, 120px" className={styles.mascot} />
         </div>
 

@@ -56,7 +56,6 @@
 .me > svg { color: var(--brand-cocoa); }
 
 .group { margin-top: 14px; border-top: 1px solid var(--brand-pink); }
-.filterEmpty { margin: 18px 0; color: var(--brand-cocoa-deep); font-size: 14px; }
 .group summary svg { color: var(--place); }
 .group summary { display: flex; align-items: center; gap: 10px; padding: 12px 4px; cursor: pointer; list-style: none; font-size: 17px; font-weight: 700; color: var(--brand-cocoa); }
 .group summary::-webkit-details-marker { display: none; }
@@ -147,7 +146,14 @@ a.room:hover .roomAction { background: var(--brand-blush); }
 /* The room this player is in: the leaf green of the logo, above every other room. */
 .group[data-place=here], .tile[data-place=here] { --place: var(--brand-leaf-deep); --glow: transparent; }
 /* Friends who are in no room: just their tiles, below the rooms. */
-.elsewhere { margin-top: 18px; padding-top: 18px; border-top: 1px solid var(--brand-pink); }
+/* Online and offline friends, each under its heading with a count; the offline ones a little faded. */
+.presenceHeading { display: flex; align-items: center; gap: 8px; margin: 22px 0 10px; color: var(--brand-cocoa); font-size: 16px; font-weight: 400; }
+.presenceHeading i { width: 10px; height: 10px; border-radius: 50%; background: var(--brand-leaf); }
+.presenceHeading[data-presence=offline] { padding-top: 18px; border-top: 1px solid var(--brand-pink); }
+.presenceHeading[data-presence=offline] i { background: var(--brand-pink-edge); }
+.presenceHeading small { color: var(--brand-cocoa-soft); font-size: 13px; }
+.offline .tile { opacity: .7; }
+.tile[data-place=online] { --place: var(--brand-leaf); }
 .watchMark { display: inline-grid; place-items: center; flex: none; color: var(--place); font-size: 13px; }
 .panel .answer button svg { font-size: 18px; }
 .friendChip { display: inline-flex; align-items: center; gap: 6px; min-height: 40px; padding: 8px 16px; border-radius: var(--brand-control-radius); background: var(--brand-blush); color: var(--brand-cocoa-deep); font-weight: 700; }

@@ -16,7 +16,7 @@ export function BeginnerMissions() {
   return <div className={styles.missions}>
     <header className={styles.hero}>
       <div><h3 data-ui-title>{t('入門編をクリアする')}</h3><p>{t('ひとつずつ、盤面で覚えよう。')}</p></div>
-      <Image src="/images/game/characters/home-rabbit.webp" width={96} height={96} alt="" />
+      <Image src="/images/game/characters/mug-chori.webp" width={96} height={96} alt="" />
     </header>
     <div className={styles.progress}>
       <progress value={progress.completed} max={progress.total} aria-label={t('入門編のクリア状況')} />

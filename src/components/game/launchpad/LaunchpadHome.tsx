@@ -16,12 +16,12 @@ import styles from './LaunchpadHome.module.css';
 
 /** One ordered list owns each destination's behavior and illustration. */
 const destinations = [
-  { target: 'social', character: 'home-pink', tone: 'vanilla' },
-  { target: 'discover', character: 'home-purple', tone: 'sage' },
-  { target: 'cards', character: 'home-mint', tone: 'pink' },
-  { target: 'puzzles', character: 'home-rabbit', tone: 'vanilla' },
-  { target: 'history', character: 'home-yellow', tone: 'vanilla' },
-  { target: 'editor', character: 'pink-friend', tone: 'pink' },
+  { target: 'social', character: 'mug-gato', tone: 'vanilla' },
+  { target: 'discover', character: 'mug-shuo', tone: 'sage' },
+  { target: 'cards', character: 'mug-gitty', tone: 'pink' },
+  { target: 'puzzles', character: 'mug-chori', tone: 'vanilla' },
+  { target: 'history', character: 'mug-rikusu', tone: 'vanilla' },
+  { target: 'editor', character: 'buran', tone: 'pink' },
 ] as const;
 
 export function LaunchpadHome({ onHome, onShare }: { onHome: () => void; onShare: () => void }) {

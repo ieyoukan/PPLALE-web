@@ -9,12 +9,10 @@ import { GameIcon } from '@/components/shared/ui/GameIcon';
 import { useI18n } from '@/i18n/LocaleProvider';
 import { usePlaza } from '../plaza/PlazaProvider';
 import { RoomCard } from './RoomCard';
-import { matchesRoomRules } from '@/lib/game/room/filters';
-import type { RoomRuleFilter } from '@/lib/game/room/filters';
 import styles from './Social.module.css';
 import own from './RoomCard.module.css';
 
-export function Invitations({ filter }: { filter: RoomRuleFilter }) {
+export function Invitations() {
   const { user } = useAuth(), { id: here } = usePlaza(), { t } = useI18n();
   const [rooms, setRooms] = useState<RoomInfo[]>([]);
   useEffect(() => {
@@ -26,7 +24,7 @@ export function Invitations({ filter }: { filter: RoomRuleFilter }) {
     document.addEventListener('visibilitychange', ask);
     return () => { current = false; clearInterval(timer); document.removeEventListener('visibilitychange', ask); };
   }, [user]);
-  const shown = rooms.filter(room => room.id !== here && matchesRoomRules(room, filter));
+  const shown = rooms.filter(room => room.id !== here);
   if (!shown.length) return null;
   return <section className={own.invited} aria-label={t('招待が届いています')}>
     <h3><GameIcon name="letter" />{t('招待が届いています')}</h3>

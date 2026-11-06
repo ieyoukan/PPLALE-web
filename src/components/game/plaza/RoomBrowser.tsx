@@ -107,7 +107,7 @@ export function RoomBrowser({ onCreate, onEntered }: { onCreate: () => void; onE
           </OrnateFrame>
         </div>
       </OrnateFrame> : <div className={styles.empty}>
-        <Image src="/images/game/characters/home-purple.webp" alt="" width={120} height={132} />
+        <Image src="/images/game/characters/mug-shuo.webp" alt="" width={120} height={132} />
         <p role="status">{t(loading ? 'ルームを探しています…' : 'パブリックルームがありません')}</p>
       </div>}
       <aside className={styles.directory} aria-label={t('パブリックルーム一覧')} aria-busy={loading}>

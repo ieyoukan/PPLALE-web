@@ -15,9 +15,7 @@ import { GameIcon } from '@/components/shared/ui/GameIcon';
 import { useI18n } from '@/i18n/LocaleProvider';
 import { locate, placeLabel, placeOf, placeOrder } from './location';
 import { RoomCard } from './RoomCard';
-import { RoomRuleFilters } from '@/components/shared/room/RoomRuleFilters';
-import { allRoomRules, matchesRoomRules } from '@/lib/game/room/filters';
-import type { RoomRuleFilter } from '@/lib/game/room/filters';
+import { WATCHING_STALE } from '@/lib/game/social';
 import { Invitations } from './Invitations';
 import { ProfileShare } from './ProfileShare';
 import { UserSearch } from './UserSearch';
@@ -39,7 +37,6 @@ function Social({ uid }: { uid: string }) {
   const me = useMyProfile(), plaza = usePlaza(), { t, nameText } = useI18n();
   const { friends, error, loading } = useSocial(uid);
   const [rooms, setRooms] = useState<Record<string, RoomInfo>>({}), [now, setNow] = useState(() => Date.now());
-  const [ruleFilter, setRuleFilter] = useState<RoomRuleFilter>(allRoomRules);
   const roomIds = [...new Set(friends.flatMap(player => [player.roomId, player.watching?.roomId].filter((id): id is string => !!id)))].sort().join(',');
   useEffect(() => {
     let current = true;
@@ -66,7 +63,10 @@ function Social({ uid }: { uid: string }) {
     group.members.push({ player, role: found.role }); groups.set(found.room.id, group);
   }
   const ordered = [...groups.values()].sort((a, b) => placeOrder.indexOf(placeOf(a.room)) - placeOrder.indexOf(placeOf(b.room)) || a.room.id.localeCompare(b.room.id));
-  const filtered = ordered.filter(group => matchesRoomRules(group.room, ruleFilter));
+  // Online: in a room (here or found) or said where they are lately (the presence of the last few minutes); else offline.
+  const recent = (player: SocialPlayer) => !!player.watching && now - player.watching.at < WATCHING_STALE;
+  const onlineElsewhere = elsewhere.filter(recent), offline = elsewhere.filter(player => !recent(player));
+  const onlineCount = withMe.length + ordered.reduce((sum, group) => sum + group.members.length, 0) + onlineElsewhere.length;
   const tile = ({ profile, friendship }: SocialPlayer, place: string, status: string) => <FriendTile key={friendship.id} profile={profile} place={place} status={status} />;
   return <section className={styles.panel} aria-label={t('ソーシャル')}>
     <header className={styles.socialHeading}>
@@ -86,11 +86,10 @@ function Social({ uid }: { uid: string }) {
     </details>}
     {error && <p className={styles.error} role="alert">{t(error)}</p>}
     <UserSearch />
-    <RoomRuleFilters value={ruleFilter} onChange={setRuleFilter} />
-    <Invitations filter={ruleFilter} />
+    <Invitations />
     {!friends.length && <div className={styles.empty} role={loading ? 'status' : undefined}><p>{loading ? t('読み込み中…') : t('リンクを送って、フレンドになろう')}</p>{!loading && me && <ProfileShare uid={uid} name={me.displayName} mine />}</div>}
-    {ordered.length > 0 && filtered.length === 0 && <p className={styles.filterEmpty}>{t('このルールのルームは見つかりません')}</p>}
-    {filtered.map(({ room, members }) => {
+    {friends.length > 0 && <h3 className={styles.presenceHeading} data-presence="online"><i aria-hidden="true" /><span data-ui-title>{t('オンライン')}</span><small>{t('{count}人', { count: onlineCount })}</small></h3>}
+    {ordered.map(({ room, members }) => {
       const place = placeOf(room);
       return <details key={room.id} className={styles.group} data-place={place} open>
         <summary><span className={styles.chevron} aria-hidden="true" /><span data-ui-title>{room.plaza ? nameText(room.plaza.name) : t('{name}のルーム', { name: room.host })}</span><span className={styles.placeChip}>{t(placeLabel[place])}</span></summary>
@@ -100,7 +99,11 @@ function Social({ uid }: { uid: string }) {
         </div>
       </details>;
     })}
-    {elsewhere.length > 0 && <div className={`${styles.tiles} ${styles.elsewhere}`}>{elsewhere.map(player => tile(player, 'away', ''))}</div>}
+    {onlineElsewhere.length > 0 && <div className={styles.tiles}>{onlineElsewhere.map(player => tile(player, 'online', t('オンライン')))}</div>}
+    {offline.length > 0 && <>
+      <h3 className={styles.presenceHeading} data-presence="offline"><i aria-hidden="true" /><span data-ui-title>{t('オフライン')}</span><small>{t('{count}人', { count: offline.length })}</small></h3>
+      <div className={`${styles.tiles} ${styles.offline}`}>{offline.map(player => tile(player, 'away', ''))}</div>
+    </>}
   </section>;
 }
 

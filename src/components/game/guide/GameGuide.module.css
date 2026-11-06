@@ -1,2 +1,28 @@
+/* ランチパッドの横の案内役（GameGuide.tsx）。置き場所と現れ方は Launchpad.module.css の .dialogGuide。 */
 .guide { display: block; pointer-events: none; user-select: none; }
+/* Pressed, the guide slips back behind the launchpad (the way it came out), then comes out again. */
+.body { position: absolute; inset: 0; display: block; width: 100%; height: 100%; padding: 0; border: 0; background: none; cursor: pointer; pointer-events: auto; -webkit-tap-highlight-color: transparent;
+  transition: transform .4s cubic-bezier(.3, 1.4, .5, 1); }
+.guide[data-hiding] .body { transform: translate(-38%, 4%); transition: transform .14s ease-in; }
+.body:focus-visible { outline: 3px solid var(--brand-cocoa); outline-offset: -6px; border-radius: var(--brand-control-radius); }
 .art { display: block; width: 100%; height: 100%; object-fit: contain; object-position: center bottom; }
+
+/* The words: a paper bubble near the head, after the guide has come out; gone after a while. */
+.words {
+  position: absolute; top: 2%; right: 6px; z-index: 1; display: grid; gap: 2px; width: max-content; max-width: calc(100% - 12px);
+  padding: 8px 12px; border: 1px solid var(--brand-control-edge); border-radius: 14px 14px 4px 14px;
+  background: color-mix(in srgb, var(--brand-paper) 94%, transparent); color: var(--brand-cocoa-deep);
+  font-family: var(--font-site-body), sans-serif; font-size: 14px; line-height: 1.5; overflow-wrap: anywhere; pointer-events: none;
+  opacity: 0; animation: words 6.6s .55s ease-out forwards;
+}
+.words b { color: var(--brand-cocoa); font-size: 11px; }
+@keyframes words {
+  0% { opacity: 0; transform: translateY(6px); }
+  6%, 88% { opacity: 1; transform: none; }
+  100% { opacity: 0; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .body, .guide[data-hiding] .body { transition: none; }
+  .words { animation: wordsStill 6.6s .55s step-end forwards; }
+  @keyframes wordsStill { 0% { opacity: 1; } 100% { opacity: 0; } }
+}
