@@ -31,7 +31,7 @@ export default function CommunityPage() {
       <div className={styles.links}>
         <OrnateFrame as="a" appearance="panel" href={VRCHAT_WORLD_URL} target="_blank" rel="noopener noreferrer" className={styles.link}>
           <span className={styles.art}>
-            <Image src="/images/home/movie-poster.webp" alt="" fill sizes="(max-width: 760px) 90vw, 460px" loading="eager" className={styles.world} />
+            <Image src="/images/home/movie-poster.webp" alt="" fill sizes="(max-width: 760px) 90vw, 460px" preload loading="eager" fetchPriority="high" className={styles.world} />
           </span>
           <span className={styles.caption}>
             <Image src="/VRChat-Logo-Black.png" alt="" width={64} height={32} className={`${styles.brand} ${styles.wordmark}`} />

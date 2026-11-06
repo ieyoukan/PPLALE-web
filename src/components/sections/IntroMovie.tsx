@@ -35,9 +35,20 @@ export default function IntroMovie() {
       if (entry.isIntersecting) { if (video.currentSrc) void video.play().catch(() => {}); }
       else video.pause();
     }, { threshold: 0.4 });
-    loader.observe(video);
-    player.observe(video);
-    return () => { loader.disconnect(); player.disconnect(); };
+    // Only after the page has loaded and the browser is idle: on a phone the movie is on the first screen, and
+    // starting its ~6 MB at once took the bandwidth of the hero illustration (the home page's LCP).
+    const idleSupported = typeof window.requestIdleCallback === 'function';
+    let idle = 0;
+    const watch = () => {
+      const start = () => { loader.observe(video); player.observe(video); };
+      idle = idleSupported ? window.requestIdleCallback(start, { timeout: 2000 }) : window.setTimeout(start, 200);
+    };
+    if (document.readyState === 'complete') watch(); else window.addEventListener('load', watch, { once: true });
+    return () => {
+      window.removeEventListener('load', watch);
+      if (idleSupported) window.cancelIdleCallback(idle); else window.clearTimeout(idle);
+      loader.disconnect(); player.disconnect();
+    };
   }, []);
 
   // 読み込み前に見えた場合は、ソースを入れた直後に再生する。

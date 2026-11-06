@@ -1,4 +1,6 @@
 .doc {
+  /* The rules' kanji come from their own face (rules-fonts.css); everything else from the site's body font. */
+  font-family: 'PPLALE Rules', var(--font-site-body), 'Hiragino Maru Gothic ProN', sans-serif;
   color: var(--brand-cocoa-deep);
   font-size: 15px;
   line-height: 1.85;

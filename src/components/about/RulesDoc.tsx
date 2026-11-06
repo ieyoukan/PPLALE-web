@@ -2,6 +2,8 @@ import { readFile } from 'node:fs/promises';
 import path from 'node:path';
 import Markdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
+// The rules text's own face (one file per weight for its kanji): scripts/generate-site-fonts.mjs, docs/performance/home-performance.md.
+import '@/app/generated/rules-fonts.css';
 import styles from './RulesDoc.module.css';
 import RulesEnglish from './RulesEnglish';
 

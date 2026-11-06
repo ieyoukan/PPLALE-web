@@ -187,7 +187,9 @@ function Book({ onZoom, paused }: { onZoom: (page: number) => void; paused: bool
                   if (info.offset.x < -45) turn(1);
                   if (info.offset.x > 45) turn(-1);
                 }}>
-                <Image src={slide.src} alt={titleOf(slide)} fill unoptimized draggable={false} style={{ objectFit: 'contain' }} />
+                {/* The first page is the page's largest paint (LCP): preloaded, at the size it is shown (the enlarged view keeps the original). */}
+                <Image src={slide.src} alt={titleOf(slide)} fill sizes="(max-width: 1072px) calc(100vw - 72px), 1000px" draggable={false} style={{ objectFit: 'contain' }}
+                  preload={index === 0} loading="eager" fetchPriority={index === 0 ? 'high' : 'auto'} />
               </motion.div>
             </AnimatePresence>
             <button type="button" className={styles.zoom} aria-label={t('このページを大きく見る')} onClick={() => onZoom(index)}>⤢</button>
@@ -207,7 +209,7 @@ function Book({ onZoom, paused }: { onZoom: (page: number) => void; paused: bool
           {allSlides.map((thumb, i) => (
             <button type="button" key={thumb.src} aria-label={t('{n}ページ {title}', { n: i + 1, title: titleOf(thumb) })} aria-current={i === index ? 'page' : undefined}
               className={styles.thumb} onClick={() => turnTo(i)}>
-              <Image src={thumb.src} alt="" width={96} height={68} unoptimized loading="lazy" />
+              <Image src={thumb.src} alt="" width={96} height={68} sizes="96px" loading="lazy" />
             </button>
           ))}
         </div>
