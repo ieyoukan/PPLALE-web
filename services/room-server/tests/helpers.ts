@@ -46,9 +46,9 @@ export async function serve({ data = shared(), history, push, ...options }: Part
 export type Served = Awaited<ReturnType<typeof serve>>;
 
 /** A seat's socket (or, without a token, a spectator's): collects what it is sent, and sends actions waiting for their result. */
-export async function connect(served: Pick<Served, 'port'>, id: string, token: string | null, headers: Record<string, string> = {}, chat = false) {
+export async function connect(served: Pick<Served, 'port'>, id: string, token: string | null, headers: Record<string, string> = {}, chat = false, chatReads = false) {
     const socket = new WebSocket(`ws://localhost:${served.port}/rooms/${id}/socket`, { headers });
-    const views: RoomView[] = [], chats: Extract<ServerMessage, { type: 'chat' }>[] = [], results = new Map<number, (error: string | undefined) => void>(), waiting: (() => void)[] = [];
+    const views: RoomView[] = [], chats: Extract<ServerMessage, { type: 'chat' }>[] = [], reads: Extract<ServerMessage, { type: 'chatReads' }>[] = [], results = new Map<number, (error: string | undefined) => void>(), waiting: (() => void)[] = [];
     let gone: string | null = null, n = 0;
     const closed = new Promise<number>(resolve => socket.on('close', code => { resolve(code); waiting.splice(0).forEach(wake => wake()); }));
     socket.on('error', () => {});
@@ -56,16 +56,17 @@ export async function connect(served: Pick<Served, 'port'>, id: string, token: s
         const message = JSON.parse(String(data)) as ServerMessage;
         if (message.type === 'view') views.push(message.view);
         else if (message.type === 'chat') chats.push(message);
+        else if (message.type === 'chatReads') reads.push(message);
         else if (message.type === 'result') results.get(message.n)?.(message.error);
-        else gone = message.error;
+        else if (message.type === 'gone') gone = message.error;
         waiting.splice(0).forEach(wake => wake());
     });
     const say = (message: ClientMessage) => socket.send(JSON.stringify(message));
     await new Promise<void>((resolve, reject) => { socket.once('open', () => resolve()); socket.once('error', reject); socket.once('unexpected-response', () => reject(new Error('refused'))); });
-    say({ ...(token === null ? { type: 'hello', watch: true } as const : { type: 'hello', token } as const), ...(chat && { chat: true as const }) });
+    say({ ...(token === null ? { type: 'hello', watch: true } as const : { type: 'hello', token } as const), ...(chat && { chat: true as const }), ...(chatReads && { chatReads: true as const }) });
     const next = () => new Promise<void>(resolve => waiting.push(resolve));
     return {
-        socket, views, chats, closed,
+        socket, views, chats, reads, closed,
         gone: () => gone,
         latest: () => views.at(-1)!,
         /** Waits until the latest view satisfies `test`. */
@@ -82,6 +83,13 @@ export async function connect(served: Pick<Served, 'port'>, id: string, token: s
                 await next();
             }
             return chats.at(-1)!;
+        },
+        async untilReads(test: (message: Extract<ServerMessage, { type: 'chatReads' }>) => boolean) {
+            while (!reads.length || !test(reads.at(-1)!)) {
+                if (socket.readyState > 1) throw new Error(`socket closed while waiting for reads (${gone})`);
+                await next();
+            }
+            return reads.at(-1)!;
         },
         /** Sends an action; resolves with the error it was refused with, or undefined. */
         act(action: RoomAction) {

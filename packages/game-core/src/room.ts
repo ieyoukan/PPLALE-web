@@ -268,7 +268,8 @@ export interface Entered {
 /** 最初にhelloでトークンまたは観戦を指定する。操作番号nにより、要求とresultを対応させる。 */
 export type ClientMessage =
     /** 席またはルームメンバーのトークン。 */
-    | { type: 'hello'; token?: string; watch?: true; chat?: true }
+    /** `chatReads`: this browser takes read receipts on their own (`chatReads`), not with every message again. */
+    | { type: 'hello'; token?: string; watch?: true; chat?: true; chatReads?: true }
     | { type: 'action'; n: number; action: RoomAction }
     | { type: 'performance'; reports: PlayReport[] }
     /** 画面の表示・非表示を通知する。非表示中の手番はPushで伝える。reportsAway対応サーバーへだけ送る。 */
@@ -277,6 +278,8 @@ export type ClientMessage =
 export type ServerMessage =
     | { type: 'view'; view: RoomView }
     | { type: 'chat'; id: string; version: number; messages: RoomChatMessage[]; /** メンバーごとの既読位置。 */ reads?: Record<string, string> }
+    /** 既読の位置だけ（hello.chatReads を送ったブラウザへ）。発言一覧は送り直さない。 */
+    | { type: 'chatReads'; id: string; reads: Record<string, string> }
     | { type: 'result'; n: number; error?: string; revision?: number; timing?: ServerTiming }
     /** `closed`: a plaza closed while this member was away; they may make its successor (`PlazaRequest.from`). */
     | { type: 'gone'; error: string; closed?: true };

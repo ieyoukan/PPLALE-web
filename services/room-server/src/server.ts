@@ -87,7 +87,7 @@ const HIDDEN = 'ルームが見つからないか、招待が必要です';
 const CLOSED = 'このルームは閉じました';
 const LEFT = 'ルームから出ました';
 
-type Attached = WebSocket & { alive?: boolean; entry?: Member; chatEnabled?: boolean; chatInitialized?: boolean };
+type Attached = WebSocket & { alive?: boolean; entry?: Member; chatEnabled?: boolean; chatInitialized?: boolean; chatReadsEnabled?: boolean };
 /** The members connected now, as the views and tidying take them. */
 const onlineMembers = (present: Pick<Present, 'members'>) => new Set(present.members ?? []);
 /** The signed-in account among a request's verified owners, if any. */
@@ -300,8 +300,17 @@ export function createRoomServer({ config, backend, catalog, history, push = pus
         }
     }
     /** Sends each seat's view (and the spectators' and members' views) to the sockets held here. */
-    function deliver({ room, online, watching, members, chat }: Pick<RoomEvent, 'room' | 'online' | 'watching' | 'members' | 'chat'>) {
+    function deliver({ room, online, watching, members, chat, reads }: Pick<RoomEvent, 'room' | 'online' | 'watching' | 'members' | 'chat' | 'reads'>) {
         const pair = sockets.get(room.id);
+        // A read receipt: only the reads, to browsers that take them on their own (older ones get the messages again).
+        if (reads && !chat && room.plaza) {
+            const receipts = chatReads(room.plaza);
+            if (pair) for (const socket of pair[3]) {
+                if (!socket.chatEnabled || !socket.entry || !room.plaza.members.some(member => member.id === memberOfEntry(socket.entry!.member))) continue;
+                tell(socket, socket.chatReadsEnabled ? { type: 'chatReads', id: room.id, reads: receipts } : { type: 'chat', id: room.id, version: room.version, messages: room.plaza.chat ?? [], reads: receipts });
+            }
+            return;
+        }
         if (chat && room.plaza) {
             if (pair) for (const socket of pair[3]) {
                 if (socket.chatEnabled && socket.entry && room.plaza.members.some(member => member.id === memberOfEntry(socket.entry!.member)))
@@ -332,17 +341,17 @@ export function createRoomServer({ config, backend, catalog, history, push = pus
         }
     }
     /** After a change: the sockets here get their views, and the other instances are told to send theirs. */
-    async function announce(room: Room, vacated?: Side, timing?: CommandTiming, removed?: string[], chat?: true) {
+    async function announce(room: Room, vacated?: Side, timing?: CommandTiming, removed?: string[], chat?: true, reads?: true) {
         let at = performance.now();
         const now = await present(room.id);
         if (timing) timing.presence += performance.now() - at;
         at = performance.now();
-        deliver({ room, ...now, ...(chat && { chat }) });
+        deliver({ room, ...now, ...(chat && { chat }), ...(reads && { reads }) });
         if (room.plaza && room.status === 'closed') dismissMembers(room.id, null, true);
         else if (removed?.length) dismissMembers(room.id, removed);
         if (timing) timing.deliver += performance.now() - at;
         at = performance.now();
-        await backend.publish({ from: pod, room: chat ? { ...room, last: null } : room, ...now, ...(chat && { chat }), ...(vacated !== undefined && { dismiss: vacated }), ...(removed?.length && { dismissMembers: removed }) });
+        await backend.publish({ from: pod, room: chat || reads ? { ...room, last: null } : room, ...now, ...(chat && { chat }), ...(reads && { reads }), ...(vacated !== undefined && { dismiss: vacated }), ...(removed?.length && { dismissMembers: removed }) });
         if (timing) timing.publish += performance.now() - at;
     }
     const ready = backend.subscribe(event => {
@@ -925,7 +934,7 @@ export function createRoomServer({ config, backend, catalog, history, push = pus
                 }, timing);
                 // Whoever leaves is told the result before their sockets are ended.
                 if (outcome.removed?.includes(member)) tell(socket, { type: 'result', n });
-                await announce(room, undefined, timing, outcome.removed, outcome.chat);
+                await announce(room, undefined, timing, outcome.removed, outcome.chat, outcome.chatRead);
                 timing.total = performance.now() - received;
                 const sent = body as RoomAction;
                 const measured = outcome.command && sent.action === 'command' && isPlayKind(sent.command.type) ? parseServerTiming(timing) : undefined;
@@ -990,6 +999,7 @@ export function createRoomServer({ config, backend, catalog, history, push = pus
             if (message?.type === 'hello' && !helloStarted) {
                 helloStarted = true;
                 socket.chatEnabled = message.chat === true;
+                socket.chatReadsEnabled = message.chatReads === true;
                 return next(() => message.watch ? watch() : hello(message.token));
             }
             if (message?.type === 'performance') {

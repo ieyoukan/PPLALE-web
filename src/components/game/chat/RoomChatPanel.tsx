@@ -9,7 +9,6 @@ import { ChatComposer } from './ChatComposer';
 import { ChatMessages } from './ChatMessages';
 import { ChatStampPicker } from './ChatStampPicker';
 import { useChatSender } from './useChatSender';
-import { useUnreadMessages } from './useUnreadMessages';
 import { useChatArrivals } from './useChatArrivals';
 import { ChatPreview } from './ChatPreview';
 import { useI18n } from '@/i18n/LocaleProvider';
@@ -28,9 +27,8 @@ export function RoomChatPanel({ open, onOpen, onClose }: { open: boolean; onOpen
   const ownMemberId = view?.plaza?.me;
   const ready = linked && !!view?.plaza?.chatEnabled;
   const stampsReady = ready && !!view?.plaza?.chatStamps;
-  const unread = useUnreadMessages(chat, ownMemberId, open);
-  // A new message from someone else while the chat is closed (or the tab hidden): a bubble, a sound, and an OS notice.
-  const { preview, clearPreview } = useChatArrivals(chat, ownMemberId, open, roomId);
+  // A new message from someone else while the chat is closed (or the tab hidden): the count, a bubble, a sound, an OS notice.
+  const { unread, preview, clearPreview } = useChatArrivals(chat, ownMemberId, open, roomId);
   const receipts = !!view?.plaza?.chatReceipts;
 
   // 既読: reading the open chat in a shown tab marks the newest message of the others as read.

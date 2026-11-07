@@ -15,6 +15,8 @@ export interface RoomConnectionHandlers {
   onLink: (connected: boolean) => void;
   onGone: (message: string, closed?: boolean) => void;
   onChat?: (message: Extract<ServerMessage, { type: 'chat' }>) => void;
+  /** Read receipts on their own (asked for in hello when this is given). */
+  onChatReads?: (message: Extract<ServerMessage, { type: 'chatReads' }>) => void;
 }
 
 export interface RoomConnection {
@@ -62,7 +64,7 @@ export function connectRoom(id: string, token: string | null, handlers: RoomConn
   function open() {
     if (stopped || !roomServerUrl) return;
     const next = socket = new WebSocket(`${roomServerUrl.replace(/^http/, 'ws')}/rooms/${id}/socket`);
-    next.addEventListener('open', () => next.send(JSON.stringify({ ...(token === null ? { type: 'hello' as const, watch: true as const } : { type: 'hello' as const, token }), ...(handlers.onChat && { chat: true as const }) } satisfies ClientMessage)));
+    next.addEventListener('open', () => next.send(JSON.stringify({ ...(token === null ? { type: 'hello' as const, watch: true as const } : { type: 'hello' as const, token }), ...(handlers.onChat && { chat: true as const }), ...(handlers.onChatReads && { chatReads: true as const }) } satisfies ClientMessage)));
     next.addEventListener('message', event => {
       if (stopped || socket !== next) return;
       const message = JSON.parse(String(event.data)) as ServerMessage;
@@ -76,6 +78,8 @@ export function connectRoom(id: string, token: string | null, handlers: RoomConn
         handlers.onView(message.view);
       } else if (message.type === 'chat') {
         handlers.onChat?.(message);
+      } else if (message.type === 'chatReads') {
+        handlers.onChatReads?.(message);
       } else if (message.type === 'result') {
         const asked = waiting.get(message.n);
         waiting.delete(message.n);
@@ -90,11 +94,12 @@ export function connectRoom(id: string, token: string | null, handlers: RoomConn
         }
         if (message.error) asked?.reject(new RoomRequestError(400, message.error));
         else asked?.resolve();
-      } else {
+      } else if (message.type === 'gone') {
         stopped = true;
         failWaiting();
         handlers.onGone(message.error, message.closed);
       }
+      // Any other kind (from a newer server) is not for this browser: ignored, never taken as the room being gone.
     });
     next.addEventListener('close', event => {
       if (stopped || socket !== next) return;

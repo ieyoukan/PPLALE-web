@@ -191,6 +191,7 @@ export function PlazaProvider({ children }: { children: ReactNode }) {
       },
       onLink(up) { if (activeConnectionRef.current?.socket === socket) setLinked(up); },
       onChat(message) { if (activeConnectionRef.current?.socket === socket && message.id === roomId) receiveChatMessages(message.messages, message.version, message.reads); },
+      onChatReads(message) { if (activeConnectionRef.current?.socket === socket && message.id === roomId) setChatReads(message.reads); },
       onGone(message, closed) {
         if (!settled) { settled = true; clearTimeout(timer); socket.close(); return resolve({ ok: false, message, closed: !!closed }); }
         if (activeConnectionRef.current?.socket === socket && !leaving.current.has(socket)) handleLostConnectionRef.current({ id: roomId, token, socket }, message, !!closed);

@@ -6,6 +6,12 @@ import { doc, setDoc } from 'firebase/firestore';
 import { db, auth } from '@/lib/firebase';
 import { validateDeckData } from '@/lib/schema';
 import { isSleeve } from '@pplale/game-core';
+
+/** A guest deck's sleeve (saved by the game as `deck_<id>_sleeve`), to go with it to the account. */
+const guestSleeve = (deckId: string) => {
+  const sleeve = localStorage.getItem(`deck_${deckId}_sleeve`);
+  return isSleeve(sleeve) ? { sleeve } : {};
+};
 import { useAuth } from '@/lib/auth';
 import { browserPopupRedirectResolver, GoogleAuthProvider, signInWithPopup } from 'firebase/auth';
 import { useI18n } from '@/i18n/LocaleProvider';
@@ -254,7 +260,7 @@ export function useDeckPageState({
           sweetDeckIds: sweetDeck.map(card => card.id),
           playableCardId: selectedPlayableCard?.id || null,
           // A guest deck's sleeve (saved by the game) goes with it to the account.
-          ...(isSleeve(localStorage.getItem(`deck_${deckId}_sleeve`)) && { sleeve: localStorage.getItem(`deck_${deckId}_sleeve`) }),
+          ...guestSleeve(deckId),
           updatedAt: new Date()
         };
         try {
@@ -286,7 +292,7 @@ export function useDeckPageState({
           sweetDeckIds: sweetDeck.map(card => card.id),
           playableCardId: selectedPlayableCard?.id || null,
           // A guest deck's sleeve (saved by the game) goes with it to the account.
-          ...(isSleeve(localStorage.getItem(`deck_${deckId}_sleeve`)) && { sleeve: localStorage.getItem(`deck_${deckId}_sleeve`) }),
+          ...guestSleeve(deckId),
           updatedAt: new Date()
         };
         try {

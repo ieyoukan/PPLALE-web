@@ -8,13 +8,16 @@ import type { PointerEvent as ReactPointerEvent } from 'react';
 import { useI18n } from '@/i18n/LocaleProvider';
 import { useBoardContext } from '../board/BoardContext';
 import { useReplayAssessment } from '../board/useReplayAssessment';
+import { changeBetween, swingOf } from '../board/assessmentMarks';
 import { stageRect, toStage } from '../stage/stageSpace';
 import styles from './ReplayBar.module.css';
 
 /** How long the player stays up while playing after the last touch. */
 const HIDE_AFTER = 3500;
-/** A change of the chance of winning this large (between judged positions) is marked on the timeline. */
-const SWING = 0.12;
+/**
+ * The swings are found by the rule 形勢の詳細 uses (board/assessmentMarks.ts). Only how they fit on this thin timeline
+ * is its own: of marks closer than 6% of its width the larger is kept, at most this many.
+ */
 const MAX_SWINGS = 6;
 
 const icons = {
@@ -59,16 +62,16 @@ export function ReplayBar() {
   const near = (win: number) => view === 0 ? win : 1 - win;
   // The biggest swings: each is marked where the move that caused it was about to be played.
   const swings = useMemo(() => {
-    const found = points.slice(1).map((point, i) => ({ from: points[i].index, to: point.index, change: near(point.win) - near(points[i].win) }))
-      .filter(swing => Math.abs(swing.change) >= SWING && swing.to - swing.from <= 3);
+    const found = points.slice(1).flatMap((point, i) => {
+      const change = changeBetween(points[i], point, view);
+      return swingOf(change) ? [{ from: points[i].index, to: point.index, change: change! }] : [];
+    });
     // The larger of two swings close together keeps its mark, so that marks never overlap.
     const kept: typeof found = [];
     for (const swing of found.sort((a, b) => Math.abs(b.change) - Math.abs(a.change))) {
       if (kept.length < MAX_SWINGS && kept.every(other => Math.abs(other.from - swing.from) > last * 0.06)) kept.push(swing);
     }
     return kept.sort((a, b) => a.from - b.from);
-    // `near` only depends on `view`.
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [points, view, last]);
   const x = (index: number) => index / last * 1000;
   const y = (win: number) => (1 - near(win)) * 100;

@@ -34,6 +34,8 @@ export default defineConfig([
   },
   globalIgnores([
     '.next/**',
+    // Local tool caches (benchmarks, generated fonts): not in the repository.
+    '.cache/**',
     '**/.venv/**',
     '.playwright-mcp/**',
     'out/**',

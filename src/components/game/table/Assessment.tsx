@@ -12,7 +12,8 @@ import type { Translate } from '@/lib/game/sessionStore';
 import { useBoardContext } from '../board/BoardContext';
 import type { AssessedPoint } from '../board/assess';
 import { moveText } from '../board/assess';
-import { TURNAROUND } from '../board/assessmentHighlights';
+import { chanceOf, markOf } from '../board/assessmentMarks';
+import type { MoveMark } from '../board/assessmentMarks';
 import styles from './Assessment.module.css';
 
 const percent = (win: number, side: Side) => Math.round((side === 0 ? win : 1 - win) * 100);
@@ -35,18 +36,15 @@ export function AssessmentBar() {
   </div>;
 }
 
-/**
- * blunder / dubious: this side's move, graded against the best move (after the match). up / down: any move (either
- * side's, a draw, a die) that moved this side's chance by 12 points or more, as the replay's timeline marks them.
- */
-type Mark = 'blunder' | 'dubious' | 'up' | 'down';
+/** The marks and their rule are shared with the replay's timeline (board/assessmentMarks.ts). */
+type Mark = MoveMark;
 const markName: Record<Mark, string> = { blunder: '悪手', dubious: '疑問手', up: '好転', down: '悪化' };
 interface Move { point: AssessedPoint; actor: Side; mark: Mark | null; /** For `side`; null across a gap in an unfinished analysis. */ delta: number | null }
 interface TurnCourse { key: string; turn: AssessedPoint['turn']; owner: Side; moves: Move[]; /** Positions (command counts) where it starts and ends. */ from: number; to: number; delta: number }
 
 /** The match turn by turn, as `side` sees it. */
 function courseOf(points: AssessedPoint[], side: Side): TurnCourse[] {
-  const mine = (point: AssessedPoint) => side === 0 ? point.win : 1 - point.win;
+  const mine = (point: AssessedPoint) => chanceOf(point, side);
   const turns: TurnCourse[] = [];
   points.forEach((point, index) => {
     const before = points[index - 1];
@@ -58,9 +56,7 @@ function courseOf(points: AssessedPoint[], side: Side): TurnCourse[] {
       turns.push(course);
     }
     const delta = point.index === before.index + 1 ? mine(point) - mine(before) : null;
-    const own = point.command.actor === side;
-    const swing = delta === null ? null : delta >= TURNAROUND - 1e-9 ? 'up' : delta <= -TURNAROUND + 1e-9 ? 'down' : null;
-    course.moves.push({ point, actor: point.command.actor, delta, mark: (own && point.grade) || swing });
+    course.moves.push({ point, actor: point.command.actor, delta, mark: markOf(before, point, side) });
     course.to = point.index;
   });
   for (const course of turns) {

@@ -62,6 +62,8 @@ export interface Visitor { profileId?: string; historyOwners?: string[]; name: s
 /** ルームの変更に加え、接続・通知などで必要になる処理。 */
 export interface PlazaOutcome extends Outcome {
     chat?: true;
+    /** Only someone's read receipt (既読) changed. */
+    chatRead?: true;
     /** 在室扱いでなくなったメンバー。この人の接続を閉じる。 */
     removed?: string[];
     /** 名前で入室を許可した相手。通知先として使う。 */
@@ -341,7 +343,7 @@ export function actPlaza(room: Room, id: string, body: unknown, catalog: Catalog
             markChatRead(plaza, me, plaza.chat!.at(-1)!.id);
             return { chat: true };
         case 'chatRead':
-            return markChatRead(plaza, me, request.id) ? { chat: true } : {};
+            return markChatRead(plaza, me, request.id) ? { chatRead: true } : {};
         case 'ready': {
             const own = seated();
             if (room.status !== 'lobby') throw new RoomError(409, room.status === 'finished' ? '「もう一度」を選んでから準備してください' : '対戦中はデッキを変えられません');

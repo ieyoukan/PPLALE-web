@@ -236,7 +236,7 @@ test('後攻5ターン目の+2PPは「最大PP」に数えない（あみのの�
 
 test('トークンは幼女として数える: ちむどんどん！の「コスト1〜10の幼女」に猫まんじゅう（コスト1）が入る', () => {
   // One unit of each cost 2–9, a 猫まんじゅう for cost 1, and ちむどんどん！ itself (10 while in the nap).
-  const ofCost = n => Object.values(catalog).find(c => c.type === 'yojo' && c.cost === n && c.id !== 'y_146' && /^y_/.test(c.id)).id;
+  const ofCost = n => Object.values(catalog).find(c => c.type === 'yojo' && c.cost === n && c.id !== 'y_146' && c.id.startsWith('y_')).id;
   const nap = ['token_cat', ...[2, 3, 4, 5, 6, 7, 8, 9].map(ofCost), 'y_146'];
   const s = playFirst(arena({ me: { hand: ['y_146'], nap } }), 'y_146');
   assert.deepEqual([s.winner, s.winReason], [0, 'special']);

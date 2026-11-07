@@ -42,7 +42,7 @@ CPUの単独対戦・リプレイ・エディタ ──> BoardEmulator
 | チャットを表示する条件と開閉状態 | `src/components/game/chat/RoomChatProvider.tsx` |
 | チャットの配置・キー・スクロール | `src/components/game/chat/RoomChatPanel.tsx` |
 | 発言表示・入力・スタンプ一覧 | `src/components/game/chat/ChatMessages.tsx`・`src/components/game/chat/ChatComposer.tsx`・`src/components/game/chat/ChatStampPicker.tsx` |
-| チャット送信・再送・未読 | `src/components/game/chat/useChatSender.ts`・`src/components/game/chat/useUnreadMessages.ts` |
+| チャット送信・再送・未読 | `src/components/game/chat/useChatSender.ts`・`src/components/game/chat/useChatArrivals.ts` |
 | サーバー側の発言検証・頻度・履歴 | `services/room-server/src/chat.ts` |
 
 画面は操作と描画、サーバーは権限と確定状態、game-coreはルールと共有型を担当する。同じ表示や判定を別の画面に複製しない。学習済み係数・自動生成データは生成元から更新し、可読性の整理で値を変えない。

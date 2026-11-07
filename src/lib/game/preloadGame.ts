@@ -3,7 +3,7 @@
 // 起動画面で、ゲームで使う画像と音声をまとめて先に読み込む（ブラウザのキャッシュに入れるだけで、展開はしない）。
 // 1回のページ表示で1度だけ行い、終わったあとのルーム・メニュー・対戦は読み込み待ちなしで表示する。
 import { useEffect, useSyncExternalStore } from 'react';
-import { GUIDES } from '@/components/game/guide/GameGuide';
+import { GUIDES } from '@/components/game/guide/guides';
 import { getImageProps } from 'next/image';
 import { browserAppLocale } from '@/i18n/config';
 import chatStamps from './generated/chat-stamps.json';
@@ -28,7 +28,7 @@ const RAW_IMAGES = [
 ];
 /** Pictures shown through next/image: the size each is drawn at, so the same resized file is fetched. */
 const SIZED_IMAGES: { src: string; width: number; height: number; sizes?: string }[] = [
-  // The launchpad's guides (GameGuide.tsx GUIDES), drawn at 360px.
+  // The launchpad's guides (guide/guides.ts), drawn at 360px.
   ...GUIDES.map(guide => ({ src: `/images/game/characters/${guide.image}.webp`, width: guide.width, height: guide.height, sizes: '360px' })),
   ...['gato-mug', 'shuo', 'gitty', 'chori-mug', 'rikusu-mug', 'buran'].map(name => ({ src: `/images/game/characters/${name}.webp`, width: 100, height: 110 })),
   { src: '/images/game/characters/shuo.webp', width: 120, height: 132 },
