@@ -75,6 +75,13 @@ button:not(:disabled),
   cursor: pointer;
 }
 
+/* 写真や濃色の盤面上でも、キーボードの現在位置を見失わないようにする。 */
+:where(a, button, input, select, textarea, [tabindex]):focus-visible {
+  outline: 2px solid var(--brand-cocoa-deep);
+  outline-offset: 3px;
+  box-shadow: 0 0 0 5px var(--brand-paper);
+}
+
 @keyframes slideIn {
   from { transform: translateX(100%); opacity: 0; }
   to { transform: translateX(0); opacity: 1; }
