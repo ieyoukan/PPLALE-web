@@ -73,7 +73,7 @@
   },
   "devDependencies": {
     "@eslint/eslintrc": "^3",
-    "@pandacss/dev": "^0.31.0",
+    "@pandacss/dev": "^2.5.0",
     "@playwright/test": "^1.62.1",
     "@svgr/plugin-svgo": "^8.1.0",
     "@svgr/webpack": "^8.1.0",
@@ -82,17 +82,17 @@
     "@types/react-dom": "^19",
     "@types/three": "^0.186.0",
     "esbuild": "^0.28.2",
-    "eslint": "^10.13.0",
-    "eslint-config-next": "^16.2.3",
+    "eslint": "^10.14.0",
+    "eslint-config-next": "^16.4.5",
     "eslint-plugin-react": "^7.37.5",
     "eslint-plugin-react-hooks": "^7.0.1",
-    "eslint-plugin-security": "^4.2.0",
-    "eslint-plugin-unicorn": "^78.0.0",
+    "eslint-plugin-security": "^4.2.1",
+    "eslint-plugin-unicorn": "^79.0.0",
     "file-loader": "^6.2.0",
     "fontkit": "2.0.4",
     "husky": "^9.1.7",
-    "postcss": "^8.5.6",
+    "postcss": "^8.5.32",
     "subset-font": "2.9.0",
-    "typescript": "^6.0.3"
+    "typescript": "^7.0.2"
   }
 }
