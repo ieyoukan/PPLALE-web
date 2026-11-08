@@ -17,8 +17,13 @@ export default function IntroMovie() {
   const videoRef = useRef<HTMLVideoElement>(null);
   const [near, setNear] = useState(false);
   const [muted, setMuted] = useState(true);
+  const [volume, setVolume] = useState(0.35);
   const [reducedMotion, setReducedMotion] = useState(false);
   const visibleRef = useRef(false);
+
+  useEffect(() => {
+    if (videoRef.current) videoRef.current.volume = volume;
+  }, [volume]);
 
   useEffect(() => {
     const video = videoRef.current;
@@ -54,16 +59,22 @@ export default function IntroMovie() {
   // 読み込み前に見えた場合は、ソースを入れた直後に再生する。
   useEffect(() => {
     const video = videoRef.current;
-    if (!near || !video || !visibleRef.current || matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+    if (!near || !video) return;
+    // The video has no <source> on first render. When the lazy-loaded sources are
+    // added later, restart resource selection so browsers such as Firefox pick
+    // them up instead of keeping the initial "no supported source" error.
+    video.load();
+    if (!visibleRef.current || matchMedia('(prefers-reduced-motion: reduce)').matches) return;
     void video.play().catch(() => {});
   }, [near]);
 
   const toggleSound = () => {
     const video = videoRef.current;
     if (!video) return;
-    video.muted = !video.muted;
-    setMuted(video.muted);
-    if (!video.muted && video.paused) void video.play().catch(() => {});
+    const nextMuted = !muted;
+    video.muted = nextMuted;
+    setMuted(nextMuted);
+    if (!nextMuted && video.paused) void video.play().catch(() => {});
   };
 
   return (
@@ -72,7 +83,7 @@ export default function IntroMovie() {
         ref={videoRef}
         className={styles.video}
         poster={near ? POSTER : undefined}
-        muted
+        muted={muted}
         loop
         playsInline
         preload="none"
@@ -82,14 +93,28 @@ export default function IntroMovie() {
         {near && SOURCES.map(source => <source key={source.src} src={source.src} type={source.type} />)}
       </video>
       {!reducedMotion && (
-        <button type="button" className={styles.sound} onClick={toggleSound} aria-pressed={!muted} aria-label={t(muted ? '音を出す' : '音を消す')}>
-          <svg viewBox="0 0 24 24" aria-hidden="true">
-            <path d="M4 9h4l5-4v14l-5-4H4z" fill="currentColor" />
-            {muted
-              ? <path d="M16.5 9.5l5 5m0-5l-5 5" />
-              : <><path d="M16 9a4 4 0 0 1 0 6" /><path d="M18.5 6.5a7.5 7.5 0 0 1 0 11" /></>}
-          </svg>
-        </button>
+        <>
+          <label className={styles.volume}>
+            <span className={styles.srOnly}>{t('音量')}</span>
+            <input
+              type="range"
+              min="0"
+              max="1"
+              step="0.05"
+              value={volume}
+              onChange={event => setVolume(Number(event.currentTarget.value))}
+              aria-label={t('音量')}
+            />
+          </label>
+          <button type="button" className={styles.sound} onClick={toggleSound} aria-pressed={!muted} aria-label={t(muted ? '音を出す' : '音を消す')}>
+            <svg viewBox="0 0 24 24" aria-hidden="true">
+              <path d="M4 9h4l5-4v14l-5-4H4z" fill="currentColor" />
+              {muted
+                ? <path d="M16.5 9.5l5 5m0-5l-5 5" />
+                : <><path d="M16 9a4 4 0 0 1 0 6" /><path d="M18.5 6.5a7.5 7.5 0 0 1 0 11" /></>}
+            </svg>
+          </button>
+        </>
       )}
     </div>
   );

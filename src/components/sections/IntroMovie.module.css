@@ -5,7 +5,22 @@
   box-shadow: 0 0 0 4px var(--brand-paper), 0 0 0 6px var(--brand-pink);
 }
 .video { display: block; width: 100%; height: 100%; object-fit: cover; }
-/* 右下の音の切り替え。ミュート中は×、音ありは音の波で表す。 */
+/* 右下に音量とミュートの操作をまとめる。 */
+.volume {
+  position: absolute; right: 64px; bottom: 12px; display: grid; place-items: center;
+  width: 112px; height: 44px; padding: 0 12px; border: 2px solid var(--brand-pink-edge); border-radius: 24px;
+  background: var(--brand-paper);
+}
+.volume input {
+  width: 100%; height: 24px; margin: 0; accent-color: var(--brand-cocoa);
+  cursor: pointer;
+}
+.volume input:focus-visible { outline: 3px solid var(--brand-cocoa); outline-offset: 3px; border-radius: 12px; }
+.srOnly {
+  position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden;
+  clip: rect(0, 0, 0, 0); white-space: nowrap; border: 0;
+}
+/* ミュート中は×、音ありは音の波で表す。 */
 .sound {
   position: absolute; right: 12px; bottom: 12px; display: grid; place-items: center;
   width: 44px; height: 44px; padding: 0; border: 2px solid var(--brand-pink-edge); border-radius: 50%;
