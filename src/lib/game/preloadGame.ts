@@ -7,7 +7,7 @@ import { GUIDES } from '@/components/game/guide/guides';
 import { getImageProps } from 'next/image';
 import { browserAppLocale } from '@/i18n/config';
 import chatStamps from './generated/chat-stamps.json';
-import { gameAudio, bgmUrl } from './gameAudio';
+import { gameAudio, bgmUrl, HOME_TRACK } from './gameAudio';
 import { gameCardAssets, gameCardSource, prepareGameCardFormat } from './matchAssets';
 
 /** `ready`: everything is in, or the launch screen has waited long enough (the rest keeps loading). */
@@ -51,7 +51,7 @@ async function assetUrls() {
   const avif = gameCardSource(Object.keys(gameCardAssets)[0])?.endsWith('.avif');
   return [...new Set([
     // Music muted is not fetched (it is when turned up).
-    ...(gameAudio().volume('bgm') > 0 ? [bgmUrl('home'), bgmUrl('match')] : []),
+    ...(gameAudio().volume('bgm') > 0 ? [bgmUrl(HOME_TRACK), bgmUrl(gameAudio().nextMatchTrack())] : []),
     // Every card at match size, in the language shown (tokens without an English card in Japanese).
     ...Object.keys(gameCardAssets).map(id => gameCardSource(id, english)).filter((url): url is string => !!url),
     avif ? chatStamps.avif : chatStamps.webp,

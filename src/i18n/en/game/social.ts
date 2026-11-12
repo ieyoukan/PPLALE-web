@@ -4,6 +4,8 @@ export const social: Record<string, string> = {
   '持って動かす': 'Drag the card',
   '矢印でねらう': 'Aim with an arrow',
   '効果音': 'Sound effects',
+  '対戦の曲': 'Match music',
+  'ランダム': 'Random',
   // フレンド・ソーシャル画面
   'フレンド': 'Friends',
   'フレンドの現在地': 'Where friends are',

@@ -7,21 +7,32 @@ export type BgmScene = 'home' | 'match';
 export type SoundEffect = 'land' | 'hit' | 'draw' | 'pop';
 export type AudioChannel = 'bgm' | 'se';
 
-const TRACKS: Record<BgmScene, string> = {
-  /** ホーム・ルーム・メニュー：いのせんとるーむ */
-  home: '/audio/bgm/innocent-room',
-  /** 対戦中：なぞ？なぞ！ぷぷりえ☆大解決！（からおけ☆ばーじょん） */
-  match: '/audio/bgm/nazonazo-daikaiketsu',
-};
+/** A piece of music: its file (without the format), and its title and version, shown faintly when it starts. */
+export interface BgmTrack { id: string; file: string; title: string; version: string }
+
+/** ホーム・ルーム・メニュー */
+export const HOME_TRACK: BgmTrack = { id: 'innocent-room', file: '/audio/bgm/innocent-room', title: 'いのせんとるーむ', version: '' };
+/** 対戦中。設定で1曲に決めるか、ランダム（初期値。対戦ごとに前回と違う曲）にする。 */
+export const MATCH_TRACKS: BgmTrack[] = [
+  { id: 'nazonazo-daikaiketsu', file: '/audio/bgm/nazonazo-daikaiketsu', title: 'なぞ？なぞ！ぷぷりえ☆大解決！', version: 'からおけ☆ばーじょん' },
+  { id: 'go-go-pupurie-forever', file: '/audio/bgm/go-go-pupurie-forever', title: 'GO！GO！ぷぷりえフォーエバー', version: 'からおけばーじょん' },
+  { id: 'lolipop-cafe', file: '/audio/bgm/lolipop-cafe', title: 'lolipop♪cafe', version: 'からおけ♪ばーじょん' },
+];
+/** `random`, or the id of one of MATCH_TRACKS. */
+export type MatchMusicChoice = 'random' | string;
+const CHOICE_KEY = 'pplale-match-bgm-v1';
+
 /**
  * The music files: Opus in WebM (40 kbps), or HE-AAC (48 kbps) where Opus cannot be played (older Safari).
  * Made from the original MP3 (128 kbps) with ffmpeg; the commands are in docs/game-design.md.
  */
 let format: '.webm' | '.m4a' | null = null;
-export function bgmUrl(scene: BgmScene) {
+export function bgmUrl(track: BgmTrack) {
   format ??= new Audio().canPlayType('audio/webm; codecs="opus"') ? '.webm' : '.m4a';
-  return TRACKS[scene] + format;
+  return track.file + format;
 }
+/** A track that has just started: shown once (`at` tells two startings of the same track apart). */
+export interface NowPlaying { track: BgmTrack; at: number }
 const KEYS: Record<AudioChannel, string> = { bgm: 'pplale-bgm-volume-v1', se: 'pplale-se-volume-v1' };
 export const DEFAULT_VOLUMES: Record<AudioChannel, number> = { bgm: 0.3, se: 0.7 };
 /** The loudest the music and the effects get at 100% (the tracks are mastered loud; effects are short). */
@@ -36,16 +47,30 @@ function stored(channel: AudioChannel) {
   } catch { return DEFAULT_VOLUMES[channel]; }
 }
 
+function storedChoice(): MatchMusicChoice {
+  try {
+    const value = localStorage.getItem(CHOICE_KEY);
+    return value && MATCH_TRACKS.some(track => track.id === value) ? value : 'random';
+  } catch { return 'random'; }
+}
+
 class GameAudio {
   private context: AudioContext | null = null;
   private music: HTMLAudioElement | null = null;
   private musicGain: GainNode | null = null;
   private effects: GainNode | null = null;
-  private playing: BgmScene | null = null;
+  private playing: BgmTrack | null = null;
   private scene: BgmScene = 'home';
-  private positions: Partial<Record<BgmScene, number>> = {};
+  /** The match's track, chosen when a match board comes on screen (none between matches). */
+  private matchTrack: BgmTrack | null = null;
+  /** With `random`: the next match's track, chosen ahead so the launch screen can load it. */
+  private upcoming: BgmTrack | null = null;
+  private lastMatchTrack: string | null = null;
+  private choice: MatchMusicChoice | null = null;
+  private positions: Record<string, number> = {};
   private switching = 0;
   private volumes: Record<AudioChannel, number> | null = null;
+  private started: NowPlaying | null = null;
   private listeners = new Set<() => void>();
 
   volume(channel: AudioChannel) {
@@ -54,6 +79,7 @@ class GameAudio {
   }
 
   subscribe = (listener: () => void) => { this.listeners.add(listener); return () => { this.listeners.delete(listener); }; };
+  private changed() { this.listeners.forEach(listener => listener()); }
 
   setVolume(channel: AudioChannel, value: number) {
     this.volume(channel);
@@ -65,8 +91,43 @@ class GameAudio {
       // Silent music is not downloaded or played; turned up again, it starts.
       if (this.volumes!.bgm === 0) this.stopMusic(); else void this.apply();
     } else this.effects?.gain.setTargetAtTime(this.volumes!.se * SE_LEVEL, now, 0.02);
-    this.listeners.forEach(listener => listener());
+    this.changed();
   }
+
+  /** Which match music the player chose (kept on this device): one track, or `random`. */
+  matchMusic(): MatchMusicChoice {
+    return this.choice ??= storedChoice();
+  }
+
+  /** Chosen during a match, a track plays at once (from the top); `random` lets the playing one go on. */
+  setMatchMusic(choice: MatchMusicChoice) {
+    this.choice = choice === 'random' || MATCH_TRACKS.some(track => track.id === choice) ? choice : 'random';
+    try { localStorage.setItem(CHOICE_KEY, this.choice); } catch { /* This visit only. */ }
+    if (this.scene === 'match' && this.choice !== 'random') { this.matchTrack = this.trackFor(); void this.apply(); }
+    this.changed();
+  }
+
+  /** The track the next match will play (what the launch screen loads ahead). */
+  nextMatchTrack(): BgmTrack {
+    const choice = this.matchMusic();
+    const chosen = MATCH_TRACKS.find(track => track.id === choice);
+    if (chosen) return chosen;
+    if (!this.upcoming) {
+      const others = MATCH_TRACKS.filter(track => track.id !== this.lastMatchTrack);
+      this.upcoming = others[Math.floor(Math.random() * others.length)];
+    }
+    return this.upcoming;
+  }
+
+  private trackFor() {
+    const track = this.nextMatchTrack();
+    this.upcoming = null;
+    this.lastMatchTrack = track.id;
+    return track;
+  }
+
+  /** The track that started last, to show its title once. */
+  nowPlaying() { return this.started; }
 
   /** In a tap or key press: create or resume the audio, then play the scene's music. */
   unlock() {
@@ -90,10 +151,11 @@ class GameAudio {
     } catch { /* Sound is optional: the game always works without it. */ }
   }
 
-  /** Which music the screen wants (a match board, or anything else). */
+  /** Which music the screen wants (a match board, or anything else). Each match chooses its track as it begins. */
   setScene(scene: BgmScene) {
     if (this.scene === scene) return;
     this.scene = scene;
+    this.matchTrack = scene === 'match' ? this.trackFor() : null;
     void this.apply();
   }
 
@@ -113,37 +175,44 @@ class GameAudio {
   private stopMusic() {
     const music = this.music;
     if (!music || !this.playing) return;
-    this.positions[this.playing] = music.currentTime;
+    this.positions[this.playing.id] = music.currentTime;
     music.pause();
     this.playing = null;
   }
 
-  /** Fade the playing track out, then the wanted one in (the home music goes on where it was; a match starts its music from the top). */
+  /**
+   * Fade the playing track out, then the wanted one in (the home music goes on where it was; a match's music starts
+   * from the top). A track newly put on announces itself once it really plays (not when the browser blocks it).
+   */
   private async apply() {
     const context = this.context, music = this.music, gain = this.musicGain;
     if (!context || !music || !gain || context.state === 'closed' || document.hidden || this.volume('bgm') === 0) return;
-    const scene = this.scene;
-    if (this.playing === scene && !music.paused) return;
+    const track = this.scene === 'match' && this.matchTrack ? this.matchTrack : HOME_TRACK;
+    if (this.playing === track && !music.paused) return;
     const turn = ++this.switching;
     const level = this.volume('bgm') * BGM_LEVEL;
-    if (this.playing && this.playing !== scene && !music.paused) {
+    if (this.playing && this.playing !== track && !music.paused) {
       gain.gain.cancelScheduledValues(context.currentTime);
       gain.gain.setValueAtTime(gain.gain.value, context.currentTime);
       gain.gain.linearRampToValueAtTime(0, context.currentTime + FADE_OUT);
       await new Promise(resolve => setTimeout(resolve, FADE_OUT * 1000));
       if (turn !== this.switching) return;
-      this.positions[this.playing] = music.currentTime;
+      this.positions[this.playing.id] = music.currentTime;
     }
-    if (this.playing !== scene || !music.src.endsWith(bgmUrl(scene))) {
-      music.src = bgmUrl(scene);
-      const from = scene === 'home' ? this.positions.home ?? 0 : 0;
+    const fresh = this.playing !== track || !music.src.endsWith(bgmUrl(track));
+    if (fresh) {
+      music.src = bgmUrl(track);
+      const from = track === HOME_TRACK ? this.positions[track.id] ?? 0 : 0;
       if (from) music.addEventListener('loadedmetadata', () => { music.currentTime = from; }, { once: true });
     }
-    this.playing = scene;
+    this.playing = track;
     gain.gain.cancelScheduledValues(context.currentTime);
     gain.gain.setValueAtTime(0, context.currentTime);
     gain.gain.linearRampToValueAtTime(level, context.currentTime + FADE_IN);
-    await music.play().catch(() => { if (turn === this.switching) this.playing = null; });
+    try {
+      await music.play();
+      if (fresh && turn === this.switching) { this.started = { track, at: Date.now() }; this.changed(); }
+    } catch { if (turn === this.switching) this.playing = null; }
   }
 }
 
