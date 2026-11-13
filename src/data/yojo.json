@@ -448,11 +448,11 @@
       "type": "yojo",
       "fruit": "grape",
       "description": "",
-      "imageUrl": "/images/yojo/cad7a5a55745fc59.webp",
+      "imageUrl": "/images/yojo/111ぶどうとここ.webp",
       "cost": 1,
       "hp": 1,
       "attack": 1,
-      "effect": "この幼女が場にいる状態で自身のプレイアブルキャラのスキル(Exスキルは除く)が使用されたならば、この幼女は次の自分のターン開始時までかくれんぼを持つ。",
+      "effect": "この幼女が自分の場にいる状態で自身のプレイアブルキャラのスキル(Exスキルは除く)が使用されたならば、この幼女は次の自分のターン開始時までかくれんぼを持つ。",
       "role": ""
     },
     {
@@ -656,7 +656,7 @@
       "type": "yojo",
       "fruit": "grape",
       "description": "",
-      "imageUrl": "/images/yojo/4672e3ca79c20360.webp",
+      "imageUrl": "/images/yojo/465ぶどうもなか.webp",
       "cost": 4,
       "hp": 5,
       "attack": 6,
