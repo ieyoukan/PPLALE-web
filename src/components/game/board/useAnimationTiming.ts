@@ -15,8 +15,8 @@ const snapshot = () => window.matchMedia(query).matches;
 const serverSnapshot = () => false;
 
 /**
- * One source for CSS durations and the timers that release interaction. Online matches use the same
- * pace as CPU matches: waiting is cut by overlapping the request with the animation, not by shortening it.
+ * カードの移動800ms＋着地200msは従来のまま。CSSと演出の終了に同じ時間を使う。
+ * 次のドローを受け付ける間隔は useDrawInput で別に管理する。
  */
 export function useAnimationTiming() {
   const minimal = useSyncExternalStore(subscribe, snapshot, serverSnapshot);

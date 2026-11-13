@@ -1,0 +1,123 @@
+{
+ "date": "2026-11-02",
+ "machine": "macOS, Chrome 156, 1280x800 DPR2, next start (production build), local room server",
+ "room_idle_breakdown_before": [
+  {
+   "label": "room idle",
+   "cpu": {
+    "renderer": 7,
+    "gpu-process": 18
+   },
+   "renderer": {
+    "mainThreadPercent": 1,
+    "otherThreadsPercent": 6
+   },
+   "main": 0
+  },
+  {
+   "label": "room idle, animations paused",
+   "cpu": {
+    "browser": 5
+   },
+   "renderer": {
+    "mainThreadPercent": 0,
+    "otherThreadsPercent": 0
+   },
+   "main": 0
+  },
+  {
+   "label": "room scene hidden",
+   "cpu": {
+    "browser": 9,
+    "renderer": 2
+   },
+   "renderer": {
+    "mainThreadPercent": 0,
+    "otherThreadsPercent": 1
+   },
+   "main": 0
+  }
+ ],
+ "memory_across_matches_cpu_vs_cpu_easy": [
+  {
+   "label": "match 1 start",
+   "memoryMB": {
+    "browser": 89,
+    "audio": 25,
+    "renderer": 455,
+    "storage": 20,
+    "network": 41,
+    "gpu-process": 939,
+    "total": 1569
+   },
+   "heapMB": 12.1,
+   "nodes": 1598,
+   "listeners": 552,
+   "localStorageKB": 95
+  },
+  {
+   "label": "match 1 end",
+   "memoryMB": {
+    "browser": 81,
+    "audio": 24,
+    "renderer": 421,
+    "storage": 20,
+    "network": 39,
+    "gpu-process": 373,
+    "total": 957
+   },
+   "heapMB": 12.7,
+   "nodes": 1734,
+   "listeners": 599,
+   "localStorageKB": 150
+  },
+  {
+   "label": "match 2 end",
+   "memoryMB": {
+    "browser": 82,
+    "audio": 24,
+    "renderer": 418,
+    "storage": 20,
+    "network": 39,
+    "gpu-process": 352,
+    "total": 935
+   },
+   "heapMB": 13,
+   "nodes": 1740,
+   "listeners": 577,
+   "localStorageKB": 180
+  },
+  {
+   "label": "match 3 end",
+   "memoryMB": {
+    "browser": 82,
+    "audio": 24,
+    "renderer": 445,
+    "storage": 21,
+    "network": 39,
+    "gpu-process": 488,
+    "total": 1100
+   },
+   "heapMB": 13.2,
+   "nodes": 1736,
+   "listeners": 579,
+   "localStorageKB": 190
+  },
+  {
+   "label": "match 4 end",
+   "memoryMB": {
+    "browser": 82,
+    "audio": 24,
+    "renderer": 436,
+    "storage": 21,
+    "network": 39,
+    "gpu-process": 577,
+    "total": 1178
+   },
+   "heapMB": 13.3,
+   "nodes": 1723,
+   "listeners": 605,
+   "localStorageKB": 153
+  }
+ ]
+}

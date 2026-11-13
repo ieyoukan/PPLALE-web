@@ -50,3 +50,25 @@ export function appendChatMessage(plaza: Plaza, member: PlazaMember, request: Ch
         sentAt: now,
     }].slice(-MAX_ROOM_CHAT_MESSAGES);
 }
+
+export const chatReadSchema = z.object({ action: z.literal('chatRead'), id: z.string().max(200) });
+
+/**
+ * The member has read up to message `id` (既読). Only moves forward, and only to a message still in the history;
+ * true when it changed (the members are told).
+ */
+export function markChatRead(plaza: Plaza, member: PlazaMember, id: string) {
+    const chat = plaza.chat ?? [];
+    const index = chat.findIndex(message => message.id === id);
+    if (index < 0) return false;
+    const previous = member.chatRead ? chat.findIndex(message => message.id === member.chatRead) : -1;
+    if (previous >= index) return false;
+    member.chatRead = id;
+    return true;
+}
+
+/** Each member's last read message that is still in the history. */
+export function chatReads(plaza: Plaza): Record<string, string> {
+    const ids = new Set((plaza.chat ?? []).map(message => message.id));
+    return Object.fromEntries(plaza.members.flatMap(member => member.chatRead && ids.has(member.chatRead) ? [[member.id, member.chatRead]] : []));
+}

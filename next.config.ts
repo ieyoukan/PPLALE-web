@@ -38,7 +38,7 @@ const config: NextConfig = {
     optimizePackageImports: ['framer-motion'],
   },
   serverExternalPackages: ['@vercel/og', 'sharp'],
-  outputFileTracingIncludes: { '/about': ['./docs/game-rules.md'], '/api/og/**': ['./public/og-cards/**/*.png'], '/api/og/profile/**': ['./public/images/token/**/*.webp', './public/og-cards/profile-bg.jpg'], '/api/og/room/**': ['./public/images/game/logo.webp', './public/images/game/fruits/*.webp'] },
+  outputFileTracingIncludes: { '/about': ['./docs/game-rules.md'], '/rules.md': ['./docs/game-rules.md'], '/api/og/**': ['./public/og-cards/**/*.png'], '/api/og/profile/**': ['./public/images/token/**/*.webp', './public/og-cards/profile-bg.jpg'], '/api/og/room/**': ['./public/images/game/logo.webp', './public/images/game/fruits/*.webp'] },
   // 本番環境用の設定
   assetPrefix: '',
   basePath: '',
@@ -67,6 +67,17 @@ const config: NextConfig = {
             key: 'X-Frame-Options',
             value: 'DENY',
           },
+          // Isolate the window from pages it did not open; the Google sign-in popup (signInWithPopup) keeps working.
+          {
+            key: 'Cross-Origin-Opener-Policy',
+            value: 'same-origin-allow-popups',
+          },
+          // No plugins, no <base> rewriting, never framed. Scripts are not restricted here: Next.js's inline
+          // scripts would need a nonce, which makes every page rendered per request.
+          {
+            key: 'Content-Security-Policy',
+            value: "object-src 'none'; base-uri 'self'; frame-ancestors 'none'",
+          },
         ],
       },
       {
@@ -75,6 +86,11 @@ const config: NextConfig = {
       },
       {
         source: '/puzzle-previews/:path*',
+        headers: [{ key: 'Cache-Control', value: 'public, max-age=31536000, immutable' }],
+      },
+      {
+        // Versioned file names (pplale-intro-v1.*): bump the version when a video changes.
+        source: '/videos/:path*',
         headers: [{ key: 'Cache-Control', value: 'public, max-age=31536000, immutable' }],
       },
       {
@@ -91,7 +107,13 @@ const config: NextConfig = {
   // Links to a room from before rooms had their own address (`?id=`): every room is /game/room/<id>/ now.
   async redirects() {
     const room = { type: 'query' as const, key: 'id', value: '(?<id>\\d{6})' };
-    return ['/game/room', '/game/battle/room'].map(source => ({ source, has: [room], destination: '/game/room/:id/', permanent: false }));
+    return [
+      ...['/game/room', '/game/battle/room'].map(source => ({ source, has: [room], destination: '/game/room/:id/', permanent: false })),
+      // The short profile address to share (src/lib/game/social.ts profileShareUrl).
+      // The tournament page became part of the community page (2026-11-06).
+      { source: '/tournament', destination: '/community/', permanent: true },
+      { source: '/u/:uid([\\w-]{1,128})', destination: '/game/profile/?id=:uid', permanent: false },
+    ];
   },
   turbopack: {
     resolveAlias: {

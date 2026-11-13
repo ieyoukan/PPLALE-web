@@ -21,6 +21,8 @@ import type { PlaySample } from '@pplale/game-core/performance';
 export interface RoomEvent {
     /** Chat-only update: do not send or re-animate the match. */
     chat?: true;
+    /** Read receipts only (既読): send the reads, not the messages or the match. */
+    reads?: true;
     /** The instance that made the change (it has already told its own sockets). */
     from: string;
     room: Room;

@@ -17,3 +17,18 @@
   .clock meter { flex: 1; min-width: 0; }
   .clock small { display: none; }
 }
+
+/* 対戦中はターン終了ボタンを囲む輪で残り時間を表す（上から時計回りに減る）。時刻は輪の下の縁に重ねる。 */
+.ring { position: absolute; left: 50%; top: 50%; z-index: 2; width: calc(clamp(136px, 11cqw, 172px) + 18px); aspect-ratio: 1; transform: translate(-50%, -50%); pointer-events: none; color: var(--brand-cocoa-deep); font-variant-numeric: tabular-nums; }
+.ring svg { display: block; width: 100%; height: 100%; transform: rotate(-90deg) scaleY(-1); }
+.ring circle { fill: none; stroke-width: 5; }
+.track { stroke: #fff8f066; }
+.left { stroke: var(--brand-leaf); stroke-linecap: round; transition: stroke-dasharray .25s linear, stroke .3s; }
+.ring[data-urgent] .left { stroke: #d2475f; }
+.ring[data-paused] .left { stroke: var(--brand-cocoa-soft); stroke-dasharray: 2 3 !important; }
+.ringTime { position: absolute; left: 50%; bottom: -6px; transform: translateX(-50%); padding: 0 8px; border-radius: 8px; background: var(--brand-paper); font: 700 16px/22px var(--font-site-body), sans-serif; }
+.ring[data-urgent] .ringTime { color: #b4384f; }
+@container stage (max-height: 600px) { .ring { width: 134px; } .ringTime { font-size: 14px; line-height: 19px; } }
+@media (prefers-reduced-motion: reduce) { .left { transition: none; } }
+/* 輪と時刻の分だけ、上下のPP欄との間をあける。 */
+:global([data-turn-center]):has(> .ring) { padding-block: 10px 16px; }

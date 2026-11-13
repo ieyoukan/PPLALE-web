@@ -2,9 +2,10 @@
 
 import { useEffect, useRef, useState } from 'react';
 import { useAuth } from '@/lib/auth';
-import { defaultProfile, readProfile, saveProfile } from '@/lib/game/social';
+import { defaultProfile, enableSearch, readProfile, saveProfile } from '@/lib/game/social';
 import { CardArtwork } from '@/components/shared/card/CardArtwork';
 import { GameIcon } from '@/components/shared/ui/GameIcon';
+import { useI18n } from '@/i18n/LocaleProvider';
 import { ProfileIconPicker } from './ProfileIconPicker';
 import { useOwnProfileOpen } from './ownProfile';
 import styles from './ProfileOnboarding.module.css';
@@ -17,7 +18,12 @@ export default function ProfileOnboarding({ uid }: { uid: string }) {
   const [attempt, setAttempt] = useState(0);
   useEffect(() => {
     let current = true;
-    const load = () => { void readProfile(uid).then(profile => { if (current) setStatus(profile ? 'ready' : 'missing'); }, () => { if (current) setStatus('error'); }); };
+    const load = () => { void readProfile(uid).then(profile => {
+      if (!current) return;
+      setStatus(profile ? 'ready' : 'missing');
+      // Saved before name search: made findable once. Everyone is found by name.
+      if (profile && profile.searchable !== true) void enableSearch(uid).catch(() => {});
+    }, () => { if (current) setStatus('error'); }); };
     load(); window.addEventListener('pplale-profile-updated', load);
     return () => { current = false; window.removeEventListener('pplale-profile-updated', load); };
   }, [uid, attempt]);
@@ -33,6 +39,7 @@ function SetupDialog({ uid, failed, onRetry, onComplete, onSignOut }: { uid: str
   const [profile, setProfile] = useState(() => defaultProfile(uid, ''));
   const [choosing, setChoosing] = useState(false), [busy, setBusy] = useState(false);
   const [error, setError] = useState('');
+  const { t } = useI18n();
   useEffect(() => {
     const element = dialog.current;
     element?.showModal();
@@ -55,20 +62,20 @@ function SetupDialog({ uid, failed, onRetry, onComplete, onSignOut }: { uid: str
     catch { setError('ログアウトできませんでした。もう一度お試しください'); setBusy(false); }
   }
   return <dialog ref={dialog} className={styles.dialog} aria-labelledby="profile-setup-title" aria-describedby="profile-setup-description" onCancel={event => event.preventDefault()}>
-    <h2 id="profile-setup-title">はじめまして！</h2>
-    <p id="profile-setup-description">{failed ? 'プロフィールを確認できませんでした' : 'みんなに見える名前とアイコンを決めよう'}</p>
-    {failed ? <button className={styles.primary} onClick={onRetry}>もう一度読み込む</button> : <form onSubmit={event => { event.preventDefault(); void save(); }}>
+    <h2 id="profile-setup-title">{t('はじめまして！')}</h2>
+    <p id="profile-setup-description">{failed ? t('プロフィールを確認できませんでした') : t('みんなに見える名前とアイコンを決めよう')}</p>
+    {failed ? <button className={styles.primary} onClick={onRetry}>{t('もう一度読み込む')}</button> : <form onSubmit={event => { event.preventDefault(); void save(); }}>
       <fieldset disabled={busy}>
-        <button type="button" className={styles.avatar} onClick={() => setChoosing(value => !value)} aria-label="カードのアイコンを選ぶ" aria-expanded={choosing}>
-          <CardArtwork id={profile.iconCardId} sizes="100px" eager /><span><GameIcon name="pen" />変更</span>
+        <button type="button" className={styles.avatar} onClick={() => setChoosing(value => !value)} aria-label={t('カードのアイコンを選ぶ')} aria-expanded={choosing}>
+          <CardArtwork id={profile.iconCardId} sizes="100px" eager /><span><GameIcon name="pen" />{t('変更')}</span>
         </button>
-        <label>なまえ<input ref={nameInput} required maxLength={12} autoComplete="nickname" placeholder="ニックネーム" value={profile.displayName} onChange={event => setProfile({ ...profile, displayName: event.target.value })} /></label>
-        <label>ひとこと<input maxLength={80} value={profile.comment} placeholder="よろしくお願いします！" onChange={event => setProfile({ ...profile, comment: event.target.value })} /></label>
+        <label>{t('なまえ')}<input ref={nameInput} required maxLength={12} autoComplete="nickname" placeholder={t('ニックネーム')} value={profile.displayName} onChange={event => setProfile({ ...profile, displayName: event.target.value })} /></label>
+        <label>{t('ひとこと')}<input maxLength={80} value={profile.comment} placeholder={t('よろしくお願いします！')} onChange={event => setProfile({ ...profile, comment: event.target.value })} /></label>
         {choosing && <ProfileIconPicker selected={profile.iconCardId} onSelect={iconCardId => { setProfile({ ...profile, iconCardId }); setChoosing(false); }} />}
-        <button className={styles.primary} disabled={busy || !profile.displayName.trim()} data-ui-title><GameIcon name="check" />{busy ? '保存中…' : '保存してはじめる'}</button>
+        <button className={styles.primary} disabled={busy || !profile.displayName.trim()} data-ui-title><GameIcon name="check" />{busy ? t('保存中…') : t('保存してはじめる')}</button>
       </fieldset>
     </form>}
-    {error && <p role="alert">{error}</p>}
-    <button className={styles.signOut} disabled={busy} onClick={() => void leave()}>ログアウト</button>
+    {error && <p role="alert">{t(error)}</p>}
+    <button className={styles.signOut} disabled={busy} onClick={() => void leave()}>{t('ログアウト')}</button>
   </dialog>;
 }

@@ -10,37 +10,23 @@ import { useI18n } from '@/i18n/LocaleProvider';
 import { nanoid } from 'nanoid';
 import { css } from 'styled-system/css';
 
+// デッキ作成の入口。サイト共通の淡い紙面と8pxの角丸で、ホバーは面の色だけを変える（docs/design-system.md）。
 const createDeckOptionButtonClass = css({
   position: 'relative',
-  overflow: 'hidden',
-  rounded: 'lg',
-  borderWidth: '1px',
-  borderColor: 'gray.200',
-  bg: 'white',
+  rounded: 'var(--brand-control-radius)',
+  borderWidth: '2px',
+  borderColor: 'var(--brand-pink)',
+  bg: 'var(--brand-paper)',
   p: '6',
-  boxShadow: 'xs',
-  transitionProperty: 'box-shadow',
+  textAlign: 'left',
+  cursor: 'pointer',
+  transitionProperty: 'background-color',
   transitionDuration: '150ms',
-  transitionTimingFunction: 'cubic-bezier(0.4, 0, 0.2, 1)',
   _dark: { borderColor: 'gray.700', bg: 'gray.800' },
-  // エクスポート/インポートボタンと同じ、中心から広がるリップルhover効果
-  _after: {
-    content: '""',
-    position: 'absolute',
-    top: '50%',
-    left: '50%',
-    width: '100%',
-    paddingBottom: '100%',
-    borderRadius: '50%',
-    transform: 'translate(-50%, -50%) scale(0)',
-    transition: 'transform 0.4s ease',
-    pointerEvents: 'none',
-    bg: 'black/8',
-  },
-  _hover: {
-    boxShadow: 'lg',
-    _after: { transform: 'translate(-50%, -50%) scale(2.5)' },
-  },
+  _hover: { bg: 'var(--brand-blush)', _dark: { bg: 'gray.700' } },
+  _active: { transform: 'translateY(2px)' },
+  _focusVisible: { outline: '3px solid var(--brand-cocoa)', outlineOffset: '3px' },
+  _disabled: { opacity: 0.6, cursor: 'wait' },
 });
 
 export default function BuildPage() {
@@ -106,7 +92,7 @@ export default function BuildPage() {
 
         {/* 新しいデッキ作成セクション */}
         <section className={css({ mb: '12' })}>
-          <h2 className={css({ mb: '4', fontSize: '2xl', fontWeight: 'semibold', color: 'gray.900', _dark: { color: 'gray.100' } })}>{t('新しいデッキを作成')}</h2>
+          <h2 className={css({ mb: '4', fontFamily: 'var(--font-site-title), sans-serif', fontSize: '2xl', fontWeight: 'normal', color: 'var(--brand-cocoa)', _dark: { color: 'gray.100' } })}>{t('新しいデッキを作成')}</h2>
           <div className={css({ display: 'grid', gridTemplateColumns: 'repeat(1, minmax(0, 1fr))', md: { gridTemplateColumns: 'repeat(2, minmax(0, 1fr))' }, gap: '4' })}>
             <button
               onClick={() => handleCreateDeck('normal')}
@@ -114,14 +100,14 @@ export default function BuildPage() {
               className={createDeckOptionButtonClass}
             >
               <div className={css({ display: 'flex', alignItems: 'center', gap: '4' })}>
-                <div className={css({ w: '12', h: '12', bg: 'blue.100', rounded: 'full', display: 'flex', alignItems: 'center', justifyContent: 'center', _dark: { bg: 'blue.200' } })}>
-                  <svg className={css({ w: '6', h: '6', color: 'blue.600', _dark: { color: 'blue.400' } })} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <div className={css({ w: '12', h: '12', bg: 'var(--brand-pink)', rounded: 'full', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: '0' })}>
+                  <svg className={css({ w: '6', h: '6', color: 'var(--brand-cocoa-deep)' })} fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
                   </svg>
                 </div>
                 <div>
-                  <h3 className={css({ fontSize: 'lg', fontWeight: 'medium', color: 'gray.800', _dark: { color: 'gray.100' } })}>{t('通常構築')}</h3>
-                  <p className={css({ mt: '1', fontSize: 'sm', color: 'gray.500', _dark: { color: 'gray.400' } })}>{t('新しいデッキを最初から構築します')}</p>
+                  <h3 className={css({ fontFamily: 'var(--font-site-title), sans-serif', fontSize: 'lg', fontWeight: 'normal', color: 'var(--brand-cocoa)', _dark: { color: 'gray.100' } })}>{t('通常構築')}</h3>
+                  <p className={css({ mt: '1', fontSize: 'sm', color: 'var(--brand-cocoa-soft)', _dark: { color: 'gray.400' } })}>{t('新しいデッキを最初から構築します')}</p>
                 </div>
               </div>
             </button>
@@ -132,14 +118,14 @@ export default function BuildPage() {
               className={createDeckOptionButtonClass}
             >
               <div className={css({ display: 'flex', alignItems: 'center', gap: '4' })}>
-                <div className={css({ w: '12', h: '12', bg: 'green.100', rounded: 'full', display: 'flex', alignItems: 'center', justifyContent: 'center', _dark: { bg: 'green.900' } })}>
-                  <svg className={css({ w: '6', h: '6', color: 'green.600', _dark: { color: 'green.400' } })} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <div className={css({ w: '12', h: '12', bg: 'var(--brand-sage)', rounded: 'full', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: '0' })}>
+                  <svg className={css({ w: '6', h: '6', color: 'var(--brand-cocoa-deep)' })} fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16m-7 6h7" />
                   </svg>
                 </div>
                 <div>
-                  <h3 className={css({ fontSize: 'lg', fontWeight: 'medium', color: 'gray.800', _dark: { color: 'gray.100' } })}>2pick</h3>
-                  <p className={css({ mt: '1', fontSize: 'sm', color: 'gray.500', _dark: { color: 'gray.400' } })}>{t('2枚選択方式でデッキを構築します')}</p>
+                  <h3 className={css({ fontFamily: 'var(--font-site-title), sans-serif', fontSize: 'lg', fontWeight: 'normal', color: 'var(--brand-cocoa)', _dark: { color: 'gray.100' } })}>2pick</h3>
+                  <p className={css({ mt: '1', fontSize: 'sm', color: 'var(--brand-cocoa-soft)', _dark: { color: 'gray.400' } })}>{t('2枚選択方式でデッキを構築します')}</p>
                 </div>
               </div>
             </button>

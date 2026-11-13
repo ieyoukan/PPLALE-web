@@ -8,7 +8,7 @@ for (const width of [390, 1280]) {
   test.describe(`site typography ${width}px`, () => {
     test.use({ viewport: { width, height: 900 }, locale: 'ja-JP' });
 
-    for (const path of ['/build/', '/deck/2pick/', '/game/cpu/', '/game/battle/', '/tournament/', '/about/', '/contact/']) {
+    for (const path of ['/build/', '/deck/2pick/', '/game/cpu/', '/game/battle/', '/community/', '/about/', '/contact/']) {
       test(`${path} shares headings and body fonts`, async ({ page }, info) => {
         await page.goto(path);
         const heading = page.locator('h1, h2').first();

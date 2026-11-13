@@ -1,157 +1,11 @@
 'use client';
 
-import { createContext, useContext, useMemo, useState } from 'react';
+import { createContext, useContext, useEffect, useMemo, useState, useSyncExternalStore } from 'react';
 import type { CardRole, CardType, CardVersion, FruitType, SweetType } from '@/types/card';
-import { APP_LOCALE_COOKIE, type AppLocale } from './config';
+import { APP_LOCALE_COOKIE, browserAppLocale, type AppLocale } from './config';
+import type { GameEnglish } from './en/game';
 
-const englishText: Record<string, string> = {
-  'ぷぷりえーる デッキ構築': 'PPLALE Deck Builder',
-  '2Pick構築': '2Pick Draft',
-  '言語': 'Language',
-  '日本語': '日本語',
-  'English': 'English',
-  'メニュー': 'Menu',
-  'テーマ': 'Theme',
-  '2枚制限': 'Two-copy limit',
-  '同じカードは最大2枚まで': 'Up to two copies of the same card',
-  '同じカードを何枚でも追加可能': 'Any number of copies can be added',
-  'エクスポート': 'Export',
-  'インポート': 'Import',
-  'ログイン': 'Sign in',
-  'ログアウト': 'Sign out',
-  'ユーザー': 'User',
-  '新しいデッキを作成': 'Create a new deck',
-  '通常構築': 'Standard deck',
-  '新しいデッキを最初から構築します': 'Build a new deck from scratch',
-  '2枚選択方式でデッキを構築します': 'Build a deck by choosing between pairs of cards',
-  '最近作成したデッキ': 'Recently updated decks',
-  'デッキ一覧': 'Your decks',
-  '並び順': 'Sort by',
-  '更新が新しい順': 'Recently updated',
-  '更新が古い順': 'Oldest update first',
-  '名前の昇順': 'Name: A–Z',
-  '名前の降順': 'Name: Z–A',
-  'フルーツ': 'Fruit',
-  '選択した組み合わせのみ': 'Only the selected combination',
-  'すべて': 'All',
-  '未選択': 'Not selected',
-  '条件をリセット': 'Reset filters and sort',
-  'デッキを検索・並べ替え中...': 'Searching and sorting decks...',
-  'すべてのデッキを表示しました': 'All matching decks displayed',
-  '最終更新が新しい順': 'Most recently updated first',
-  '保存したデッキがありません': 'You have no saved decks',
-  '条件に合うデッキがありません': 'No decks match your search',
-  'デッキを検索中...': 'Searching decks...',
-  'すべてのデッキを読み込みました': 'All decks loaded',
-  'デッキを読み込めませんでした': 'Could not load decks',
-  '再読み込み': 'Retry',
-  'さらに読み込む': 'Load more',
-  '画像を表示できません': 'Preview unavailable',
-  'コピーしました': 'Copied',
-  'コピーできませんでした': 'Copy failed',
-  'コピー中...': 'Copying...',
-  'デッキを削除しました': 'Deck deleted',
-  'デッキを削除できませんでした': 'Could not delete the deck',
-  '削除中...': 'Deleting...',
-  'このデッキを削除してもよろしいですか？この操作は取り消せません。': 'Are you sure you want to delete this deck? This action cannot be undone.',
-  'その他のデッキ': 'Other decks',
-  'デッキ名でフィルター': 'Filter by deck name',
-  '最終更新': 'Last updated',
-  'デッキを削除': 'Delete deck',
-  'このデッキを削除しますか？': 'Delete this deck?',
-  'キャンセル': 'Cancel',
-  '削除': 'Delete',
-  '無名のデッキ': 'Untitled deck',
-  '無名の2pickデッキ': 'Untitled 2Pick deck',
-  '共有されたデッキ': 'Shared deck',
-  'デッキ': 'Deck',
-  'デッキの削除': 'Delete deck',
-  '削除する': 'Delete',
-  '共有リンクをコピー': 'Copy share link',
-  'メニューを開く': 'Open menu',
-  'カードコードからデッキ画像を生成': 'Generate a deck image from card codes',
-  'カードコードを入力すると自動で画像が生成されます': 'Enter card codes to generate an image automatically',
-  'デッキ画像を生成中...': 'Generating deck image...',
-  '幼女デッキ（カンマ区切り）': 'Little girl deck (comma-separated)',
-  'お菓子デッキ（カンマ区切り）': 'Sweets deck (comma-separated)',
-  'プレイアブルカード（任意）': 'Playable character (optional)',
-  '幼女デッキ': 'Little girl deck',
-  'お菓子デッキ': 'Sweets deck',
-  'プレイアブルカード': 'Playable character',
-  'カードを検索': 'Search cards',
-  'すべてのフルーツ': 'All fruit types',
-  'お菓子タイプ': 'Sweets type',
-  'バージョン': 'Version',
-  'ソートしない': 'Do not sort',
-  'ID順': 'ID',
-  '名前順': 'Name',
-  'コスト順': 'Cost',
-  '攻撃力順': 'Attack',
-  'HP順': 'Health',
-  '追加': 'Add',
-  'デッキにカードがありません': 'There are no cards in this deck',
-  '選択する': 'Select',
-  'デッキに追加': 'Add to deck',
-  'デッキから削除': 'Remove from deck',
-  '拡大表示を閉じる': 'Close enlarged view',
-  'カード裏面': 'Card back',
-  '閉じる': 'Close',
-  '幼女カードを追加': 'Add a little girl card',
-  'お菓子カードを追加': 'Add a sweets card',
-  'プレイアブルカードを追加': 'Add a playable character',
-  'デッキ名を編集': 'Edit deck name',
-  '保存': 'Save',
-  'デッキを保存するにはログインしてください': 'Sign in to save this deck',
-  'Googleでログインして保存': 'Sign in with Google and save',
-  'アカウントにデッキを保存': 'Save deck to account',
-  '読み込み中...': 'Loading...',
-  'デッキが見つかりません': 'Deck not found',
-  'デッキを見る': 'View deck',
-  '結果を見る': 'View result',
-  '次へ': 'Next',
-  '戻る': 'Back',
-  '選び直す': 'Choose again',
-  '決定': 'Confirm',
-  'デッキを確認': 'Review deck',
-  'プレイアブルカードを確認してください': 'Review the playable characters',
-  'プレイアブルカードを選択してください': 'Choose a playable character',
-  'フルーツを選択してください': 'Choose fruit types',
-  'プレイアブルカードのバージョンを選択してください': 'Choose playable character versions',
-  'カードのフルーツを選択してください': 'Choose card fruit types',
-  'カードを選択してください': 'Choose a card',
-  '構築完了': 'Deck complete',
-  'デッキ構築結果': 'Deck-building result',
-  '構築したデッキをシェアしよう': 'Share the deck you built',
-  'デッキを保存': 'Save deck',
-  'ログインしてデッキを保存': 'Sign in to save deck',
-  'もう一度プレイ': 'Play again',
-  'ホームに戻る': 'Back to home',
-  'コピー': 'Copy',
-  'コピーしました！': 'Copied!',
-  '幼女デッキをコピー': 'Copy little girl deck',
-  'お菓子デッキをコピー': 'Copy sweets deck',
-  'プレイアブルキャラ': 'Playable character',
-  'デッキ情報をインポート': 'Import deck data',
-  'デッキ情報をエクスポート': 'Export deck data',
-  'デッキをインポート': 'Import deck',
-  'デッキをエクスポート': 'Export deck',
-  'デッキの画像を表示': 'Show deck image',
-  'デッキ画像プレビュー': 'Deck image preview',
-  '画像生成中...': 'Generating image...',
-  'デッキ画像': 'Deck image',
-  '画像をダウンロード': 'Download image',
-  '画像生成に失敗しました': 'Could not generate the image',
-  'シェア': 'Share',
-  'シェアアイコン': 'Share icon',
-  'リンクをコピー': 'Copy link',
-  'リンクアイコン': 'Link icon',
-  'Twitterでシェア': 'Share on Twitter',
-  'Twitterアイコン': 'Twitter icon',
-  '画像アイコン': 'Image icon',
-  '大会一覧': 'Tournaments',
-  '使用可能フルーツ': 'Allowed fruit types',
-  '大会ページへ': 'Open tournament page',
-};
+import { siteEnglish } from './en/site';
 
 const cardTypeLabels: Record<AppLocale, Record<CardType, string>> = {
   ja: { yojo: '幼女', sweet: 'お菓子', playable: 'プレイアブル' },
@@ -189,7 +43,12 @@ const roleLabels: Record<AppLocale, Record<CardRole, string>> = {
 interface LocaleContextValue {
   locale: AppLocale;
   setLocale: (locale: AppLocale) => void;
-  t: (japaneseText: string) => string;
+  /** The text in the current language. `vars` fill `{name}` in both the Japanese key and its English. */
+  t: (japaneseText: string, vars?: Record<string, string | number>) => string;
+  /** Text made by the game engine or the room server (logs, prompts, errors): translated by pattern in English. */
+  gameText: (text: string) => string;
+  /** A player's or room's name as shown: in English only the game's default names (ゲスト, プレイヤー, 〇〇のルーム …) are translated; names people chose stay. */
+  nameText: (name: string) => string;
   cardTypeLabel: (type: CardType) => string;
   fruitLabel: (fruit: FruitType) => string;
   sweetTypeLabel: (type: SweetType) => string;
@@ -200,7 +59,9 @@ interface LocaleContextValue {
 const defaultValue: LocaleContextValue = {
   locale: 'ja',
   setLocale: () => undefined,
-  t: (text) => text,
+  t: (text, vars) => fill(text, vars),
+  gameText: text => text,
+  nameText: name => name,
   cardTypeLabel: (type) => cardTypeLabels.ja[type],
   fruitLabel: (fruit) => fruitLabels.ja[fruit],
   sweetTypeLabel: (type) => sweetTypeLabels.ja[type],
@@ -210,23 +71,47 @@ const defaultValue: LocaleContextValue = {
 
 const LocaleContext = createContext<LocaleContextValue>(defaultValue);
 
-export function LocaleProvider({ initialLocale, children }: { initialLocale: AppLocale; children: React.ReactNode }) {
-  const [locale, setLocaleState] = useState(initialLocale);
+const noSubscription = () => () => {};
+/** Names the game or the room server gives when none was chosen. */
+const DEFAULT_NAMES = new Set(['ゲスト', 'ホスト', 'プレイヤー', 'フレンド', '相手', 'あなた', 'CPU', '無名のデッキ', 'おまかせデッキ']);
+const fill = (text: string, vars?: Record<string, string | number>) => vars ? text.replace(/\{(\w+)\}/g, (whole, name: string) => name in vars ? String(vars[name]) : whole) : text;
+
+/**
+ * `initialLocale`: the server's choice (the site's proxy reads the cookie, Accept-Language and country).
+ * `live` (the game): the server renders Japanese and the browser then uses the saved choice or its own
+ * language. Changing it reloads the page (cards and their pictures differ by language; a room rejoins by itself).
+ */
+export function LocaleProvider({ initialLocale, live = false, children }: { initialLocale: AppLocale; live?: boolean; children: React.ReactNode }) {
+  const detected = useSyncExternalStore(noSubscription, () => live ? browserAppLocale() : initialLocale, () => initialLocale);
+  const [chosen, setChosen] = useState<AppLocale | null>(null);
+  const locale = chosen ?? detected;
+  useEffect(() => { if (live) { document.documentElement.lang = locale; document.documentElement.dataset.locale = locale; } }, [live, locale]);
+  // The game's English (menus, boards, the engine's and the room's messages) is fetched only for English.
+  const [game, setGame] = useState<GameEnglish | null>(null);
+  useEffect(() => {
+    if (locale !== 'en' || game) return;
+    let current = true;
+    void import('./en/game').then(module => { if (current) setGame(module.gameEnglish); });
+    return () => { current = false; };
+  }, [locale, game]);
 
   const value = useMemo<LocaleContextValue>(() => ({
     locale,
     setLocale(nextLocale) {
-      setLocaleState(nextLocale);
+      setChosen(nextLocale);
       document.cookie = `${APP_LOCALE_COOKIE}=${nextLocale}; Path=/; Max-Age=31536000; SameSite=Lax`;
+      // Cards, their pictures and the game's text all change: reload (a room comes back from its address and saved seat).
       window.location.reload();
     },
-    t: (text) => locale === 'en' ? englishText[text] ?? text : text,
+    t: (text, vars) => fill(locale === 'en' ? siteEnglish[text] ?? game?.text[text] ?? text : text, vars),
+    gameText: text => locale === 'en' && game ? game.translate(text) : text,
+    nameText: name => locale === 'en' && game && (DEFAULT_NAMES.has(name) || /^.+のルーム$/.test(name)) ? game.translate(name) : name,
     cardTypeLabel: (type) => cardTypeLabels[locale][type],
     fruitLabel: (fruit) => fruitLabels[locale][fruit],
     sweetTypeLabel: (type) => sweetTypeLabels[locale][type],
     versionLabel: (version) => versionLabels[locale][version],
     roleLabel: (role) => roleLabels[locale][role],
-  }), [locale]);
+  }), [locale, game]);
 
   return <LocaleContext.Provider value={value}>{children}</LocaleContext.Provider>;
 }

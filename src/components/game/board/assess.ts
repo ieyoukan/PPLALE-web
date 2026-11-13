@@ -62,6 +62,25 @@ export function describe(state: GameState, command: Command): string {
   }
 }
 
+type Translate = (japaneseText: string, vars?: Record<string, string | number>) => string;
+/**
+ * {@link describe}'s words (and the analysis' 「（name）」 before the other side's moves) in the reader's language:
+ * `t` and `gameText` of useI18n. The same Japanese in Japanese. The workers make the words, so they are translated where shown.
+ */
+export function moveText(words: string, t: Translate, gameText: (text: string) => string): string {
+  const actor = words.match(/^（(.+?)）(.*)$/s);
+  if (actor) return t('（{name}）{move}', { name: gameText(actor[1]), move: moveText(actor[2], t, gameText) });
+  let match: RegExpMatchArray | null;
+  if ((match = words.match(/^「(.+)」で「(.+)」を攻撃$/))) return t('「{card}」で「{target}」を攻撃', { card: gameText(match[1]), target: gameText(match[2]) });
+  if ((match = words.match(/^「(.+)」でお菓子を食べる$/))) return t('「{card}」でお菓子を食べる', { card: gameText(match[1]) });
+  if ((match = words.match(/^「(.+)」を出す$/))) return t('「{card}」を出す', { card: gameText(match[1]) });
+  if ((match = words.match(/^「(.+)」を公開$/))) return t('「{card}」を公開', { card: gameText(match[1]) });
+  if ((match = words.match(/^「(.+)」を選ぶ$/))) return t('「{card}」を選ぶ', { card: gameText(match[1]) });
+  // スキルを使う, ターン終了, 選ぶ, 操作, or a choice's label made by the engine.
+  const known = t(words);
+  return known !== words ? known : gameText(words);
+}
+
 /**
  * Walks the match and yields every playing position not assessed yet. A position is judged with
  * `viewer`'s knowledge only: the opponent's hand and the deck order stay guessed.

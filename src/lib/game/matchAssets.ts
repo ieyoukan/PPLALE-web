@@ -15,7 +15,9 @@ export function prepareGameCardFormat() {
   })();
   return formatReady;
 }
-export const gameCardSource = (id: string) => gameCardAssets[id]?.[avif ? 'avif' : 'webp'];
+const englishAssets: Record<string, { webp: string; avif: string }> = cardAssets.english;
+/** The card's match-sized picture; `english`: the printed English card where there is one. */
+export const gameCardSource = (id: string, english = false) => (english && englishAssets[id] || gameCardAssets[id])?.[avif ? 'avif' : 'webp'];
 const tokens = [...tokenYojo.tokenYojo, ...token.token].map(card => card.id);
 
 /** Only identities already revealed by the server; hidden cards never require a decoded picture. */

@@ -1,10 +1,10 @@
 'use client';
 import Link from 'next/link';
-import { fruitNames } from '@pplale/game-core/room';
 import type { RoomInfo } from '@pplale/game-core/room';
 import { roomHref, watchHref } from '@/lib/game/sessionStore';
 import { fruitArt, roomThumbnail } from '@/lib/game/roomThumbnail';
 import { GameIcon } from '@/components/shared/ui/GameIcon';
+import { useI18n } from '@/i18n/LocaleProvider';
 import { RoomThumbnailImage } from '../plaza/RoomThumbnailImage';
 import { usePlaza } from '../plaza/PlazaProvider';
 import { visibilityInfo } from '../plaza/visibility';
@@ -15,26 +15,28 @@ import own from './RoomCard.module.css';
 /**
  * A room as a world card (as in VRChat): its rules' fruit pictures and what it is doing. Choosing it enters
  * the room (a room to gather in), or joins or watches a two-seat room. `large`: the bigger card on a profile.
+ * `here`: the room this player is in, shown with a pin instead of a way in.
  */
-export function RoomCard({ room, large }: { room: RoomInfo; large?: boolean }) {
-  const { go } = usePlaza();
+export function RoomCard({ room, large, here }: { room: RoomInfo; large?: boolean; here?: boolean }) {
+  const { go } = usePlaza(), { t, fruitLabel, nameText } = useI18n();
   const place = placeOf(room), plaza = room.plaza, { fruits } = roomThumbnail(room.rules);
-  const href = plaza ? roomHref(room.id) : place === 'open' ? roomHref(room.id) : place === 'playing' ? watchHref(room.id) : undefined;
-  const title = plaza ? plaza.name : `${room.host}のルーム`;
-  const verb = plaza ? '入る' : place === 'open' ? '参加' : '観戦';
+  const href = here ? undefined : plaza ? roomHref(room.id) : place === 'open' ? roomHref(room.id) : place === 'playing' ? watchHref(room.id) : undefined;
+  const title = plaza ? nameText(plaza.name) : t('{name}のルーム', { name: room.host });
+  const verb = plaza ? t('入る') : place === 'open' ? t('参加') : t('観戦');
   const card = <>
     <span className={styles.roomArt} aria-hidden="true"><RoomThumbnailImage rules={room.rules} sizes={large ? '420px' : '200px'} /></span>
-    <span className={styles.roomBadge}>{placeLabel[place]}</span>
+    <span className={styles.roomBadge}>{t(placeLabel[place])}</span>
+    {here && <span className={styles.roomAction}><GameIcon name="pin" />{t('いまここ')}</span>}
     {href && <span className={styles.roomAction}>{plaza ? <GameIcon name="enter" /> : <GameIcon name={place === 'open' ? 'play' : 'eye'} />}{verb}</span>}
     <span className={styles.roomInfo}>
-      {(large || plaza) && <b className={styles.roomHost}>{title}</b>}
-      {plaza ? <span className={own.people} title={visibilityInfo[plaza.visibility].label}><GameIcon name={visibilityInfo[plaza.visibility].icon} /><GameIcon name="people" />{plaza.members}</span> : <b>#{room.id}</b>}
-      <span className={styles.fruitDots}>{fruits.map(fruit => <i key={fruit} title={fruitNames[fruit]} style={{ background: fruitArt[fruit].tone }} />)}</span>
+      {(large || plaza) && <b className={styles.roomHost} data-ui-title>{title}</b>}
+      {plaza ? <span className={own.people} title={t(visibilityInfo[plaza.visibility].label)}><GameIcon name={visibilityInfo[plaza.visibility].icon} /><GameIcon name="people" />{plaza.members}</span> : <b className={styles.roomId}>#{room.id}</b>}
+      <span className={styles.fruitDots}>{fruits.map(fruit => <i key={fruit} title={fruitLabel(fruit)} style={{ background: fruitArt[fruit].tone }} />)}</span>
     </span>
   </>;
   const className = large ? `${styles.room} ${styles.roomLarge}` : styles.room;
   // Entering from here keeps this screen until the room lets the player in.
-  return href ? <Link className={className} data-place={place} href={href} aria-label={`${title}: ${plaza ? verb : `${verb}する`}`}
+  return href ? <Link className={className} data-place={place} href={href} aria-label={`${title}: ${plaza ? verb : place === 'open' ? t('参加する') : t('観戦する')}`}
     onClick={event => { if (plaza) { event.preventDefault(); void go(room.id); } }}>{card}</Link>
     : <div className={className} data-place={place}>{card}</div>;
 }

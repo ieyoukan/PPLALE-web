@@ -182,7 +182,7 @@ test('y_57 かんらん: hand discard hits randomly; hiding does not block rando
   s = choose(playFirst(s, 'y_5'), hand(s)[1]); s = draws(s); assert.equal(s.cards[uid].damage, 3);
 });
 test('y_58 まめろん: defend debuffs attacker; enemy sweets deal two extra damage', () => {
-  let s = arena({ me: { field: ['y_49'] }, foe: { field: ['y_58'] } }); const uid = field(s)[0];
+  let s = arena({ me: { field: ['y_49'] }, foe: { field: ['y_58'] } });
   // ふろんとさん swaps to 5/1, まめろん makes it 3/−1 before the damage: it is gone without hitting back.
   s = attack(s); assert.equal(field(s).length, 0); assert.equal(s.cards[field(s, 1)[0]].damage, 0);
   s = arena({ me: { hand: ['s_6'] }, foe: { field: ['y_58'] } }); const target = field(s, 1)[0]; s = choose(playFirst(s, 's_6'), target); assert.ok(!field(s, 1).includes(target));

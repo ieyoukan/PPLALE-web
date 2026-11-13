@@ -7,7 +7,7 @@
 .toggle { position: relative; width: 44px; height: 44px; padding: 0; }
 .chat .toggle { background: color-mix(in srgb, var(--brand-paper) 85%, transparent); }
 .chat .toggle:is(:hover, :focus-visible) { border-color: currentColor; }
-.badge { position: absolute; top: -7px; right: -7px; display: grid; place-items: center; min-width: 22px; height: 22px; padding: 0 4px; border: 2px solid var(--brand-cream); border-radius: 999px; background: var(--brand-cocoa-deep); color: var(--brand-cream); font-size: 11px; font-weight: 700; line-height: 1; font-variant-numeric: tabular-nums; pointer-events: none; }
+.badge { position: absolute; top: -7px; right: -7px; display: grid; place-items: center; min-width: 22px; height: 22px; padding: 0 4px; border: 2px solid var(--brand-cream); border-radius: 999px; background: #d93a4f; color: #fff; font-size: 11px; font-weight: 700; line-height: 1; font-variant-numeric: tabular-nums; pointer-events: none; }
 .panel { --pad: 18px; --frame-face: color-mix(in srgb, var(--brand-paper) 85%, transparent); position: absolute; bottom: 54px; left: 0; width: 360px; height: 440px; max-height: calc(100cqh - 110px); display: flex; flex-direction: column; gap: 12px; }
 .log { flex: 1; min-height: 0; overflow-y: auto; overflow-x: hidden; overscroll-behavior: contain; touch-action: pan-y; user-select: text; scrollbar-width: thin; }
 .message { display: flex; align-items: flex-start; gap: 10px; margin: 0 0 16px; }
@@ -33,3 +33,25 @@
 .stampList { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; min-height: 0; overflow-y: auto; overscroll-behavior: contain; touch-action: pan-y; scrollbar-width: thin; }
 .stamps button { --chat-stamp-size: 100%; min-width: 0; padding: 2px; aspect-ratio: 1; border-color: transparent; }
 .stamps button:hover:not(:disabled) { background: var(--brand-blush); }
+
+/* 既読：自分の発言の時刻の横に、小さく。 */
+.read { color: var(--brand-cocoa-soft); font-size: 11px; font-weight: 700; white-space: nowrap; }
+
+/* 新着の吹き出し：閉じたチャットボタンの上に出て、しばらくしてから消える（ホバー中は止める）。 */
+.chat .preview {
+  position: absolute; left: 0; bottom: 54px; display: flex; align-items: flex-start; gap: 8px; width: max-content; max-width: min(300px, calc(100cqw - 48px));
+  padding: 8px 12px 8px 8px; border: 1px solid var(--brand-control-edge); border-radius: 14px 14px 14px 4px;
+  background: color-mix(in srgb, var(--brand-paper) 94%, transparent); color: var(--brand-cocoa-deep); text-align: left;
+  animation-name: previewLife; animation-timing-function: linear; animation-fill-mode: forwards;
+}
+.chat .preview:hover, .chat .preview:focus-visible { animation-play-state: paused; border-color: var(--brand-cocoa-soft); }
+.previewBody { display: grid; gap: 2px; min-width: 0; }
+.previewBody b { overflow: hidden; font-size: 12px; text-overflow: ellipsis; white-space: nowrap; }
+.previewText { display: -webkit-box; overflow: hidden; font-size: 14px; line-height: 1.45; overflow-wrap: anywhere; -webkit-box-orient: vertical; -webkit-line-clamp: 2; }
+.previewStamp { display: block; width: 56px; }
+@keyframes previewLife {
+  0% { opacity: 0; transform: translateY(8px); }
+  6%, 82% { opacity: 1; transform: none; }
+  100% { opacity: 0; }
+}
+@media (prefers-reduced-motion: reduce) { @keyframes previewLife { 0%, 88% { opacity: 1; } 100% { opacity: 0; } } }

@@ -77,9 +77,11 @@ test('site providers stay out of the game; site tools preserve the room and save
   await expect(page.locator('html')).not.toHaveClass(/\bdark\b/);
   expect(await page.evaluate(() => window.siteSettingWrites)).toEqual([]);
   await menu.getByRole('button', { name: 'カード', exact: true }).click();
-  for (const name of [/^デッキ構築/, /^2Pick構築/, /^デッキ画像/]) await expect(menu.getByRole('link', { name })).toHaveAttribute('target', '_blank');
+  // Decks are managed in the game (the launchpad's デッキ); 2Pick and deck images are the site's, in another tab.
+  await expect(menu.getByRole('link', { name: /^デッキ 保存したデッキ/ })).not.toHaveAttribute('target', '_blank');
+  for (const name of [/^2Pick構築/, /^デッキ画像/]) await expect(menu.getByRole('link', { name })).toHaveAttribute('target', '_blank');
   const popupPromise = page.waitForEvent('popup');
-  await menu.getByRole('link', { name: /^デッキ構築/ }).click();
+  await menu.getByRole('link', { name: /^2Pick構築/ }).click();
   const site = await popupPromise;
   try {
     await expect(site.locator('html')).toHaveClass(/\bdark\b/);

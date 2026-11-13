@@ -17,6 +17,7 @@ export interface MatchRecord {
     /** Turns per side. */
     turns: number;
     seed: number;
+    decisiveOpeningDice?: true;
     decks: [StoredDeck, StoredDeck];
     commands: Command[];
 }
@@ -58,10 +59,11 @@ function command(value: unknown): Command | null {
 }
 
 /** The match from its first state, one state per command; null when it cannot be played like that. */
-function* replay(record: Pick<MatchRecord, 'seed' | 'decks' | 'commands'>, catalog: Catalog): Generator<GameState, GameState | null> {
+function* replay(record: Pick<MatchRecord, 'seed' | 'decks' | 'commands' | 'decisiveOpeningDice'>, catalog: Catalog): Generator<GameState, GameState | null> {
     let state: GameState;
     try {
         state = newGame([{ ...record.decks[0], name: 'プレイヤー' }, { ...record.decks[1], name: 'CPU' }], catalog, sandboxRules, record.seed);
+        if (!record.decisiveOpeningDice) delete state.decisiveOpeningDice;
     } catch { return null; }
     for (const next of record.commands) {
         yield state;
@@ -81,14 +83,15 @@ export function verifyReport(body: unknown, catalog: Catalog, day = new Date().t
     if (!Array.isArray(b.decks) || b.decks.length !== 2 || !Array.isArray(b.commands) || b.commands.length < 1 || b.commands.length > MAX_COMMANDS) return { error: 'decks or commands' };
     const decks = b.decks.map(deck), commands = b.commands.map(command);
     if (decks.includes(null) || commands.includes(null)) return { error: 'decks or commands' };
-    const record = { seed: b.seed as number, decks: decks as [StoredDeck, StoredDeck], commands: commands as Command[] };
+    if (b.decisiveOpeningDice !== undefined && b.decisiveOpeningDice !== true) return { error: 'dice rules' };
+    const record = { ...(b.decisiveOpeningDice === true && { decisiveOpeningDice: true as const }), seed: b.seed as number, decks: decks as [StoredDeck, StoredDeck], commands: commands as Command[] };
     const states = replay(record, catalog);
     let step = states.next();
     while (!step.done) step = states.next();
     const end = step.value;
     if (!end) return { error: 'the match cannot be replayed' };
     if (!isSide(end.winner)) return { error: 'the match is not finished' };
-    const id = createHash('sha256').update(JSON.stringify([record.seed, record.decks, record.commands])).digest('hex').slice(0, 24);
+    const id = createHash('sha256').update(JSON.stringify([record.seed, record.decks, record.commands, ...(record.decisiveOpeningDice ? [true] : [])])).digest('hex').slice(0, 24);
     return { id, day, level: 'master', model: isText(b.model, 40) ? b.model : 'unknown', winner: end.winner, turns: matchTurns(end), ...record };
 }
 

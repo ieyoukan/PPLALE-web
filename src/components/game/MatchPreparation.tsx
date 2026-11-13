@@ -4,11 +4,13 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import type { ReactNode } from 'react';
 import type { AssetProgress } from '@/lib/game/room/warmAssets';
 import styles from './MatchPreparation.module.css';
+import { useI18n } from '@/i18n/LocaleProvider';
 
 export function PreparationProgress({ progress, overlay = false }: { progress: AssetProgress | null; overlay?: boolean }) {
+  const { t } = useI18n();
   return progress && <div className={`${styles.progress} ${overlay ? styles.overlay : ''}`} role="status">
-    <span>対戦を準備中…</span>
-    <progress aria-label="対戦データの準備" max={progress.total || 1} value={progress.done} />
+    <span>{t('対戦を準備中…')}</span>
+    <progress aria-label={t('対戦データの準備')} max={progress.total || 1} value={progress.done} />
   </div>;
 }
 
@@ -35,6 +37,7 @@ export function MatchAssetGate({ ids, cpu = false, master = false, children }: {
   const [attempt, setAttempt] = useState(0);
   const [error, setError] = useState('');
   const [progress, setProgress] = useState<AssetProgress | null>({ done: 0, total: 1 });
+  const { t, gameText } = useI18n();
   useEffect(() => {
     const controller = new AbortController();
     setError('');
@@ -46,6 +49,6 @@ export function MatchAssetGate({ ids, cpu = false, master = false, children }: {
   }, [key, attempt]);
   if (ready === key) return children;
   return <section className={styles.gate} aria-busy={!error}>
-    {error ? <><p role="alert">{error}</p><button onClick={() => setAttempt(value => value + 1)}>もう一度準備する</button></> : <PreparationProgress progress={progress} />}
+    {error ? <><p role="alert">{gameText(error)}</p><button onClick={() => setAttempt(value => value + 1)}>{t('もう一度準備する')}</button></> : <PreparationProgress progress={progress} />}
   </section>;
 }

@@ -30,11 +30,17 @@ export interface Definition {
     effect?: string;
 }
 export type Catalog = Record<string, Definition>;
+/** The card backs a deck may use (its sleeve). red is the original back; the rest were added 2026-11-06. */
+export const SLEEVES = ['red', 'green', 'purple', 'pink', 'blue', 'brown', 'teal'] as const;
+export type Sleeve = typeof SLEEVES[number];
+export const isSleeve = (value: unknown): value is Sleeve => typeof value === 'string' && (SLEEVES as readonly string[]).includes(value);
 export interface Deck {
     name: string;
     yojo: string[];
     sweet: string[];
     playable: string;
+    /** Only how the backs of this deck's cards look; never part of the match itself. */
+    sleeve?: Sleeve;
 }
 
 export interface Rules {
@@ -117,6 +123,8 @@ export interface Player {
     milestones: number[];
     /** この対戦で手札から使ったカードID。使用した順に保持する。 */
     played: string[];
+    /** 印刷時は別タイプだが、イチゴタイプを付けてプレイした「うゆち」の回数。 */
+    extraUyuchiPlays?: number;
     /** ふわふわパンケーキ */
     shield: boolean;
     /** 待機中のおいしくなる呪文の回数。次の実体のお菓子を「1＋この回数」倍にする。 */
@@ -190,7 +198,16 @@ export interface Task {
     blockedTarget?: string;
     resume?: Task;
 }
+/** 仮選択してから確定するカード選択。ルールの処理順は変えない表示用の指定。 */
+export interface CardSelection {
+    kind: 'discard' | 'exile' | 'activate' | 'give';
+    count?: number;
+    optional?: boolean;
+    /** 任意選択を終える既存の回答ID。 */
+    finish?: string;
+}
 export interface Choice {
+    selection?: CardSelection;
     prompt: string;
     options: {
         id: string;
@@ -213,6 +230,8 @@ export interface GameState {
     effectTauntRules?: true;
     /** 最新のターン進行・手札上限・山札切れの裁定を使う保存形式。 */
     turnRules?: true;
+    /** 開始時のダイスを引き分けなしにする。省略した旧リプレイは当時の乱数を使う。 */
+    decisiveOpeningDice?: true;
     phase: Phase;
     openingRemaining: [number, number];
     mulligan: { eligible: [string[], string[]]; confirmed: [boolean, boolean] };

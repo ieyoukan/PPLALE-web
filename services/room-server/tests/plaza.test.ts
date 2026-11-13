@@ -101,8 +101,12 @@ test('plaza: a public room is entered by anyone; seats are taken from the table 
     assert.equal(await c.act({ action: 'sit', seat: 1 }), undefined);
     assert.equal((await until(b, view => !!view.players[1])).players[0]!.ready, false);
     assert.equal(await b.act({ action: 'ready', deck }), undefined);
-    assert.equal(await c.act({ action: 'ready', deck }), undefined);
+    // A sleeve is only the look of the backs: one the game does not have is refused, a known one is shown to everyone.
+    assert.notEqual(await c.act({ action: 'ready', deck: { ...deck, sleeve: 'gold' } } as never), undefined);
+    assert.equal(await c.act({ action: 'ready', deck: { ...deck, sleeve: 'blue' } }), undefined);
     const watched = await until(alice, view => view.status === 'playing');
+    assert.equal(watched.players[1]!.sleeve, 'blue');
+    assert.equal(watched.players[0]!.sleeve, undefined);
     assert.equal(watched.watching, true);
     assert.equal(watched.ownDeck, undefined);
     const played = await until(b, view => view.status === 'playing');

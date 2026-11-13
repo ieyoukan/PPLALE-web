@@ -5,7 +5,7 @@ import { test } from 'node:test';
 import { gzipSync } from 'node:zlib';
 import { create } from 'fontkit';
 import { cacheRoot } from '../scripts/lib/asset-cache.mjs';
-import { gameMenuCodePoints, homeCodePoints, unicodeRanges } from '../scripts/generate-site-fonts.mjs';
+import { gameMenuCodePoints, homeCodePoints, sitePageCodePoints, unicodeRanges } from '../scripts/generate-site-fonts.mjs';
 
 const root = new URL('../', import.meta.url);
 const fontCache = path.join(cacheRoot, 'site-fonts');
@@ -15,6 +15,21 @@ test('Unicode ranges are exact and compact at block boundaries', () => {
   assert.equal(unicodeRanges([0x100, 0xFE, 0xFF, 0x100, 0x102]), 'U+FE-100,U+102');
 });
 
+test('the rules face covers the rules text that the shared subsets do not, in one file per weight', async () => {
+  const points = await sitePageCodePoints();
+  const rules = await readFile(new URL('docs/game-rules.md', root), 'utf8');
+  for (const char of rules) assert.ok(points.has(char.codePointAt(0)), `rules character missing: ${char}`);
+  const shared = new Set([...await homeCodePoints(), ...await gameMenuCodePoints()]);
+  const faces = manifest.filter(font => font.rules);
+  assert.equal(faces.length, 3);
+  for (const face of faces) {
+    const [part] = face.parts;
+    const source = create(await readFile(path.join(fontCache, face.file)));
+    assert.deepEqual(part.points, source.characterSet.filter(point => points.has(point) && !shared.has(point)));
+    assert.ok(part.bytes < 120_000, 'the rules face stays one small file');
+  }
+});
+
 test('menu font extraction covers the current split launchpad and its shared copy', async () => {
   const points = await gameMenuCodePoints();
   for (const character of 'ソーシャルいまのルームプロフィールロリの一手を極めるためにフレンドとまた遊ぼうログイン共有初心者ミッション入門編召喚酔い突撃防衛挑発早食貫通奪う') {
@@ -22,7 +37,7 @@ test('menu font extraction covers the current split launchpad and its shared cop
   }
 });
 
-for (const font of manifest) {
+for (const font of manifest.filter(font => !font.rules)) {
   test(`${font.family} ${font.weight}: preserve all characters and glyphs across disjoint subsets`, async () => {
     const source = create(await readFile(path.join(fontCache, font.file)));
     const homePoints = await homeCodePoints();
@@ -67,7 +82,7 @@ test('generated font CSS stays external, small, and uses immutable asset names',
   // More small fallback faces prevent a rare kanji from downloading a large font.
   assert.ok(Buffer.byteLength(css) < 120_000);
   assert.ok(gzipSync(css).length < 16_000);
-  for (const font of manifest) {
+  for (const font of manifest.filter(font => !font.rules)) {
     for (const part of font.parts) {
       assert.match(part.filename, /-[\da-f]{16}\.woff2$/);
       assert.ok(css.includes(`unicode-range:${part.range}`));

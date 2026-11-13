@@ -5,13 +5,14 @@ import { viewFor } from '../packages/game-core/dist/index.js';
 const base = process.env.PPLALE_ROOM_TEST_URL;
 test.skip(!base, 'set PPLALE_ROOM_TEST_URL to a web app with a room server URL');
 
-async function room(page, seat = 0, direct = false) {
+async function room(page, seat = 0, direct = false, position, clock = false) {
   const id = '123456'; let socket, version = 0;
-  let game = arena({ me: { hand: ['y_0'] }, foe: { hand: ['y_1'] } }); game.active = seat;
+  let game = position ?? arena({ me: { hand: ['y_0'] }, foe: { hand: ['y_1'] } }); game.active = seat;
   let playing = direct;
   const messages = [];
   const view = () => ({ id, version: ++version, status: playing ? 'playing' : 'lobby', match: 1, matchId: 'camera-match', seat, spectators: 0,
-    rules: { fruits: ['strawberry'], extendedPlayable: false, spectators: true }, last: null, resigned: null,
+    rules: { fruits: ['strawberry'], extendedPlayable: false, spectators: true, ...(clock && {turnSeconds:120}) },
+    ...(clock && {serverNow:Date.now(),turnClock:{turn:game.turn,side:game.active,remainingMs:62000,deadline:null}}), last: null, resigned: null,
     players: [0, 1].map(side => ({ member: side === seat ? 'me' : 'friend', name: side === seat ? 'あなた' : 'フレンド', online: true, ready: playing })),
     game: playing ? viewFor(game, seat) : null,
     plaza: { name: '星空のルーム', visibility: 'invite', me: 'me', owner: 'me', creator: { name: 'あなた' },
@@ -50,12 +51,29 @@ for (const { seat, viewport } of [
     const sample = () => { const watch = window.__sceneWatch; if (!watch.running) return; watch.frames++; if (watch.nodes.some(node => !node?.isConnected || !node.checkVisibility())) watch.missing++; requestAnimationFrame(sample); };
     requestAnimationFrame(sample);
   });
+  // Record, from the moment the camera starts, whether the board was already drawn and how long frames took.
+  await page.evaluate(() => {
+    const flight = window.__flight = { boardAtStart: null, gaps: [] };
+    const scene = document.querySelector('[data-room-scene]');
+    new MutationObserver((_, observer) => {
+      if (scene.dataset.roomCamera !== 'moving') return;
+      observer.disconnect();
+      flight.boardAtStart = !!scene.querySelector('[data-table] img') && [...scene.querySelectorAll('[data-table] img')].every(image => image.complete);
+      let last = performance.now();
+      const frame = now => { flight.gaps.push(now - last); last = now; if (scene.dataset.roomCamera === 'moving') requestAnimationFrame(frame); };
+      requestAnimationFrame(frame);
+    }).observe(scene, { attributes: true, attributeFilter: ['data-room-camera'] });
+  });
   show(true);
   await expect(page.locator('[data-room-camera="moving"]')).toBeVisible({ timeout: 20000 });
   await page.waitForTimeout(260);
   expect(await page.evaluate(() => getComputedStyle(document.querySelector('[data-room-floor]').parentElement).transform === getComputedStyle(document.querySelector('[data-room-board-projection]')).transform)).toBe(true);
   await page.screenshot({ path: info.outputPath('camera-midway.png') });
   await expect(page.locator('[data-room-camera="match"]')).toBeVisible();
+  // The board was drawn before the turn began, and the turn ran without a long stall.
+  const flight = await page.evaluate(() => window.__flight);
+  expect(flight.boardAtStart).toBe(true);
+  expect(Math.max(...flight.gaps.slice(1))).toBeLessThan(120);
   await expect(page.locator('[data-room-scene] [data-table]')).toHaveCount(1);
   await expect(page.locator('[data-in-scene]')).toHaveCSS('display', 'contents');
   const roomBounds = await page.locator('[data-room-view]').boundingBox();
@@ -110,4 +128,49 @@ test('cancelling a camera animation still enables the settled match controls', a
   await expect(page.locator('[data-room-camera="match"]')).toBeVisible();
   await expect(page.getByRole('button', { name: 'メニュー', exact: true })).toBeInViewport();
   await expect(page.locator('[data-scene-ready="true"]')).toHaveCount(1);
+});
+
+for(const {seat,viewport} of [
+  {seat:0,viewport:{width:1280,height:860}},
+  {seat:0,viewport:{width:844,height:390}},
+  {seat:1,viewport:{width:844,height:390}},
+  {seat:1,viewport:{width:390,height:844}},
+]) test(`revealed cards leave sweets readable in the room from seat ${seat} at ${viewport.width}x${viewport.height}`,async({page})=>{
+  await page.setViewportSize(viewport);
+  const game=arena({me:{hand:Array(18).fill('y_0'),points:7},foe:{hand:Array(18).fill('y_0'),points:9}});
+  for(const player of game.players)for(const uid of player.hand)game.cards[uid].revealed=true;
+  await room(page,seat,true,game);
+  await expect(page.locator('[data-scene-ready="true"]')).toHaveCount(1,{timeout:20000});
+  const value=page.locator(`[data-leader="${seat}"] [class*="counterValue"] > span`).first();
+  await expect(value).toHaveText(seat===0?'7':'9');
+  const unobscured=()=>value.evaluate(element=>{
+    const r=element.getBoundingClientRect(),leader=element.closest('[data-leader]');
+    return [.25,.5,.75].every(fraction=>leader.contains(document.elementFromPoint(r.x+r.width*fraction,r.y+r.height/2)));
+  });
+  await expect.poll(unobscured).toBe(true);
+  await page.locator('[data-hand-list] [data-hand]').last().focus();
+  await expect.poll(unobscured).toBe(true);
+  await page.screenshot({path:`/tmp/pplale-room-revealed-points-${seat}-${viewport.width}.png`});
+});
+
+
+for(const viewport of [{width:1280,height:860},{width:844,height:390},{width:390,height:844}])test(`room seat one keeps all counters and the clock readable at ${viewport.width}x${viewport.height}`,async({page})=>{
+  await page.setViewportSize(viewport);
+  const game=arena({me:{playable:'p_6'},foe:{playable:'p_6'}});
+  game.players.forEach((player,side)=>{player.played=[...Array(side?5:2).fill('y_2'),...Array(side?7:3).fill('s_0')];player.mp=side?12:6;player.mochidaLeft=side?9:4;});
+  const connection=await room(page,1,true,game,true);
+  await expect(page.locator('[data-scene-ready="true"]')).toHaveCount(1,{timeout:20000});
+  const end=page.getByRole('button',{name:/ターン\s*終了/});const before=await end.boundingBox();
+  for(const side of [0,1]){
+    const counters=page.locator(`[data-pp="${side}"] [data-resource]`);await expect(counters).toHaveCount(4);
+    for(const counter of await counters.all()){
+      await expect.poll(()=>counter.evaluate(element=>{const r=element.getBoundingClientRect(),top=document.elementFromPoint(r.x+r.width/2,r.y+r.height/2);return element.contains(top)?null:{resource:element.dataset.resource,cover:top?.closest('button')?.getAttribute('aria-label')??top?.outerHTML.slice(0,160)};})).toBeNull();
+    }
+  }
+  await expect(page.locator('[data-pp="1"] [data-resource="uyuchi"]')).toContainText('5');
+  const clock=page.getByRole('timer',{name:'ターン残り時間'});await expect(clock).toBeVisible();await expect(clock.locator('time')).toHaveText('1:02');
+  game.players[1].played.push('y_2');game.revision++;connection.show(true);
+  await expect(page.locator('[data-pp="1"] [data-resource="uyuchi"]')).toContainText('6');
+  expect(Math.abs((await end.boundingBox()).y-before.y)).toBeLessThan(1);
+  await page.screenshot({path:`/tmp/pplale-room-player-counters-${viewport.width}.png`});
 });

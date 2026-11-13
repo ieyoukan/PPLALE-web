@@ -1,0 +1,20 @@
+/* 曲名：画面の右側に、白い文字をうっすらと。右から少し寄ってきて、しばらく置いてから消える。
+   明るい起動画面でも読めるよう、文字の周りにココア色の淡い影を敷く。 */
+.nowPlaying {
+  position: absolute; top: 92px; right: max(24px, env(safe-area-inset-right)); z-index: 390;
+  display: flex; align-items: center; gap: 10px; max-width: 46%; pointer-events: none;
+  color: #fff; text-shadow: 0 0 2px color-mix(in srgb, var(--brand-ink) 55%, transparent), 0 1px 8px color-mix(in srgb, var(--brand-ink) 45%, transparent);
+  opacity: 0; animation: nowPlaying 6s ease-out forwards;
+}
+.nowPlaying svg { flex: none; width: 22px; height: 22px; filter: drop-shadow(0 0 2px color-mix(in srgb, var(--brand-ink) 55%, transparent)); }
+.text { display: grid; justify-items: end; gap: 1px; min-width: 0; text-align: right; }
+.text b { overflow: hidden; max-width: calc(100% + 20px); margin: -6px -10px; padding: 6px 10px; /* room for the shadow, which overflow would cut square */ font-family: var(--font-site-title), sans-serif; font-size: 18px; font-weight: 400; text-overflow: ellipsis; white-space: nowrap; }
+.text small { font-size: 12px; font-weight: 700; letter-spacing: .04em; opacity: .9; }
+@keyframes nowPlaying {
+  0% { opacity: 0; transform: translateX(16px); }
+  12%, 75% { opacity: .85; transform: none; }
+  100% { opacity: 0; transform: none; }
+}
+@media (prefers-reduced-motion: reduce) {
+  @keyframes nowPlaying { 0% { opacity: 0; } 8%, 80% { opacity: .85; } 100% { opacity: 0; } }
+}

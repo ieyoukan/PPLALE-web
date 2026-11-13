@@ -3,10 +3,12 @@ import { useEffect, useId, useRef } from 'react';
 import type { ReactNode } from 'react';
 import { OrnateFrame } from '@/components/shared/ui/ornament/OrnateFrame';
 import { GameIcon } from '@/components/shared/ui/GameIcon';
+import { useI18n } from '@/i18n/LocaleProvider';
 import styles from './Plaza.module.css';
 
 /** A framed card that rises over the table for one choice. Escape, the × and the backdrop close it; focus stays inside. */
 export function Sheet({ title, onClose, children, wide }: { title: string; onClose: () => void; children: ReactNode; wide?: boolean }) {
+  const { t } = useI18n();
   const panel = useRef<HTMLDivElement>(null), titleId = useId();
   useEffect(() => {
     const previous = document.activeElement as HTMLElement | null;
@@ -19,7 +21,7 @@ export function Sheet({ title, onClose, children, wide }: { title: string; onClo
     <OrnateFrame ref={panel} className={`${styles.sheet} ${wide ? styles.sheetWide : ''}`} role="dialog" aria-modal="true" aria-labelledby={titleId} onClick={event => event.stopPropagation()}>
       <header className={styles.sheetHead}>
         <h2 id={titleId}>{title}</h2>
-        <button type="button" className={styles.round} onClick={onClose} aria-label="閉じる"><GameIcon name="close" /></button>
+        <button type="button" className={styles.round} onClick={onClose} aria-label={t('閉じる')}><GameIcon name="close" /></button>
       </header>
       <div className={styles.sheetBody}>{children}</div>
     </OrnateFrame>

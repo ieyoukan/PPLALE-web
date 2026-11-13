@@ -21,7 +21,8 @@ test.beforeAll(async () => {
         else if (path === '@/lib/game/social') contents = `export const WATCHING_STALE = 180000; export const defaultProfile = () => ({});
           export const readProfile = async uid => ({uid, displayName:'ありす', comment:'いっしょに遊ぼう', iconCardId:'p_1', decks:[]});
           export const readFriendship = async () => window.fixture.friend === false ? null : {status:'accepted'};
-          export const requestFriend = async () => {}; export const respondFriend = async () => {}; export const saveProfile = async p => p;`;
+          export const requestFriend = async () => {}; export const respondFriend = async () => {}; export const saveProfile = async p => p;
+          export const profileShareUrl = uid => location.origin + '/u/' + uid;`;
         else if (path === '@/lib/game/room/client') contents = `export async function readProfileLocation() {
             window.fixture.reads++; if(window.fixture.fail) throw Error('offline'); return window.fixture.location;
           }
@@ -80,7 +81,8 @@ test('joinable location shows enter and keeps invitations aimed at the viewer’
 
 for (const options of [{location:{kind:'offline'}}, {fail:true}, {friend:false}]) test(`unavailable location displays offline without entry actions (${JSON.stringify(options)})`, async ({page}) => {
   const where = await mount(page, options);
-  await expect(where).toContainText('オフライン');
+  // Someone who is not a friend is not told whether the player is online.
+  await expect(where).toContainText(options.friend === false ? 'フレンド限定' : 'オフライン');
   await expect(where.getByRole('button')).toHaveCount(0);
   await expect(where.getByRole('link')).toHaveCount(0);
   if (options.friend === false) expect(await page.evaluate(() => window.fixture.reads)).toBe(0);

@@ -1,14 +1,19 @@
 'use client';
 
 import { useEffect, useRef, useState } from 'react';
-import { useBoardContext } from '../board/BoardContext';
+import { useBoardContext, usePlayerName } from '../board/BoardContext';
 import { analyze } from '../board/analysis';
+import { moveText } from '../board/assess';
+import { useI18n } from '@/i18n/LocaleProvider';
 import type { Analysis, AnalysisRequest, AnalysisResponse } from '../board/analysis';
 import styles from '../BoardEmulator.module.css';
 
 /** 「最善手を調べる」 for the position on the table; looked at again whenever the position changes. */
 export function AnalysisPanel() {
   const { game, names, editing, setPanel } = useBoardContext();
+  const { t, gameText } = useI18n();
+  const playerName = usePlayerName();
+  const step = (words: string) => moveText(words, t, gameText);
   const worker = useRef<Worker | null>(null), request = useRef(0);
   const [result, setResult] = useState<{ game: unknown; analysis: Analysis | null } | null>(null);
   useEffect(() => {
@@ -35,25 +40,25 @@ export function AnalysisPanel() {
   // Edits do not count as moves, so the board itself (not its revision) tells whether the answer is current.
   const analysis = result?.game === game ? result.analysis : undefined;
   return <>
-    <h2>最善手を調べる</h2>
+    <h2>{t('最善手を調べる')}</h2>
     <div className={styles.analysis}>
-      {analysis === undefined && <p role="status">調べています…</p>}
-      {analysis === null && <p>今は調べられる場面ではありません（ターン中に、手番の側が操作できるときに調べます）。</p>}
+      {analysis === undefined && <p role="status">{t('調べています…')}</p>}
+      {analysis === null && <p>{t('今は調べられる場面ではありません（ターン中に、手番の側が操作できるときに調べます）。')}</p>}
       {analysis && <>
-        <p><b>{names[analysis.side]}</b>の番　勝ちやすさ <b>{Math.round((analysis.best.win) * 100)}%</b></p>
+        <p><b>{playerName(names[analysis.side])}</b>{t('の番　勝ちやすさ')} <b>{Math.round((analysis.best.win) * 100)}%</b></p>
         <section>
-          <h3>このターンで勝てるか（詰み）</h3>
+          <h3>{t('このターンで勝てるか（詰み）')}</h3>
           {analysis.lethal.status === 'win'
-            ? <><p className={styles.analysisWin}>勝てます。手順：</p><ol>{analysis.lethal.steps.map((step, i) => <li key={i}>{step}</li>)}</ol></>
-            : <p>{analysis.lethal.status === 'none' ? 'このターンに勝つ手順はありません。' : '手順が多すぎて、調べきれませんでした。'}</p>}
+            ? <><p className={styles.analysisWin}>{t('勝てます。手順：')}</p><ol>{analysis.lethal.steps.map((words, i) => <li key={i}>{step(words)}</li>)}</ol></>
+            : <p>{t(analysis.lethal.status === 'none' ? 'このターンに勝つ手順はありません。' : '手順が多すぎて、調べきれませんでした。')}</p>}
         </section>
         {analysis.lethal.status !== 'win' && <section>
-          <h3>さいきょうのおすすめ</h3>
-          <ol>{analysis.best.steps.map((step, i) => <li key={i}>{step}</li>)}</ol>
+          <h3>{t('さいきょうのおすすめ')}</h3>
+          <ol>{analysis.best.steps.map((words, i) => <li key={i}>{step(words)}</li>)}</ol>
         </section>}
-        <p className={styles.analysisNote}>相手の手札や山札の順番も含め、盤面のすべてを見て調べています。おすすめは CPU の判断で、正解とは限りません。</p>
+        <p className={styles.analysisNote}>{t('相手の手札や山札の順番も含め、盤面のすべてを見て調べています。おすすめは CPU の判断で、正解とは限りません。')}</p>
       </>}
-      <button onClick={() => setPanel({ type: editing ? 'editMenu' : 'menu' })}>メニューへ戻る</button>
+      <button onClick={() => setPanel({ type: editing ? 'editMenu' : 'menu' })}>{t('メニューへ戻る')}</button>
     </div>
   </>;
 }

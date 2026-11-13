@@ -1,4 +1,5 @@
-export type GameNotice = 'matched' | 'started';
+/** matched: someone sat across; started: the match began; chat: a new message in the room (softer, one note). */
+export type GameNotice = 'matched' | 'started' | 'chat';
 
 // ゲーム内の通知音を1つのAudioContextで管理する。対戦の主要処理で音源の取得や繰り返し再生を行わない。
 export class NotificationSound {
@@ -25,7 +26,7 @@ export class NotificationSound {
     const context = this.context, output = this.output;
     if (!context || !output || context.state !== 'running') return;
     try {
-      const notes = kind === 'matched' ? [659.25, 880] : [523.25, 659.25, 783.99];
+      const notes = kind === 'chat' ? [987.77] : kind === 'matched' ? [659.25, 880] : [523.25, 659.25, 783.99];
       const at = Math.max(context.currentTime + 0.01, this.nextAt);
       output.gain.setValueAtTime(0.35 * this.volume, context.currentTime);
       notes.forEach((frequency, index) => {
@@ -34,7 +35,7 @@ export class NotificationSound {
         oscillator.type = 'sine';
         oscillator.frequency.value = frequency;
         gain.gain.setValueAtTime(0, start);
-        gain.gain.linearRampToValueAtTime(0.16, start + 0.015);
+        gain.gain.linearRampToValueAtTime(kind === 'chat' ? 0.09 : 0.16, start + 0.015);
         gain.gain.exponentialRampToValueAtTime(0.0001, end);
         oscillator.connect(gain); gain.connect(output);
         oscillator.onended = () => { oscillator.disconnect(); gain.disconnect(); };

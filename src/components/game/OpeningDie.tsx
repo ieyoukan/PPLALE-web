@@ -1,18 +1,27 @@
 'use client';
 
 import { useEffect, useLayoutEffect, useRef, useState } from 'react';
+import type { PointerEvent } from 'react';
 import type { DieVisualState } from './openingDieScene';
 import styles from './OpeningDie.module.css';
+import { useI18n } from '@/i18n/LocaleProvider';
 
-export const DICE_THROW_DURATION = 1800;
+export const DICE_THROW_DURATION = 800;
+/** Brightness of the die itself while pointed at / pressed (in the scene's linear light, about the former brightness(1.12) / (.92)). */
+const HOVERED = 1.28, PRESSED = .83;
 export function OpeningDie({ value, rolling, interactive, label, onRoll }: {
   value: number | null; rolling: boolean; interactive: boolean; label: string; onRoll: () => void;
 }) {
   const host = useRef<HTMLSpanElement>(null);
-  const visual = useRef<DieVisualState>({ value, rolling });
+  const { t } = useI18n();
+  const visual = useRef<DieVisualState>({ value, rolling, light: 1 });
   const [rendered, setRendered] = useState(false);
   const [failed, setFailed] = useState(false);
-  useLayoutEffect(() => { visual.current = { value, rolling }; }, [value, rolling]);
+  const [pointer, setPointer] = useState<'hover' | 'press' | null>(null);
+  const ready = interactive && !rolling && (rendered || failed);
+  useLayoutEffect(() => {
+    visual.current = { value, rolling, light: !ready ? 1 : pointer === 'press' ? PRESSED : pointer === 'hover' ? HOVERED : 1 };
+  }, [value, rolling, ready, pointer]);
   useEffect(() => {
     let cancelled = false, dispose: (() => void) | undefined;
     void import('./openingDieScene').then(({ createOpeningDieScene }) => {
@@ -23,9 +32,11 @@ export function OpeningDie({ value, rolling, interactive, label, onRoll }: {
     }).catch(() => { if (!cancelled) setFailed(true); });
     return () => { cancelled = true; dispose?.(); };
   }, []);
-  const ready = interactive && !rolling && (rendered || failed);
+  // Only the die lights up (in the scene); a filter on the canvas brightened its floor too.
+  const hover = (event: PointerEvent) => setPointer(event.pointerType === 'mouse' ? 'hover' : null);
   return <button type="button" className={`${styles.surface} ${ready ? styles.ready : ''}`} disabled={!ready} onClick={onRoll}
-    aria-label={interactive ? `${label}のサイコロを振る` : rolling ? `${label}のサイコロが回転中` : `${label}のサイコロ${value === null ? '' : `：${value}`}`}>
+    onPointerEnter={hover} onPointerUp={hover} onPointerDown={() => setPointer('press')} onPointerLeave={() => setPointer(null)} onPointerCancel={() => setPointer(null)}
+    aria-label={interactive ? t('{name}のサイコロを振る', { name: label }) : rolling ? t('{name}のサイコロが回転中', { name: label }) : value === null ? t('{name}のサイコロ', { name: label }) : t('{name}のサイコロ：{n}', { name: label, n: value })}>
     <span ref={host} className={`${styles.scene} ${rendered ? styles.sceneReady : ''}`} aria-hidden="true" />
     {failed && <svg className={styles.fallback} viewBox="0 0 300 320" aria-hidden="true">
       <defs><filter id="die-shadow"><feGaussianBlur stdDeviation="5" /></filter></defs>

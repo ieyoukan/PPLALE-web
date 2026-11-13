@@ -1,10 +1,10 @@
-import type { Catalog, Player } from '@pplale/game-core';
+import { uyuchiPlayCount, type Catalog, type Player } from '@pplale/game-core';
 
 /** Keep the same definitions as the on-play effects (tokens are not real sweets). */
 export function cardCounts(player: Player, catalog: Catalog) {
   const sweets = player.played.filter(id => catalog[id]?.type === 'sweet' && !['back_menu', 'currency'].includes(catalog[id].sweetType ?? '') && id !== 's_38');
   return {
-    uyuchi: player.played.filter(id => catalog[id]?.name?.includes('うゆち') && catalog[id].fruit === 'strawberry').length,
+    uyuchi: uyuchiPlayCount(player, catalog),
     sweets: sweets.length,
     sweetKinds: new Set(sweets).size,
     mochida: player.mochidaLeft ?? 0,

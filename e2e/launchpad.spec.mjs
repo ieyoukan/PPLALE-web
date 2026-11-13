@@ -44,12 +44,14 @@ test('five tabs switch in place, room actions and volume persist, and Escape res
   await page.keyboard.press('Escape');
 
   await pad.getByRole('tab', { name: '音量', exact: true }).click();
-  const slider = pad.getByRole('slider', { name: '通知音の音量' });
+  // BGM, effects and notifications sit in the same rows; notifications off greys their slider.
+  await expect(pad.getByRole('slider')).toHaveCount(3);
+  const slider = pad.getByRole('slider', { name: 'BGM' }), notices = pad.getByRole('slider', { name: '通知音' });
   await slider.fill('37');
   await expect(slider).toHaveValue('37');
-  await expect(pad.getByRole('button', { name: '音をたしかめる' })).toBeEnabled();
+  await expect(notices).toBeEnabled();
   await pad.getByRole('button', { name: '通知音', exact: true }).click();
-  await expect(pad.getByRole('button', { name: '音をたしかめる' })).toBeDisabled();
+  await expect(notices).toBeDisabled();
   await pad.getByRole('tab', { name: '設定', exact: true }).click();
   await expect(pad.getByRole('tabpanel')).toContainText('アカウント');
   // The home room's visibility is kept for the next room the game opens with.
@@ -64,6 +66,7 @@ test('five tabs switch in place, room actions and volume persist, and Escape res
   await page.getByRole('button', { name: 'メニュー', exact: true }).click();
   await pad.getByRole('tab', { name: '音量', exact: true }).click();
   await expect(slider).toHaveValue('37');
+  await expect(notices).toBeDisabled();
   await expect(pad.getByRole('button', { name: '通知音', exact: true })).toHaveAttribute('aria-pressed', 'false');
   expect(errors).toEqual([]);
 });
@@ -79,7 +82,8 @@ test('the game\'s screens open in the expanded pad over the same live room, with
   await pad.getByRole('button', { name: 'ゲームメニューを拡大' }).click();
   // Expanded, the game's screens are down the left and the pad's tabs are icons only at the top right.
   const screens = pad.getByRole('tablist', { name: 'ゲームの画面' }), icons = pad.getByRole('tablist', { name: 'ランチパッドのタブ' });
-  await expect(screens.getByRole('tab')).toHaveCount(6);
+  await expect(screens.getByRole('tab')).toHaveCount(7);
+  await expect(screens.getByRole('tab', { name: 'デッキ', exact: true })).toBeVisible();
   await expect(icons.getByRole('tab')).toHaveCount(4);
   await expect(screens.getByRole('tab', { name: /CPU対決|バトル/ })).toHaveCount(0);
   await expect(icons.getByRole('tab', { name: '設定' })).toHaveText('');

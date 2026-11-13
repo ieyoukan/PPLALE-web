@@ -75,6 +75,13 @@ button:not(:disabled),
   cursor: pointer;
 }
 
+/* 写真や濃色の盤面上でも、キーボードの現在位置を見失わないようにする。 */
+:where(a, button, input, select, textarea, [tabindex]):focus-visible {
+  outline: 2px solid var(--brand-cocoa-deep);
+  outline-offset: 3px;
+  box-shadow: 0 0 0 5px var(--brand-paper);
+}
+
 @keyframes slideIn {
   from { transform: translateX(100%); opacity: 0; }
   to { transform: translateX(0); opacity: 1; }
@@ -98,3 +105,6 @@ button:not(:disabled),
 [data-site-ui] :is(h1, h2, h3, h4, h5, h6, legend, [data-ui-title]) small:not(:where([data-readable] *)) {
   font-family: var(--font-site-body), sans-serif;
 }
+
+/* 静的な文の二か国語表示（src/i18n/Bi.tsx）：<html data-locale> に合わない言語を隠す。 */
+html[data-locale='en'] [data-lang='ja'], html:not([data-locale='en']) [data-lang='en'] { display: none !important; }

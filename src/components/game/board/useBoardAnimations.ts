@@ -1,11 +1,13 @@
 'use client';
 
+import { gameAudio } from '@/lib/game/gameAudio';
 import { useCallback, useLayoutEffect, useRef, useState } from 'react';
 import type { RefObject } from 'react';
 import { canAttack, changesBetween, handReactionOps, HIDDEN_CARD, other, scriptOf, skillAt, turnOf } from '@pplale/game-core';
 import type { Command, GameState, Side } from '@pplale/game-core';
 import { displayCards, gameCatalog } from '@/lib/game/catalog';
-import { skillDescription } from '@/lib/game/skillText';
+import { englishCard, englishSkillDescription, skillDescription } from '@/lib/game/skillText';
+import { useI18n } from '@/i18n/LocaleProvider';
 import type { DrawFlight } from '../BoardPieces';
 import { present } from './presenters';
 import type { Hit, Pop, Rect, Spot } from './presenters';
@@ -60,8 +62,9 @@ function buzz(hits: Hit[]) {
   const amount = Math.max(...blows.map(hit => hit.amount));
   navigator.vibrate(amount >= 4 ? [70, 50, 90] : 30 + amount * 15);
 }
-/** Cards on their way into a hand, deck or the field must land before anyone acts; ones going to a pile are only decoration. */
+/** 通常操作は着地待ち。山札→手札への移動中は、次のドローだけを重ねられる。 */
 const blocksPlay = (flight: DrawFlight) => flight.toZone !== 'nap' && flight.toZone !== 'exile';
+const isDraw = (flight: DrawFlight) => flight.toZone === 'hand' && (flight.fromZone === 'yojo' || flight.fromZone === 'sweet');
 const spotKey = (spot: Spot) => 'unit' in spot ? `unit:${spot.unit}` : 'hand' in spot ? `hand:${spot.hand}` : 'pile' in spot ? `pile:${spot.pile.join('-')}` : 'leader' in spot ? `leader:${spot.leader}` : `pp:${spot.pp}`;
 const selectorOf = (spot: Spot) => 'unit' in spot ? `[data-unit="${spot.unit}"]` : 'hand' in spot ? `[data-hand="${spot.hand}"]`
   : 'pile' in spot ? `[data-deck="${spot.pile.join('-')}"] [data-stack]` : 'leader' in spot ? `[data-leader="${spot.leader}"]` : `[data-pp="${spot.pp}"]`;
@@ -93,6 +96,10 @@ export function useBoardAnimations({ game, shown, view, mode, cpuSides, replayin
   spectating?: [string, string];
 }) {
   const timing = useAnimationTiming();
+  // The language for the labels made below. Read when a change is presented, so switching it never replays an animation.
+  const i18n = useI18n();
+  const language = useRef(i18n);
+  useLayoutEffect(() => { language.current = i18n; }, [i18n]);
   const { draw: DRAW_DURATION, rest: FLIGHT_REST, strikeHit: STRIKE_HIT, strike: STRIKE_DURATION,
     announceHit: ANNOUNCE_HIT, announce: ANNOUNCE_DURATION, pingHit: PING_HIT, ping: PING_DURATION,
     choiceHit: CHOICE_HIT, choice: CHOICE_DURATION } = timing;
@@ -135,7 +142,7 @@ export function useBoardAnimations({ game, shown, view, mode, cpuSides, replayin
     const root = container.current;
     // Everything the command changed, shown by the presenter registered for each kind of change.
     const seen = present(changesBetween(old, shown), {
-      before: old, after: shown, view, open: mode === 'watch' || !!spectating, byAttack: lastCommand.current === 'attack',
+      before: old, after: shown, view, open: mode === 'watch' || !!spectating, byAttack: lastCommand.current === 'attack', t: language.current.t,
       rect: (spot, when) => when === 'before' ? rectsBefore.current.get(spotKey(spot)) : liveRect(root, spot),
     });
     // A card rolled a die in this command: throw it, then hold the result for a moment.
@@ -147,6 +154,7 @@ export function useBoardAnimations({ game, shown, view, mode, cpuSides, replayin
     }
     if (seen.hits.length) {
       if (!replaying) buzz(seen.hits);
+      gameAudio().play('hit');
       setHits(current => [...current, ...seen.hits]);
       later(() => setHits(current => current.filter(hit => !seen.hits.includes(hit))), HIT_DURATION);
     }
@@ -155,13 +163,21 @@ export function useBoardAnimations({ game, shown, view, mode, cpuSides, replayin
       later(() => setPops(current => current.filter(pop => !seen.pops.includes(pop))), POP_DURATION);
     }
     const next = seen.flights;
+    // A card drawn into a hand: one swish as the first one flies.
+    const drawn = next.filter(flight => flight.toZone === 'hand');
+    if (drawn.length) later(() => gameAudio().play('draw'), Math.min(...drawn.map(flight => flight.delay)));
     if (next.length) {
+      const handTargets = new Map(shown.players.flatMap(player => player.hand).map(uid => [uid, liveRect(root, { hand: uid })]));
       // A card is in one flight at a time: one that starts replaces an earlier one still shown
       // (given back in the mulligan and drawn again right away).
-      setFlights(current => [...current.filter(f => !next.some(n => n.uid === f.uid)), ...next]);
+      setFlights(current => [...current.filter(f => !next.some(n => n.uid === f.uid)).map(flight => {
+        // 続けて引くと手札が並び直すので、飛行中のカードも新しい着地点へ向ける。
+        const to = flight.toZone === 'hand' ? handTargets.get(flight.uid) : undefined;
+        return to ? { ...flight, to } : flight;
+      }), ...next]);
       // The card rests where it lands for a moment: removing it exactly when the flight should end cuts
       // the landing off whenever the animation starts a little late (a busy frame).
-      later(() => setFlights(current => current.filter(f => !next.includes(f))), Math.max(...next.map(f => f.delay)) + DRAW_DURATION + FLIGHT_REST);
+      later(() => setFlights(current => current.filter(f => !next.some(n => n.id === f.id))), Math.max(...next.map(f => f.delay)) + DRAW_DURATION + FLIGHT_REST);
     }
     // Who goes first was decided: show both sides' order before the opening draws.
     if (old.phase === 'initiative' && shown.phase === 'opening') {
@@ -179,7 +195,7 @@ export function useBoardAnimations({ game, shown, view, mode, cpuSides, replayin
     if (beginsTurn) {
       const announce = () => {
         const { order, number } = turnOf(shown);
-        setTurnNotice({ id: shown.turn, own: mode === 'hotseat' || shown.active === view, order: order === 'first' ? '先攻' : '後攻', number, pp: shown.players[shown.active].pp, label: mode === 'watch' ? `${sideLabel(mode, shown.active)}のターン` : spectating ? `${spectating[shown.active]}のターン` : undefined });
+        setTurnNotice({ id: shown.turn, own: mode === 'hotseat' || shown.active === view, order, number, pp: shown.players[shown.active].pp, player: mode === 'watch' ? sideLabel(mode, shown.active) : spectating ? spectating[shown.active] : undefined });
         later(() => setTurnNotice(null), TURN_NOTICE_DURATION);
       };
       if (next.length) later(announce, Math.max(...next.map(f => f.delay)) + DRAW_DURATION);
@@ -213,7 +229,7 @@ export function useBoardAnimations({ game, shown, view, mode, cpuSides, replayin
     const opponent = command.actor !== view || cpuSides.includes(command.actor) || !!spectating;
     // Discarding うぃまる is an activation, including when the human uses it on the CPU's turn.
     const handReaction = command.type === 'choose' && game.pending?.task.op === 'eatResponse' && command.option !== 'skip';
-    const announced = opponent || handReaction ? describe(game, command, cardId) : null;
+    const announced = opponent || handReaction ? describe(game, command, cardId, language.current) : null;
     if (announced) {
       setAnnouncement(announced);
       later(apply, ANNOUNCE_HIT);
@@ -226,7 +242,7 @@ export function useBoardAnimations({ game, shown, view, mode, cpuSides, replayin
       && !root?.querySelector(`[data-unit="${command.option}"], [data-hand="${command.option}"]`)
       ? game.pending?.options.find(o => o.id === command.option) : undefined;
     if (option) {
-      const note = { id: ++choiceId, side: command.actor, label: option.label };
+      const note = { id: ++choiceId, side: command.actor, label: language.current.gameText(option.label) };
       setChoiceNote(note);
       later(apply, CHOICE_HIT);
       later(() => setChoiceNote(current => current?.id === note.id ? null : current), CHOICE_DURATION);
@@ -277,7 +293,11 @@ export function useBoardAnimations({ game, shown, view, mode, cpuSides, replayin
   /** A tap moves on: ゲームセット → verdict → result screen. */
   const advanceFinale = useCallback(() => setFinale(current => current === 'set' ? 'verdict' : current === 'verdict' ? null : current), []);
 
-  return { timing, flights, strike, turnNotice, announcement, ping, order, finale, hits, pops, effectRoll, choiceNote, advanceFinale, busy: flights.some(blocksPlay) || !!strike || !!turnNotice || !!announcement || !!ping || !!order || !!effectRoll || !!choiceNote || lagging, run, skipNext, reset };
+  const blocking = !!strike || !!turnNotice || !!announcement || !!ping || !!order || !!effectRoll || !!choiceNote || lagging;
+  return { timing, flights, strike, turnNotice, announcement, ping, order, finale, hits, pops, effectRoll, choiceNote, advanceFinale,
+    busy: flights.some(blocksPlay) || blocking,
+    drawBlocked: flights.some(flight => blocksPlay(flight) && !isDraw(flight)) || blocking,
+    run, skipNext, reset };
 }
 
 /**
@@ -300,21 +320,25 @@ function answerable(game: GameState, command: Command, view: Side, cpuSides: Sid
 
 let choiceId = 0;
 let announcementId = 0;
-/** Announced plays, skills, reveals and activated hand effects. */
-function describe(game: GameState, command: Command, cardId?: string): Announcement | null {
+/** Announced plays, skills, reveals and activated hand effects, in the reader's language (the English card's name and text in English). */
+function describe(game: GameState, command: Command, cardId: string | undefined, { locale, t, gameText }: ReturnType<typeof useI18n>): Announcement | null {
   const id = ++announcementId;
   if (command.type === 'choose' && game.pending?.task.op === 'eatResponse' && command.option !== 'skip'
     && game.pending.task.actor === command.actor && game.players[command.actor].hand.includes(command.option)
     && (cardId ?? game.cards[command.option]?.cardId) === 'y_64') {
-    return { id, kind: 'reaction', side: command.actor, cardId: 'y_64', title: 'うぃまるを使った！', text: '手札から公開してお昼寝場所へ\nお菓子ポイントの変動を無効化' };
+    return { id, kind: 'reaction', side: command.actor, cardId: 'y_64', title: t('うぃまるを使った！'), text: t('手札から公開してお昼寝場所へ\nお菓子ポイントの変動を無効化') };
   }
   if (command.type === 'play' || command.type === 'reveal') {
     const card = displayCards[cardId ?? game.cards[command.uid]?.cardId];
-    return card && { id, kind: command.type, side: command.actor, cardId: card.id, title: card.name, text: card.effect ?? '' };
+    const english = card && locale === 'en' ? englishCard(card.id) : undefined;
+    return card && { id, kind: command.type, side: command.actor, cardId: card.id, title: english?.name ?? card.name, text: (english ?? card).effect ?? '' };
   }
   if (command.type === 'skill') {
     const ref = skillAt(game.players[command.actor], command.index);
-    return ref ? { id, kind: 'skill', side: command.actor, cardId: ref.playable, title: ref.skill.name, text: skillDescription(displayCards[ref.playable].effect, ref.origin) } : null;
+    if (!ref) return null;
+    const english = locale === 'en' ? englishCard(ref.playable)?.effect : undefined;
+    return { id, kind: 'skill', side: command.actor, cardId: ref.playable, title: gameText(ref.skill.name),
+      text: english ? englishSkillDescription(english, ref.origin) : skillDescription(displayCards[ref.playable].effect, ref.origin) };
   }
   return null;
 }

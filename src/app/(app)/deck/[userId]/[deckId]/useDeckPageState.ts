@@ -5,6 +5,13 @@ import { getCardCatalog } from '@/data/catalog';
 import { doc, setDoc } from 'firebase/firestore';
 import { db, auth } from '@/lib/firebase';
 import { validateDeckData } from '@/lib/schema';
+import { isSleeve } from '@pplale/game-core';
+
+/** A guest deck's sleeve (saved by the game as `deck_<id>_sleeve`), to go with it to the account. */
+const guestSleeve = (deckId: string) => {
+  const sleeve = localStorage.getItem(`deck_${deckId}_sleeve`);
+  return isSleeve(sleeve) ? { sleeve } : {};
+};
 import { useAuth } from '@/lib/auth';
 import { browserPopupRedirectResolver, GoogleAuthProvider, signInWithPopup } from 'firebase/auth';
 import { useI18n } from '@/i18n/LocaleProvider';
@@ -252,6 +259,8 @@ export function useDeckPageState({
           yojoDeckIds: yojoDeck.map(card => card.id),
           sweetDeckIds: sweetDeck.map(card => card.id),
           playableCardId: selectedPlayableCard?.id || null,
+          // A guest deck's sleeve (saved by the game) goes with it to the account.
+          ...guestSleeve(deckId),
           updatedAt: new Date()
         };
         try {
@@ -282,6 +291,8 @@ export function useDeckPageState({
           yojoDeckIds: yojoDeck.map(card => card.id),
           sweetDeckIds: sweetDeck.map(card => card.id),
           playableCardId: selectedPlayableCard?.id || null,
+          // A guest deck's sleeve (saved by the game) goes with it to the account.
+          ...guestSleeve(deckId),
           updatedAt: new Date()
         };
         try {
@@ -303,7 +314,7 @@ export function useDeckPageState({
   };
 
   const handleNameChange = async (newName: string) => {
-    const normalizedName = newName.trim() || '無名のデッキ';
+    const normalizedName = newName.trim() || (locale === 'ja' ? '無名のデッキ' : 'Untitled deck');
 
     if (userId === 'local') {
       setIsEditing(false);

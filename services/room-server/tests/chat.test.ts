@@ -40,7 +40,9 @@ test('chat: member identity, Unicode limits, retry idempotency, bounded room-onl
 });
 
 test('chat: two pods deliver separate chat frames, preserve play, reconnect history and legacy clients', async t => {
-    const data = shared(), a = await serve({ data }), b = await serve({ data });
+    // 入室直後のheartbeatが混ざると、チャットと無関係な在室通知まで数えてしまう。
+    // このテストは明示的な入退室だけを使い、定期的な在室更新は別のテストで確認する。
+    const data = shared(), a = await serve({ data, beatSeconds: 60 }), b = await serve({ data, beatSeconds: 60 });
     t.after(async () => { await a.close(); await b.close(); });
     const made = (await a.call<Entered>('/rooms', { rules, name: 'ありす', plaza: { visibility: 'public' } })).data;
     const id = made.view.id, bob = (await b.call<Entered>(`/rooms/${id}/join`, { name: 'ぼぶ' })).data;
@@ -108,4 +110,48 @@ test('chat stamps: fixed catalog, server fallback, shared limits, retries and me
     assert.throws(() => act(body, 1000, 'outsider'), /ルームが見つかりません/);
     assert.equal(plazaView(room, owner, new Set([owner]), catalog).plaza!.chatStamps, true);
     assert.equal(plazaView(room, owner, new Set([owner]), catalog).plaza!.chat![0].stamp, 'ageru');
+});
+
+test('chat: read receipts move forward, follow the sender, and are shown with the history', () => {
+    const { room } = createPlaza('123458', { rules, plaza: { visibility: 'public' } }, { name: 'ありす', profileId: 'alice' });
+    const owner = room.plaza!.owner!, guest = admit(room, { name: 'ぼぶ' }).member.id;
+    const act = (body: unknown, at: number, member = owner) => actPlaza(room, member, body, catalog, at);
+    act(message('おはよう'), 0);
+    act(message('いまどこ？'), 2000);
+    const [first, second] = room.plaza!.chat!.map(item => item.id);
+    // The sender has read their own message; the other member has read nothing yet.
+    assert.deepEqual(plazaView(room, guest, new Set([owner, guest]), catalog).plaza!.chatReads, { [owner]: second });
+    assert.equal(plazaView(room, guest, new Set([owner, guest]), catalog).plaza!.chatReceipts, true);
+    assert.deepEqual(act({ action: 'chatRead', id: second }, 3000, guest), { chatRead: true });
+    // Never backwards, never to a message that is not in the history.
+    assert.deepEqual(act({ action: 'chatRead', id: first }, 3100, guest), {});
+    assert.deepEqual(act({ action: 'chatRead', id: 'unknown' }, 3200, guest), {});
+    assert.deepEqual(plazaView(room, owner, new Set([owner, guest]), catalog).plaza!.chatReads, { [owner]: second, [guest]: second });
+    assert.throws(() => act({ action: 'chatRead', id: second }, 3300, 'outsider'), /ルームが見つかりません/);
+});
+
+test('chat: a read receipt goes on its own to browsers that take it (also across pods), with the messages to older ones', async t => {
+    const data = shared(), a = await serve({ data, beatSeconds: 60 }), b = await serve({ data, beatSeconds: 60 });
+    t.after(async () => { await a.close(); await b.close(); });
+    const made = (await a.call<Entered>('/rooms', { rules, name: 'ありす', plaza: { visibility: 'public' } })).data;
+    const id = made.view.id, bob = (await b.call<Entered>(`/rooms/${id}/join`, { name: 'ぼぶ' })).data;
+    const alice = await connect(a, id, made.token, {}, true, true), older = await connect(a, id, made.token, {}, true);
+    const other = await connect(b, id, bob.token, {}, true, true);
+    await Promise.all([alice, older, other].map(client => client.until(view => view.plaza!.members.filter(member => member.online).length === 2)));
+    const said = message('よんだ？');
+    assert.equal(await other.act(said), undefined);
+    const latest = (await alice.untilChat(event => event.messages.some(item => item.text === said.text))).messages.at(-1)!;
+    await older.untilChat(event => event.messages.some(item => item.text === said.text));
+    const chats = [other.chats.length, older.chats.length];
+    assert.equal(await alice.act({ action: 'chatRead', id: latest.id }), undefined);
+    // Bob (another pod) gets only the reads; the older browser gets the messages again, with the reads.
+    assert.equal((await other.untilReads(event => event.reads[made.view.plaza!.me] === latest.id)).id, id);
+    assert.equal((await older.untilChat(event => event.reads?.[made.view.plaza!.me] === latest.id)).messages.at(-1)!.id, latest.id);
+    assert.equal(other.chats.length, chats[0], 'the messages are not sent again for a read receipt');
+    assert.equal(older.gone(), null);
+    // Reading the same message again changes nothing and tells no one.
+    const sent = [other.reads.length, older.chats.length];
+    assert.equal(await alice.act({ action: 'chatRead', id: latest.id }), undefined);
+    await new Promise(resolve => setTimeout(resolve, 200));
+    assert.deepEqual([other.reads.length, older.chats.length], sent);
 });

@@ -11,7 +11,7 @@ for (const width of [390, 1280]) {
       await expect(page.getByRole('heading', { level: 1 })).toHaveAccessibleName('お菓子争奪戦争ぷぷりえーる');
       await expect(page.getByRole('heading', { name: 'ゲームについて' })).toBeVisible();
       await expect(page.getByText('「お菓子争奪戦争ぷぷりえーる」は、', { exact: false })).toBeVisible();
-      for (const href of ['/about', '/game', '/build', '/deck/2pick', '/tournament', '/deck-view']) {
+      for (const href of ['/about', '/game', '/build', '/deck/2pick', '/community', '/deck-view']) {
         await expect(page.locator(`a[href="${href}/"]`).first()).toBeVisible();
       }
       await expect(page.locator('link[rel="canonical"]')).toHaveAttribute('href', 'https://pplale.vercel.app/');
@@ -45,7 +45,7 @@ test('sitemap includes the home and public play entry with canonical trailing sl
   const response = await request.get('/sitemap.xml');
   expect(response.ok()).toBe(true);
   const xml = await response.text();
-  for (const path of ['', 'about/', 'game/', 'build/', 'deck/2pick/', 'tournament/']) {
+  for (const path of ['', 'about/', 'game/', 'build/', 'deck/2pick/', 'community/']) {
     expect(xml).toContain(`<loc>https://pplale.vercel.app/${path}</loc>`);
   }
   expect(xml).not.toContain('<lastmod>');

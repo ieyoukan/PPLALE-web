@@ -1,0 +1,94 @@
+{
+  "measuredAt": "2026-11-01T05:02:25.244Z",
+  "web": "https://pplale.vercel.app",
+  "server": "https://pplale-room.youkan.uk",
+  "serverVersion": "0.16.0",
+  "forcedPresentationWait": false,
+  "note": "Private guest test room; 3 real plays. Fixed random only reproduces the client presentation wait; network is real. No room IDs or tokens are exported.",
+  "measurements": [
+    {
+      "feedbackMs": 2416.100000023842,
+      "confirmedMs": 2371.5,
+      "preview": false,
+      "animationDuration": "0.32s"
+    },
+    {
+      "feedbackMs": 149.89999997615814,
+      "confirmedMs": 100.29999995231628,
+      "preview": false,
+      "animationDuration": "0.32s"
+    },
+    {
+      "feedbackMs": 107.70000004768372,
+      "confirmedMs": 92.5,
+      "preview": false,
+      "animationDuration": "0.32s"
+    }
+  ],
+  "samples": [
+    {
+      "kind": "play",
+      "outcome": "ok",
+      "at": 1793509320000,
+      "background": false,
+      "inputToSend": 0.9,
+      "roundTrip": 109.6,
+      "sendToView": 106,
+      "viewToPaint": 2308.6,
+      "inputToPaint": 2415.5,
+      "server": {
+        "queue": 0.1,
+        "read": 7.1,
+        "apply": 0.6,
+        "store": 33.1,
+        "presence": 0,
+        "deliver": 0,
+        "publish": 0,
+        "total": 0
+      }
+    },
+    {
+      "kind": "play",
+      "outcome": "ok",
+      "at": 1793509320000,
+      "background": false,
+      "inputToSend": 0.4,
+      "roundTrip": 93.3,
+      "sendToView": 92.7,
+      "viewToPaint": 56.7,
+      "inputToPaint": 149.8,
+      "server": {
+        "queue": 0.1,
+        "read": 5.5,
+        "apply": 0.4,
+        "store": 22.3,
+        "presence": 0,
+        "deliver": 0,
+        "publish": 0,
+        "total": 0
+      }
+    },
+    {
+      "kind": "play",
+      "outcome": "ok",
+      "at": 1793509320000,
+      "background": false,
+      "inputToSend": 0.3,
+      "roundTrip": 87.8,
+      "sendToView": 85.2,
+      "viewToPaint": 22,
+      "inputToPaint": 107.5,
+      "server": {
+        "queue": 0.1,
+        "read": 5.8,
+        "apply": 0.4,
+        "store": 20,
+        "presence": 0,
+        "deliver": 0,
+        "publish": 0,
+        "total": 0
+      }
+    }
+  ],
+  "errors": []
+}

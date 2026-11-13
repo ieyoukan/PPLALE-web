@@ -2,7 +2,7 @@
 
 // 各画面の遅延読込をここに集約する。開いていない画面のコードは先に読み込まない。
 import dynamic from 'next/dynamic';
-import { NotificationVolumeControl } from '../notifications/GameNotifications';
+import { SoundSettings } from '../audio/SoundSettings';
 import { NotificationsPage } from '../social/NotificationsPage';
 import { GameSettings } from '../settings/GameSettings';
 import { CurrentRoomPanel } from '../plaza/CurrentRoomPanel';
@@ -21,6 +21,8 @@ const CardGallery = dynamic(() => import('@/components/game/home/CardGallery'));
 const RoomBrowser = dynamic(() => import('@/components/game/plaza/RoomBrowser').then(module => module.RoomBrowser));
 const EditorLobby = dynamic(() => import('@/components/game/editor/EditorLobby'));
 const SocialPage = dynamic(() => import('@/components/game/social/SocialPage').then(module => module.SocialPage));
+const DecksPage = dynamic(() => import('@/components/game/decks/DecksPage').then(module => module.DecksPage));
+const DeckEditor = dynamic(() => import('@/components/game/decks/DeckEditor').then(module => module.DeckEditor));
 const ProfilePage = dynamic(() => import('@/components/game/social/ProfilePage').then(module => module.ProfilePage));
 const PlayPerformancePanel = dynamic(() => import('@/components/game/performance/PlayPerformancePanel').then(module => module.PlayPerformancePanel));
 
@@ -32,7 +34,7 @@ export function LaunchpadScreens({ section, place, onPanel, onClose }: { section
     case 'home': return <LaunchpadHome onHome={() => onPanel('home')} onShare={() => onPanel('share')} />;
     case 'notifications': return <NotificationsPage />;
     case 'instance': return <CurrentRoomPanel onAction={onPanel} />;
-    case 'volume': return <div className={styles.preferences}><GameIcon name="volume" className={styles.preferenceIcon} /><NotificationVolumeControl /></div>;
+    case 'volume': return <div className={styles.preferences}><GameIcon name="volume" className={styles.preferenceIcon} /><SoundSettings /></div>;
     case 'settings': return <GameSettings volume={false} />;
     case 'cpu': return <GameLobby />;
     case 'history': return <MatchHistory />;
@@ -40,6 +42,8 @@ export function LaunchpadScreens({ section, place, onPanel, onClose }: { section
     case 'missions': return <BeginnerMissions />;
     case 'cards': return <CardsMenu />;
     case 'zukan': return <CardGallery />;
+    case 'decks': return <DecksPage key={`${place.id ?? ''}:${place.from ?? ''}`} place={place} />;
+    case 'deckEditor': return <DeckEditor key={place.id} place={place} onClose={onClose} />;
     case 'editor': return <EditorLobby />;
     case 'social': return <SocialPage />;
     case 'profile': return <ProfilePage id={place.id} />;

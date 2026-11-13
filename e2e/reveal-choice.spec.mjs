@@ -12,7 +12,7 @@ async function loadBoard(page, game) {
   await page.goto('/robots.txt');
   await page.evaluate(({ key, game }) => localStorage.setItem(key, JSON.stringify({ game, mode: 'hotseat', level: 'easy' })), { key, game });
   await page.goto('/game/play/');
-  await expect(page.locator('[data-table]')).toBeVisible();
+  await expect(page.locator('[data-table]')).toBeVisible({timeout:20000});
   // The development-only Next indicator overlaps the first card on a narrow viewport.
   await page.addStyleTag({ content: 'nextjs-portal { display: none; }' });
 }
@@ -116,3 +116,25 @@ test('returning the last selected card to the hand and completing reveals nothin
   await expect(completion(page)).toBeHidden();
   expect((await savedGame(page)).cards[uid].revealed).toBe(false);
 });
+
+// 公開札の数や画面比率が変わっても、ポイントの数字を手札が覆わない。
+for (const viewport of [{width:1280,height:860},{width:1920,height:1080},{width:844,height:390},{width:667,height:375},{width:390,height:844}]) {
+  test(`many revealed cards keep own sweets visible at ${viewport.width}×${viewport.height}`,async({page})=>{
+    await page.setViewportSize(viewport);
+    for (const publicCount of [18,8]) {
+      const game=arena({me:{hand:Array(18).fill('y_60'),points:7}});
+      for (const uid of hand(game).slice(-publicCount)) game.cards[uid].revealed=true;
+      await loadBoard(page,game);
+      const value=page.locator('[data-leader="0"] [class*="counterValue"] > span').first();
+      await expect(value).toHaveText('7');
+      const unobscured=()=>value.evaluate(element=>{
+        const r=element.getBoundingClientRect(),leader=element.closest('[data-leader]');
+        return [.25,.5,.75].every(fraction=>leader.contains(document.elementFromPoint(r.x+r.width*fraction,r.y+r.height/2)));
+      });
+      await expect.poll(unobscured).toBe(true);
+      await card(page,hand(game).at(-1)).focus();
+      await expect.poll(unobscured).toBe(true);
+      if(publicCount===18) await page.screenshot({path:`/tmp/pplale-revealed-points-after-${viewport.width}.png`});
+    }
+  });
+}

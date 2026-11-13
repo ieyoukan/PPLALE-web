@@ -9,20 +9,24 @@
 .roomPreview { --pad: 12px; position: absolute; top: 38px; right: 48px; z-index: 1; display: grid; gap: 4px; width: 200px; filter: none; }
 .roomPreview img { display: block; width: 100%; height: auto; aspect-ratio: 16 / 9; object-fit: cover; }
 .roomPreview span { overflow: hidden; padding: 0 3px; color: var(--brand-cocoa-deep); font-size: 13px; font-weight: 700; text-overflow: ellipsis; white-space: nowrap; }
-.feature { display: flex; align-items: center; gap: 44px; opacity: 0; transform: translateY(10px); transition: opacity .5s ease, transform .5s ease; }
+/* The card (the taller one) sets the height and the text is centred beside it: the text growing as its font arrives moves nothing. */
+.feature { display: flex; align-items: flex-start; gap: 44px; opacity: 0; transform: translateY(10px); transition: opacity .5s ease, transform .5s ease; }
 .feature[data-shown] { opacity: 1; transform: none; }
 .cardArt {
   /* The card as printed: no ring, no rounding, upright; it floats up and down (docs/design-system.md). */
   position: relative; width: 236px; aspect-ratio: 2 / 3; overflow: hidden; filter: none; animation: float 5s ease-in-out infinite;
 }
 .cardArt img { object-fit: contain; }
-.cardText { --pad: 30px 34px; display: grid; gap: 10px; width: 420px; filter: none; }
+.cardText { --pad: 30px 34px; display: grid; gap: 10px; align-self: center; width: 420px; filter: none; }
 .cardText h2 { font-size: 30px; line-height: 1.2; color: var(--brand-cocoa); }
 .cardText p { font-size: 17px; line-height: 1.65; }
 .chips { display: flex; gap: 6px; }
 .chips b { padding: 3px 12px; border-radius: 999px; background: var(--brand-blush); font-size: 13px; }
 .chips b + b { background: var(--brand-sage-wash); }
-.status { display: flex; align-items: center; gap: 12px; font-size: 16px; color: var(--brand-cocoa-soft); }
+.status { display: grid; justify-items: center; gap: 10px; font-size: 16px; color: var(--brand-cocoa-soft); }
+/* ゲームの画像・音声の読み込み：桜色からバニラ色へ満ちていくゲージ（文字は出さない）。 */
+.loading { display: block; width: min(320px, 60vw); height: 10px; overflow: hidden; border: 1px solid var(--brand-pink-edge); border-radius: 6px; background: var(--brand-paper); }
+.loading i { display: block; height: 100%; border-radius: 5px; background: linear-gradient(90deg, var(--brand-pink), var(--brand-vanilla)); transition: width .3s ease-out; }
 .dots { display: flex; gap: 6px; }
 .dots i { width: 9px; height: 9px; border-radius: 50%; background: var(--brand-pink-edge); animation: hop 1.2s ease-in-out infinite; }
 .dots i:nth-child(2) { animation-delay: .15s; background: var(--brand-vanilla); }

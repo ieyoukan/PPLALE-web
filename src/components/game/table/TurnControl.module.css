@@ -1,3 +1,9 @@
 .action { width: clamp(136px, 11cqw, 172px); flex: 0 0 auto; font-size: clamp(24px, 2cqw, 30px); }
 .play { font-size: clamp(19px, 1.6cqw, 24px); }
 @container stage (max-height: 600px) { .action { width: 118px; font-size: 24px; } .play { font-size: 20px; } }
+
+/* 上下の情報量が違っても、中央の主要操作は同じ位置に保つ。 */
+div.rail { display: grid; grid-template-rows: minmax(0, 1fr) auto minmax(0, 1fr); justify-items: center; align-items: start; height: calc(100cqh - 120px); max-height: 600px; }
+.rail > [data-pp] { align-self: end; }
+.center { position: relative; display: flex; justify-content: center; width: 100%; }
+.bottom { display: flex; flex-direction: column; align-items: center; align-self: start; gap: 4px; width: 100%; }

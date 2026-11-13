@@ -56,7 +56,6 @@
 .me > svg { color: var(--brand-cocoa); }
 
 .group { margin-top: 14px; border-top: 1px solid var(--brand-pink); }
-.filterEmpty { margin: 18px 0; color: var(--brand-cocoa-deep); font-size: 14px; }
 .group summary svg { color: var(--place); }
 .group summary { display: flex; align-items: center; gap: 10px; padding: 12px 4px; cursor: pointer; list-style: none; font-size: 17px; font-weight: 700; color: var(--brand-cocoa); }
 .group summary::-webkit-details-marker { display: none; }
@@ -79,7 +78,7 @@
 .roomAction { display: inline-flex; align-items: center; gap: 4px; position: absolute; top: 72px; right: 8px; padding: 5px 12px; border: 2px solid var(--place); border-radius: 6px; background: var(--brand-paper); color: var(--brand-cocoa-deep); font-size: 13px; font-weight: 800; }
 a.room:hover .roomAction { background: var(--brand-blush); }
 .roomInfo { display: flex; align-items: center; gap: 8px; padding: 8px 10px; font-size: 13px; }
-.roomInfo b { font-family: Georgia, serif; letter-spacing: .04em; }
+.roomInfo .roomId { font-family: Georgia, serif; letter-spacing: .04em; }
 .fruitDots { display: flex; gap: 3px; }
 .fruitDots i { width: 10px; height: 10px; border-radius: 50%; border: 1.5px solid #fff; box-shadow: none; }
 
@@ -100,9 +99,40 @@ a.room:hover .roomAction { background: var(--brand-blush); }
 .panel .accept { background: var(--brand-sage); }
 .panel .decline { background: #ece3dc; }
 
-.addFriend { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; margin-top: 8px; padding: 12px 0; border-block: 1px solid var(--brand-pink); font-size: 13px; }
-.addFriend label { display: flex; flex: 1; min-width: 220px; align-items: center; gap: 10px; color: var(--brand-cocoa); font-size: 22px; }
-.addFriend input { font-size: 14px; }
+/* Finding someone by name or profile link (UserSearch): results are friend tiles with a neutral edge. */
+.search { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; margin: 4px 0 14px; font-size: 13px; }
+.search label { position: relative; display: flex; flex: 1; min-width: 220px; align-items: center; color: var(--brand-cocoa); font-size: 20px; }
+.search label > svg { position: absolute; left: 12px; pointer-events: none; }
+.panel .search input { padding-left: 42px; font-size: 14px; }
+.search label[data-searching] > svg { animation: bob .8s ease-in-out infinite; }
+.search > .tiles { flex-basis: 100%; }
+.searchEmpty { flex-basis: 100%; margin: 0; color: var(--brand-cocoa-soft); font-size: 13px; }
+.tile[data-place=found] { --place: var(--brand-pink-edge); }
+
+/* Sharing a profile (ProfileShare): its short link, then Discord, X and the device's share sheet as icons. */
+.share { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin-top: 12px; }
+.panel .share button, .share a { position: relative; min-height: 40px; }
+.panel button.shareLink { flex: 0 1 auto; justify-content: flex-start; min-width: 0; max-width: 100%; padding: 8px 12px; background: var(--brand-cream); font-size: 13px; }
+.shareLink > span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.shareLink > svg { flex: none; font-size: 18px; color: var(--brand-cocoa); }
+.share[data-mine] .shareLink { border-color: var(--brand-cocoa); background: var(--brand-blush); }
+.panel button.shareTile, .shareTile { display: inline-grid; place-items: center; width: 44px; padding: 0; border: 1px solid var(--brand-control-edge); border-radius: var(--brand-control-radius); background: var(--brand-paper); color: var(--brand-cocoa-deep); font-size: 20px; text-decoration: none; }
+.shareTile:hover, .panel button.shareLink:hover { background: var(--brand-blush); }
+.share :is(button, a):active { transform: translateY(2px); }
+.xMark { font-size: 20px; line-height: 1; }
+.copiedDot { position: absolute; top: -7px; right: -7px; display: grid; place-items: center; width: 22px; height: 22px; border-radius: 50%; background: var(--brand-sage); color: var(--brand-cocoa-deep); font-size: 13px; font-style: normal; animation: popIn .35s cubic-bezier(.3, 1.6, .5, 1) both; }
+.srOnly { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
+
+/* A visitor who is not signed in: both faces with a heart between, and one button to sign in and ask. */
+.befriend { display: grid; justify-items: center; gap: 14px; margin-bottom: 20px; padding: 18px 12px; border-block: 1px solid var(--brand-pink); background: var(--brand-vanilla-wash); }
+.pair { display: flex; align-items: center; gap: 14px; }
+.blankFace { display: grid; place-items: center; width: 64px; height: 64px; border: 2px dashed var(--brand-pink-edge); border-radius: 50%; color: var(--brand-cocoa-soft); font-size: 28px; }
+.pairHeart { width: 30px; height: 30px; color: var(--brand-pink-edge); fill: currentColor; animation: beat 1.6s ease-in-out infinite; }
+.perks { display: flex; flex-wrap: wrap; justify-content: center; gap: 6px 18px; margin: 0; padding: 0; list-style: none; color: var(--brand-cocoa); font-size: 12px; font-weight: 700; }
+.perks li { display: inline-flex; align-items: center; gap: 5px; }
+.perks svg { font-size: 17px; }
+@keyframes popIn { from { opacity: 0; transform: scale(.4); } }
+@media (prefers-reduced-motion: reduce) { .pairHeart, .copiedDot, .search label[data-searching] > svg { animation: none; } }
 
 @keyframes beat { 0%, 70%, 100% { transform: scale(1); } 80% { transform: scale(1.25); } 90% { transform: scale(.95); } }
 @keyframes bob { 50% { transform: translateY(-3px); } }
@@ -111,14 +141,19 @@ a.room:hover .roomAction { background: var(--brand-blush); }
 @container stage (max-width: 600px) { .groupBody { grid-template-columns: 1fr; } .room { grid-template-rows: 80px auto; } .roomAction { top: 42px; } .tiles { grid-template-columns: 1fr; } .tile { width: 100%; } }
 .group[data-place=sent], .tile[data-place=sent], .room[data-place=sent] { --place: #b39ad8; --glow: #b39ad855; }
 .headingLinks { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; max-width: 100%; }
-/* The bell: an icon with no frame. */
-.bell { display: inline-flex; flex-shrink: 0; align-items: center; justify-content: center; gap: 6px; min-width: 42px; height: 42px; padding: 0 6px; border-radius: 6px; color: var(--brand-cocoa); font-size: 22px; }
-.bell:hover { background: var(--brand-blush); }
-.bell .badge { flex-shrink: 0; min-width: 22px; height: 22px; padding: 0 6px; font-size: 12px; }
 .empty .primary { gap: 6px; margin-top: 6px; }
 .group[data-place=watching], .tile[data-place=watching], .room[data-place=watching] { --place: #4fb3a9; --glow: #4fb3a955; }
+/* The room this player is in: the leaf green of the logo, above every other room. */
+.group[data-place=here], .tile[data-place=here] { --place: var(--brand-leaf-deep); --glow: transparent; }
 /* Friends who are in no room: just their tiles, below the rooms. */
-.elsewhere { margin-top: 18px; padding-top: 18px; border-top: 1px solid var(--brand-pink); }
+/* Online and offline friends, each under its heading with a count; the offline ones a little faded. */
+.presenceHeading { display: flex; align-items: center; gap: 8px; margin: 22px 0 10px; color: var(--brand-cocoa); font-size: 16px; font-weight: 400; }
+.presenceHeading i { width: 10px; height: 10px; border-radius: 50%; background: var(--brand-leaf); }
+.presenceHeading[data-presence=offline] { padding-top: 18px; border-top: 1px solid var(--brand-pink); }
+.presenceHeading[data-presence=offline] i { background: var(--brand-pink-edge); }
+.presenceHeading small { color: var(--brand-cocoa-soft); font-size: 13px; }
+.offline .tile { opacity: .7; }
+.tile[data-place=online] { --place: var(--brand-leaf); }
 .watchMark { display: inline-grid; place-items: center; flex: none; color: var(--place); font-size: 13px; }
 .panel .answer button svg { font-size: 18px; }
 .friendChip { display: inline-flex; align-items: center; gap: 6px; min-height: 40px; padding: 8px 16px; border-radius: var(--brand-control-radius); background: var(--brand-blush); color: var(--brand-cocoa-deep); font-weight: 700; }

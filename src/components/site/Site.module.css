@@ -1,0 +1,57 @@
+/* サイトのページの共通部品（SiteHeader・SitePage）。色は brand.css の --brand-* だけを使う。 */
+
+/* ヘッダー：クリームの帯と桜色の線。ロゴはそのままの色で小さく置く。 */
+.header {
+  position: sticky; top: 0; z-index: 40;
+  background: color-mix(in srgb, var(--brand-paper) 94%, transparent);
+  backdrop-filter: blur(8px);
+  border-bottom: 2px solid var(--brand-pink);
+  color: var(--brand-cocoa-deep);
+}
+.headerInner { display: flex; align-items: center; gap: 12px; max-width: 1200px; height: 60px; margin: 0 auto; padding: 0 16px; }
+.logo { display: block; flex-shrink: 0; width: 86px; border-radius: var(--brand-control-radius); }
+.logo img { display: block; width: 100%; height: auto; }
+.logo:focus-visible { outline: 3px solid var(--brand-cocoa); outline-offset: 3px; }
+.headerTitle {
+  min-width: 0; overflow: hidden; color: var(--brand-cocoa);
+  font-family: var(--font-site-title), sans-serif; font-size: 18px; line-height: 1.3;
+  text-overflow: ellipsis; white-space: nowrap;
+}
+.headerActions { display: flex; align-items: center; gap: 10px; flex-shrink: 0; margin-left: auto; }
+
+/* 背景：模様は増やさず無地。クリーム（標準）、桜色、あそびかただけ既存のチェック柄。 */
+.page { min-height: 100vh; display: flex; flex-direction: column; color: var(--brand-cocoa-deep); background: var(--brand-cream); }
+.page[data-pattern=blush] { background: var(--brand-blush); }
+.page[data-pattern=gingham] { background-color: var(--brand-cream); background-image: var(--brand-gingham); background-size: 100px 100px; }
+.main { flex: 1; width: 100%; max-width: 820px; margin: 0 auto; padding: 40px 16px 72px; }
+.main[data-width=lg] { max-width: 1040px; }
+
+/* 見出し：モッチーポップのココア色に、3色の水玉を添える。 */
+.titleWrap { display: flex; flex-direction: column; align-items: center; gap: 10px; margin-bottom: 28px; text-align: center; }
+.title { margin: 0; color: var(--brand-cocoa); font-family: var(--font-site-title), sans-serif; font-size: clamp(28px, 4.4vw, 42px); font-weight: 400; line-height: 1.4; }
+.titleDots { display: flex; gap: 8px; }
+.titleDots i { width: 10px; height: 10px; border-radius: 50%; background: var(--brand-pink); }
+.titleDots i:nth-child(2) { background: var(--brand-vanilla); }
+.titleDots i:nth-child(3) { background: var(--brand-sage); }
+.lead { margin: -12px auto 28px; max-width: 36em; color: var(--brand-cocoa-soft); font-size: 15px; line-height: 1.8; text-align: center; }
+
+/* 紙面：カード由来の飾り枠（OrnateFrame）。 */
+.panel { --pad: clamp(28px, 5vw, 48px); }
+.prose { font-size: 15px; line-height: 1.9; }
+.prose > * + *, .prose :where(div, section) + :where(div, section) { margin-top: 32px; }
+.prose h2 { margin: 0 0 10px; color: var(--brand-cocoa); font-family: var(--font-site-title), sans-serif; font-size: clamp(19px, 2.6vw, 23px); font-weight: 400; line-height: 1.5; }
+.prose h3 { margin: 18px 0 6px; color: var(--brand-cocoa); font-size: 16px; font-weight: 700; }
+.prose p { margin: 0 0 10px; }
+.prose ul { margin: 0; padding-left: 1.4em; list-style: none; }
+.prose li { position: relative; margin: 4px 0; }
+.prose li::before { content: ''; position: absolute; left: -1.05em; top: .72em; width: 7px; height: 7px; border-radius: 50%; background: var(--brand-peach); }
+.prose a { color: var(--brand-cocoa-deep); text-decoration: underline; text-decoration-color: var(--brand-peach); text-decoration-thickness: 2px; text-underline-offset: 3px; overflow-wrap: anywhere; }
+.prose a:hover { text-decoration-color: var(--brand-cocoa); }
+.prose hr { border: 0; border-top: 2px dotted var(--brand-pink-edge); margin: 24px 0; }
+
+@media (max-width: 600px) {
+  .headerInner { height: 54px; padding: 0 12px; }
+  .logo { width: 72px; }
+  .headerTitle { font-size: 15px; }
+  .main { padding: 28px 12px 56px; }
+}

@@ -18,6 +18,8 @@ import { useCpuPlayer } from './useCpuPlayer';
 import { cpuSidesOf, sideLabel } from './useGameSession';
 import type { BoardSession } from './useGameSession';
 import { useOpeningDice } from './useOpeningDice';
+import { useCardChoice } from './useCardChoice';
+import { useDrawInput } from './useDrawInput';
 import { enterLandscape } from '../stage/stageSpace';
 
 export type Panel =
@@ -34,6 +36,8 @@ const typeOf = (game: GameState, uid: string) => gameCatalog[game.cards[uid].car
 // A replay moves quickly through the opening and leaves time to follow each turn.
 const REPLAY_DELAY = 500;
 const REPLAY_OPENING_DELAY = 150;
+const isDrawCommand = (game: GameState, command: Command) => command.type === 'openingDraw'
+  || command.type === 'choose' && game.pending?.task.op === 'draw' && (command.option === 'yojo' || command.option === 'sweet');
 
 /**
  * Everything the board UI needs: the match, who may act, what is targetable, and the handlers
@@ -55,6 +59,8 @@ export function useBoard(container: RefObject<HTMLDivElement | null>, session: B
     { card: profile?.iconCardId ?? actual.players[0].playable, cpu: mode === 'watch' },
     { card: actual.players[1].playable, cpu: mode === 'watch' || mode === 'cpu' },
   ];
+  /** Each side's sleeve (the backs of its cards): from the room, or the decks of a match set up here. */
+  const sleeves = useMemo<[string | undefined, string | undefined]>(() => remote?.sleeves ?? [setup?.decks[0]?.sleeve, setup?.decks[1]?.sleeve], [remote?.sleeves, setup]);
   const home: Side = remote?.seat ?? (mode === 'watch' ? 1 : 0);
   const [view, setView] = useState<Side>(home);
   const [selected, setSelected] = useState<string | null>(null);
@@ -80,11 +86,14 @@ export function useBoard(container: RefObject<HTMLDivElement | null>, session: B
   if (!deciding && before !== actual) setBefore(actual);
   const game = deciding ? before : actual;
   const animations = useBoardAnimations({ game: actual, shown: game, view, mode, cpuSides, replaying, container, spectating: watching ? names : undefined });
-  const { run: animate, skipNext: skipAnimation, flights, strike, turnNotice, announcement, ping, order, effectRoll, choiceNote, busy: animating } = animations;
+  const { run: animate, skipNext: skipAnimation, flights, strike, busy: animating, drawBlocked } = animations;
   // The request travels while the presentation runs. Only the presentation gates accepting its view.
   const [presentingOwn, setPresentingOwn] = useState(false);
   const [intent, setIntent] = useState<Command | null>(null);
+  const [intentRevision, setIntentRevision] = useState<number | null>(null);
   const roomInputLocked = useRef(false);
+  const drawInput = useDrawInput();
+  const { reset: resetDrawInput } = drawInput;
 
   /** Sends a command (with its animation). Clears the local selection of the acting side. */
   const act = useCallback((command: Command) => {
@@ -97,20 +106,34 @@ export function useBoard(container: RefObject<HTMLDivElement | null>, session: B
       setExchanges([]);
     }
     if (remote) {
+      setIntentRevision(actual.revision);
       setIntent(command);
       setPresentingOwn(true);
       animate(command, () => setPresentingOwn(false));
       send(command,inputAt);
     } else animate(command, () => send(command));
-  }, [view, animate, send, remote, actual.phase]);
+  }, [view, animate, send, remote, actual.phase, actual.revision]);
 
-  const presented = remote?.presented;
+  // 仮置きは自分にだけ見せる。PP・効果・攻撃可否はサーバーの確定状態から変えない。
+  const submitted = intent?.type === 'play' && intent.actor === view ? intent : null;
+  const submittedCard = submitted && game.cards[submitted.uid];
+  const slot = submitted?.slot ?? Array.from({ length: 7 }, (_, index) => index).find(index => !game.players[view].field.some(uid => game.cards[uid].slot === index));
+  const pendingPlay = remote && game.revision === intentRevision && !error && submitted && submittedCard && gameCatalog[submittedCard.cardId]?.type === 'yojo'
+    && game.players[view].hand.includes(submitted.uid) && slot !== undefined
+    ? { uid: submitted.uid, cardId: submittedCard.cardId, side: view, slot } : null;
+  const previewing = !!pendingPlay;
+  const presented = remote?.presented, presentation = remote?.presentation;
   useLayoutEffect(() => {
     if (!presented || watching) return;
+    const waiting = presentingOwn || deciding;
+    presentation?.({ preview: false, waiting });
     let second = 0;
-    const first = requestAnimationFrame(() => { second = requestAnimationFrame(() => presented(game.revision)); });
+    const first = requestAnimationFrame(() => { second = requestAnimationFrame(() => {
+      presentation?.({ preview: previewing, waiting });
+      presented(game.revision);
+    }); });
     return () => { cancelAnimationFrame(first); cancelAnimationFrame(second); };
-  },[presented,game.revision,watching]);
+  },[presented,presentation,game.revision,watching,previewing,presentingOwn,deciding]);
 
   const dice = useOpeningDice({ game: actual, act, paused: loading, cpuSides, cpuRolls: ready && !loading && !paused && !animating, remote: !!remote });
   const { busy: rollingDice } = dice;
@@ -122,7 +145,7 @@ export function useBoard(container: RefObject<HTMLDivElement | null>, session: B
   }, [presentingOwn, remote?.waiting]);
   const modelUsed = useCpuPlayer({
     enabled: ready && !replaying && !puzzleFinished && cpuSides.length > 0 && !loading && !paused, sides: cpuSides, levels, game: actual, act, flights,
-    busy: { any: moving, blocking: rollingDice || !!strike || !!turnNotice || !!announcement || !!ping || !!order || !!effectRoll || !!choiceNote },
+    busy: { any: moving, blocking: rollingDice || drawBlocked || !!remote?.waiting || presentingOwn },
   });
   // A finished match against さいきょう goes to the CPU server once, if this browser agreed to it.
   // The course of the match (形勢), judged with what side 0 can know.
@@ -135,9 +158,9 @@ export function useBoard(container: RefObject<HTMLDivElement | null>, session: B
   useEffect(() => {
     if (mode !== 'cpu' || levels[1] !== 'master' || typeof game.winner !== 'number') return;
     if (!record || record.reported || !learningConsent.given()) return;
-    reportMatch({ seed: record.seed, decks: record.decks, commands: record.commands, model: modelUsed.current ?? 'unknown' });
+    reportMatch({ decisiveOpeningDice: game.decisiveOpeningDice, seed: record.seed, decks: record.decks, commands: record.commands, model: modelUsed.current ?? 'unknown' });
     markReported();
-  }, [mode, levels, game.winner, record, markReported, modelUsed]);
+  }, [mode, levels, game.winner, game.decisiveOpeningDice, record, markReported, modelUsed]);
 
   // ── Replay ──
   const { stopReplay: endReplay } = session;
@@ -168,6 +191,7 @@ export function useBoard(container: RefObject<HTMLDivElement | null>, session: B
       handling.current = key;
       resetAnimations();
       resetDice();
+      resetDrawInput();
       setPresentingOwn(false);
       setIntent(null);
       roomInputLocked.current = false;
@@ -187,16 +211,17 @@ export function useBoard(container: RefObject<HTMLDivElement | null>, session: B
       handling.current = key;
       return accept();
     }
-    const parallelDraw = command.type === 'openingDraw' && (actual.phase === 'opening' || actual.phase === 'mulligan');
-    if (rollingDice || animating && !parallelDraw) return;
+    const parallelDraw = isDrawCommand(actual, command);
+    if (rollingDice || (parallelDraw ? drawBlocked : animating)) return;
     handling.current = key;
     // A hand reaction reveals its card in the resulting public zone, even if the previous hand was hidden.
     const shownCardId = cardId ?? (command.type === 'choose' ? after.cards[command.option]?.cardId : undefined);
     animate(command, accept, shownCardId);
-  }, [next, accept, seat, watching, replaying, paused, animating, rollingDice, animate, resetAnimations, resetDice, showDie, presentingOwn, actual.phase]);
+  }, [next, accept, seat, watching, replaying, paused, animating, drawBlocked, rollingDice, animate, resetAnimations, resetDice, resetDrawInput, showDie, presentingOwn, actual]);
 
   // A replay moved to another position: what was being presented is dropped and the new position shown as it is.
   const timeline = session.timeline;
+  const replayTarget = useRef<number | null>(null);
   const seekReplay = useCallback((at: number) => {
     if (!timeline || at === timeline.at) return;
     handling.current = null;
@@ -208,6 +233,15 @@ export function useBoard(container: RefObject<HTMLDivElement | null>, session: B
     setExchanges([]);
     timeline.seek(at);
   }, [timeline, resetAnimations, resetDice, skipAnimation]);
+
+  // A replay opened at a move (replayFrom) goes there as soon as its positions are known.
+  useEffect(() => {
+    if (!timeline || replayTarget.current === null) return;
+    const at = replayTarget.current;
+    replayTarget.current = null;
+    seekReplay(at);
+    setPaused(true);
+  }, [timeline, seekReplay]);
 
   const failed = remote?.failed;
   useEffect(() => {
@@ -233,17 +267,40 @@ export function useBoard(container: RefObject<HTMLDivElement | null>, session: B
   const me = game.players[view];
   const pending = useMemo(() => pendingView(game), [game]);
   const ours = !!pending && canControl(pending.actor);
-  const attacks = useMemo(() => attackTargets(game, game.active, gameCatalog), [game]);
+  const cardChoice = useCardChoice({ pending, revision: game.revision, enabled: ours && !editing && !replaying, busy, failed: remote?.failed ?? error, act });
   const playEnabled = !editing && !puzzleFinished && game.phase === 'playing' && canControl(view) && game.active === view && !game.pending && !busy && !loading && game.winner === null;
+  // The other player only has to draw the sweet their points made them take (forced, nothing to decide):
+  // the player whose turn it is may already pick up a unit and attack; the attack is sent once they have drawn.
+  const forcedDrawTask = game.pending?.task;
+  const waitingForcedDraw = !editing && !puzzleFinished && game.phase === 'playing' && game.winner === null && !loading && canControl(view) && game.active === view
+    && forcedDrawTask?.op === 'draw' && forcedDrawTask.text === 'threshold' && forcedDrawTask.actor !== view && !canControl(forcedDrawTask.actor);
+  // A unit may also be picked up while the last command is still being shown: its attack goes right after.
+  const attackEnabled = !editing && !puzzleFinished && game.phase === 'playing' && game.winner === null && !loading && canControl(view) && game.active === view
+    && (!game.pending || waitingForcedDraw);
+  const [queuedAttack, setQueuedAttack] = useState<Extract<Command, { type: 'attack' }> | null>(null);
+  // During that draw the engine accepts no attack, so the attacks are read as if the draw were done (it changes no unit).
+  const attacks = useMemo(() => attackTargets(waitingForcedDraw ? { ...game, pending: null } : game, game.active, gameCatalog), [game, waitingForcedDraw]);
   const flying = (uid: string) => flights.some(f => f.uid === uid);
   const canStrike = useCallback((uid: string, target: string | 'leader') => game.active === view && !!attacks[uid]?.includes(target), [attacks, game.active, view]);
-  const canAttackNow = (uid: string) => !!attacks[uid];
+  const canAttackNow = (uid: string) => !!attacks[uid] && !queuedAttack;
+  /** Attack, or (while the other player draws their forced sweet) attack as soon as they have drawn. */
+  const attackOrQueue = (uid: string, target: string | 'leader') => {
+    if (playEnabled) return act({ type: 'attack', actor: view, uid, target });
+    if (!attackEnabled) return;
+    setQueuedAttack({ type: 'attack', actor: view, uid, target });
+    setAttacker(null);
+  };
   const affordable = (uid: string) => playEnabled && costOf(game, uid, gameCatalog, view) <= me.pp && canPlay(game, view, uid, gameCatalog);
   /** The pending choice lets the player pick this option id. */
   const isOption = (id: string) => ours && !!pending && [...pending.units, ...pending.hand].includes(id);
 
   // ── Actions ──
-  const choose = (option: string) => { if (ours && pending && !busy) act({ type: 'choose', actor: pending.actor, option }); };
+  const choose = (option: string) => {
+    if (!ours || !pending || busy || cardChoice.submitting) return;
+    if (cardChoice.selection?.candidates.includes(option)) return cardChoice.toggle(option);
+    cardChoice.cancel();
+    act({ type: 'choose', actor: pending.actor, option });
+  };
   const play = (uid: string, slot?: number) => act({ type: 'play', actor: view, uid, slot });
   /** One change of the board in edit mode, shown at once (no animation). */
   const editBoard = useCallback((change: BoardEdit) => {
@@ -257,24 +314,26 @@ export function useBoard(container: RefObject<HTMLDivElement | null>, session: B
   };
 
   function deckReady(side: Side, kind: DeckKind) {
-    if (remote?.sending) return false;
+    if (remote?.waiting || presentingOwn || drawInput.waiting || drawBlocked || deciding || loading || rollingDice) return false;
     // Opening draws, and the redraws after giving cards back in the mulligan (once those have landed in the deck).
     const redraw = game.phase === 'mulligan' && !game.mulligan.confirmed[side] && !flights.some(f => f.toZone === 'yojo' || f.toZone === 'sweet');
-    if (game.phase === 'opening' || redraw) return canControl(side) && !loading && !rollingDice && game.openingRemaining[side] > 0 && !flights.some(f => game.players[side].hand.includes(f.uid));
-    return ours && !busy && !loading && pending!.actor === side && pending!.decks.includes(kind);
+    if (game.phase === 'opening' || redraw) return canControl(side) && game.openingRemaining[side] > 0;
+    return ours && pending!.actor === side && pending!.decks.includes(kind);
   }
   function clickDeck(side: Side, kind: DeckKind) {
     if (editing) return setPanel({ type: 'editPile', side, kind });
+    if (!deckReady(side, kind) || !drawInput.take()) return;
     if (game.phase === 'opening' || game.phase === 'mulligan') act({ type: 'openingDraw', actor: side, deck: kind });
-    else choose(kind);
+    else act({ type: 'choose', actor: side, option: kind });
   }
   /** Tap on a field slot: pick an effect target, attack, place the selected unit, or inspect. */
   function clickSlot(side: Side, uid: string | undefined, slot: number) {
     if (editing) return uid ? setPanel({ type: 'editUnit', uid }) : setPicking({ side, zone: 'field', slot });
     if (uid && isOption(uid)) return choose(uid);
-    if (attacker && side !== view && uid && canStrike(attacker, uid)) return act({ type: 'attack', actor: view, uid: attacker, target: uid });
+    if (attacker && side !== view && uid && canStrike(attacker, uid)) return attackOrQueue(attacker, uid);
+    if (uid && side === view && uid === queuedAttack?.uid) return setQueuedAttack(null);
     if (selected && side === view && !uid && playEnabled && typeOf(game, selected) === 'yojo') return play(selected, slot);
-    if (uid && side === view && playEnabled && canAttackNow(uid)) {
+    if (uid && side === view && attackEnabled && canAttackNow(uid)) {
       setAttacker(attacker === uid ? null : uid);
       setSelected(null);
       return;
@@ -289,7 +348,7 @@ export function useBoard(container: RefObject<HTMLDivElement | null>, session: B
     setAttacker(null);
   }
   function attackLeader() {
-    if (attacker && canStrike(attacker, 'leader')) act({ type: 'attack', actor: view, uid: attacker, target: 'leader' });
+    if (attacker && canStrike(attacker, 'leader')) attackOrQueue(attacker, 'leader');
   }
 
   const drag = useCardDrag({
@@ -297,9 +356,10 @@ export function useBoard(container: RefObject<HTMLDivElement | null>, session: B
     canPick: useCallback((uid: string, kind: DragSource) => {
       // Edit mode: units move between slots, hand units are put on the field.
       if (editing) return { canDrag: true };
-      if (busy || kind === 'field' && (!playEnabled || !attacks[uid])) return null;
-      return { canDrag: playEnabled && (kind === 'field' || costOf(game, uid, gameCatalog, view) <= game.players[view].pp && canPlay(game, view, uid, gameCatalog)) };
-    }, [editing, busy, playEnabled, attacks, game, view]),
+      if (kind === 'field') return attackEnabled && !queuedAttack && attacks[uid] ? { canDrag: true } : null;
+      if (busy) return null;
+      return { canDrag: playEnabled && costOf(game, uid, gameCatalog, view) <= game.players[view].pp && canPlay(game, view, uid, gameCatalog) };
+    }, [editing, busy, playEnabled, attackEnabled, queuedAttack, attacks, game, view]),
     onDragStart: useCallback((uid: string, kind: DragSource) => {
       // Edit mode only moves the card: nothing is selected to attack with or to play.
       if (editing) return;
@@ -320,14 +380,23 @@ export function useBoard(container: RefObject<HTMLDivElement | null>, session: B
         const unit = target?.closest<HTMLElement>('[data-unit]')?.dataset.unit;
         const leader = target?.closest<HTMLElement>('[data-leader]')?.dataset.leader;
         const id = unit ?? (leader === String(other(view)) ? 'leader' : null);
-        if (id && canStrike(uid, id)) act({ type: 'attack', actor: view, uid, target: id });
+        if (id && canStrike(uid, id)) attackOrQueue(uid, id);
         return;
       }
       const slot = target?.closest<HTMLElement>('[data-slot]');
       if (slot?.dataset.side === String(view) && !slot.dataset.unit && typeOf(game, uid) === 'yojo') act({ type: 'play', actor: view, uid, slot: Number(slot.dataset.slot) });
       else if (target?.closest('[data-table]') && typeOf(game, uid) === 'sweet') act({ type: 'play', actor: view, uid });
-    }, [editing, editBoard, view, canStrike, act, game]),
+      // attackOrQueue: a plain function of this render (it reads the current waiting state).
+      // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [editing, editBoard, view, canStrike, act, game, playEnabled, attackEnabled]),
   });
+
+  // The queued attack goes once the forced draw is done and nothing else is pending; dropped if no longer possible.
+  useEffect(() => {
+    if (!queuedAttack) return;
+    if (playEnabled) { setQueuedAttack(null); if (canStrike(queuedAttack.uid, queuedAttack.target)) act(queuedAttack); }
+    else if (!attackEnabled) setQueuedAttack(null);
+  }, [queuedAttack, attackEnabled, playEnabled, canStrike, act]);
 
   // ── Mulligan ──
   const returning = me.hand.filter(uid => exchanges.includes(uid) && game.mulligan.eligible[view].includes(uid));
@@ -350,9 +419,11 @@ export function useBoard(container: RefObject<HTMLDivElement | null>, session: B
   function resetTable() {
     animations.reset();
     dice.reset();
+    resetDrawInput();
     setView(home);
     setSelected(null);
     setAttacker(null);
+    setQueuedAttack(null);
     setExchanges([]);
     setPanel(null);
     setPaused(false);
@@ -369,6 +440,15 @@ export function useBoard(container: RefObject<HTMLDivElement | null>, session: B
     session.editStart();
   }
   function startReplay() { resetTable(); session.startReplay(); }
+  /**
+   * Opens the replay at the position after `at` commands, paused (形勢の詳細: look again at a move). The replay's
+   * positions are worked out when it starts, so the jump waits for its timeline.
+   */
+  function replayFrom(at: number) {
+    replayTarget.current = at;
+    if (timeline) { seekReplay(at); setPaused(true); replayTarget.current = null; }
+    else startReplay();
+  }
   function stopReplay() { resetTable(); session.stopReplay(); }
   function undo() {
     animations.skipNext();
@@ -382,21 +462,23 @@ export function useBoard(container: RefObject<HTMLDivElement | null>, session: B
     setPanel(null);
     setSelected(null);
     setAttacker(null);
+    setQueuedAttack(null);
+    cardChoice.cancel();
     drag.cancel();
   }
 
   return {
-    game, mode, levels, view, me, panel, ready, busy, paused, names, portraits, remote, puzzle,
+    game, mode, levels, view, me, panel, ready, busy: busy || cardChoice.submitting, paused, names, portraits, sleeves, remote, puzzle,
     assessment, assessable, showAssessment, setShowAssessment,
     setup, canRematch, canReplay, replaying, timeline, seekReplay, position, editBoard: openEditor, editStartingBoard,
     editing, edit: editBoard, picking, setPicking, session,
     error: error || saveError, canUndo,
-    selected, attacker, pending, ours, playEnabled,
+    selected, attacker, pending, ours, playEnabled, attackEnabled, queuedAttack, waitingForcedDraw, cancelQueuedAttack: () => setQueuedAttack(null), cardChoice,
     animations, dice, drag, mulligan,
     intent: remote && (presentingOwn || remote.waiting) ? intent : null,
-    canControl, canStrike, canAttackNow, affordable, isOption, flying, deckReady,
+    pendingPlay, canControl, canStrike, canAttackNow, affordable, isOption, flying, deckReady,
     act, choose, play, adjust, clickDeck, clickSlot, clickHand, attackLeader,
-    setPanel, setSelected, setAttacker, setView, setPaused, leave, undo, clearSelection, toggleFullscreen, rematch, startReplay, stopReplay,
+    setPanel, setSelected, setAttacker, setView, setPaused, leave, undo, clearSelection, toggleFullscreen, rematch, startReplay, replayFrom, stopReplay,
   };
 }
 export type Board = ReturnType<typeof useBoard>;

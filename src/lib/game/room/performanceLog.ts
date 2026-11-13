@@ -1,4 +1,4 @@
-import { clientStages, duration, isPlayKind, parseServerTiming } from '@pplale/game-core/performance';
+import { clientStages, duration, isPlayKind, parseServerTiming, parsePresentationTiming } from '@pplale/game-core/performance';
 import type { PlaySample } from '@pplale/game-core/performance';
 
 const KEY = 'pplale-room-performance-v1';
@@ -13,7 +13,8 @@ function clean(value: unknown): PlaySample | null {
   if (!isPlayKind(item.kind) || !outcomes.includes(item.outcome) || !Number.isFinite(item.at) || typeof item.background !== 'boolean') return null;
   return { kind:item.kind, outcome:item.outcome, at:Math.floor(item.at / 60000) * 60000, background:item.background,
     ...Object.fromEntries(clientStages.filter(stage => duration(item[stage])).map(stage => [stage,item[stage]])),
-    ...(parseServerTiming(item.server) && {server:parseServerTiming(item.server)}) };
+    ...(parseServerTiming(item.server) && {server:parseServerTiming(item.server)}),
+    ...(parsePresentationTiming(item.presentation) && {presentation:parsePresentationTiming(item.presentation)}) };
 }
 function load() {
   loaded = true;

@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react';
 import { currentSubscription, disablePush, enablePush, pushAvailability, pushKey, refreshPush } from '@/lib/game/push';
 import type { PushAvailability } from '@/lib/game/push';
+import { useI18n } from '@/i18n/LocaleProvider';
 import styles from './PushToggle.module.css';
 
 /** What a tap on a bell that cannot ring tells. */
@@ -20,6 +21,7 @@ export function PushToggle() {
   const [on, setOn] = useState(false);
   const [busy, setBusy] = useState(false);
   const [hint, setHint] = useState(false);
+  const { t } = useI18n();
 
   useEffect(() => {
     let live = true;
@@ -48,9 +50,9 @@ export function PushToggle() {
     } catch { /* The bell stays as it was. */ } finally { setBusy(false); }
   };
   return <span className={styles.wrap}>
-    <button className={styles.bell} data-on={on || undefined} disabled={busy} aria-pressed={on} aria-label={on ? '通知を止める' : '通知を受け取る'} onClick={() => void toggle()}>
+    <button className={styles.bell} data-on={on || undefined} disabled={busy} aria-pressed={on} aria-label={on ? t('通知を止める') : t('通知を受け取る')} onClick={() => void toggle()}>
       <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 16V11a6 6 0 0 1 12 0v5l1.5 2h-15zM10 20a2 2 0 0 0 4 0" />{!on && <path className={styles.slash} d="M4 4l16 16" />}</svg>
     </button>
-    {hint && HINTS[availability] && <span className={styles.hint} role="status">{HINTS[availability]}</span>}
+    {hint && HINTS[availability] && <span className={styles.hint} role="status">{t(HINTS[availability])}</span>}
   </span>;
 }

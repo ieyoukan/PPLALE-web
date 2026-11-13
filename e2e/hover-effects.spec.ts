@@ -20,36 +20,23 @@ test.describe('Hover effects: scale removed, ripple added', () => {
     }
   });
 
-  test('tournament page buttons should have ripple, not scale', async ({ page }) => {
-    await page.goto('/tournament');
-
-    const discordLink = page.getByRole('link', { name: /discord.*(参加|join)|join.*discord/i });
-    await expect(discordLink).toBeVisible();
-
-    // ::after疑似要素があることを確認
-    const hasAfter = await discordLink.evaluate((el) => {
-      const after = getComputedStyle(el, '::after');
-      return after.content !== 'none' && after.content !== '';
-    });
-    expect(hasAfter).toBe(true);
-
-    // scale transformがないことを確認
-    const transform = await discordLink.evaluate((el) =>
-      getComputedStyle(el).transform
-    );
-    expect(transform).toBe('none');
+  test('community links open Discord and the VRChat world without moving on hover', async ({ page }) => {
+    await page.goto('/community');
+    const discord = page.getByRole('link', { name: /discord/i });
+    const world = page.getByRole('link', { name: /ワールド|world/i });
+    await expect(discord).toHaveAttribute('href', 'https://discord.com/invite/tjvQHMNgYc');
+    await expect(world).toHaveAttribute('href', /vrchat\.com\/home\/launch\?worldId=wrld_eca300bc-95a1-4f28-aa56-ebca34f67a5f/);
+    for (const link of [discord, world]) {
+      await expect(link).toHaveAttribute('target', '_blank');
+      await link.hover();
+      expect(await link.evaluate(el => getComputedStyle(el).transform)).toBe('none');
+    }
   });
 
-  test('tournament link cards should not have box-shadow', async ({ page }) => {
+  test('the old tournament address moves to the community page', async ({ page }) => {
     await page.goto('/tournament');
-
-    const buildLink = page.getByRole('link', { name: /デッキをつくる|build a deck/i });
-    await expect(buildLink).toBeVisible();
-
-    const boxShadow = await buildLink.evaluate((el) =>
-      getComputedStyle(el).boxShadow
-    );
-    expect(boxShadow).toBe('none');
+    await expect(page).toHaveURL(/\/community\/$/);
+    await expect(page.getByRole('heading', { name: /^(大会|Tournaments)$/ })).toBeVisible();
   });
 
   test('build page layout uses Panda CSS (no Tailwind classes)', async ({ page }) => {

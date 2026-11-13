@@ -4,6 +4,7 @@
 import { Suspense, useContext, useEffect, useRef } from 'react';
 import { createPortal } from 'react-dom';
 import type { CSSProperties } from 'react';
+import { useMatchMusic } from './audio/GameAudio';
 import { BoardSurfaceContext } from './board/BoardSurfaceMount';
 import Image from 'next/image';
 import dynamic from 'next/dynamic';
@@ -34,6 +35,7 @@ import type { DeckKind } from '@pplale/game-core';
 import styles from './BoardEmulator.module.css';
 import { useGameNotifications } from './notifications/GameNotifications';
 import { PuzzleControls } from './puzzles/PuzzleControls';
+import { useI18n } from '@/i18n/LocaleProvider';
 
 const MulliganBoard = dynamic(() => import('./MulliganBoard').then(module => module.MulliganBoard));
 
@@ -54,6 +56,9 @@ export function BoardTable({ session }: { session: BoardSession }) {
   const surface = useContext(BoardSurfaceContext);
   const container = useRef<HTMLDivElement>(null);
   const board = useBoard(surface?.root ?? container, session);
+  const { t, gameText } = useI18n();
+  // In a room the board is drawn hidden and the camera flies to it first: the music changes on arrival.
+  useMatchMusic(!surface || surface.controlsReady);
   const { game, me, view, mode, paused, attacker, selected, drag, mulligan, ready, panel, error, replaying, remote, editing, animations, setup, puzzle, setPanel, setPaused, setAttacker } = board;
   // The saved match is still loading (or missing, and the preparation page is opening).
   if (!ready) return <div data-readable className={styles.emulator} aria-busy="true" />;
@@ -62,7 +67,9 @@ export function BoardTable({ session }: { session: BoardSession }) {
   const drawerOpen = !!panel && panel.type !== 'inspect' && panel.type !== 'skills';
   const { timing } = animations;
   const timingStyle = { '--draw-duration': `${timing.draw}ms`, '--strike-duration': `${timing.strike}ms`, '--announcement-duration': `${timing.announce}ms`, '--ping-duration': `${timing.ping}ms` } as CSSProperties;
-  const table = <div className={`${styles.table} ${surface ? styles.sceneTable : ''}`} data-table data-readable={surface ? '' : undefined} style={timingStyle}>
+  // A sweet is used by dropping it anywhere on the table.
+  const sweetHeld = !!drag.held && me.hand.includes(drag.held.uid) && gameCatalog[game.cards[drag.held.uid].cardId]?.type === 'sweet';
+  const table = <div className={`${styles.table} ${surface ? styles.sceneTable : ''}`} data-table data-aim-ok={sweetHeld || undefined} data-readable={surface ? '' : undefined} style={timingStyle}>
     <div className={styles.mat}><div className={styles.logoLayer} aria-hidden="true">
       {Array.from({ length: 8 }, (_, index) => <Image key={index} src="/images/game/cafe-logo.svg" alt="" width={1568} height={882}
         unoptimized loading="eager" fetchPriority={index === 0 ? 'high' : 'auto'} className={styles.matLogo} />)}
@@ -79,14 +86,14 @@ export function BoardTable({ session }: { session: BoardSession }) {
       <header className={styles.toolbar}>
         {/* One button in one place: opens the menu, and closes whatever drawer is open. */}
         <button className={`${styles.menuButton} ${drawerOpen ? styles.menuButtonOpen : ''}`} aria-expanded={drawerOpen}
-          onClick={() => setPanel(drawerOpen ? null : { type: editing ? 'editMenu' : 'menu' })} aria-label={drawerOpen ? 'メニューを閉じる' : 'メニュー'}>
+          onClick={() => setPanel(drawerOpen ? null : { type: editing ? 'editMenu' : 'menu' })} aria-label={t(drawerOpen ? 'メニューを閉じる' : 'メニュー')}>
           <span aria-hidden="true">{drawerOpen ? '×' : '☰'}</span>
         </button>
-        <button className={styles.infoButton} aria-label="対戦ログ" aria-expanded={panel?.type === 'logs'} onClick={() => setPanel(panel?.type === 'logs' ? null : { type: 'logs' })}>☷<small>ログ</small></button>
-        <button className={styles.infoButton} aria-label="カードのカウント" aria-expanded={panel?.type === 'counts'} onClick={() => setPanel(panel?.type === 'counts' ? null : { type: 'counts' })}>✦<small>カウント</small></button>
-        {(remote ? !!remote.ownDeck && !remote.watching : !!setup) && <button className={styles.infoButton} aria-label="自分のデッキ" aria-expanded={panel?.type === 'deck'} onClick={() => setPanel(panel?.type === 'deck' ? null : { type: 'deck' })}>▤<small>自分のデッキ</small></button>}
+        <button className={styles.infoButton} aria-label={t('対戦ログ')} aria-expanded={panel?.type === 'logs'} onClick={() => setPanel(panel?.type === 'logs' ? null : { type: 'logs' })}>☷<small>{t('ログ')}</small></button>
+        <button className={styles.infoButton} aria-label={t('カードのカウント')} aria-expanded={panel?.type === 'counts'} onClick={() => setPanel(panel?.type === 'counts' ? null : { type: 'counts' })}>✦<small>{t('カウント')}</small></button>
+        {(remote ? !!remote.ownDeck && !remote.watching : !!setup) && <button className={styles.infoButton} aria-label={t('自分のデッキ')} aria-expanded={panel?.type === 'deck'} onClick={() => setPanel(panel?.type === 'deck' ? null : { type: 'deck' })}>▤<small>{t('自分のデッキ')}</small></button>}
         <EditButton />
-        {(mode === 'cpu' || mode === 'watch') && !replaying && paused && <button className={styles.menuButton} onClick={() => setPaused(false)} aria-label="CPU再開">▶</button>}
+        {(mode === 'cpu' || mode === 'watch') && !replaying && paused && <button className={styles.menuButton} onClick={() => setPaused(false)} aria-label={t('CPU再開')}>▶</button>}
       </header>
       {/* Below the own PP, where nothing else on the rail sits, so the toolbar keeps its width. */}
       <FullscreenButton />
@@ -98,15 +105,19 @@ export function BoardTable({ session }: { session: BoardSession }) {
       <AssessmentBar />
       <DiceStage />
       <ChoiceTray />
-      {error && <div className={styles.errorToast} role="alert">{error}</div>}
+      {error && <div className={styles.errorToast} role="alert">{gameText(error)}</div>}
+      {board.queuedAttack && board.waitingForcedDraw && <div className={styles.attackActions} role="status">
+        <span className={styles.queuedNote}>{t('相手が引いたら攻撃します')}</span>
+        <button onClick={board.cancelQueuedAttack}>{t('やめる')}</button>
+      </div>}
       {attacker && <div className={styles.attackActions}>
-        <button onClick={() => setPanel({ type: 'inspect', uid: attacker })}>拡大</button>
-        <button onClick={() => { setAttacker(null); drag.cancel(); }}>戻す ↶</button>
+        <button onClick={() => setPanel({ type: 'inspect', uid: attacker })}>{t('拡大')}</button>
+        <button onClick={() => { setAttacker(null); drag.cancel(); }}>{t('戻す ↶')}</button>
       </div>}
       <HandDock />
       <SelectedCard />
       {/* While the replacements are drawn the table itself is used: the decks glow and the hand shows. */}
-      {mulligan.remaining > 0 && board.canControl(view) && <div className={styles.drawHint} role="status">あと{mulligan.remaining}枚、好きな山札から引く</div>}
+      {mulligan.remaining > 0 && board.canControl(view) && <div className={styles.drawHint} role="status">{t('あと{n}枚、好きな山札から引く', { n: mulligan.remaining })}</div>}
       {/* Loading an overlay must never suspend the room's whole board. */}
       {game.phase === 'mulligan' && !game.pending && mulligan.remaining === 0 && !remote?.watching && <Suspense fallback={null}><MulliganBoard key={view}
         cards={me.hand.map(uid => ({ uid, id: game.cards[uid].cardId, name: displayCards[game.cards[uid].cardId].name, deck: gameCatalog[game.cards[uid].cardId].type as DeckKind }))}

@@ -52,11 +52,16 @@ export const NOTIFICATIONS_PATH = '/game/notifications/';
 export const SETTINGS_PATH = '/game/settings/';
 /** 盤面エディタ: place cards freely, then play from there. */
 export const EDITOR_PATH = '/game/editor/';
+export const DECKS_PATH = '/game/decks/';
 export const PUZZLES_PATH = '/game/puzzles/';
 export const puzzleListHref = (fruit: string) => `${PUZZLES_PATH}?fruit=${encodeURIComponent(fruit)}`;
 export const puzzleHref = (id: string) => `/game/puzzle/?id=${encodeURIComponent(id)}`;
 export const CARD_GALLERY_PATH = '/game/cards/zukan/';
 export const PLAY_PATH = '/game/play/';
+
+/** Translates a Japanese text (useI18n `t`); the default keeps the Japanese and fills `{name}`. */
+export type Translate = (japaneseText: string, vars?: Record<string, string | number>) => string;
+export const untranslated: Translate = (text, vars) => vars ? text.replace(/\{(\w+)\}/g, (whole, name: string) => name in vars ? String(vars[name]) : whole) : text;
 
 /** Sides the CPU plays in a mode. */
 export const cpuSidesOf = (mode: Mode): Side[] => mode === 'cpu' || mode === 'puzzle' ? [1] : mode === 'watch' ? [0, 1] : [];
@@ -81,13 +86,18 @@ export function savedMatchRules(): MatchRules | null {
 }
 
 /** A short description of the unfinished saved match (for a "continue" link), or null without one. */
-export function describeSavedMatch(): string | null {
+export function describeSavedMatch(t: Translate = untranslated): string | null {
   const saved = readSession();
   const game = saved?.game as Partial<GameState> | undefined;
   if (!game || game.winner !== null || !Array.isArray(game.players)) return null;
-  if (saved?.editing === true) return '盤面を編集中';
-  const mode = saved?.mode === 'watch' ? 'CPU同士を観戦' : saved?.mode === 'hotseat' ? 'ふたり対戦' : 'CPUと対戦';
-  if (game.phase !== 'playing' || game.active === undefined || !game.rules) return `${mode}・開始前`;
+  if (saved?.editing === true) return t('盤面を編集中');
+  const mode = t(saved?.mode === 'watch' ? 'CPU同士を観戦' : saved?.mode === 'hotseat' ? 'ふたり対戦' : 'CPUと対戦');
+  if (game.phase !== 'playing' || game.active === undefined || !game.rules) return t('{mode}・開始前', { mode });
   const { order, number } = turnOf({ active: game.active, rules: game.rules, players: game.players });
-  return `${mode}・${order === 'first' ? '先攻' : '後攻'}${number}ターン目`;
+  return t('{mode}・{turn}', { mode, turn: turnName(order, number, t) });
+}
+
+/** 先攻3ターン目: the turn of a match, as the result screen and the saved match name it. */
+export function turnName(order: 'first' | 'second', number: number, t: Translate = untranslated) {
+  return t(order === 'first' ? '先攻{number}ターン目' : '後攻{number}ターン目', { number });
 }

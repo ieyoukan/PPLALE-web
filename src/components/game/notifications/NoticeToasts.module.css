@@ -1,0 +1,26 @@
+/* 画面の中央下に、半透明のココア色で。下から現れ、しばらく置いてから消える（ホバー中は止める）。 */
+.toasts {
+  position: absolute; left: 50%; bottom: max(84px, calc(env(safe-area-inset-bottom) + 72px)); z-index: 400;
+  display: grid; justify-items: center; gap: 8px; width: min(440px, calc(100% - 32px)); transform: translateX(-50%); pointer-events: none;
+}
+.toast {
+  display: flex; align-items: center; gap: 12px; max-width: 100%; padding: 10px 18px 10px 14px; pointer-events: auto;
+  border: 1px solid color-mix(in srgb, var(--brand-cream-line) 40%, transparent); border-radius: var(--brand-control-radius);
+  background: color-mix(in srgb, var(--brand-ink) 78%, transparent); color: var(--brand-cream-on-dark);
+  font-family: var(--font-site-body), sans-serif; text-align: left; cursor: pointer;
+  backdrop-filter: blur(6px); animation-name: noticeLife; animation-timing-function: linear; animation-fill-mode: forwards;
+}
+.toast:hover, .toast:focus-visible { animation-play-state: paused; background: color-mix(in srgb, var(--brand-ink) 88%, transparent); }
+.toast:focus-visible { outline: 2px solid var(--brand-cream-on-dark); outline-offset: 2px; }
+.toast svg { flex: none; width: 22px; height: 22px; }
+.text { display: grid; gap: 2px; min-width: 0; }
+.text b { overflow: hidden; font-size: 15px; text-overflow: ellipsis; white-space: nowrap; }
+.text small { font-size: 12px; opacity: .85; }
+@keyframes noticeLife {
+  0% { opacity: 0; transform: translateY(10px); }
+  5%, 85% { opacity: 1; transform: none; }
+  100% { opacity: 0; }
+}
+@media (prefers-reduced-motion: reduce) {
+  @keyframes noticeLife { 0%, 90% { opacity: 1; } 100% { opacity: 0; } }
+}

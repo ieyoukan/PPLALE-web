@@ -9,6 +9,7 @@ import { createMatch, randomSeed } from '@/lib/game/match';
 import { savedMatchRules, sideLabel } from '@/lib/game/sessionStore';
 import type { Levels, MatchSetup, Mode } from '@/lib/game/sessionStore';
 import { useAuth } from '@/lib/auth';
+import { useI18n } from '@/i18n/LocaleProvider';
 import { DeckSelect, UnusableDecks, useDeckChoices } from './DeckSelect';
 import { RulePicker } from './RulePicker';
 import { OrnateFrame } from '@/components/shared/ui/ornament/OrnateFrame';
@@ -24,6 +25,7 @@ export function GameSetup({ modes, onStart }: {
     onStart: (match: { game: GameState; seed: number; setup: MatchSetup; mode: Mode; levels: Levels }) => void | Promise<void>;
 }) {
     const { user, signInWithGoogle } = useAuth();
+    const { t, gameText } = useI18n();
     const [error, setError] = useState('');
     const [starting, setStarting] = useState(false);
     const startingRef = useRef(false);
@@ -75,40 +77,40 @@ export function GameSetup({ modes, onStart }: {
     }
     return <div className={layout.content} data-mode={mode} data-learning={collects && agreed || undefined}>
     <div className={`${styles.setupModes} ${layout.modes}`} data-landscape-action>
-      {modes.map(id => <button key={id} data-ui-title aria-pressed={mode === id} onClick={() => setMode(id)}>{modeNames[id]}</button>)}
+      {modes.map(id => <button key={id} data-ui-title aria-pressed={mode === id} onClick={() => setMode(id)}>{t(modeNames[id])}</button>)}
     </div>
     {/* One row per CPU side: the opponent against you, both sides when watching. */}
-    {(mode === 'watch' ? [0, 1] as Side[] : mode === 'cpu' ? [1] as Side[] : []).map(side => <div key={side} className={`${styles.setupModes} ${layout.modes} ${layout.levelButtons}`} data-landscape-action role="group" aria-label={mode === 'watch' ? `${sideLabel(mode, side)}の強さ` : 'CPUの強さ'}>
-      {mode === 'watch' && <span className={styles.setupModeLabel}>{sideLabel(mode, side)}</span>}
-      {cpuLevels.map(id => <button key={id} aria-pressed={levels[side] === id} title={cpuProfiles[id].description} onClick={() => setLevel(side, id)}>{cpuProfiles[id].name}</button>)}
+    {(mode === 'watch' ? [0, 1] as Side[] : mode === 'cpu' ? [1] as Side[] : []).map(side => <div key={side} className={`${styles.setupModes} ${layout.modes} ${layout.levelButtons}`} data-landscape-action role="group" aria-label={mode === 'watch' ? t('{side}の強さ', { side: t(sideLabel(mode, side)) }) : t('CPUの強さ')}>
+      {mode === 'watch' && <span className={styles.setupModeLabel}>{t(sideLabel(mode, side))}</span>}
+      {cpuLevels.map(id => <button key={id} aria-pressed={levels[side] === id} title={gameText(cpuProfiles[id].description)} onClick={() => setLevel(side, id)}>{gameText(cpuProfiles[id].name)}</button>)}
     </div>)}
-    {collects && agreed && <p className={`${styles.help} ${layout.learning}`}><span>CPU学習用の匿名記録を送信中</span><button className={styles.textButton} onClick={() => agree(false)}>送るのをやめる</button></p>}
+    {collects && agreed && <p className={`${styles.help} ${layout.learning}`}><span>{t('CPU学習用の匿名記録を送信中')}</span><button className={styles.textButton} onClick={() => agree(false)}>{t('送るのをやめる')}</button></p>}
     {/* Which cards both decks may use; the selectors below only let a deck that fits be chosen. */}
-    <OrnateFrame as="section" size="sm" faint className={`${styles.setupRules} ${layout.rulesInline}`} aria-label="対戦のルール">
+    <OrnateFrame as="section" size="sm" faint className={`${styles.setupRules} ${layout.rulesInline}`} aria-label={t('対戦のルール')}>
       <RulePicker rules={rules} onChange={next => { setRules(next); setError(''); }} compact />
     </OrnateFrame>
     {/* The opponent's deck first, then this player's (when watching, CPU 1 then CPU 2). */}
     <OrnateFrame size="sm" className={`${styles.deckTable} ${layout.decks}`}>{(mode === 'watch' ? [0, 1] : [1, 0]).map(side => <label key={side}>
-      <span data-ui-title>{mode === 'watch' ? `${sideLabel(mode, side as Side)}のデッキ` : side === 0 ? 'あなたのデッキ' : '相手のデッキ'}</span>
+      <span data-ui-title>{mode === 'watch' ? t('{name}のデッキ', { name: t(sideLabel(mode, side as Side)) }) : t(side === 0 ? 'あなたのデッキ' : '相手のデッキ')}</span>
       <DeckSelect choices={choices} chosen={chosen[side]} onChange={id => setSelected(previous => previous.map((value, index) => index === side ? id : value))} />
     </label>)}</OrnateFrame>
-    {!user ? <button className={`${styles.secondaryButton} ${layout.login}`} onClick={() => { signInWithGoogle().catch(() => setError('ログインできませんでした')); }}>Googleでログインして保存済みデッキを使う</button> : <p className={`${styles.help}`}>{saved.loading ? 'デッキを読み込み中…' : `${saved.decks.length}件の保存済みデッキ`} · <Link href="/build">デッキを編集する</Link></p>}
+    {!user ? <button className={`${styles.secondaryButton} ${layout.login}`} onClick={() => { signInWithGoogle().catch(() => setError('ログインできませんでした')); }}>{t('Googleでログインして保存済みデッキを使う')}</button> : <p className={`${styles.help}`}>{saved.loading ? t('デッキを読み込み中…') : t('{count}件の保存済みデッキ', { count: saved.decks.length })} · <Link href="/build">{t('デッキを編集する')}</Link></p>}
     <UnusableDecks choices={choices} className={styles.ruleSettings} />
-    {saved.error && <p role="alert" className={styles.error}>{saved.error}</p>}
-    {error && <p role="alert" className={styles.error}>{error}</p>}
-    <OrnateFrame as="button" size="line" data-ui-title data-landscape-action className={`${styles.startButton} ${layout.start}`} disabled={starting || chosen.some(choice => !choice)} aria-busy={starting} onClick={() => void start()}>{starting ? '対戦を準備中…' : '対戦をはじめる'} <span>→</span></OrnateFrame>
+    {saved.error && <p role="alert" className={styles.error}>{t(saved.error)}</p>}
+    {error && <p role="alert" className={styles.error}>{gameText(error)}</p>}
+    <OrnateFrame as="button" size="line" data-ui-title data-landscape-action className={`${styles.startButton} ${layout.start}`} disabled={starting || chosen.some(choice => !choice)} aria-busy={starting} onClick={() => void start()}>{t(starting ? '対戦を準備中…' : '対戦をはじめる')} <span>→</span></OrnateFrame>
     {asking && <>
-      <button className={styles.consentBackdrop} aria-label="閉じる" onClick={() => setAsking(false)} />
+      <button className={styles.consentBackdrop} aria-label={t('閉じる')} onClick={() => setAsking(false)} />
       <OrnateFrame as="section" className={styles.consent} role="dialog" aria-modal="true" aria-labelledby="learning-consent">
-        <h2 id="learning-consent">さいきょうの学習に協力する</h2>
-        <p>さいきょうは、みなさんとの対戦から学んで強くなります。さいきょうとの対戦が終わるたびに、次の記録を学習用のサーバーに送ります。</p>
+        <h2 id="learning-consent">{t('さいきょうの学習に協力する')}</h2>
+        <p>{t('さいきょうは、みなさんとの対戦から学んで強くなります。さいきょうとの対戦が終わるたびに、次の記録を学習用のサーバーに送ります。')}</p>
         <ul>
-          <li>お互いのデッキに入っているカード</li>
-          <li>お互いが打った手と、勝ち負け</li>
+          <li>{t('お互いのデッキに入っているカード')}</li>
+          <li>{t('お互いが打った手と、勝ち負け')}</li>
         </ul>
-        <p>名前・アカウント・デッキの名前は送りません。記録からだれの対戦かはわかりません。ログインも不要です。くわしくは<Link href="/privacy-policy" target="_blank">プライバシーポリシー</Link>をご覧ください。</p>
-        <OrnateFrame as="button" size="line" data-ui-title className={styles.startButton} onClick={() => { agree(true); start(true); }}>同意して対戦をはじめる <span>→</span></OrnateFrame>
-        <button className={styles.secondaryButton} onClick={() => setAsking(false)}>同意しない（ほかの強さを選ぶ）</button>
+        <p>{t('名前・アカウント・デッキの名前は送りません。記録からだれの対戦かはわかりません。ログインも不要です。くわしくは')}<Link href="/privacy-policy" target="_blank">{t('プライバシーポリシー')}</Link>{t('をご覧ください。')}</p>
+        <OrnateFrame as="button" size="line" data-ui-title className={styles.startButton} onClick={() => { agree(true); start(true); }}>{t('同意して対戦をはじめる')} <span>→</span></OrnateFrame>
+        <button className={styles.secondaryButton} onClick={() => setAsking(false)}>{t('同意しない（ほかの強さを選ぶ）')}</button>
       </OrnateFrame>
     </>}
   </div>;

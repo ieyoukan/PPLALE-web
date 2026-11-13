@@ -29,7 +29,7 @@ const FireBaseLogin: React.FC<FireBaseLoginProps> = () => {
   const { t } = useI18n();
   const [user, set_user] = useState<User | null>(null);
   const profile = useMyProfile();
-  const publicName = profile?.uid === user?.uid ? profile?.displayName ?? 'プレイヤー' : 'プレイヤー';
+  const publicName = profile?.uid === user?.uid ? profile?.displayName ?? t('プレイヤー') : t('プレイヤー');
   const [menu_open, set_menu_open] = useState<boolean>(false);
   const menuRef = useRef<HTMLDivElement>(null);
 

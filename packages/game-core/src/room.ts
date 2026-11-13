@@ -4,7 +4,7 @@ export type { RoomChatStampId } from './chatStamps.ts';
 // ルームのルールと、ブラウザ・サーバー間で共有する型。
 // ブラウザとルームサーバーの通信形式を定義する。
 // サーバーが完全な状態を持ち、閲覧者に許可した情報だけを返す。
-import type { Catalog, Command, Deck, GameState, Side } from './model.ts';
+import type { Catalog, Command, Deck, GameState, Side, Sleeve } from './model.ts';
 import type { CpuLevel } from './ai/types.ts';
 import { defaultMatchRules, deckRuleErrors, describeMatchRules, parseMatchRules } from './rules.ts';
 import type { MatchRules } from './rules.ts';
@@ -107,6 +107,8 @@ export interface RoomPlayer {
     left?: boolean;
     /** 自分またはCPUの選択済みデッキ名。未公開のカード内容は含めない。 */
     deck?: string;
+    /** 選択済みデッキのスリーブ（カードの裏面）。見た目だけなので全員に公開する。赤（標準）は省く。 */
+    sleeve?: Sleeve;
     /** この席に座っているルームメンバー。 */
     member?: string;
     /** この席はサーバーのCPUが操作する。 */
@@ -164,6 +166,8 @@ export type RoomAction =
     | { action: 'rename'; name: string }
     /** 文字または登録済みスタンプを送る。送信IDを使い、再試行しても重複させない。 */
     | ({ action: 'chat'; messageId: string } & ({ text: string; stamp?: never } | { stamp: RoomChatStampId; text?: never }))
+    /** その発言まで読んだ（既読）。表示中のチャットで最新の他人の発言を送る。 */
+    | { action: 'chatRead'; id: string }
     /** 招待リンクを更新し、古いリンクを失効させる。 */
     | { action: 'renewInvite' }
     /** フレンドからの入室リクエストへ回答する。 */
@@ -226,6 +230,10 @@ export interface PlazaView {
     chatEnabled?: true;
     /** 登録済みスタンプの送信に対応するサーバー。 */
     chatStamps?: true;
+    /** 既読（chatRead）に対応するサーバー。 */
+    chatReceipts?: true;
+    /** メンバーごとの、読んだ最後の発言ID。履歴（chat）と一緒に返す。 */
+    chatReads?: Record<string, string>;
     /** 対戦中に変更された、次の試合用のルール。 */
     nextRules?: RoomRules;
     /** 招待リンクの秘密。共有できるメンバーだけに返す。 */
@@ -260,7 +268,8 @@ export interface Entered {
 /** 最初にhelloでトークンまたは観戦を指定する。操作番号nにより、要求とresultを対応させる。 */
 export type ClientMessage =
     /** 席またはルームメンバーのトークン。 */
-    | { type: 'hello'; token?: string; watch?: true; chat?: true }
+    /** `chatReads`: this browser takes read receipts on their own (`chatReads`), not with every message again. */
+    | { type: 'hello'; token?: string; watch?: true; chat?: true; chatReads?: true }
     | { type: 'action'; n: number; action: RoomAction }
     | { type: 'performance'; reports: PlayReport[] }
     /** 画面の表示・非表示を通知する。非表示中の手番はPushで伝える。reportsAway対応サーバーへだけ送る。 */
@@ -268,7 +277,9 @@ export type ClientMessage =
 /** viewは表示状態、resultは操作番号nの成否、goneはルーム・メンバーの消失。成功した操作のviewはresultより先に届く。 */
 export type ServerMessage =
     | { type: 'view'; view: RoomView }
-    | { type: 'chat'; id: string; version: number; messages: RoomChatMessage[] }
+    | { type: 'chat'; id: string; version: number; messages: RoomChatMessage[]; /** メンバーごとの既読位置。 */ reads?: Record<string, string> }
+    /** 既読の位置だけ（hello.chatReads を送ったブラウザへ）。発言一覧は送り直さない。 */
+    | { type: 'chatReads'; id: string; reads: Record<string, string> }
     | { type: 'result'; n: number; error?: string; revision?: number; timing?: ServerTiming }
     /** `closed`: a plaza closed while this member was away; they may make its successor (`PlazaRequest.from`). */
     | { type: 'gone'; error: string; closed?: true };

@@ -140,7 +140,7 @@ export async function generateMetadata(
             ? `${deckData.name} のデッキ構成です。幼女カード、お菓子カード、プレイアブルカードを確認できます。`
             : `View the little girl, sweets, and playable character cards in ${deckData.name}.`;
         }
-        const authorName = profile?.displayName ?? 'プレイヤー';
+        const authorName = profile?.displayName ?? (locale === 'ja' ? 'プレイヤー' : 'Player');
         description = locale === 'ja' ? `作成者：${authorName}。${description}` : `By ${authorName}. ${description}`;
         // A stable 15-minute signature window permits CDN reuse. Deck edits get a new URL.
         const ts = Math.floor(Date.now() / 900000) * 900;

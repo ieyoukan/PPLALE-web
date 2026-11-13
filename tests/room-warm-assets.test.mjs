@@ -5,18 +5,19 @@ import { build } from 'esbuild';
 const { outputFiles } = await build({ entryPoints: ['src/lib/game/room/warmAssets.ts'], bundle: true, write: false, format: 'esm', platform: 'node',
   plugins: [{ name: 'card-sources', setup(builder) {
     builder.onResolve({ filter: /matchAssets$/ }, () => ({ path: 'cards', namespace: 'fixture' }));
-    builder.onLoad({ filter: /.*/, namespace: 'fixture' }, () => ({ contents: `export const prepareGameCardFormat=async()=>{};export const gameCardSource=id=>'/game-assets/cards/'+id+'.avif';` }));
+    builder.onLoad({ filter: /.*/, namespace: 'fixture' }, () => ({ contents: `export const prepareGameCardFormat=async()=>{};export const gameCardSource=(id,english)=>'/game-assets/cards/'+(english?'en/':'')+id+'.avif';` }));
   } }] });
 let instance = 0;
 async function fixture(t, { fail = false, onFetch } = {}) {
-  const original = { window: globalThis.window, fetch: globalThis.fetch };
-  t.after(() => { globalThis.window = original.window; globalThis.fetch = original.fetch; });
+  const original = { window: globalThis.window, fetch: globalThis.fetch, document: globalThis.document };
+  t.after(() => { globalThis.window = original.window; globalThis.fetch = original.fetch; globalThis.document = original.document; });
   const requests = [], decoded = [], active = new Set(); let maximum = 0, failure = fail;
   globalThis.fetch = async (src, options) => {
     requests.push({ src, options }); active.add(src); maximum = Math.max(maximum, active.size);
     await Promise.resolve(); onFetch?.();
     return { ok: !failure, arrayBuffer: async () => { await Promise.resolve(); active.delete(src); return new ArrayBuffer(8); } };
   };
+  globalThis.document = { cookie: 'pplale-locale=ja' };
   globalThis.window = { Image: class { async decode() { decoded.push(this.src); } removeAttribute() {} } };
   const { warmRoomCards } = await import(`data:text/javascript;base64,${Buffer.from(outputFiles[0].text + `\n// ${instance++}`).toString('base64')}`);
   return { warmRoomCards, requests, decoded, maximum: () => maximum, recover: () => { failure = false; active.clear(); } };
@@ -59,4 +60,11 @@ test('a failed background request is retriable', async t => {
   f.recover();
   await f.warmRoomCards([], undefined, undefined, false);
   assert.equal(f.requests.length, 8);
+});
+
+test('English warming requests the same English picture that the board will show',async t=>{
+  const f=await fixture(t);globalThis.document.cookie='pplale-locale=en';
+  await f.warmRoomCards(['a'],undefined,undefined,false);
+  assert.ok(f.requests.some(request=>request.src==='/game-assets/cards/en/a.avif'));
+  assert.ok(!f.requests.some(request=>request.src==='/game-assets/cards/a.avif'));
 });

@@ -1,0 +1,35 @@
+/* ランチパッドの横の案内役（GameGuide.tsx）。置き場所と現れ方は Launchpad.module.css の .dialogGuide。 */
+.guide { display: block; pointer-events: none; user-select: none; }
+/* Pressed, the guide slips back behind the launchpad (the way it came out), a little smaller (65%, toward its middle), and is gone
+   until the launchpad is closed (moving away into depth: no turning or swaying, docs/design-system.md). */
+.body { position: absolute; inset: 0; display: block; width: 100%; height: 100%; padding: 0; border: 0; background: none; cursor: pointer; pointer-events: auto; -webkit-tap-highlight-color: transparent;
+  transform-origin: center; }
+.guide[data-hiding] .body { transform: translateX(-45%) scale(.65); opacity: 0; transition: transform .3s ease-in, opacity .3s ease-in; cursor: default; pointer-events: none; }
+/* The words' own layer over the guide's box (the launchpad puts it in front of itself). A size container, so the words
+   can find where the picture's head is: the picture is drawn whole at the bottom of the box (object-fit: contain), so
+   its drawn height is the smaller of the box's height and the box's width times its shape (--shape, height / width). */
+.wordsLayer { display: block; pointer-events: none; container-type: size; }
+.body:focus-visible { outline: 3px solid var(--brand-cocoa); outline-offset: -6px; border-radius: var(--brand-control-radius); }
+.art { display: block; width: 100%; height: 100%; object-fit: contain; object-position: center bottom; }
+
+/* The words: a paper bubble near the head, after the guide has come out; gone after a while. */
+/* The bubble's lower edge a tenth below the top of the drawn picture (at the head, whatever the character's height),
+   kept inside the box for the tallest ones. */
+.words {
+  position: absolute; right: 6px; bottom: min(calc(min(100cqh, 100cqw * var(--shape, 2)) * .9), calc(100cqh - 4.6em)); z-index: 1; display: grid; gap: 2px; width: max-content; max-width: calc(100% - 12px);
+  padding: 8px 12px; border: 1px solid var(--brand-control-edge); border-radius: 14px 14px 4px 14px;
+  background: color-mix(in srgb, var(--brand-paper) 94%, transparent); color: var(--brand-cocoa-deep);
+  font-family: var(--font-site-body), sans-serif; font-size: 14px; line-height: 1.5; overflow-wrap: anywhere; pointer-events: none;
+  opacity: 0; animation: words 6.6s .55s ease-out forwards;
+}
+.words b { color: var(--brand-cocoa); font-size: 11px; }
+@keyframes words {
+  0% { opacity: 0; transform: translateY(6px); }
+  6%, 88% { opacity: 1; transform: none; }
+  100% { opacity: 0; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .guide[data-hiding] .body { transition: none; }
+  .words { animation: wordsStill 6.6s .55s step-end forwards; }
+  @keyframes wordsStill { 0% { opacity: 1; } 100% { opacity: 0; } }
+}

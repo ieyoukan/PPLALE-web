@@ -5,6 +5,7 @@ import dynamic from 'next/dynamic';
 import { useBoardContext } from '../board/BoardContext';
 import type { Panel } from '../board/useBoard';
 import styles from '../BoardEmulator.module.css';
+import { useI18n } from '@/i18n/LocaleProvider';
 const EditUnitPanel = dynamic(() => import('./EditPanels').then(module => module.EditUnitPanel));
 const EditHandPanel = dynamic(() => import('./EditPanels').then(module => module.EditHandPanel));
 const EditPilePanel = dynamic(() => import('./EditPanels').then(module => module.EditPilePanel));
@@ -31,6 +32,7 @@ const isDrawer = (panel: Panel): panel is DrawerPanel => !!panel && (drawers as 
  */
 export function SidePanel() {
   const { panel, setPanel } = useBoardContext();
+  const { t } = useI18n();
   const drawer = isDrawer(panel) ? panel : null;
   // Keep the last content while the drawer slides out.
   const [last, setLast] = useState<DrawerPanel | null>(drawer);
@@ -38,7 +40,7 @@ export function SidePanel() {
   const modal = panel?.type === 'skills';
   return <>
     {panel?.type === 'endMatch' && <Suspense fallback={null}><EndMatchDialog /></Suspense>}
-    <aside className={`${styles.drawer} ${styles.slideDrawer} ${drawer ? styles.drawerOpen : ''}`} inert={!drawer} aria-label="メニュー">
+    <aside className={`${styles.drawer} ${styles.slideDrawer} ${drawer ? styles.drawerOpen : ''}`} inert={!drawer} aria-label={t('メニュー')}>
       <Suspense fallback={null}>
       {last?.type === 'menu' && <MenuPanel />}
       {last?.type === 'logs' && <LogPanel />}
@@ -55,9 +57,9 @@ export function SidePanel() {
       {last?.type === 'zone' && <ZonePanel side={last.side} kind={last.kind} />}
       </Suspense>
     </aside>
-    {modal && <button className={styles.modalBackdrop} aria-label="スキルを閉じる" onClick={() => setPanel(null)} />}
+    {modal && <button className={styles.modalBackdrop} aria-label={t('スキルを閉じる')} onClick={() => setPanel(null)} />}
     {(panel?.type === 'skills' || panel?.type === 'inspect') && <aside className={[styles.drawer, modal ? styles.skillModal : styles.inspection].join(' ')}
-      role={modal ? 'dialog' : undefined} aria-modal={modal || undefined} aria-label={modal ? 'スキル' : 'カード情報'}>
+      role={modal ? 'dialog' : undefined} aria-modal={modal || undefined} aria-label={t(modal ? 'スキル' : 'カード情報')}>
       <Suspense fallback={null}>
       {/* Both end with their own 閉じる, placed like the buttons of a hand card chosen in play. */}
       {panel.type === 'inspect' && <InspectPanel uid={panel.uid} />}

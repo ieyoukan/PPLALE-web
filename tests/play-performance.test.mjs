@@ -6,7 +6,7 @@ const bundle = async file => {
   return import(`data:text/javascript;base64,${Buffer.from(result.outputFiles[0].text).toString('base64')}`);
 };
 const { playTiming } = await bundle('../src/lib/game/room/playTiming.ts');
-const { parsePlayReport, summarizePlays, parseServerTiming } = await bundle('../packages/game-core/src/performance.ts');
+const { parsePlayReport, summarizePlays, parseServerTiming, parsePresentationTiming } = await bundle('../packages/game-core/src/performance.ts');
 const server = {queue:1,read:2,apply:3,store:4,presence:5,deliver:6,publish:7,total:28};
 test('view, acknowledgement and presentation are measured independently on one monotonic clock',()=>{
   let now=10;const samples=[],reports=[]; const timing=playTiming(sample=>samples.push(sample),report=>reports.push(report),()=>now);
@@ -52,11 +52,24 @@ test('the browser journal retains 200 samples and strips fields when saving and 
   const window=new EventTarget(),values=new Map();globalThis.window=window;globalThis.localStorage={getItem:key=>values.get(key)??null,setItem:(key,value)=>values.set(key,value)};
   const {recordPlaySample,performanceLog,clearPlaySamples}=await bundle('../src/lib/game/room/performanceLog.ts');
   try {
-    for(let i=0;i<250;i++)recordPlaySample({kind:'attack',at:123456789,outcome:'ok',background:false,inputToPaint:i,name:'secret',room:'123456',server:{...server,card:'secret'}});
+    for(let i=0;i<250;i++)recordPlaySample({kind:'attack',at:123456789,outcome:'ok',background:false,inputToPaint:i,name:'secret',room:'123456',server:{...server,card:'secret'},presentation:{inputToPreview:32,resolutionWait:1240,card:'secret'}});
     window.dispatchEvent(new Event('pagehide'));
     const raw=values.get('pplale-room-performance-v1');assert.ok(!raw.includes('secret'));assert.ok(!raw.includes('"room"'));
-    const stored=JSON.parse(raw);assert.equal(stored.length,200);assert.equal(stored[0].inputToPaint,50);assert.equal(stored[0].at%60000,0);
+    const stored=JSON.parse(raw);assert.equal(stored.length,200);assert.equal(stored[0].inputToPaint,50);assert.equal(stored[0].at%60000,0);assert.deepEqual(stored[0].presentation,{inputToPreview:32,resolutionWait:1240});
     assert.equal(performanceLog.snapshot().length,200);
     clearPlaySamples();assert.equal(performanceLog.snapshot().length,0);assert.equal(values.get('pplale-room-performance-v1'),'[]');
   } finally {delete globalThis.window;delete globalThis.localStorage;}
+});
+
+// 仮置きと確定待ちを分けても、共有レポートに相手の手札反応の情報を増やさない。
+test('immediate preview and resolution wait are local diagnostics on the same clock',()=>{
+  let now=0;const samples=[],reports=[];const timing=playTiming(s=>samples.push(s),r=>reports.push(r),()=>now);
+  timing.begin(1,'play',2);timing.presentation({preview:false,waiting:true});
+  now=32;timing.presentation({preview:true,waiting:true});
+  now=100;timing.received(2);timing.acknowledged(1,{revision:2,timing:server});
+  now=1240;timing.presentation({preview:false,waiting:false});now=1272;timing.presented(2);
+  assert.deepEqual(samples[0].presentation,{inputToPreview:32,resolutionWait:1240});
+  assert.equal(samples[0].viewToPaint,1172);assert.equal(reports[0].presentation,undefined);
+  assert.deepEqual(parsePresentationTiming({inputToPreview:32,resolutionWait:1240,card:'secret'}),samples[0].presentation);
+  assert.equal(parsePresentationTiming({inputToPreview:Infinity,resolutionWait:-1}),undefined);timing.close();
 });

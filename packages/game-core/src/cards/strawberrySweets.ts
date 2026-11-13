@@ -39,7 +39,7 @@ const floatOps: OpTable = {
     float: {
         run(fx, t) {
             if (!t.target) {
-                if (fx.me.hand.length) fx.ask('手札を1枚除外してフロートを探しますか？', [{ id: 'skip', label: 'しない' }, ...fx.me.hand.map(id => ({ id, label: fx.defOf(id).name }))], t);
+                if (fx.me.hand.length) fx.ask('手札を1枚除外してフロートを探しますか？', [{ id: 'skip', label: 'しない' }, ...fx.me.hand.map(id => ({ id, label: fx.defOf(id).name }))], t, { kind: 'exile' });
                 return;
             }
             if (t.target === 'skip') return;
@@ -73,7 +73,7 @@ const doughnutOps: OpTable = {
     doughnut: {
         run(fx, t) {
             if (!t.target) {
-                fx.pick('捨てるドーナツを選んでください', fx.me.hand.filter(id => fx.defOf(id).sweetType === 'doughnut'), t);
+                fx.pick('捨てるドーナツを選んでください', fx.me.hand.filter(id => fx.defOf(id).sweetType === 'doughnut'), t, { kind: 'discard' });
                 return;
             }
             fx.discard(t.target);
@@ -147,10 +147,13 @@ export const strawberrySweets: CardScripts = {
     // s_18 いちごパフェ: 2枚引く。幼女デッキから引いた枚数だけ相手のお菓子を減らし、お菓子デッキからの枚数だけ回復。
     s_18: {
         onPlay: ctx => ctx.queue('draw', { count: 2 }),
-        onDrawn(ctx, { kind, uid }) {
-            if (!uid) return;
-            if (kind === 'yojo') ctx.losePoints(ctx.foeSide, 1, 'reduce');
-            else ctx.heal(1);
+        onDrawn(ctx, { drawn, done }) {
+            if (!done) return;
+            // 2枚とも引いてから枚数分をまとめて処理する。回復量が2でも回復は1回。
+            const yojo = drawn.filter(uid => ctx.defOf(uid).type === 'yojo').length;
+            const sweets = drawn.filter(uid => ctx.defOf(uid).type === 'sweet').length;
+            if (yojo) ctx.losePoints(ctx.foeSide, yojo, 'reduce');
+            if (sweets) ctx.heal(sweets);
         },
     },
     // s_19 ふわふわパンケーキ: お菓子を3回復。食べる／奪う効果を1度だけ無効化（重複しない）。
@@ -225,7 +228,7 @@ export const strawberrySweets: CardScripts = {
             gift: {
                 run(fx, t) {
                     if (!t.target) {
-                        fx.pick('相手へ渡すお菓子を選んでください', fx.me.hand.filter(id => fx.isRealSweet(id)), t);
+                        fx.pick('相手へ渡すお菓子を選んでください', fx.me.hand.filter(id => fx.isRealSweet(id)), t, { kind: 'give' });
                         return;
                     }
                     fx.me.hand = fx.me.hand.filter(id => id !== t.target);

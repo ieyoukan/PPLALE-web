@@ -182,7 +182,7 @@ export const melonYojo: CardScripts = {
             }
             if (t.target) { ctx.exile(t.target); t = { ...t, target: undefined, count: t.count! - 1, amount: (t.amount ?? 0) + 1 }; }
             const left = exilableNap(ctx);
-            if (t.count! > 0 && left.length > t.count!) return ctx.pick(`除外するお昼寝場所の幼女を選んでください（あと${t.count}人）`, left, t);
+            if (t.count! > 0 && left.length > t.count!) return ctx.pick(`除外するお昼寝場所の幼女を選んでください（あと${t.count}人）`, left, t, { kind: 'exile', count: t.count });
             if (t.count! > 0) for (const uid of left.slice(0, t.count)) { ctx.exile(uid); t = { ...t, amount: (t.amount ?? 0) + 1 }; }
             finishChori(ctx, t.subject!, t.amount! >= 4);
         },
@@ -210,7 +210,7 @@ export const melonYojo: CardScripts = {
             } else {
                 if (t.target) { ctx.exile(t.target); t = { ...t, target: undefined, count: t.count! - 1 }; }
                 const left = exilableNap(ctx, 'melon');
-                if (t.count! > 0 && left.length > t.count!) return ctx.pick(`除外するメロンタイプの幼女を選んでください（あと${t.count}人）`, left, t);
+                if (t.count! > 0 && left.length > t.count!) return ctx.pick(`除外するメロンタイプの幼女を選んでください（あと${t.count}人）`, left, t, { kind: 'exile', count: t.count });
                 for (const uid of t.count! > 0 ? left : []) ctx.exile(uid);
                 ctx.buff(ctx.uid, 1, 1);
                 ctx.card.exhausted = false;
@@ -233,13 +233,13 @@ export const melonYojo: CardScripts = {
         onPlay: ctx => step(ctx, 'exileHand'),
         effect(ctx, t) {
             if (t.step === 'exileHand') {
-                if (!t.target && ctx.me.hand.length) return ctx.pick('除外する手札を選んでください', ctx.me.hand, t);
+                if (!t.target && ctx.me.hand.length) return ctx.pick('除外する手札を選んでください', ctx.me.hand, t, { kind: 'exile' });
                 if (t.target) ctx.exile(t.target);
                 step(ctx, 'mill');
                 return;
             }
             const cards = [...ctx.me.yojo, ...ctx.me.sweet];
-            if (!t.target) return ctx.pick('お昼寝場所に捨てるデッキのカードを選んでください', cards, t);
+            if (!t.target) return ctx.pick('お昼寝場所に捨てるデッキのカードを選んでください', cards, t, { kind: 'discard' });
             const kind = ctx.me.yojo.includes(t.target) ? 'yojo' : 'sweet';
             ctx.me[kind] = ctx.me[kind].filter(uid => uid !== t.target);
             ctx.me.nap.push(t.target);
@@ -328,7 +328,7 @@ export const melonYojo: CardScripts = {
             if (t.target) { ctx.exile(t.target, ctx.foeSide); t = { ...t, target: undefined, count: t.count! - 1 }; }
             const units = ctx.foe.nap.filter(uid => ctx.defOf(uid).type === 'yojo' && !(ctx.s.cards[uid].cardId === 'y_146' && !ctx.s.cards[uid].silenced));
             if (t.count! <= 0) return;
-            if (units.length > t.count!) return ctx.pick(`除外する相手のお昼寝場所の幼女を選んでください（あと${t.count}人）`, units, t);
+            if (units.length > t.count!) return ctx.pick(`除外する相手のお昼寝場所の幼女を選んでください（あと${t.count}人）`, units, t, { kind: 'exile', count: t.count });
             for (const uid of units) ctx.exile(uid, ctx.foeSide);
         },
         cpu: { choose: (ctx, _t, options) => [...options].sort((a, b) => ctx.defOf(b).cost - ctx.defOf(a).cost)[0] },
@@ -365,7 +365,7 @@ export const melonYojo: CardScripts = {
         effect(ctx, t) {
             const seen = (t.candidates ?? []).filter(uid => ctx.me.yojo.includes(uid));
             if (t.step === 'look' && seen.length) {
-                if (!t.target) return ctx.pick('お昼寝場所に捨てるカードを選んでください（幼女デッキの上3枚）', seen, t);
+                if (!t.target) return ctx.pick('お昼寝場所に捨てるカードを選んでください（幼女デッキの上3枚）', seen, t, { kind: 'discard' });
                 ctx.me.yojo = ctx.me.yojo.filter(uid => uid !== t.target);
                 ctx.me.nap.push(t.target);
                 const rest = seen.filter(uid => uid !== t.target);
@@ -432,7 +432,7 @@ export const melonYojo: CardScripts = {
             // 選び終えてから、X体をまとめて捨てる（神隠し ようじょ贄は1回で2X個。ユーザー裁定）。
             if (t.target && t.target !== 'done') t = { ...t, target: undefined, ids: [...(t.ids ?? []), t.target] };
             const chosen = t.ids ?? [], cats = ctx.me.hand.filter(uid => isCat(ctx, uid) && !chosen.includes(uid));
-            if (t.target !== 'done' && cats.length) return ctx.ask('捨てる猫まんじゅうを選んでください（任意）', [{ id: 'done', label: `捨て終える（${chosen.length}体）` }, ...cats.map(id => ({ id, label: '猫まんじゅうを捨てる' }))], t);
+            if (t.target !== 'done' && cats.length) return ctx.ask('捨てる猫まんじゅうを選んでください（任意）', [{ id: 'done', label: `捨て終える（${chosen.length}体）` }, ...cats.map(id => ({ id, label: '猫まんじゅうを捨てる' }))], t, { kind: 'discard', count: cats.length, optional: true, finish: 'done' });
             const x = chosen.length;
             if (!x) return;
             ctx.discard(chosen);

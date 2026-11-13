@@ -12,7 +12,7 @@ test('the rule tiles decide which decks can be chosen, and the match keeps the r
   const errors = [];
   page.on('pageerror', error => errors.push(error.message));
   await page.goto(new URL('cpu/', url).href);
-  const tile = fruit => page.getByRole('checkbox', { name: new RegExp(fruitNames[fruit]) });
+  const tile = fruit => page.getByRole('checkbox', { name: fruitNames[fruit] });
   const beta = page.getByRole('checkbox', { name: /拡張プレイアブル/ });
 
   // Every fruit and 拡張プレイアブル (ExP) has a tile; what the game cannot play yet cannot be chosen.

@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { RoomRequestError, connectRoom, dropSeat, joinRoom, keepSeat, readRoomInfo, seatFor } from '@/lib/game/room/client';
 import { useGameNotifications } from '../notifications/GameNotifications';
+import type { PresentationState } from '@pplale/game-core/performance';
 import type { RoomConnection } from '@/lib/game/room/client';
 import { isRoomId } from '@pplale/game-core/room';
 import type { RoomAction, RoomInfo, RoomView, SeatKey } from '@pplale/game-core/room';
@@ -93,6 +94,7 @@ export function useRoom(id: string | null, watch = false) {
   /** Sends a request of this seat; its view has arrived when this resolves. Rejects with RoomRequestError. */
   const send = useCallback((action: RoomAction, inputAt?: number) =>
     connection.current?.send(action,inputAt) ?? Promise.reject(new RoomRequestError(401, 'このルームの参加者ではありません')), []);
+  const presentation = useCallback((state:PresentationState) => connection.current?.presentation(state), []);
   const presented = useCallback((revision:number) => connection.current?.presented(revision), []);
   /** Every view after this call, in order. Returns how to stop. */
   const subscribe = useCallback((listener: (view: RoomView) => void) => {
@@ -107,6 +109,6 @@ export function useRoom(id: string | null, watch = false) {
     if (!watch) dropSeat(id);
   }, [id, watch]);
 
-  return { stage, info, view, seat: key?.seat ?? null, linked, error, join, send, subscribe, leave, presented };
+  return { stage, info, view, seat: key?.seat ?? null, linked, error, join, send, subscribe, leave, presented, presentation };
 }
 export type Room = ReturnType<typeof useRoom>;

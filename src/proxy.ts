@@ -30,5 +30,5 @@ export function proxy(request: NextRequest) {
 }
 
 export const config = {
-  matcher: ['/build/:path*', '/deck/:path*', '/deck-view/:path*', '/tournament/:path*'],
+  matcher: ['/build/:path*', '/deck/:path*', '/deck-view/:path*'],
 };

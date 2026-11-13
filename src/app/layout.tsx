@@ -7,6 +7,8 @@ import "./brand.css";
 import { AuthProvider } from '@/lib/auth';
 import { SpeedInsights } from "@vercel/speed-insights/next"
 import { PwaSetup } from '@/components/pwa/PwaSetup';
+import { LocaleProvider } from '@/i18n/LocaleProvider';
+import { LOCALE_SCRIPT } from '@/i18n/config';
 
 // Vercel環境かどうかを判定
 const isVercel = process.env.VERCEL === '1';
@@ -84,6 +86,7 @@ export default function RootLayout({
         <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
         <link rel="manifest" href="/site.webmanifest" />
 
+        <script dangerouslySetInnerHTML={{ __html: LOCALE_SCRIPT }} />
         <script
           dangerouslySetInnerHTML={{
             __html: `(() => {
@@ -106,11 +109,13 @@ export default function RootLayout({
         data-site-ui
         suppressHydrationWarning
       >
-        <AuthProvider>
-          <main>{children}</main>
-          {isVercel && <SpeedInsights />}
-          <PwaSetup />
-        </AuthProvider>
+        <LocaleProvider initialLocale="ja" live>
+          <AuthProvider>
+            <main>{children}</main>
+            {isVercel && <SpeedInsights />}
+            <PwaSetup />
+          </AuthProvider>
+        </LocaleProvider>
       </body>
     </html>
   );

@@ -10,3 +10,16 @@
 .links { display: flex; flex-wrap: wrap; justify-content: center; gap: 8px; }
 .link { display: inline-flex; align-items: center; gap: 7px; min-height: 40px; padding: 8px 18px; border: 1px solid var(--brand-control-edge); border-radius: var(--brand-control-radius); background: var(--brand-paper); color: var(--brand-cocoa-deep); font-size: 14px; font-weight: 700; text-decoration: none; cursor: pointer; }
 .link:hover { background: var(--brand-blush); }
+
+/* カードの操作：2つの操作を小さな絵で並べ、選んでいる方を桜色の面にする。 */
+.controls { display: flex; flex-wrap: wrap; justify-content: center; gap: 10px; }
+.control { display: grid; justify-items: center; gap: 4px; width: 150px; padding: 10px 8px; border: 1px solid var(--brand-control-edge); border-radius: var(--brand-control-radius); background: var(--brand-paper); color: var(--brand-cocoa-deep); font-weight: 700; font-size: 14px; cursor: pointer; }
+.control:hover { background: var(--brand-blush); }
+.control[aria-checked=true] { border-color: var(--brand-cocoa); background: var(--brand-blush); box-shadow: inset 0 0 0 1px var(--brand-cocoa); }
+.control svg { width: 120px; height: 70px; }
+.controlSlot { fill: #69adea55; stroke: #86b9e8; stroke-width: 1.5; stroke-dasharray: 3 2; }
+.controlCard { fill: #f5c4cf; stroke: var(--brand-cocoa-deep); stroke-width: 1.5; }
+.controlGhost { fill: none; stroke: var(--brand-pink-edge); stroke-width: 1.5; stroke-dasharray: 3 2; }
+.controlTrail { fill: none; stroke: var(--brand-pink-edge); stroke-width: 2; stroke-dasharray: 2 4; stroke-linecap: round; }
+.controlArrow { fill: none; stroke: var(--brand-cocoa-deep); stroke-width: 4; stroke-linecap: round; }
+.controlHead { fill: var(--brand-cocoa-deep); }

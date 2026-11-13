@@ -3,38 +3,41 @@
 import Image from 'next/image';
 import Link from 'next/link';
 import { GameIcon } from '@/components/shared/ui/GameIcon';
-import { OrnateFrame } from '@/components/shared/ui/ornament/OrnateFrame';
-import { ScreenSubtitle } from '@/components/shared/ui/ScreenSubtitle';
 import { introLessons, introProgress } from '@/lib/game/introCourse';
-import { puzzleHref, puzzleListHref } from '@/lib/game/sessionStore';
+import { puzzleHref } from '@/lib/game/sessionStore';
 import { usePuzzleProgress } from '@/lib/game/usePuzzleProgress';
+import { useI18n } from '@/i18n/LocaleProvider';
 import styles from './BeginnerMissions.module.css';
 
 export function BeginnerMissions() {
   const { cleared } = usePuzzleProgress();
+  const { t } = useI18n();
   const progress = introProgress(cleared);
   return <div className={styles.missions}>
-    <div className={styles.hero}>
-      <Image src="/images/game/characters/home-rabbit.webp" width={128} height={128} alt="" />
-      <div><ScreenSubtitle>はじめてのぷぷりえーる</ScreenSubtitle><p>盤面で試して、遊び方を覚えよう。</p></div>
+    <header className={styles.hero}>
+      <div><h3 data-ui-title>{t('入門編をクリアする')}</h3><p>{t('ひとつずつ、盤面で覚えよう。')}</p></div>
+      <Image src="/images/game/characters/chori-mug.webp" width={96} height={96} alt="" />
+    </header>
+    <div className={styles.progress}>
+      <progress value={progress.completed} max={progress.total} aria-label={t('入門編のクリア状況')} />
+      <b>{progress.completed} / {progress.total}</b>
     </div>
-    <OrnateFrame size="sm" className={styles.mission}>
-      <header><GameIcon name="beginner" /><h3 data-ui-title>入門編をクリアする</h3><b>{progress.completed} / {progress.total}</b></header>
-      <progress value={progress.completed} max={progress.total} aria-label="入門編のクリア状況" />
-      {progress.next
-        ? <Link className={styles.start} href={puzzleHref(progress.next.id)} prefetch={false}>{progress.completed ? 'つづきから' : 'はじめる'}<GameIcon name="enter" /></Link>
-        : <p className={styles.achieved} role="status"><GameIcon name="check" />ミッション達成！</p>}
-      <ol className={styles.lessons}>
-        {introLessons.map((problem, index) => <li key={problem.id} data-cleared={cleared.includes(problem.id) || undefined}>
-          <Link href={puzzleHref(problem.id)} prefetch={false}>
-            <span className={styles.step}>{cleared.includes(problem.id) ? <GameIcon name="check" /> : index + 1}</span>
-            <span><small>入門{index + 1}</small><b>{problem.lesson.title}</b></span>
+    {progress.done && <p className={styles.achieved} role="status"><GameIcon name="check" />{t('ミッション達成！')}</p>}
+    <ol className={styles.lessons}>
+      {introLessons.map((problem, index) => {
+        const done = cleared.includes(problem.id), current = progress.next?.id === problem.id;
+        return <li key={problem.id} data-cleared={done || undefined} data-current={current || undefined}>
+          <Link href={puzzleHref(problem.id)} prefetch={false} aria-current={current ? 'step' : undefined}>
+            <span className={styles.step} aria-hidden="true">{done ? <GameIcon name="check" /> : index + 1}</span>
+            <span className={styles.lessonText}>
+              <span className={styles.lessonLabel}><small data-ui-title>{t('入門{number}', { number: index + 1 })}</small>{current && <em>{t(progress.completed ? 'つぎはここ' : 'ここから')}</em>}{done && <em>{t('クリア')}</em>}</span>
+              <b>{t(problem.lesson.title)}</b>
+            </span>
             <GameIcon name="enter" />
           </Link>
-        </li>)}
-      </ol>
-      <Link className={styles.listLink} href={puzzleListHref('intro')} prefetch={false}>入門編の一覧</Link>
-    </OrnateFrame>
-    <small className={styles.saveNote}>クリア状況はこのブラウザに保存されます。</small>
+        </li>;
+      })}
+    </ol>
+    <small className={styles.saveNote}>{t('クリア状況はこのブラウザに保存されます。')}</small>
   </div>;
 }

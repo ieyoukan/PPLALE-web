@@ -1,6 +1,6 @@
 'use client';
 
-import { useRef, useEffect } from 'react';
+import { useRef, useEffect, useId } from 'react';
 import { useSettings } from '@/app/(app)/SettingsProvider';
 import { useDarkMode } from '@/components/site/DarkModeProvider';
 import { usePathname } from 'next/navigation';
@@ -21,29 +21,53 @@ export default function SettingsButton() {
   const isMainPage = pathname === '/';
   const is2PickPage = pathname === '/deck/2pick';
   const menuRef = useRef<HTMLDivElement>(null);
+  const triggerRef = useRef<HTMLButtonElement>(null);
+  const panelRef = useRef<HTMLDivElement>(null);
+  const panelId = useId();
 
   useEffect(() => {
-    const handleClickOutside = (event: MouseEvent) => {
+    const handleClickOutside = (event: PointerEvent) => {
       if (menuRef.current && !menuRef.current.contains(event.target as Node)) {
         setShowSettings(false);
       }
     };
 
     if (showSettings) {
-      document.addEventListener('mousedown', handleClickOutside);
+      panelRef.current?.querySelector<HTMLButtonElement>('button')?.focus();
+      document.addEventListener('pointerdown', handleClickOutside);
     }
 
     return () => {
-      document.removeEventListener('mousedown', handleClickOutside);
+      document.removeEventListener('pointerdown', handleClickOutside);
     };
   }, [showSettings, setShowSettings]);
 
   return (
-    <div className={css({ position: 'relative' })} ref={menuRef}>
+    <div
+      className={css({ position: 'relative' })}
+      ref={menuRef}
+      onKeyDown={event => {
+        if (showSettings && event.key === 'Escape') {
+          event.preventDefault();
+          event.stopPropagation();
+          setShowSettings(false);
+          triggerRef.current?.focus();
+        }
+      }}
+      onBlur={event => {
+        // Only when the focus has gone somewhere else (Tab): a click on a label or a button that does not take the
+        // focus (Safari) leaves no relatedTarget, and the pointer outside is handled by handleClickOutside.
+        if (event.relatedTarget && !event.currentTarget.contains(event.relatedTarget)) setShowSettings(false);
+      }}
+    >
       <button
+        ref={triggerRef}
+        type="button"
         className={iconButton({ variant: 'ghost', size: 'xl' })}
         onClick={() => setShowSettings(!showSettings)}
         aria-label={t('メニュー')}
+        aria-expanded={showSettings}
+        aria-controls={showSettings ? panelId : undefined}
       >
         {showSettings ? (
           <svg aria-hidden="true" className={css({ w: '6', h: '6' })} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
@@ -57,20 +81,32 @@ export default function SettingsButton() {
       </button>
       {showSettings && (
         <div
+          id={panelId}
+          ref={panelRef}
+          role="region"
+          aria-label={t('メニュー')}
           className={css({
-            position: 'absolute',
-            right: '0',
+            position: { base: 'fixed', sm: 'absolute' },
+            right: { base: '4', sm: '0' },
+            top: { base: '16', sm: 'auto' },
             zIndex: '50',
             mt: '2',
-            w: '56',
+            w: 'min(20rem, calc(100vw - 2rem))',
+            maxH: 'calc(100dvh - 6rem - env(safe-area-inset-bottom, 0px))',
+            overflowY: 'auto',
+            overscrollBehavior: 'contain',
             rounded: 'lg',
             borderWidth: '1px',
-            borderColor: 'gray.200',
-            bg: 'white',
+            borderColor: 'var(--brand-control-edge)',
+            bg: 'var(--brand-paper)',
             p: '4',
-            color: 'gray.900',
+            color: 'var(--brand-cocoa-deep)',
             boxShadow: 'lg',
-            _dark: { borderColor: 'gray.700', bg: 'gray.800', color: 'gray.100' },
+            _dark: { borderColor: 'var(--brand-wood-edge)', bg: 'var(--brand-wood)', color: 'var(--brand-cream-on-dark)' },
+            '& button': { minH: '44px' },
+            '& button[aria-pressed="true"]': { bg: 'var(--brand-pink)', color: 'var(--brand-cocoa-deep)' },
+            '& button[aria-pressed="false"]': { color: 'inherit', _hover: { bg: 'var(--brand-blush)', color: 'var(--brand-cocoa-deep)' } },
+            '& button[data-menu-action]': { bg: 'var(--brand-blush)', color: 'var(--brand-cocoa-deep)', _hover: { bg: 'var(--brand-pink)' } },
           })}
         >
           <div className={css({ display: 'flex', flexDirection: 'column', gap: '4' })}>
@@ -105,10 +141,10 @@ export default function SettingsButton() {
                   gap: '1',
                   rounded: 'lg',
                   borderWidth: '1px',
-                  borderColor: 'gray.200',
-                  bg: 'gray.50',
+                  borderColor: 'var(--brand-control-edge)',
+                  bg: 'var(--brand-cream)',
                   p: '1',
-                  _dark: { borderColor: 'gray.700', bg: 'gray.900' },
+                  _dark: { borderColor: 'var(--brand-wood-edge)', bg: 'var(--brand-wood-deep)' },
                 })}
               >
                 {[
@@ -141,9 +177,9 @@ export default function SettingsButton() {
                 id="twoCardLimit"
                 checked={isTwoCardLimit}
                 onChange={(e) => setIsTwoCardLimit(e.target.checked)}
-                className={css({ h: '4', w: '4', color: 'blue.600' })}
+                className={css({ h: '5', w: '5', flexShrink: 0, accentColor: 'var(--brand-cocoa)' })}
               />
-              <label htmlFor="twoCardLimit" className={css({ fontSize: 'sm' })}>
+              <label htmlFor="twoCardLimit" className={css({ display: 'flex', alignItems: 'center', minH: '44px', flex: 1, fontSize: 'sm', color: 'inherit', cursor: 'pointer' })}>
                 {t('2枚制限')}
               </label>
             </div>
@@ -155,6 +191,7 @@ export default function SettingsButton() {
             {!is2PickPage && !isMainPage ?(
             <div className={css({ display: 'flex', flexDirection: 'column', gap: '2' })}>
               <button
+                data-menu-action
                 className={`${button({ variant: 'primary' })} ${css({ w: 'full' })}`}
                 onClick={() => window.dispatchEvent(new CustomEvent('exportDeck'))}
               >
@@ -164,6 +201,7 @@ export default function SettingsButton() {
                 <span>{t('エクスポート')}</span>
               </button>
               <button
+                data-menu-action
                 className={`${button({ variant: 'secondary' })} ${css({ w: 'full' })}`}
                 onClick={() => window.dispatchEvent(new CustomEvent('importDeck'))}
               >

@@ -9,6 +9,8 @@ export default defineConfig({
   reporter: 'html',
   use: {
     baseURL: 'http://localhost:3000',
+    // The game follows the browser's language (src/i18n); the specs read the Japanese screens unless they set English.
+    locale: 'ja-JP',
     trace: 'on-first-retry',
   },
   projects: [

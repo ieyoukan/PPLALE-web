@@ -95,6 +95,7 @@ export const playerFields: Record<keyof Player, ChangeKind | null> = {
     turns: null, // presented by the turn announcement
     turnPpBonus: null, // shown by the board (the white +2 marble)
     milestones: null, // shown by the board (the blue marbles); the draw itself is a move
+    extraUyuchiPlays: null, // うゆちのタイプ付与を含むプレイ履歴
     played: null, // history for 「既に〜をプレイしていたなら」
     lastBorrow: null, // bookkeeping for ストラ
     skillHistory: null, // persistent history, separate from remaining uses
@@ -124,7 +125,7 @@ export const stateFields: Record<keyof GameState, string | null> = {
     effectRoll: 'roll',
     effectBlocks: 'blocked',
     log: 'board: history panel',
-    version: null, effectTauntRules: null, turnRules: null, rules: null, rng: null, serial: null,
+    version: null, effectTauntRules: null, turnRules: null, decisiveOpeningDice: null, rules: null, rng: null, serial: null,
     revision: null, queue: null, stall: null,
 };
 

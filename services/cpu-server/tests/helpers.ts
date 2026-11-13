@@ -9,10 +9,10 @@ export { catalog };
 export const temporaryDirectory = () => mkdtempSync(path.join(os.tmpdir(), 'cpu-server-'));
 
 /** A finished match as the game would report it (played by two quick CPUs, which is enough here). */
-export function playedReport(seed: number) {
+export function playedReport(seed: number, legacy = false) {
     const decks: [Deck, Deck] = [randomStrawberryDeck(seed), randomStrawberryDeck(seed + 1)];
     const commands: Command[] = [];
-    const result = playMatch(catalog, { levels: ['hard', 'normal'], seed, decks, onStep: (_state, command) => { commands.push(command); } });
+    const result = playMatch(catalog, { levels: ['hard', 'normal'], seed, decks, onStep: (state, command) => { if (legacy) delete state.decisiveOpeningDice; commands.push(command); } });
     const plain = ({ yojo, sweet, playable }: Deck) => ({ yojo, sweet, playable });
-    return { report: { level: 'master', model: 'test-model', seed, decks: decks.map(plain), commands }, winner: result.winner };
+    return { report: { ...(!legacy && { decisiveOpeningDice: true as const }), level: 'master', model: 'test-model', seed, decks: decks.map(plain), commands }, winner: result.winner };
 }

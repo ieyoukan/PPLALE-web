@@ -1,10 +1,12 @@
 .doc {
+  /* The rules' kanji come from their own face (rules-fonts.css); everything else from the site's body font. */
+  font-family: 'PPLALE Rules', var(--font-site-body), 'Hiragino Maru Gothic ProN', sans-serif;
   color: var(--brand-cocoa-deep);
   font-size: 15px;
   line-height: 1.85;
   overflow-wrap: anywhere;
 }
-.doc h2 {
+.doc h3 {
   margin: 40px 0 14px;
   padding-bottom: 6px;
   border-bottom: 3px dotted var(--brand-pink-edge);
@@ -13,8 +15,8 @@
   line-height: 1.4;
   scroll-margin-top: 140px;
 }
-.doc h2:first-child { margin-top: 0; }
-.doc h3 { margin: 26px 0 10px; color: var(--brand-cocoa); font-size: 18px; }
+.doc h3:first-child { margin-top: 0; }
+.doc h4 { margin: 26px 0 10px; color: var(--brand-cocoa); font-size: 18px; }
 .doc p, .doc ul, .doc ol { margin: 10px 0; }
 .doc ul, .doc ol { padding-left: 1.5em; }
 .doc ul { list-style: disc; }
@@ -44,5 +46,5 @@
 .tableWrap td:first-child { color: var(--brand-cocoa); font-weight: 700; }
 @media (max-width: 640px) {
   .doc { font-size: 14px; }
-  .doc h2 { font-size: 19px; }
+  .doc h3 { font-size: 19px; }
 }

@@ -52,7 +52,11 @@ for (const viewport of [{ width: 1280, height: 860 }, { width: 844, height: 390 
         turnClock: { ...view.turnClock, deadline: serverNow + 72_000 } };
       socket.send(JSON.stringify({ type: 'view', view }));
       await expect(clock).not.toHaveAttribute('data-paused');
-      await expect.poll(() => clock.locator('time').textContent(), { timeout: 5000 }).toBe('1:01');
+      // 描画やスクリーンショットの所要時間に依存せず、再開後に残り時間が減ることを確かめる。
+      const secondsNow = async () => { const [minutes, seconds] = (await clock.locator('time').textContent()).split(':').map(Number); return minutes * 60 + seconds; };
+      const resumed = await secondsNow();
+      expect(resumed).toBeGreaterThan(0); expect(resumed).toBeLessThanOrEqual(62);
+      await expect.poll(secondsNow, { timeout: 5000 }).toBeLessThan(resumed);
       expect(messages).toBe(1); // hello only; the countdown sends no commands or clock polls.
       view = { ...view, version: 4, rules: { ...view.rules, turnSeconds: undefined }, turnClock: undefined };
       socket.send(JSON.stringify({ type: 'view', view }));

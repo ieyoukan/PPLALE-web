@@ -43,10 +43,47 @@ test('starting a match waits for the dice and does not take any cards from eithe
   assert.equal(cpuCommand(state, catalog), null);
 });
 
-test('dice can tie, a tie needs a new roll, and the larger value earns the order choice', () => {
+test('new opening dice decide in two rolls and preserve their rule through a save', () => {
+  for (let seed = 0; seed < 100; seed++) {
+    const state = create(seed);
+    const first = command(state, { type: 'roll', actor: 0 });
+    const restored = restoreGame(JSON.parse(JSON.stringify(first)), catalog);
+    assert.equal(restored.decisiveOpeningDice, true);
+    const decided = command(restored, { type: 'roll', actor: 1 });
+    assert.equal(decided.phase, 'initiative');
+    assert.equal(decided.dice.ties, 0);
+    assert.notEqual(...decided.dice.rolls);
+    assert.equal(decided.active, decided.dice.rolls[0] > decided.dice.rolls[1] ? 0 : 1);
+    assert.deepEqual(decided, command(first, { type: 'roll', actor: 1 }));
+    assert.ok(applyCommand(decided, { type: 'roll', actor: 0 }, catalog).error);
+  }
+});
+
+test('all 30 different-face outcomes exist and split the order choice 15 to 15', () => {
+  const outcomes = new Set();
+  const state = create();
+  for (let first = 1; first <= 6; first++) {
+    for (let sample = 0; sample < 500; sample++) {
+      state.dice = { rolls: [first, null], ties: 0 };
+      state.rng = Math.floor(sample / 500 * 0xffffffff);
+      const next = command(state, { type: 'roll', actor: 1 });
+      const second = next.dice.rolls[1];
+      assert.ok(second >= 1 && second <= 6 && second !== first);
+      outcomes.add(`${first},${second}`);
+    }
+  }
+  const pairs = [...outcomes].map(pair => pair.split(',').map(Number));
+  assert.equal(pairs.length, 30);
+  assert.equal(pairs.filter(([first, second]) => first > second).length, 15);
+  assert.equal(pairs.filter(([first, second]) => first < second).length, 15);
+});
+
+test('legacy dice retain ties and the original seeded replay', () => {
   let tied;
   for (let seed = 0; seed < 500 && !tied; seed++) {
-    const first = command(create(seed), { type: 'roll', actor: 0 });
+    const legacy = create(seed);
+    delete legacy.decisiveOpeningDice;
+    const first = command(restoreGame(JSON.parse(JSON.stringify(legacy)), catalog), { type: 'roll', actor: 0 });
     const state = command(first, { type: 'roll', actor: 1 });
     if (state.dice.rolls[0] === state.dice.rolls[1]) tied = state;
   }

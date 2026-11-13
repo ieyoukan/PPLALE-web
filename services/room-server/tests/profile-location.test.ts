@@ -20,7 +20,8 @@ test('profile location: authenticates friends, checks live presence and masks in
         return realFetch(url, options);
     }) as typeof fetch;
     t.after(() => { globalThis.fetch = realFetch; });
-    const served = await serve(); t.after(() => served.close());
+    // 公開範囲の確認中に短いテスト用TTLが切れないようにする。退出は明示的な切断で検証する。
+    const served = await serve({ beatSeconds: 1 }); t.after(() => served.close());
     const sockets = [];
     for (const [index, visibility] of ['public', 'invite', 'invitePlus', 'friends', 'offline'].entries()) {
         const id = String(100001 + index), profileId = `target-${visibility}`;

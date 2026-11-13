@@ -2,6 +2,7 @@
 // it is legal; an answer from the other player's hand (ぶらんちゃん) is waited for in between.
 import { scriptFor } from '../cards/registry.ts';
 import { costOf, hpOf, isRealSweet, note } from '../core/cards.ts';
+import { fruitsOf } from '../core/protection.ts';
 import { enterField } from '../core/zones.ts';
 import { cardContext } from '../effects/context.ts';
 import type { Catalog, Definition, GameState, Player, Side } from '../model.ts';
@@ -26,6 +27,8 @@ export function playAnswers(s: GameState, side: Side): string[] {
 
 export function commitPlay(s: GameState, actor: Side, uid: string, slot: number, catalog: Catalog) {
     const p = s.players[actor], card = s.cards[uid], def = catalog[card.cardId], cost = costOf(s, uid, catalog, actor);
+    // 手札から離れる前にタイプを確定する。ソーダによる付与もここで拾う。
+    const extraUyuchi = def.type === 'yojo' && def.name.includes('うゆち') && def.fruit !== 'strawberry' && fruitsOf(s, uid, catalog).includes('strawberry');
     p.pp -= cost;
     p.hand = p.hand.filter(id => id !== uid);
     note(s, `${p.name}：「${def.name}」をプレイ（${cost}PP）`);
@@ -43,6 +46,9 @@ export function commitPlay(s: GameState, actor: Side, uid: string, slot: number,
     }
     // Recorded after the effect, so 「既に」 conditions do not count this card.
     // A passive whose condition this play fulfils holds from here on (いのまこ).
-    const passive = withSkillLimits(p, catalog, () => { p.played.push(card.cardId); });
+    const passive = withSkillLimits(p, catalog, () => {
+        p.played.push(card.cardId);
+        if (extraUyuchi) p.extraUyuchiPlays = (p.extraUyuchiPlays ?? 0) + 1;
+    });
     if (passive) note(s, `${p.name}：パッシブ「${passive.name}」の条件を達成`);
 }

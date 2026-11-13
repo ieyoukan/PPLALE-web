@@ -2,26 +2,50 @@
 
 // ルームの共有URLから入室して表示する。旧2席ルームは互換用の画面へ振り分ける。
 import { useEffect, useState } from 'react';
+import dynamic from 'next/dynamic';
 import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { DEFAULT_VISIBILITY } from '@pplale/game-core/room';
 import type { RoomInfo } from '@pplale/game-core/room';
 import { plazaKey, readRoomInfo, seatFor } from '@/lib/game/room/client';
 import { CPU_PATH } from '@/lib/game/sessionStore';
-import RoomBoard from '../room/RoomBoard';
+import { afterLaunchPicture, usePreload } from '@/lib/game/preloadGame';
 import { LaunchScreen } from './LaunchScreen';
 import { useLaunchpad } from '@/components/game/launchpad/LaunchpadContext';
 import { GameIcon } from '@/components/shared/ui/GameIcon';
-import { RoomCreatedSheet } from './RoomManagementSheets';
-import { PlazaRoom } from './PlazaRoom';
 import { plazaHref, usePlaza } from './PlazaProvider';
 import type { Refusal } from './PlazaProvider';
+import { useI18n } from '@/i18n/LocaleProvider';
 import styles from './LaunchScreen.module.css';
 import plazaStyles from './Plaza.module.css';
+
+// The room and the board (their code and styles) load behind the launch screen, which stays until the game's
+// pictures are in anyway: its first paint no longer waits for the board's stylesheet. The room's module is
+// fetched as the launch screen appears and shown in its place once loaded (the same launch screen stays meanwhile).
+let roomModule: typeof import('./PlazaRoom') | undefined;
+function useRoomModule() {
+  const [loaded, setLoaded] = useState(roomModule);
+  useEffect(() => {
+    if (loaded) return;
+    let cancelled = false;
+    const load = (retry: boolean): Promise<void> => import('./PlazaRoom').then(module => { if (!cancelled) setLoaded(roomModule = module); },
+      () => retry ? new Promise(resolve => setTimeout(resolve, 2000)).then(() => load(false)) : undefined);
+    // After the launch screen's own picture, like the rest of the game's files.
+    void afterLaunchPicture().then(() => load(true));
+    return () => { cancelled = true; };
+  }, [loaded]);
+  return loaded;
+}
+const RoomCreatedSheet = dynamic(() => import('./RoomManagementSheets').then(module => module.RoomCreatedSheet));
+// The older two-seat room: rare, so its board simply loads when asked for.
+const RoomBoard = dynamic(() => import('../room/RoomBoard'), { loading: () => <LaunchScreen status="ルームに入っています" /> });
 
 export function RoomPage({ id }: { id: string }) {
   const params = useSearchParams(), invite = params.get('invite'), watch = params.get('watch') === '1', created = params.get('created') === '1';
   const router = useRouter(), { enter, stage, view, id: current, legacy: legacyId, goHome } = usePlaza();
+  // The launch screen stays until the game's pictures and music are in (preloadGame).
+  const preload = usePreload();
+  const room = useRoomModule();
   const launchpad = useLaunchpad();
   // null: not known yet. A seat kept in this browser is a two-seat room's; a link to watch may be either.
   const [kind, setKind] = useState<'plaza' | 'legacy' | null>(null);
@@ -51,7 +75,7 @@ export function RoomPage({ id }: { id: string }) {
 
   if (legacy) return <RoomBoard id={id} watch={watch && !seatFor(id)} />;
   if (kind === null) return <LaunchScreen status="ルームに入っています" />;
-  if (current === id && view) return <><PlazaRoom view={view} onMenu={launchpad.open} />
+  if (room && current === id && view && preload.ready) return <><room.PlazaRoom view={view} onMenu={launchpad.open} />
     {created && view.plaza && view.plaza.owner === view.plaza.me && <RoomCreatedSheet view={view} onClose={() => router.replace(plazaHref(id))} />}</>;
   if (stage.kind === 'refused' && (stage.to === id || stage.to === null)) return <LaunchScreen><Refused reason={stage.reason} message={stage.message} id={id} /></LaunchScreen>;
   return <LaunchScreen status="ルームに入っています" preview={preview} />;
@@ -68,15 +92,16 @@ const reasons: Record<Refusal, string> = {
 /** Why the room could not be entered, and where to go instead. */
 export function Refused({ reason, message, id }: { reason: Refusal; message: string; id?: string }) {
   const plaza = usePlaza(), router = useRouter();
+  const { t, gameText } = useI18n();
   const [busy, setBusy] = useState(false);
   const other = plaza.id && plaza.id !== id ? plaza.id : null;
   return <>
-    <p className={styles.troubleText} role="alert">{reasons[reason]}{reason === 'error' && message && <small>{message}</small>}</p>
+    <p className={styles.troubleText} role="alert">{t(reasons[reason])}{reason === 'error' && message && <small>{gameText(message)}</small>}</p>
     <div className={styles.troubleActions}>
-      {reason === 'offline' && <button className={plazaStyles.primaryButton} disabled={busy} onClick={() => { setBusy(true); router.refresh(); window.location.reload(); }}><GameIcon name="refresh" /><span data-ui-title>もう一度</span></button>}
-      {other ? <button className={plazaStyles.primaryButton} onClick={() => { plaza.settle(); router.push(plazaHref(other)); }}><GameIcon name="back" /><span data-ui-title>もとのルームへ</span></button>
-        : reason !== 'offline' && <button className={plazaStyles.primaryButton} disabled={busy} onClick={() => { setBusy(true); void plaza.create(DEFAULT_VISIBILITY); }}><GameIcon name="door" /><span data-ui-title>インバイトのルームを作る</span></button>}
-      <Link className={plazaStyles.softButton} href={CPU_PATH} prefetch={false}><GameIcon name="cpu" />ひとりで遊ぶ</Link>
+      {reason === 'offline' && <button className={plazaStyles.primaryButton} disabled={busy} onClick={() => { setBusy(true); router.refresh(); window.location.reload(); }}><GameIcon name="refresh" /><span data-ui-title>{t('もう一度')}</span></button>}
+      {other ? <button className={plazaStyles.primaryButton} onClick={() => { plaza.settle(); router.push(plazaHref(other)); }}><GameIcon name="back" /><span data-ui-title>{t('もとのルームへ')}</span></button>
+        : reason !== 'offline' && <button className={plazaStyles.primaryButton} disabled={busy} onClick={() => { setBusy(true); void plaza.create(DEFAULT_VISIBILITY); }}><GameIcon name="door" /><span data-ui-title>{t('インバイトのルームを作る')}</span></button>}
+      <Link className={plazaStyles.softButton} href={CPU_PATH} prefetch={false}><GameIcon name="cpu" />{t('ひとりで遊ぶ')}</Link>
     </div>
   </>;
 }

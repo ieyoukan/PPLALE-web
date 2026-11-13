@@ -3,9 +3,11 @@
 import { costOf } from '@pplale/game-core';
 import type { CSSProperties } from 'react';
 import { gameCatalog } from '@/lib/game/catalog';
+import { useI18n } from '@/i18n/LocaleProvider';
 import { HAND_CARD_SIZES } from '@/lib/game/cardImages';
 import { sideName, useBoardContext } from '../board/BoardContext';
 import { FlyingCard } from '../BoardPieces';
+import { aimPath } from '../board/useCardDrag';
 import { GameCard } from '../GameCard';
 import { TurnAnnouncement } from '../TurnAnnouncement';
 import styles from '../BoardEmulator.module.css';
@@ -20,6 +22,19 @@ export function HeldCard() {
   const { game, view, me, drag } = useBoardContext();
   const held = drag.held;
   if (!held) return null;
+  if (held.aim) {
+    // The card stays in place; a curved arrow from it follows the pointer (useCardDrag moves it).
+    const { d, angle } = aimPath(held.origin, held);
+    return <svg data-aim-arrow className={styles.aimArrow} aria-hidden="true">
+      <path data-aim-line className={styles.aimShadow} d={d} />
+      <path data-aim-line className={styles.aimLine} d={d} />
+      <path data-aim-line className={styles.aimFlow} d={d} />
+      <g data-aim-tip transform={`translate(${held.x} ${held.y}) rotate(${angle})`}>
+        <circle className={styles.aimRing} r="26" />
+        <path className={styles.aimHead} d="M-4,-17 L22,0 L-4,17 L4,0 Z" />
+      </g>
+    </svg>;
+  }
   return <div data-held-card className={styles.heldCard} style={{ left: held.x, top: held.y }}>
     <GameCard id={game.cards[held.uid].cardId} instance={game.cards[held.uid]} sizes={HAND_CARD_SIZES} currentCost={me.hand.includes(held.uid) ? costOf(game, held.uid, gameCatalog, view) : undefined} />
   </div>;
@@ -28,6 +43,7 @@ export function HeldCard() {
 /** Attack lunge, damage numbers, labels (+1/+1 …), the opponent's non-card choices, card flights and the turn announcement. */
 export function AnimationLayer() {
   const board = useBoardContext();
+  const { t, gameText } = useI18n();
   const { strike, flights, turnNotice, hits, pops, choiceNote } = board.animations;
   return <>
     {turnNotice && <TurnAnnouncement key={turnNotice.id} notice={turnNotice} />}
@@ -35,12 +51,12 @@ export function AnimationLayer() {
       <div className={styles.strikeCard} style={{ left: strike.x, top: strike.y, width: strike.width, height: strike.height, '--strike-x': `${strike.dx}px`, '--strike-y': `${strike.dy}px` } as CSSProperties}><GameCard id={strike.cardId} /></div>
       <div className={styles.impact} style={{ left: strike.x + strike.dx + strike.width / 2, top: strike.y + strike.dy + strike.height / 2 }}>✦</div>
     </div>}
-    {hits.map(hit => <strong key={hit.id} className={`${styles.hitNumber} ${hit.kind === 'attack' ? styles.hitAttack : ''}`} style={{ left: hit.x, top: hit.y }} role="status" aria-label={`${hit.amount}ダメージ`}>
+    {hits.map(hit => <strong key={hit.id} className={`${styles.hitNumber} ${hit.kind === 'attack' ? styles.hitAttack : ''}`} style={{ left: hit.x, top: hit.y }} role="status" aria-label={t('{amount}ダメージ', { amount: hit.amount })}>
       {hit.kind === 'attack' && <svg className={styles.hitBurst} viewBox="0 0 100 100" aria-hidden="true"><polygon points={SCUFFLE} /></svg>}
       {hit.amount}
     </strong>)}
-    {pops.map(pop => <span key={pop.id} className={`${styles.pop} ${popTones[pop.tone]}`} style={{ left: pop.x, top: pop.y }}>{pop.text}</span>)}
-    {choiceNote && <div key={choiceNote.id} className={styles.choiceNote} role="status">{sideName(board, choiceNote.side)}：{choiceNote.label}</div>}
-    <div className={styles.flightLayer}>{flights.map(flight => <FlyingCard key={flight.uid} flight={flight} />)}</div>
+    {pops.map(pop => <span key={pop.id} className={`${styles.pop} ${popTones[pop.tone]}`} style={{ left: pop.x, top: pop.y }}>{gameText(pop.text)}</span>)}
+    {choiceNote && <div key={choiceNote.id} className={styles.choiceNote} role="status">{t('{name}：{text}', { name: t(sideName(board, choiceNote.side)), text: gameText(choiceNote.label) })}</div>}
+    <div className={styles.flightLayer}>{flights.map(flight => <FlyingCard key={flight.id} flight={flight} sleeve={board.sleeves[flight.side]} />)}</div>
   </>;
 }

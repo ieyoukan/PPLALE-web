@@ -43,7 +43,7 @@ export const expandedOps: OpTable = {
                 return;
             }
             const eligible = fx.me.pp >= 4 ? fx.me.hand.filter(uid => fx.s.cards[uid].cardId === 'y_122' && !fx.s.cards[uid].silenced) : [];
-            if (!t.target && eligible.length) { fx.ask('リンネを除外して4PP払い、相手のドローフェイズをスキップしますか？', [{ id: 'skip', label: '発動しない' }, ...eligible.map(id => ({ id, label: 'リンネを除外して発動' }))], t); return; }
+            if (!t.target && eligible.length) { fx.ask('リンネを除外して4PP払い、相手のドローフェイズをスキップしますか？', [{ id: 'skip', label: '発動しない' }, ...eligible.map(id => ({ id, label: 'リンネを除外して発動' }))], t, { kind: 'activate' }); return; }
             fx.queue('draw', { actor: fx.foeSide, text: 'turn', source: undefined });
         },
     },
@@ -162,7 +162,7 @@ export const expandedOps: OpTable = {
             const amino = t.subject !== 'leader' && fx.me.field.includes(t.subject!) && fx.me.pp >= 2 ? held('y_91') : [];
             if (t.target !== 'skip' && (linne.length || amino.length)) {
                 const prompt = !amino.length ? 'リンネを公開して攻撃した幼女を-1/0しますか？' : !linne.length ? 'あみのを公開して捨て、2PPで攻撃を無効にしますか？' : '手札の幼女で攻撃に対応しますか？';
-                fx.ask(prompt, [{ id: 'skip', label: '発動しない' }, ...linne.map(id => ({ id, label: fx.defOf(id).name })), ...amino.map(id => ({ id, label: `${fx.defOf(id).name}：2PPで攻撃を無効化` }))], t);
+                fx.ask(prompt, [{ id: 'skip', label: '発動しない' }, ...linne.map(id => ({ id, label: fx.defOf(id).name })), ...amino.map(id => ({ id, label: `${fx.defOf(id).name}：2PPで攻撃を無効化` }))], t, { kind: 'activate' });
                 return;
             }
             fx.next({ op: 'combat', actor: fx.foeSide, source: t.source, target: t.subject });
@@ -222,14 +222,14 @@ export const expandedOps: OpTable = {
                 const answers = t.target ? [] : playAnswers(fx.s, fx.side);
                 if (answers.length) {
                     fx.ask(`相手が「${fx.defOf(played).name}」をプレイしました。ぶらんちゃんと手札2枚を除外して、効果を不発にしてお昼寝場所へ送りますか？`,
-                        [{ id: 'skip', label: '発動しない' }, ...answers.map(id => ({ id, label: 'ぶらんちゃんを除外して発動' }))], t);
+                        [{ id: 'skip', label: '発動しない' }, ...answers.map(id => ({ id, label: 'ぶらんちゃんを除外して発動' }))], t, { kind: 'activate' });
                     return;
                 }
                 if (!t.target || t.target === 'skip') { commitPlay(fx.s, fx.foeSide, played, t.value!, fx.catalog); return; }
                 t = { ...t, subject: t.target, target: undefined, ids: [] };
             } else if (t.target) t = { ...t, ids: [...(t.ids ?? []), t.target], target: undefined };
             const rest = fx.me.hand.filter(uid => uid !== t.subject && !(t.ids ?? []).includes(uid)), needed = 2 - (t.ids ?? []).length;
-            if (needed > 0 && rest.length > needed) { fx.pick(`一緒に除外する手札を選んでください（あと${needed}枚）`, rest, t); return; }
+            if (needed > 0 && rest.length > needed) { fx.pick(`一緒に除外する手札を選んでください（あと${needed}枚）`, rest, t, { kind: 'exile', count: needed }); return; }
             for (const uid of [t.subject!, ...(t.ids ?? []), ...(needed > 0 ? rest : [])]) exile(fx.s, uid, fx.catalog, fx.side);
             fx.foe.hand = fx.foe.hand.filter(uid => uid !== played);
             fx.foe.nap.push(played);
@@ -257,7 +257,7 @@ export const expandedOps: OpTable = {
             }
             const eligible = fx.me.hand.filter(uid => fx.s.cards[uid].cardId === 'y_64' && !fx.s.cards[uid].silenced);
             if (!t.target && eligible.length) {
-                fx.ask('うぃまるを公開して捨て、お菓子ポイントの変動を無効にしますか？', [{ id: 'skip', label: '発動しない' }, ...eligible.map(id => ({ id, label: fx.defOf(id).name }))], t);
+                fx.ask('うぃまるを公開して捨て、お菓子ポイントの変動を無効にしますか？', [{ id: 'skip', label: '発動しない' }, ...eligible.map(id => ({ id, label: fx.defOf(id).name }))], t, { kind: 'activate' });
                 return;
             }
             losePoints(fx.s, t.actor, t.amount!, 'eat');

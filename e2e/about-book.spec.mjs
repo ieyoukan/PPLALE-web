@@ -57,22 +57,28 @@ for (const width of [1280, 390]) {
       expect(errors).toEqual([]);
     });
 
-    test('shows docs/game-rules.md as text', async ({ page }, info) => {
+    test('shows docs/game-rules.md as text below the book, in the HTML from the server', async ({ page, request }, info) => {
+      // Search engines and agents read the rules without running the page.
+      const html = await (await request.get('/about/')).text();
+      for (const text of ['1. 対戦開始と初期手札', 'ぶどうFAQ⑥-1', '"@type":"AboutPage"', '"@type":"BreadcrumbList"']) expect(html).toContain(text);
+      expect(html).not.toMatch(/<h1[^>]*opacity:0/);
       await page.goto('/about/');
-      await page.getByRole('tab', { name: /もじでよむ/ }).click();
+      await page.getByRole('link', { name: /もじでよむ/ }).click();
       await expect(page).toHaveURL(/#text$/);
-      const doc = page.getByRole('article', { name: 'ルール・裁定集' });
-      await expect(doc.getByRole('heading', { level: 2, name: '1. 対戦開始と初期手札' })).toBeVisible();
+      const doc = page.getByRole('region', { name: 'ルール・裁定集' });
+      await expect(doc.getByRole('heading', { level: 3, name: '1. 対戦開始と初期手札' })).toBeInViewport();
       await expect(doc).not.toContainText('この会話');
       await expect(doc).not.toContainText('初期手札の交換でカードを山札に戻す順番');
       await expect(doc).not.toContainText('今回の資料だけでは確定しない点');
       await expect(page.getByRole('button', { name: /今回の資料だけでは確定しない点/ })).toHaveCount(0);
       await expect(doc.getByRole('cell', { name: '早食い', exact: true })).toBeVisible();
       await page.getByRole('button', { name: 'ぶどうタイプのFAQ', exact: true }).click();
-      await expect(doc.getByRole('heading', { level: 2, name: '5. ぶどうタイプのFAQ' })).toBeInViewport();
+      await expect(doc.getByRole('heading', { level: 3, name: '5. ぶどうタイプのFAQ' })).toBeInViewport();
       await page.screenshot({ path: info.outputPath('about-text.png') });
-      await page.reload();
-      await expect(page.getByRole('tab', { name: /もじでよむ/ })).toHaveAttribute('aria-selected', 'true');
+      // The old address of the text tab still opens on the rules.
+      await page.goto('/about/');
+      await page.goto('/about/#text');
+      await expect(doc.getByRole('heading', { level: 2, name: 'ルール・裁定集' })).toBeInViewport();
       expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(true);
     });
   });

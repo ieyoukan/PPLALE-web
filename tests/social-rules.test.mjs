@@ -35,6 +35,17 @@ test('social rules: profiles contain only public allowed fields and only their o
   assert.equal((await getDoc(ref)).data().displayName, '変更');
 });
 
+test('social rules: name search pieces are allowed, but profiles still cannot be listed or searched by clients', { skip: !enabled }, async t => {
+  const a = await client(t), b = await client(t);
+  const ref = doc(a.db, 'profiles', a.uid);
+  await setDoc(ref, { ...profile(), searchable: true, nameGrams: ['な', 'ま', 'え', 'なま', 'まえ', 'なまえ'] });
+  await denied(updateDoc(ref, { nameGrams: Array.from({ length: 79 }, (_, index) => `g${index}`), updatedAt: serverTimestamp() }));
+  await denied(updateDoc(ref, { searchable: false, nameGrams: ['な'], updatedAt: serverTimestamp() }));
+  await denied(updateDoc(ref, { searchable: 'yes', updatedAt: serverTimestamp() }));
+  await updateDoc(ref, { searchable: false, nameGrams: [], updatedAt: serverTimestamp() });
+  await denied(getDocs(query(collection(b.db, 'profiles'), where('nameGrams', 'array-contains', 'な'), limit(20))));
+});
+
 test('deck sharing allows direct links, but only the owner can enumerate saved decks', { skip: !enabled }, async t => {
   const a = await client(t), b = await client(t), guest = await client(t, false);
   const id = 'shared-deck';

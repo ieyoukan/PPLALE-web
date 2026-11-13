@@ -40,10 +40,10 @@ export function servedModel(): Promise<ServedModel | null> {
  * Sends a finished match against さいきょう. Only the cards of both decks, the shuffle seed and the
  * moves leave the browser: no names, no deck names, no account. The server replays it to find the winner.
  */
-export function reportMatch(match: { seed: number; decks: [Deck, Deck]; commands: Command[]; model: string }) {
+export function reportMatch(match: { seed: number; decks: [Deck, Deck]; commands: Command[]; model: string; decisiveOpeningDice?: true }) {
   if (!cpuServerUrl) return;
   const cards = ({ yojo, sweet, playable }: Deck) => ({ yojo, sweet, playable });
-  const body = JSON.stringify({ level: 'master', model: match.model, seed: match.seed, decks: match.decks.map(cards), commands: match.commands });
+  const body = JSON.stringify({ level: 'master', decisiveOpeningDice: match.decisiveOpeningDice, model: match.model, seed: match.seed, decks: match.decks.map(cards), commands: match.commands });
   // A lost report is not worth bothering the player with.
   void fetch(`${cpuServerUrl}/reports`, { method: 'POST', keepalive: true, headers: { 'content-type': 'application/json' }, body }).catch(() => {});
 }

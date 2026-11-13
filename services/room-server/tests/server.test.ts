@@ -1,5 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
+import { memoryBackend } from '../src/backend.ts';
 import { HIDDEN_CARD, playableNow } from '@pplale/game-core';
 import type { RoomInfo, RoomServerStats, Seated } from '@pplale/game-core/room';
 import { connect, deck, seatedRoom, serve, shared, startedMatch } from './helpers.ts';
@@ -306,4 +307,17 @@ test('upkeep: idle rooms lapse, and one address cannot ask without end', async (
     assert.equal((await served.call('/healthz')).status, 200);
     assert.equal((await served.call('/readyz')).status, 200);
     await served.close();
+});
+
+
+test('shutdown waits for a delayed room subscription before closing its backend',async t=>{
+    const backend=memoryBackend(),gate=Promise.withResolvers<void>();let closed=false;
+    const served=await serve({data:{open:()=>({...backend,
+        async subscribe(listener: Parameters<typeof backend.subscribe>[0]){await gate.promise;await backend.subscribe(listener);},
+        async close(){closed=true;await backend.close();},
+    })}});
+    const closing=served.close();t.after(async()=>{gate.resolve();await closing;});
+    await new Promise(resolve=>setTimeout(resolve,25));
+    assert.equal(closed,false,'the backend must stay open while its subscriber connects');
+    gate.resolve();await closing;assert.equal(closed,true);
 });

@@ -8,14 +8,19 @@ self.addEventListener('activate', event => event.waitUntil(self.clients.claim())
 self.addEventListener('push', event => {
   let data = {};
   try { data = event.data ? event.data.json() : {}; } catch { data = { body: event.data ? event.data.text() : '' }; }
-  event.waitUntil(self.registration.showNotification(data.title || 'ぷぷりえーる', {
-    body: data.body || '',
-    icon: '/icon-192.png',
-    badge: '/icon-192.png',
-    tag: data.tag,
-    renotify: !!data.tag,
-    data: { url: data.url || '/game/' },
-  }));
+  const notice = { title: data.title || 'ぷぷりえーる', body: data.body || '', url: data.url || '/game/', tag: data.tag || `notice-${Date.now()}` };
+  event.waitUntil(Promise.all([
+    self.registration.showNotification(notice.title, {
+      body: notice.body,
+      icon: '/icon-192.png',
+      badge: '/icon-192.png',
+      tag: data.tag,
+      renotify: !!data.tag,
+      data: { url: notice.url },
+    }),
+    // The open pages show it too, at the bottom of the screen (NoticeToasts).
+    self.clients.matchAll({ type: 'window', includeUncontrolled: true }).then(windows => windows.forEach(client => client.postMessage({ type: 'pplale-notice', notice }))),
+  ]));
 });
 
 // Open (or focus) the page the notification is about.

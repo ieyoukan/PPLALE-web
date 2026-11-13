@@ -89,10 +89,10 @@ test('a play automatically records network, server and shown-board timings and b
   expect(JSON.stringify(samples)).not.toMatch(/あなた|相手|test-token|123456|cardId|"uid"/);
   await page.goto(`${base}/game/performance/`);
   await expect(page.getByRole('heading',{name:'通信計測',exact:true})).toBeVisible();
-  await expect(page.getByRole('status')).toContainText('記録 1 件');
+  await expect(page.getByRole('status').filter({ hasText: /記録 \d+ 件/ })).toContainText('記録 1 件');
   await expect(page.getByRole('heading',{name:'サーバー処理の内訳'})).toBeVisible();
   const download=page.waitForEvent('download');await page.getByRole('button',{name:'JSONを書き出す'}).click();expect((await download).suggestedFilename()).toBe('pplale-play-performance.json');
-  await page.getByRole('button',{name:'この端末の記録を消す'}).click();await expect(page.getByRole('status')).toContainText('記録 0 件');
+  await page.getByRole('button',{name:'この端末の記録を消す'}).click();await expect(page.getByRole('status').filter({ hasText: /記録 \d+ 件/ })).toContainText('記録 0 件');
   await page.screenshot({path:'/tmp/pplale-play-performance-desktop.png',fullPage:true});
 });
 
@@ -128,11 +128,18 @@ test('a fake reaction wait does not delay sending a card or confirm its play in 
   await freeze(page);
   await click(page.getByRole('button', { name: '場に出す', exact: true }));
   await expect.poll(() => room.requests.length).toBe(1);
-  await expect(page.locator(`[data-hand="${uid}"][data-submitting]`)).toBeVisible();
+  const preview=page.locator(`[data-pending-play="${uid}"]`);
+  await expect(preview).toBeVisible();await expect(preview).toBeDisabled();
+  await expect(page.locator(`[data-hand="${uid}"][data-submitting]`)).toHaveCSS('visibility','hidden');
+  const motion=await preview.locator('img').evaluate(element=>getComputedStyle(element).animationDuration);
+  expect(motion).toBe('0.32s');
+  await preview.locator('img').evaluate(element=>{window.placementImage=element;});
   room.reply();
   await expect(page.locator(`[data-unit="${uid}"]`)).toHaveCount(0);
   await page.clock.runFor(920);
   await expect(page.locator(`[data-unit="${uid}"]`)).toBeVisible();
+  await expect(preview).toHaveCount(0);
+  expect(await page.locator(`[data-unit="${uid}"] img`).evaluate(element=>element===window.placementImage)).toBe(true);
   expect(room.requests).toHaveLength(1);
 });
 
@@ -193,4 +200,85 @@ test('opening draws remain independent while the opponent has a card in flight',
   await expect.poll(() => room.requests.length).toBe(2);
   room.reply();
   await expect(page.locator('[data-hand-list] [data-hand]')).toHaveCount(2);
+});
+
+
+for (const kind of ['opening', 'effect']) test(`${kind} room draws overlap after acknowledgement, but never predict a draw`, async ({ page }) => {
+  let initial = arena();
+  if (kind === 'opening') { initial.phase = 'opening'; initial.openingRemaining = [3, 4]; }
+  else initial = applyCommand(initial, { type: 'adjust', actor: 0, resource: 'points', delta: -8 }, catalog, true).state;
+  const room = await board(page, initial);
+  const deck = page.locator(`button[data-deck="0-${kind === 'opening' ? 'yojo' : 'sweet'}"]`);
+  await expect(deck).toBeEnabled();
+  await freeze(page);
+  await click(deck);
+  await expect.poll(() => room.requests.length).toBe(1);
+  await page.clock.runFor(350);
+  await expect(deck).toBeDisabled();
+  await deck.evaluate(button => button.click());
+  expect(room.requests).toHaveLength(1);
+  await expect(page.locator('[data-hand-list] [data-hand]')).toHaveCount(0);
+  room.reply();
+  await page.clock.runFor(40);
+  await expect(page.locator('[data-hand-list] [data-hand]')).toHaveCount(1);
+  await expect(page.locator('[data-draw-flight]')).toHaveCount(1);
+  await expect(deck).toBeEnabled();
+  await click(deck);
+  await expect.poll(() => room.requests.length).toBe(2);
+  room.reply();
+  await page.clock.runFor(40);
+  await expect(page.locator('[data-hand-list] [data-hand]')).toHaveCount(2);
+  await expect(page.locator('[data-draw-flight]')).toHaveCount(2);
+  await page.clock.runFor(1200);
+  expect(room.requests).toHaveLength(2);
+  await expect(page.locator('[data-draw-flight]')).toHaveCount(0);
+});
+
+test('a refused placement restores the hand without changing PP or the actual field',async({page})=>{
+  const initial=arena({me:{hand:['y_9']},foe:{hand:['y_17']}}),uid=hand(initial)[0];
+  const room=await board(page,initial,0);
+  await page.locator(`[data-hand="${uid}"]`).click();await freeze(page);
+  await click(page.getByRole('button',{name:'場に出す',exact:true}));
+  await expect(page.locator(`[data-pending-play="${uid}"]`)).toBeVisible();
+  await expect(page.locator(`[data-unit="${uid}"]`)).toHaveCount(0);
+  await expect.poll(()=>room.requests.length).toBe(1);room.reply('盤面が更新されました。もう一度操作してください');
+  await expect(page.locator(`[data-pending-play="${uid}"]`)).toHaveCount(0);
+  await expect(page.locator(`[data-hand="${uid}"]`)).toHaveCSS('visibility','visible');
+  await expect(page.getByRole('button',{name:/ターン\s*終了/})).toBeEnabled();
+});
+
+test('a real hidden hand reaction keeps the preview without confirming PP and can cancel it',async({page})=>{
+  const initial=arena({me:{hand:['y_9'],pp:10},foe:{hand:['y_109','y_9','s_19']}}),uid=hand(initial)[0];
+  const bran=initial.players[1].hand[0],room=await board(page,initial,0);
+  await page.locator(`[data-hand="${uid}"]`).click();await freeze(page);
+  await click(page.getByRole('button',{name:'場に出す',exact:true}));await expect.poll(()=>room.requests.length).toBe(1);
+  const after=room.reply();expect(after.pending.task.op).toBe('playResponse');
+  await page.clock.runFor(1000);
+  await expect(page.locator(`[data-pending-play="${uid}"]`)).toBeVisible();
+  await expect(page.locator(`[data-unit="${uid}"]`)).toHaveCount(0);
+  await expect(page.getByRole('button',{name:/ターン\s*終了/})).toBeDisabled();
+  room.opponent({type:'choose',actor:1,option:bran});await page.clock.runFor(6000);
+  await expect(page.locator(`[data-pending-play="${uid}"]`)).toHaveCount(0);
+  await expect(page.locator(`[data-unit="${uid}"]`)).toHaveCount(0);
+  await expect(page.locator(`[data-hand-list] [data-hand="${uid}"]`)).toHaveCount(0);
+  expect(after.players[0].pp).toBe(initial.players[0].pp);
+});
+
+
+test('discard and exile drafts send nothing until confirmed; refusal stops the remaining choices',async({page})=>{
+  const initial=applyCommand(arena({me:{hand:Array(12).fill('y_17')}}),{type:'end',actor:0},catalog).state;
+  const [a,b,c]=initial.players[0].hand,room=await board(page,initial);
+  const card=uid=>page.locator(`[data-hand-list] [data-hand="${uid}"]`);
+  for(const uid of [a,b,c])await card(uid).evaluate(element=>element.click());
+  await expect(card(a)).toHaveAttribute('aria-pressed','true');expect(room.requests).toHaveLength(0);
+  await card(a).evaluate(element=>element.click());await expect(card(a)).toHaveAttribute('aria-pressed','false');
+  await card(a).evaluate(element=>element.click());
+  await page.getByRole('button',{name:'除外する（3枚）',exact:true}).click();
+  await expect.poll(()=>room.requests.length).toBe(1);expect(room.requests[0].action.command.option).toBe(b);
+  await page.waitForTimeout(100);expect(room.requests).toHaveLength(1);
+  room.reply();await expect.poll(()=>room.requests.length).toBe(2);expect(room.requests[1].action.command.option).toBe(c);
+  room.reply('盤面が更新されました。もう一度操作してください');
+  await expect(page.getByRole('alert').filter({hasText:'盤面が更新されました'})).toBeVisible();
+  await page.waitForTimeout(300);expect(room.requests).toHaveLength(2);
+  await expect(card(a)).toBeVisible();await expect(card(c)).toBeVisible();
 });

@@ -1,5 +1,7 @@
 import { other, winReasonOf } from '@pplale/game-core';
 import type { GameState, Side } from '@pplale/game-core';
+import { untranslated } from '@/lib/game/sessionStore';
+import type { Translate } from '@/lib/game/sessionStore';
 import type { Board } from '../board/useBoard';
 
 export interface Outcome {
@@ -16,24 +18,24 @@ export interface Outcome {
 const winnerOf = (game: GameState): Side | null => game.winner === 'draw' ? other(game.rules.firstPlayer) : game.winner;
 
 /** How the finished match reads for the viewer, or null while it is still going. */
-export function outcomeOf({ game, view, mode, names, remote }: Pick<Board, 'game' | 'view' | 'mode' | 'names' | 'remote'>): Outcome | null {
+export function outcomeOf({ game, view, mode, names, remote }: Pick<Board, 'game' | 'view' | 'mode' | 'names' | 'remote'>, t: Translate = untranslated): Outcome | null {
   const winner = winnerOf(game);
   if (winner === null) return null;
-  const text = `${names[winner]}の勝ち`;
+  const text = t('{name}の勝ち', { name: t(names[winner]) });
   if (mode !== 'cpu' && mode !== 'room' || remote?.watching) return { winner, kind: 'neutral', text };
-  return winner === view ? { winner, kind: 'win', text: '勝利!!' } : { winner, kind: 'lose', text };
+  return winner === view ? { winner, kind: 'win', text: t('勝利!!') } : { winner, kind: 'lose', text };
 }
 
 /** Why the match ended, in a few words for the result screen. One line per `WinReason`. */
-export function reasonOf(game: GameState, names: [string, string]): string {
+export function reasonOf(game: GameState, names: [string, string], t: Translate = untranslated): string {
   const winner = winnerOf(game);
   if (winner === null) return '';
-  const loser = names[other(winner)];
+  const name = t(names[other(winner)]);
   switch (winReasonOf(game)) {
-    case 'points': return 'お菓子ポイントが0になった';
-    case 'special': return '特殊勝利条件を満たした';
-    case 'defeat': return `${loser}が敗北条件を満たした`;
-    case 'resign': return `${loser}が投了した`;
-    default: return '行動のないターンが続き、お菓子ポイントで判定';
+    case 'points': return t('お菓子ポイントが0になった');
+    case 'special': return t('特殊勝利条件を満たした');
+    case 'defeat': return t('{name}が敗北条件を満たした', { name });
+    case 'resign': return t('{name}が投了した', { name });
+    default: return t('行動のないターンが続き、お菓子ポイントで判定');
   }
 }

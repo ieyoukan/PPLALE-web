@@ -1,19 +1,22 @@
 // 最初のターンまでの処理。ダイス・先後選択・初期ドロー・手札交換を扱う。
 import { note } from '../core/cards.ts';
-import { rollDie, shuffled } from '../core/rng.ts';
+import { random, rollDie, shuffled } from '../core/rng.ts';
 import { draw } from '../core/zones.ts';
 import { other, RuleError, sides } from '../model.ts';
 import type { DeckKind, GameState, Side } from '../model.ts';
 import type { Handlers } from './types.ts';
 
 export const openingCommands: Handlers<'roll' | 'initiative' | 'openingDraw' | 'mulligan' | 'keep'> = {
-    // Each side rolls once in order (side 0 first); a tie clears both and repeats.
+    // 新しい対戦は異なる目の30通りから選ぶ。大小は各15通りで、どちらも勝率50%。
     roll(s, c) {
         if (s.phase !== 'dice') throw new RuleError('手番は既に決まっています');
         const complete = s.dice?.rolls.every(value => value !== null);
         const rolls: [number | null, number | null] = complete ? [null, null] : [...(s.dice?.rolls ?? [null, null])];
         if (c.actor !== (rolls[0] === null ? 0 : 1)) throw new RuleError('順番にダイスを振ってください');
-        rolls[c.actor] = rollDie(s);
+        if (s.decisiveOpeningDice && c.actor === 1) {
+            const value = random(s, 5) + 1, first = rolls[0]!;
+            rolls[1] = value >= first ? value + 1 : value;
+        } else rolls[c.actor] = rollDie(s);
         s.dice = { rolls, ties: s.dice?.ties ?? 0 };
         note(s, `${s.players[c.actor].name}のダイス：${rolls[c.actor]}`);
         if (rolls[0] === null || rolls[1] === null) return;

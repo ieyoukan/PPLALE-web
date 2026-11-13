@@ -4,7 +4,7 @@ import { catalog as roomCatalog } from './catalog.ts';
 // 接続や保存先には依存せず、要求に応じて状態を変更する。
 import { createHash, randomBytes, randomInt, randomUUID, timingSafeEqual } from 'node:crypto';
 import { z } from 'zod';
-import { applyCommand, decideMatch, newGame, other, sandboxRules, viewFor } from '@pplale/game-core';
+import { SLEEVES, applyCommand, decideMatch, newGame, other, sandboxRules, viewFor } from '@pplale/game-core';
 import type { Catalog, CpuLevel, Deck, GameState, Side } from '@pplale/game-core';
 import { MAX_NAME_LENGTH, parseRoomRules, roomDeckErrors } from '@pplale/game-core/room';
 import type { MatchEnd } from '@pplale/game-core/history';
@@ -79,7 +79,7 @@ export const command = z.discriminatedUnion('type', [
     z.object({ type: z.literal('acorn'), actor: side, mode: z.enum(['draw', 'pp']) }),
 ]);
 const cardIds = z.array(z.string().max(16)).max(40);
-export const deck = z.object({ name: z.string().max(60), yojo: cardIds, sweet: cardIds, playable: z.string().max(16) });
+export const deck = z.object({ name: z.string().max(60), yojo: cardIds, sweet: cardIds, playable: z.string().max(16), sleeve: z.enum(SLEEVES).optional() });
 const action = z.discriminatedUnion('action', [
     z.object({ action: z.literal('ready'), deck }),
     z.object({ action: z.literal('unready') }),
@@ -114,7 +114,7 @@ export interface Present { online: [boolean, boolean]; watching: number; members
 /** 席または観戦者向けのルーム表示。 */
 export function seatView(room: Room, seat: Side | 'spectator', { online, watching }: Present): RoomView {
     const { id, mode, version, status, match, rules, last, resigned, seats, state, record, turnClock } = room;
-    const players = seats.map((s, index) => s && { name: s.name, ...(s.profileId && { profileId: s.profileId }), ready: s.ready, online: online[index], ...(s.left && { left: true }), ...(index === seat && s.deck && { deck: s.deck.name }) }) as RoomView['players'];
+    const players = seats.map((s, index) => s && { name: s.name, ...(s.profileId && { profileId: s.profileId }), ready: s.ready, online: online[index], ...(s.left && { left: true }), ...(index === seat && s.deck && { deck: s.deck.name }), ...(s.deck?.sleeve && s.deck.sleeve !== 'red' && { sleeve: s.deck.sleeve }) }) as RoomView['players'];
     return {
         id, ...(mode && { mode }), version, seat: seat === 'spectator' ? 0 : seat, ...(seat === 'spectator' ? { watching: true as const } : { reportsAway: true as const }), spectators: watching,
         ...(seat !== 'spectator' && seats[seat]?.deck && { ownDeck: seats[seat]!.deck! }),

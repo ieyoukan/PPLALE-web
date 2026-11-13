@@ -9,7 +9,7 @@ import { random, rollDie, shuffled } from '../core/rng.ts';
 import { bounce, destroy, discard, exile, reveal, summon, toDeck } from '../core/zones.ts';
 import { colorProtected, fruitsOf } from '../core/protection.ts';
 import { other } from '../model.ts';
-import type { Catalog, DeckKind, Definition, GameState, Instance, Keyword, Player, Side, Task, TaskOp } from '../model.ts';
+import type { CardSelection, Catalog, DeckKind, Definition, GameState, Instance, Keyword, Player, Side, Task, TaskOp } from '../model.ts';
 
 export interface Effects {
     readonly s: GameState;
@@ -31,9 +31,9 @@ export interface Effects {
     /** Adds a step that resolves right after the current one. */
     next(task: Task): void;
     /** Waits for the step's actor to pick one of the options; the step re-runs with `target` set. */
-    ask(prompt: string, options: { id: string; label: string }[], task: Task): void;
-    /** Like `ask` for card uids; labels come from the catalog. Does nothing without candidates. */
-    pick(prompt: string, uids: string[], task: Task): void;
+    ask(prompt: string, options: { id: string; label: string }[], task: Task, selection?: CardSelection): void;
+    /** カードIDの選択。selectionは画面の仮選択方法だけを指定し、効果の処理順は変えない。候補なしなら何もしない。 */
+    pick(prompt: string, uids: string[], task: Task, selection?: CardSelection): void;
 
     buff(uid: string, attack: number, hp: number): void;
     addKeyword(uid: string, keyword: Keyword): void;
@@ -111,8 +111,8 @@ export function effects(s: GameState, catalog: Catalog, side: Side, source?: str
         s, catalog, side, foeSide: other(side), me, foe, multiplier, source,
         queue: (op, extra = {}) => { s.queue.push({ op, actor: side, ...(source ? { source } : {}), multiplier, ...extra }); },
         next: task => { s.queue.unshift(task); },
-        ask: (prompt, options, task) => { if (options.length) s.pending = { prompt, options, task }; },
-        pick: (prompt, uids, task) => { if (uids.length) s.pending = { prompt, options: uids.map(id => ({ id, label: label(id) })), task }; },
+        ask: (prompt, options, task, selection) => { if (options.length) s.pending = { prompt, options, task, ...(selection && { selection }) }; },
+        pick: (prompt, uids, task, selection) => { if (uids.length) s.pending = { prompt, options: uids.map(id => ({ id, label: label(id) })), task, ...(selection && { selection }) }; },
         buff: (uid, attack, hp) => { if (!protectedTarget(uid)) buff(s, uid, attack, hp); },
         giveEvasion: (uid, x) => giveEvasion(s, uid, x),
         addKeyword: (uid, keyword) => { if (!protectedTarget(uid)) addKeyword(s, uid, keyword); },

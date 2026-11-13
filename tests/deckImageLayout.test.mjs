@@ -28,5 +28,6 @@ test('partial and overfull decks keep stable empty slots and respect deck limits
   assert.ok(empty.every(slot => slot.id === null));
   const full = deckImageLayout({ yojoDeckIds: Array(200).fill('y_0'), sweetDeckIds: Array(50).fill('s_0'), playableCardId: 'p_0' });
   assert.equal(full.filter(slot => slot.id).length, 31);
-  assert.deepEqual(full.map(({ id, ...slot }) => slot), empty.map(({ id, ...slot }) => slot));
+  const withoutId = slot => ({ ...slot, id: undefined });
+  assert.deepEqual(full.map(withoutId), empty.map(withoutId));
 });

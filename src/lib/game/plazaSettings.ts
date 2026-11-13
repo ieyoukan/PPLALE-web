@@ -19,8 +19,11 @@ export function saveRoomSettings(change: Partial<RoomSettings>) {
   return next;
 }
 
+import { browserAppLocale } from '@/i18n/config';
 const GUEST_NAME_KEY = 'pplale-guest-name-v2';
 /** The name a guest goes by (signed-in players go by their profile, which the server reads). */
 export function guestName() {
-  try { return localStorage.getItem(GUEST_NAME_KEY)?.trim() || 'ゲスト'; } catch { return 'ゲスト'; }
+  // Unnamed, a guest is called so in the language they see (others see it as it is).
+  const unnamed = browserAppLocale() === 'en' ? 'Guest' : 'ゲスト';
+  try { return localStorage.getItem(GUEST_NAME_KEY)?.trim() || unnamed; } catch { return unnamed; }
 }
