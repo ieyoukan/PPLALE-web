@@ -15,7 +15,7 @@ run = "pnpm run dev"
 
 [tasks.check]
 description = "Run type checking, linting, and card data checks"
-depends = ["typecheck", "lint", "cards-check", "ui-structure"]
+depends = ["typecheck", "lint", "cards-check", "ui-structure", "generated-files"]
 
 [tasks.typecheck]
 run = "pnpm run typecheck"
@@ -32,3 +32,14 @@ run = "pnpm run build"
 
 [tasks.ui-structure]
 run = "pnpm run check:ui"
+
+[tasks.generated-files]
+description = "Fail when generated output that .gitignore excludes is committed"
+run = """
+files="$(git ls-files --cached --ignored --exclude-standard)"
+if [ -n "$files" ]; then
+  echo "Gitで管理しない生成物がコミットされています（.gitignore を参照）。git rm --cached で外してください:"
+  echo "$files"
+  exit 1
+fi
+"""

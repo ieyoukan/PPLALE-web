@@ -3,10 +3,11 @@
  * カード画像とデータの整合性チェックスクリプト（CI 用）
  *
  * - src/data/*.json の imageUrl が実在するファイルを指しているか（エラー）
- * - public/images/{yojo,sweet,playable} に未参照のファイルが無いか（警告）
+ * - public/images の各カード画像ディレクトリに未参照のファイルが無いか（エラー）
+ *   差し替えで画像の名前が変わると旧画像が残るため、CMSのPRも含めてここで止める。
  *
  * 使い方: pnpm run cards:check
- * 終了コード: 参照切れがあると 1
+ * 終了コード: 参照切れ・未参照のファイルがあると 1
  */
 
 import { readFile, readdir, stat } from 'node:fs/promises';
@@ -28,9 +29,8 @@ const dataFiles = [
 ];
 
 let errors = 0;
-let warnings = 0;
 
-// dir は yojo.json と tokenYojo.json で共有されるため、警告判定用の参照集合はディレクトリ単位で合算する
+// dir は yojo.json と tokenYojo.json で共有されるため、未参照の判定に使う参照集合はディレクトリ単位で合算する
 const referencedByDir = new Map();
 
 for (const { rel, key, dir } of dataFiles) {
@@ -70,11 +70,11 @@ for (const [dir, referenced] of referencedByDir) {
   const files = await readdir(path.join(root, dir));
   for (const f of files) {
     if (!referenced.has(f)) {
-      console.warn(`[WARN] ${dir}: 未参照のファイル: ${f}`);
-      warnings++;
+      console.error(`[ERROR] ${dir}: 未参照のファイル: ${f}（差し替え前の画像なら削除する）`);
+      errors++;
     }
   }
 }
 
-console.log(`---\nエラー: ${errors} / 警告: ${warnings}`);
+console.log(`---\nエラー: ${errors}`);
 process.exit(errors > 0 ? 1 : 0);

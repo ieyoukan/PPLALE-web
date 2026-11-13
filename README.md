@@ -76,7 +76,8 @@ pnpm run cards:check
 ```
 
 - `.png` の参照が残ったままだと `cards:check` がエラーになる（変換し忘れ防止）
-- 元のPNGは不要になったら削除してよい（git履歴に残っている）
+- どのカードからも参照されないファイル（変換元のPNG、差し替え前の画像）が残っていても `cards:check` がエラーになる。変換元のPNGは確認後に削除し、画像を差し替えるときは同じファイル名で上書きする
+- Git管理しない生成物（`.gitignore` の対象）がコミットされていると `mise run check` がエラーになる
 
 OGP用カードPNG（`public/og-cards/{yojo,sweet,playable}/`）と一覧用WebP（`public/deck-thumbnails/`）はGit管理しない。
 `pnpm run build`・`pnpm run dev`・`pnpm run test:deck-images` の前に自動生成する。
