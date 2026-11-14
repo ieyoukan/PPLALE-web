@@ -1,7 +1,7 @@
 'use client';
 
 // デッキ編成。上のタブで幼女・お菓子を切り替え、左の一覧と右のデッキはそのタブの種類だけを出す。
-// デッキはOGPと同じく1枚1枠（幼女5×4、お菓子5×2）で、同じカードは枚数ぶん並ぶ。4段がちょうど入る最大の
+// デッキはOGPと同じく1枚1枠（幼女5×4、お菓子5×2）で、同じカードは枚数ぶん、すき間なく並ぶ。4段がちょうど入る最大の
 // 大きさを高さから決め、一覧のカードも同じ大きさにそろえる。押す・ドラッグで入れ、デッキ側から出す。
 // プレイアブルはここでは扱わない（一覧のポップアップで選ぶ）。
 import { useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react';
@@ -21,7 +21,8 @@ import { useDecks } from './useDecks';
 import { SEAT_DECK_SAVED } from './seatDeck';
 import styles from './Decks.module.css';
 
-const GAP = 8, COSTS = [1, 2, 3, 4, 5, 6, '7+'] as const;
+// Cards in the deck touch (no gap), as on the shared deck image.
+const GAP = 0, COSTS = [1, 2, 3, 4, 5, 6, '7+'] as const;
 type Cost = typeof COSTS[number];
 
 export function DeckEditor({ place, onClose }: { place: Place; onClose: () => void }) {

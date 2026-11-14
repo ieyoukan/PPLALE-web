@@ -29,6 +29,11 @@
 .listHead small { color: var(--brand-cocoa-soft); font-size: 14px; }
 .guestNote { display: inline-flex; align-items: center; gap: 10px; margin-left: auto; color: var(--brand-cocoa-soft); font-size: 13px; }
 .guestNote button { display: inline-flex; align-items: center; gap: 5px; min-height: 34px; padding: 4px 12px; border: 1px solid var(--brand-control-edge); border-radius: var(--brand-control-radius); background: var(--brand-paper); color: var(--brand-cocoa-deep); font-weight: 700; cursor: pointer; }
+.deckItem { position: relative; display: grid; }
+/* Straight to the editor, past the deck's popup. */
+.quickEdit { position: absolute; top: 10px; right: 10px; display: grid; place-items: center; width: 40px; height: 40px; padding: 0; border: 1px solid var(--brand-control-edge); border-radius: 50%; background: var(--brand-paper); color: var(--brand-cocoa); font-size: 18px; cursor: pointer; }
+.quickEdit:hover { background: var(--brand-blush); }
+.quickEdit:focus-visible { outline: 3px solid var(--brand-cocoa); outline-offset: 2px; }
 .decks { display: grid; grid-template-columns: repeat(auto-fill, minmax(214px, 1fr)); gap: 16px 14px; align-items: start; }
 .newDeck { display: grid; place-items: center; align-content: center; gap: 12px; min-height: 250px; border: 2px dashed var(--brand-pink-edge); border-radius: var(--brand-control-radius); background: var(--brand-cream); color: var(--brand-cocoa); font-size: 16px; cursor: pointer; }
 .newDeck:hover { background: var(--brand-blush); }
@@ -157,14 +162,16 @@
 .poolGrid { min-height: 0; overflow-y: auto; overscroll-behavior: contain; padding: 4px 4px 12px; }
 .fruitGroup + .fruitGroup { margin-top: 10px; }
 .fruitHead { display: flex; align-items: center; gap: 6px; margin: 0 0 8px; padding-bottom: 4px; border-bottom: 1px solid var(--brand-pink); font: 400 13px var(--font-site-title, inherit); color: var(--brand-cocoa); }
-.poolCards { display: grid; grid-template-columns: repeat(auto-fill, var(--cw)); justify-content: space-between; gap: 10px 8px; }
-.poolCard { position: relative; display: grid; gap: 4px; width: var(--cw); }
-.cardButton { display: block; padding: 0; border: 0; background: none; cursor: grab; touch-action: manipulation; }
+/* Cards side by side with no gap, as in a binder; the copies in the deck show as dots on the card's foot. */
+.poolCards { display: grid; grid-template-columns: repeat(auto-fill, var(--cw)); gap: 0; }
+.poolCard { position: relative; display: block; width: var(--cw); }
+.cardButton { display: block; width: 100%; padding: 0; border: 0; background: none; cursor: grab; touch-action: manipulation; }
 .cardButton:hover:not(:disabled) .card { filter: brightness(1.06); }
 .cardButton:disabled { cursor: default; }
 .poolCard[data-full] .card { opacity: .55; }
-.pips { display: flex; justify-content: center; gap: 4px; height: 9px; }
-.pips i { width: 9px; height: 9px; border-radius: 50%; background: var(--brand-cocoa); animation: arrive .3s cubic-bezier(.3, 1.6, .5, 1); }
+.pips { position: absolute; left: 50%; bottom: 5px; display: flex; gap: 3px; translate: -50% 0; pointer-events: none; }
+.pips:empty { display: none; }
+.pips i { width: 10px; height: 10px; border: 2px solid var(--brand-paper); border-radius: 50%; background: var(--brand-cocoa); box-shadow: 0 1px 2px #0005; animation: arrive .3s cubic-bezier(.3, 1.6, .5, 1); }
 .zoom { position: absolute; top: 4px; right: 4px; display: grid; place-items: center; width: 26px; height: 26px; padding: 0; border: 0; border-radius: 50%; background: #fffdf9e0; color: var(--brand-cocoa); font-size: 15px; cursor: pointer; }
 .zoom:hover { background: var(--brand-blush); }
 .deckColumn { display: grid; grid-template-rows: auto minmax(0, 1fr); min-height: 0; padding: 0 14px 0; border-radius: 4px; background: var(--brand-cream); }
@@ -174,11 +181,11 @@
 .deckCount { font: 700 22px Georgia, serif; color: var(--brand-cocoa); white-space: nowrap; }
 .deckCount small { font-size: 14px; color: var(--brand-cocoa-soft); }
 .deckCount[data-short] { color: #b4384f; }
-.slots { display: grid; grid-template-columns: repeat(5, var(--cw)); grid-auto-rows: calc(var(--cw) * 1.5); gap: 8px; align-content: start; }
+.slots { display: grid; grid-template-columns: repeat(5, var(--cw)); grid-auto-rows: calc(var(--cw) * 1.5); gap: 0; align-content: start; }
 .slot { display: block; padding: 0; border: 0; background: none; cursor: grab; touch-action: none; }
 .slot:hover .card { filter: brightness(.9); }
 .slot[data-arrive] .card { animation: arrive .35s cubic-bezier(.3, 1.5, .5, 1); }
-.emptySlot { border: 2px dashed var(--brand-pink); border-radius: 2px; }
+.emptySlot { border: 1px dashed var(--brand-pink); border-radius: 2px; }
 .dragGhost { position: absolute; z-index: 90; pointer-events: none; opacity: .92; transform: scale(1.06); }
 .flyer { position: absolute; z-index: 90; pointer-events: none; }
 

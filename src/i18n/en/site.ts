@@ -205,6 +205,7 @@ export const siteEnglish: Record<string, string> = {
   '確認': 'Review',
   '確認・共有': 'Review & share',
   '編成する': 'Edit cards',
+  'を編成する': ': edit cards',
   '見つかりませんでした': 'Nothing found',
   '読み込む': 'Load',
   '貼りつけて読み込む': 'Paste and load',

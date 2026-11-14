@@ -2,7 +2,7 @@
 
 // ランチパッドの「デッキ」：保存したデッキの一覧。デッキを押すと、詳細の画面ではなく、対戦やVRChatで
 // すぐ使うためのポップアップ（コード・プレイアブル・名前・コストカーブ・削除）が開く。そこから編成と、
-// OGPと同じ配置の確認・共有へ進む。
+// OGPと同じ配置の確認・共有へ進む。すぐ編成したいときは、デッキの右上のペンから編成へ直接入る。
 import { useEffect, useState } from 'react';
 import type { MatchRules } from '@pplale/game-core';
 import { randomDeck } from '@pplale/game-core';
@@ -70,7 +70,10 @@ export function DecksPage({ place }: { place: Place }) {
         <span className={styles.newArt}><CardBack /><GameIcon name="plus" /></span><b data-ui-title>{t('あたらしく作る')}</b>
       </button>
       {loading ? <p className={styles.loading} role="status">{t('読み込み中...')}</p>
-        : decks.map((deck, index) => <DeckBox key={deck.id} deck={deck} index={index} cards={cards} rules={room.rules} onOpen={() => setOpen({ kind: 'deck', id: deck.id })} />)}
+        : decks.map((deck, index) => <div key={deck.id} className={styles.deckItem}>
+          <DeckBox deck={deck} index={index} cards={cards} rules={room.rules} onOpen={() => setOpen({ kind: 'deck', id: deck.id })} />
+          <button type="button" className={styles.quickEdit} onClick={() => edit(deck)} aria-label={`${deck.name || t('無名のデッキ')}${t('を編成する')}`}><GameIcon name="pen" /></button>
+        </div>)}
     </div>
     {open?.kind === 'new' && <NewDeckSheet onStart={start} onClose={() => setOpen(null)} />}
     {open?.kind === 'deck' && shown && <DeckQuick deck={shown} uid={uid} cards={cards} rules={room.rules} onEdit={() => edit(shown)} onConfirm={() => setOpen({ kind: 'confirm', id: shown.id })} onClose={() => setOpen(null)} onDeleted={() => setOpen(null)} />}

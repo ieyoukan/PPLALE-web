@@ -9,7 +9,7 @@ import { usableChoice } from '@/lib/game/deckSources';
 import { randomSeed } from '@/lib/game/match';
 import { describeRoomRules } from '@pplale/game-core/room';
 import type { RoomView } from '@pplale/game-core/room';
-import { BATTLE_PATH, watchHref } from '@/lib/game/sessionStore';
+import { BATTLE_PATH, DECKS_PATH, watchHref } from '@/lib/game/sessionStore';
 import { DeckSelect, UnusableDecks, useDeckChoices } from '../DeckSelect';
 import { NameField, usePlayerName } from './PlayerNameField';
 import { RecruitmentButton } from '../social/RecruitmentButton';
@@ -95,7 +95,7 @@ function Waiting({ room, view }: { room: Room; view: RoomView }) {
           <DeckSelect choices={choices} chosen={chosen} onChange={setSelected} />
         </label>
         {!user ? <div className={styles.row}><button className={styles.secondary} onClick={() => { signInWithGoogle().catch(() => setError('ログインできませんでした')); }}>{t('Googleでログインして保存済みデッキを使う')}</button></div>
-          : <p className={styles.note}>{saved.loading ? t('デッキを読み込み中…') : t('{count}件の保存済みデッキ', { count: saved.decks.length })} · <Link href="/build">{t('デッキを編集する')}</Link></p>}
+          : <p className={styles.note}>{saved.loading ? t('デッキを読み込み中…') : t('{count}件の保存済みデッキ', { count: saved.decks.length })} · <Link href={DECKS_PATH}>{t('デッキを編集する')}</Link></p>}
         <UnusableDecks choices={choices} className={styles.note} />
         {/* A deck made on demand (おまかせ) is made when it is sent: choosing again makes another. */}
         <button className={styles.primary} disabled={busy || !chosen} onClick={() => { if (chosen) { const deck = chosen.deck(randomSeed()); ask(preparation.prepare().then(() => room.send({ action: 'ready', deck }))); } }}>{t(preparation.busy ? '対戦を準備中…' : 'このデッキで準備OK')}</button>

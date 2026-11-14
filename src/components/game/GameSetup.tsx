@@ -6,7 +6,7 @@ import type { CpuLevel, GameState, MatchRules, Side } from '@pplale/game-core';
 import { cpuServerUrl, learningConsent } from '@/lib/game/cpuServer';
 import { usableChoice } from '@/lib/game/deckSources';
 import { createMatch, randomSeed } from '@/lib/game/match';
-import { savedMatchRules, sideLabel } from '@/lib/game/sessionStore';
+import { DECKS_PATH, savedMatchRules, sideLabel } from '@/lib/game/sessionStore';
 import type { Levels, MatchSetup, Mode } from '@/lib/game/sessionStore';
 import { useAuth } from '@/lib/auth';
 import { useI18n } from '@/i18n/LocaleProvider';
@@ -94,7 +94,7 @@ export function GameSetup({ modes, onStart }: {
       <span data-ui-title>{mode === 'watch' ? t('{name}のデッキ', { name: t(sideLabel(mode, side as Side)) }) : t(side === 0 ? 'あなたのデッキ' : '相手のデッキ')}</span>
       <DeckSelect choices={choices} chosen={chosen[side]} onChange={id => setSelected(previous => previous.map((value, index) => index === side ? id : value))} />
     </label>)}</OrnateFrame>
-    {!user ? <button className={`${styles.secondaryButton} ${layout.login}`} onClick={() => { signInWithGoogle().catch(() => setError('ログインできませんでした')); }}>{t('Googleでログインして保存済みデッキを使う')}</button> : <p className={`${styles.help}`}>{saved.loading ? t('デッキを読み込み中…') : t('{count}件の保存済みデッキ', { count: saved.decks.length })} · <Link href="/build">{t('デッキを編集する')}</Link></p>}
+    {!user ? <button className={`${styles.secondaryButton} ${layout.login}`} onClick={() => { signInWithGoogle().catch(() => setError('ログインできませんでした')); }}>{t('Googleでログインして保存済みデッキを使う')}</button> : <p className={`${styles.help}`}>{saved.loading ? t('デッキを読み込み中…') : t('{count}件の保存済みデッキ', { count: saved.decks.length })} · <Link href={DECKS_PATH}>{t('デッキを編集する')}</Link></p>}
     <UnusableDecks choices={choices} className={styles.ruleSettings} />
     {saved.error && <p role="alert" className={styles.error}>{t(saved.error)}</p>}
     {error && <p role="alert" className={styles.error}>{gameText(error)}</p>}
