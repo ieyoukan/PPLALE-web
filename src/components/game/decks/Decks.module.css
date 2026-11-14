@@ -162,9 +162,10 @@
 .poolGrid { min-height: 0; overflow-y: auto; overscroll-behavior: contain; padding: 4px 4px 12px; }
 .fruitGroup + .fruitGroup { margin-top: 10px; }
 .fruitHead { display: flex; align-items: center; gap: 6px; margin: 0 0 8px; padding-bottom: 4px; border-bottom: 1px solid var(--brand-pink); font: 400 13px var(--font-site-title, inherit); color: var(--brand-cocoa); }
-/* Cards side by side with no gap, as in a binder; the copies in the deck show as dots on the card's foot. */
-.poolCards { display: grid; grid-template-columns: repeat(auto-fill, var(--cw)); gap: 0; }
-.poolCard { position: relative; display: block; width: var(--cw); }
+/* Ten cards a row, side by side with no gap, as large as the list's width allows (larger than the deck's);
+   the copies in the deck show as dots on the card's foot. */
+.poolCards { display: grid; grid-template-columns: repeat(10, minmax(0, 1fr)); gap: 0; }
+.poolCard { position: relative; display: block; min-width: 0; }
 .cardButton { display: block; width: 100%; padding: 0; border: 0; background: none; cursor: grab; touch-action: manipulation; }
 .cardButton:hover:not(:disabled) .card { filter: brightness(1.06); }
 .cardButton:disabled { cursor: default; }

@@ -2,7 +2,7 @@
 
 // デッキ編成。上のタブで幼女・お菓子を切り替え、左の一覧と右のデッキはそのタブの種類だけを出す。
 // デッキはOGPと同じく1枚1枠（幼女5×4、お菓子5×2）で、同じカードは枚数ぶん、すき間なく並ぶ。4段がちょうど入る最大の
-// 大きさを高さから決め、一覧のカードも同じ大きさにそろえる。押す・ドラッグで入れ、デッキ側から出す。
+// 大きさを高さとパネルの幅の1/4から決める。一覧は横10枚で、幅いっぱいの（デッキより大きい）カード。押す・ドラッグで入れ、デッキ側から出す。
 // プレイアブルはここでは扱わない（一覧のポップアップで選ぶ）。
 import { useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react';
 import type { CSSProperties, PointerEvent as ReactPointerEvent } from 'react';
@@ -22,7 +22,7 @@ import { SEAT_DECK_SAVED } from './seatDeck';
 import styles from './Decks.module.css';
 
 // Cards in the deck touch (no gap), as on the shared deck image.
-const GAP = 0, COSTS = [1, 2, 3, 4, 5, 6, '7+'] as const;
+const GAP = 0, DECK_SHARE = 0.25, COSTS = [1, 2, 3, 4, 5, 6, '7+'] as const;
 type Cost = typeof COSTS[number];
 
 export function DeckEditor({ place, onClose }: { place: Place; onClose: () => void }) {
@@ -74,7 +74,9 @@ function Editor({ initial, uid, place, onClose, onStart }: { initial: DeckDraft;
     const fit = () => {
       const style = getComputedStyle(element), padding = parseFloat(style.paddingTop) + parseFloat(style.paddingBottom);
       const head = host.querySelector<HTMLElement>('[data-deck-head]')?.offsetHeight ?? 44;
-      const width = Math.max(48, Math.min(150, Math.floor((element.clientHeight - padding - head - GAP * 4) / 4 / 1.5)));
+      // At most a quarter of the panel's width: the list beside it keeps ten larger cards a row.
+      const byWidth = Math.floor((element.clientWidth - parseFloat(style.paddingLeft) - parseFloat(style.paddingRight)) * DECK_SHARE / 5);
+      const width = Math.max(40, Math.min(150, byWidth, Math.floor((element.clientHeight - padding - head - GAP * 4) / 4 / 1.5)));
       host.style.setProperty('--cw', `${width}px`);
       host.style.setProperty('--deck-width', `${width * 5 + GAP * 4}px`);
     };

@@ -76,7 +76,9 @@ test('site providers stay out of the game; site tools preserve the room and save
   const menu = await home(page), roomURL = page.url();
   await expect(page.locator('html')).not.toHaveClass(/\bdark\b/);
   expect(await page.evaluate(() => window.siteSettingWrites)).toEqual([]);
-  await menu.getByRole('button', { name: 'カード', exact: true }).click();
+  // カード (図鑑・2Pick・デッキ画像) is among the game's screens of the expanded menu; the quick links have デッキ.
+  await menu.getByRole('button', { name: 'ゲームメニューを拡大', exact: true }).click();
+  await menu.getByRole('tab', { name: 'カード', exact: true }).click();
   // Decks are managed in the game (the launchpad's デッキ); 2Pick and deck images are the site's, in another tab.
   await expect(menu.getByRole('link', { name: /^デッキ 保存したデッキ/ })).not.toHaveAttribute('target', '_blank');
   for (const name of [/^2Pick構築/, /^デッキ画像/]) await expect(menu.getByRole('link', { name })).toHaveAttribute('target', '_blank');
@@ -106,7 +108,7 @@ for (const width of [1280, 390]) test(`launchpad exposes game tools with matchin
   await page.setViewportSize({ width, height: 844 });
   const menu = await home(page), roomURL = page.url();
   const links = menu.getByRole('navigation', { name: 'ゲームの画面', exact: true });
-  await expect(links.getByRole('button')).toHaveText(['ソーシャル', 'ルーム', 'カード', 'リーサルパズル', '対戦履歴', '盤面エディタ']);
+  await expect(links.getByRole('button')).toHaveText(['ソーシャル', 'ルーム', 'デッキ', 'リーサルパズル', '対戦履歴', '盤面エディタ']);
   const sizes = await links.getByRole('button').evaluateAll(buttons => buttons.map(button => [button.offsetWidth, button.offsetHeight]));
   expect(new Set(sizes.map(size => JSON.stringify(size))).size).toBe(1);
   await expect(menu.getByText('フリーマッチ', { exact: true })).toHaveCount(0);

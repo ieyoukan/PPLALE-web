@@ -58,3 +58,9 @@
 .standalone { display: flex; width: min(660px, 100%); height: min(760px, 100%); min-height: 0; }
 .standalone:focus { outline: none; }
 .standalone .pad { grid-template-columns: minmax(0, 1fr); grid-template-rows: auto minmax(0, 1fr); grid-template-areas: 'head' 'panel'; height: 100%; }
+
+/* The deck editor takes the whole pad: no screens down the side (its back button returns), so the card list has
+   room for ten cards a row (Decks.module.css). */
+.pad[data-section='deckEditor'] > .tabBar { display: none; }
+.expanded .pad[data-section='deckEditor'] { --pad: 24px 28px 20px; grid-template-columns: minmax(0, 1fr); grid-template-areas: 'head' 'panel'; }
+.dialog .pad[data-section='deckEditor'] { grid-template-columns: minmax(0, 1fr); grid-template-areas: 'status' 'head' 'panel'; }

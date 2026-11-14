@@ -3,6 +3,7 @@
 .tile[data-palette=pink] { background: var(--brand-blush); }
 .tile:hover { background: var(--brand-blush); }
 .tile img { width: 100%; height: 78px; object-fit: contain; }
-.tile span { font-size: 14px; font-weight: 700; }
+.name { display: inline-flex; align-items: center; gap: 5px; max-width: 100%; font-size: 14px; font-weight: 700; white-space: nowrap; }
+.name svg { flex: none; width: 18px; height: 18px; }
 .tile:focus-visible { outline: 3px solid var(--brand-cocoa); outline-offset: 2px; }
-@media (max-width: 600px) { .tile span { font-size: 11px; } }
+@media (max-width: 600px) { .name { gap: 3px; font-size: 11px; } .name svg { width: 14px; height: 14px; } }

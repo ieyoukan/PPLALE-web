@@ -14,14 +14,17 @@ import { MISSIONS_PATH } from '@/lib/game/introCourse';
 import { useI18n } from '@/i18n/LocaleProvider';
 import styles from './LaunchpadHome.module.css';
 
-/** One ordered list owns each destination's behavior and illustration. */
+/**
+ * One ordered list owns each destination's behavior, illustration and icon (beside its name, so each is found at a
+ * glance). デッキ goes straight to the saved decks, one tap from making or editing one (図鑑 etc. are in カード).
+ */
 const destinations = [
-  { target: 'social', character: 'gato-mug', tone: 'vanilla' },
-  { target: 'discover', character: 'shuo', tone: 'sage' },
-  { target: 'cards', character: 'gitty', tone: 'pink' },
-  { target: 'puzzles', character: 'chori-mug', tone: 'vanilla' },
-  { target: 'history', character: 'rikusu-mug', tone: 'vanilla' },
-  { target: 'editor', character: 'buran', tone: 'pink' },
+  { target: 'social', character: 'gato-mug', tone: 'vanilla', icon: 'social' },
+  { target: 'discover', character: 'shuo', tone: 'sage', icon: 'door' },
+  { target: 'decks', character: 'gitty', tone: 'pink', icon: 'cards' },
+  { target: 'puzzles', character: 'chori-mug', tone: 'vanilla', icon: 'puzzle' },
+  { target: 'history', character: 'rikusu-mug', tone: 'vanilla', icon: 'history' },
+  { target: 'editor', character: 'buran', tone: 'pink', icon: 'pen' },
 ] as const;
 
 export function LaunchpadHome({ onHome, onShare }: { onHome: () => void; onShare: () => void }) {
@@ -30,8 +33,8 @@ export function LaunchpadHome({ onHome, onShare }: { onHome: () => void; onShare
     <CurrentRoomBanner />
     <GuestSignInPrompt compact />
     <section aria-label={t('クイックリンク')}>
-      <nav className={styles.destinations} aria-label={t('ゲームの画面')}>{destinations.map(({ target, character, tone }) =>
-        <CharacterDestination key={target} character={character} tone={tone} label={t(target === 'discover' ? 'ルーム' : sectionInfo[target].label)}
+      <nav className={styles.destinations} aria-label={t('ゲームの画面')}>{destinations.map(({ target, character, tone, icon }) =>
+        <CharacterDestination key={target} character={character} tone={tone} icon={icon} label={t(target === 'discover' ? 'ルーム' : sectionInfo[target].label)}
           onClick={() => openAt({ section: target })} />)}</nav>
     </section>
     <div className={styles.quick} role="group" aria-label={t('ルームの操作')}>
