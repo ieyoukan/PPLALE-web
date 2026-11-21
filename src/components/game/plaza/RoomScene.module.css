@@ -19,11 +19,16 @@
 }
 .world { z-index: 0; transform-style: preserve-3d; }
 .boardProjection { z-index: 1; isolation: isolate; }
+/* Stretched from its near edge (+x, the bottom of the room view): far away 10×, sideways 4×, toward the viewer
+   only 400px. No part may come within the perspective distance, or Chrome on macOS sometimes draws the
+   wood and floor past the window into the tab strip while the camera flies to the match (formerly scale(10)
+   from the centre reached about 4600px behind the camera). The flat colour is what the screen saw of the
+   former 27%→40% gradient. */
 .floor {
-  position: absolute; inset: -240px -280px;
-  transform: translateZ(calc(-1 * var(--floor-depth))) scale(10);
+  position: absolute; inset: -240px -400px -240px -280px;
+  transform-origin: 100% 50%; transform: translateZ(calc(-1 * var(--floor-depth))) scale(10, 4);
   border: 1px solid color-mix(in srgb, var(--brand-room-floor-edge) 38%, transparent);
-  background: linear-gradient(90deg, color-mix(in srgb, var(--brand-room-floor) 27%, transparent), color-mix(in srgb, var(--brand-room-floor) 40%, transparent));
+  background: color-mix(in srgb, var(--brand-room-floor) 33.5%, transparent);
 }
 .floorShadow {
   position: absolute; inset: -50px -80px;

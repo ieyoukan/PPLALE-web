@@ -32,8 +32,9 @@ for (const viewport of [{ width: 1280, height: 800 }, { width: 844, height: 390 
       return { width: image.naturalWidth, height: image.naturalHeight };
     });
     expect(sky.width / sky.height).toBe(1.75);
-    const floor = await page.locator('[data-room-floor]').evaluate(element => getComputedStyle(element).backgroundImage);
-    expect(floor).toContain('gradient');
+    // A translucent floor (its colour mixed with transparent), so the sky shows through.
+    const floor = await page.locator('[data-room-floor]').evaluate(element => getComputedStyle(element).backgroundColor);
+    expect(floor).toMatch(/\/ 0?\.\d+\)$|^rgba\(/);
     const seats = page.getByRole('button', { name: 'この席にすわる' });
     await expect(seats).toHaveCount(2);
     for (const seat of await seats.all()) {
