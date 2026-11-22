@@ -29,7 +29,7 @@ const player = z.object({
 }).transform(({ doubleSweet, sweetBoost, ...rest }) => ({ ...rest, sweetBoost: sweetBoost ?? (doubleSweet ? 1 : 0) }));
 const schema = z.object({
     version: z.literal(1), effectTauntRules: z.literal(true).optional(), turnRules: z.literal(true).optional(), decisiveOpeningDice: z.literal(true).optional(), phase: z.enum(['dice', 'initiative', 'opening', 'mulligan', 'playing']).default('playing'), dice: z.object({ rolls: z.tuple([integer.min(1).max(6).nullable(), integer.min(1).max(6).nullable()]), ties: positive }).nullable().default(null), rng: positive, serial: positive, revision: positive, active: side, turn: positive,
-    rules: z.object({ initialPoints: integer.positive(), initialYojo: positive.max(20), initialSweet: positive.max(10), firstPlayer: side, turnDraw: z.enum(['yojo', 'sweet']) }),
+    rules: z.object({ initialPoints: integer.positive(), initialYojo: positive.max(20), initialSweet: positive.max(10), firstPlayer: side, turnDraw: z.enum(['yojo', 'sweet']), fixedOrder: z.literal(true).optional(), openingHand: z.tuple([positive.max(30), positive.max(30)]).optional(), secondBoost: z.literal(false).optional() }),
     openingRemaining: z.tuple([positive, positive]).default([0, 0]),
     stall: z.object({ acted: z.boolean(), idleTurns: positive }).optional(),
     effectRoll: z.object({ revision: positive, side, value: z.number().int().min(1).max(6), cardId: z.string().optional() }).optional(),

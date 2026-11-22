@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import Image from 'next/image';
-import { MAX_MEMBERS } from '@pplale/game-core/room';
+import { MAX_MEMBERS, officialPlay, playPresets, presetOf } from '@pplale/game-core/room';
 import type { RoomInfo, RoomView } from '@pplale/game-core/room';
 import { browseRooms } from '@/lib/game/room/client';
 import { ScreenSubtitle } from '@/components/shared/ui/ScreenSubtitle';
@@ -99,6 +99,8 @@ export function RoomBrowser({ onCreate, onEntered }: { onCreate: () => void; onE
           <span><GameIcon name="rules" />{t('{fruit}まで', { fruit: fruitLabel(chosen.rules.fruits.at(-1)!) })}</span>
           <span>{t(chosen.rules.extendedPlayable ? '拡張あり' : '通常')}</span>
           <span><GameIcon name="timer" />{chosen.rules.turnSeconds ? t('{minutes}分', { minutes: chosen.rules.turnSeconds / 60 }) : t('無制限')}</span>
+          {/* Only a room not played by the official rules says how: its template, or カスタム. */}
+          {!officialPlay(chosen.rules) && <span><GameIcon name="sparkle" />{t(playPresets.find(preset => preset.id === presetOf(chosen.rules))?.name ?? 'カスタム')}</span>}
         </div>
         <div className={styles.entry}>
           <span className={styles.status}>{t(chosen.status === 'playing' ? '対戦中・観戦できます' : '待機中')}</span>

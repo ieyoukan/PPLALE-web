@@ -2,7 +2,7 @@
 import { note } from '../core/cards.ts';
 import { random, rollDie, shuffled } from '../core/rng.ts';
 import { draw } from '../core/zones.ts';
-import { other, RuleError, sides } from '../model.ts';
+import { openingCount, other, RuleError, sides } from '../model.ts';
 import type { DeckKind, GameState, Side } from '../model.ts';
 import type { Handlers } from './types.ts';
 
@@ -29,7 +29,7 @@ export const openingCommands: Handlers<'roll' | 'initiative' | 'openingDraw' | '
         s.phase = 'initiative';
         note(s, `${s.players[s.active].name}が先攻・後攻を選びます`);
     },
-    // The dice winner chooses; the second player draws one extra opening card.
+    // The dice winner chooses; the second player draws one extra opening card (unless the room's rules give other counts).
     initiative(s, c) {
         if (s.phase !== 'initiative' || s.active !== c.actor) throw new RuleError('ダイスで勝った側が先攻・後攻を選んでください');
         if (c.order !== 'first' && c.order !== 'second') throw new RuleError('先攻・後攻を選んでください');
@@ -37,7 +37,7 @@ export const openingCommands: Handlers<'roll' | 'initiative' | 'openingDraw' | '
         s.active = s.rules.firstPlayer;
         s.phase = 'opening';
         note(s, `${s.players[c.actor].name}が${c.order === 'first' ? '先攻' : '後攻'}を選びました`);
-        for (const side of sides) s.openingRemaining[side] = s.rules.initialYojo + s.rules.initialSweet + (side === s.rules.firstPlayer ? 0 : 1);
+        for (const side of sides) s.openingRemaining[side] = openingCount(s.rules, side);
     },
     // Both sides draw in parallel, one card per click from either deck. The same command draws the
     // replacements of a mulligan.

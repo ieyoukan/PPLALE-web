@@ -49,7 +49,23 @@ export interface Rules {
     initialSweet: number;
     firstPlayer: Side;
     turnDraw: DeckKind;
+    /**
+     * 先攻・後攻を固定する（ルームの独自ルール）。ダイスと先後の選択を行わず、firstPlayerが先攻で
+     * 初期ドローから始める。省略時は公式どおりダイスで決める。
+     */
+    fixedOrder?: true;
+    /** 初期手札の枚数 [先攻, 後攻]（ルームの独自ルール）。省略時は公式の initialYojo+initialSweet と、その+1枚。 */
+    openingHand?: [number, number];
+    /** falseなら後攻5ターン目の追加2PPを行わない（ルームの独自ルール）。省略時は公式どおり行う。 */
+    secondBoost?: false;
 }
+/** 独自ルールで選べる初期手札の枚数の範囲。 */
+export const OPENING_HAND_RANGE = { min: 1, max: 9 } as const;
+/** この側の初期手札の枚数。 */
+export const openingCount = (rules: Rules, side: Side): number => {
+    const first = side === rules.firstPlayer;
+    return rules.openingHand?.[first ? 0 : 1] ?? rules.initialYojo + rules.initialSweet + (first ? 0 : 1);
+};
 export const MAX_PP = 12;
 // 初期配置の検証用設定。ターン進行・PP・手札上限はルールに従う。
 export const sandboxRules: Rules = {

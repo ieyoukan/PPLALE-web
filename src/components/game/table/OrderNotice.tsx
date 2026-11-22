@@ -36,7 +36,8 @@ export function OrderNotice() {
     <div className={styles.versusMiddle}>
       <i className={styles.versusBeam} aria-hidden="true" />
       <span className={styles.versusMark} aria-hidden="true">VS</span>
-      <p className={styles.versusCaption}>{t(order.chooser === order.first ? '{name}が先攻をえらびました' : '{name}が後攻をえらびました', { name: t(names[order.chooser]) })}</p>
+      {/* A fixed order (a room's rule) was nobody's choice: the plates say it all. */}
+      {order.chooser !== undefined && <p className={styles.versusCaption}>{t(order.chooser === order.first ? '{name}が先攻をえらびました' : '{name}が後攻をえらびました', { name: t(names[order.chooser]) })}</p>}
     </div>
     {row(view, 'bottom')}
   </div>;

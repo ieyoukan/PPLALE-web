@@ -1,0 +1,70 @@
+/* 対戦の進め方: templates in one row, then one row per rule. Cocoa text on cream keeps 4.5:1. */
+.picker { container-type: inline-size; display: grid; gap: 10px; min-width: 0; margin: 14px 0 0; padding: 0; border: 0; color: var(--brand-cocoa-deep); }
+.picker legend { margin-bottom: 5px; padding: 0; font-size: 14px; font-weight: 700; line-height: 1.3; }
+
+.presets { display: grid; grid-template-columns: repeat(auto-fit, minmax(96px, 1fr)); gap: 6px; }
+.presets button, .custom {
+  display: grid; justify-items: center; gap: 4px; padding: 8px 4px 6px; border: 1px solid var(--brand-control-edge); border-radius: var(--brand-control-radius);
+  background: var(--brand-paper); color: var(--brand-cocoa-deep); font: inherit; cursor: pointer; transition: background-color .2s, border-color .2s;
+}
+.presets button:hover { background: var(--brand-blush); }
+.presets button[aria-checked=true], .custom { border-color: var(--brand-cocoa); background: var(--brand-blush); box-shadow: inset 0 0 0 1px var(--brand-cocoa); }
+.custom { cursor: default; animation: arrive .3s ease-out both; }
+.presets button:focus-visible, .row button:focus-visible, .stepper button:focus-visible { outline: 3px solid var(--brand-cocoa); outline-offset: 2px; }
+.presetName { font-size: 14px; font-weight: 700; line-height: 1.2; }
+.presetFace { display: flex; align-items: center; justify-content: center; gap: 6px; height: 26px; }
+.hands { display: inline-flex; align-items: baseline; gap: 2px; font-size: 15px; font-weight: 700; font-variant-numeric: tabular-nums; }
+.hands small { color: var(--brand-cocoa-soft); font-size: 12px; }
+
+.die { width: 22px; height: 22px; }
+.die rect { fill: var(--brand-paper); stroke: var(--brand-cocoa); stroke-width: 1.6; }
+.die circle { fill: var(--brand-cocoa); }
+/* The 先攻 plate of the table (OrderNotice), in small. */
+.firstMark { display: inline-grid; place-items: center; width: 22px; height: 22px; border-radius: var(--brand-panel-radius); background: var(--brand-peach); color: var(--brand-cocoa-deep); font-size: 13px; font-weight: 700; line-height: 1; }
+/* The table's white +2 marble. */
+.marble {
+  position: relative; display: inline-grid; place-items: center; box-sizing: border-box; width: 26px; height: 26px; border: 2px solid #c7c1b5; border-radius: 50%;
+  background: radial-gradient(circle at 30% 23%, #fff 0 25%, #fffff5 45%, #deded5 77%, #aaa99d); color: #49413e; font: 700 12px/1 Arial, sans-serif;
+  transition: opacity .2s, filter .2s;
+}
+.marble[data-off] { opacity: .45; filter: grayscale(1); }
+.marble[data-off]::after { content: ''; position: absolute; left: -3px; right: -3px; top: 50%; height: 2px; background: var(--brand-cocoa); transform: translateY(-50%) rotate(-35deg); }
+
+.rows { display: grid; gap: 8px; }
+.row { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; min-height: 40px; }
+.rowIcon { display: grid; place-items: center; width: 34px; flex: none; color: var(--brand-cocoa); font-size: 22px; }
+.row > button, .stepper button {
+  display: inline-flex; align-items: center; justify-content: center; gap: 6px; min-height: 38px; padding: 4px 12px; border: 0; border-radius: var(--brand-control-radius);
+  outline: 2px solid var(--brand-pink); background: var(--brand-paper); color: var(--brand-cocoa-deep); font: inherit; font-size: 15px; font-weight: 700; cursor: pointer;
+}
+.row > button[aria-checked=true] { background: var(--brand-cocoa); color: var(--brand-cream); }
+.row > button[aria-checked=true] .die rect { fill: var(--brand-cream); stroke: var(--brand-cream); }
+.row > button[aria-checked=true] .die circle { fill: var(--brand-cocoa); }
+.seatName { max-width: 9em; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.row > button svg { flex: none; }
+
+.steppers { display: flex; flex-wrap: wrap; gap: 8px 14px; }
+.stepper { display: inline-flex; align-items: center; gap: 6px; }
+.stepper button { width: 34px; min-height: 34px; padding: 0; font-size: 20px; line-height: 1; }
+.stepper button:disabled { opacity: .4; cursor: default; }
+.orderPlate { display: inline-grid; place-items: center; min-width: 38px; padding: 3px 6px; border-radius: var(--brand-panel-radius); background: var(--brand-blush); font-size: 13px; font-weight: 700; }
+.orderPlate[data-order=first] { background: var(--brand-peach); }
+.count { display: inline-flex; flex-direction: column; align-items: center; gap: 2px; min-width: 64px; }
+.count b { font-size: 14px; font-variant-numeric: tabular-nums; }
+.count[data-changed] b { text-decoration: underline 2px var(--brand-peach); text-underline-offset: 3px; }
+.backs { display: flex; height: 18px; }
+/* Small card backs that overlap more as there are more; each new one drops in from above. */
+.backs i { display: block; width: 12px; height: 18px; margin-left: -4px; border: 1px solid var(--brand-pink-edge); border-radius: 1px; background: var(--brand-pink); animation: drop .25s ease-out both; }
+.backs i:first-child { margin-left: 0; }
+
+.turnFive { display: inline-flex; align-items: baseline; gap: 1px; font-size: 11px; font-weight: 700; white-space: nowrap; }
+.turnFive b { font-size: 18px; }
+.boost { padding: 4px 10px; }
+.boost .marble { width: 30px; height: 30px; font-size: 13px; }
+
+@keyframes drop { from { transform: translateY(-6px); opacity: 0; } }
+@keyframes arrive { from { transform: translateY(4px); opacity: 0; } }
+@media (prefers-reduced-motion: reduce) {
+  .backs i, .custom { animation: none; }
+  .presets button, .marble { transition: none; }
+}

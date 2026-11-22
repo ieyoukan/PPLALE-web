@@ -4,7 +4,7 @@ import { catalog as roomCatalog } from './catalog.ts';
 // 接続や保存先には依存せず、要求に応じて状態を変更する。
 import { createHash, randomBytes, randomInt, randomUUID, timingSafeEqual } from 'node:crypto';
 import { z } from 'zod';
-import { SLEEVES, applyCommand, decideMatch, newGame, other, sandboxRules, viewFor } from '@pplale/game-core';
+import { SLEEVES, applyCommand, decideMatch, engineRules, newGame, other, viewFor } from '@pplale/game-core';
 import type { Catalog, CpuLevel, Deck, GameState, Side } from '@pplale/game-core';
 import { MAX_NAME_LENGTH, parseRoomRules, roomDeckErrors } from '@pplale/game-core/room';
 import type { MatchEnd } from '@pplale/game-core/history';
@@ -156,7 +156,8 @@ export function mixed(ids: string[]) {
 }
 export function startMatch(room: Room, catalog: Catalog) {
     const decks = room.seats.map(seat => ({ ...seat!.deck!, name: seat!.name, yojo: mixed(seat!.deck!.yojo), sweet: mixed(seat!.deck!.sweet) })) as [Deck, Deck];
-    room.state = newGame(decks, catalog, { ...sandboxRules }, randomInt(2 ** 32));
+    // The room's play rules (fixed order, opening hands, the 後攻's turn-5 PP) are kept in the match itself, so its replay follows them.
+    room.state = newGame(decks, catalog, engineRules(room.rules), randomInt(2 ** 32));
     room.status = 'playing';
     room.record = { id: randomUUID(), startedAt: Date.now() };
     room.match++;

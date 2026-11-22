@@ -406,6 +406,7 @@ export const patterns: [RegExp, string][] = [
   [/^(.+?)が先攻・後攻を選びます$/, '$1 chooses who goes first'],
   [/^(.+?)が先攻を選びました$/, '$1 chose to go first'],
   [/^(.+?)が後攻を選びました$/, '$1 chose to go second'],
+  [/^(.+?)が先攻です$/, '$1 goes first'],
   [/^(.+?)：初期手札を(\d+)枚交換$/, '$1 swapped $2 opening cards'],
   [/^(.+?)の(\d+)ターン目$/, "$1's turn $2"],
   [/^(.+?)：「(.+)」をプレイ（(\d+)PP）$/, '$1 played "$2" ($3 PP)'],

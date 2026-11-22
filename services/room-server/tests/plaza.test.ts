@@ -42,6 +42,25 @@ test('plaza: CPU deck selection is validated, can be changed before play, and re
     assert.throws(() => act({ action: 'cpu', seat: 1, level: 'normal', deck: chosen }), /対戦が終わって/);
     assert.deepEqual(room, playing, 'the playing deck cannot be replaced');
 });
+test('plaza: the owner\'s play rules start the match: the fixed seat goes first with the chosen hands and no turn-5 PP', () => {
+    const { room } = createPlaza('123457', { rules, plaza: { visibility: 'public' } }, { name: 'ありす' });
+    const me = room.plaza!.owner!;
+    const act = (body: unknown) => actPlaza(room, me, body, catalog);
+    act({ action: 'rules', rules: { ...rules, firstSeat: 1, openingHand: [4, 3], secondBoost: false, unknown: true } });
+    assert.deepEqual(room.rules, { ...rules, spectators: true, firstSeat: 1, openingHand: [4, 3], secondBoost: false });
+    act({ action: 'cpu', seat: 1, level: 'normal', deck: { ...deck, name: 'CPU用デッキ' } });
+    act({ action: 'sit', seat: 0 });
+    act({ action: 'ready', deck });
+    assert.equal(room.status, 'playing');
+    const game = room.state!;
+    assert.equal(game.phase, 'opening');
+    assert.equal(game.dice, null);
+    assert.equal(game.rules.firstPlayer, 1);
+    assert.deepEqual(game.openingRemaining, [3, 4]);
+    assert.equal(game.rules.secondBoost, false);
+    // The players see the rules the match was started with.
+    assert.equal(plazaView(room, me, new Set([me]), catalog).game!.rules.fixedOrder, true);
+});
 /** Waits until the member's view has a match whose revision passed `revision` (or satisfies `test`). */
 const until = (client: Client, test: (view: RoomView) => boolean) => client.until(test);
 

@@ -1,7 +1,7 @@
 // デッキを検証し、新しい対戦の初期状態を作る。
 import { note, spawnCard } from './core/cards.ts';
 import { shuffled } from './core/rng.ts';
-import { sides } from './model.ts';
+import { openingCount, sides } from './model.ts';
 import type { Catalog, Deck, GameState, Player, Rules } from './model.ts';
 import { playableMp, playableSkills, skillLimits } from './playables/skills.ts';
 import { implementedCard, implementedFruits } from './cards/registry.ts';
@@ -35,7 +35,7 @@ export function validateDeck(deck: Deck, catalog: Catalog): string[] {
     return Array.from(new Set(errors));
 }
 
-/** Starts at the dice phase; nobody has drawn yet. */
+/** Starts at the dice phase (or, with a fixed order, at the opening draws); nobody has drawn yet. */
 export function newGame(decks: [Deck, Deck], catalog: Catalog, rules: Rules, seed: number): GameState {
     if (decks.some(d => [...d.yojo, ...d.sweet].some(id => catalog[id]?.fruit === 'orange')) && decks.some(d => d.sweet.includes('s_24')))
         throw new Error('ぷぷりえーるはオレンジ環境以降では使用できません');
@@ -57,6 +57,11 @@ export function newGame(decks: [Deck, Deck], catalog: Catalog, rules: Rules, see
     for (const side of sides) {
         for (const kind of ['yojo', 'sweet'] as const) s.players[side][kind] = shuffled(s, decks[side][kind].map(id => spawnCard(s, id)));
     }
-    note(s, 'ダイスを振って先攻・後攻を決めてください');
+    if (rules.fixedOrder) {
+        // 先攻・後攻が決まっている：ダイスと先後の選択を飛ばして、双方が初期手札を引く。
+        s.phase = 'opening';
+        for (const side of sides) s.openingRemaining[side] = openingCount(s.rules, side);
+        note(s, `${s.players[s.rules.firstPlayer].name}が先攻です`);
+    } else note(s, 'ダイスを振って先攻・後攻を決めてください');
     return s;
 }

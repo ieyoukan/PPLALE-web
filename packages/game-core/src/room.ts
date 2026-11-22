@@ -6,15 +6,16 @@ export type { RoomChatStampId } from './chatStamps.ts';
 // サーバーが完全な状態を持ち、閲覧者に許可した情報だけを返す。
 import type { Catalog, Command, Deck, GameState, Side, Sleeve } from './model.ts';
 import type { CpuLevel } from './ai/types.ts';
-import { defaultMatchRules, deckRuleErrors, describeMatchRules, parseMatchRules } from './rules.ts';
-import type { MatchRules } from './rules.ts';
+import { defaultMatchRules, deckRuleErrors, describeMatchRules, describePlayRules, parseMatchRules, parsePlayRules } from './rules.ts';
+import type { MatchRules, PlayRules } from './rules.ts';
 import type { PlayPerformance, PlayReport, ServerTiming } from './performance.ts';
 
 // ルームのルール：使用できるカードと観戦の可否。
-export { describeMatchRules, fruitNames, fruits, playableNow } from './rules.ts';
-export type { Fruit, MatchRules } from './rules.ts';
+export { applyPreset, describeMatchRules, describePlayRules, engineRules, fruitNames, fruits, OFFICIAL_OPENING_HAND, officialPlay, playableNow, playPresets, presetOf } from './rules.ts';
+export type { Fruit, MatchRules, PlayPresetId, PlayRules } from './rules.ts';
 
-export interface RoomRules extends MatchRules {
+/** ルームのルール：デッキの条件（MatchRules）、対戦の進め方（PlayRules、省略は公式）、持ち時間と観戦。 */
+export interface RoomRules extends MatchRules, PlayRules {
     /** 1ターンの秒数。省略時は無制限。開始準備は時間制限の対象外。 */
     turnSeconds?: 120 | 180 | 300;
     /** 観戦の許可。通常ルームの観戦者には両手札を見せ、対戦者には観戦人数を知らせる。 */
@@ -25,7 +26,7 @@ export const defaultRoomRules: RoomRules = { ...defaultMatchRules, spectators: f
 export function parseRoomRules(value: unknown): RoomRules | null {
     const rules = parseMatchRules(value);
     const seconds = (value as RoomRules | null)?.turnSeconds;
-    return rules && { ...rules, spectators: (value as RoomRules).spectators === true,
+    return rules && { ...rules, ...parsePlayRules(value), spectators: (value as RoomRules).spectators === true,
         ...((seconds === 120 || seconds === 180 || seconds === 300) && { turnSeconds: seconds }) };
 }
 
@@ -33,7 +34,7 @@ export function parseRoomRules(value: unknown): RoomRules | null {
 export const roomDeckErrors = (deck: Deck, rules: RoomRules, catalog: Catalog): string[] => deckRuleErrors(deck, rules, catalog, 'このルーム');
 
 /** 準備画面と共有文で使うルールの要約。 */
-export const describeRoomRules = (rules: RoomRules) => `${describeMatchRules(rules)} ／ 観戦：${rules.spectators ? 'あり' : 'なし'} ／ 1ターン：${rules.turnSeconds ? `${rules.turnSeconds / 60}分` : '無制限'}`;
+export const describeRoomRules = (rules: RoomRules) => [describeMatchRules(rules), describePlayRules(rules), `観戦：${rules.spectators ? 'あり' : 'なし'}`, `1ターン：${rules.turnSeconds ? `${rules.turnSeconds / 60}分` : '無制限'}`].filter(Boolean).join(' ／ ');
 
 /** サーバーのターン時計。相手の選択待ちではdeadlineをnullにし、remainingMsを固定する。 */
 export interface RoomTurnClock {

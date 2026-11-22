@@ -1,7 +1,7 @@
 'use client';
 
 import { gameAudio } from '@/lib/game/gameAudio';
-import { useCallback, useLayoutEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react';
 import type { RefObject } from 'react';
 import { canAttack, changesBetween, handReactionOps, HIDDEN_CARD, other, scriptOf, skillAt, turnOf } from '@pplale/game-core';
 import type { Command, GameState, Side } from '@pplale/game-core';
@@ -23,7 +23,8 @@ type Strike = { uid: string; cardId: string; x: number; y: number; dx: number; d
 /** A card, skill or hand reaction, shown large before it resolves. */
 type Announcement = { id: number; kind: 'play' | 'skill' | 'reveal' | 'reaction'; side: Side; cardId: string; title: string; text: string };
 /** Who goes first, shown once it is decided. */
-type OrderNotice = { chooser: Side; first: Side };
+/** `chooser`: who chose after the dice; left out when the room's rules fixed the order. */
+type OrderNotice = { chooser?: Side; first: Side };
 /** A die a card rolled (ぎってぃ): thrown, then its result is shown. */
 type EffectRoll = { id: number; side: Side; value: number; cardId?: string; rolling: boolean };
 /** What the opponent picked when the choice is not a card on the table (e.g. paying extra PP). */
@@ -133,6 +134,16 @@ export function useBoardAnimations({ game, shown, view, mode, cpuSides, replayin
     const id = setTimeout(() => { timers.current.delete(id); callback(); }, delay);
     timers.current.add(id);
   }, []);
+
+  // A fixed order (a room's rule) has no dice and no choice: say who goes first as the match opens,
+  // once per match (its shuffled seed tells matches apart) and before anyone has drawn.
+  const orderShown = useRef<number | null>(null);
+  useEffect(() => {
+    if (replaying || !shown.rules.fixedOrder || shown.phase !== 'opening' || shown.players.some(player => player.hand.length) || orderShown.current === shown.rng) return;
+    orderShown.current = shown.rng;
+    setOrder({ first: shown.rules.firstPlayer });
+    later(() => setOrder(null), ORDER_NOTICE_DURATION);
+  }, [shown, replaying, later]);
 
   // Compare with the previous state and present the difference.
   useLayoutEffect(() => {

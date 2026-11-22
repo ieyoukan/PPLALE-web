@@ -1,5 +1,6 @@
 // デッキに使用できるカードのルール。ルーム・CPU戦・保存済みデッキ・おためしデッキで同じ判定を使う。
-import type { Catalog, Deck } from './model.ts';
+import { OPENING_HAND_RANGE, sandboxRules } from './model.ts';
+import type { Catalog, Deck, Rules, Side } from './model.ts';
 import { implementedFruits } from './cards/registry.ts';
 import { random, shuffled } from './core/rng.ts';
 import { extendedPlayables, playableSkills } from './playables/skills.ts';
@@ -79,3 +80,77 @@ export function randomDeck(rules: MatchRules, catalog: Catalog, seed: number): D
 /** One line for the lobby and for sharing, e.g. 「フルーツ：いちご ／ 拡張プレイアブル：なし」. */
 export const describeMatchRules = (rules: MatchRules) =>
     `フルーツ：${rules.fruits.map(fruit => fruitNames[fruit]).join('・')} ／ 拡張プレイアブル（ExP）：${rules.extendedPlayable ? 'あり' : 'なし'}`;
+
+/**
+ * How a match is played (rooms only; every field left out is the official rule). These change the
+ * engine's `Rules` (`engineRules`), not which decks may be used.
+ */
+export interface PlayRules {
+    /** The seat that goes first, with no dice. Left out: the dice decide (official). */
+    firstSeat?: Side;
+    /** Opening hand sizes [先攻, 後攻]. Left out: 3 and 4 (official). */
+    openingHand?: [number, number];
+    /** false: the 後攻 gets no extra 2PP on its 5th turn. Left out: it does (official). */
+    secondBoost?: false;
+}
+/** The official opening hands [先攻, 後攻]. */
+export const OFFICIAL_OPENING_HAND: readonly [number, number] = [3, 4];
+const handSize = (value: unknown): value is number => Number.isInteger(value) && (value as number) >= OPENING_HAND_RANGE.min && (value as number) <= OPENING_HAND_RANGE.max;
+
+/** The usable part of anything sent as play rules; what equals the official rule is left out. */
+export function parsePlayRules(value: unknown): PlayRules {
+    const raw = value as Partial<PlayRules> | null | undefined;
+    const hand = raw?.openingHand;
+    const opening = Array.isArray(hand) && hand.length === 2 && hand.every(handSize) && (hand[0] !== OFFICIAL_OPENING_HAND[0] || hand[1] !== OFFICIAL_OPENING_HAND[1]) ? [hand[0], hand[1]] as [number, number] : undefined;
+    return {
+        ...((raw?.firstSeat === 0 || raw?.firstSeat === 1) && { firstSeat: raw.firstSeat }),
+        ...(opening && { openingHand: opening }),
+        ...(raw?.secondBoost === false && { secondBoost: false as const }),
+    };
+}
+/** Whether the match is played by the official rules. */
+export const officialPlay = (rules: PlayRules) => Object.keys(parsePlayRules(rules)).length === 0;
+/** The engine rules a match with these play rules starts with. */
+export function engineRules(rules: PlayRules): Rules {
+    const play = parsePlayRules(rules);
+    return {
+        ...sandboxRules,
+        ...(play.firstSeat !== undefined && { fixedOrder: true as const, firstPlayer: play.firstSeat }),
+        ...(play.openingHand && { openingHand: [...play.openingHand] as [number, number] }),
+        ...(play.secondBoost === false && { secondBoost: false as const }),
+    };
+}
+
+/**
+ * Ready-made play rules (テンプレート). Not stored anywhere: the one shown as chosen is the one the
+ * current rules equal (`presetOf`), so a template and the rules can never disagree. A fixed order
+ * matches whichever seat goes first: the owner picks the seat.
+ * The handicaps all help the 先攻, for a weaker player fixed as 先攻 against a stronger one.
+ */
+export type PlayPresetId = 'official' | 'handicap1' | 'handicap2' | 'handicap3';
+export const playPresets: readonly { id: PlayPresetId; name: string; rules: PlayRules }[] = [
+    { id: 'official', name: '公式', rules: {} },
+    { id: 'handicap1', name: 'ハンデ小', rules: { firstSeat: 0, secondBoost: false } },
+    { id: 'handicap2', name: 'ハンデ中', rules: { firstSeat: 0, secondBoost: false, openingHand: [3, 3] } },
+    { id: 'handicap3', name: 'ハンデ大', rules: { firstSeat: 0, secondBoost: false, openingHand: [4, 3] } },
+];
+const presetKey = (rules: PlayRules) => {
+    const play = parsePlayRules(rules);
+    return JSON.stringify([play.firstSeat !== undefined, play.openingHand ?? OFFICIAL_OPENING_HAND, play.secondBoost !== false]);
+};
+/** The template these play rules equal, or null for custom ones (カスタム). */
+export const presetOf = (rules: PlayRules): PlayPresetId | null => playPresets.find(preset => presetKey(preset.rules) === presetKey(rules))?.id ?? null;
+/** The play rules of a template, keeping the seat already chosen to go first. */
+export function applyPreset(rules: PlayRules, id: PlayPresetId): PlayRules {
+    const preset = playPresets.find(entry => entry.id === id)!.rules;
+    return parsePlayRules({ ...preset, ...(preset.firstSeat !== undefined && rules.firstSeat !== undefined && { firstSeat: rules.firstSeat }) });
+}
+/** One line for the lobby and for sharing, e.g. 「先攻：席1 ／ 初期手札：先攻3枚・後攻3枚 ／ 後攻5ターン目+2PP：なし」. Empty for the official rules. */
+export function describePlayRules(rules: PlayRules): string {
+    const play = parsePlayRules(rules);
+    return [
+        ...(play.firstSeat !== undefined ? [`先攻：席${play.firstSeat + 1}`] : []),
+        ...(play.openingHand ? [`初期手札：先攻${play.openingHand[0]}枚・後攻${play.openingHand[1]}枚`] : []),
+        ...(play.secondBoost === false ? ['後攻5ターン目+2PP：なし'] : []),
+    ].join(' ／ ');
+}

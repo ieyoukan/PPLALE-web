@@ -10,6 +10,7 @@ import { DECK_IMAGE_ASPECT } from '@/lib/deckImageLayout';
 import type { DeckChoice } from '@/lib/game/deckSources';
 import { displayCards } from '@/lib/game/catalog';
 import { RulePicker } from '../RulePicker';
+import { PlayRulesPicker } from './PlayRulesPicker';
 import { DeckCardLayout } from '@/components/shared/deck/DeckCardLayout';
 import SavedDeckThumbnail from '@/components/deck/SavedDeckThumbnail';
 import { OrnateFrame } from '@/components/shared/ui/ornament/OrnateFrame';
@@ -108,6 +109,9 @@ export function RulesSheet({ view, onClose }: { view: RoomView; onClose: () => v
     {mine && <label className={styles.roomName}>{t('ルーム名')}<input value={name} onChange={event => setName(Array.from(event.target.value).slice(0, MAX_ROOM_NAME_LENGTH).join(''))} disabled={busy} autoComplete="off" /></label>}
     <div className={mine ? undefined : styles.readOnly} inert={!mine || busy}>
       <RulePicker rules={rules} onChange={next => setRules(current => ({ ...current, ...next }))} compact />
+      {/* The play rules replace all three fields: one left out goes back to the official rule. */}
+      <PlayRulesPicker rules={rules} seats={[view.players[0]?.name, view.players[1]?.name]}
+        onChange={next => setRules(current => ({ ...current, firstSeat: undefined, openingHand: undefined, secondBoost: undefined, ...next }))} />
       <div className={styles.turnChoice} role="radiogroup" aria-label={t('1ターンの時間')}>
         <GameIcon name="timer" />
         {TURNS.map(seconds => <button key={seconds ?? 0} role="radio" aria-checked={rules.turnSeconds === seconds} onClick={() => setRules(current => ({ ...current, turnSeconds: seconds }))}>{seconds ? t('{minutes}分', { minutes: seconds / 60 }) : '∞'}</button>)}
