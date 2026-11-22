@@ -7,7 +7,9 @@
 //
 // Redis未設定時は、開発・テスト用にプロセス内で管理する。
 import { createClient } from 'redis';
-import webpush from 'web-push';
+// web-push 4 is an ES module with named exports only (no default export).
+import { sendNotification } from 'web-push';
+import type { RequestOptions } from 'web-push';
 import { z } from 'zod';
 import type { Side } from '@pplale/game-core';
 
@@ -93,13 +95,13 @@ export async function redisPushStore(url: string, prefix = 'pplale:push:'): Prom
 }
 
 export interface VapidKeys { publicKey: string; privateKey: string; subject: string }
-type Send = (target: Subscription, payload: string, options: webpush.RequestOptions) => Promise<unknown>;
+type Send = (target: Subscription, payload: string, options: RequestOptions) => Promise<unknown>;
 
 /**
  * Sends notices to a player's registered browsers. Without VAPID keys nothing is sent (the
  * registrations are still kept). A browser whose subscription ended (404/410) is forgotten.
  */
-export function pusher(store: PushStore, keys: VapidKeys | null, send: Send = webpush.sendNotification) {
+export function pusher(store: PushStore, keys: VapidKeys | null, send: Send = sendNotification) {
     async function tell(uid: string, notice: Notice) {
         if (!keys) return;
         const devices = await store.list(uid);
