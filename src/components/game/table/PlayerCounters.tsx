@@ -1,6 +1,6 @@
 'use client';
 
-import { playableMp, skillsFor } from '@pplale/game-core';
+import { playablesOf, playerMp, skillsFor } from '@pplale/game-core';
 import type { Side } from '@pplale/game-core';
 import { useI18n } from '@/i18n/LocaleProvider';
 import { gameCatalog } from '@/lib/game/catalog';
@@ -13,10 +13,11 @@ export function PlayerCounters({ side }: { side: Side }) {
   const { game, names, setPanel } = useBoardContext();
   const { t } = useI18n();
   const player = game.players[side], counts = cardCounts(player, gameCatalog);
-  const mp = playableMp[player.playable];
+  // ダブルプレイアブルは、控えのプレイアブルのMPも表示する。
+  const mp = playerMp(player);
   // MPを使って0になった後も表示する。使用履歴を使うので復帰・観戦でも同じ表示になる。
-  const skills = skillsFor(player.playable);
-  const spentMp = (player.skillHistory ?? []).some(index => !!skills[index]?.mp);
+  const skills = playablesOf(player).map(skillsFor);
+  const spentMp = (player.skillHistory ?? []).some(index => skills.some(list => !!list[index]?.mp));
   const counters: { key: string; label: string; value: number; maximum?: number }[] = [
     { key: 'uyuchi', label: 'うゆち', value: counts.uyuchi },
     { key: 'sweets', label: 'お菓子', value: counts.sweets },

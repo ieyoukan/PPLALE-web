@@ -13,6 +13,7 @@ import { useI18n } from '@/i18n/LocaleProvider';
 import styles from './RulePicker.module.css';
 
 import { fruitArt } from '@/lib/game/roomThumbnail';
+import { CardArtwork } from '@/components/shared/card/CardArtwork';
 
 /** The fruit's colour and picture, as on the 2pick tiles (shared with the rooms' pictures). */
 export { fruitArt };
@@ -21,13 +22,13 @@ export { fruitArt };
  * One tile. With `onChange` it is a checkbox that covers the whole tile; without, it only shows a
  * state that cannot be changed. `soon`: the game cannot play it yet (準備中).
  */
-function Tile({ name, note, image, tone, on, soon, onChange }: {
-  name: string; note?: ReactNode; image: string; tone: string; on: boolean; soon?: boolean; onChange?: (on: boolean) => void;
+function Tile({ name, note, image, art, tone, on, soon, onChange }: {
+  name: string; note?: ReactNode; image?: string; art?: ReactNode; tone: string; on: boolean; soon?: boolean; onChange?: (on: boolean) => void;
 }) {
   const { t, locale } = useI18n();
   const body = <>
     <span className={styles.art} style={{ '--tone': tone } as CSSProperties}>
-      <Image src={image} alt="" width={320} height={180} sizes="(max-width: 720px) 46vw, 240px" loading="eager" />
+      {art ?? (image && <Image src={image} alt="" width={320} height={180} sizes="(max-width: 720px) 46vw, 240px" loading="eager" />)}
       {on && <span className={styles.mark}><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 13l4 4L19 7" /></svg></span>}
       {soon && <span className={styles.soon}>{locale === 'en' ? t('準備中（対戦ではまだ使えない）') : '準備中'}</span>}
     </span>
@@ -41,17 +42,19 @@ function Tile({ name, note, image, tone, on, soon, onChange }: {
 }
 
 /**
- * `onChange` gets the two fields of `MatchRules`; rules with more (a room's) keep the rest.
- * What `playableNow` does not allow is shown but cannot be chosen.
+ * `onChange` gets the fields of `MatchRules`; rules with more (a room's) keep the rest.
+ * What `playableNow` does not allow is shown but cannot be chosen. `double`: also offer ダブルプレイアブル
+ * (rooms only).
  */
-export function RulePicker({ rules, onChange, compact = false }: { rules: MatchRules; onChange: (rules: MatchRules) => void; compact?: boolean }) {
-  const { extendedPlayable } = rules;
+export function RulePicker({ rules, onChange, compact = false, double = false }: { rules: MatchRules; onChange: (rules: MatchRules) => void; compact?: boolean; double?: boolean }) {
+  const { extendedPlayable, doublePlayable } = rules;
   const { t } = useI18n();
+  const keep = { extendedPlayable, ...(doublePlayable && { doublePlayable }) };
   // On: this fruit's environment. Off: the environment just before it (いちご itself always stays).
   const toggleFruit = (fruit: Fruit, on: boolean) => {
     const index = fruits.indexOf(fruit);
     if (!on && index === 0) return;
-    onChange({ fruits: fruitsUpTo(on ? fruit : fruits[index - 1]), extendedPlayable });
+    onChange({ ...keep, fruits: fruitsUpTo(on ? fruit : fruits[index - 1]) });
   };
   const waiting = fruits.some(fruit => !playableNow.fruits.includes(fruit)) || !playableNow.extendedPlayable;
   return <div className={`${styles.picker} ${compact ? styles.compact : ''}`}>
@@ -65,11 +68,15 @@ export function RulePicker({ rules, onChange, compact = false }: { rules: MatchR
       </fieldset>
       <fieldset className={styles.group}>
         <legend>{t('プレイアブル')}</legend>
-        <div className={`${styles.tiles} ${styles.versions}`}>
+        <div className={`${styles.tiles} ${styles.versions}`} data-double={double || undefined}>
           {/* The rules only decide ExP: a 通常 playable may always lead a deck. */}
           <Tile name={t('通常')} note={t('いつも使える')} image="/images/versions/通常.webp" tone="#a88667" on />
           <Tile name={t('拡張プレイアブル')} note="ExP" image="/images/versions/β.webp" tone="#9B4341" on={playableNow.extendedPlayable && extendedPlayable} soon={!playableNow.extendedPlayable}
-            onChange={on => onChange({ fruits: rules.fruits, extendedPlayable: on })} />
+            onChange={on => onChange({ ...keep, fruits: rules.fruits, extendedPlayable: on })} />
+          {/* Two playables a deck switches between: two cards side by side, the back one a little behind. */}
+          {double && <Tile name={t('ダブル')} note={t('2枚を切り替え')} tone="#e8c8c8" on={!!doublePlayable}
+            art={<span className={styles.doubleArt} aria-hidden="true"><span><CardArtwork id="p_1" sizes="80px" /></span><span><CardArtwork id="p_0" sizes="80px" /></span></span>}
+            onChange={on => onChange({ fruits: rules.fruits, extendedPlayable, ...(on && { doublePlayable: true }) })} />}
         </div>
       </fieldset>
     </div>

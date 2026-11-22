@@ -120,6 +120,33 @@
 .near .playableZone { top: 77%; }
 .far .playableZone { top: 1.2%; transform: rotate(180deg); }
 .playableCard { position: absolute; width: 61%; aspect-ratio: 533 / 800; top: 14%; left: 19.5%; filter: drop-shadow(1px 2px 3px #51443a55); }
+
+/* ダブルプレイアブル: the reserve card waits behind the front one, a little smaller and lower. */
+/* The zone is the frame; the button inside it opens the skills. The reserve card sits at its upper corner, clear of the front card. */
+.playableButton { position: absolute; inset: 0; padding: 0; border: 0; background: none; cursor: pointer; }
+.reserveCard { position: absolute; left: 80%; top: -22%; width: 42%; aspect-ratio: 533 / 800; padding: 0; border: 0; background: none; filter: drop-shadow(1px 2px 3px #51443a55) saturate(.75) brightness(.92); cursor: pointer; }
+.reserveCard:disabled { cursor: default; }
+.reserveCard:not(:disabled):hover { filter: drop-shadow(1px 2px 3px #51443a55); }
+.reserveCard:focus-visible { outline: 3px solid var(--brand-cocoa); outline-offset: 2px; }
+.reserveCard > :first-child { position: absolute; inset: 0; }
+.reserveSwap { position: absolute; right: -26%; top: -14%; display: grid; place-items: center; width: 62%; aspect-ratio: 1; border: 2px solid var(--brand-paper); border-radius: 50%; background: var(--brand-cocoa); color: var(--brand-cream); animation: reserveHint 1.6s ease-in-out infinite; }
+.reserveSwap svg { width: 70%; height: 70%; fill: none; stroke: currentColor; stroke-width: 2.6; stroke-linecap: round; stroke-linejoin: round; }
+/* A switch: the new front card comes forward from behind, the old one goes back to the reserve spot. */
+.playableCard[data-switched] { animation: playableForward .5s cubic-bezier(.3, 1.4, .5, 1) both; }
+.reserveCard[data-switched] { animation: playableBack .45s ease-out both; }
+.switchBurst { position: absolute; inset: -30%; border-radius: 50%; pointer-events: none;
+  background: radial-gradient(circle, #fff8 0 18%, transparent 19%) 50% 0 / 22% 22% no-repeat, radial-gradient(circle, #f5df97 0 18%, transparent 19%) 100% 50% / 18% 18% no-repeat,
+    radial-gradient(circle, #efb39d 0 18%, transparent 19%) 50% 100% / 20% 20% no-repeat, radial-gradient(circle, #f8e8e8 0 18%, transparent 19%) 0 50% / 18% 18% no-repeat,
+    radial-gradient(circle, #fffdf9cc 0 30%, #f5df9766 45%, transparent 68%);
+  animation: switchBurst .7s ease-out both; }
+@keyframes playableForward { from { transform: translate(82%, -80%) scale(.69); opacity: .5; } }
+@keyframes playableBack { from { transform: translate(-120%, 115%) scale(1.45); opacity: .6; } }
+@keyframes switchBurst { from { transform: scale(.4); opacity: 1; } to { transform: scale(1.25); opacity: 0; } }
+@keyframes reserveHint { 50% { transform: translateY(-12%); } }
+@media (prefers-reduced-motion: reduce) {
+  .playableCard[data-switched], .reserveCard[data-switched], .switchBurst, .reserveSwap { animation: none; }
+  .switchBurst { display: none; }
+}
 .turnCounter, .pointsCounter { position: absolute; width: 20.3%; height: 17.5%; pointer-events: auto; }
 .near .turnCounter { left: 23.5%; top: 72%; }
 .near .pointsCounter { left: 58.25%; top: 72%; }
@@ -694,3 +721,18 @@
 [data-aimed].fieldSlot, [data-aimed] .counterLabel { outline: .4cqw solid var(--brand-star); outline-offset: .25cqw; box-shadow: 0 0 1.4cqw .3cqw #f5d36ecc; }
 @keyframes aimFlow { to { stroke-dashoffset: -27; } }
 @media (prefers-reduced-motion: reduce) { .aimFlow { animation: none; } }
+
+/* ダブルプレイアブル: the reserve in the skill panel; its card is the switch. */
+.skillReserve { display: grid; grid-template-columns: auto 1fr; align-items: center; gap: 14px; margin: 14px 0 6px; padding: 10px 12px; border: 1px dashed var(--brand-pink-edge); border-radius: 8px; background: var(--brand-paper); color: var(--brand-cocoa-deep); }
+.skillReserve h3 { margin: 0 0 4px; }
+.skillReserve ul { margin: 4px 0 0; padding: 0; list-style: none; display: grid; gap: 2px; font-size: 14px; }
+.skillReserve li { display: flex; justify-content: space-between; gap: 10px; }
+.skillReserve small { color: var(--brand-cocoa-soft); white-space: nowrap; }
+.skillReservePassive { margin: 0; font-size: 13px; color: var(--brand-cocoa-soft); }
+.skillReservePassive[data-active=true] { color: var(--brand-cocoa-deep); font-weight: 700; text-decoration: underline 2px var(--brand-sage); text-underline-offset: 3px; }
+.skillReserveSwitch { position: relative; padding: 0; border: 0; background: none; cursor: pointer; }
+.skillReserveSwitch:disabled { cursor: default; opacity: .7; }
+.skillReserveSwitch .inspectImage { display: block; width: 64px; margin: 0; }
+.skillReserveSwitch svg { position: absolute; right: -10px; bottom: -6px; width: 30px; height: 30px; padding: 5px; box-sizing: border-box; border: 2px solid var(--brand-paper); border-radius: 50%; background: var(--brand-cocoa); fill: none; stroke: var(--brand-cream); stroke-width: 2.6; stroke-linecap: round; stroke-linejoin: round; }
+.skillReserveSwitch:not(:disabled):hover svg { background: var(--brand-cocoa-deep); }
+.skillReserveSwitch:focus-visible { outline: 3px solid var(--brand-cocoa); outline-offset: 3px; }

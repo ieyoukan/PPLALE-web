@@ -53,7 +53,9 @@ export function policyInputs(state: GameState, move: Move, before: Float32Array,
     view(before, side, x, layout.state);
     view(valueFeatures(move.next, catalog), side, x, layout.delta);
     view(before, side, x, layout.delta, -1);
-    x[layout.type + TYPES.indexOf(c.type as typeof TYPES[number])] = 1;
+    // A command the policy was not trained on (switchPlayable) has no type feature.
+    const type = TYPES.indexOf(c.type as typeof TYPES[number]);
+    if (type >= 0) x[layout.type + type] = 1;
     const card = (uid: string, at: number) => {
         const i = index.get(state.cards[uid]?.cardId ?? '');
         if (i !== undefined) x[at + i] = 1;

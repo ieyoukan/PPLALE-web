@@ -1,7 +1,7 @@
 // 山札・手札・場・お昼寝場所などの移動と、それに伴う誘発効果を処理する。
 import { scriptFor, scriptOf } from '../cards/registry.ts';
 import { cardContext, effects } from '../effects/context.ts';
-import { activePassive } from '../playables/skills.ts';
+import { activePassives } from '../playables/skills.ts';
 import { deckLabel, other, sides } from '../model.ts';
 import type { Catalog, DeckKind, GameState, Side } from '../model.ts';
 import { markAction } from './stall.ts';
@@ -146,8 +146,9 @@ export function enterField(s: GameState, side: Side, uid: string, catalog: Catal
     // ビデカメ: 「このゲーム中、自分の場に出た幼女すべてを+1/+1する」, however the unit arrives.
     const boost = s.players[side].entryBuff ?? 0;
     if (boost) buff(s, uid, boost, boost);
-    // The owner's passive applies to every unit that enters, before the unit's own effects (ちょり).
-    activePassive(s.players[side], catalog)?.onUnitEnter?.(effects(s, catalog, side), uid);
+    // The owner's passive applies to every unit that enters, before the unit's own effects (ちょり);
+    // a ダブルプレイアブル's passive in reserve too.
+    for (const passive of activePassives(s.players[side], catalog)) passive.onUnitEnter?.(effects(s, catalog, side), uid);
     const ctx = cardContext(s, catalog, side, uid);
     scriptFor(s, uid).onEnter?.(ctx);
     if (fromHand) {

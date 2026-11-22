@@ -3,7 +3,7 @@ export * from './model.ts';
 export { applyCommand } from './commands/index.ts';
 export { newGame, singleCopy, validateDeck } from './setup.ts';
 export { decideMatch, winReasonOf } from './core/outcome.ts';
-export { applyPreset, deckRuleErrors, defaultMatchRules, describeMatchRules, describePlayRules, engineRules, fruitNames, fruits, fruitsUpTo, isExtendedPlayable, OFFICIAL_OPENING_HAND, officialPlay, parseMatchRules, parsePlayRules, playableNow, playPresets, presetOf, randomDeck } from './rules.ts';
+export { applyPreset, deckRuleErrors, defaultMatchRules, describeMatchRules, describePlayRules, engineRules, fruitNames, fruits, fruitsUpTo, isExtendedPlayable, OFFICIAL_OPENING_HAND, officialPlay, parseMatchRules, parsePlayRules, playableNow, playPresets, presetOf, randomDeck, withoutSubPlayable } from './rules.ts';
 export type { Fruit, MatchRules, PlayPresetId, PlayRules } from './rules.ts';
 export { restoreGame } from './snapshot.ts';
 export { buildPosition, checkPosition, decodePosition, encodePosition, parsePosition, positionOf } from './position.ts';
@@ -14,7 +14,7 @@ export { actingSides, cpuCommand, cpuStrategies, createHard, createMaster, creat
 export type { CpuDecision, CpuLevel, CpuOptions, CpuStrategy, Evaluator, LethalOptions, LethalResult, MatchOptions, MatchResult, Move, TurnSearchOptions, ValueModel, Weights } from './ai/index.ts';
 export { attackOf, availablePpMaximum, costOf, hpOf, maxPp, spawnCard } from './core/cards.ts';
 export { canAttack } from './core/combat.ts';
-export { activePassive, extendedPlayables, mpMax, playableMp, playablePassives, playableSkills, skillLimit, skillLimits, skillAt, skillPrice, skillsFor } from './playables/skills.ts';
+export { activePassive, activePassives, extendedPlayables, mpMax, playableMp, playablePassives, playablesOf, playableSkills, playerMp, playerMpMax, skillLimit, skillLimits, skillAt, skillPrice, skillsFor } from './playables/skills.ts';
 export type { PassiveScript, SkillScript } from './playables/skills.ts';
 export { implementedCard, scriptOf } from './cards/registry.ts';
 export { uyuchiPlayCount } from './core/playCounts.ts';

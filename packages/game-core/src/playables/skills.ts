@@ -5,7 +5,7 @@ import { attackOf, costOf, hpOf, immobilized } from '../core/cards.ts';
 import { isHidden } from '../core/protection.ts';
 import type { Effects } from '../effects/context.ts';
 import { MAX_PP } from '../model.ts';
-import type { Catalog, Keyword, Player, Task } from '../model.ts';
+import type { Catalog, Keyword, Player, ReservePlayable, Task } from '../model.ts';
 import { selectable } from '../effects/targets.ts';
 
 export interface SkillScript {
@@ -363,6 +363,14 @@ export const playableMp: Record<string, { initial: number; max: number }> = {
 };
 /** The most MP the playable can hold; 0 for one without MP. */
 export const mpMax = (playable: string) => playableMp[playable]?.max ?? 0;
+/** The player's playables: the front one, then the one in reserve (ダブルプレイアブル). */
+export const playablesOf = (p: Pick<Player, 'playable' | 'reserve'>): string[] => p.reserve ? [p.playable, p.reserve.playable] : [p.playable];
+/**
+ * The MP of a player: a ダブルプレイアブル keeps the MP of the one that has it while it is in reserve
+ * (only one playable has MP, and a deck cannot hold the same playable twice).
+ */
+export const playerMpMax = (p: Pick<Player, 'playable' | 'reserve'>) => Math.max(...playablesOf(p).map(mpMax));
+export const playerMp = (p: Pick<Player, 'playable' | 'reserve'>) => playablesOf(p).map(id => playableMp[id]).find(Boolean);
 
 /** 拡張プレイアブル (ExP; version `beta` in the card data). They lead a deck only when its rules allow it; each is playable once it has skills here. */
 export const extendedPlayables: readonly string[] = ['p_6', 'p_7', 'p_8'];
@@ -391,13 +399,24 @@ export function skillAt(p: Pick<Player, 'playable' | 'extraSkills'>, index: numb
 /** How many skills the `skill` command can name for this player. */
 export const skillCount = (p: Pick<Player, 'playable' | 'extraSkills'>) => skillsFor(p.playable).length + (p.extraSkills?.length ?? 0);
 
-type Owner = Pick<Player, 'playable' | 'played'>;
-/** The playable's passive, when its condition holds for this player now. */
-export function activePassive(p: Owner, catalog: Catalog): PassiveScript | undefined {
-    const passive = playablePassives[p.playable];
+type Owner = Pick<Player, 'playable' | 'played'> & { reserve?: Pick<ReservePlayable, 'playable'> };
+const passiveOf = (playable: string, p: Owner, catalog: Catalog): PassiveScript | undefined => {
+    const passive = playablePassives[playable];
     return passive && (passive.active?.(p, catalog) ?? true) ? passive : undefined;
-}
-/** What using skill `index` costs this player now. */
+};
+/** The front playable's passive, when its condition holds for this player now. */
+export const activePassive = (p: Owner, catalog: Catalog): PassiveScript | undefined => passiveOf(p.playable, p, catalog);
+/**
+ * Every passive that holds now: the front playable's and, for a ダブルプレイアブル, the reserve's too —
+ * a passive works from the reserve as well (2026-11-22 ユーザー指定).
+ */
+export const activePassives = (p: Owner, catalog: Catalog): PassiveScript[] =>
+    playablesOf(p as Pick<Player, 'playable' | 'reserve'>).flatMap(id => passiveOf(id, p, catalog) ?? []);
+/**
+ * What using skill `index` costs this player now. A passive changes the cost of its own playable's
+ * skills only (いのまこ in reserve does not make the front one's 固有スキル free: provisional reading,
+ * see open-questions.md).
+ */
 export function skillPrice(p: Owner, index: number, catalog: Catalog): { pp: number; mp: number } {
     const skill = skillsFor(p.playable)[index];
     if (!skill) return { pp: 0, mp: 0 };
@@ -407,12 +426,17 @@ export function skillPrice(p: Owner, index: number, catalog: Catalog): { pp: num
  * The most uses skill `index` can have left now: its printed limit plus what a passive adds.
  * `Player.skills[index]` is always between 0 and this; 0 for a skill without a use limit.
  */
-export function skillLimit(p: Owner, index: number, catalog: Catalog): number {
-    const skill = skillsFor(p.playable)[index];
+export function skillLimit(p: Owner, index: number, catalog: Catalog, playable = p.playable): number {
+    const skill = skillsFor(playable)[index];
     if (skill?.uses === undefined) return 0;
-    return skill.uses + (activePassive(p, catalog)?.extraUses?.(index) ?? 0);
+    // The common skill is shared by both playables of a ダブルプレイアブル: every passive that holds adds
+    // to it. A 固有スキル gets only what its own playable's passive adds.
+    const extra = index === 0 ? activePassives(p, catalog).reduce((sum, passive) => sum + (passive.extraUses?.(0) ?? 0), 0)
+        : passiveOf(playable, p, catalog)?.extraUses?.(index) ?? 0;
+    return skill.uses + extra;
 }
-export const skillLimits = (p: Owner, catalog: Catalog): number[] => skillsFor(p.playable).map((_, index) => skillLimit(p, index, catalog));
+/** The limits of `playable`'s skills (the front one's unless given), in `skillsFor` order. */
+export const skillLimits = (p: Owner, catalog: Catalog, playable = p.playable): number[] => skillsFor(playable).map((_, index) => skillLimit(p, index, catalog, playable));
 
 /**
  * Runs a change that can switch a passive on or off (a card was played, the editor rewrote the
@@ -420,11 +444,14 @@ export const skillLimits = (p: Owner, catalog: Catalog): number[] => skillsFor(p
  * Returns the passive when the change made its condition hold.
  */
 export function withSkillLimits(p: Player, catalog: Catalog, change: () => void): PassiveScript | undefined {
-    const before = skillLimits(p, catalog), was = activePassive(p, catalog);
+    const front = p.playable, reserve = p.reserve?.playable;
+    const before = skillLimits(p, catalog), beforeReserve = reserve ? skillLimits(p, catalog, reserve) : [], was = activePassives(p, catalog);
     change();
-    skillLimits(p, catalog).forEach((limit, index) => {
-        if (limit !== before[index]) p.skills[index] = Math.max(0, Math.min(limit, p.skills[index] + limit - before[index]));
+    const follow = (skills: number[], limits: number[], previous: number[], from: number) => limits.forEach((limit, index) => {
+        if (index >= from && limit !== previous[index]) skills[index] = Math.max(0, Math.min(limit, skills[index] + limit - previous[index]));
     });
-    const now = activePassive(p, catalog);
-    return now && !was ? now : undefined;
+    follow(p.skills, skillLimits(p, catalog, front), before, 0);
+    // The reserve's common skill is not counted (the front's is shared).
+    if (p.reserve) follow(p.reserve.skills, skillLimits(p, catalog, p.reserve.playable), beforeReserve, 1);
+    return activePassives(p, catalog).find(passive => !was.includes(passive));
 }

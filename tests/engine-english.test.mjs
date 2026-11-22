@@ -18,6 +18,10 @@ const japanese = /[぀-ヿ一-鿿]/;
 // Text as the engine and the server build it (templates filled with sample names and numbers).
 const samples = {
   'Aliceのダイス：5': "Alice's dice: 5",
+  'Aliceが先攻です': 'Alice goes first',
+  'Alice：プレイアブルをあみのに切り替え': 'Alice switched the playable to Amino',
+  'フルーツ：いちご・ぶどう ／ 拡張プレイアブル（ExP）：なし ／ ダブルプレイアブル：あり ／ 先攻：席2 ／ 初期手札：先攻4枚・後攻3枚 ／ 後攻5ターン目+2PP：なし ／ 観戦：あり ／ 1ターン：3分':
+    "Fruits: Strawberry, Grape / Extended playables (ExP): Off / Double playables: On / First: seat 2 / Opening hands: first 4, second 3 / Second player's +2 PP on turn 5: Off / Watching: On / Turn: 3 min",
   'Aliceが後攻を選びました': 'Alice chose to go second',
   'Alice：初期手札を2枚交換': 'Alice swapped 2 opening cards',
   'Aliceの3ターン目': "Alice's turn 3",

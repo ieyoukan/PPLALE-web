@@ -34,6 +34,8 @@ function translate(value: string): string {
     if (match) return english.replace(/\$(\d)/g, (_, index: string) => part(match[Number(index)] ?? ''));
   }
   if (value.includes(' / ')) return value.split(' / ').map(translate).join(' / ');
+  // A rules summary with parts the whole-line patterns do not list (a room's play rules, ダブルプレイアブル): part by part.
+  if (value.includes(' ／ ')) return value.split(' ／ ').map(translate).join(' / ');
   const pieces = value.split(/(?<=[。！？\n])/);
   return pieces.length > 1 ? pieces.map(piece => translate(piece.trim()) + (piece.endsWith('\n') ? '\n' : ' ')).join('').trim() : value;
 }

@@ -77,9 +77,10 @@ export const command = z.discriminatedUnion('type', [
     z.object({ type: z.literal('reveal'), actor: side, uid }),
     z.object({ type: z.literal('exSkill'), actor: side, skill: z.enum(['dice', 'strawberryHunt', 'healing', 'abyss', 'dagger', 'alice', 'smoke', 'kamikakushi']) }),
     z.object({ type: z.literal('acorn'), actor: side, mode: z.enum(['draw', 'pp']) }),
+    z.object({ type: z.literal('switchPlayable'), actor: side }),
 ]);
 const cardIds = z.array(z.string().max(16)).max(40);
-export const deck = z.object({ name: z.string().max(60), yojo: cardIds, sweet: cardIds, playable: z.string().max(16), sleeve: z.enum(SLEEVES).optional() });
+export const deck = z.object({ name: z.string().max(60), yojo: cardIds, sweet: cardIds, playable: z.string().max(16), subPlayable: z.string().max(16).optional(), sleeve: z.enum(SLEEVES).optional() });
 const action = z.discriminatedUnion('action', [
     z.object({ action: z.literal('ready'), deck }),
     z.object({ action: z.literal('unready') }),

@@ -9,6 +9,13 @@
 .tiles { display: grid; grid-template-columns: repeat(var(--columns), minmax(0, 1fr)); gap: 14px; }
 .fruits { --columns: 4; }
 .versions { --columns: 2; }
+.versions[data-double] { --columns: 3; }
+/* With ダブル the versions are three tiles: the groups keep every tile the same width (4 : 3). */
+.groups:has(.versions[data-double]) { grid-template-columns: minmax(0, 4fr) minmax(0, 3fr); }
+/* ダブルプレイアブル: two playable cards, the second a little behind and lower, on a blush ground. */
+.doubleArt { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; }
+.doubleArt > span { position: relative; height: 84%; aspect-ratio: 533 / 800; filter: drop-shadow(1px 2px 2px #51443a55); }
+.doubleArt > span:first-child { margin-right: -14%; transform: translateY(6%) scale(.9); filter: drop-shadow(1px 2px 2px #51443a55) brightness(.94); }
 
 .tile { color: var(--brand-cocoa-deep); position: relative; display: grid; align-content: start; gap: 6px; text-align: center; cursor: pointer; }
 .tile[data-fixed], .tile[data-soon] { cursor: default; }
@@ -45,6 +52,7 @@
 
 /* Home rules use one landscape row at every screen size. */
 .compact .groups { grid-template-columns: minmax(0, 2fr) minmax(0, 1fr); gap: 10px; }
+.compact .groups:has(.versions[data-double]) { grid-template-columns: minmax(0, 4fr) minmax(0, 3fr); }
 .compact .tiles { gap: 6px; }
 .compact .fruits { --columns: 4; }
 .compact .versions { width: auto; }

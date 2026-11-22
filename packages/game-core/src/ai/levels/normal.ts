@@ -6,7 +6,8 @@ import { cardContext, effects } from '../../effects/context.ts';
 import { opDef } from '../../effects/resolve.ts';
 import { other } from '../../model.ts';
 import type { Catalog, Command, GameState, Side } from '../../model.ts';
-import { skillAt } from '../../playables/skills.ts';
+import { skillAt, skillsFor } from '../../playables/skills.ts';
+import { skillUnavailable } from '../../playables/usage.ts';
 import type { Move } from '../moves.ts';
 import type { CpuDecision, CpuStrategy } from '../types.ts';
 
@@ -64,6 +65,12 @@ function mainPhase(d: CpuDecision): Move {
     const fx = effects(s, catalog, side);
     const skill = of(moves, 'skill').find(m => skillAt(p, m.command.index)?.skill.cpu?.(fx));
     if (skill) return skill;
+    // ダブルプレイアブル: bring the reserve to the front when one of its skills is worth using now.
+    const swap = of(moves, 'switchPlayable')[0];
+    if (swap) {
+        const after = swap.next, mine = after.players[side], next = effects(after, catalog, side);
+        if (skillsFor(mine.playable).some((script, index) => !skillUnavailable(after, side, index, catalog) && script.cpu?.(next))) return swap;
+    }
     // Each unit in field order: the sweets if possible, otherwise the weakest enemy.
     for (const uid of p.field) {
         const own = attacks.filter(m => m.command.uid === uid);

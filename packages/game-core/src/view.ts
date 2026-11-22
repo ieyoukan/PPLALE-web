@@ -3,7 +3,7 @@ import { scriptFor, scriptOf } from './cards/registry.ts';
 import { canAttack } from './core/combat.ts';
 import { fruitsOf } from './core/protection.ts';
 import { cardContext, effects } from './effects/context.ts';
-import { activePassive, playableMp, playablePassives, skillAt, skillLimit, skillPrice, skillsFor } from './playables/skills.ts';
+import { activePassive, activePassives, playablePassives, playerMp, skillAt, skillLimit, skillPrice, skillsFor } from './playables/skills.ts';
 import { skillUnavailable } from './playables/usage.ts';
 import { other } from './model.ts';
 import type { CardSelection, Catalog, DeckKind, GameState, Side, TaskOp } from './model.ts';
@@ -109,9 +109,15 @@ export interface PlayableView {
     /** `active`: its condition holds now (always, for one without a condition). */
     passive?: { name: string; active: boolean };
     mp?: { current: number; max: number };
+    /**
+     * ダブルプレイアブル: the playable in reserve, its skills (uses as they are now; the common skill is the
+     * front one's, shared) and its passive, which works from the reserve too.
+     */
+    reserve?: { playable: string; skills: { name: string; left: number | null; limit: number | null }[]; passive?: { name: string; active: boolean } };
 }
 export function playableView(s: GameState, side: Side, catalog: Catalog): PlayableView {
-    const p = s.players[side], passive = playablePassives[p.playable], mp = playableMp[p.playable];
+    const p = s.players[side], passive = playablePassives[p.playable], mp = playerMp(p);
+    const reserve = p.reserve, reservePassive = reserve && playablePassives[reserve.playable];
     return {
         skills: skillsFor(p.playable).map((skill, index) => ({
             name: skill.name, ...skillPrice(p, index, catalog), reaction: !!skill.reaction,
@@ -128,6 +134,15 @@ export function playableView(s: GameState, side: Side, catalog: Catalog): Playab
         }),
         ...(passive ? { passive: { name: passive.name, active: !!activePassive(p, catalog) } } : {}),
         ...(mp ? { mp: { current: p.mp ?? 0, max: mp.max } } : {}),
+        ...(reserve ? { reserve: {
+            playable: reserve.playable,
+            skills: skillsFor(reserve.playable).map((skill, index) => ({
+                name: skill.name,
+                left: skill.uses === undefined ? null : index === 0 ? p.skills[0] ?? 0 : reserve.skills[index] ?? 0,
+                limit: skill.uses === undefined ? null : skillLimit(p, index, catalog, reserve.playable),
+            })),
+            ...(reservePassive ? { passive: { name: reservePassive.name, active: activePassives(p, catalog).includes(reservePassive) } } : {}),
+        } } : {}),
     };
 }
 

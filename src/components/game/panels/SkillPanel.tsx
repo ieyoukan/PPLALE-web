@@ -19,7 +19,7 @@ export function SkillPanel({ side }: { side: Side }) {
   const { game, busy, mode, act, setPanel } = board;
   const player = game.players[side], card = displayCards[player.playable];
   const usable = game.phase === 'playing' && game.active === side && board.canControl(side) && !game.pending && !busy;
-  const { skills, taken, passive, mp } = playableView(game, side, gameCatalog);
+  const { skills, taken, passive, mp, reserve } = playableView(game, side, gameCatalog);
   const { locale, t, gameText } = useI18n();
   const cardName = useCardName();
   /** The skill's text from the playable's printed card, in English from the English card. */
@@ -46,6 +46,19 @@ export function SkillPanel({ side }: { side: Side }) {
       {/* A reaction skill is offered by the game when its moment comes. */}
       <small>{skill.reaction && <>{t('相手ターンに確認')}<br /></>}{skill.left === null ? t('回数制限なし') : t('残り{n}回', { n: skill.left })}</small>
     </button>)}
+    {/* ダブルプレイアブル: the one in reserve, its passive (working from there too) and its skills, used once it is in front. */}
+    {reserve && <div className={styles.skillReserve}>
+      <button className={styles.skillReserveSwitch} disabled={!usable} onClick={() => { act({ type: 'switchPlayable', actor: side }); setPanel(null); }}
+        aria-label={t('{name}に切り替える', { name: cardName(reserve.playable, displayCards[reserve.playable]?.name ?? reserve.playable) })}>
+        <span className={styles.inspectImage}><GameCard id={reserve.playable} sizes="80px" /></span>
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 7h11l-3-3M17 17H6l3 3" /></svg>
+      </button>
+      <div>
+        <h3>{cardName(reserve.playable, displayCards[reserve.playable]?.name ?? reserve.playable)}</h3>
+        {reserve.passive && <p className={styles.skillReservePassive} data-active={reserve.passive.active}>{t('パッシブ')}：{gameText(reserve.passive.name)}（{t(reserve.passive.active ? '発動中' : '条件を満たすと発動')}）</p>}
+        <ul>{reserve.skills.map((skill, index) => index > 0 && <li key={index}>{gameText(skill.name)}<small>{skill.left === null ? t('回数制限なし') : t('残り{n}回', { n: skill.left })}</small></li>)}</ul>
+      </div>
+    </div>}
     {taken.length > 0 && <h3>{t('相手から奪ったスキル')}</h3>}
     {taken.map(skill => <button className={styles.skillButton} key={skill.index}
       disabled={!usable || !!skill.unavailable}

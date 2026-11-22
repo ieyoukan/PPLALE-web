@@ -11,7 +11,9 @@ export function canAttack(s: GameState, side: Side, uid: string, target: string 
     const p = s.players[side], c = s.cards[uid];
     // ぶどうのもなか: 「スキルすべての残り使用回数が0ならば行動可能」. A skill without a use limit never runs
     // out (user ruling), so with such a playable (しゅれい) it never acts on its own.
-    const skillsLeft = () => p.skills.some(left => left > 0) || skillsFor(p.playable).some(skill => skill.uses === undefined);
+    // A ダブルプレイアブル's skills are those of both playables (the reserve's common skill is the front's).
+    const skillsLeft = () => p.skills.some(left => left > 0) || skillsFor(p.playable).some(skill => skill.uses === undefined)
+        || !!p.reserve && (p.reserve.skills.some((left, index) => index > 0 && left > 0) || skillsFor(p.reserve.playable).some(skill => skill.uses === undefined));
     const conditionalImmobile = !c?.silenced && (c?.cardId === 'y_47' ? catalog[c.cardId].hp + c.hpBonus - c.damage > 5 : c?.cardId === 'y_50' && skillsLeft());
     if (s.phase !== 'playing' || s.active !== side || s.pending || s.winner !== null || !p.field.includes(uid) || !c || c.exhausted || c.keywords.includes('immobile') || conditionalImmobile || immobilized(s, uid))
         return false;

@@ -1,7 +1,7 @@
 // ターン中の操作。カード使用・攻撃・スキル・選択肢への回答・ターン終了を扱う。
 import { canPlay } from '../view.ts';
 import { scriptFor } from '../cards/registry.ts';
-import { costOf, increasePp } from '../core/cards.ts';
+import { costOf, increasePp, note } from '../core/cards.ts';
 import { canAttack, resolveAttack } from '../core/combat.ts';
 import { markAction } from '../core/stall.ts';
 import { FIELD_SIZE, openSlot, reveal } from '../core/zones.ts';
@@ -19,7 +19,7 @@ function assertMainPhase(s: GameState, actor: Side) {
     if (s.pending) throw new RuleError('効果の選択を先に完了してください');
 }
 
-export const turnCommands: Handlers<'play' | 'attack' | 'end' | 'reveal' | 'skill' | 'choose' | 'exSkill' | 'acorn'> = {
+export const turnCommands: Handlers<'play' | 'attack' | 'end' | 'reveal' | 'skill' | 'choose' | 'exSkill' | 'acorn' | 'switchPlayable'> = {
     play(s, c, catalog) {
         assertMainPhase(s, c.actor);
         const p = s.players[c.actor];
@@ -57,6 +57,21 @@ export const turnCommands: Handlers<'play' | 'attack' | 'end' | 'reveal' | 'skil
     skill(s, c, catalog) {
         assertMainPhase(s, c.actor);
         activateSkill(s, c.actor, c.index, catalog);
+    },
+    // ダブルプレイアブル: the reserve comes to the front, with its own 固有スキル uses. Free and as often as
+    // wanted on one's own turn (2026-11-22 ユーザー指定). The common skill's uses are shared, so they stay.
+    // Not an action for the stall rule: it changes nothing on the table.
+    switchPlayable(s, c, catalog) {
+        assertMainPhase(s, c.actor);
+        const p = s.players[c.actor], reserve = p.reserve;
+        if (!reserve) throw new RuleError('控えのプレイアブルがいません');
+        const common = p.skills[0];
+        p.reserve = { playable: p.playable, skills: [...p.skills] };
+        p.playable = reserve.playable;
+        p.skills = [...reserve.skills];
+        p.skills[0] = common;
+        p.switchedTurn = s.turn;
+        note(s, `${p.name}：プレイアブルを${catalog[p.playable]?.name ?? p.playable}に切り替え`);
     },
     exSkill(s, c, catalog) {
         assertMainPhase(s, c.actor);

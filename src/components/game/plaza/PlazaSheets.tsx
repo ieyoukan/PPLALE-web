@@ -108,7 +108,7 @@ export function RulesSheet({ view, onClose }: { view: RoomView; onClose: () => v
   return <Sheet title={t(mine ? 'ルームを編集' : 'このルームのルール')} onClose={onClose} wide>
     {mine && <label className={styles.roomName}>{t('ルーム名')}<input value={name} onChange={event => setName(Array.from(event.target.value).slice(0, MAX_ROOM_NAME_LENGTH).join(''))} disabled={busy} autoComplete="off" /></label>}
     <div className={mine ? undefined : styles.readOnly} inert={!mine || busy}>
-      <RulePicker rules={rules} onChange={next => setRules(current => ({ ...current, ...next }))} compact />
+      <RulePicker rules={rules} onChange={next => setRules(current => ({ ...current, doublePlayable: undefined, ...next }))} compact double />
       {/* The play rules replace all three fields: one left out goes back to the official rule. */}
       <PlayRulesPicker rules={rules} seats={[view.players[0]?.name, view.players[1]?.name]}
         onChange={next => setRules(current => ({ ...current, firstSeat: undefined, openingHand: undefined, secondBoost: undefined, ...next }))} />

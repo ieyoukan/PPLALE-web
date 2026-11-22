@@ -60,6 +60,8 @@ function candidates(s: GameState, side: Side): Command[] {
         ...(Object.keys(p.exSkills ?? {}) as ExSkillId[]).filter(id => !exSkillInfo[id].automatic && (p.exSkills![id]?.uses ?? 0) > 0).map((skill): Command => ({ type: 'exSkill', actor: side, skill })),
         ...((p.acorns ?? 0) > 0 ? (['draw', 'pp'] as const).map((mode): Command => ({ type: 'acorn', actor: side, mode })) : []),
         ...p.hand.filter(uid => isRevealable(s.cards[uid].cardId) && !s.cards[uid].revealed).map((uid): Command => ({ type: 'reveal', actor: side, uid })),
+        // ダブルプレイアブル: the CPU switches at most once a turn, so a search never goes back and forth.
+        ...(p.reserve && p.switchedTurn !== s.turn ? [{ type: 'switchPlayable', actor: side } as Command] : []),
         { type: 'end', actor: side },
     ];
 }
@@ -80,6 +82,9 @@ function worthTrying(s: GameState, command: Command, catalog: Catalog): boolean 
             const skill = skillsFor(p.playable)[command.index], price = skillPrice(p, command.index, catalog);
             return !skill.reaction && (skill.uses === undefined || p.skills[command.index] > 0) && price.pp <= p.pp && price.mp <= (p.mp ?? 0);
         }
+        // Only worth it when the reserve has a 固有スキル with uses left that its printed cost can pay for.
+        case 'switchPlayable': return !!p.reserve && skillsFor(p.reserve.playable).some((skill, index) =>
+            index > 0 && !skill.reaction && (skill.uses === undefined || p.reserve!.skills[index] > 0) && skill.cost <= p.pp && (skill.mp ?? 0) <= (p.mp ?? 0));
         default: return true;
     }
 }

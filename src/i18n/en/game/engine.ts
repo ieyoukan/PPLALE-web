@@ -296,6 +296,9 @@ export const exact: Record<string, string> = {
   '場の幼女を選んでください': 'Choose a little girl on the field',
   '手札のカードを選んでください': 'Choose a card in your hand',
   '使えるプレイアブルを選んでください': 'Choose a usable playable character',
+  '2枚目に使えるプレイアブルを選んでください': 'Choose a usable second playable character',
+  '2枚目には別のプレイアブルを選んでください': 'Choose a different playable character as the second one',
+  '控えのプレイアブルがいません': 'There is no playable character in reserve',
   '作った盤面から開始': 'Started from a custom board',
 
   // ── Decks and match rules ──
@@ -407,6 +410,7 @@ export const patterns: [RegExp, string][] = [
   [/^(.+?)が先攻を選びました$/, '$1 chose to go first'],
   [/^(.+?)が後攻を選びました$/, '$1 chose to go second'],
   [/^(.+?)が先攻です$/, '$1 goes first'],
+  [/^(.+?)：プレイアブルを(.+)に切り替え$/, '$1 switched the playable to $2'],
   [/^(.+?)：初期手札を(\d+)枚交換$/, '$1 swapped $2 opening cards'],
   [/^(.+?)の(\d+)ターン目$/, "$1's turn $2"],
   [/^(.+?)：「(.+)」をプレイ（(\d+)PP）$/, '$1 played "$2" ($3 PP)'],
@@ -510,6 +514,18 @@ export const patterns: [RegExp, string][] = [
   [/^フルーツ：(いちご|ぶどう|めろん|おれんじ)・(いちご|ぶどう|めろん|おれんじ)・(いちご|ぶどう|めろん|おれんじ) ／ 拡張プレイアブル（ExP）：(あり|なし)$/, 'Fruits: $1, $2, $3 / Extended playables (ExP): $4'],
   [/^フルーツ：(いちご|ぶどう|めろん|おれんじ)・(いちご|ぶどう|めろん|おれんじ) ／ 拡張プレイアブル（ExP）：(あり|なし)$/, 'Fruits: $1, $2 / Extended playables (ExP): $3'],
   [/^フルーツ：(いちご|ぶどう|めろん|おれんじ) ／ 拡張プレイアブル（ExP）：(あり|なし)$/, 'Fruits: $1 / Extended playables (ExP): $2'],
+  // Each part of a longer rules summary (translate() splits it at ／).
+  [/^フルーツ：(いちご|ぶどう|めろん|おれんじ)・(いちご|ぶどう|めろん|おれんじ)・(いちご|ぶどう|めろん|おれんじ)・(いちご|ぶどう|めろん|おれんじ)$/, 'Fruits: $1, $2, $3, $4'],
+  [/^フルーツ：(いちご|ぶどう|めろん|おれんじ)・(いちご|ぶどう|めろん|おれんじ)・(いちご|ぶどう|めろん|おれんじ)$/, 'Fruits: $1, $2, $3'],
+  [/^フルーツ：(いちご|ぶどう|めろん|おれんじ)・(いちご|ぶどう|めろん|おれんじ)$/, 'Fruits: $1, $2'],
+  [/^フルーツ：(いちご|ぶどう|めろん|おれんじ)$/, 'Fruits: $1'],
+  [/^拡張プレイアブル（ExP）：(あり|なし)$/, 'Extended playables (ExP): $1'],
+  [/^ダブルプレイアブル：(あり|なし)$/, 'Double playables: $1'],
+  [/^先攻：席(\d)$/, 'First: seat $1'],
+  [/^初期手札：先攻(\d+)枚・後攻(\d+)枚$/, 'Opening hands: first $1, second $2'],
+  [/^後攻5ターン目\+2PP：なし$/, "Second player's +2 PP on turn 5: Off"],
+  [/^観戦：(あり|なし)$/, 'Watching: $1'],
+  [/^1ターン：(.+)$/, 'Turn: $1'],
 
   // ── Board editor (side is 手前/奥) ──
   [/^(手前|奥)：使えるプレイアブルを選んでください$/, '$1 side: choose a usable playable character'],

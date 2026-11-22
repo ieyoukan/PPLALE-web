@@ -5,7 +5,7 @@ import { markAction } from '../core/stall.ts';
 import { cardContext, effects } from '../effects/context.ts';
 import { other, RuleError } from '../model.ts';
 import type { Catalog, GameState, Side, Task } from '../model.ts';
-import { mpMax, skillAt, skillPrice, skillsFor } from './skills.ts';
+import { playerMpMax, skillAt, skillPrice, skillsFor } from './skills.ts';
 
 /**
  * Why `side` cannot use skill `index` now, or undefined: uses left, when it may be used, PP, MP and
@@ -64,8 +64,8 @@ export function activateSkill(s: GameState, side: Side, index: number, catalog: 
     return change;
 }
 
-/** MP is restored up to the playable's maximum; a playable without MP gains none. */
+/** MP is restored up to the playable's maximum (either of a ダブルプレイアブル); a playable without MP gains none. */
 export function gainMp(s: GameState, side: Side, amount: number) {
-    const p = s.players[side], max = mpMax(p.playable);
+    const p = s.players[side], max = playerMpMax(p);
     if (max) p.mp = Math.max(0, Math.min(max, (p.mp ?? 0) + amount));
 }

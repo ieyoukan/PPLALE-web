@@ -4,6 +4,7 @@ const cloneTask = (t: Task): Task => ({ ...t, ids: t.ids && [...t.ids], candidat
 const clonePlayer = (p: Player): Player => ({
     ...p, yojo: [...p.yojo], sweet: [...p.sweet], hand: [...p.hand], field: [...p.field], nap: [...p.nap], exile: [...p.exile],
     milestones: [...p.milestones], played: [...p.played], skills: [...p.skills],
+    ...(p.reserve ? { reserve: { playable: p.reserve.playable, skills: [...p.reserve.skills] } } : {}),
     ...(p.skillHistory ? { skillHistory: [...p.skillHistory] } : {}),
     ...(p.exSkills ? { exSkills: Object.fromEntries(Object.entries(p.exSkills).map(([id, skill]) => [id, { ...skill }])) } : {}),
     ...(p.extraSkills ? { extraSkills: p.extraSkills.map(skill => ({ ...skill })) } : {}),
@@ -27,7 +28,7 @@ export function cloneState(s: GameState): GameState {
         openingRemaining: [s.openingRemaining[0], s.openingRemaining[1]],
         mulligan: { eligible: [[...s.mulligan.eligible[0]], [...s.mulligan.eligible[1]]], confirmed: [s.mulligan.confirmed[0], s.mulligan.confirmed[1]] },
         dice: s.dice && { rolls: [s.dice.rolls[0], s.dice.rolls[1]], ties: s.dice.ties },
-        rules: { ...s.rules },
+        rules: { ...s.rules, ...(s.rules.openingHand ? { openingHand: [s.rules.openingHand[0], s.rules.openingHand[1]] } : {}) },
         players: [clonePlayer(s.players[0]), clonePlayer(s.players[1])],
         cards,
         queue: s.queue.map(cloneTask),

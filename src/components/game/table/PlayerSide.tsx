@@ -34,6 +34,11 @@ export function PlayerSide({ side }: { side: Side }) {
   // Face-up layouts still respect redaction; only identities supplied by the server are visible.
   const open = mode === 'watch' || mode === 'puzzle' || !!remote?.watching || editing;
   const leaderTarget = !!attacker && side !== view && board.canStrike(attacker, 'leader');
+  // ダブルプレイアブル: count each switch (also the opponent's), so the front card plays its entrance only then.
+  const [front, setFront] = useState({ playable: player.playable, switches: 0 });
+  if (front.playable !== player.playable) setFront({ playable: player.playable, switches: front.switches + 1 });
+  const reserve = player.reserve;
+  const canSwitch = !!reserve && !editing && game.phase === 'playing' && game.active === side && board.canControl(side) && !game.pending && !busy;
   const concealed = player.hand.filter(uid => !game.cards[uid].revealed);
   const revealed = player.hand.filter(uid => game.cards[uid].revealed);
   const mixed = concealed.length > 0 && revealed.length > 0;
@@ -42,9 +47,21 @@ export function PlayerSide({ side }: { side: Side }) {
     <Zone side={side} kind="sweet" className={styles.deckSweet} />
     <Zone side={side} kind="nap" className={styles.napZone} />
     <Zone side={side} kind="exile" className={styles.exileZone} />
-    <button className={styles.playableZone} onClick={() => board.setPanel(editing ? { type: 'editPlayer', side } : { type: 'skills', side })} aria-label={t(editing ? `${who}の設定` : `${who}のスキル`)}>
-      <span className={styles.playableCard}><GameCard id={player.playable} sizes="90px" /></span>
-    </button>
+    <div className={styles.playableZone}>
+      <button className={styles.playableButton} onClick={() => board.setPanel(editing ? { type: 'editPlayer', side } : { type: 'skills', side })} aria-label={t(editing ? `${who}の設定` : `${who}のスキル`)}>
+        <span key={front.switches} className={styles.playableCard} data-switched={front.switches > 0 || undefined}>
+          <GameCard id={player.playable} sizes="90px" />
+          {front.switches > 0 && <i className={styles.switchBurst} aria-hidden="true" />}
+        </span>
+      </button>
+      {/* The other playable of a ダブルプレイアブル waits at the front one's upper corner: on one's own turn a tap brings it forward. */}
+      {reserve && <button key={`reserve-${front.switches}`} className={styles.reserveCard} data-switched={front.switches > 0 || undefined} disabled={!canSwitch}
+        aria-label={t('{name}に切り替える', { name: cardName(reserve.playable, displayCards[reserve.playable]?.name ?? reserve.playable) })}
+        onClick={() => { gameAudio().play('pop'); board.act({ type: 'switchPlayable', actor: side }); }}>
+        <GameCard id={reserve.playable} sizes="60px" />
+        {canSwitch && <span className={styles.reserveSwap} aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M7 7h11l-3-3M17 17H6l3 3" /></svg></span>}
+      </button>}
+    </div>
     <div className={styles.turnCounter}>
       {/* Edit mode: the number shown (the turn count) is what the buttons change, and the PP is filled to the
           new maximum as at the start of a turn; the rest of the player is behind the label. */}

@@ -91,7 +91,9 @@ export const playerFields: Record<keyof Player, ChangeKind | null> = {
     sweetBoost: 'sweetBoost',
     skills: 'skillUses',
     name: null, // fixed
-    playable: null, // fixed
+    playable: null, // fixed, except the switch of a ダブルプレイアブル: the board animates it itself
+    reserve: null, // the other playable of a ダブルプレイアブル, shown by the board beside the front one
+    switchedTurn: null, // bookkeeping for the CPU
     turns: null, // presented by the turn announcement
     turnPpBonus: null, // shown by the board (the white +2 marble)
     milestones: null, // shown by the board (the blue marbles); the draw itself is a move

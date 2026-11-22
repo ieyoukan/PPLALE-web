@@ -11,6 +11,12 @@ export const keywords: readonly Keyword[] = ['charge', 'fast', 'taunt', 'guard',
 export type ExSkillId = 'dice' | 'strawberryHunt' | 'healing' | 'abyss' | 'dagger' | 'alice' | 'smoke' | 'kamikakushi';
 export const exSkillIds: readonly ExSkillId[] = ['dice', 'strawberryHunt', 'healing', 'abyss', 'dagger', 'alice', 'smoke', 'kamikakushi'];
 export interface ExSkillState { uses: number; lastTurn?: number; usedThisTurn?: number }
+/**
+ * ダブルプレイアブルの控え（裏）のプレイアブル。切り替えると表の `Player.playable`・`skills` と入れ替わる。
+ * `skills` は控えの固有スキルの残り回数で、並びはskillsForと同じ。共通スキル（添字0）の回数は2枚で共有し、
+ * 表の `skills[0]` だけを使う。
+ */
+export interface ReservePlayable { playable: string; skills: number[] }
 /** A skill taken from the other playable (レンテ): `index` is its place in `skillsFor(playable)`. */
 export interface ExtraSkill { playable: string; index: number; uses: number }
 
@@ -39,6 +45,11 @@ export interface Deck {
     yojo: string[];
     sweet: string[];
     playable: string;
+    /**
+     * The second playable (ダブルプレイアブル). Used only where the rules allow it (`Rules.doublePlayable`);
+     * elsewhere the deck plays with `playable` alone.
+     */
+    subPlayable?: string;
     /** Only how the backs of this deck's cards look; never part of the match itself. */
     sleeve?: Sleeve;
 }
@@ -58,6 +69,8 @@ export interface Rules {
     openingHand?: [number, number];
     /** falseなら後攻5ターン目の追加2PPを行わない（ルームの独自ルール）。省略時は公式どおり行う。 */
     secondBoost?: false;
+    /** デッキの2枚目のプレイアブルを控えに置いて対戦する（ダブルプレイアブル）。 */
+    doublePlayable?: true;
 }
 /** 独自ルールで選べる初期手札の枚数の範囲。 */
 export const OPENING_HAND_RANGE = { min: 1, max: 9 } as const;
@@ -147,6 +160,10 @@ export interface Player {
     sweetBoost: number;
     /** スキルごとの残り使用回数。並びはskillsForと同じ。回数制限がないスキルは0のまま。 */
     skills: number[];
+    /** ダブルプレイアブルの控え。表は `playable`。 */
+    reserve?: ReservePlayable;
+    /** 最後にプレイアブルを切り替えたゲーム内ターン（CPUが同じターンに切り替えを繰り返さないための記録）。 */
+    switchedTurn?: number;
     lastBorrow: number;
     skillHistory?: number[];
     exSkills?: Partial<Record<ExSkillId, ExSkillState>>;
@@ -291,6 +308,8 @@ export type Command =
     | { type: 'skill'; actor: Side; index: number }
     | { type: 'exSkill'; actor: Side; skill: ExSkillId }
     | { type: 'acorn'; actor: Side; mode: 'draw' | 'pp' }
+    // ダブルプレイアブル：表と控えを入れ替える。自分のターン中なら何度でも、コストなし。
+    | { type: 'switchPlayable'; actor: Side }
     | { type: 'reveal'; actor: Side; uid: string }
     // 検証用操作。allowAdjustが有効な場合だけ許可する。
     | { type: 'adjust'; actor: Side; resource: 'points' | 'pp' | 'ppBonus' | 'damage'; delta: number; uid?: string }

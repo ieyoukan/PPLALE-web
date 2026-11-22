@@ -26,7 +26,9 @@ function certainlyStuck(s: GameState): boolean {
         if (p.field.some(uid => !(s.cards[uid].keywords.includes('immobile') && s.cards[uid].immobileUntil === undefined))) return false;
         if (p.extraSkills?.some(extra => extra.uses > 0)) return false;
         // The common skill (index 0) needs a unit on the field; with no cards left none can arrive.
-        return skillsFor(p.playable).every((skill, index) => skill.uses === undefined || p.skills[index] <= 0 || index === 0 && !p.field.length);
+        // A ダブルプレイアブル's reserve can come to the front at any time, so its 固有スキル count too.
+        return skillsFor(p.playable).every((skill, index) => skill.uses === undefined || p.skills[index] <= 0 || index === 0 && !p.field.length)
+            && (!p.reserve || skillsFor(p.reserve.playable).every((skill, index) => index === 0 || skill.uses === undefined || p.reserve!.skills[index] <= 0));
     });
 }
 

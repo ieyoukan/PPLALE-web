@@ -4,6 +4,7 @@ import { shuffled } from './core/rng.ts';
 import { openingCount, sides } from './model.ts';
 import type { Catalog, Deck, GameState, Player, Rules } from './model.ts';
 import { playableMp, playableSkills, skillLimits } from './playables/skills.ts';
+import type { ReservePlayable } from './model.ts';
 import { implementedCard, implementedFruits } from './cards/registry.ts';
 
 /** Whether the card may be in a 幼女 / お菓子 deck at all: an implemented card of an implemented fruit, never a token. */
@@ -28,6 +29,10 @@ export function validateDeck(deck: Deck, catalog: Catalog): string[] {
         }
     }
     if (catalog[deck.playable]?.type !== 'playable' || !(deck.playable in playableSkills)) errors.push('使えるプレイアブルを選んでください');
+    if (deck.subPlayable !== undefined) {
+        if (catalog[deck.subPlayable]?.type !== 'playable' || !(deck.subPlayable in playableSkills)) errors.push('2枚目に使えるプレイアブルを選んでください');
+        else if (deck.subPlayable === deck.playable) errors.push('2枚目には別のプレイアブルを選んでください');
+    }
     for (const id of Array.from(new Set(deck.sweet))) {
         if (singleCopy(catalog, id) && deck.sweet.filter(c => c === id).length > 1) errors.push(`${catalog[id].name}は1枚までです`);
         if (id === 's_24' && [...deck.yojo, ...deck.sweet].some(id => catalog[id]?.fruit === 'orange')) errors.push('ぷぷりえーるはオレンジ環境以降では使用できません');
@@ -43,12 +48,20 @@ export function newGame(decks: [Deck, Deck], catalog: Catalog, rules: Rules, see
         const errors = validateDeck(d, catalog);
         if (errors.length) throw new Error(errors.join(' / '));
     }
-    const players = decks.map((d): Player => ({
-        name: d.name, yojo: [], sweet: [], hand: [], field: [], nap: [], exile: [], playable: d.playable,
-        points: rules.initialPoints, maxPoints: rules.initialPoints, turns: 0, pp: 0, ppBonus: 0, turnPpBonus: 0, nextPpDebt: 0,
-        milestones: [], played: [], shield: false, sweetBoost: 0, skills: skillLimits({ playable: d.playable, played: [] }, catalog), lastBorrow: -10,
-        ...(playableMp[d.playable] ? { mp: playableMp[d.playable].initial } : {}),
-    })) as [Player, Player];
+    const players = decks.map((d): Player => {
+        // ダブルプレイアブル: the second playable waits in reserve, only where the rules allow it.
+        const reserve: ReservePlayable | undefined = rules.doublePlayable && d.subPlayable ? { playable: d.subPlayable, skills: [] } : undefined;
+        const owner = { playable: d.playable, played: [], ...(reserve && { reserve }) };
+        if (reserve) reserve.skills = skillLimits(owner, catalog, reserve.playable);
+        const mp = playableMp[d.playable] ?? (reserve && playableMp[reserve.playable]);
+        return {
+            name: d.name, yojo: [], sweet: [], hand: [], field: [], nap: [], exile: [], playable: d.playable,
+            points: rules.initialPoints, maxPoints: rules.initialPoints, turns: 0, pp: 0, ppBonus: 0, turnPpBonus: 0, nextPpDebt: 0,
+            milestones: [], played: [], shield: false, sweetBoost: 0, skills: skillLimits(owner, catalog), lastBorrow: -10,
+            ...(reserve && { reserve }),
+            ...(mp ? { mp: mp.initial } : {}),
+        };
+    }) as [Player, Player];
     const s: GameState = {
         version: 1, effectTauntRules: true, turnRules: true, decisiveOpeningDice: true, phase: 'dice', openingRemaining: [0, 0], mulligan: { eligible: [[], []], confirmed: [false, false] }, dice: null,
         rules: { ...rules }, rng: seed >>> 0, serial: 0, revision: 0, active: rules.firstPlayer, turn: 0,

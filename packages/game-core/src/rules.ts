@@ -19,6 +19,11 @@ export interface MatchRules {
     fruits: Fruit[];
     /** Whether 拡張プレイアブル (ExP; version `beta` in the card data) may lead a deck. */
     extendedPlayable: boolean;
+    /**
+     * ダブルプレイアブル: a deck may bring a second playable (`Deck.subPlayable`) and switch between the two.
+     * Left out: no (a deck that has one plays with its first playable alone).
+     */
+    doublePlayable?: boolean;
 }
 export const defaultMatchRules: MatchRules = { fruits: ['strawberry'], extendedPlayable: false };
 /** What the engine can play today. Rules cannot allow more than this; it grows as cards are implemented. */
@@ -38,7 +43,10 @@ export function parseMatchRules(value: unknown): MatchRules | null {
     const raw = value as Partial<MatchRules> | null | undefined;
     const chosen = Array.isArray(raw?.fruits) ? fruits.filter(fruit => raw.fruits!.includes(fruit) && playableNow.fruits.includes(fruit)) : [];
     const newest = chosen.at(-1);
-    return newest ? { fruits: fruitsUpTo(newest).filter(fruit => playableNow.fruits.includes(fruit)), extendedPlayable: raw?.extendedPlayable === true && playableNow.extendedPlayable } : null;
+    return newest ? {
+        fruits: fruitsUpTo(newest).filter(fruit => playableNow.fruits.includes(fruit)), extendedPlayable: raw?.extendedPlayable === true && playableNow.extendedPlayable,
+        ...(raw?.doublePlayable === true && { doublePlayable: true }),
+    } : null;
 }
 
 export const isExtendedPlayable = (catalog: Catalog, id: string) => catalog[id]?.type === 'playable' && (catalog[id].version ?? 'normal') !== 'normal';
@@ -50,9 +58,17 @@ export function deckRuleErrors(deck: Deck, rules: MatchRules, catalog: Catalog, 
     const errors: string[] = [];
     const used = new Set([...deck.yojo, ...deck.sweet].map(id => catalog[id]?.fruit).filter((fruit): fruit is Fruit => fruits.includes(fruit as Fruit)));
     for (const fruit of Array.from(used)) if (!rules.fruits.includes(fruit)) errors.push(`${where}では${fruitNames[fruit]}のカードを使えません`);
-    if (isExtendedPlayable(catalog, deck.playable) && !rules.extendedPlayable) errors.push(`${where}では拡張プレイアブルを使えません`);
+    // The second playable counts only where the rules allow two (elsewhere it stays out of the match).
+    const playables = rules.doublePlayable && deck.subPlayable ? [deck.playable, deck.subPlayable] : [deck.playable];
+    if (playables.some(id => isExtendedPlayable(catalog, id)) && !rules.extendedPlayable) errors.push(`${where}では拡張プレイアブルを使えません`);
     if (deck.sweet.some(id => retired(id, rules))) errors.push('ぷぷりえーるはオレンジ環境以降では使用できません');
-    return errors.length ? errors : validateDeck(deck, catalog);
+    return errors.length ? errors : validateDeck(rules.doublePlayable ? deck : withoutSubPlayable(deck), catalog);
+}
+/** The deck as it plays where the rules allow one playable only. */
+export function withoutSubPlayable(deck: Deck): Deck {
+    const single = { ...deck };
+    delete single.subPlayable;
+    return single;
 }
 
 const cardNumber = (id: string) => Number(id.slice(2));
@@ -79,7 +95,7 @@ export function randomDeck(rules: MatchRules, catalog: Catalog, seed: number): D
 
 /** One line for the lobby and for sharing, e.g. 「フルーツ：いちご ／ 拡張プレイアブル：なし」. */
 export const describeMatchRules = (rules: MatchRules) =>
-    `フルーツ：${rules.fruits.map(fruit => fruitNames[fruit]).join('・')} ／ 拡張プレイアブル（ExP）：${rules.extendedPlayable ? 'あり' : 'なし'}`;
+    `フルーツ：${rules.fruits.map(fruit => fruitNames[fruit]).join('・')} ／ 拡張プレイアブル（ExP）：${rules.extendedPlayable ? 'あり' : 'なし'}${rules.doublePlayable ? ' ／ ダブルプレイアブル：あり' : ''}`;
 
 /**
  * How a match is played (rooms only; every field left out is the official rule). These change the
@@ -110,11 +126,12 @@ export function parsePlayRules(value: unknown): PlayRules {
 }
 /** Whether the match is played by the official rules. */
 export const officialPlay = (rules: PlayRules) => Object.keys(parsePlayRules(rules)).length === 0;
-/** The engine rules a match with these play rules starts with. */
-export function engineRules(rules: PlayRules): Rules {
+/** The engine rules a match with these play rules (and, for a room, whether two playables are allowed) starts with. */
+export function engineRules(rules: PlayRules & Pick<MatchRules, 'doublePlayable'>): Rules {
     const play = parsePlayRules(rules);
     return {
         ...sandboxRules,
+        ...(rules.doublePlayable === true && { doublePlayable: true as const }),
         ...(play.firstSeat !== undefined && { fixedOrder: true as const, firstPlayer: play.firstSeat }),
         ...(play.openingHand && { openingHand: [...play.openingHand] as [number, number] }),
         ...(play.secondBoost === false && { secondBoost: false as const }),
