@@ -11,6 +11,11 @@ updates:
         dependency-type: "production" # package.jsonの dependencies
       development-dependencies:
         dependency-type: "development" # package.jsonの devDependencies
+    # TypeScript 7 は従来のJS APIを持たず、lintのtypescript-eslint（8.73時点で <6.1）とフォント生成・UI構造チェックの
+    # スクリプトが動かない。typescript-eslintが7に対応するまで、7以上のメジャー更新は出さない（2026-11-23）。
+    ignore:
+      - dependency-name: "typescript"
+        update-types: ["version-update:semver-major"]
         
   - package-ecosystem: "github-actions"
     directory: "/"

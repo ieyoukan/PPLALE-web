@@ -138,6 +138,13 @@ const iconButtonRecipe = defineRecipe({
 });
 
 export default defineConfig({
+  // Panda 2 does not add the presets by itself: without them there are no utilities (bg, w…) or conditions (_hover, _dark).
+  presets: ['@pandacss/preset-base', '@pandacss/preset-panda'],
+  // Panda 2's reset changed a few defaults; the site keeps the look it had with Panda 0.31.
+  globalCss: {
+    'h1, h2, h3, h4, h5, h6': { textWrap: 'wrap' },
+    'html, :host': { WebkitTapHighlightColor: 'initial', '--global-color-placeholder': '#9ca3af', '--global-color-selection': 'Highlight' },
+  },
   preflight: true,
   include: ['./src/app/**/*.{ts,tsx}', './src/components/**/*.{ts,tsx}'],
   exclude: [],
