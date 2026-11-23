@@ -12,6 +12,13 @@ const guestSleeve = (deckId: string) => {
   const sleeve = localStorage.getItem(`deck_${deckId}_sleeve`);
   return isSleeve(sleeve) ? { sleeve } : {};
 };
+/** A guest deck's second playable (ダブルプレイアブル, saved by the game) goes with it to the account too. */
+const guestSubPlayable = (deckId: string) => {
+  try {
+    const saved = JSON.parse(localStorage.getItem(`deck_${deckId}_subPlayable`) ?? 'null') as { id?: unknown } | null;
+    return typeof saved?.id === 'string' ? { subPlayableCardId: saved.id } : {};
+  } catch { return {}; }
+};
 import { useAuth } from '@/lib/auth';
 import { browserPopupRedirectResolver, GoogleAuthProvider, signInWithPopup } from 'firebase/auth';
 import { useI18n } from '@/i18n/LocaleProvider';
@@ -261,6 +268,7 @@ export function useDeckPageState({
           playableCardId: selectedPlayableCard?.id || null,
           // A guest deck's sleeve (saved by the game) goes with it to the account.
           ...guestSleeve(deckId),
+          ...guestSubPlayable(deckId),
           updatedAt: new Date()
         };
         try {
@@ -293,6 +301,7 @@ export function useDeckPageState({
           playableCardId: selectedPlayableCard?.id || null,
           // A guest deck's sleeve (saved by the game) goes with it to the account.
           ...guestSleeve(deckId),
+          ...guestSubPlayable(deckId),
           updatedAt: new Date()
         };
         try {

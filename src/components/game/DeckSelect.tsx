@@ -50,7 +50,7 @@ function useSavedDecks() {
 export function useDeckChoices(rules: MatchRules, where?: string) {
   const saved = useSavedDecks();
   // Socket views contain fresh objects even when the deck rules have not changed.
-  const key = JSON.stringify({ fruits: rules.fruits, extendedPlayable: rules.extendedPlayable });
+  const key = JSON.stringify({ fruits: rules.fruits, extendedPlayable: rules.extendedPlayable, ...(rules.doublePlayable && { doublePlayable: true }) });
   const choices = useMemo(() => deckChoices(JSON.parse(key) as MatchRules, { saved: saved.decks, where }), [key, saved.decks, where]);
   return { choices, saved };
 }

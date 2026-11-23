@@ -27,6 +27,7 @@ service cloud.firestore {
           'yojoDeckIds',
           'sweetDeckIds',
           'playableCardId',
+          'subPlayableCardId',
           'sleeve',
           'createdAt',
           'updatedAt',
@@ -36,7 +37,7 @@ service cloud.firestore {
       // 更新: 所有者のみ・変更できるフィールドを制限
       allow update: if isOwner(userId) && validSleeve() &&
         request.resource.data.diff(resource.data).affectedKeys()
-          .hasOnly(['name', 'yojoDeckIds', 'sweetDeckIds', 'playableCardId', 'sleeve', 'updatedAt', 'is2pick']);
+          .hasOnly(['name', 'yojoDeckIds', 'sweetDeckIds', 'playableCardId', 'subPlayableCardId', 'sleeve', 'updatedAt', 'is2pick']);
 
       // 削除: 所有者のみ
       allow delete: if isOwner(userId);

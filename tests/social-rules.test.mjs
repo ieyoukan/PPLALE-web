@@ -57,6 +57,9 @@ test('deck sharing allows direct links, but only the owner can enumerate saved d
     await denied(getDoc(doc(reader.db, 'users', a.uid)));
   }
   await denied(updateDoc(doc(a.db, 'users', a.uid, 'decks', id), { email: 'private-account@example.invalid' }));
+  // ダブルプレイアブル: the second playable is a deck field the owner may write.
+  await updateDoc(doc(a.db, 'users', a.uid, 'decks', id), { subPlayableCardId: 'p_0' });
+  assert.equal((await getDoc(doc(a.db, 'users', a.uid, 'decks', id))).data().subPlayableCardId, 'p_0');
 });
 
 test('social rules: only the recipient can accept; friend lists, recruitments and watching are private and revoked on removal', { skip: !enabled }, async t => {

@@ -67,7 +67,7 @@ export function DeckQuick({ deck, uid, cards, rules, onEdit, onConfirm, onClose,
   onEdit: () => void; onConfirm: () => void; onClose: () => void; onDeleted: () => void;
 }) {
   const { t } = useI18n();
-  const [name, setName] = useState(deck.name), [choosing, setChoosing] = useState<'playable' | 'sleeve' | null>(null);
+  const [name, setName] = useState(deck.name), [choosing, setChoosing] = useState<'playable' | 'sub' | 'sleeve' | null>(null);
   const [deleting, setDeleting] = useState(false), [busy, setBusy] = useState(false), [error, setError] = useState('');
   const { copied, failed, copy } = useCopied();
   const save = (change: Partial<DeckDraft>) => {
@@ -77,6 +77,7 @@ export function DeckQuick({ deck, uid, cards, rules, onEdit, onConfirm, onClose,
   const rename = () => { if (name.trim() !== deck.name) save({ name }); };
   const problems = deckProblems(deck, rules), complete = deck.yojo.length === DECK_LIMITS.yojo && deck.sweet.length === DECK_LIMITS.sweet && !!deck.playable;
   const playable = deck.playable ? cards.byId.get(deck.playable) : undefined;
+  const sub = deck.subPlayable ? cards.byId.get(deck.subPlayable) : undefined;
   const codeRow = (key: 'yojo' | 'sweet', label: string) => {
     const code = deckCode(deck[key]), short = deck[key].length < DECK_LIMITS[key];
     return <div className={styles.codeRow}>
@@ -90,6 +91,12 @@ export function DeckQuick({ deck, uid, cards, rules, onEdit, onConfirm, onClose,
       <button type="button" className={styles.playableButton} aria-expanded={choosing === 'playable'} onClick={() => setChoosing(value => value === 'playable' ? null : 'playable')} aria-label={t('プレイアブルを変える')}>
         {playable ? <CardImage card={playable} sizes="220px" eager /> : <span className={styles.emptyCard}><GameIcon name="plus" /></span>}
         <span className={styles.swap}><GameIcon name="refresh" />{t('変える')}</span>
+      </button>
+      {/* ダブルプレイアブル: a second playable, used only in rooms that allow two. */}
+      <button type="button" className={styles.sleeveButton} aria-expanded={choosing === 'sub'} onClick={() => setChoosing(value => value === 'sub' ? null : 'sub')} aria-label={t('2枚目のプレイアブルを変える')}>
+        <span className={styles.sleeveThumb}>{sub ? <CardImage card={sub} sizes="60px" /> : <span className={styles.emptyCard}><GameIcon name="plus" /></span>}</span>
+        <span data-ui-title>{t('2枚目')}</span>
+        <GameIcon name="refresh" />
       </button>
       {/* The sleeve: the backs of this deck's cards, as the opponent sees them. */}
       <button type="button" className={styles.sleeveButton} aria-expanded={choosing === 'sleeve'} onClick={() => setChoosing(value => value === 'sleeve' ? null : 'sleeve')} aria-label={t('スリーブを変える')}>
@@ -105,7 +112,14 @@ export function DeckQuick({ deck, uid, cards, rules, onEdit, onConfirm, onClose,
         {rules && complete && <span className={problems.length ? styles.misfits : styles.fits}>{problems.length ? t('このルーム×') : <><GameIcon name="check" />{t('このルームOK')}</>}</span>}
       </div>
       {choosing === 'playable' ? <div className={styles.playables} role="group" aria-label={t('プレイアブルを選ぶ')}>
-        {cards.playable.map(card => <button key={card.id} type="button" aria-pressed={card.id === deck.playable} disabled={busy} onClick={() => { setChoosing(null); if (card.id !== deck.playable) save({ playable: card.id }); }} aria-label={card.name}>
+        {cards.playable.map(card => <button key={card.id} type="button" aria-pressed={card.id === deck.playable} disabled={busy} onClick={() => { setChoosing(null); if (card.id !== deck.playable) save({ playable: card.id, ...(card.id === deck.subPlayable && { subPlayable: null }) }); }} aria-label={card.name}>
+          <CardImage card={card} sizes="130px" />{card.version === 'beta' && <span className={styles.exp}>ExP</span>}
+        </button>)}
+      </div> : choosing === 'sub' ? <div className={styles.playables} role="group" aria-label={t('2枚目のプレイアブルを選ぶ')}>
+        <button type="button" aria-pressed={!deck.subPlayable} disabled={busy} onClick={() => { setChoosing(null); if (deck.subPlayable) save({ subPlayable: null }); }} aria-label={t('2枚目なし')}>
+          <span className={styles.emptyCard}><GameIcon name="close" /></span>
+        </button>
+        {cards.playable.map(card => <button key={card.id} type="button" aria-pressed={card.id === deck.subPlayable} disabled={busy || card.id === deck.playable} onClick={() => { setChoosing(null); if (card.id !== deck.subPlayable) save({ subPlayable: card.id }); }} aria-label={card.name}>
           <CardImage card={card} sizes="130px" />{card.version === 'beta' && <span className={styles.exp}>ExP</span>}
         </button>)}
       </div> : choosing === 'sleeve' ? <div className={styles.sleeves} role="group" aria-label={t('スリーブを選ぶ')}>

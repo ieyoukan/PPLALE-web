@@ -70,6 +70,7 @@ export type TokenCard = z.infer<typeof tokenCardSchema>;
  * - createdAt: Date (任意、作成日時)
  * - name: string
  * - playableCardId: string | null
+ * - subPlayableCardId: string | null (任意、ダブルプレイアブルの2枚目)
  * - sweetDeckIds: string[]
  * - updatedAt: Date (任意、更新日時)
  * - yojoDeckIds: string[]
@@ -79,6 +80,7 @@ export const deckSchema = z.object({
   createdAt: z.instanceof(Date).optional(),
   name: z.string().min(1).max(200),
   playableCardId: z.string().nullable(),
+  subPlayableCardId: z.string().nullable().optional(),
   sweetDeckIds: z.array(z.string()).max(10),
   updatedAt: z.instanceof(Date).optional(),
   yojoDeckIds: z.array(z.string()).max(20),
