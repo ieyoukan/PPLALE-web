@@ -14,7 +14,7 @@ export const puzzleFruits = [
 ] as const;
 export const puzzleDifficulties = ['入門', '初級', '中級', '上級'] as const;
 
-interface PuzzleSource {
+export interface PuzzleSource {
   id: string;
   code: string;
   fruit: string;
@@ -22,12 +22,13 @@ interface PuzzleSource {
   lesson?: { title: string; paragraphs: string[] };
 }
 const sources: PuzzleSource[] = [...introductions, ...problems];
-export const lethalPuzzles = sources.map(problem => {
+export function toLethalPuzzle(problem: PuzzleSource) {
   const position = decodePosition(problem.code);
   if (!position?.title) throw new Error(`パズルの盤面が不正です: ${problem.id}`);
   return { ...problem, title: position.title, position, lesson: problem.lesson ?? null };
-});
-export type LethalPuzzle = typeof lethalPuzzles[number];
+}
+export const lethalPuzzles = sources.map(toLethalPuzzle);
+export type LethalPuzzle = ReturnType<typeof toLethalPuzzle>;
 export type PuzzleStatus = 'playing' | 'cleared' | 'failed';
 export interface PuzzleAttempt {
   initial: GameState;

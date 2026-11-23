@@ -4,6 +4,7 @@ import { useEffect, useRef } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { lethalPuzzles } from '@/lib/game/puzzles';
+import { useUnlockedPuzzles } from '@/lib/game/lockedPuzzles';
 import { puzzleHref } from '@/lib/game/sessionStore';
 import { MISSIONS_PATH, introProgress } from '@/lib/game/introCourse';
 import { usePuzzleProgress } from '@/lib/game/usePuzzleProgress';
@@ -39,11 +40,13 @@ function PuzzleResult() {
   const { puzzle, canUndo, undo, rematch, leave, session } = useBoardContext();
   const { cleared } = usePuzzleProgress();
   const { t, gameText } = useI18n();
+  const unlocked = useUnlockedPuzzles();
   const dialog = useRef<HTMLDivElement>(null);
   useEffect(() => { dialog.current?.querySelector<HTMLElement>('[data-primary-action]')?.focus(); }, []);
   if (!puzzle) return null;
   const won = puzzle.status === 'cleared';
-  const following = lethalPuzzles[lethalPuzzles.findIndex(problem => problem.id === puzzle.problem.id) + 1];
+  const puzzles = [...lethalPuzzles, ...unlocked.puzzles];
+  const following = puzzles[puzzles.findIndex(problem => problem.id === puzzle.problem.id) + 1];
   const introduction = puzzle.problem.fruit === 'intro';
   const next = introduction && following?.fruit !== 'intro' ? undefined : following;
   return <div className={styles.resultBackdrop}>

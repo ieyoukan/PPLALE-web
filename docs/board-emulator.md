@@ -55,6 +55,8 @@
 
 解答コマンドを収録済みのメロン初級・中級7問は、引き続きseed 1・2・3で再生テストする。追加18問の解答列は未収録で、盤面の復元・プレビューを確認する。検証手法は [CPUの勝ち筋探索](cpu.md#探索の設定と選び方) を参照。
 
+限定公開のパズル（現在はオレンジ12問：初級3・中級5・上級4）は、一覧に鍵付きのフルーツとして表示し、あいことばを入れると開く。リポジトリは公開のため、問題は `scripts/lock-puzzles.mjs` でPBKDF2-SHA256＋AES-GCMにより暗号化した `src/data/lockedPuzzles.json` だけをコミットし、平文の問題リストとあいことばはコミットしない。鍵のかかった間は問題数ぶんの伏せたタイルだけを見せ、正しいあいことばは端末（`pplale-puzzle-keys-v1`）に保存して次回から自動で開く。盤面画像は配信せず、一覧ではフルーツの絵で代用する。問題を差し替えるときは `PUZZLE_PASSWORD=... node scripts/lock-puzzles.mjs orange オレンジ <平文のJSON>` を実行する（`packages/game-core` のビルドが必要）。中身の検証は `PUZZLE_PASSWORD=... node --test tests/locked-puzzles.test.mjs`。
+
 盤面画像の再生成は、`pnpm run dev` を起動した状態で `pnpm run puzzles:images`。別ポートの場合は `pnpm run puzzles:images --url http://localhost:3100` とする。Playwrightが各共有コードから実盤面を開き、メニュー・操作ボタンだけを隠して1280×720のWebPを生成する。独立したブラウザを使うため、利用中の対戦データには触れない。`public/puzzle-previews/` と `src/data/lethalPuzzlePreviews.json` を一緒にコミットする。通常のビルド時には撮影せず、生成済み画像を配信する。画像の内容ハッシュをファイル名に含め、`Cache-Control: public, max-age=31536000, immutable` でブラウザ・CDNへ長期キャッシュする。変更時は新しいURLへ切り替えるため、古い画像のキャッシュと混同しない。Vercel固有の画像生成・ストレージAPIは使わない。`node --test tests/puzzle-previews.test.mjs` で問題コードと画像の対応・ハッシュ・寸法を確認できる。
 
 ## はじめる

@@ -25,6 +25,33 @@
 .previewPlay { position: absolute; top: 50%; left: 50%; display: grid; place-items: center; width: 64px; height: 64px; padding-left: 4px; transform: translate(-50%, -50%) scale(.9); background: var(--brand-cocoa); color: var(--brand-cream); font-size: 24px; clip-path: polygon(50% 0, 100% 50%, 50% 100%, 0 50%); opacity: 0; transition: opacity .18s, transform .18s; }
 .problem:hover .previewPlay, .problem:focus-visible .previewPlay { opacity: 1; transform: translate(-50%, -50%) scale(1); }
 .cleared { position: absolute; top: 6px; right: 6px; display: grid; place-items: center; width: 34px; height: 34px; background: var(--brand-sage); color: var(--brand-cocoa-deep); font-size: 18px; font-weight: 700; clip-path: polygon(50% 0, 100% 50%, 50% 100%, 0 50%); }
+/* 鍵のかかったフルーツ。南京錠とあいことばの欄、伏せた問題の数だけのタイル。 */
+.fruitPicker a { display: inline-flex; align-items: center; gap: 6px; }
+.fruitPicker .icon { font-size: 16px; }
+.locked { display: grid; gap: 22px; }
+.lockForm { --pad: 22px 24px 18px; display: grid; justify-items: center; gap: 14px; justify-self: center; width: min(100%, 420px); color: var(--brand-cocoa-deep); }
+.padlock { width: 76px; height: 76px; overflow: visible; fill: var(--brand-peach-wash); stroke: var(--brand-cocoa); stroke-width: 3.5; stroke-linecap: round; stroke-linejoin: round; }
+.padlock rect { fill: var(--brand-peach); }
+.shackle { fill: none; transition: transform .45s cubic-bezier(.3, 1.6, .5, 1); }
+.keyhole { stroke: var(--brand-cocoa-deep); stroke-width: 4.5; }
+.locked[data-state="open"] .shackle { transform: translateY(-10px); }
+.locked[data-state="open"] .padlock { animation: unlockHop .7s ease-out; }
+.locked[data-state="wrong"] .lockForm { animation: lockShake .4s ease-in-out; }
+.lockField { display: flex; gap: 8px; width: 100%; }
+.lockField input { flex: 1; min-width: 0; height: 46px; padding: 0 14px; border: 2px solid var(--brand-pink-edge); border-radius: var(--brand-control-radius); background: var(--brand-paper); color: var(--brand-cocoa-deep); font: inherit; font-size: 18px; letter-spacing: .08em; }
+.lockField input::placeholder { color: var(--brand-cocoa-soft); letter-spacing: 0; }
+.lockField input[aria-invalid="true"] { border-color: var(--brand-peach); background: var(--brand-peach-wash); }
+.lockField input:focus-visible, .lockField button:focus-visible { outline: 3px solid var(--brand-cocoa-deep); outline-offset: 2px; }
+.lockField button { display: grid; place-items: center; width: 52px; height: 46px; border: 2px solid var(--brand-cocoa); border-radius: var(--brand-control-radius); background: var(--brand-vanilla); color: var(--brand-cocoa-deep); font-size: 24px; cursor: pointer; }
+.lockField button:disabled { opacity: .45; cursor: default; }
+.lockStatus { min-height: 1.4em; font-size: 14px; color: var(--brand-cocoa-deep); }
+.sealedGrid { grid-template-columns: repeat(auto-fill, minmax(min(100%, 150px), 1fr)); gap: 12px; }
+.sealed { display: grid; place-items: center; aspect-ratio: 16 / 9; border: 1px dashed var(--brand-pink-edge); background: var(--brand-peach-wash); color: var(--brand-peach); font-size: 30px; animation: appear .4s ease-out both; }
+.locked[data-state="open"] .sealed { animation: sealedOpen .6s ease-in both; }
+.placeholderPreview { display: grid; place-items: center; width: 100%; height: 100%; background: var(--brand-peach-wash); color: var(--brand-peach); font-size: 56px; }
+@keyframes lockShake { 20%, 60% { transform: translateX(-8px); } 40%, 80% { transform: translateX(8px); } }
+@keyframes unlockHop { 40% { transform: translateY(-6px) scale(1.06); } }
+@keyframes sealedOpen { to { opacity: 0; transform: scale(.96); } }
 .note { font-size: 13px; color: var(--brand-cocoa-soft); }
 .tools { position: absolute; z-index: 60; top: 88px; right: 16px; display: grid; gap: 3px; width: clamp(164px, 13cqw, 204px); padding: 5px; border: 2px solid var(--brand-pink-edge); border-radius: 16px; background: var(--brand-paper); color: var(--brand-cocoa-deep); box-shadow: none; text-align: center; }
 .toolHeading { display: flex; align-items: center; justify-content: space-between; gap: 4px; }
@@ -57,4 +84,4 @@
 @keyframes sparkle { 50% { transform: rotate(12deg) scale(1.08); } }
 @container stage (max-height: 860px) { .tools { top: 72px; } }
 @container stage (max-height: 500px) { .tools { top: 60px; } .result { gap: 8px; padding: 18px; } .resultMark { width: 55px; height: 55px; font-size: 36px; } }
-@media (prefers-reduced-motion: reduce) { .problem, .previewPlay { transition: none; } .result, .success { animation: none; } }
+@media (prefers-reduced-motion: reduce) { .problem, .previewPlay, .shackle { transition: none; } .result, .success, .sealed, .padlock, .lockForm { animation: none !important; } }
