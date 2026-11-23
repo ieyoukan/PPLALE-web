@@ -5,7 +5,8 @@ import Link from 'next/link';
 import Image from 'next/image';
 import { useSearchParams } from 'next/navigation';
 import { lethalPuzzles, puzzleDifficulties, puzzleFruits } from '@/lib/game/puzzles';
-import { lockedPuzzleFruits, useUnlockedPuzzles } from '@/lib/game/lockedPuzzles';
+import { lockedPuzzleFruits, useLockedPreview, useUnlockedPuzzles } from '@/lib/game/lockedPuzzles';
+import type { LethalPuzzle } from '@/lib/game/puzzles';
 import { usePuzzleProgress } from '@/lib/game/usePuzzleProgress';
 import { puzzleHref, puzzleListHref } from '@/lib/game/sessionStore';
 import { useI18n } from '@/i18n/LocaleProvider';
@@ -58,10 +59,9 @@ export default function PuzzleLobby({ fruitId }: { fruitId?: string } = {}) {
         return <li key={puzzle.id}>
           <OrnateFrame as={Link} size="sm" className={styles.problem} href={puzzleHref(puzzle.id)} prefetch={false} aria-label={t(puzzle.title) + (done ? t(' クリア済み') : '')}>
             <span className={styles.preview} data-puzzle-preview={puzzle.id}>
-              {/* 限定公開の問題は盤面画像を配信しない。 */}
               {preview
                 ? <Image src={preview.src} alt={t('{title}の出題盤面', { title: t(puzzle.title) })} width={preview.width} height={preview.height} sizes="(max-width: 900px) 70vw, 460px" unoptimized />
-                : <span className={styles.placeholderPreview}><PuzzleIcon name="fruit" /></span>}
+                : <LockedPreview puzzle={puzzle} />}
               <span className={styles.previewPlay}><PuzzleIcon name="play" /></span>
               {done && <span className={styles.cleared}><PuzzleIcon name="check" /></span>}
             </span>
@@ -74,4 +74,13 @@ export default function PuzzleLobby({ fruitId }: { fruitId?: string } = {}) {
       })}</ul>
     </section>)}
   </div>;
+}
+
+/** 限定公開の問題の盤面は暗号化して配信し、解錠した端末で復号してから見せる。 */
+function LockedPreview({ puzzle }: { puzzle: LethalPuzzle }) {
+  const { t } = useI18n();
+  const src = useLockedPreview(puzzle);
+  return src
+    ? <Image className={styles.revealed} src={src} alt={t('{title}の出題盤面', { title: t(puzzle.title) })} width={1280} height={720} unoptimized />
+    : <span className={styles.placeholderPreview}><PuzzleIcon name="fruit" /></span>;
 }

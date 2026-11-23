@@ -48,6 +48,7 @@
 .sealedGrid { grid-template-columns: repeat(auto-fill, minmax(min(100%, 150px), 1fr)); gap: 12px; }
 .sealed { display: grid; place-items: center; aspect-ratio: 16 / 9; border: 1px dashed var(--brand-pink-edge); background: var(--brand-peach-wash); color: var(--brand-peach); font-size: 30px; animation: appear .4s ease-out both; }
 .locked[data-state="open"] .sealed { animation: sealedOpen .6s ease-in both; }
+.preview > .revealed { animation: appear .35s ease-out; }
 .placeholderPreview { display: grid; place-items: center; width: 100%; height: 100%; background: var(--brand-peach-wash); color: var(--brand-peach); font-size: 56px; }
 @keyframes lockShake { 20%, 60% { transform: translateX(-8px); } 40%, 80% { transform: translateX(8px); } }
 @keyframes unlockHop { 40% { transform: translateY(-6px) scale(1.06); } }
@@ -84,4 +85,4 @@
 @keyframes sparkle { 50% { transform: rotate(12deg) scale(1.08); } }
 @container stage (max-height: 860px) { .tools { top: 72px; } }
 @container stage (max-height: 500px) { .tools { top: 60px; } .result { gap: 8px; padding: 18px; } .resultMark { width: 55px; height: 55px; font-size: 36px; } }
-@media (prefers-reduced-motion: reduce) { .problem, .previewPlay, .shackle { transition: none; } .result, .success, .sealed, .padlock, .lockForm { animation: none !important; } }
+@media (prefers-reduced-motion: reduce) { .problem, .previewPlay, .shackle { transition: none; } .result, .success, .sealed, .revealed, .padlock, .lockForm { animation: none !important; } }

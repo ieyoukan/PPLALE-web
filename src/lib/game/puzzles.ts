@@ -20,6 +20,8 @@ export interface PuzzleSource {
   fruit: string;
   difficulty: string;
   lesson?: { title: string; paragraphs: string[] };
+  /** 限定公開の問題だけ。暗号化した盤面画像と、その復号に使う初期化ベクトル。 */
+  preview?: { src: string; iv: string };
 }
 const sources: PuzzleSource[] = [...introductions, ...problems];
 export function toLethalPuzzle(problem: PuzzleSource) {

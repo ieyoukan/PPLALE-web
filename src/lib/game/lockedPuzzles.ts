@@ -18,6 +18,9 @@ const EVENT = 'pplale-puzzle-keys';
 /** 端末に保存できない場合も、この訪問中は開いたままにする。 */
 let memoryKeys: Record<string, string> = {};
 const decrypted = new Map<string, Promise<LethalPuzzle[] | null>>();
+/** 盤面画像も同じ鍵で暗号化してある。復号した問題ごとに鍵を覚えておく。 */
+const previewKeys = new WeakMap<LethalPuzzle, CryptoKey>();
+const previewUrls = new Map<string, Promise<string | null>>();
 
 const bytes = (base64: string) => Uint8Array.from(atob(base64), character => character.charCodeAt(0));
 const normalize = (password: string) => password.normalize('NFKC').trim();
@@ -34,7 +37,11 @@ function decrypt(fruit: string, password: string): Promise<LethalPuzzle[] | null
         const key = await crypto.subtle.deriveKey({ name: 'PBKDF2', hash: 'SHA-256', salt: bytes(group.salt), iterations: group.iterations }, material, { name: 'AES-GCM', length: 256 }, false, ['decrypt']);
         const plain = await crypto.subtle.decrypt({ name: 'AES-GCM', iv: bytes(group.iv) }, key, bytes(group.data));
         const sources: PuzzleSource[] = JSON.parse(new TextDecoder().decode(plain));
-        return sources.map(toLethalPuzzle);
+        return sources.map(source => {
+          const puzzle = toLethalPuzzle(source);
+          previewKeys.set(puzzle, key);
+          return puzzle;
+        });
       } catch { return null; }
     })();
     decrypted.set(cacheKey, result);
@@ -95,4 +102,27 @@ export function useUnlockedPuzzles() {
     return () => { live = false; };
   }, [snapshot]);
   return { puzzles: state.puzzles, ready: snapshot !== null && state.snapshot === snapshot };
+}
+
+/** 限定公開の問題の盤面画像。解錠した端末でだけ復号して表示する。 */
+export function useLockedPreview(puzzle: LethalPuzzle): string | null {
+  const preview = puzzle.preview;
+  const [url, setUrl] = useState<{ src: string; url: string | null } | null>(null);
+  useEffect(() => {
+    const key = previewKeys.get(puzzle);
+    if (!preview || !key) return;
+    let result = previewUrls.get(preview.src);
+    if (!result) {
+      result = fetch(preview.src)
+        .then(response => { if (!response.ok) throw new Error(String(response.status)); return response.arrayBuffer(); })
+        .then(data => crypto.subtle.decrypt({ name: 'AES-GCM', iv: bytes(preview.iv) }, key, data))
+        .then(image => URL.createObjectURL(new Blob([image], { type: 'image/webp' })))
+        .catch(() => null);
+      previewUrls.set(preview.src, result);
+    }
+    let live = true;
+    void result.then(value => { if (live) setUrl({ src: preview.src, url: value }); });
+    return () => { live = false; };
+  }, [puzzle, preview]);
+  return url && url.src === preview?.src ? url.url : null;
 }

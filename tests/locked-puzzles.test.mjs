@@ -1,6 +1,7 @@
 import test, { after } from 'node:test';
 import assert from 'node:assert/strict';
-import { mkdtemp, readFile, rm } from 'node:fs/promises';
+import { mkdtemp, readFile, readdir, rm } from 'node:fs/promises';
+import sharp from 'sharp';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { pathToFileURL } from 'node:url';
@@ -25,6 +26,10 @@ test('locked groups ship only ciphertext and refuse a wrong password', async () 
   assert.equal(await checkPassword('orange', 'wrong'), false);
   assert.equal(await checkPassword('orange', ''), false);
   assert.equal(await checkPassword('unknown', 'wrong'), false);
+  // 盤面画像も平文では置かない（WebPの署名が無い）。
+  const images = await readdir(new URL('../public/puzzle-previews/locked/orange/', import.meta.url));
+  assert.equal(images.length, locked.orange.count);
+  for (const name of images) assert.doesNotMatch((await readFile(new URL(`../public/puzzle-previews/locked/orange/${name}`, import.meta.url))).subarray(0, 12).toString('latin1'), /RIFF|WEBP/);
 });
 
 test('the correct password opens every locked board', { skip: !process.env.PUZZLE_PASSWORD && 'PUZZLE_PASSWORD is not set' }, async () => {
@@ -40,5 +45,11 @@ test('the correct password opens every locked board', { skip: !process.env.PUZZL
   for (const problem of problems) {
     const { game } = startPuzzle(toLethalPuzzle(problem));
     assert.equal(puzzleStatus({ game, initial: game }), 'playing', problem.id);
+    assert.ok(problem.preview, `${problem.id}: 盤面画像が無い`);
+    const sealed = await readFile(new URL(`../public${problem.preview.src}`, import.meta.url));
+    const image = Buffer.from(await crypto.subtle.decrypt({ name: 'AES-GCM', iv: bytes(problem.preview.iv) }, key, sealed));
+    const metadata = await sharp(image).metadata();
+    assert.deepEqual([metadata.format, metadata.width, metadata.height], ['webp', 1280, 720], problem.id);
+    assert.ok(image.length < 180000, 'the list should load small thumbnails');
   }
 });
