@@ -19,6 +19,8 @@ export interface PuzzleSource {
   code: string;
   fruit: string;
   difficulty: string;
+  /** 盤面コードの題名より優先する表示名（限定公開の問題で使う）。 */
+  title?: string;
   lesson?: { title: string; paragraphs: string[] };
   /** 限定公開の問題だけ。暗号化した盤面画像と、その復号に使う初期化ベクトル。 */
   preview?: { src: string; iv: string };
@@ -27,7 +29,7 @@ const sources: PuzzleSource[] = [...introductions, ...problems];
 export function toLethalPuzzle(problem: PuzzleSource) {
   const position = decodePosition(problem.code);
   if (!position?.title) throw new Error(`パズルの盤面が不正です: ${problem.id}`);
-  return { ...problem, title: position.title, position, lesson: problem.lesson ?? null };
+  return { ...problem, title: problem.title ?? position.title, position, lesson: problem.lesson ?? null };
 }
 export const lethalPuzzles = sources.map(toLethalPuzzle);
 export type LethalPuzzle = ReturnType<typeof toLethalPuzzle>;
