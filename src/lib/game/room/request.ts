@@ -21,7 +21,7 @@ export async function requestRoom<T>(path: string, body?: unknown, signed = fals
   let response: Response;
   try {
     response = await fetch(roomServerUrl + path, {
-      method: body === undefined ? 'GET' : 'POST', cache: 'no-store', signal: AbortSignal.timeout(path.startsWith('/history/') ? 60_000 : 8000),
+      method: body === undefined ? 'GET' : 'POST', cache: 'no-store', signal: AbortSignal.timeout(path.startsWith('/history/') || path.includes('/replay/') ? 60_000 : 8000),
       ...(headers && { headers }), ...(body !== undefined && { body: JSON.stringify(body) }),
     });
   } catch { throw new RoomRequestError(0, UNREACHABLE); }

@@ -11,8 +11,10 @@ import { useRoomSession } from '../room/useRoomSession';
 import boardStyles from '../BoardEmulator.module.css';
 import link from '../room/Room.module.css';
 import { GameIcon } from '@/components/shared/ui/GameIcon';
-import { PlazaTable } from './PlazaTable';
+import { PlazaTable, tournamentTables } from './PlazaTable';
 import { TableBar } from './TableBar';
+import { TournamentPull } from './TournamentPull';
+import { guestIcon, useProfiles } from '@/components/shared/player/useProfiles';
 import { usePlaza } from './PlazaProvider';
 import { useI18n } from '@/i18n/LocaleProvider';
 import styles from './Plaza.module.css';
@@ -81,6 +83,8 @@ function PlazaMatch({ initial, onDone, onMenu }: { initial: Played; onDone: () =
   const session = useRoomSession({ room, initial, seat: initial.seat, onLeave, plaza: options });
   const people = view?.plaza?.members.filter(member => member.online).length ?? 0;
   const [moving, setMoving] = useState(false);
+  const profiles = useProfiles(view?.plaza?.tournament?.entrants.map(entrant => entrant?.profileId) ?? []);
+  const iconOf = (member?: string, profileId?: string) => profileId && profiles[profileId] ? profiles[profileId].iconCardId : guestIcon(member ?? '');
   const look = (table: number) => { setMoving(true); void send({ action: 'look', table }).catch(() => {}).finally(() => setMoving(false)); };
   // The players of a finished match may watch it again (its recording is theirs).
   const replay = view?.status === 'finished' && view.matchId === initial.matchId ? view.replayId : undefined;
@@ -88,8 +92,9 @@ function PlazaMatch({ initial, onDone, onMenu }: { initial: Played; onDone: () =
     <BoardTable session={session} />
     {replay && <aside className={link.spectatorTools}><Link href={`/game/replay/?id=${replay}`}>{t('リプレイを見る ▶')}</Link></aside>}
     {/* Whoever only watches may go to another table from the board. */}
-    {initial.watching && view?.plaza?.tables && view.plaza.tables.length > 1 && <div className={styles.watchTables}>
-      <TableBar tables={view.plaza.tables} current={view.plaza.table ?? 0} owner={false} busy={moving} compact onLook={look} onAdd={() => {}} onRemove={() => {}} />
+    {initial.watching && view?.plaza && (view.plaza.tables && view.plaza.tables.length > 1 || view.plaza.tournament) && <div className={styles.watchTables}>
+      <TableBar tables={view.plaza.tables ?? []} current={view.plaza.table ?? 0} owner={false} busy={moving} compact tournament={tournamentTables(view.plaza)} onLook={look} onAdd={() => {}} onRemove={() => {}} />
+      <TournamentPull room={view.plaza} roomId={view.id} busy={moving} compact iconOf={iconOf} ask={() => {}} onLook={look} />
     </div>}
     {/* On the board's right rail, where nothing of the match is: the room and the game's menu. */}
     <button className={`${boardStyles.infoButton} ${styles.roomTool}`} aria-label={t('ルーム（{count}人）', { count: people })} onClick={onMenu}>

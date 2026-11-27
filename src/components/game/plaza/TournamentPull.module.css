@@ -1,0 +1,108 @@
+/* The tournament blind. A cocoa tab hangs under the table bar; the bracket drops from the top on cream paper. */
+.tab {
+  position: absolute; top: calc(100% + 2px); left: 50%; z-index: 2; display: grid; place-items: center; width: 56px; height: 30px; padding: 0;
+  border: 0; border-radius: 0 0 var(--brand-control-radius) var(--brand-control-radius); background: var(--brand-cocoa); color: var(--brand-vanilla);
+  font-size: 20px; transform: translateX(-50%); transition: height .2s cubic-bezier(.3, 1.6, .5, 1), background-color .2s; cursor: pointer;
+}
+.tab:hover { height: 36px; }
+.tab[data-open] { background: var(--brand-cocoa-deep); }
+/* A champion is known: the tab is the star's gold. */
+.tab[data-done] { background: var(--brand-star-deep); color: var(--brand-cream); }
+.tab[data-compact] { width: 46px; height: 24px; font-size: 16px; }
+.tab:focus-visible, .blind :focus-visible { outline: 3px solid var(--brand-cocoa); outline-offset: 2px; }
+
+.backdrop { position: absolute; inset: 0; z-index: 180; background: color-mix(in srgb, var(--brand-ink) 35%, transparent); animation: fade .2s ease both; }
+.blind {
+  position: absolute; top: 0; left: 50%; z-index: 181; display: grid; gap: 10px; box-sizing: border-box; width: min(1120px, 96%); max-height: 88%;
+  padding: 18px 20px 30px; border-radius: 0 0 14px 14px; background: var(--brand-cream); color: var(--brand-cocoa-deep);
+  box-shadow: 0 10px 0 var(--brand-pink), 0 18px 30px color-mix(in srgb, var(--brand-ink) 30%, transparent);
+  transform: translateX(-50%); animation: drop .5s cubic-bezier(.3, 1.35, .5, 1) both; overflow: hidden;
+}
+/* The cord to pull it back up. */
+.pull { position: absolute; bottom: 4px; left: 50%; display: grid; place-items: center; width: 90px; height: 22px; padding: 0; border: 0; background: none; transform: translateX(-50%); cursor: pointer; }
+.pull span { width: 54px; height: 5px; border-radius: 999px; background: var(--brand-pink-edge); }
+.pull:hover span { background: var(--brand-cocoa-soft); }
+
+/* ── Choosing who plays ── */
+.draw { display: grid; justify-items: center; gap: 16px; padding: 6px 0 4px; }
+.entrants { display: flex; flex-wrap: wrap; justify-content: center; gap: 10px; max-height: 50vh; margin: 0; padding: 0; overflow: auto; list-style: none; }
+.entrants button { position: relative; display: grid; justify-items: center; gap: 4px; width: 84px; padding: 6px 2px; border: 0; border-radius: var(--brand-control-radius); background: none; color: var(--brand-cocoa-deep); font: inherit; cursor: pointer; }
+.entrants button:hover { background: var(--brand-blush); }
+.entrants button span { max-width: 100%; overflow-wrap: anywhere; word-break: auto-phrase; font-size: 13px; font-weight: 700; line-height: 1.2; text-align: center; }
+.entrants button[aria-pressed=false] span { opacity: .5; }
+.check { position: absolute; top: 2px; right: 10px; display: grid; place-items: center; width: 22px; height: 22px; border-radius: 50%; background: var(--brand-leaf-deep); color: var(--brand-cream); font-size: 14px; animation: pop .25s cubic-bezier(.3, 1.6, .5, 1) both; }
+.start {
+  display: inline-flex; align-items: center; gap: 10px; min-height: 52px; padding: 0 26px; border: 0; border-radius: var(--brand-control-radius);
+  background: var(--brand-cocoa); color: var(--brand-cream); font: inherit; font-size: 20px; cursor: pointer;
+}
+.start svg { color: var(--brand-vanilla); font-size: 24px; }
+.start small { display: grid; place-items: center; min-width: 26px; height: 26px; padding: 0 6px; border-radius: 999px; background: var(--brand-cream); color: var(--brand-cocoa-deep); font-size: 14px; font-weight: 700; }
+.start:disabled { opacity: .45; cursor: default; }
+
+/* ── The bracket ── */
+.bracketArea { display: grid; gap: 10px; min-height: 0; overflow: auto; }
+.bracket { --line: var(--brand-pink-edge); --gap: 30px; display: flex; gap: var(--gap); width: max-content; min-width: 100%; justify-content: center; height: max(240px, calc(var(--first) * 70px + 28px)); }
+.round { display: flex; flex-direction: column; width: 176px; }
+.round h3 { flex: none; height: 24px; margin: 0; font-size: 13px; font-weight: 700; text-align: center; color: var(--brand-cocoa-soft); }
+.round ol { display: flex; flex: 1; flex-direction: column; margin: 0; padding: 0; list-style: none; }
+/* Every slot of a round is as tall as two of the round before: each match sits level with the pair it follows. */
+.slot { position: relative; display: flex; flex: 1; align-items: center; }
+.round:not([data-last]) .slot::after { content: ''; position: absolute; right: calc(var(--gap) / -2); width: calc(var(--gap) / 2); border: 0 solid var(--line); }
+.round:not([data-last]) .slot:nth-child(odd)::after { top: 50%; bottom: 0; border-top-width: 2px; border-right-width: 2px; border-top-right-radius: 6px; }
+.round:not([data-last]) .slot:nth-child(even)::after { top: 0; bottom: 50%; border-bottom-width: 2px; border-right-width: 2px; border-bottom-right-radius: 6px; }
+.round + .round .slot::before, .round[data-last] .slot::after { content: ''; position: absolute; top: 50%; width: calc(var(--gap) / 2); border-top: 2px solid var(--line); }
+.round + .round .slot::before { left: calc(var(--gap) / -2); }
+.round[data-last] .slot::after { right: calc(var(--gap) * -1); width: var(--gap); }
+
+.match {
+  position: relative; display: grid; gap: 2px; width: 100%; padding: 3px; border: 2px solid var(--brand-pink); border-radius: var(--brand-control-radius); background: var(--brand-paper);
+  transition: border-color .2s;
+}
+.match[data-state=playing] { border-color: var(--brand-cocoa); animation: glow 2.4s ease-in-out 2; }
+.match[data-state=waiting] { border-style: dashed; }
+.match[role=button] { cursor: pointer; }
+.match[data-picked] { border-color: var(--brand-star); box-shadow: 0 0 0 3px var(--brand-vanilla); }
+.player { display: grid; grid-template-columns: 26px minmax(0, 1fr) auto; align-items: center; gap: 6px; min-height: 28px; padding: 1px 4px; border-radius: 4px; }
+.player span { min-width: 0; overflow-wrap: anywhere; word-break: auto-phrase; font-size: 13px; font-weight: 700; line-height: 1.15; }
+.player[data-empty] { display: block; min-height: 28px; color: var(--brand-pink-edge); text-align: center; line-height: 28px; }
+.player[data-outcome=win] { background: var(--brand-sage-wash); }
+.player[data-outcome=loss] { opacity: .5; }
+.player[data-away] span { text-decoration: line-through 1px; }
+.player[data-self] span::after { content: ''; display: inline-block; width: 6px; height: 6px; margin-left: 5px; border-radius: 50%; background: var(--brand-peach); vertical-align: middle; }
+.crown { color: var(--brand-star-deep); font-size: 16px; }
+/* The owner's: give this match to this side. */
+.give { display: grid; place-items: center; width: 26px; height: 26px; padding: 0; border: 0; border-radius: 50%; background: var(--brand-vanilla); color: var(--brand-cocoa-deep); font-size: 15px; cursor: pointer; animation: pop .2s ease-out both; }
+.give:hover:not(:disabled) { background: var(--brand-star); color: var(--brand-cream); }
+
+/* Tags on the match's right edge: its table (to go and watch), calling again, the replay. */
+.goTable, .call, .replay {
+  position: absolute; right: -14px; display: flex; align-items: center; justify-content: center; gap: 2px; min-width: 28px; height: 24px; padding: 0 6px;
+  border: 0; border-radius: 999px; font: inherit; font-size: 12px; text-decoration: none; cursor: pointer;
+}
+.goTable { top: calc(50% - 12px); background: var(--brand-cocoa); color: var(--brand-cream); z-index: 1; }
+.goTable svg { color: var(--brand-vanilla); }
+.goTable:hover { transform: scale(1.08); }
+.call { bottom: -12px; right: 18px; background: var(--brand-cocoa); color: var(--brand-vanilla); animation: pop .2s ease-out both; }
+.replay { top: calc(50% - 12px); background: var(--brand-blush); color: var(--brand-cocoa); }
+.call:disabled { opacity: .5; }
+
+.championColumn { display: flex; align-items: center; padding-top: 24px; }
+.champion {
+  display: grid; justify-items: center; align-content: center; gap: 6px; width: 140px; min-height: 120px; padding: 10px; border: 2px dashed var(--brand-pink);
+  border-radius: 14px; color: var(--brand-pink-edge); font-size: 40px; text-align: center;
+}
+.champion[data-decided] { border: 3px solid var(--brand-star); background: var(--brand-vanilla-wash); color: var(--brand-star-deep); animation: pop .5s cubic-bezier(.3, 1.6, .5, 1) both; }
+.champion b { overflow-wrap: anywhere; word-break: auto-phrase; color: var(--brand-cocoa-deep); font-size: 17px; }
+
+.ownerTools { display: flex; justify-content: flex-end; gap: 6px; }
+.ownerTools button { display: inline-flex; align-items: center; gap: 5px; min-height: 34px; padding: 4px 12px; border: 1px solid var(--brand-control-edge); border-radius: var(--brand-control-radius); background: var(--brand-paper); color: var(--brand-cocoa-deep); font: inherit; font-size: 13px; cursor: pointer; }
+.ownerTools button:hover:not(:disabled) { background: var(--brand-blush); }
+
+@keyframes drop { from { transform: translate(-50%, -105%); } }
+@keyframes fade { from { opacity: 0; } }
+@keyframes pop { from { transform: scale(.4); opacity: 0; } }
+@keyframes glow { 50% { box-shadow: 0 0 0 4px var(--brand-vanilla); } }
+@media (prefers-reduced-motion: reduce) {
+  .blind, .backdrop, .check, .champion[data-decided], .match[data-state=playing] { animation: none; }
+  .tab { transition: none; }
+}

@@ -101,7 +101,7 @@ type Attached = WebSocket & {
 function sharedSignature(room: Room, online: ReadonlySet<string>) {
     const plaza = room.plaza!;
     return JSON.stringify([
-        room.status, room.rules, plaza.name, plaza.owner, plaza.nextRules, plaza.invite, plaza.requests, plaza.results?.length,
+        room.status, room.rules, plaza.name, plaza.owner, plaza.nextRules, plaza.invite, plaza.requests, plaza.results?.length, plaza.tournament,
         plaza.members.map(member => [member.id, member.name, member.profileId, member.at, online.has(member.id)]),
         tableIndexes(room).map(index => {
             const table = tableAt(room, index)!;
@@ -570,6 +570,20 @@ export function createRoomServer({ config, backend, catalog, history, push = pus
         if (await push.store.once(`invite:${id}:${to}`, 10 * 60_000)) push.later(to, notices.invited(member.name, id));
         return { ok: true };
     }
+    /**
+     * A match played in this room, for anyone in it while the room lasts (whoever played it also has it in
+     * their own history). Asked with the member's secret; only matches the room kept a result of.
+     */
+    async function roomReplay(request: IncomingMessage, id: string, matchId: string) {
+        if (!history) throw new RoomError(503, '履歴の保存機能を準備しています');
+        const body = await readJson(request, MAX_BODY) as Record<string, unknown> | null;
+        const room = await backend.get(id);
+        if (!room?.plaza || room.status === 'closed' || !memberOf(room, body?.member)) throw new RoomError(404, 'リプレイが見つかりません');
+        if (!room.plaza.results?.some(result => result.matchId === matchId)) throw new RoomError(404, 'リプレイが見つかりません');
+        const recording = await history.recording(await historyOwners(request), matchId, true);
+        if (!recording) throw new RoomError(404, 'リプレイが見つかりません');
+        return recording;
+    }
     /** The plaza routes under /rooms/ that are not one room. */
     async function plazaRequest(request: IncomingMessage, name: string) {
         const owners = await historyOwners(request), token = idToken(request);
@@ -665,7 +679,7 @@ export function createRoomServer({ config, backend, catalog, history, push = pus
         }
         try {
             const path = new URL(request.url ?? '/', 'http://localhost').pathname.replace(/\/+$/, '') || '/';
-            const route = `${request.method} ${path}`, [, id, tail] = /^\/rooms\/([^/]+)(\/join|\/invite)?$/.exec(path) ?? [];
+            const route = `${request.method} ${path}`, [, id, tail] = /^\/rooms\/([^/]+)(\/join|\/invite|\/replay\/[\da-f-]{36})?$/.exec(path) ?? [];
             if (request.method === 'OPTIONS') {
                 return send(response, 204, undefined, { 'access-control-allow-methods': 'GET, POST', 'access-control-allow-headers': 'content-type,authorization,x-history-key', 'access-control-max-age': '86400' });
             }
@@ -747,6 +761,8 @@ export function createRoomServer({ config, backend, catalog, history, push = pus
                 return send(response, 200, { ...roomInfo(room), hostOnline: (await backend.online(room.id))[0] });
             }
             if (request.method === 'POST' && tail === '/invite') return send(response, 200, await inviteFriend(request, id));
+            const replay = /^\/replay\/([\da-f-]{36})$/.exec(tail ?? '');
+            if (request.method === 'POST' && replay) return send(response, 200, await roomReplay(request, id, replay[1]));
             const existing = request.method === 'POST' && tail ? await backend.get(id) : null;
             if (request.method === 'POST' && tail && !existing) throw new RoomError(404, HIDDEN);
             if (existing?.plaza) {

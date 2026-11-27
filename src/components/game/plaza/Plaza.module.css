@@ -37,6 +37,8 @@
 .roomTitle small { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 13px; color: var(--brand-cocoa-soft); }
 .count { display: flex; align-items: center; gap: 4px; flex: none; padding-left: 10px; border-left: 1px solid var(--brand-pink-edge); font-weight: 700; font-size: 15px; }
 .topActions { display: flex; align-items: center; gap: 12px; }
+/* The tables and, hanging under them, the tournament's tab. */
+.topCenter { position: relative; display: flex; justify-content: center; min-width: 56px; min-height: 52px; }
 .inviteButton { display: flex; align-items: center; gap: 10px; height: 52px; padding: 0 22px; font-size: 20px; }
 .inviteButton svg { font-size: 22px; }
 

@@ -3,8 +3,8 @@ import { randomBytes, randomInt, randomUUID, timingSafeEqual } from 'node:crypto
 import { z } from 'zod';
 import { other, actingSides, cpuLevels, cpuProfiles, randomDeck, viewFor } from '@pplale/game-core';
 import type { Catalog, CpuLevel, Deck, Side } from '@pplale/game-core';
-import { DEFAULT_VISIBILITY, MAX_MEMBERS, MAX_PLAZA_RESULTS, MAX_ROOM_NAME_LENGTH, MAX_TABLES, MEMBER_GRACE, invitedVisibility, isRoomVisibility, parseRoomRules, roomDeckErrors } from '@pplale/game-core/room';
-import type { PlazaResult, PlazaTableView, RoomChatMessage } from '@pplale/game-core/room';
+import { DEFAULT_VISIBILITY, MAX_MEMBERS, MAX_PLAZA_RESULTS, MAX_ROOM_NAME_LENGTH, MAX_TABLES, MEMBER_GRACE, TOURNAMENT_SIZE, invitedVisibility, isRoomVisibility, matchPlayers, matchState, newTournament, parseRoomRules, roomDeckErrors } from '@pplale/game-core/room';
+import type { PlazaResult, PlazaTableView, PlazaTournament, RoomChatMessage } from '@pplale/game-core/room';
 import type { RoomInfo, RoomRules, RoomView, RoomVisibility } from '@pplale/game-core/room';
 import type { MatchEnd } from '@pplale/game-core/history';
 import { publicAssessment } from './public-assessment.ts';
@@ -59,6 +59,8 @@ export interface Plaza {
     former?: string[];
     /** このルームで終わった対戦の勝敗。新しいものが後ろ。 */
     results?: PlazaResult[];
+    /** 行っているトーナメント。 */
+    tournament?: PlazaTournament;
 }
 
 /** 入室を求める本人の検証済みプロフィールID・履歴所有者・表示名。 */
@@ -105,6 +107,10 @@ const action = z.discriminatedUnion('action', [
     z.object({ action: z.literal('look'), table: z.number().int().min(0).max(MAX_TABLES - 1) }),
     z.object({ action: z.literal('addTable') }),
     z.object({ action: z.literal('removeTable') }),
+    z.object({ action: z.literal('tournament'), entrants: z.array(z.string().max(16)).min(TOURNAMENT_SIZE.min).max(TOURNAMENT_SIZE.max) }),
+    z.object({ action: z.literal('endTournament') }),
+    z.object({ action: z.literal('callMatch'), round: z.number().int().min(0).max(4), index: z.number().int().min(0).max(15) }),
+    z.object({ action: z.literal('decide'), round: z.number().int().min(0).max(4), index: z.number().int().min(0).max(15), winner: side }),
 ]);
 
 /** 表示用のルーム名。短い1行に整え、空にはしない。 */
@@ -321,14 +327,89 @@ export function tableOf(room: Room, member: PlazaMember): number {
  */
 function changeTable<T>(room: Room, index: number, catalog: Catalog, now: number, change: (table: Room) => T): T {
     const before = tableAt(room, index)!.status;
+    let ended = false;
     const result = withTable(room, index, table => {
         const value = change(table);
-        if (before === 'playing' && table.status === 'finished' && table.record && table.state) noteResult(room.plaza!, index, table, now);
+        ended = before === 'playing' && table.status === 'finished' && !!table.record && !!table.state;
         syncTurnClock(table, now);
         return value;
     });
+    if (ended) {
+        const table = focus(room, index);
+        noteResult(room.plaza!, index, table, now);
+        tournamentResult(room.plaza!, index, table);
+    }
     settleRules(room, catalog);
     return result;
+}
+
+/** 卓で終わった対戦が、そこへ呼んだトーナメントの試合なら、勝った側を表に書く。引き分けや別の人の対戦なら、呼び直せるように戻す。 */
+function tournamentResult(plaza: Plaza, index: number, table: Room) {
+    const tournament = plaza.tournament;
+    if (!tournament) return;
+    tournament.rounds.forEach((matches, round) => matches.forEach((match, at) => {
+        if (match.table !== index) return;
+        delete match.table;
+        const winner = table.state!.winner;
+        if (winner !== 0 && winner !== 1) return;
+        const member = table.seats[winner]?.member;
+        const side = matchPlayers(tournament, round, at).findIndex(player => player !== null && tournament.entrants[player]!.member === member);
+        if (side < 0) return;
+        match.winner = side as Side;
+        match.matchId = table.record!.id;
+    }));
+}
+
+/** メンバーとして座る席。 */
+const memberSeat = (member: PlazaMember): Seat => ({
+    tokenHash: '', member: member.id, name: member.name, ...(member.profileId && { profileId: member.profileId }), ...(member.historyOwners && { historyOwners: member.historyOwners }), deck: null, ready: false,
+});
+
+/**
+ * 対戦者がそろったトーナメントの試合を、あいた卓へ呼ぶ（なければ卓を増やす）。2人とも、ルームにいて、
+ * 対戦中でも対戦の結果を見ている最中でもないときだけ呼ぶ。前の席は立たせ、表の上を席0、下を席1にする。
+ * `only` は呼び直す1試合。呼べた試合の数を返す。
+ */
+function callTournament(room: Room, catalog: Catalog, now: number, only?: { round: number; index: number }): number {
+    const plaza = room.plaza!, tournament = plaza.tournament;
+    if (!tournament || room.status === 'closed') return 0;
+    let called = 0;
+    tournament.rounds.forEach((matches, round) => matches.forEach((match, index) => {
+        if (only ? only.round !== round || only.index !== index : matchState(tournament, round, index) !== 'ready') return;
+        const people = matchPlayers(tournament, round, index).map(player => player === null ? undefined : plaza.members.find(member => member.id === tournament.entrants[player]!.member));
+        if (people.some(person => !person)) return;
+        const busy = people.some(person => {
+            const place = placeOf(room, person!.id);
+            return place && tableAt(room, place.table)!.status !== 'lobby' && place.table !== match.table;
+        });
+        if (busy) return;
+        const taken = new Set(tournament.rounds.flat().flatMap(other => other !== match && other.table !== undefined ? [other.table] : []));
+        let free = match.table !== undefined && tableAt(room, match.table)?.status === 'lobby' ? match.table
+            : tableIndexes(room).find(where => !taken.has(where) && tableAt(room, where)!.status === 'lobby' && tableAt(room, where)!.seats.every(seat => !seat || people.some(person => seat.member === person!.id)));
+        if (free === undefined) {
+            if (tableCount(room) >= MAX_TABLES) return;
+            room.tables = [...room.tables ?? [], { ...emptyTable(), changed: room.version + 1 }];
+            free = tableCount(room) - 1;
+        }
+        for (const person of people) {
+            const place = placeOf(room, person!.id);
+            if (place) changeTable(room, place.table, catalog, now, table => standUp(table, place.seat, catalog, {}));
+        }
+        const target = free;
+        changeTable(room, target, catalog, now, table => {
+            // Someone else sat down there meanwhile: not called.
+            if (table.seats.some(Boolean)) return;
+            table.seats = people.map(person => memberSeat(person!)) as Room['seats'];
+        });
+        if (!people.every((person, side) => tableAt(room, target)!.seats[side]?.member === person!.id)) return;
+        for (const person of people) {
+            if (target) person!.at = target;
+            else delete person!.at;
+        }
+        match.table = target;
+        called++;
+    }));
+    return called;
 }
 
 /** 終わった対戦の勝敗を残す。中断したCPU戦（記録なし）は残さない。 */
@@ -381,6 +462,7 @@ export function tidyPlaza(room: Room, online: ReadonlySet<string>, now: number, 
     if (closeEmpty(room, empty)) return empty;
     const changed = notePresence(room, online, now), outcome: PlazaOutcome = {};
     for (const member of [...room.plaza.members]) if (member.away !== undefined && now - member.away >= MEMBER_GRACE) remove(room, member.id, 'disconnect', outcome, catalog, now);
+    if (outcome.removed) callTournament(room, catalog, now);
     return outcome.removed || changed ? outcome : null;
 }
 
@@ -468,9 +550,57 @@ export function actPlaza(room: Room, id: string, body: unknown, catalog: Catalog
             if (table.status === 'playing' || table.seats.some(seat => seat && !seat.cpu && !seat.left)) throw new RoomError(409, '人が座っている卓は片付けられません');
             room.tables = room.tables!.slice(0, -1);
             if (!room.tables.length) delete room.tables;
+            for (const match of plaza.tournament?.rounds.flat() ?? []) if (match.table === last) delete match.table;
             for (const member of plaza.members) if ((member.at ?? 0) >= last) {
                 if (last > 1) member.at = last - 1;
                 else delete member.at;
+            }
+            break;
+        }
+        case 'tournament': {
+            ownerOnly('トーナメントを始められるのはオーナーだけです');
+            const chosen = [...new Set(request.entrants)].map(entrant => plaza.members.find(member => member.id === entrant));
+            if (chosen.some(member => !member) || chosen.length < TOURNAMENT_SIZE.min) throw new RoomError(409, 'ルームにいる2人以上を選んでください');
+            // The draw: the order of the bracket.
+            const order = chosen.map(member => ({ member: member!.id, name: member!.name, ...(member!.profileId && { profileId: member!.profileId }) }));
+            for (let at = order.length - 1; at > 0; at--) {
+                const other = randomInt(at + 1);
+                [order[at], order[other]] = [order[other], order[at]];
+            }
+            plaza.tournament = newTournament(randomUUID(), order);
+            break;
+        }
+        case 'endTournament':
+            ownerOnly('トーナメントを終えられるのはオーナーだけです');
+            delete plaza.tournament;
+            break;
+        case 'callMatch': {
+            ownerOnly('試合を呼べるのはオーナーだけです');
+            const tournament = plaza.tournament, match = tournament?.rounds[request.round]?.[request.index];
+            if (!tournament || !match) throw new RoomError(404, 'その試合はありません');
+            const state = matchState(tournament, request.round, request.index);
+            if (state === 'done' || state === 'waiting') throw new RoomError(409, state === 'done' ? 'その試合はもう終わりました' : '対戦する2人がまだ決まっていません');
+            if (match.table !== undefined && tableAt(room, match.table)?.status === 'playing') throw new RoomError(409, 'その試合はもう始まっています');
+            if (!callTournament(room, catalog, now, { round: request.round, index: request.index })) throw new RoomError(409, '今は呼べません。対戦中の人か、ルームにいない人がいます');
+            break;
+        }
+        case 'decide': {
+            ownerOnly('勝ち負けを決められるのはオーナーだけです');
+            const tournament = plaza.tournament, match = tournament?.rounds[request.round]?.[request.index];
+            if (!tournament || !match) throw new RoomError(404, 'その試合はありません');
+            const state = matchState(tournament, request.round, request.index);
+            if (state === 'done' || state === 'waiting') throw new RoomError(409, state === 'done' ? 'その試合はもう終わりました' : '対戦する2人がまだ決まっていません');
+            if (match.table !== undefined && tableAt(room, match.table)?.status === 'playing') throw new RoomError(409, 'その試合はもう始まっています');
+            match.winner = request.winner;
+            // Those called to it leave its table free for the next match.
+            const where = match.table;
+            delete match.table;
+            if (where !== undefined && tableAt(room, where)?.status === 'lobby') {
+                const members = matchPlayers(tournament, request.round, request.index).map(player => player === null ? null : tournament.entrants[player]!.member);
+                changeTable(room, where, catalog, now, table => {
+                    table.seats = table.seats.map(seat => seat?.member && members.includes(seat.member) ? null : seat) as Room['seats'];
+                    unready(table);
+                });
             }
             break;
         }
@@ -479,9 +609,12 @@ export function actPlaza(room: Room, id: string, body: unknown, catalog: Catalog
             const place = placeOf(room, id);
             const index = place?.table ?? tableOf(room, me);
             changeTable(room, index, catalog, now, table => actTable(table, me, place?.seat ?? null, request, catalog, outcome, now));
+            // Someone may have become free for their next tournament match.
+            callTournament(room, catalog, now);
             return outcome;
         }
     }
+    callTournament(room, catalog, now);
     // Every view goes out again: no table plays its last move over.
     for (const index of tableIndexes(room)) tableAt(room, index)!.last = null;
     return outcome;
@@ -552,7 +685,7 @@ function actTable(table: Room, me: PlazaMember, mine: Side | null, request: Tabl
             atTable();
             if (table.seats[request.seat]) throw new RoomError(409, 'その席にはもう誰かが座っています');
             if (mine !== null) table.seats[mine] = null;
-            table.seats[request.seat] = { tokenHash: '', member: id, name: me.name, ...(me.profileId && { profileId: me.profileId }), ...(me.historyOwners && { historyOwners: me.historyOwners }), deck: null, ready: false };
+            table.seats[request.seat] = memberSeat(me);
             unready(table, id);
             break;
         }
@@ -646,7 +779,7 @@ export function plazaView(room: Room, id: string, online: ReadonlySet<string>, c
                     ...(place && { seat: place.seat }), ...(count > 1 && { table: at.get(entry.id)! }),
                 };
             }),
-            tables, table: index, results: plaza.results ?? [],
+            tables, table: index, results: plaza.results ?? [], ...(plaza.tournament && { tournament: plaza.tournament }),
             ...(plaza.nextRules && { nextRules: plaza.nextRules }),
             ...(shares && plaza.invite && { invite: plaza.invite }),
             ...(shares && plaza.requests.length && { requests: plaza.requests.map(({ profileId, name }) => ({ profileId, name })) }),

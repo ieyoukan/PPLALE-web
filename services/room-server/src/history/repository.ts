@@ -24,8 +24,9 @@ export interface HistoryRepository {
     get(id: string): Promise<Room | null>;
     linkGuest(owners: string[]): Promise<void>;
     list(owners: string[], cursor?: string, favorites?: boolean): Promise<HistoryPage>;
-    detail(owners: string[], id: string): Promise<MatchDetails | null>;
-    recording(owners: string[], id: string): Promise<MatchRecording | null>;
+    /** `open`: shown to someone who did not play it (a member of the room where it was played), as watching. */
+    detail(owners: string[], id: string, open?: boolean): Promise<MatchDetails | null>;
+    recording(owners: string[], id: string, open?: boolean): Promise<MatchRecording | null>;
     favorite(owners: string[], id: string, value: boolean): Promise<boolean>;
     ping(): Promise<boolean>;
     close(): Promise<void>;

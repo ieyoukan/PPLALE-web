@@ -198,15 +198,15 @@ export class PostgresHistory implements HistoryRepository {
         const last = entries.at(-1);
         return { entries, cursor: rows.length > 30 && last ? Buffer.from(JSON.stringify([last.endedAt, last.id])).toString('base64url') : null };
     }
-    async detail(owners: string[], id: string): Promise<MatchDetails | null> {
+    async detail(owners: string[], id: string, open = false): Promise<MatchDetails | null> {
         const access = await this.access(owners, id), row = (await this.pool.query('SELECT * FROM matches WHERE id=$1 AND ended IS NOT NULL', [id])).rows[0];
         if (!row) return null;
         const meta = this.checkedMeta(row);
-        if (!access && !(meta.mode === 'free' && meta.rules.spectators)) return null;
+        if (!access && !open && !(meta.mode === 'free' && meta.rules.spectators)) return null;
         return { format: 1, match: { ...meta, seat: Number(access?.seat ?? 0) as Side, favorite: !!access?.favorite, ...(!access && { watching: true as const }) }, catalog: await this.catalog(this.pool, row.catalog) };
     }
-    async recording(owners: string[], id: string): Promise<MatchRecording | null> {
-        const detail = await this.detail(owners, id);
+    async recording(owners: string[], id: string, open = false): Promise<MatchRecording | null> {
+        const detail = await this.detail(owners, id, open);
         if (!detail) return null;
         const row = (await this.pool.query('SELECT * FROM matches WHERE id=$1', [id])).rows[0];
         const rows = (await this.pool.query('SELECT * FROM frames WHERE match=$1 ORDER BY seq', [id])).rows;

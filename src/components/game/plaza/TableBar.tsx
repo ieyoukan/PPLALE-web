@@ -10,8 +10,10 @@ import { GameIcon } from '@/components/shared/ui/GameIcon';
 import { useI18n } from '@/i18n/LocaleProvider';
 import styles from './TableBar.module.css';
 
-export function TableBar({ tables, current, owner, busy, compact = false, onLook, onAdd, onRemove }: {
+export function TableBar({ tables, current, owner, busy, compact = false, tournament, onLook, onAdd, onRemove }: {
   tables: PlazaTableView[];
+  /** Tables a tournament match was called to: a small trophy on their chips. */
+  tournament?: ReadonlySet<number>;
   current: number;
   /** The owner may add and take away tables. */
   owner: boolean;
@@ -38,6 +40,7 @@ export function TableBar({ tables, current, owner, busy, compact = false, onLook
           <button type="button" className={styles.chip} data-current={index === current || undefined} data-status={table.status}
             aria-current={index === current || undefined} aria-label={label} title={label} disabled={busy && index !== current} onClick={() => index !== current && onLook(index)}>
             <b>{index + 1}</b>
+            {tournament?.has(index) && <GameIcon name="trophy" className={styles.trophy} />}
             {table.status === 'playing'
               ? <GameIcon name="sword" className={styles.sword} />
               : <span className={styles.seats} aria-hidden="true">{table.players.map((player, side) => <i key={side} data-taken={player ? player.cpu ? 'cpu' : 'person' : undefined} />)}</span>}

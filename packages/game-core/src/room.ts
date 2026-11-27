@@ -13,6 +13,9 @@ import type { PlayPerformance, PlayReport, ServerTiming } from './performance.ts
 // ルームのルール：使用できるカードと観戦の可否。
 export { describeMatchRules, describePlayRules, engineRules, fruitNames, fruits, OFFICIAL_OPENING_HAND, officialPlay, playableNow } from './rules.ts';
 export type { Fruit, MatchRules, PlayRules } from './rules.ts';
+export { championOf, matchPlayers, matchState, newTournament, roundName, TOURNAMENT_SIZE, winnerOf } from './tournament.ts';
+export type { PlazaTournament, TournamentEntrant, TournamentMatch, TournamentMatchState } from './tournament.ts';
+import type { PlazaTournament } from './tournament.ts';
 
 /** ルームのルール：デッキの条件（MatchRules）、対戦の進め方（PlayRules、省略は公式）、持ち時間と観戦。 */
 export interface RoomRules extends MatchRules, PlayRules {
@@ -171,6 +174,14 @@ export type RoomAction =
     | { action: 'addTable' }
     /** オーナーが末尾の卓を片付ける。誰も座っておらず、対戦していない卓だけ。 */
     | { action: 'removeTable' }
+    /** オーナーがトーナメントを始める（作り直す）。参加者はメンバーIDで、並びはサーバーが抽選する。 */
+    | { action: 'tournament'; entrants: string[] }
+    /** オーナーがトーナメントを終える。 */
+    | { action: 'endTournament' }
+    /** オーナーがトーナメントの試合を卓に呼ぶ（呼び直す）。2人をあいた卓に座らせる。 */
+    | { action: 'callMatch'; round: number; index: number }
+    /** オーナーがトーナメントの試合の勝者を決める（不戦勝・棄権など、卓で対戦しない場合）。 */
+    | { action: 'decide'; round: number; index: number; winner: Side }
     /** 文字または登録済みスタンプを送る。送信IDを使い、再試行しても重複させない。 */
     | ({ action: 'chat'; messageId: string } & ({ text: string; stamp?: never } | { stamp: RoomChatStampId; text?: never }))
     /** その発言まで読んだ（既読）。表示中のチャットで最新の他人の発言を送る。 */
@@ -286,6 +297,8 @@ export interface PlazaView {
     table?: number;
     /** このルームで終わった対戦の勝敗。新しいものが後ろ。 */
     results?: PlazaResult[];
+    /** 行っているトーナメント。 */
+    tournament?: PlazaTournament;
     /** 招待リンクの秘密。共有できるメンバーだけに返す。 */
     invite?: string;
     /** 入室リクエスト。承認できるメンバーだけに返す。 */

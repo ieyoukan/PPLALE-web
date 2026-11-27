@@ -18,6 +18,8 @@
 .seats i[data-taken=cpu] { background: var(--brand-cocoa-soft); border-color: var(--brand-cocoa-soft); }
 .chip[data-current] .seats i[data-taken=cpu] { background: var(--brand-cream); border-color: var(--brand-cream); }
 .sword { width: 15px; height: 15px; color: var(--brand-star-deep); }
+/* A tournament match was called here. */
+.trophy { position: absolute; top: 2px; right: 2px; width: 14px; height: 14px; padding: 1px; border-radius: 50%; background: var(--brand-star-deep); color: var(--brand-cream); }
 .chip[data-current] .sword { color: var(--brand-vanilla); }
 
 .arrow, .edit {

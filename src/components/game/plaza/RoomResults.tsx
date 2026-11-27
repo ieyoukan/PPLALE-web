@@ -2,7 +2,7 @@
 
 // Who won in this room (戦績): one row per person who played here, most wins first, with their wins and
 // losses as marks (newest first). Opening a row lists their matches: against whom, at which table, and
-// (one's own) the replay. Kept only while the room lasts; everyone's own history keeps the matches.
+// the replay (anyone in the room may watch it while the room lasts). Kept only while the room lasts; everyone's own history keeps the matches.
 import { useState } from 'react';
 import Link from 'next/link';
 import type { PlazaResult, PlazaResultPlayer } from '@pplale/game-core/room';
@@ -32,7 +32,7 @@ function records(results: PlazaResult[]): PlayerRecord[] {
   return [...byPlayer.values()].sort((a, b) => b.wins - a.wins || a.losses - b.losses || b.played.length - a.played.length);
 }
 
-export function RoomResults({ results, me, iconOf }: { results: PlazaResult[]; me: string; iconOf: (member?: string, profileId?: string) => string }) {
+export function RoomResults({ results, room, me, iconOf }: { results: PlazaResult[]; room: string; me: string; iconOf: (member?: string, profileId?: string) => string }) {
   const { t, nameText } = useI18n();
   const [open, setOpen] = useState<string | null>(null);
   const rows = records(results);
@@ -54,7 +54,8 @@ export function RoomResults({ results, me, iconOf }: { results: PlazaResult[]; m
             <i className={styles.outcome} data-outcome={outcome} aria-hidden="true" />
             <Avatar card={iconOf(opponent.member, opponent.profileId)} cpu={!!opponent.cpu} size={24} />
             <span className={styles.opponent}>{nameText(opponent.name)}</span>
-            {player.member === me && <Link className={styles.replay} href={`/game/replay/?id=${result.matchId}`} aria-label={t('リプレイを見る')}><GameIcon name="play" /></Link>}
+            {/* In a tab of its own: this one stays in the room meanwhile. */}
+            <Link className={styles.replay} href={`/game/replay/?id=${result.matchId}&room=${room}`} target="_blank" aria-label={t('リプレイを見る')}><GameIcon name="play" /></Link>
           </li>)}
         </ul>}
       </li>;

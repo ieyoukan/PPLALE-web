@@ -29,6 +29,7 @@ import { RoomThumbnailImage } from './RoomThumbnailImage';
 import { ShareSheet } from './ShareSheet';
 import { TableBar } from './TableBar';
 import { RoomResults } from './RoomResults';
+import { TournamentPull } from './TournamentPull';
 import { GameIcon } from '@/components/shared/ui/GameIcon';
 import { usePlaza } from './PlazaProvider';
 import { guestIcon, useProfiles } from '@/components/shared/player/useProfiles';
@@ -153,8 +154,11 @@ export function PlazaTable({ view, onMenu, match }: { view: RoomView; onMenu: ()
         <span className={styles.roomTitle}><b data-ui-title>{nameText(room.name)}</b><small>{t(info.label)}・{nameText(room.creator.name)}</small></span>
         <span className={styles.count}><GameIcon name="people" />{room.members.length}</span>
       </OrnateFrame>
-      <TableBar tables={tables} current={current} owner={room.owner === room.me} busy={busy} onLook={look}
-        onAdd={() => ask({ action: 'addTable' })} onRemove={() => ask({ action: 'removeTable' })} />
+      <div className={styles.topCenter}>
+        <TableBar tables={tables} current={current} owner={room.owner === room.me} busy={busy} onLook={look} tournament={tournamentTables(room)}
+          onAdd={() => ask({ action: 'addTable' })} onRemove={() => ask({ action: 'removeTable' })} />
+        <TournamentPull room={room} roomId={view.id} busy={busy} iconOf={iconOf} ask={ask} onLook={look} />
+      </div>
       <div className={styles.topActions}>
         <BeginnerMissionLink />
         <button className={styles.inviteButton} onClick={() => setOpen('share')}><GameIcon name="letter" /><span data-ui-title>{t('さそう')}</span></button>
@@ -168,7 +172,7 @@ export function PlazaTable({ view, onMenu, match }: { view: RoomView; onMenu: ()
         <button type="button" role="tab" aria-selected={panel === 'people'} onClick={() => setPanel('people')} aria-label={t('人')} title={t('人')}><GameIcon name="people" /></button>
         <button type="button" role="tab" aria-selected={panel === 'results'} onClick={() => setPanel('results')} aria-label={t('戦績')} title={t('戦績')}><GameIcon name="sword" /></button>
       </div>
-      {panel === 'results' ? <RoomResults results={room.results ?? []} me={room.me} iconOf={iconOf} /> : <ul>{room.members.map(member => <li key={member.id} data-away={!member.online || undefined}>
+      {panel === 'results' ? <RoomResults results={room.results ?? []} room={view.id} me={room.me} iconOf={iconOf} /> : <ul>{room.members.map(member => <li key={member.id} data-away={!member.online || undefined}>
         <ProfileLink self={member.id === room.me} profileId={member.profileId} className={styles.person} label={member.id === room.me ? t('自分のプロフィール') : t('{name}のプロフィール', { name: member.name })}>
           <Avatar card={iconOf(member.id, member.profileId)} size={42} dim={!member.online} />
           <span className={styles.personName}>{nameText(member.name)}{(member.id === room.me || member.table !== undefined) && <small>{[member.id === room.me && t('あなた'), member.table !== undefined && t('卓{n}', { n: member.table + 1 })].filter(Boolean).join('・')}</small>}</span>
@@ -214,6 +218,10 @@ export function PlazaTable({ view, onMenu, match }: { view: RoomView; onMenu: ()
     {match && target && <BoardSurfaceContext.Provider value={{ target, root, controlsReady: cameraReady && staged }}>{match.content}</BoardSurfaceContext.Provider>}
   </div>;
 }
+
+/** The tables where a tournament match was called. */
+export const tournamentTables = (room: NonNullable<RoomView['plaza']>) =>
+  new Set(room.tournament?.rounds.flat().flatMap(match => match.table === undefined ? [] : [match.table]) ?? []);
 
 /**
  * Moving to another table slides the room in from that side, as if the camera went along the row of

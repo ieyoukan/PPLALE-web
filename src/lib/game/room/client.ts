@@ -13,6 +13,8 @@ export type { RoomConnection } from './connection';
 export const readMatchHistory = (cursor?: string, favorites = false) => requestRoom<HistoryPage>('/history/list', { cursor, favorites });
 export const readMatchDetail = (id: string) => requestRoom<MatchDetails>(`/history/${id}/detail`, {});
 export const readRecording = (id: string) => requestRoom<MatchRecording>(`/history/${id}`, {});
+/** A match played in a room this browser is in (any member may watch it while the room lasts). */
+export const readRoomRecording = (room: string, id: string, member: string) => requestRoom<MatchRecording>(`/rooms/${room}/replay/${id}`, { member });
 export const favoriteMatch = (id: string, value: boolean) => requestRoom<{ ok: true }>(`/history/${id}/favorite`, { value });
 
 export const joinRoom = (id: string, name: string) => requestRoom<Seated>(`/rooms/${id}/join`, { name });

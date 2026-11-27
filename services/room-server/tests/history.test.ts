@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import { createHash } from 'node:crypto';
 import { applyCommand, legalMoves } from '@pplale/game-core';
 import type { HistoryPage, MatchRecording } from '@pplale/game-core/history';
-import type { Seated } from '@pplale/game-core/room';
+import type { Entered, Seated } from '@pplale/game-core/room';
 import { admit, createPlaza, actPlaza } from '../src/plaza.ts';
 import { tableAt } from '../src/tables.ts';
 import { catalog } from '../src/catalog.ts';
@@ -322,4 +322,28 @@ historyTest('history: every table of a room records its own match, side by side,
     assert.equal(recording.match.winner, 1);
     assert.equal(recording.frames.at(-1)!.event, 'resign');
     assert.equal(await history.recording(['device:host'], second), null, 'only its players read it');
+});
+
+historyTest('history API: anyone in a room watches the replays of the matches played there while it lasts; nobody else does', async t => {
+    const { history, backend, onClose } = await fixture(t);
+    const served = await serve({ history, data: { open: () => backend } }); onClose(() => served.close());
+    const host = { 'x-history-key': 'd'.repeat(64) }, watcher = { 'x-history-key': 'e'.repeat(64) }, stranger = { 'x-history-key': 'f'.repeat(64) };
+    const made = (await served.call<Entered>('/rooms', { rules: { fruits: ['strawberry'], extendedPlayable: false }, name: 'ありす', plaza: { name: 'たいかい', visibility: 'public' } }, host)).data;
+    const id = made.view.id, alice = await connect(served, id, made.token);
+    await alice.until(view => view.plaza!.members[0].online);
+    const joined = (await served.call<Entered>(`/rooms/${id}/join`, { name: 'みてる' }, watcher)).data;
+    assert.equal(await alice.act({ action: 'sit', seat: 0 }), undefined);
+    assert.equal(await alice.act({ action: 'cpu', seat: 1, level: 'easy' }), undefined);
+    assert.equal(await alice.act({ action: 'ready', deck }), undefined);
+    assert.equal(await alice.act({ action: 'resign' }), undefined);
+    const ended = await alice.until(view => !!view.plaza!.results?.length);
+    const matchId = ended.plaza!.results![0].matchId;
+    // The one who watched reads it with their own secret in this room; the history API alone does not give it.
+    assert.equal((await served.call(`/history/${matchId}`, {}, watcher)).status, 404);
+    const replay = await served.call<MatchRecording>(`/rooms/${id}/replay/${matchId}`, { member: joined.token }, watcher);
+    assert.equal(replay.status, 200);
+    assert.equal(replay.data.match.watching, true);
+    assert.ok(replay.data.frames.length > 0);
+    assert.equal((await served.call(`/rooms/${id}/replay/${matchId}`, { member: 'forged' }, stranger)).status, 404);
+    assert.equal((await served.call(`/rooms/${id}/replay/${'0'.repeat(8)}-0000-0000-0000-${'0'.repeat(12)}`, { member: joined.token }, watcher)).status, 404);
 });

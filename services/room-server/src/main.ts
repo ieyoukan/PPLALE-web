@@ -13,7 +13,21 @@ if (!config.redisUrl && !process.env.HISTORY_URL && !process.env.HISTORY_DATABAS
 const transient = config.redisUrl ? await redisBackend(config.redisUrl) : memoryBackend();
 const history = process.env.HISTORY_URL ? remoteHistory(process.env.HISTORY_URL) : process.env.HISTORY_DATABASE_URL
     ? await (await import('./history/postgres.ts')).PostgresHistory.open(process.env.HISTORY_DATABASE_URL, process.env.HISTORY_SYNCHRONOUS_COMMIT === 'remote_apply' ? 'remote_apply' : 'on') : undefined;
-const backend = history ? await durableBackend(transient, history, { catalog, version: config.version }) : transient;
+/**
+ * The history service may be restarting at the same moment (both roll out together): wait for it for a
+ * while (about 30 s, inside the liveness probe's patience) rather than exit and be restarted.
+ */
+async function durable(attempts = 15) {
+    for (let attempt = 1; ; attempt++) {
+        try { return await durableBackend(transient, history!, { catalog, version: config.version }); }
+        catch (error) {
+            if (attempt >= attempts) throw error;
+            console.warn(`history service not ready (${error instanceof Error ? error.message : 'unavailable'}), retrying`);
+            await new Promise(resolve => setTimeout(resolve, 2000));
+        }
+    }
+}
+const backend = history ? await durable() : transient;
 const keys = vapidKeys();
 if (!keys) console.warn('VAPID_PUBLIC_KEY / VAPID_PRIVATE_KEY are not set: no push notifications are sent');
 const push = pusher(config.redisUrl ? await redisPushStore(config.redisUrl) : memoryPushStore(), keys);
