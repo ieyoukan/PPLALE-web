@@ -165,8 +165,8 @@ export function PlazaTable({ view, onMenu, match }: { view: RoomView; onMenu: ()
     <OrnateFrame as="aside" tone="cream" className={styles.people} aria-label={t('ルームにいる人')} inert={playing || !cameraReady}>
       {/* Who is here, or who won here. */}
       <div className={styles.panelTabs} role="tablist">
-        <button type="button" role="tab" aria-selected={panel === 'people'} onClick={() => setPanel('people')}><GameIcon name="people" />{t('人')}<small>{room.members.length}</small></button>
-        <button type="button" role="tab" aria-selected={panel === 'results'} onClick={() => setPanel('results')}><GameIcon name="sword" />{t('戦績')}{!!room.results?.length && <small>{room.results.length}</small>}</button>
+        <button type="button" role="tab" aria-selected={panel === 'people'} onClick={() => setPanel('people')} aria-label={t('人')} title={t('人')}><GameIcon name="people" /></button>
+        <button type="button" role="tab" aria-selected={panel === 'results'} onClick={() => setPanel('results')} aria-label={t('戦績')} title={t('戦績')}><GameIcon name="sword" /></button>
       </div>
       {panel === 'results' ? <RoomResults results={room.results ?? []} me={room.me} iconOf={iconOf} /> : <ul>{room.members.map(member => <li key={member.id} data-away={!member.online || undefined}>
         <ProfileLink self={member.id === room.me} profileId={member.profileId} className={styles.person} label={member.id === room.me ? t('自分のプロフィール') : t('{name}のプロフィール', { name: member.name })}>

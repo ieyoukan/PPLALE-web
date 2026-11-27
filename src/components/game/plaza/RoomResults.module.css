@@ -2,36 +2,31 @@
 .records { display: grid; min-width: 0; margin: 0; padding: 0; list-style: none; }
 .records > li { min-width: 0; border-bottom: 1px solid color-mix(in srgb, var(--brand-cream-line) 20%, transparent); }
 .row {
-  display: grid; grid-template-columns: 36px minmax(0, 1fr) auto; grid-template-areas: "icon name score" "icon marks marks";
-  align-items: center; gap: 2px 8px; width: 100%; padding: 8px 2px; border: 0; background: none; color: var(--brand-cream-on-dark); font: inherit; text-align: left;
+  display: grid; grid-template-columns: 36px minmax(0, 1fr); grid-template-areas: "icon name" "icon marks";
+  align-items: center; gap: 3px 8px; width: 100%; padding: 8px 2px; border: 0; background: none; color: var(--brand-cream-on-dark); font: inherit; text-align: left;
   animation: rise .3s ease-out both;
 }
 .row > :first-child { grid-area: icon; }
 .row:hover { background: color-mix(in srgb, var(--brand-cream-on-dark) 10%, transparent); }
 [data-self] > .row .name::after { content: ''; display: inline-block; width: 6px; height: 6px; margin-left: 6px; border-radius: 50%; background: var(--brand-pink); vertical-align: middle; }
-.name { grid-area: name; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 15px; font-weight: 700; }
-.score { grid-area: score; display: flex; align-items: baseline; gap: 1px; font-variant-numeric: tabular-nums; }
-.score b { font-size: 17px; }
-.score small { margin-right: 4px; font-size: 11px; opacity: .85; }
+/* Names wrap onto a second line rather than being cut. */
+.name { grid-area: name; min-width: 0; overflow-wrap: anywhere; word-break: auto-phrase; font-size: 14px; font-weight: 700; line-height: 1.25; }
 /* Newest on the left: a filled leaf dot for a win, a peach ring for a loss, a cream ring for a draw. */
-.marks { grid-area: marks; display: flex; gap: 4px; min-height: 9px; }
-.marks i { width: 9px; height: 9px; border-radius: 50%; border: 1.5px solid var(--brand-cream-line); }
-.marks i[data-outcome=win] { border-color: var(--brand-sage); background: var(--brand-sage); }
-.marks i[data-outcome=loss] { border-color: var(--brand-peach); }
+.marks { grid-area: marks; display: flex; flex-wrap: wrap; gap: 4px; min-height: 10px; }
+.marks i, .outcome { width: 10px; height: 10px; border-radius: 50%; border: 2px solid var(--brand-cream-line); }
+.marks i[data-outcome=win], .outcome[data-outcome=win] { border-color: var(--brand-sage); background: var(--brand-sage); }
+.marks i[data-outcome=loss], .outcome[data-outcome=loss] { border-color: var(--brand-peach); }
 
-.matches { display: grid; gap: 2px; margin: 0 0 8px 44px; padding: 0; list-style: none; animation: rise .2s ease-out both; }
-.matches li { display: flex; align-items: center; gap: 6px; min-width: 0; font-size: 13px; color: var(--brand-cream-on-dark); }
-.outcome { flex: none; padding: 1px 6px; border-radius: var(--brand-panel-radius); background: var(--brand-cream-line); color: var(--brand-cocoa-deep); font-size: 12px; font-weight: 700; }
-.outcome[data-outcome=win] { background: var(--brand-sage); }
-.outcome[data-outcome=loss] { background: var(--brand-peach); }
-.opponent { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.matches small { flex: none; opacity: .8; }
+.matches { display: grid; gap: 4px; margin: 0 0 8px; padding: 0 2px; list-style: none; animation: rise .2s ease-out both; }
+.matches li { display: grid; grid-template-columns: 10px 24px minmax(0, 1fr) auto; align-items: center; gap: 6px; min-width: 0; font-size: 13px; color: var(--brand-cream-on-dark); }
+.outcome { box-sizing: border-box; }
+.opponent { min-width: 0; overflow-wrap: anywhere; word-break: auto-phrase; line-height: 1.25; }
 .replay { display: grid; place-items: center; flex: none; width: 24px; height: 24px; border-radius: var(--brand-control-radius); color: var(--brand-vanilla); }
 .replay:hover { background: color-mix(in srgb, var(--brand-cream-on-dark) 14%, transparent); }
 .replay svg { width: 16px; height: 16px; }
 
-.empty { display: grid; justify-items: center; gap: 8px; margin: 24px 0; color: color-mix(in srgb, var(--brand-cream-line) 85%, transparent); font-size: 14px; text-align: center; }
-.empty svg { width: 28px; height: 28px; opacity: .7; }
+.empty { display: grid; justify-items: center; margin: 28px 0; color: color-mix(in srgb, var(--brand-cream-line) 70%, transparent); }
+.empty svg { width: 32px; height: 32px; }
 .row:focus-visible, .replay:focus-visible { outline: 3px solid var(--brand-vanilla); outline-offset: 2px; }
 
 @keyframes rise { from { opacity: 0; transform: translateY(4px); } }

@@ -49,8 +49,7 @@
   display: flex; align-items: center; justify-content: center; gap: 4px; min-height: 36px; padding: 4px 2px; border: 0; border-bottom: 2px solid transparent;
   background: none; color: color-mix(in srgb, var(--brand-cream-line) 80%, transparent); font: inherit; font-size: 14px; font-weight: 700;
 }
-.panelTabs button svg { width: 16px; height: 16px; }
-.panelTabs button small { font-size: 11px; opacity: .85; }
+.panelTabs button svg { width: 22px; height: 22px; }
 .panelTabs button[aria-selected=true] { border-bottom-color: var(--brand-vanilla); color: var(--brand-cream-on-dark); }
 .panelTabs button:hover { color: var(--brand-cream-on-dark); }
 .people li { min-width: 0; }
