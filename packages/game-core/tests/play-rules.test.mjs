@@ -1,7 +1,7 @@
-// ルームの独自ルール（先攻・後攻の固定、初期手札の枚数、後攻5ターン目の追加PP）とテンプレート。
+// ルームの独自ルール（先攻・後攻の固定、初期手札の枚数、後攻5ターン目の追加PP）。
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { applyPreset, describePlayRules, engineRules, maxPp, newGame, officialPlay, parsePlayRules, presetOf, restoreGame, sandboxRules } from '../dist/index.js';
+import { describePlayRules, engineRules, maxPp, newGame, officialPlay, parsePlayRules, restoreGame, sandboxRules } from '../dist/index.js';
 import { parseRoomRules, describeRoomRules } from '../dist/room.js';
 import { arena, catalog, draws, failure, hand, run } from './helpers.mjs';
 
@@ -87,16 +87,4 @@ test('a room keeps its play rules with the rest of its rules', () => {
   assert.deepEqual(rules, { fruits: ['strawberry'], extendedPlayable: false, spectators: true, firstSeat: 0, openingHand: [4, 3], secondBoost: false });
   assert.match(describeRoomRules(rules), /先攻：席1 ／ 初期手札：先攻4枚・後攻3枚 ／ 後攻5ターン目\+2PP：なし ／ 観戦：あり/);
   assert.doesNotMatch(describeRoomRules(parseRoomRules({ fruits: ['strawberry'] })), /先攻|初期手札/);
-});
-
-test('templates are recognised from the rules, whichever seat goes first, and keep the chosen seat', () => {
-  assert.equal(presetOf({}), 'official');
-  assert.equal(presetOf({ firstSeat: 1, secondBoost: false }), 'handicap1');
-  assert.equal(presetOf({ firstSeat: 0, secondBoost: false, openingHand: [3, 3] }), 'handicap2');
-  assert.equal(presetOf({ firstSeat: 1, secondBoost: false, openingHand: [4, 3] }), 'handicap3');
-  assert.equal(presetOf({ firstSeat: 0 }), null);
-  assert.equal(presetOf({ openingHand: [5, 5] }), null);
-  assert.deepEqual(applyPreset({ firstSeat: 1 }, 'handicap2'), { firstSeat: 1, secondBoost: false, openingHand: [3, 3] });
-  assert.deepEqual(applyPreset({}, 'handicap1'), { firstSeat: 0, secondBoost: false });
-  assert.deepEqual(applyPreset({ firstSeat: 1, secondBoost: false }, 'official'), {});
 });

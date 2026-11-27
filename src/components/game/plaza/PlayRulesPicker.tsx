@@ -1,11 +1,12 @@
 'use client';
 
-// How a room's matches are played (対戦の進め方): a template, then each rule on its own — who goes
-// first (the dice, or a seat the owner fixes), the opening hand sizes, and the 後攻's extra 2PP on its
-// 5th turn. Shown with the table's own pieces (a die, card backs, the white +2 marble) rather than words.
+// How a room's matches are played (対戦の進め方): one labelled row per rule — who goes first (the
+// dice, or a seat the owner fixes), the opening hand sizes, and the 後攻's extra 2PP on its 5th turn.
+// A rule changed from the official one is marked, and one button puts them all back.
 // Every rule left at the official value is left out of the rules (game-core `parsePlayRules`).
-import { applyPreset, OFFICIAL_OPENING_HAND, OPENING_HAND_RANGE, parsePlayRules, playPresets, presetOf } from '@pplale/game-core';
+import { OFFICIAL_OPENING_HAND, OPENING_HAND_RANGE, officialPlay, parsePlayRules } from '@pplale/game-core';
 import type { PlayRules, Side } from '@pplale/game-core';
+import type { ReactNode } from 'react';
 import { GameIcon } from '@/components/shared/ui/GameIcon';
 import { useI18n } from '@/i18n/LocaleProvider';
 import styles from './PlayRulesPicker.module.css';
@@ -23,14 +24,12 @@ const Backs = ({ count }: { count: number }) =>
 /** The white marble the table shows on the 後攻's 5th turn; struck through when there is none. */
 const Marble = ({ off }: { off?: boolean }) => <span className={styles.marble} data-off={off || undefined} aria-hidden="true">+2</span>;
 
-/** A template's look: the order, the two opening hands and the marble, in small. */
-function PresetFace({ rules }: { rules: PlayRules }) {
-  const play = parsePlayRules(rules), hand = play.openingHand ?? OFFICIAL_OPENING_HAND;
-  return <span className={styles.presetFace} aria-hidden="true">
-    {play.firstSeat === undefined ? <Die /> : <b className={styles.firstMark}>先</b>}
-    <span className={styles.hands}>{hand[0]}<small>|</small>{hand[1]}</span>
-    <Marble off={play.secondBoost === false} />
-  </span>;
+/** One rule: its name on the left (marked when it differs from the official rule), its choices on the right. */
+function Row({ name, changed, children }: { name: string; changed: boolean; children: ReactNode }) {
+  return <div className={styles.row} data-changed={changed || undefined}>
+    <span className={styles.rowName}>{name}</span>
+    <div className={styles.choices}>{children}</div>
+  </div>;
 }
 
 export function PlayRulesPicker({ rules, seats, onChange }: {
@@ -40,15 +39,15 @@ export function PlayRulesPicker({ rules, seats, onChange }: {
   onChange: (rules: PlayRules) => void;
 }) {
   const { t } = useI18n();
-  const play = parsePlayRules(rules), chosen = presetOf(play);
+  const play = parsePlayRules(rules);
   const hand = play.openingHand ?? OFFICIAL_OPENING_HAND;
   const change = (next: PlayRules) => onChange(parsePlayRules({ ...play, ...next }));
   const setHand = (order: 0 | 1, size: number) => change({ openingHand: (order === 0 ? [size, hand[1]] : [hand[0], size]) as [number, number] });
   const seatName = (seat: Side) => seats[seat] ?? t('席{n}', { n: seat + 1 });
   const stepper = (order: 0 | 1) => {
-    const label = t(order === 0 ? '先攻' : '後攻'), size = hand[order];
+    const size = hand[order];
     return <div className={styles.stepper} role="group" aria-label={t(order === 0 ? '先攻の初期手札' : '後攻の初期手札')}>
-      <span className={styles.orderPlate} data-order={order === 0 ? 'first' : 'second'}>{label}</span>
+      <span className={styles.orderPlate} data-order={order === 0 ? 'first' : 'second'}>{t(order === 0 ? '先攻' : '後攻')}</span>
       <button type="button" aria-label={t('1枚へらす')} disabled={size <= OPENING_HAND_RANGE.min} onClick={() => setHand(order, size - 1)}>−</button>
       <span className={styles.count} data-changed={size !== OFFICIAL_OPENING_HAND[order] || undefined} aria-live="polite">
         <Backs count={size} /><b>{t('{n}枚', { n: size })}</b>
@@ -56,40 +55,29 @@ export function PlayRulesPicker({ rules, seats, onChange }: {
       <button type="button" aria-label={t('1枚ふやす')} disabled={size >= OPENING_HAND_RANGE.max} onClick={() => setHand(order, size + 1)}>+</button>
     </div>;
   };
+  const boost = play.secondBoost !== false;
   return <fieldset className={styles.picker}>
-    <legend>{t('対戦の進め方')}</legend>
-    <div className={styles.presets} role="radiogroup" aria-label={t('テンプレート')}>
-      {playPresets.map(preset => <button key={preset.id} type="button" role="radio" aria-checked={chosen === preset.id}
-        onClick={() => onChange(applyPreset(play, preset.id))}>
-        <PresetFace rules={preset.rules} />
-        <span className={styles.presetName}>{t(preset.name)}</span>
-      </button>)}
-      {/* Shown only while the rules match no template; it cannot be chosen, it only says so. */}
-      {chosen === null && <span className={styles.custom} role="radio" aria-checked="true" aria-disabled="true">
-        <PresetFace rules={play} />
-        <span className={styles.presetName}>{t('カスタム')}</span>
-      </span>}
-    </div>
-    <div className={styles.rows}>
-      <div className={styles.row} role="radiogroup" aria-label={t('先攻の決め方')}>
-        <span className={styles.rowIcon} aria-hidden="true"><b className={styles.firstMark}>先</b></span>
-        <button type="button" role="radio" aria-checked={play.firstSeat === undefined} aria-label={t('ダイスで決める')} onClick={() => change({ firstSeat: undefined })}><Die /></button>
+    <legend>
+      {t('対戦の進め方')}
+      {!officialPlay(play) && <button type="button" className={styles.reset} onClick={() => onChange({})}><GameIcon name="history" />{t('公式ルールにもどす')}</button>}
+    </legend>
+    <Row name={t('先攻')} changed={play.firstSeat !== undefined}>
+      <div className={styles.options} role="radiogroup" aria-label={t('先攻の決め方')}>
+        <button type="button" role="radio" aria-checked={play.firstSeat === undefined} onClick={() => change({ firstSeat: undefined })}><Die />{t('ダイス')}</button>
         {([0, 1] as const).map(seat => <button key={seat} type="button" role="radio" aria-checked={play.firstSeat === seat} aria-label={t('{name}が先攻', { name: seatName(seat) })}
           onClick={() => change({ firstSeat: seat })}>
           <GameIcon name="seat" /><span className={styles.seatName}>{seatName(seat)}</span>
         </button>)}
       </div>
-      <div className={styles.row}>
-        <span className={styles.rowIcon} aria-hidden="true"><GameIcon name="cards" /></span>
-        <div className={styles.steppers}>{stepper(0)}{stepper(1)}</div>
+    </Row>
+    <Row name={t('初期手札')} changed={play.openingHand !== undefined}>
+      {stepper(0)}{stepper(1)}
+    </Row>
+    <Row name={t('後攻5ターン目の+2PP')} changed={!boost}>
+      <div className={styles.options} role="radiogroup" aria-label={t('後攻5ターン目の追加2PP')}>
+        <button type="button" role="radio" aria-checked={boost} onClick={() => change({ secondBoost: undefined })}><Marble />{t('あり')}</button>
+        <button type="button" role="radio" aria-checked={!boost} onClick={() => change({ secondBoost: false })}><Marble off />{t('なし')}</button>
       </div>
-      <div className={styles.row}>
-        <span className={styles.rowIcon} aria-hidden="true"><span className={styles.turnFive}>{t('後攻')}<b>5</b></span></span>
-        <button type="button" role="switch" aria-checked={play.secondBoost !== false} aria-label={t('後攻5ターン目の追加2PP')} className={styles.boost}
-          onClick={() => change({ secondBoost: play.secondBoost === false ? undefined : false })}>
-          <Marble off={play.secondBoost === false} />
-        </button>
-      </div>
-    </div>
+    </Row>
   </fieldset>;
 }

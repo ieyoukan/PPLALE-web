@@ -11,8 +11,8 @@ import type { MatchRules, PlayRules } from './rules.ts';
 import type { PlayPerformance, PlayReport, ServerTiming } from './performance.ts';
 
 // ルームのルール：使用できるカードと観戦の可否。
-export { applyPreset, describeMatchRules, describePlayRules, engineRules, fruitNames, fruits, OFFICIAL_OPENING_HAND, officialPlay, playableNow, playPresets, presetOf } from './rules.ts';
-export type { Fruit, MatchRules, PlayPresetId, PlayRules } from './rules.ts';
+export { describeMatchRules, describePlayRules, engineRules, fruitNames, fruits, OFFICIAL_OPENING_HAND, officialPlay, playableNow } from './rules.ts';
+export type { Fruit, MatchRules, PlayRules } from './rules.ts';
 
 /** ルームのルール：デッキの条件（MatchRules）、対戦の進め方（PlayRules、省略は公式）、持ち時間と観戦。 */
 export interface RoomRules extends MatchRules, PlayRules {

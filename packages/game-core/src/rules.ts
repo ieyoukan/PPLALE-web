@@ -138,30 +138,6 @@ export function engineRules(rules: PlayRules & Pick<MatchRules, 'doublePlayable'
     };
 }
 
-/**
- * Ready-made play rules (テンプレート). Not stored anywhere: the one shown as chosen is the one the
- * current rules equal (`presetOf`), so a template and the rules can never disagree. A fixed order
- * matches whichever seat goes first: the owner picks the seat.
- * The handicaps all help the 先攻, for a weaker player fixed as 先攻 against a stronger one.
- */
-export type PlayPresetId = 'official' | 'handicap1' | 'handicap2' | 'handicap3';
-export const playPresets: readonly { id: PlayPresetId; name: string; rules: PlayRules }[] = [
-    { id: 'official', name: '公式', rules: {} },
-    { id: 'handicap1', name: 'ハンデ小', rules: { firstSeat: 0, secondBoost: false } },
-    { id: 'handicap2', name: 'ハンデ中', rules: { firstSeat: 0, secondBoost: false, openingHand: [3, 3] } },
-    { id: 'handicap3', name: 'ハンデ大', rules: { firstSeat: 0, secondBoost: false, openingHand: [4, 3] } },
-];
-const presetKey = (rules: PlayRules) => {
-    const play = parsePlayRules(rules);
-    return JSON.stringify([play.firstSeat !== undefined, play.openingHand ?? OFFICIAL_OPENING_HAND, play.secondBoost !== false]);
-};
-/** The template these play rules equal, or null for custom ones (カスタム). */
-export const presetOf = (rules: PlayRules): PlayPresetId | null => playPresets.find(preset => presetKey(preset.rules) === presetKey(rules))?.id ?? null;
-/** The play rules of a template, keeping the seat already chosen to go first. */
-export function applyPreset(rules: PlayRules, id: PlayPresetId): PlayRules {
-    const preset = playPresets.find(entry => entry.id === id)!.rules;
-    return parsePlayRules({ ...preset, ...(preset.firstSeat !== undefined && rules.firstSeat !== undefined && { firstSeat: rules.firstSeat }) });
-}
 /** One line for the lobby and for sharing, e.g. 「先攻：席1 ／ 初期手札：先攻3枚・後攻3枚 ／ 後攻5ターン目+2PP：なし」. Empty for the official rules. */
 export function describePlayRules(rules: PlayRules): string {
     const play = parsePlayRules(rules);
