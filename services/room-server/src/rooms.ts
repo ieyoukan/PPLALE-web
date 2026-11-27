@@ -29,26 +29,34 @@ export interface Seat {
     /** この席はサーバーのCPUが操作する。 */
     cpu?: CpuLevel;
 }
-export interface Room {
+/** 1つの卓：2つの席と、そこで行う対戦。ルーム自身が1卓目で、2卓目以降は `Room.tables` に置く（tables.ts）。 */
+export interface Table {
     turnClock?: RoomTurnClock;
     /** 明示的に中断したCPU戦の記録ID。履歴からこの試合だけを破棄する。 */
     discardedMatch?: string;
     record?: { id: string; startedAt: number; reason?: MatchEnd };
-    id: string;
-    mode?: 'free';
-    version: number;
+    /** ルームが閉じた（closed）ことは1卓目の状態で表す。 */
     status: RoomStatus;
     match: number;
-    rules: RoomRules;
     /** 旧2席ルームは先攻側の席を必ず持つ。通常ルームは両席とも空にできる。 */
     seats: [Seat | null, Seat | null];
-    /** 集まって遊ぶルームの在室情報。 */
-    plaza?: Plaza;
     state: GameState | null;
     last: LastCommand | null;
     resigned: Side | null;
     /** 各席の切断開始時刻。接続中はnull。古いルームでは省略される。 */
     away?: [number | null, number | null];
+    /** この卓が最後に変わったときのルームのversion。変わっていない卓の表示を送り直さないために使う。 */
+    changed?: number;
+}
+export interface Room extends Table {
+    id: string;
+    mode?: 'free';
+    version: number;
+    rules: RoomRules;
+    /** 集まって遊ぶルームの在室情報。 */
+    plaza?: Plaza;
+    /** 2卓目以降。1卓だけのルーム（旧ルームを含む）では省略する。 */
+    tables?: Table[];
 }
 
 /** 許可できない要求。statusはHTTP状態、messageはユーザー向けの理由。 */

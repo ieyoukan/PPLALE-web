@@ -261,7 +261,7 @@ test('plaza: a member away longer than the grace is no longer in it; the last on
     const bob = (await call<Entered>(`/rooms/${id}/join`, { name: 'ぼぶ', invite: made.view.plaza!.invite })).data;
     // Everyone is away for good: tidying a little after the grace removes them and closes the room.
     const room = (await backend.get(id))!;
-    const tidied = tidyPlaza(room, new Set(), Date.now() + MEMBER_GRACE + 1)!;
+    const tidied = tidyPlaza(room, new Set(), Date.now() + MEMBER_GRACE + 1, catalog)!;
     assert.deepEqual(tidied.removed!.length, 2);
     assert.equal(room.status, 'closed');
     assert.ok(formerOf(room, made.token) && formerOf(room, bob.token));

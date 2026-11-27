@@ -2,9 +2,10 @@ import type { Catalog } from '@pplale/game-core';
 import { archiveCatalog } from './assets.ts';
 import { captureState } from './capture.ts';
 import { RoomError } from '../rooms.ts';
-import type { Room } from '../rooms.ts';
+import type { Room, Table } from '../rooms.ts';
 import type { Backend } from '../backend.ts';
 import type { HistoryRepository, HistoryCapture } from './repository.ts';
+import type { SnapshotCapture } from './capture.ts';
 
 /** ルームIDが同じでも、作成時のキーが異なれば別のルームとして扱う。 */
 const sameRoom = (a: Room, b: Room) => a.plaza || b.plaza ? a.plaza?.key === b.plaza?.key : a.seats[0]?.tokenHash === b.seats[0]?.tokenHash;
@@ -12,8 +13,21 @@ const sameRoom = (a: Room, b: Room) => a.plaza || b.plaza ? a.plaza?.key === b.p
 /** 更新中もRedisをルームの正本にする。CASと履歴の保存待ち登録を同時に行い、PostgreSQL保存後に応答・公開する。保存待ちデータはPodの停止でも消さない。 */
 export async function durableBackend(redis: Backend, history: HistoryRepository, engine: { catalog: Catalog; version: string; archiveImages?: boolean }): Promise<Backend> {
     const catalogId = await history.registerCatalog(engine.archiveImages === false ? engine.catalog : await archiveCatalog(engine.catalog, history));
+    // A move at one table leaves the others as they were: their snapshots are taken once.
+    const snapshots = new Map<string, SnapshotCapture>();
+    const snapshot = (table: Table): SnapshotCapture | null => {
+        if (!table.state) return null;
+        const key = `${table.record?.id}:${table.state.revision}:${table.status}`;
+        let taken = snapshots.get(key);
+        if (!taken) {
+            snapshots.set(key, taken = captureState(table.state, engine.catalog, catalogId, engine.version));
+            if (snapshots.size > 64) snapshots.delete(snapshots.keys().next().value!);
+        }
+        return taken;
+    };
     const capture = async (room?: Room): Promise<HistoryCapture> => ({
-        snapshot: room?.state ? captureState(room.state, engine.catalog, catalogId, engine.version) : null,
+        snapshot: room ? snapshot(room) : null,
+        ...(room?.tables && { tables: room.tables.map(snapshot) }),
         // 旧Podで受理した操作は記録が欠けるため、完全なリプレイと表示しない。
         completeAllowed: await redis.historyReady(),
     });

@@ -10,9 +10,11 @@ export interface HistoryWrite {
     previous: Room | null;
     expires: number;
     capture: SnapshotCapture | null;
+    /** 2卓目以降の対戦の記録（添字0が2卓目）。1卓だけのルームでは省略する。 */
+    tables?: (SnapshotCapture | null)[];
     completeAllowed: boolean;
 }
-export interface HistoryCapture { snapshot: SnapshotCapture | null; completeAllowed: boolean }
+export interface HistoryCapture { snapshot: SnapshotCapture | null; tables?: (SnapshotCapture | null)[]; completeAllowed: boolean }
 export interface HistoryRepository {
     assetIds(): Promise<string[]>;
     putAsset(id: string, data: string, mime: string): Promise<void>;

@@ -12,8 +12,8 @@ function expiredOwner(profileId?: string) {
     const made = initial(profileId), { room } = made, old = room.plaza!.owner!;
     const other = admit(room, { name: 'ぼぶ' }, 0).member;
     notePresence(room, new Set([old, other.id]), 0);
-    tidyPlaza(room, new Set([other.id]), 100);
-    tidyPlaza(room, new Set([other.id]), 101 + MEMBER_GRACE);
+    tidyPlaza(room, new Set([other.id]), 100, catalog);
+    tidyPlaza(room, new Set([other.id]), 101 + MEMBER_GRACE, catalog);
     assert.equal(room.plaza!.owner, null);
     return { ...made, old, other };
 }
@@ -110,7 +110,7 @@ test('ownership: HTTP reconnection across pods preserves an active owner and rec
     await watcher.until(view => view.plaza!.members.some(member => member.id === bob.view.plaza!.me && member.online));
     const room = (await a.backend.get(id))!;
     room.plaza!.members.find(member => member.id === original)!.away = Date.now() - MEMBER_GRACE - 1;
-    tidyPlaza(room, new Set([bob.view.plaza!.me]), Date.now());
+    tidyPlaza(room, new Set([bob.view.plaza!.me]), Date.now(), catalog);
     const expected = room.version++;
     assert.ok(await a.backend.replace(room, expected, 60_000));
     const returned = await a.call<Entered>(`/rooms/${id}/join`, { name: 'ありす', rejoin: active.data.token });
@@ -136,7 +136,7 @@ test('ownership: expiring a member while their socket joins returns gone instead
         if (!raced && entry.member.startsWith(made.view.plaza!.me)) {
             raced = true;
             const room = (await served.backend.get(entry.id))!;
-            tidyPlaza(room, new Set([bob.view.plaza!.me]), Date.now() + MEMBER_GRACE + 1);
+            tidyPlaza(room, new Set([bob.view.plaza!.me]), Date.now() + MEMBER_GRACE + 1, catalog);
             const expected = room.version++;
             assert.ok(await served.backend.replace(room, expected, 60_000));
         }

@@ -41,7 +41,8 @@ import type { Backend, Member, Overview, RoomEvent, Spot } from './backend.ts';
 import type { Config } from './config.ts';
 import { RoomError, act, createRoom, expireTurn, joinRoom, playerName, roomInfo, seatOf, seatView, tidy } from './rooms.ts';
 import type { Present, Room } from './rooms.ts';
-import { actPlaza, admit, askToEnter, closeEmpty, cpuToAct, createPlaza, entryOf, formerOf, inviteByName, memberOf, notePresence, playCpu, plazaInfo, plazaView, rejoiningMember, succeed, tidyPlaza } from './plaza.ts';
+import { actPlaza, admit, askToEnter, closeEmpty, cpuToAct, cpuTurns, createPlaza, entryOf, expireTableTurn, formerOf, inviteByName, memberOf, notePresence, playCpu, plazaInfo, plazaView, rejoiningMember, succeed, tableOf, tidyPlaza } from './plaza.ts';
+import { focus, tableAt, tableCount, tableIndexes } from './tables.ts';
 import { chatReads } from './chat.ts';
 import type { PlazaOutcome, Visitor } from './plaza.ts';
 import { cpuThinker } from './cpu.ts';
@@ -87,7 +88,27 @@ const HIDDEN = 'ルームが見つからないか、招待が必要です';
 const CLOSED = 'このルームは閉じました';
 const LEFT = 'ルームから出ました';
 
-type Attached = WebSocket & { alive?: boolean; entry?: Member; chatEnabled?: boolean; chatInitialized?: boolean; chatReadsEnabled?: boolean };
+type Attached = WebSocket & {
+    alive?: boolean; entry?: Member; chatEnabled?: boolean; chatInitialized?: boolean; chatReadsEnabled?: boolean;
+    /** What the last plaza view sent here showed (`viewSignature`): the same is not sent again. */
+    shown?: string;
+};
+/**
+ * What a plaza member's view depends on besides their own table: the room, who is where, and how every
+ * table looks from outside. A move at one table changes none of it, so those at other tables are not sent
+ * their (unchanged) board again.
+ */
+function sharedSignature(room: Room, online: ReadonlySet<string>) {
+    const plaza = room.plaza!;
+    return JSON.stringify([
+        room.status, room.rules, plaza.name, plaza.owner, plaza.nextRules, plaza.invite, plaza.requests, plaza.results?.length,
+        plaza.members.map(member => [member.id, member.name, member.profileId, member.at, online.has(member.id)]),
+        tableIndexes(room).map(index => {
+            const table = tableAt(room, index)!;
+            return [table.status, table.seats.map(seat => seat && [seat.name, seat.member, seat.cpu, seat.ready, seat.left, seat.deck?.name, seat.deck?.sleeve])];
+        }),
+    ]);
+}
 /** The members connected now, as the views and tidying take them. */
 const onlineMembers = (present: Pick<Present, 'members'>) => new Set(present.members ?? []);
 /** The signed-in account among a request's verified owners, if any. */
@@ -120,31 +141,40 @@ export function createRoomServer({ config, backend, catalog, history, push = pus
     /** The sockets this instance holds, by room and spot: the two seats (a player may have the room open twice), the spectators, then a plaza's members. */
     const sockets = new Map<string, [Set<Attached>, Set<Attached>, Set<Attached>, Set<Attached>]>();
     const thinker = cpuThinker(catalog);
-    // One pending CPU move per plaza whose sockets are here; any instance may make it, the first to claim it does.
+    // One pending CPU move per table of a plaza whose sockets are here; any instance may make it, the first to claim it does.
     const cpuTimers = new Map<string, { version: number; timer: ReturnType<typeof setTimeout> }>();
     function scheduleCpu(room: Room) {
-        const previous = cpuTimers.get(room.id);
-        if (previous && previous.version >= room.version) return;
-        if (previous) clearTimeout(previous.timer);
-        cpuTimers.delete(room.id);
-        const seat = cpuToAct(room);
-        if (stopping || seat === null || !sockets.has(room.id) || !room.state) return;
-        const state = room.state, pace = state.phase === 'opening' || state.phase === 'mulligan' ? CPU_OPENING_PACE : handReactionOps.includes(state.pending?.task.op ?? '') ? cpuReactionPace() : CPU_PACE;
-        const expected = { match: room.match, revision: state.revision };
-        const timer = setTimeout(() => { cpuTimers.delete(room.id); void playCpuMove(room.id, seat, expected); }, pace);
-        timer.unref();
-        cpuTimers.set(room.id, { version: room.version, timer });
+        const turns = cpuTurns(room);
+        for (const [key, previous] of Array.from(cpuTimers)) {
+            if (!key.startsWith(`${room.id}:`) || previous.version >= room.version || turns.some(turn => key === `${room.id}:${turn.table}`)) continue;
+            clearTimeout(previous.timer);
+            cpuTimers.delete(key);
+        }
+        for (const { table, seat } of turns) {
+            const key = `${room.id}:${table}`, previous = cpuTimers.get(key);
+            if (previous && previous.version >= room.version) continue;
+            if (previous) clearTimeout(previous.timer);
+            cpuTimers.delete(key);
+            const state = tableAt(room, table)!.state;
+            if (stopping || !sockets.has(room.id) || !state) continue;
+            const pace = state.phase === 'opening' || state.phase === 'mulligan' ? CPU_OPENING_PACE : handReactionOps.includes(state.pending?.task.op ?? '') ? cpuReactionPace() : CPU_PACE;
+            const expected = { match: tableAt(room, table)!.match, revision: state.revision };
+            const timer = setTimeout(() => { cpuTimers.delete(key); void playCpuMove(room.id, table, seat, expected); }, pace);
+            timer.unref();
+            cpuTimers.set(key, { version: room.version, timer });
+        }
     }
-    async function playCpuMove(id: string, seat: Side, expected: { match: number; revision: number }) {
+    async function playCpuMove(id: string, table: number, seat: Side, expected: { match: number; revision: number }) {
         try {
             // Longer than a move takes to decide (cpu.ts gives up after 15 seconds), short enough to retry soon.
-            if (!await backend.claim(`cpu:${id}:${expected.match}:${expected.revision}:${seat}`, 20_000)) return;
+            if (!await backend.claim(`cpu:${id}:${table}:${expected.match}:${expected.revision}:${seat}`, 20_000)) return;
             const room = await backend.get(id);
-            if (!room) return;
+            const target = room && tableAt(room, table);
+            if (!room || !target) return;
             // Chat changes the room version but never invalidates or postpones a CPU move.
-            if (room.match !== expected.match || room.state?.revision !== expected.revision || cpuToAct(room) !== seat) { scheduleCpu(room); return; }
-            const level = room.seats[seat]!.cpu!;
-            const state = room.state!;
+            if (target.match !== expected.match || target.state?.revision !== expected.revision || cpuToAct(focus(room, table)) !== seat) { scheduleCpu(room); return; }
+            const level = target.seats[seat]!.cpu!;
+            const state = target.state!;
             const thought = await thinker.think(state, level, seat);
             if (stopping) return;
             // Should no move be found, or the one found be refused, a legal move of whatever phase this is
@@ -155,11 +185,11 @@ export function createRoomServer({ config, backend, catalog, history, push = pus
                 for (const move of legalMoves(state, seat, catalog)) yield move.command;
             }
             for (const sent of candidates()) {
-                let before: Side | null = null;
+                let before: (Side | null)[] = [];
                 try {
                     const { room: played, result: outcome } = await update(id, target => {
-                        before = decider(target);
-                        return playCpu(target, seat, sent as Parameters<typeof playCpu>[2], expected, catalog);
+                        before = deciders(target);
+                        return playCpu(target, table, seat, sent as Parameters<typeof playCpu>[3], expected, catalog);
                     });
                     await announce(played);
                     deciderChanged(played, before);
@@ -171,7 +201,7 @@ export function createRoomServer({ config, backend, catalog, history, push = pus
                     if (!(error instanceof RoomError && error.status === 422)) throw error;
                 }
             }
-            console.error('cpu found no legal move', id, state.phase);
+            console.error('cpu found no legal move', id, table, state.phase);
         } catch (error) {
             // Someone else changed the match first: its new view schedules the next move.
             if (!(error instanceof RoomError)) console.error('cpu move failed', error instanceof Error ? error.message : error);
@@ -179,29 +209,42 @@ export function createRoomServer({ config, backend, catalog, history, push = pus
     }
     /** Who was online in each of those rooms when its views were last sent. */
     const told = new Map<string, string>();
-    // One wake-up per timed room, not a per-second broadcast or Redis write.
+    // One wake-up per timed table, not a per-second broadcast or Redis write.
     const turnTimers = new Map<string, { version: number; deadline: number; timer: ReturnType<typeof setTimeout> }>();
-    function scheduleTurn(room: Room, retryAfter = 0) {
-        const deadline = room.status === 'playing' ? room.turnClock?.deadline : null;
-        const previous = turnTimers.get(room.id);
-        if (previous && previous.version > room.version) return;
-        if (previous && previous.deadline === deadline && !retryAfter) { previous.version = room.version; return; }
-        if (previous) clearTimeout(previous.timer);
-        turnTimers.delete(room.id);
-        if (stopping || deadline == null) return;
-        const timer = setTimeout(() => {
-            turnTimers.delete(room.id);
-            void expireRoomTurn(room.id);
-        }, Math.max(retryAfter, deadline - Date.now(), 0));
-        timer.unref();
-        turnTimers.set(room.id, { version: room.version, deadline, timer });
+    function scheduleTurn(room: Room, retryAfter = 0, only?: number) {
+        const count = tableCount(room);
+        // Timers of tables taken away.
+        for (const [key, previous] of Array.from(turnTimers)) {
+            const [id, table] = key.split(':');
+            if (id !== room.id || Number(table) < count || previous.version > room.version) continue;
+            clearTimeout(previous.timer);
+            turnTimers.delete(key);
+        }
+        for (const table of tableIndexes(room)) {
+            if (only !== undefined && table !== only) continue;
+            const each = tableAt(room, table)!, key = `${room.id}:${table}`;
+            const deadline = each.status === 'playing' ? each.turnClock?.deadline : null;
+            const previous = turnTimers.get(key);
+            if (previous && previous.version > room.version) continue;
+            if (previous && previous.deadline === deadline && !retryAfter) { previous.version = room.version; continue; }
+            if (previous) clearTimeout(previous.timer);
+            turnTimers.delete(key);
+            if (stopping || deadline == null) continue;
+            const timer = setTimeout(() => {
+                turnTimers.delete(key);
+                void expireRoomTurn(room.id, table);
+            }, Math.max(retryAfter, deadline - Date.now(), 0));
+            timer.unref();
+            turnTimers.set(key, { version: room.version, deadline, timer });
+        }
     }
-    async function expireRoomTurn(id: string) {
+    async function expireRoomTurn(id: string, table: number) {
         try {
             for (let attempt = 0; attempt < 6 && !stopping; attempt++) {
                 const room = await backend.get(id);
                 if (!room) return;
-                const expected = room.version, before = decider(room), outcome = expireTurn(room, catalog);
+                const expected = room.version, before = deciders(room);
+                const outcome = room.plaza ? expireTableTurn(room, table, catalog) : table === 0 ? expireTurn(room, catalog) : null;
                 if (!outcome) { scheduleTurn(room); return; }
                 room.version++;
                 if (!await backend.replace(room, expected, lifetime(room))) continue;
@@ -216,7 +259,7 @@ export function createRoomServer({ config, backend, catalog, history, push = pus
         }
         // A temporary backend failure must not lose the deadline or spin on an overdue clock.
         const room = await backend.get(id).catch(() => null);
-        if (room) scheduleTurn(room, 1000);
+        if (room) scheduleTurn(room, 1000, table);
     }
     let serial = 0;
     const socketsOf = (id: string) => {
@@ -259,7 +302,9 @@ export function createRoomServer({ config, backend, catalog, history, push = pus
         }
         throw new RoomError(503, '混み合っています。もう一度お試しください');
     }
-    /** Tells the player of `seat` by a push notification, unless their page is open and in front. */
+    /** Who has to act now at each table. */
+    const deciders = (room: Room) => tableIndexes(room).map(table => decider(focus(room, table)));
+    /** Tells the player of `seat` (at the table `room` is focused on) by a push notification, unless their page is open and in front. */
     function tellIfAway(room: Room, seat: Side, notice: Notice) {
         const uid = room.seats[seat]?.profileId, member = room.seats[seat]?.member;
         if (!uid || !push.enabled) return;
@@ -270,11 +315,13 @@ export function createRoomServer({ config, backend, catalog, history, push = pus
         })().catch(error => console.error('push failed', error instanceof Error ? error.message : 'unknown'));
     }
     /** After a change of the match: whoever has to act now (and did not before) is told. */
-    function deciderChanged(room: Room, before: Side | null) {
-        const now = decider(room);
-        if (now === null || now === before) return;
-        // Choices answered in quick succession make one notification.
-        void push.store.once(`turn:${room.id}:${now}`, 10_000).then(first => { if (first) tellIfAway(room, now, notices.turn(room, now)); }, () => {});
+    function deciderChanged(room: Room, before: (Side | null)[]) {
+        for (const table of tableIndexes(room)) {
+            const at = focus(room, table), now = decider(at);
+            if (now === null || now === before[table]) continue;
+            // Choices answered in quick succession make one notification.
+            void push.store.once(`turn:${room.id}:${table ? `${table}:` : ''}${now}`, 10_000).then(first => { if (first) tellIfAway(at, now, notices.turn(at, now)); }, () => {});
+        }
     }
     const present = (id: string): Promise<Present> => backend.presence(id);
     const key = ({ online, watching, members }: Present) => `${online.join()}:${watching}:${[...members ?? []].sort().join()}`;
@@ -323,14 +370,18 @@ export function createRoomServer({ config, backend, catalog, history, push = pus
         told.set(room.id, key({ online, watching, members }));
         if (room.plaza) {
             scheduleCpu(room);
-            const here = new Set(members ?? []), views = new Map<string, ServerMessage>();
+            const here = new Set(members ?? []), views = new Map<string, ServerMessage>(), shared = sharedSignature(room, here);
             for (const socket of Array.from(pair[3])) {
                 const member = socket.entry && memberOfEntry(socket.entry.member);
-                if (!member || !room.plaza.members.some(other => other.id === member)) continue;
+                const entry = member ? room.plaza.members.find(other => other.id === member) : undefined;
+                if (!member || !entry) continue;
                 const history = !!socket.chatEnabled && !socket.chatInitialized, cacheKey = `${member}:${history}`;
+                const table = tableOf(room, entry), signature = `${member}:${table}:${tableAt(room, table)!.changed ?? 0}:${shared}`;
+                if (!history && socket.shown === signature) continue;
                 let message = views.get(cacheKey);
                 if (!message) views.set(cacheKey, message = { type: 'view', view: plazaView(room, member, here, catalog, history) });
                 tell(socket, message);
+                socket.shown = signature;
             }
             return;
         }
@@ -926,10 +977,10 @@ export function createRoomServer({ config, backend, catalog, history, push = pus
                     tell(socket, { type: 'result', n });
                     return;
                 }
-                let before: Side | null = null;
+                let before: (Side | null)[] = [];
                 const { room, result: outcome } = await update(id, target => {
                     if (!target.plaza) throw new RoomError(404, GONE);
-                    before = decider(target);
+                    before = deciders(target);
                     return actPlaza(target, member, body, catalog);
                 }, timing);
                 // Whoever leaves is told the result before their sockets are ended.
@@ -964,10 +1015,10 @@ export function createRoomServer({ config, backend, catalog, history, push = pus
             const timing = commandTiming();
             timing.queue = performance.now() - received;
             try {
-                let before: Side | null = null;
+                let before: (Side | null)[] = [];
                 const { room, result: outcome } = await update(id, target => {
                     if (!target.seats[seat] || target.plaza) throw new RoomError(404, GONE);
-                    before = decider(target);
+                    before = deciders(target);
                     return act(target, seat, body, catalog);
                 }, timing);
                 // The view goes out before the result, so whoever waits for the result already has it.
@@ -1078,9 +1129,9 @@ export function createRoomServer({ config, backend, catalog, history, push = pus
             if (room.plaza) {
                 if (room.status === 'closed') continue;
                 const here = onlineMembers(await present(id));
-                if (tidyPlaza(structuredClone(room), here, now) === null) continue;
+                if (tidyPlaza(structuredClone(room), here, now, catalog) === null) continue;
                 try {
-                    const { room: tidied, result } = await update(id, target => tidyPlaza(target, here, now) ?? {} as PlazaOutcome);
+                    const { room: tidied, result } = await update(id, target => tidyPlaza(target, here, now, catalog) ?? {} as PlazaOutcome);
                     if (result.finished) await backend.count('matchesFinished');
                     await announce(tidied, undefined, undefined, result.removed);
                     if (result.emptied) await closeEmptied(id);

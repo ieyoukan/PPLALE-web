@@ -31,7 +31,7 @@ test('abort: either human seat can interrupt CPU preparation or play without a r
         const view = plazaView(room, me, new Set([me]), catalog);
         assert.equal(view.game, null); assert.equal(view.matchId, undefined); assert.equal(view.replayId, undefined);
         assert.throws(() => act({ action: 'abort' }), /対戦中ではありません/);
-        assert.throws(() => playCpu(room, (1 - seat) as 0 | 1, { type: 'roll', actor: (1 - seat) as 0 | 1 }, { match, revision: 0 }, catalog), /stale/);
+        assert.throws(() => playCpu(room, 0, (1 - seat) as 0 | 1, { type: 'roll', actor: (1 - seat) as 0 | 1 }, { match, revision: 0 }, catalog), /stale/);
         act({ action: 'ready', deck });
         assert.equal(room.status, 'playing'); assert.equal(room.match, match + 1); assert.notEqual(room.record!.id, record);
         const restarted = structuredClone(room);

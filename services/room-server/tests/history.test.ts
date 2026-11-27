@@ -4,7 +4,8 @@ import { createHash } from 'node:crypto';
 import { applyCommand, legalMoves } from '@pplale/game-core';
 import type { HistoryPage, MatchRecording } from '@pplale/game-core/history';
 import type { Seated } from '@pplale/game-core/room';
-import { createPlaza, actPlaza } from '../src/plaza.ts';
+import { admit, createPlaza, actPlaza } from '../src/plaza.ts';
+import { tableAt } from '../src/tables.ts';
 import { catalog } from '../src/catalog.ts';
 import { createRoom, joinRoom, act, tidy } from '../src/rooms.ts';
 import { durableBackend } from '../src/history/backend.ts';
@@ -297,4 +298,28 @@ historyTest('history: CPU interruption deletes its unfinished replay and preserv
     assert.equal((await backend.get(room.id))!.status, 'lobby');
     act({ action: 'ready', deck }); await store(backend, room); act({ action: 'resign' }); await store(backend, room);
     assert.ok(await history.recording(['device:host'], room.record!.id));
+});
+
+historyTest('history: every table of a room records its own match, side by side, and a CPU interruption at one deletes only its own', async t => {
+    const { backend, history } = await fixture(t);
+    const { room } = createPlaza('456789', { rules: { fruits: ['strawberry'], extendedPlayable: false }, plaza: { visibility: 'public' } }, { name: 'あなた', historyOwners: ['device:host'] });
+    const me = room.plaza!.owner!, act = (body: unknown) => actPlaza(room, me, body, catalog);
+    const guest = admit(room, { name: 'ぼぶ', historyOwners: ['device:guest'] }).member.id, theirs = (body: unknown) => actPlaza(room, guest, body, catalog);
+    act({ action: 'addTable' });
+    act({ action: 'sit', seat: 0 }); act({ action: 'cpu', seat: 1, level: 'easy' }); act({ action: 'ready', deck });
+    await backend.create(room, 3_600_000);
+    theirs({ action: 'look', table: 1 }); theirs({ action: 'sit', seat: 0 }); theirs({ action: 'cpu', seat: 1, level: 'easy' }); theirs({ action: 'ready', deck });
+    await store(backend, room);
+    const first = room.record!.id, second = tableAt(room, 1)!.record!.id;
+    // A move at the second table while the first plays on.
+    const state = tableAt(room, 1)!.state!, move = legalMoves(state, 0, catalog)[0];
+    if (move) { theirs({ action: 'command', command: move.command, revision: state.revision }); await store(backend, room); }
+    act({ action: 'abort', match: room.match }); await store(backend, room);
+    theirs({ action: 'resign' }); await store(backend, room);
+    assert.equal(await history.recording(['device:host'], first), null, 'the interrupted CPU match is gone');
+    const recording = await history.recording(['device:guest'], second);
+    assert.ok(recording, 'the second table kept its own recording');
+    assert.equal(recording.match.winner, 1);
+    assert.equal(recording.frames.at(-1)!.event, 'resign');
+    assert.equal(await history.recording(['device:host'], second), null, 'only its players read it');
 });

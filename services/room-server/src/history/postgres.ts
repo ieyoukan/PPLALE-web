@@ -6,6 +6,7 @@ import { matchTurns } from '@pplale/game-core';
 import type { Catalog, GameState, Side } from '@pplale/game-core';
 import type { HistoryPage, MatchDetails, MatchRecording, MatchSummary, ReplayFrame } from '@pplale/game-core/history';
 import type { Room } from '../rooms.ts';
+import { focus, tableAt, tableIndexes } from '../tables.ts';
 import type { SnapshotCapture } from './capture.ts';
 import type { HistoryRepository, HistoryWrite } from './repository.ts';
 
@@ -131,7 +132,11 @@ export class PostgresHistory implements HistoryRepository {
             const old = (await client.query('SELECT * FROM rooms WHERE id=$1', [write.room.id])).rows[0];
             if (old && (BigInt(old.event_ms) > BigInt(ms) || BigInt(old.event_ms) === BigInt(ms) && BigInt(old.event_seq) >= BigInt(seq))) return;
             const previous = old ? JSON.parse(old.json) as Room : write.previous;
-            await this.archive(client, write.room, previous, write.capture, write.completeAllowed);
+            // Each table's match is its own recording.
+            for (const index of tableIndexes(write.room)) {
+                const before = previous && tableAt(previous, index) ? focus(previous, index) : null;
+                await this.archive(client, focus(write.room, index), before, index ? write.tables?.[index - 1] ?? null : write.capture, write.completeAllowed);
+            }
             await client.query('INSERT INTO rooms VALUES($1,$2,$3,$4,$5,$6) ON CONFLICT(id) DO UPDATE SET version=excluded.version,expires=excluded.expires,json=excluded.json,event_ms=excluded.event_ms,event_seq=excluded.event_seq', [write.room.id, write.room.version, write.expires, JSON.stringify(write.room), ms, seq]);
         });
     }
@@ -140,8 +145,9 @@ export class PostgresHistory implements HistoryRepository {
             const rows = (await client.query("SELECT json FROM rooms WHERE expires<=$1 AND (json::jsonb)->>'status' NOT IN ('closed','finished')", [Date.now()])).rows;
             for (const row of rows) {
                 const room = JSON.parse(row.json) as Room;
-                await this.archive(client, { ...room, status: 'closed', state: null }, room, null, false);
-                await client.query('UPDATE rooms SET json=$1 WHERE id=$2', [JSON.stringify({ ...room, status: 'closed', state: null }), room.id]);
+                const closed: Room = { ...room, status: 'closed', state: null, ...(room.tables && { tables: room.tables.map(table => ({ ...table, state: null })) }) };
+                for (const index of tableIndexes(room)) await this.archive(client, focus(closed, index), focus(room, index), null, false);
+                await client.query('UPDATE rooms SET json=$1 WHERE id=$2', [JSON.stringify(closed), room.id]);
             }
         });
     }

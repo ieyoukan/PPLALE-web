@@ -3,13 +3,14 @@ import { randomBytes, randomInt, randomUUID, timingSafeEqual } from 'node:crypto
 import { z } from 'zod';
 import { other, actingSides, cpuLevels, cpuProfiles, randomDeck, viewFor } from '@pplale/game-core';
 import type { Catalog, CpuLevel, Deck, Side } from '@pplale/game-core';
-import { DEFAULT_VISIBILITY, MAX_MEMBERS, MAX_ROOM_NAME_LENGTH, MEMBER_GRACE, invitedVisibility, isRoomVisibility, parseRoomRules, roomDeckErrors } from '@pplale/game-core/room';
-import type { RoomChatMessage } from '@pplale/game-core/room';
+import { DEFAULT_VISIBILITY, MAX_MEMBERS, MAX_PLAZA_RESULTS, MAX_ROOM_NAME_LENGTH, MAX_TABLES, MEMBER_GRACE, invitedVisibility, isRoomVisibility, parseRoomRules, roomDeckErrors } from '@pplale/game-core/room';
+import type { PlazaResult, PlazaTableView, RoomChatMessage } from '@pplale/game-core/room';
 import type { RoomInfo, RoomRules, RoomView, RoomVisibility } from '@pplale/game-core/room';
 import type { MatchEnd } from '@pplale/game-core/history';
 import { publicAssessment } from './public-assessment.ts';
-import { RoomError, applyMatchCommand, command, deck, giveUp, hash, playerName, side, startMatch } from './rooms.ts';
-import type { Outcome, Room, Seat } from './rooms.ts';
+import { RoomError, applyMatchCommand, command, deck, expireTurn, giveUp, hash, playerName, side, startMatch } from './rooms.ts';
+import type { Outcome, Room, Seat, Table } from './rooms.ts';
+import { emptyTable, focus, tableAt, tableCount, tableIndexes, withTable } from './tables.ts';
 import { appendChatMessage, chatActionSchema, chatReadSchema, chatReads, markChatRead } from './chat.ts';
 import { syncTurnClock, turnTimeoutCommand } from './turn-clock.ts';
 
@@ -27,6 +28,8 @@ export interface PlazaMember {
     chatRead?: string;
     /** すべての接続が切れた時刻。接続中は設定しない。 */
     away?: number;
+    /** 見ている卓（0から）。1卓目は省略する。座っている間は、座っている卓を見る。 */
+    at?: number;
 }
 export interface Plaza {
     /** 同じルームIDが後から再利用されても、別のルームとして区別するためのキー。 */
@@ -54,6 +57,8 @@ export interface Plaza {
     successor?: string;
     /** 切断猶予が過ぎたメンバーのトークンのハッシュ。再入室と後継作成の証明に使う。 */
     former?: string[];
+    /** このルームで終わった対戦の勝敗。新しいものが後ろ。 */
+    results?: PlazaResult[];
 }
 
 /** 入室を求める本人の検証済みプロフィールID・履歴所有者・表示名。 */
@@ -97,6 +102,9 @@ const action = z.discriminatedUnion('action', [
     chatReadSchema,
     z.object({ action: z.literal('renewInvite') }),
     z.object({ action: z.literal('answer'), profileId, accept: z.boolean() }),
+    z.object({ action: z.literal('look'), table: z.number().int().min(0).max(MAX_TABLES - 1) }),
+    z.object({ action: z.literal('addTable') }),
+    z.object({ action: z.literal('removeTable') }),
 ]);
 
 /** 表示用のルーム名。短い1行に整え、空にはしない。 */
@@ -233,45 +241,110 @@ function cpuSeat(room: Room, cpu: CpuLevel, catalog: Catalog, chosen?: Deck): Se
 }
 
 /** keep以外の人の準備完了を解除する。相手の交代やルール変更時に使う。 */
-function unready(room: Room, keep?: string) {
-    for (const seat of room.seats) if (seat && !seat.cpu && seat.member !== keep) seat.ready = false;
+function unready(table: Table, keep?: string) {
+    for (const seat of table.seats) if (seat && !seat.cpu && seat.member !== keep) seat.ready = false;
 }
 
-/** ルール変更時には、CPUのデッキも新しい条件に合わせる。 */
+/** 今のルールで使えないデッキのCPUには、ルールに合うデッキを持たせ直す。 */
+function refreshCpus(table: Room, catalog: Catalog) {
+    table.seats = table.seats.map(seat => seat?.cpu && (!seat.deck || roomDeckErrors(seat.deck, table.rules, catalog).length) ? cpuSeat(table, seat.cpu, catalog) : seat) as Room['seats'];
+}
+
+/** ルールを変える。準備中の卓は準備完了を解除し、CPUのデッキも新しい条件に合わせる。対戦中・対戦後の卓は、準備へ戻るときに合わせる。 */
 function rulesChanged(room: Room, rules: RoomRules, catalog: Catalog) {
     room.rules = { ...rules, spectators: true };
-    unready(room);
-    room.seats = room.seats.map(seat => seat?.cpu ? cpuSeat(room, seat.cpu, catalog) : seat) as Room['seats'];
+    for (const index of tableIndexes(room)) {
+        if (tableAt(room, index)!.status !== 'lobby') continue;
+        withTable(room, index, table => {
+            unready(table);
+            table.seats = table.seats.map(seat => seat?.cpu ? cpuSeat(table, seat.cpu, catalog) : seat) as Room['seats'];
+        });
+    }
 }
 
-/** 対戦後に準備へ戻す。退出済みの席を空け、次のルールを適用する。 */
-function toTable(room: Room, catalog: Catalog) {
-    if (room.status !== 'finished') return;
-    room.status = 'lobby';
-    room.state = null;
-    room.resigned = null;
-    room.last = null;
-    room.seats = room.seats.map(seat => seat?.left ? null : seat) as Room['seats'];
-    for (const seat of room.seats) if (seat && !seat.cpu) seat.ready = false;
-    const next = room.plaza!.nextRules;
+/** 対戦中に変えたルールは、どの卓でも対戦していないときに使い始める。 */
+function settleRules(room: Room, catalog: Catalog) {
+    const next = room.plaza?.nextRules;
+    if (!next || room.status === 'closed' || tableIndexes(room).some(index => tableAt(room, index)!.status === 'playing')) return;
     delete room.plaza!.nextRules;
-    if (next) rulesChanged(room, next, catalog);
+    rulesChanged(room, next, catalog);
+}
+
+/** 対戦後に準備へ戻す。退出済みの席を空け、今のルールに合わないCPUのデッキを作り直す。 */
+function toTable(table: Room, catalog: Catalog) {
+    if (table.status !== 'finished') return;
+    table.status = 'lobby';
+    table.state = null;
+    table.resigned = null;
+    table.last = null;
+    table.seats = table.seats.map(seat => seat?.left ? null : seat) as Room['seats'];
+    for (const seat of table.seats) if (seat && !seat.cpu) seat.ready = false;
+    refreshCpus(table, catalog);
 }
 
 /** 席を離れる。対戦中なら敗北とし、終了済みの対戦者名は残す。 */
-function vacate(room: Room, seat: Side, reason: MatchEnd, outcome: PlazaOutcome) {
-    if (room.status === 'playing') {
-        giveUp(room, seat, reason);
+function vacate(table: Room, seat: Side, reason: MatchEnd, outcome: PlazaOutcome) {
+    if (table.status === 'playing') {
+        giveUp(table, seat, reason);
         outcome.finished = true;
-        room.seats[seat]!.left = true;
-    } else if (room.status === 'finished') room.seats[seat]!.left = true;
+        table.seats[seat]!.left = true;
+    } else if (table.status === 'finished') table.seats[seat]!.left = true;
     // 次の着席時に、相手側の準備を確認し直す。
-    else room.seats[seat] = null;
+    else table.seats[seat] = null;
+}
+
+/** 自分から席を立つ。終わった対戦の席なら、その卓を準備へ戻してから空ける。 */
+function standUp(table: Room, seat: Side, catalog: Catalog, outcome: PlazaOutcome) {
+    if (table.status === 'finished') {
+        toTable(table, catalog);
+        table.seats[seat] = null;
+    } else vacate(table, seat, 'leave', outcome);
+}
+
+/** メンバーが座っている卓と席。着席していなければnull。 */
+export function placeOf(room: Room, id: string): { table: number; seat: Side } | null {
+    for (const table of tableIndexes(room)) {
+        const seat = tableAt(room, table)!.seats.findIndex(taken => taken?.member === id);
+        if (seat >= 0) return { table, seat: seat as Side };
+    }
+    return null;
+}
+/** メンバーがいる卓：座っている卓、なければ見ている卓。 */
+export function tableOf(room: Room, member: PlazaMember): number {
+    const place = placeOf(room, member.id);
+    return place ? place.table : Math.min(member.at ?? 0, tableCount(room) - 1);
+}
+
+/**
+ * 卓の対戦を変える（withTable）。対戦が終わったらルームの勝敗に残し、持ち時間を合わせる。
+ * 対戦の終了で、保留していたルールを使い始めることがある。
+ */
+function changeTable<T>(room: Room, index: number, catalog: Catalog, now: number, change: (table: Room) => T): T {
+    const before = tableAt(room, index)!.status;
+    const result = withTable(room, index, table => {
+        const value = change(table);
+        if (before === 'playing' && table.status === 'finished' && table.record && table.state) noteResult(room.plaza!, index, table, now);
+        syncTurnClock(table, now);
+        return value;
+    });
+    settleRules(room, catalog);
+    return result;
+}
+
+/** 終わった対戦の勝敗を残す。中断したCPU戦（記録なし）は残さない。 */
+function noteResult(plaza: Plaza, index: number, table: Room, now: number) {
+    const winner = table.state!.winner;
+    const players = table.seats.map(seat => ({
+        name: seat?.name ?? '？', ...(seat?.profileId && { profileId: seat.profileId }), ...(seat?.member && { member: seat.member }), ...(seat?.cpu && { cpu: seat.cpu }),
+    })) as PlazaResult['players'];
+    const result: PlazaResult = { matchId: table.record!.id, table: index, endedAt: now, players, winner: winner === 0 || winner === 1 ? winner : null };
+    plaza.results = [...(plaza.results ?? []).filter(entry => entry.matchId !== result.matchId), result].slice(-MAX_PLAZA_RESULTS);
 }
 
 /** メンバーを退出させる。最後の人ならルームを閉じる。 */
-function remove(room: Room, id: string, reason: MatchEnd, outcome: PlazaOutcome) {
+function remove(room: Room, id: string, reason: MatchEnd, outcome: PlazaOutcome, catalog: Catalog, now: number) {
     const plaza = room.plaza!, gone = plaza.members.find(member => member.id === id);
+    const place = placeOf(room, id);
     plaza.members = plaza.members.filter(member => member.id !== id);
     if (gone && reason === 'disconnect') plaza.former = [...plaza.former ?? [], ...gone.tokens].slice(-MAX_FORMER);
     if (plaza.owner === id) {
@@ -279,8 +352,7 @@ function remove(room: Room, id: string, reason: MatchEnd, outcome: PlazaOutcome)
         else delete plaza.formerOwner;
         plaza.owner = null;
     }
-    const seat = seatOf(room, id);
-    if (seat !== null) vacate(room, seat, reason, outcome);
+    if (place) changeTable(room, place.table, catalog, now, table => vacate(table, place.seat, reason, outcome));
     (outcome.removed ??= []).push(id);
     // CPUだけではルームを存続させない。退出による決着は、もう1回の更新まで残す。
     // 勝者と退出理由を保存してから閉じ、中断扱いの記録にしないため。
@@ -294,27 +366,22 @@ function remove(room: Room, id: string, reason: MatchEnd, outcome: PlazaOutcome)
 export function closeEmpty(room: Room, outcome: PlazaOutcome = {}): boolean {
     if (!room.plaza || room.plaza.members.length || room.status === 'closed') return false;
     room.status = 'closed';
-    room.state = null;
-    delete room.turnClock;
+    for (const index of tableIndexes(room)) withTable(room, index, table => {
+        table.state = null;
+        delete table.turnClock;
+    });
     outcome.closed = true;
     return true;
 }
 
 /** 切断猶予を過ぎたメンバーを除く。変更がなければnull。 */
-export function tidyPlaza(room: Room, online: ReadonlySet<string>, now: number): PlazaOutcome | null {
+export function tidyPlaza(room: Room, online: ReadonlySet<string>, now: number, catalog: Catalog): PlazaOutcome | null {
     if (!room.plaza || room.status === 'closed') return null;
     const empty: PlazaOutcome = {};
     if (closeEmpty(room, empty)) return empty;
     const changed = notePresence(room, online, now), outcome: PlazaOutcome = {};
-    for (const member of [...room.plaza.members]) if (member.away !== undefined && now - member.away >= MEMBER_GRACE) remove(room, member.id, 'disconnect', outcome);
-    if (outcome.removed) syncTurnClock(room, now);
+    for (const member of [...room.plaza.members]) if (member.away !== undefined && now - member.away >= MEMBER_GRACE) remove(room, member.id, 'disconnect', outcome, catalog, now);
     return outcome.removed || changed ? outcome : null;
-}
-
-/** メンバーが座っている席。着席していなければnull。 */
-function seatOf(room: Room, id: string): Side | null {
-    const seat = room.seats.findIndex(taken => taken?.member === id);
-    return seat < 0 ? null : seat as Side;
 }
 
 /** 招待を発行できるか。インバイトはオーナー、それ以外は在室者に許可する。 */
@@ -327,15 +394,7 @@ export function actPlaza(room: Room, id: string, body: unknown, catalog: Catalog
     const plaza = room.plaza!, request = parsed.data, outcome: PlazaOutcome = {};
     const me = plaza.members.find(member => member.id === id);
     if (!me || room.status === 'closed') throw new RoomError(404, 'ルームが見つかりません');
-    const mine = seatOf(room, id);
-    const seated = () => {
-        if (mine === null) throw new RoomError(409, '席に座ってから選んでください');
-        return room.seats[mine]!;
-    };
-    const atTable = () => {
-        if (room.status === 'playing') throw new RoomError(409, '対戦が終わってから選べます');
-        toTable(room, catalog);
-    };
+    const ownerOnly = (message: string) => { if (plaza.owner !== id) throw new RoomError(403, message); };
     switch (request.action) {
         case 'chat':
             appendChatMessage(plaza, me, request, now);
@@ -344,92 +403,9 @@ export function actPlaza(room: Room, id: string, body: unknown, catalog: Catalog
             return { chat: true };
         case 'chatRead':
             return markChatRead(plaza, me, request.id) ? { chatRead: true } : {};
-        case 'ready': {
-            const own = seated();
-            if (room.status !== 'lobby') throw new RoomError(409, room.status === 'finished' ? '「もう一度」を選んでから準備してください' : '対戦中はデッキを変えられません');
-            const errors = roomDeckErrors(request.deck, room.rules, catalog);
-            if (errors.length) throw new RoomError(400, errors.join(' / '));
-            own.deck = request.deck;
-            own.ready = true;
-            if (room.seats.every(seat => seat?.ready)) {
-                startMatch(room, catalog);
-                outcome.started = true;
-            }
-            break;
-        }
-        case 'unready':
-            if (room.status !== 'lobby') throw new RoomError(409, '対戦はもう始まっています');
-            seated().ready = false;
-            break;
-        case 'command': {
-            seated();
-            if (room.status !== 'playing' || !room.state) throw new RoomError(409, '対戦中ではありません');
-            if (turnTimeoutCommand(room, now)) throw new RoomError(409, '制限時間になりました。ターンを終了しています');
-            const state = room.state, sent = { ...request.command, actor: mine! } as Parameters<typeof applyMatchCommand>[1];
-            if (state.phase === 'playing' && request.revision !== state.revision) throw new RoomError(409, '盤面が更新されました。もう一度操作してください');
-            Object.assign(outcome, applyMatchCommand(room, sent, catalog));
-            break;
-        }
-        case 'abort':
-            seated();
-            if (request.match !== room.match) throw new RoomError(409, '試合が切り替わりました。もう一度確認してください');
-            if (room.status !== 'playing' || !room.state) throw new RoomError(409, '対戦中ではありません');
-            if (!room.seats[other(mine!)]?.cpu) throw new RoomError(403, '中断できるのはCPUとの対戦だけです');
-            room.discardedMatch = room.record?.id;
-            delete room.record;
-            // 勝敗や終了通知は作らず、準備に戻す処理だけを再利用する。
-            room.status = 'finished';
-            toTable(room, catalog);
-            break;
-        case 'resign':
-            seated();
-            if (room.status !== 'playing' || !room.state) throw new RoomError(409, '対戦中ではありません');
-            giveUp(room, mine!);
-            outcome.finished = true;
-            break;
-        case 'rematch':
-            // 席を維持して準備へ戻る。次の対戦ではデッキを選び直せる。
-            seated();
-            atTable();
-            break;
         case 'leave':
-            remove(room, id, 'leave', outcome);
+            remove(room, id, 'leave', outcome, catalog, now);
             break;
-        case 'sit': {
-            atTable();
-            if (room.seats[request.seat]) throw new RoomError(409, 'その席にはもう誰かが座っています');
-            if (mine !== null) room.seats[mine] = null;
-            room.seats[request.seat] = { tokenHash: '', member: id, name: me.name, ...(me.profileId && { profileId: me.profileId }), ...(me.historyOwners && { historyOwners: me.historyOwners }), deck: null, ready: false };
-            unready(room, id);
-            break;
-        }
-        case 'stand':
-            if (mine === null) throw new RoomError(409, '席に座っていません');
-            if (room.status === 'finished') {
-                toTable(room, catalog);
-                room.seats[mine] = null;
-            } else vacate(room, mine, 'leave', outcome);
-            break;
-        case 'cpu': {
-            atTable();
-            if (room.seats[request.seat] && !room.seats[request.seat]?.cpu) throw new RoomError(409, 'その席にはもう誰かが座っています');
-            if (room.seats.some((seat, index) => seat?.cpu && index !== request.seat)) throw new RoomError(409, 'CPUはもう来ています');
-            room.seats[request.seat] = cpuSeat(room, request.level, catalog, request.deck);
-            // CPUを呼んだ本人の準備は維持し、ほかの着席者には確認し直してもらう。
-            unready(room, id);
-            if (room.seats.every(seat => seat?.ready)) {
-                startMatch(room, catalog);
-                outcome.started = true;
-            }
-            break;
-        }
-        case 'dismissCpu': {
-            atTable();
-            const seat = room.seats.findIndex(taken => taken?.cpu);
-            if (seat < 0) throw new RoomError(409, 'CPUはいません');
-            room.seats[seat] = null;
-            break;
-        }
         case 'claim':
             if (plaza.owner !== null) throw new RoomError(409, 'ほかの人がオーナーになりました');
             if (!mayClaim(plaza, me)) throw new RoomError(403, 'ログイン中の人が先にオーナーを引き継げます');
@@ -437,15 +413,16 @@ export function actPlaza(room: Room, id: string, body: unknown, catalog: Catalog
             delete plaza.formerOwner;
             break;
         case 'rules': {
-            if (plaza.owner !== id) throw new RoomError(403, 'ルールを変えられるのはオーナーだけです');
+            ownerOnly('ルールを変えられるのはオーナーだけです');
             const rules = parseRoomRules(request.rules);
             if (!rules) throw new RoomError(400, '使えるフルーツを1つ以上選んでください');
-            if (room.status === 'lobby') rulesChanged(room, rules, catalog);
-            else plaza.nextRules = { ...rules, spectators: true };
+            // Rules never change under a match: while any table plays, they wait (settleRules).
+            plaza.nextRules = { ...rules, spectators: true };
+            settleRules(room, catalog);
             break;
         }
         case 'rename': {
-            if (plaza.owner !== id) throw new RoomError(403, 'ルーム名を変えられるのはオーナーだけです');
+            ownerOnly('ルーム名を変えられるのはオーナーだけです');
             const name = roomName(request.name, '');
             if (!name) throw new RoomError(400, 'ルーム名を入力してください');
             plaza.name = name;
@@ -466,10 +443,145 @@ export function actPlaza(room: Room, id: string, body: unknown, catalog: Catalog
             }
             break;
         }
+        case 'look': {
+            if (!tableAt(room, request.table)) throw new RoomError(404, 'その卓はありません');
+            // Moving to another table gives up the seat at this one (never in the middle of a match).
+            const place = placeOf(room, id);
+            if (place && place.table !== request.table) {
+                if (tableAt(room, place.table)!.status === 'playing') throw new RoomError(409, '対戦中は卓を移れません');
+                changeTable(room, place.table, catalog, now, table => standUp(table, place.seat, catalog, outcome));
+            }
+            if (request.table) me.at = request.table;
+            else delete me.at;
+            break;
+        }
+        case 'addTable':
+            ownerOnly('卓を増やせるのはオーナーだけです');
+            if (tableCount(room) >= MAX_TABLES) throw new RoomError(409, 'これ以上卓を増やせません');
+            room.tables = [...room.tables ?? [], { ...emptyTable(), changed: room.version + 1 }];
+            break;
+        case 'removeTable': {
+            ownerOnly('卓を片付けられるのはオーナーだけです');
+            const last = tableCount(room) - 1, table = tableAt(room, last)!;
+            if (!last) throw new RoomError(409, '卓は1つ以上必要です');
+            // A CPU leaves with its table; a person (still at a match or its result) is never sent away.
+            if (table.status === 'playing' || table.seats.some(seat => seat && !seat.cpu && !seat.left)) throw new RoomError(409, '人が座っている卓は片付けられません');
+            room.tables = room.tables!.slice(0, -1);
+            if (!room.tables.length) delete room.tables;
+            for (const member of plaza.members) if ((member.at ?? 0) >= last) {
+                if (last > 1) member.at = last - 1;
+                else delete member.at;
+            }
+            break;
+        }
+        default: {
+            // A table's own actions: at the table where they sit, or (sitting down, calling the CPU) the one they look at.
+            const place = placeOf(room, id);
+            const index = place?.table ?? tableOf(room, me);
+            changeTable(room, index, catalog, now, table => actTable(table, me, place?.seat ?? null, request, catalog, outcome, now));
+            return outcome;
+        }
     }
-    if (!outcome.command) room.last = null;
-    syncTurnClock(room, now);
+    // Every view goes out again: no table plays its last move over.
+    for (const index of tableIndexes(room)) tableAt(room, index)!.last = null;
     return outcome;
+}
+
+type TableAction = Extract<z.infer<typeof action>, { action: 'ready' | 'unready' | 'command' | 'abort' | 'resign' | 'rematch' | 'sit' | 'stand' | 'cpu' | 'dismissCpu' }>;
+/** 1つの卓での操作。`mine` はその卓での本人の席（座っていなければnull）。 */
+function actTable(table: Room, me: PlazaMember, mine: Side | null, request: TableAction, catalog: Catalog, outcome: PlazaOutcome, now: number) {
+    const id = me.id;
+    const seated = () => {
+        if (mine === null) throw new RoomError(409, '席に座ってから選んでください');
+        return table.seats[mine]!;
+    };
+    const atTable = () => {
+        if (table.status === 'playing') throw new RoomError(409, '対戦が終わってから選べます');
+        toTable(table, catalog);
+    };
+    switch (request.action) {
+        case 'ready': {
+            const own = seated();
+            if (table.status !== 'lobby') throw new RoomError(409, table.status === 'finished' ? '「もう一度」を選んでから準備してください' : '対戦中はデッキを変えられません');
+            const errors = roomDeckErrors(request.deck, table.rules, catalog);
+            if (errors.length) throw new RoomError(400, errors.join(' / '));
+            own.deck = request.deck;
+            own.ready = true;
+            if (table.seats.every(seat => seat?.ready)) {
+                startMatch(table, catalog);
+                outcome.started = true;
+            }
+            break;
+        }
+        case 'unready':
+            if (table.status !== 'lobby') throw new RoomError(409, '対戦はもう始まっています');
+            seated().ready = false;
+            break;
+        case 'command': {
+            seated();
+            if (table.status !== 'playing' || !table.state) throw new RoomError(409, '対戦中ではありません');
+            if (turnTimeoutCommand(table, now)) throw new RoomError(409, '制限時間になりました。ターンを終了しています');
+            const state = table.state, sent = { ...request.command, actor: mine! } as Parameters<typeof applyMatchCommand>[1];
+            if (state.phase === 'playing' && request.revision !== state.revision) throw new RoomError(409, '盤面が更新されました。もう一度操作してください');
+            Object.assign(outcome, applyMatchCommand(table, sent, catalog));
+            break;
+        }
+        case 'abort':
+            seated();
+            if (request.match !== table.match) throw new RoomError(409, '試合が切り替わりました。もう一度確認してください');
+            if (table.status !== 'playing' || !table.state) throw new RoomError(409, '対戦中ではありません');
+            if (!table.seats[other(mine!)]?.cpu) throw new RoomError(403, '中断できるのはCPUとの対戦だけです');
+            table.discardedMatch = table.record?.id;
+            delete table.record;
+            // 勝敗や終了通知は作らず、準備に戻す処理だけを再利用する。
+            table.status = 'finished';
+            toTable(table, catalog);
+            break;
+        case 'resign':
+            seated();
+            if (table.status !== 'playing' || !table.state) throw new RoomError(409, '対戦中ではありません');
+            giveUp(table, mine!);
+            outcome.finished = true;
+            break;
+        case 'rematch':
+            // 席を維持して準備へ戻る。次の対戦ではデッキを選び直せる。
+            seated();
+            atTable();
+            break;
+        case 'sit': {
+            atTable();
+            if (table.seats[request.seat]) throw new RoomError(409, 'その席にはもう誰かが座っています');
+            if (mine !== null) table.seats[mine] = null;
+            table.seats[request.seat] = { tokenHash: '', member: id, name: me.name, ...(me.profileId && { profileId: me.profileId }), ...(me.historyOwners && { historyOwners: me.historyOwners }), deck: null, ready: false };
+            unready(table, id);
+            break;
+        }
+        case 'stand':
+            if (mine === null) throw new RoomError(409, '席に座っていません');
+            standUp(table, mine, catalog, outcome);
+            break;
+        case 'cpu': {
+            atTable();
+            if (table.seats[request.seat] && !table.seats[request.seat]?.cpu) throw new RoomError(409, 'その席にはもう誰かが座っています');
+            if (table.seats.some((seat, index) => seat?.cpu && index !== request.seat)) throw new RoomError(409, 'CPUはもう来ています');
+            table.seats[request.seat] = cpuSeat(table, request.level, catalog, request.deck);
+            // CPUを呼んだ本人の準備は維持し、ほかの着席者には確認し直してもらう。
+            unready(table, id);
+            if (table.seats.every(seat => seat?.ready)) {
+                startMatch(table, catalog);
+                outcome.started = true;
+            }
+            break;
+        }
+        case 'dismissCpu': {
+            atTable();
+            const seat = table.seats.findIndex(taken => taken?.cpu);
+            if (seat < 0) throw new RoomError(409, 'CPUはいません');
+            table.seats[seat] = null;
+            break;
+        }
+    }
+    if (!outcome.command) table.last = null;
 }
 
 /** サーバーで関係を確認済みのフレンドを招待する。フレンド制の入室条件は緩めず、元から入れる場合は通知だけを送る。 */
@@ -492,33 +604,49 @@ export function askToEnter(room: Room, visitor: Required<Pick<Visitor, 'profileI
     return true;
 }
 
-/** 在室メンバー向けの表示。着席していない人は観戦用の情報を受け取る。 */
+/** 在室メンバー向けの表示。盤面と席は、その人がいる卓のもの。着席していない人は観戦用の情報を受け取る。 */
 export function plazaView(room: Room, id: string, online: ReadonlySet<string>, catalog: Catalog, chatHistory = true): RoomView {
-    const plaza = room.plaza!, { version, status, match, rules, last, resigned, seats, state, record, turnClock } = room;
-    const mine = seatOf(room, id), seated = mine !== null;
-    const players = seats.map((seat, index) => seat && {
+    const plaza = room.plaza!, member = plaza.members.find(entry => entry.id === id);
+    const index = member ? tableOf(room, member) : 0, count = tableCount(room);
+    const table = focus(room, index), { version, rules } = room, { status, match, last, resigned, seats, state, record, turnClock } = table;
+    const mine = seats.findIndex(seat => seat?.member === id), seated = mine >= 0;
+    const players = seats.map((seat, side) => seat && {
         name: seat.name, ...(seat.profileId && { profileId: seat.profileId }), ready: seat.ready, online: !!seat.cpu || online.has(seat.member!),
-        ...(seat.left && { left: true }), ...((index === mine || seat.cpu) && seat.deck && { deck: seat.deck.name }),
+        ...(seat.left && { left: true }), ...((side === mine || seat.cpu) && seat.deck && { deck: seat.deck.name }),
         ...(seat.deck?.sleeve && seat.deck.sleeve !== 'red' && { sleeve: seat.deck.sleeve }),
         ...(seat.member && { member: seat.member }), ...(seat.cpu && { cpu: seat.cpu }),
     }) as RoomView['players'];
     const shares = mayInvite(plaza, id);
+    const at = new Map(plaza.members.map(entry => [entry.id, tableOf(room, entry)]));
+    const watching = (where: number) => plaza.members.filter(entry => online.has(entry.id) && at.get(entry.id) === where && !placeOf(room, entry.id)).length;
+    const tables = tableIndexes(room).map((where): PlazaTableView => {
+        const each = tableAt(room, where)!;
+        return {
+            status: each.status === 'closed' ? 'lobby' : each.status,
+            players: each.seats.map(seat => seat && { name: seat.name, ...(seat.profileId && { profileId: seat.profileId }), ...(seat.member && { member: seat.member }), ...(seat.cpu && { cpu: seat.cpu }), ready: seat.ready }) as PlazaTableView['players'],
+            watching: watching(where),
+        };
+    });
     return {
-        id: room.id, version, seat: mine ?? 0, ...(!seated && { watching: true as const }), reportsAway: true,
-        spectators: plaza.members.filter(member => online.has(member.id) && !seats.some(seat => seat?.member === member.id)).length,
-        ...(mine !== null && seats[mine]!.deck && { ownDeck: seats[mine]!.deck! }),
-        status, match, ...(record && { matchId: record.id }), rules, players, game: state && viewFor(state, mine ?? 'spectator'), last, resigned,
-        assessment: publicAssessment(room, catalog),
+        id: room.id, version, seat: seated ? mine as Side : 0, ...(!seated && { watching: true as const }), reportsAway: true,
+        spectators: watching(index),
+        ...(seated && seats[mine]!.deck && { ownDeck: seats[mine]!.deck! }),
+        status, match, ...(record && { matchId: record.id }), rules, players, game: state && viewFor(state, seated ? mine as Side : 'spectator'), last, resigned,
+        assessment: publicAssessment(table, catalog),
         ...(status === 'finished' && record && seated && { replayId: record.id }),
         ...(turnClock && { turnClock, serverNow: Date.now() }),
         plaza: {
             name: plaza.name, visibility: plaza.visibility, creator: plaza.creator, owner: plaza.owner, me: id,
-            canClaimOwner: plaza.owner === null && !!plaza.members.find(member => member.id === id && mayClaim(plaza, member, online)),
+            canClaimOwner: plaza.owner === null && !!member && mayClaim(plaza, member, online),
             chatEnabled: true, chatStamps: true, chatReceipts: true, ...(chatHistory && { chat: plaza.chat ?? [], chatReads: chatReads(plaza) }),
-            members: plaza.members.map(member => {
-                const seat = seats.findIndex(taken => taken?.member === member.id);
-                return { id: member.id, name: member.name, ...(member.profileId && { profileId: member.profileId }), online: online.has(member.id), ...(seat >= 0 && { seat: seat as Side }) };
+            members: plaza.members.map(entry => {
+                const place = placeOf(room, entry.id);
+                return {
+                    id: entry.id, name: entry.name, ...(entry.profileId && { profileId: entry.profileId }), online: online.has(entry.id),
+                    ...(place && { seat: place.seat }), ...(count > 1 && { table: at.get(entry.id)! }),
+                };
             }),
+            tables, table: index, results: plaza.results ?? [],
             ...(plaza.nextRules && { nextRules: plaza.nextRules }),
             ...(shares && plaza.invite && { invite: plaza.invite }),
             ...(shares && plaza.requests.length && { requests: plaza.requests.map(({ profileId, name }) => ({ profileId, name })) }),
@@ -532,22 +660,35 @@ export function plazaInfo(room: Room): RoomInfo {
     return {
         id: room.id, status: room.status, rules: plaza.nextRules ?? room.rules, host: plaza.creator.name, ...(plaza.creator.profileId && { hostProfileId: plaza.creator.profileId }),
         open: room.status !== 'closed' && plaza.members.length < MAX_MEMBERS, spectators: true,
-        plaza: { name: plaza.name, visibility: plaza.visibility, creator: plaza.creator, members: plaza.members.length, seated: room.seats.filter(Boolean).length },
+        plaza: { name: plaza.name, visibility: plaza.visibility, creator: plaza.creator, members: plaza.members.length, seated: tableIndexes(room).reduce((sum, index) => sum + tableAt(room, index)!.seats.filter(Boolean).length, 0) },
     };
 }
 
-/** 今行動すべきCPUの席。なければnull。 */
-export function cpuToAct(room: Room): Side | null {
-    const state = room.state;
-    if (!room.plaza || room.status !== 'playing' || !state || state.winner !== null) return null;
-    const seat = room.seats.findIndex(taken => taken?.cpu);
+/** 卓（focusしたルーム）で、今行動すべきCPUの席。なければnull。 */
+export function cpuToAct(table: Room): Side | null {
+    const state = table.state;
+    if (!table.plaza || table.status !== 'playing' || !state || state.winner !== null) return null;
+    const seat = table.seats.findIndex(taken => taken?.cpu);
     return seat >= 0 && actingSides(state).includes(seat as Side) ? seat as Side : null;
+}
+/** 今行動すべきCPUがいる卓と、その席。 */
+export function cpuTurns(room: Room): { table: number; seat: Side }[] {
+    if (!room.plaza || room.status === 'closed') return [];
+    return tableIndexes(room).flatMap(table => {
+        const seat = cpuToAct(focus(room, table));
+        return seat === null ? [] : [{ table, seat }];
+    });
 }
 
 /** 計算時の試合番号と盤面更新番号が一致する場合だけ、CPUの手を反映する。 */
-export function playCpu(room: Room, seat: Side, sent: Parameters<typeof applyMatchCommand>[1], expected: { match: number; revision: number }, catalog: Catalog, now = Date.now()): Outcome {
-    if (room.match !== expected.match || room.state?.revision !== expected.revision || cpuToAct(room) !== seat) throw new RoomError(409, 'stale');
-    const outcome = applyMatchCommand(room, { ...sent, actor: seat }, catalog);
-    syncTurnClock(room, now);
-    return outcome;
+export function playCpu(room: Room, table: number, seat: Side, sent: Parameters<typeof applyMatchCommand>[1], expected: { match: number; revision: number }, catalog: Catalog, now = Date.now()): Outcome {
+    const target = tableAt(room, table);
+    if (!target || target.match !== expected.match || target.state?.revision !== expected.revision || cpuToAct(focus(room, table)) !== seat) throw new RoomError(409, 'stale');
+    return changeTable(room, table, catalog, now, focused => applyMatchCommand(focused, { ...sent, actor: seat }, catalog));
+}
+
+/** 卓の持ち時間が切れていれば、その手番を自動で終える。切れていなければnull。 */
+export function expireTableTurn(room: Room, table: number, catalog: Catalog, now = Date.now()): Outcome | null {
+    if (!tableAt(room, table) || !turnTimeoutCommand(focus(room, table), now)) return null;
+    return changeTable(room, table, catalog, now, focused => expireTurn(focused, catalog, now));
 }

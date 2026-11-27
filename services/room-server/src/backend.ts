@@ -165,7 +165,7 @@ export async function redisBackend(url: string, prefix = 'pplale:'): Promise<Bac
         async historyPending() {
             return ((await client.xRange(outbox, '-', '+', { COUNT: 100 })) ?? []).map(({ id, message }) => {
                 const capture = JSON.parse(message.capture) as HistoryCapture;
-                return { id, room: JSON.parse(message.room) as Room, previous: JSON.parse(message.previous) as Room | null, expires: Number(message.expires), capture: capture.snapshot, completeAllowed: capture.completeAllowed };
+                return { id, room: JSON.parse(message.room) as Room, previous: JSON.parse(message.previous) as Room | null, expires: Number(message.expires), capture: capture.snapshot, ...(capture.tables && { tables: capture.tables }), completeAllowed: capture.completeAllowed };
             });
         },
         async historyAck(id) { await client.xDel(outbox, id); },
@@ -231,7 +231,7 @@ export function memoryBackend(): Backend {
     function record(room: Room, previous: Room | null, ttl: number, history?: HistoryCapture) {
         if (!history) return;
         const id = `${Date.now()}-${++serial}`;
-        pending.set(id, structuredClone({ id, room, previous, expires: Date.now() + ttl, capture: history.snapshot, completeAllowed: history.completeAllowed }));
+        pending.set(id, structuredClone({ id, room, previous, expires: Date.now() + ttl, capture: history.snapshot, ...(history.tables && { tables: history.tables }), completeAllowed: history.completeAllowed }));
     }
     const live = (id: string) => {
         const kept = rooms.get(id);

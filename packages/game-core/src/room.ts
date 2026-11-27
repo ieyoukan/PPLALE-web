@@ -165,6 +165,12 @@ export type RoomAction =
     | { action: 'rules'; rules: RoomRules }
     /** オーナーがルーム名を変更する。作成者と公開範囲は変更しない。 */
     | { action: 'rename'; name: string }
+    /** 見る卓を変える。別の卓に座っていれば、その席を立ってから移る（対戦中は移れない）。 */
+    | { action: 'look'; table: number }
+    /** オーナーが卓を末尾に1つ増やす（MAX_TABLESまで）。 */
+    | { action: 'addTable' }
+    /** オーナーが末尾の卓を片付ける。誰も座っておらず、対戦していない卓だけ。 */
+    | { action: 'removeTable' }
     /** 文字または登録済みスタンプを送る。送信IDを使い、再試行しても重複させない。 */
     | ({ action: 'chat'; messageId: string } & ({ text: string; stamp?: never } | { stamp: RoomChatStampId; text?: never }))
     /** その発言まで読んだ（既読）。表示中のチャットで最新の他人の発言を送る。 */
@@ -189,6 +195,8 @@ export const invitedVisibility = (visibility: RoomVisibility) => visibility === 
 export const MAX_ROOM_NAME_LENGTH = 16;
 /** 着席・観戦を含めたルームの同時在室人数。 */
 export const MAX_MEMBERS = 16;
+/** 1ルームに置ける卓の数。全員が同時に座れる数（2人で1卓）まで。 */
+export const MAX_TABLES = MAX_MEMBERS / 2;
 export const MAX_ROOM_CHAT_LENGTH = 300;
 export const MAX_ROOM_CHAT_MESSAGES = 50;
 export interface RoomChatMessage {
@@ -212,7 +220,42 @@ export interface PlazaMember {
     /** 現在の接続状態。一時切断中もMEMBER_GRACEの間は在室扱いにする。 */
     online: boolean;
     seat?: Side;
+    /** いる卓（座っている卓、または見ている卓）。卓が1つのルームでは省略する。 */
+    table?: number;
 }
+/** ほかの卓も含めた、各卓の様子。卓を移る前の一覧に使う。 */
+export interface PlazaTableView {
+    status: Exclude<RoomStatus, 'closed'>;
+    /** 添字は席番号。nullは空席。 */
+    players: [PlazaTableSeat | null, PlazaTableSeat | null];
+    /** この卓を見ている、座っていない人の数。 */
+    watching: number;
+}
+export interface PlazaTableSeat {
+    name: string;
+    profileId?: string;
+    member?: string;
+    cpu?: CpuLevel;
+    ready: boolean;
+}
+/** このルームで終わった対戦の勝敗。ルームが閉じると消える（各自の対戦履歴は別に残る）。 */
+export interface PlazaResult {
+    matchId: string;
+    table: number;
+    endedAt: number;
+    /** 添字は席番号。memberはルームのメンバー（CPUは省略）。 */
+    players: [PlazaResultPlayer, PlazaResultPlayer];
+    /** 勝った席。引き分けはnull。 */
+    winner: Side | null;
+}
+export interface PlazaResultPlayer {
+    name: string;
+    profileId?: string;
+    member?: string;
+    cpu?: CpuLevel;
+}
+/** ルームに残す勝敗の数。古いものから消える。 */
+export const MAX_PLAZA_RESULTS = 200;
 /** 盤面以外に、在室メンバーへ返すルームの情報。 */
 export interface PlazaView {
     name: string;
@@ -237,6 +280,12 @@ export interface PlazaView {
     chatReads?: Record<string, string>;
     /** 対戦中に変更された、次の試合用のルール。 */
     nextRules?: RoomRules;
+    /** すべての卓。この表示の盤面・席は tables[table] のもの。卓が1つでも返す。 */
+    tables?: PlazaTableView[];
+    /** この表示の卓の番号（0から）。 */
+    table?: number;
+    /** このルームで終わった対戦の勝敗。新しいものが後ろ。 */
+    results?: PlazaResult[];
     /** 招待リンクの秘密。共有できるメンバーだけに返す。 */
     invite?: string;
     /** 入室リクエスト。承認できるメンバーだけに返す。 */
