@@ -43,6 +43,16 @@
 /* ── Left: everyone in the room ── */
 .people { --pad: 26px 20px 72px; grid-area: people; min-height: 0; min-width: 0; overflow: auto; }
 .people ul { display: grid; min-width: 0; list-style: none; margin: 0; padding: 0; }
+/* 人 / 戦績: two tabs at the top of the panel, the chosen one underlined in vanilla. */
+.panelTabs { display: grid; grid-template-columns: 1fr 1fr; gap: 4px; margin-bottom: 6px; }
+.panelTabs button {
+  display: flex; align-items: center; justify-content: center; gap: 4px; min-height: 36px; padding: 4px 2px; border: 0; border-bottom: 2px solid transparent;
+  background: none; color: color-mix(in srgb, var(--brand-cream-line) 80%, transparent); font: inherit; font-size: 14px; font-weight: 700;
+}
+.panelTabs button svg { width: 16px; height: 16px; }
+.panelTabs button small { font-size: 11px; opacity: .85; }
+.panelTabs button[aria-selected=true] { border-bottom-color: var(--brand-vanilla); color: var(--brand-cream-on-dark); }
+.panelTabs button:hover { color: var(--brand-cream-on-dark); }
 .people li { min-width: 0; }
 /* Rows on the panel's own face, parted by a fine rule, rather than boxes of their own. */
 .person { display: grid; grid-template-columns: 42px minmax(0, 1fr) auto; align-items: center; gap: 6px; min-width: 0; padding: 8px 0; border-bottom: 1px solid color-mix(in srgb, var(--brand-cream-line) 20%, transparent); color: var(--brand-cream-on-dark); text-decoration: none; animation: popIn .35s cubic-bezier(.3, 1.6, .5, 1) both; }
@@ -198,6 +208,9 @@ a.person:hover { background: color-mix(in srgb, var(--brand-cream-on-dark) 10%, 
 .veilDots span { width: 9px; height: 9px; border-radius: 50%; background: var(--brand-cocoa-soft); animation: hop 1.2s ease-in-out infinite; }
 .veilDots span:nth-child(2) { animation-delay: .15s; }
 .veilDots span:nth-child(3) { animation-delay: .3s; }
+
+/* ── Watching a match: the tables, to go to another one, at the top middle of the board ── */
+.watchTables { position: absolute; top: 10px; left: 50%; z-index: 136; transform: translateX(-50%); }
 
 /* ── During a match: the room button among the board's own ── */
 /* 追加カウンターを覆わないよう、右下は全画面ボタンと横並びにする。 */

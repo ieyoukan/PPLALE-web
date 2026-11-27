@@ -12,6 +12,7 @@ import boardStyles from '../BoardEmulator.module.css';
 import link from '../room/Room.module.css';
 import { GameIcon } from '@/components/shared/ui/GameIcon';
 import { PlazaTable } from './PlazaTable';
+import { TableBar } from './TableBar';
 import { usePlaza } from './PlazaProvider';
 import { useI18n } from '@/i18n/LocaleProvider';
 import styles from './Plaza.module.css';
@@ -26,7 +27,9 @@ export function PlazaRoom({ view, onMenu }: { view: RoomView; onMenu: () => void
     if (view.game && view.status === 'finished') setResult(view as Played);
     else if (view.status === 'playing') setResult(null);
   }, [view]);
-  const current = view.game && (view.status === 'playing' || view.status === 'finished') ? view as Played : result;
+  // A result belongs to its table: moving to another table leaves it behind.
+  const table = view.plaza?.table ?? 0;
+  const current = view.game && (view.status === 'playing' || view.status === 'finished') ? view as Played : result && (result.plaza?.table ?? 0) === table ? result : null;
   const shown = current && !(current.status === 'finished' && current.matchId === dismissed) ? current : null;
   const [visitedLobby, setVisitedLobby] = useState(!view.game);
   useEffect(() => { if (!shown) setVisitedLobby(true); }, [shown]);
@@ -40,7 +43,7 @@ export function PlazaRoom({ view, onMenu }: { view: RoomView; onMenu: () => void
   // The room and its geometry remain mounted through play, results, rematches and spectating.
   return <PlazaTable view={view} onMenu={onMenu} match={shown && prepared ? {
     viewer: shown.watching ? 0 : shown.seat, animate: visitedLobby,
-    content: <PlazaMatch key={`${shown.match}:${shown.watching ? 'watch' : shown.seat}`} initial={shown} onDone={done} onMenu={onMenu} />,
+    content: <PlazaMatch key={`${shown.plaza?.table ?? 0}:${shown.match}:${shown.watching ? 'watch' : shown.seat}`} initial={shown} onDone={done} onMenu={onMenu} />,
   } : undefined} />;
 }
 
@@ -48,7 +51,7 @@ export function PlazaRoom({ view, onMenu }: { view: RoomView; onMenu: () => void
  * Later draws do not restart this gate or unmount the live board. */
 function useMatchAssets(ids: string[], initial: Played | null) {
   const pool = ids.join('|');
-  const key = initial ? `${initial.id}:${initial.match}:${initial.watching ? 'watch' : initial.seat}:${pool}` : '';
+  const key = initial ? `${initial.id}:${initial.plaza?.table ?? 0}:${initial.match}:${initial.watching ? 'watch' : initial.seat}:${pool}` : '';
   const firstCards = useEffectEvent(() => initial ? revealedMatchCardIds(initial.game) : []);
   const [ready, setReady] = useState('');
   useEffect(() => {
@@ -77,11 +80,17 @@ function PlazaMatch({ initial, onDone, onMenu }: { initial: Played; onDone: () =
   const options = useMemo(() => ({ rematch, menu: onMenu }), [rematch, onMenu]);
   const session = useRoomSession({ room, initial, seat: initial.seat, onLeave, plaza: options });
   const people = view?.plaza?.members.filter(member => member.online).length ?? 0;
+  const [moving, setMoving] = useState(false);
+  const look = (table: number) => { setMoving(true); void send({ action: 'look', table }).catch(() => {}).finally(() => setMoving(false)); };
   // The players of a finished match may watch it again (its recording is theirs).
   const replay = view?.status === 'finished' && view.matchId === initial.matchId ? view.replayId : undefined;
   return <>
     <BoardTable session={session} />
     {replay && <aside className={link.spectatorTools}><Link href={`/game/replay/?id=${replay}`}>{t('リプレイを見る ▶')}</Link></aside>}
+    {/* Whoever only watches may go to another table from the board. */}
+    {initial.watching && view?.plaza?.tables && view.plaza.tables.length > 1 && <div className={styles.watchTables}>
+      <TableBar tables={view.plaza.tables} current={view.plaza.table ?? 0} owner={false} busy={moving} compact onLook={look} onAdd={() => {}} onRemove={() => {}} />
+    </div>}
     {/* On the board's right rail, where nothing of the match is: the room and the game's menu. */}
     <button className={`${boardStyles.infoButton} ${styles.roomTool}`} aria-label={t('ルーム（{count}人）', { count: people })} onClick={onMenu}>
       <GameIcon name="people" /><small>{t('ルーム')}</small><b aria-hidden="true">{people}</b>

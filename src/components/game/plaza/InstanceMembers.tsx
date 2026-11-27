@@ -39,7 +39,7 @@ function Members({ room, friends = [], checking = false, error = '' }: { room: P
         <span className={styles.state}>
           {member.id === room.owner && <span role="img" aria-label={t('オーナー')}><GameIcon name="crown" /></span>}
           <GameIcon name={member.seat !== undefined ? 'seat' : 'eye'} />
-          <small>{t(!member.online ? '再接続中' : member.seat !== undefined ? '席にいる' : '観戦')}</small>
+          <small>{t(!member.online ? '再接続中' : member.seat !== undefined ? '席にいる' : '観戦')}{member.table !== undefined && `・${t('卓{n}', { n: member.table + 1 })}`}</small>
         </span>
       </>;
       return <li key={member.id} data-away={!member.online || undefined}>

@@ -1,0 +1,41 @@
+/* The tables in a row, between the room's plate and its buttons. Cocoa on cream keeps 4.5:1. */
+.bar { display: flex; align-items: center; gap: 6px; min-width: 0; padding: 5px 6px; border: 1px solid var(--brand-control-edge); border-radius: var(--brand-control-radius); background: var(--brand-cream); color: var(--brand-cocoa-deep); }
+.chips { display: flex; gap: 5px; min-width: 0; margin: 0; padding: 0; list-style: none; overflow-x: auto; scrollbar-width: none; }
+.chip {
+  position: relative; display: grid; justify-items: center; align-content: center; gap: 2px; width: 44px; height: 46px; padding: 0;
+  border: 2px solid var(--brand-pink); border-radius: var(--brand-control-radius); background: var(--brand-paper); color: var(--brand-cocoa-deep);
+  font: inherit; transition: background-color .2s, border-color .2s, transform .15s;
+}
+.chip b { font-size: 18px; line-height: 1; font-variant-numeric: tabular-nums; }
+.chip:hover:not([data-current]):not(:disabled) { background: var(--brand-blush); transform: translateY(-1px); }
+/* The table shown here. */
+.chip[data-current] { border-color: var(--brand-cocoa); background: var(--brand-cocoa); color: var(--brand-cream); cursor: default; }
+.chip:disabled:not([data-current]) { opacity: .55; }
+/* Its two seats: empty rings, a person filled pink, the CPU filled cocoa. */
+.seats { display: flex; gap: 4px; }
+.seats i { width: 9px; height: 9px; border: 1.5px solid currentColor; border-radius: 50%; opacity: .7; }
+.seats i[data-taken] { opacity: 1; background: var(--brand-peach); border-color: var(--brand-peach); }
+.seats i[data-taken=cpu] { background: var(--brand-cocoa-soft); border-color: var(--brand-cocoa-soft); }
+.chip[data-current] .seats i[data-taken=cpu] { background: var(--brand-cream); border-color: var(--brand-cream); }
+.sword { width: 15px; height: 15px; color: var(--brand-star-deep); }
+.chip[data-current] .sword { color: var(--brand-vanilla); }
+
+.arrow, .edit {
+  display: grid; place-items: center; flex: none; width: 34px; height: 46px; padding: 0; border: 0; border-radius: var(--brand-control-radius);
+  background: none; color: var(--brand-cocoa); font: inherit; font-size: 22px;
+}
+.arrow[data-next] svg { transform: scaleX(-1); }
+.arrow:disabled, .edit:disabled { opacity: .3; }
+.arrow:hover:not(:disabled), .edit:hover:not(:disabled) { background: var(--brand-blush); }
+.owner { display: flex; gap: 2px; padding-left: 6px; border-left: 1px solid var(--brand-pink); }
+.edit { width: 38px; font-size: 24px; font-weight: 700; }
+.edit svg { width: 22px; height: 22px; }
+
+/* Over a match's board: smaller, without the owner's buttons. */
+.bar[data-compact] { gap: 3px; padding: 3px 4px; }
+.bar[data-compact] .chip { width: 36px; height: 38px; }
+.bar[data-compact] .chip b { font-size: 15px; }
+.bar[data-compact] .arrow { width: 28px; height: 38px; font-size: 18px; }
+
+.bar :focus-visible { outline: 3px solid var(--brand-cocoa); outline-offset: 2px; }
+@media (prefers-reduced-motion: reduce) { .chip { transition: none; } }

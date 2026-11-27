@@ -27,6 +27,8 @@ import { DeckContentsSheet, DeckSheet, OpponentSheet, RulesSheet } from './Plaza
 import { CpuSheet } from './CpuSheet';
 import { RoomThumbnailImage } from './RoomThumbnailImage';
 import { ShareSheet } from './ShareSheet';
+import { TableBar } from './TableBar';
+import { RoomResults } from './RoomResults';
 import { GameIcon } from '@/components/shared/ui/GameIcon';
 import { usePlaza } from './PlazaProvider';
 import { guestIcon, useProfiles } from '@/components/shared/player/useProfiles';
@@ -103,6 +105,11 @@ export function PlazaTable({ view, onMenu, match }: { view: RoomView; onMenu: ()
   const ready = () => { if (chosen) ask({ action: 'ready', deck: chosen.deck(randomSeed()) }); };
   const owner = room.members.find(member => member.id === room.owner);
   const info = visibilityInfo[room.visibility];
+  const tables = room.tables ?? [], current = room.table ?? 0;
+  const look = (table: number) => { if (table >= 0 && table < tables.length && table !== current) ask({ action: 'look', table }); };
+  const [panel, setPanel] = useState<'people' | 'results'>('people');
+  useTableSlide(root, current, !!match);
+  const swipe = useSwipe(direction => look(current + direction), playing || tables.length < 2);
 
   /** One seat on the mat: who sits there, or the way to sit there (or to call the CPU). */
   const seat = (side: Side) => {
@@ -137,7 +144,7 @@ export function PlazaTable({ view, onMenu, match }: { view: RoomView; onMenu: ()
     </div>;
   };
 
-  return <div ref={root} className={styles.table} data-room-view data-playing={playing || undefined} data-camera-ready={cameraReady}>
+  return <div ref={root} className={styles.table} data-room-view data-playing={playing || undefined} data-camera-ready={cameraReady} {...swipe}>
     <header className={styles.top} inert={playing || !cameraReady}>
       {/* The page's heading for screen readers: the room's name shows inside the plate, a button (no heading may go there). */}
       <h1 className={styles.srOnly}>{nameText(room.name)}</h1>
@@ -146,6 +153,8 @@ export function PlazaTable({ view, onMenu, match }: { view: RoomView; onMenu: ()
         <span className={styles.roomTitle}><b data-ui-title>{nameText(room.name)}</b><small>{t(info.label)}・{nameText(room.creator.name)}</small></span>
         <span className={styles.count}><GameIcon name="people" />{room.members.length}</span>
       </OrnateFrame>
+      <TableBar tables={tables} current={current} owner={room.owner === room.me} busy={busy} onLook={look}
+        onAdd={() => ask({ action: 'addTable' })} onRemove={() => ask({ action: 'removeTable' })} />
       <div className={styles.topActions}>
         <BeginnerMissionLink />
         <button className={styles.inviteButton} onClick={() => setOpen('share')}><GameIcon name="letter" /><span data-ui-title>{t('さそう')}</span></button>
@@ -154,16 +163,21 @@ export function PlazaTable({ view, onMenu, match }: { view: RoomView; onMenu: ()
     </header>
 
     <OrnateFrame as="aside" tone="cream" className={styles.people} aria-label={t('ルームにいる人')} inert={playing || !cameraReady}>
-      <ul>{room.members.map(member => <li key={member.id} data-away={!member.online || undefined}>
+      {/* Who is here, or who won here. */}
+      <div className={styles.panelTabs} role="tablist">
+        <button type="button" role="tab" aria-selected={panel === 'people'} onClick={() => setPanel('people')}><GameIcon name="people" />{t('人')}<small>{room.members.length}</small></button>
+        <button type="button" role="tab" aria-selected={panel === 'results'} onClick={() => setPanel('results')}><GameIcon name="sword" />{t('戦績')}{!!room.results?.length && <small>{room.results.length}</small>}</button>
+      </div>
+      {panel === 'results' ? <RoomResults results={room.results ?? []} me={room.me} iconOf={iconOf} /> : <ul>{room.members.map(member => <li key={member.id} data-away={!member.online || undefined}>
         <ProfileLink self={member.id === room.me} profileId={member.profileId} className={styles.person} label={member.id === room.me ? t('自分のプロフィール') : t('{name}のプロフィール', { name: member.name })}>
           <Avatar card={iconOf(member.id, member.profileId)} size={42} dim={!member.online} />
-          <span className={styles.personName}>{nameText(member.name)}{member.id === room.me && <small>{t('あなた')}</small>}</span>
+          <span className={styles.personName}>{nameText(member.name)}{(member.id === room.me || member.table !== undefined) && <small>{[member.id === room.me && t('あなた'), member.table !== undefined && t('卓{n}', { n: member.table + 1 })].filter(Boolean).join('・')}</small>}</span>
           <span className={styles.personMarks}>
             {member.id === room.owner && <span className={styles.crown} role="img" aria-label={t('オーナー')}><GameIcon name="crown" /></span>}
             {member.seat !== undefined ? <span role="img" aria-label={t('席にいる')}><GameIcon name="seat" /></span> : <span role="img" aria-label={t('観戦')}><GameIcon name="eye" /></span>}
           </span>
         </ProfileLink>
-      </li>)}</ul>
+      </li>)}</ul>}
     </OrnateFrame>
 
     <RoomScene seats={[seat(0), seat(1)]} root={root} active={playing} viewer={match?.viewer ?? 0} animate={match?.animate ?? true}
@@ -199,6 +213,43 @@ export function PlazaTable({ view, onMenu, match }: { view: RoomView; onMenu: ()
       onChoose={(level, choice) => { const side = open.cpu; setOpen(null); ask({ action: 'cpu', seat: side, level, ...(choice.source !== 'random' && { deck: choice.deck(randomSeed()) }) }); }} />}
     {match && target && <BoardSurfaceContext.Provider value={{ target, root, controlsReady: cameraReady && staged }}>{match.content}</BoardSurfaceContext.Provider>}
   </div>;
+}
+
+/**
+ * Moving to another table slides the room in from that side, as if the camera went along the row of
+ * tables (only the room moves; its controls stay). Nothing moves for those who prefer less motion.
+ */
+function useTableSlide(root: React.RefObject<HTMLDivElement | null>, table: number, board: boolean) {
+  const previous = useRef({ table, board });
+  useEffect(() => {
+    const from = previous.current;
+    previous.current = { table, board };
+    const scene = root.current?.querySelector<HTMLElement>('[data-room-scene]');
+    // To or from a match's board, the camera's own flight is the move.
+    if (from.table === table || from.board || board || !scene || matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+    const side = table > from.table ? 1 : -1;
+    scene.animate([{ transform: `translateX(${side * 38}%)` }, { transform: 'none' }], { duration: 420, easing: 'cubic-bezier(.2, .8, .3, 1)' });
+  }, [root, table, board]);
+}
+
+/** A sideways swipe across the room (not on its buttons) moves to the next or previous table. */
+function useSwipe(onSwipe: (direction: 1 | -1) => void, off: boolean) {
+  const start = useRef<{ x: number; y: number; id: number } | null>(null);
+  if (off) return {};
+  return {
+    onPointerDown(event: React.PointerEvent) {
+      const target = event.target as HTMLElement;
+      start.current = target.closest('[data-room-scene]') && !target.closest('button, a, input, [role=dialog]') ? { x: event.clientX, y: event.clientY, id: event.pointerId } : null;
+    },
+    onPointerUp(event: React.PointerEvent) {
+      const from = start.current;
+      start.current = null;
+      if (!from || from.id !== event.pointerId) return;
+      const dx = event.clientX - from.x, dy = event.clientY - from.y;
+      if (Math.abs(dx) > 70 && Math.abs(dx) > Math.abs(dy) * 1.5) onSwipe(dx < 0 ? 1 : -1);
+    },
+    onPointerCancel() { start.current = null; },
+  };
 }
 
 /** A translated sentence with `{name}` replaced by an element (the name in bold). */
